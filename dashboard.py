@@ -169,7 +169,7 @@ def tabla_estilizada(df):
 # 7. RENDER
 if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     f1, f2, f3, f4 = st.columns(4)
-    df_visual = df.copy()
+    df_visual = df.copy().reset_index(drop=True)
 
     with f1: f_cli = st.selectbox("Client ID", ["ALL"] + sorted(df_visual["NO CLIENTE"].unique()))
     with f2: f_car = st.selectbox("Carrier", ["ALL"] + sorted(df_visual["FLETERA"].unique()))
@@ -181,9 +181,12 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     if f_des != "ALL": df_visual = df_visual[df_visual["DESTINO"] == f_des]
     if f_est != "ALL": df_visual = df_visual[df_visual["ESTATUS_CALCULADO"] == f_est]
 
+    
+    df_visual = df_visual.reset_index(drop=True)
     st.write(tabla_estilizada(df_visual))
 
  
+
 
 
 
