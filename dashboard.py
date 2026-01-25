@@ -1,132 +1,123 @@
 import streamlit as st
-import pandas as pd
 import time
 
-# 1. CONFIGURACIÓN DE PÁGINA PRO
-st.set_page_config(
-    page_title="NEXION | Portal Logístico", 
-    layout="wide", 
-    initial_sidebar_state="collapsed"
-)
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(page_title="NEXION LOGISTICS", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. GESTIÓN DE TEMA Y PALETA PROFESIONAL
+# 2. GESTIÓN DE TEMA
 if "tema" not in st.session_state:
-    st.session_state.tema = "claro" # DHL/FedEx suelen ser claros por defecto
+    st.session_state.tema = "claro"
 
+# Definición de paletas ( DHL: Amarillo/Rojo | Dark: Antracita/Verde )
 if st.session_state.tema == "oscuro":
-    # Paleta Dark Pro (Inspirada en dashboards de alta gama)
-    bg_color = "#121212"
-    nav_bg = "#1E1E1E"
-    text_color = "#FFFFFF"
-    accent_color = "#00FF00"  # Verde Neón para resaltar
-    card_bg = "#1E1E1E"
-    border = "1px solid #333333"
+    bg_app = "#121212"
+    bg_nav = "#1B1C1F"
+    text_main = "#FFFFFF"
+    accent = "#00FF00" 
+    btn_bg = "#262730"
+    border_color = "#333333"
 else:
-    # Paleta Light Pro (Inspirada en DHL/FedEx)
-    bg_color = "#F8F9FA"
-    nav_bg = "#FFFFFF"
-    text_color = "#1A1A1A"
-    accent_color = "#D40511"  # Rojo DHL (o usa #FF6B00 para FedEx)
-    card_bg = "#FFFFFF"
-    border = "1px solid #E0E0E0"
+    bg_app = "#F8F9FA"  # Gris ultra claro tipo FedEx/DHL
+    bg_nav = "#FFCC00"  # Amarillo DHL (puedes cambiarlo a blanco si prefieres)
+    text_main = "#1A1A1A"
+    accent = "#D40511"  # Rojo DHL
+    btn_bg = "#FFFFFF"
+    border_color = "#E0E0E0"
 
-# 3. CSS DE ALTO NIVEL (UI/UX)
+# 3. CSS MAESTRO PARA BOTONES Y NAVBAR
 st.markdown(f"""
     <style>
-        /* Reset y Fondos */
+        /* Fondo de la App */
         .stApp {{
-            background-color: {bg_color} !important;
-            color: {text_color} !important;
-            font-family: 'Inter', sans-serif;
-        }}
-        
-        /* Ocultar elementos basura */
-        header, footer, #MainMenu {{visibility: hidden;}}
-
-        /* Navbar Superior Pro */
-        .main-nav {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.8rem 3rem;
-            background-color: {nav_bg};
-            border-bottom: {border};
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 999;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background-color: {bg_app} !important;
+            color: {text_main} !important;
         }}
 
-        /* Tarjetas de Contenido */
-        .portal-card {{
-            background-color: {card_bg};
-            padding: 2rem;
-            border-radius: 12px;
-            border: {border};
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            margin-bottom: 1.5rem;
-        }}
+        /* Ocultar basura de Streamlit */
+        header, footer, #MainMenu, div[data-testid="stDecoration"] {{visibility: hidden;}}
 
-        /* Botones Estilo DHL */
+        /* --- ESTILO DE BOTONES DE NAVEGACIÓN --- */
+        /* Forzamos que no sean negros */
         div.stButton > button {{
-            border-radius: 4px !important;
-            padding: 0.5rem 2rem !important;
+            background-color: {btn_bg} !important;
+            color: {text_main} !important;
+            border: 1px solid {border_color} !important;
+            border-radius: 2px !important; /* DHL usa bordes muy rectos */
+            padding: 0.6rem 1rem !important;
             font-weight: 700 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 1px !important;
-            transition: all 0.3s ease !important;
+            font-size: 14px !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }}
+
+        div.stButton > button:hover {{
+            border-color: {accent} !important;
+            color: {accent} !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }}
+
+        /* Estilo para el buscador central tipo DHL */
+        .stTextInput input {{
+            border-radius: 0px !important;
+            border: 2px solid {border_color} !important;
+            height: 50px !important;
+            font-size: 18px !important;
         }}
     </style>
 """, unsafe_allow_html=True)
 
-# 4. NAVBAR SUPERIOR (HTML Personalizado)
-# Usamos columnas para que los botones de Streamlit vivan dentro del diseño
-cols = st.columns([2, 1, 1, 1, 1, 1])
+# 4. NAVBAR SUPERIOR (Layout de Portal)
+# Creamos una franja de color en la parte superior si es modo claro (estilo DHL)
+if st.session_state.tema == "claro":
+    st.markdown(f'<div style="background-color:{bg_nav}; height:5px; width:100%; position:fixed; top:0; left:0; z-index:1000;"></div>', unsafe_allow_html=True)
 
-with cols[0]:
-    st.markdown(f"<h2 style='margin:0; color:{accent_color}; font-weight:900;'>NEXION</h2>", unsafe_allow_html=True)
+c_logo, c_nav1, c_nav2, c_nav3, c_nav4 = st.columns([2, 1, 1, 1, 1])
 
-# Botones de Navegación
-if "pagina" not in st.session_state: st.session_state.pagina = "INICIO"
+with c_logo:
+    st.markdown(f"<h1 style='margin:0; color:{accent}; font-weight:900; font-size:35px;'>NEXION</h1>", unsafe_allow_html=True)
 
-with cols[1]:
-    if st.button("RASTREO", use_container_width=True): st.session_state.pagina = "RASTREO"
-with cols[2]:
-    if st.button("KPIs", use_container_width=True): st.session_state.pagina = "KPIs"
-with cols[3]:
-    if st.button("REPORTES", use_container_width=True): st.session_state.pagina = "REPORTES"
-with cols[4]:
-    # Botón de Cambio de Tema (🌓)
-    if st.button("🌓", use_container_width=True):
+with c_nav1:
+    if st.button("RASTREO", use_container_width=True):
+        st.session_state.pagina = "principal"
+with c_nav2:
+    if st.button("KPIs", use_container_width=True):
+        st.session_state.pagina = "KPIs"
+with c_nav3:
+    if st.button("REPORTES", use_container_width=True):
+        st.session_state.pagina = "Reporte"
+with c_nav4:
+    # Botón de cambio de tema con icono adaptativo
+    label_tema = "🌙 MODO OSCURO" if st.session_state.tema == "claro" else "☀️ MODO CLARO"
+    if st.button(label_tema, use_container_width=True):
         st.session_state.tema = "oscuro" if st.session_state.tema == "claro" else "claro"
         st.rerun()
 
+st.markdown("<hr style='margin-top:0; border-color:rgba(0,0,0,0.1);'>", unsafe_allow_html=True)
+
+# 5. BUSCADOR CENTRAL (DHL STYLE)
 st.markdown("<br><br>", unsafe_allow_html=True)
+_, col_mid, _ = st.columns([1, 2, 1])
 
-# 5. SPLASH SCREEN (Animación DHL Style)
-if "splash" not in st.session_state:
-    placeholder = st.empty()
-    with placeholder.container():
-        st.markdown(f"""
-            <div style="height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <div style="width: 100px; height: 5px; background: {accent_color}; animation: loading 1.5s infinite;"></div>
-                <h1 style="color: {text_color}; font-weight: 200; letter-spacing: 5px; margin-top: 20px;">SINCRO NEXION</h1>
-            </div>
-            <style>
-                @keyframes loading {{
-                    0% {{ width: 0; }}
-                    50% {{ width: 100%; }}
-                    100% {{ width: 0; }}
-                }}
-            </style>
-        """, unsafe_allow_html=True)
-        time.sleep(1.8)
-    st.session_state.splash = True
-    st.rerun()
-
-# 6. CONTENIDO DE LA PÁGINA
-st.markdown(f"### {st.session_state.pagina}")
-st.markdown("---")
+with col_mid:
+    st.markdown(f"<h2 style='text-align:center; font-weight:800;'>Rastrear su envío</h2>", unsafe_allow_html=True)
+    num_guia = st.text_input("", placeholder="Ingrese número de rastreo (ej: NX-2026...)", label_visibility="collapsed")
+    
+    # Botón de acción principal (Rojo DHL)
+    st.markdown(f"""
+        <style>
+        div[data-testid="stVerticalBlock"] > div:last-child button {{
+            background-color: {accent} !important;
+            color: white !important;
+            border: none !important;
+            width: 100% !important;
+            height: 50px !important;
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+    if st.button("RASTREAR"):
+        st.success(f"Buscando guía: {num_guia}")
 
 
 
