@@ -183,9 +183,10 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
 
     
     df_visual = df_visual.reset_index(drop=True)
-    st.write(tabla_estilizada(df_visual))
-
- 
+    st.markdown(
+    tabla_estilizada(df_visual).to_html(),
+    unsafe_allow_html=True
+)
 
 
 
