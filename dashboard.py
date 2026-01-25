@@ -23,17 +23,21 @@ else:
     border_color = "#D8DEE4"
     btn_hover = "#EBEEF2"
 
-# 3. CSS MAESTRO (SIN CAMBIOS)
+# 3. CSS MAESTRO (AJUSTADO SIN CAMBIAR DISEÑO)
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-header, footer, #MainMenu, div[data-testid="stDecoration"] {{visibility: hidden;}}
+
+header, footer, #MainMenu, div[data-testid="stDecoration"] {{ visibility: hidden; }}
+
 .stApp {{
     background-color: {bg_color} !important;
     color: {text_main} !important;
     font-family: 'Inter', sans-serif !important;
 }}
-div.stButton > button, div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
+
+div.stButton > button,
+div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
     background-color: {card_bg} !important;
     color: {text_main} !important;
     border: 1px solid {border_color} !important;
@@ -43,26 +47,30 @@ div.stButton > button, div[data-testid="stSelectbox"] div[data-baseweb="select"]
     letter-spacing: 2px !important;
     text-transform: uppercase;
 }}
+
 div.stButton > button:hover {{
     background-color: {btn_hover} !important;
 }}
+
 div[data-testid="stSelectbox"] label p {{
     font-size: 10px !important;
     color: {text_sub} !important;
     letter-spacing: 2px !important;
     text-transform: uppercase !important;
 }}
-/* OCULTAR NUMERACIÓN DE FILAS EN TABLAS STYLER */
-div[data-testid="stDataFrame"] thead tr th:first-child,
-div[data-testid="stDataFrame"] tbody tr th:first-child,
-div[data-testid="stDataFrame"] tbody tr td:first-child {
-    display: none !important;
-}
 
-/* Ajuste fino del scroll al quitar gutter */
-div[data-testid="stDataFrame"] table {
+/* OCULTAR NUMERACIÓN DE FILAS (STYLER) */
+div[data-testid="stDataFrame"] th.row_heading,
+div[data-testid="stDataFrame"] td.row_heading,
+div[data-testid="stDataFrame"] th.blank {{
+    display: none !important;
+}}
+
+/* Ajuste fino del layout */
+div[data-testid="stDataFrame"] table {{
     margin-left: 0 !important;
-}
+    border-collapse: collapse !important;
+}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -176,6 +184,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     st.write(tabla_estilizada(df_visual))
 
  
+
 
 
 
