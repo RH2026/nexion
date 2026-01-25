@@ -26,7 +26,7 @@ else:
     border_color = "#D8DEE4"  # Bordes gris seda
     btn_hover = "#EBEEF2"
 
-# 3. CSS MAESTRO: UNIFICACIÓN DE FUENTES Y BOTONES
+# 3. CSS MAESTRO (CORREGIDO PARA FORZAR TABLA BLANCA/GRIS)
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
@@ -39,7 +39,7 @@ st.markdown(f"""
             font-family: 'Inter', sans-serif !important;
         }}
 
-        /* BOTONES Y SELECTORES UNIFICADOS (Bordes rectos, espaciado Zara) */
+        /* BOTONES Y SELECTORES UNIFICADOS */
         div.stButton > button, div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: {card_bg} !important;
             color: {text_main} !important;
@@ -52,19 +52,24 @@ st.markdown(f"""
             transition: all 0.3s ease;
         }}
 
-        /* Hover unificado */
         div.stButton > button:hover {{
             background-color: {btn_hover} !important;
             border-color: {text_main} !important;
         }}
 
-        /* TABLA (ESTILO LIMPIO) */
+        /* --- CORRECCIÓN DE TABLA --- */
+        /* Forzamos el fondo de la tabla y celdas */
         div[data-testid="stDataFrame"] {{
             background-color: {card_bg} !important;
-            border: 1px solid {border_color} !important;
+        }}
+        
+        /* Forzamos el color del texto y fondo en las celdas de la tabla para que sea gris legible en blanco */
+        div[data-testid="stDataFrame"] [data-testid="stTable"] {{
+            background-color: {card_bg} !important;
+            color: {text_sub} !important;
         }}
 
-        /* Estilo para los títulos de los filtros (Labels) */
+        /* Títulos de filtros */
         div[data-testid="stSelectbox"] label p {{
             font-size: 10px !important;
             color: {text_sub} !important;
@@ -78,7 +83,6 @@ st.markdown(f"""
 c_logo, c_nav, c_theme = st.columns([1.5, 4, 0.5])
 with c_logo:
     st.markdown(f"<h2 style='color: {text_main}; font-weight: 300; letter-spacing: 4px; margin: 0;'>NEXION</h2><p style='color: {text_sub}; font-size: 9px; margin-top: -5px; letter-spacing: 1px;'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
-
 with c_nav:
     m = st.columns(4)
     for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "ESTATUS"]):
@@ -86,7 +90,6 @@ with c_nav:
             if st.button(b, use_container_width=True):
                 st.session_state.pagina = b
                 st.rerun()
-
 with c_theme:
     if st.button("☀️" if st.session_state.tema == "oscuro" else "🌙"):
         st.session_state.tema = "claro" if st.session_state.tema == "oscuro" else "oscuro"
@@ -94,7 +97,7 @@ with c_theme:
 
 st.markdown(f"<hr style='border:0; border-top:1px solid {border_color}; margin:10px 0 30px 0;'>", unsafe_allow_html=True)
 
-# 5. MOTOR DE DATOS (Mismo que proporcionaste)
+# 5. MOTOR DE DATOS
 @st.cache_data
 def cargar_datos():
     try:
@@ -115,7 +118,6 @@ df = cargar_datos()
 
 # 6. RENDERIZADO DE TABLA Y FILTROS
 if st.session_state.get("pagina", "RASTREO") == "RASTREO":
-    # Selectores (Ahora idénticos a los botones de menú)
     f1, f2, f3, f4 = st.columns(4)
     df_visual = df.copy()
     
@@ -124,13 +126,11 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     with f3: f_des = st.selectbox("Destination", options=["ALL"] + sorted(df_visual["DESTINO"].unique().tolist()))
     with f4: f_est = st.selectbox("Status", options=["ALL"] + sorted(df_visual["ESTATUS_CALCULADO"].unique().tolist()))
 
-    # Lógica de filtrado
     if f_cli != "ALL": df_visual = df_visual[df_visual["NO CLIENTE"] == f_cli]
     if f_car != "ALL": df_visual = df_visual[df_visual["FLETERA"] == f_car]
     if f_des != "ALL": df_visual = df_visual[df_visual["DESTINO"] == f_des]
     if f_est != "ALL": df_visual = df_visual[df_visual["ESTATUS_CALCULADO"] == f_est]
 
-    # Tabla con diseño limpio
     st.dataframe(
         df_visual,
         use_container_width=True,
