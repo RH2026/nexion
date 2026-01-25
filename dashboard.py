@@ -268,14 +268,14 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     # RENDER HTML
     components.html(
         f"""
-        <div style="width:100%; overflow-x:hidden;">
+        <div style="width:100%; min-height:600px; overflow-x:hidden;">
             {tabla_estilizada(df_visual[COLUMNAS_VISTA]).to_html()}
         </div>
         """,
         height=600,
         scrolling=True
     )
-
+    
 
 
 
