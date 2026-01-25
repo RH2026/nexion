@@ -62,8 +62,8 @@ with c_logo:
     st.markdown(f"<p style='color: {text_sub}; font-size: 10px; margin-top: -5px;'>CORE LOGISTICS UNIT</p>", unsafe_allow_html=True)
 
 with c_nav:
-    m = st.columns(4)
-    for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "ESTATUS"]):
+    m = st.columns(5)
+    for i, b in enumerate(["RASTREO", "SEGUIMIENTO", "ASIGNACION", "EVALUACION", "RENTABILIDAD"]):
         with m[i]:
             if st.button(b, use_container_width=True):
                 st.session_state.pagina = b
@@ -87,6 +87,7 @@ with col_search:
         st.session_state.busqueda = guia
 
 st.markdown(f"<hr style='border: 0; border-top: 1px solid {border_color}; margin: 40px 0;'>", unsafe_allow_html=True)
+
 
 
 
