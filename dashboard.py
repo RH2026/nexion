@@ -188,7 +188,7 @@ def tabla_estilizada(df):
             "background-color": card_bg,
             "color": text_sub,
             "border": f"1px solid {border_color}",
-            "font-size": "10px"
+            "font-size": "11px"
         })
         .set_table_styles([
             {
@@ -197,7 +197,7 @@ def tabla_estilizada(df):
                     ("background-color", card_bg),
                     ("color", text_main),
                     ("border", f"1px solid {border_color}"),
-                    ("font-size", "10px"),
+                    ("font-size", "11px"),
                     ("text-transform", "uppercase"),
                     ("letter-spacing", "2px")
                 ]
@@ -275,6 +275,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
         height=600,
         scrolling=True
     )
+
 
 
 
