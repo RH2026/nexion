@@ -259,7 +259,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     df_visual = df_visual.reset_index(drop=True)
 
     # FORMATO FECHAS (SOLO FECHA, SIN HORA)
-    for col in ["FECHA DE ENVÍO", "PROMESA"]:
+    for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA"]:
         df_visual[col] = (
             pd.to_datetime(df_visual[col], errors="coerce")
             .dt.strftime("%d/%m/%Y")
@@ -275,6 +275,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
         height=600,
         scrolling=True
     )
+
 
 
 
