@@ -180,6 +180,21 @@ def tabla_estilizada(df):
         .hide(axis="index")
     )
 
+# 7. RENDERIZADO RASTREO (CAJA DE BÚSQUEDA DHL)
+if st.session_state.pagina == "RASTREO":
+    st.markdown("<div style='margin-bottom: 40px;'></div>", unsafe_allow_html=True)
+    
+    # --- CAJA DE BÚSQUEDA CENTRALIZADA ---
+    _, col_search, _ = st.columns([1, 1.8, 1])
+    with col_search:
+        st.markdown(f"<p style='text-align: center; color: {text_sub}; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;'>Operational Query</p>", unsafe_allow_html=True)
+        busqueda = st.text_input("", placeholder="REFERENCIA O NÚMERO DE GUÍA...", label_visibility="collapsed")
+        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+        btn_search = st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True)
+
+    st.markdown("<div style='margin-bottom: 60px;'></div>", unsafe_allow_html=True)
+
+
 # 7. RENDER
 if st.session_state.get("pagina", "RASTREO") == "RASTREO":
 
@@ -259,6 +274,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
