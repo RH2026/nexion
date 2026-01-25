@@ -15,7 +15,7 @@ if st.session_state.tema == "oscuro":
 else:
     bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#F5F7FA", "#FFFFFF", "#1A1C1E", "#656D76", "#D8DEE4", "#EBEEF2"
 
-# 3. CSS MAESTRO (TU DISEÑO EXACTO)
+# 3. CSS MAESTRO (DISEÑO EXACTO)
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
@@ -38,6 +38,7 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
     font-weight: 600 !important;
     letter-spacing: 2px !important;
     text-transform: uppercase;
+    transition: all 0.3s ease;
 }}
 
 div.stButton > button:hover {{
@@ -45,12 +46,21 @@ div.stButton > button:hover {{
     border-color: {text_main} !important;
 }}
 
-/* BOTÓN DE BÚSQUEDA PRIMARIO (DHL STYLE) */
+/* BOTÓN DE BÚSQUEDA PRIMARIO (ESTILO DHL ALTO CONTRASTE) */
 div.stButton > button[kind="primary"] {{
     background-color: {text_main} !important;
     color: {bg_color} !important;
     border: none !important;
     font-weight: 700 !important;
+    height: 48px !important;
+}}
+
+.stTextInput input {{
+    background-color: {card_bg} !important;
+    color: {text_main} !important;
+    border: 1px solid {border_color} !important;
+    border-radius: 2px !important;
+    height: 48px !important;
 }}
 
 div[data-testid="stSelectbox"] label p {{
@@ -249,6 +259,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
