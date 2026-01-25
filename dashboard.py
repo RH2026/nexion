@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import streamlit.components.v1 as components
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
@@ -59,41 +60,37 @@ div[data-testid="stSelectbox"] label p {{
     text-transform: uppercase !important;
 }}
 
-/* OCULTAR NUMERACIÓN DE FILAS (STYLER) */
+/* OCULTAR NUMERACIÓN DE FILAS */
 div[data-testid="stDataFrame"] th.row_heading,
 div[data-testid="stDataFrame"] td.row_heading,
 div[data-testid="stDataFrame"] th.blank {{
     display: none !important;
 }}
 
-/* Ajuste fino del layout */
-div[data-testid="stDataFrame"] table {
+/* CONTENEDOR TABLA */
+div[data-testid="stDataFrame"] {{
+    overflow-x: hidden !important;
+}}
+
+/* TABLA */
+div[data-testid="stDataFrame"] table {{
+    width: 100% !important;
     margin-left: 0 !important;
     border-collapse: collapse !important;
-    width: 100% !important;
-    table-layout: auto !important; /* deja respirar columnas */
-}
+    table-layout: auto !important;
+}}
 
-/* Evita overflow horizontal sin romper diseño */
-div[data-testid="stDataFrame"] {
-    overflow-x: hidden !important;
-}
-
-/* Control inteligente de texto */
-th, td {
-    white-space: normal !important;   /* permite saltos */
-    word-break: break-word !important; /* evita empujar ancho */
-}
-
-/* Mantiene elegancia de headers */
-thead th {
-    letter-spacing: 2px !important;
-}
-
-/* Celdas más compactas sin perder look */
-td {
+/* CELDAS */
+th, td {{
+    white-space: normal !important;
+    word-break: break-word !important;
     line-height: 1.2 !important;
-}
+}}
+
+/* HEADERS */
+thead th {{
+    letter-spacing: 2px !important;
+}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -218,6 +215,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     height=600,
     scrolling=True
 )
+
 
 
 
