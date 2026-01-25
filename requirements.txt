@@ -1,0 +1,10 @@
+streamlit
+pandas
+altair
+fpdf2
+reportlab
+pypdf
+PyGithub
+requests
+plotly
+st-gsheets-connection
