@@ -67,8 +67,10 @@ div[data-testid="stDataFrame"] th.blank {{
     display: none !important;
 }}
 
-/* CONTENEDOR TABLA */
+/* CONTENEDOR TABLA – ALTURA DINÁMICA */
 div[data-testid="stDataFrame"] {{
+    max-height: calc(100vh - 330px) !important;
+    overflow-y: auto !important;
     overflow-x: hidden !important;
 }}
 
@@ -90,6 +92,24 @@ th, td {{
 /* HEADERS */
 thead th {{
     letter-spacing: 2px !important;
+}}
+
+/* SCROLLBAR DINÁMICO POR TEMA */
+div[data-testid="stDataFrame"]::-webkit-scrollbar {{
+    width: 6px;
+}}
+
+div[data-testid="stDataFrame"]::-webkit-scrollbar-track {{
+    background: transparent;
+}}
+
+div[data-testid="stDataFrame"]::-webkit-scrollbar-thumb {{
+    background-color: {border_color};
+    border-radius: 6px;
+}}
+
+div[data-testid="stDataFrame"]:hover::-webkit-scrollbar-thumb {{
+    background-color: {text_sub};
 }}
 
 </style>
@@ -215,6 +235,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     height=600,
     scrolling=True
 )
+
 
 
 
