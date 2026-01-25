@@ -80,38 +80,43 @@ st.markdown(f"<hr style='border-top:1px solid {border_color}; margin:10px 0 30px
 # 5. DATOS
 @st.cache_data
 def cargar_datos():
+    df = pd.DataFrame()  # <-- GARANTÍA DE EXISTENCIA
+
     try:
         df = pd.read_csv("Matriz_Excel_Dashboard.csv", encoding="utf-8")
-
         df.columns = df.columns.str.strip().str.upper()
-        df["NO CLIENTE"] = df["NO CLIENTE"].astype(str).str.strip()
 
-        # Normalizamos fechas (CLAVE)
+        if "NO CLIENTE" in df.columns:
+            df["NO CLIENTE"] = df["NO CLIENTE"].astype(str).str.strip()
+
+        # Normalizar fechas SOLO si existen
         for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
 
         hoy = pd.Timestamp.today().normalize()
 
-        # Creamos estatus SIN apply (más rápido y sin errores)
+        # Columna siempre creada
         df["ESTATUS_CALCULADO"] = "EN TRANSITO"
 
-        df.loc[df["FECHA DE ENTREGA REAL"].notna(), "ESTATUS_CALCULADO"] = "ENTREGADO"
+        if "FECHA DE ENTREGA REAL" in df.columns:
+            df.loc[df["FECHA DE ENTREGA REAL"].notna(), "ESTATUS_CALCULADO"] = "ENTREGADO"
 
-        df.loc[
-            df["FECHA DE ENTREGA REAL"].isna()
-            & df["PROMESA DE ENTREGA"].notna()
-            & (df["PROMESA DE ENTREGA"] < hoy),
-            "ESTATUS_CALCULADO"
-        ] = "RETRASADO"
+        if "PROMESA DE ENTREGA" in df.columns:
+            df.loc[
+                df["FECHA DE ENTREGA REAL"].isna()
+                & df["PROMESA DE ENTREGA"].notna()
+                & (df["PROMESA DE ENTREGA"] < hoy),
+                "ESTATUS_CALCULADO"
+            ] = "RETRASADO"
 
         return df
 
     except Exception as e:
         st.error(f"Error al cargar datos: {e}")
-        return pd.DataFrame(
-            columns=["NO CLIENTE", "FLETERA", "DESTINO", "ESTATUS_CALCULADO"]
-        )
+        return df
+
+df = cargar_datos()
 
 # 6. FUNCIÓN DE TABLA DINÁMICA (CLAVE)
 def tabla_estilizada(df):
@@ -157,6 +162,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     st.write(tabla_estilizada(df_visual))
 
  
+
 
 
 
