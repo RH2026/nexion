@@ -208,33 +208,71 @@ def tabla_estilizada(df):
 
 # 7. RENDER
 if st.session_state.get("pagina", "RASTREO") == "RASTREO":
+
     f1, f2, f3, f4 = st.columns(4)
     df_visual = df.copy().reset_index(drop=True)
 
-    with f1: f_cli = st.selectbox("Client ID", ["ALL"] + sorted(df_visual["NO CLIENTE"].unique()))
-    with f2: f_car = st.selectbox("Carrier", ["ALL"] + sorted(df_visual["FLETERA"].unique()))
-    with f3: f_des = st.selectbox("Destination", ["ALL"] + sorted(df_visual["DESTINO"].unique()))
-    with f4: f_est = st.selectbox("Status", ["ALL"] + sorted(df_visual["ESTATUS_CALCULADO"].unique()))
+    # FILTROS
+    with f1:
+        f_cli = st.selectbox(
+            "Client ID",
+            ["ALL"] + sorted(df_visual["NO CLIENTE"].dropna().unique())
+        )
+    with f2:
+        f_car = st.selectbox(
+            "Carrier",
+            ["ALL"] + sorted(df_visual["FLETERA"].dropna().unique())
+        )
+    with f3:
+        f_des = st.selectbox(
+            "Destination",
+            ["ALL"] + sorted(df_visual["DESTINO"].dropna().unique())
+        )
+    with f4:
+        f_est = st.selectbox(
+            "Status",
+            ["ALL"] + sorted(df_visual["ESTATUS_CALCULADO"].dropna().unique())
+        )
 
-    if f_cli != "ALL": df_visual = df_visual[df_visual["NO CLIENTE"] == f_cli]
-    if f_car != "ALL": df_visual = df_visual[df_visual["FLETERA"] == f_car]
-    if f_des != "ALL": df_visual = df_visual[df_visual["DESTINO"] == f_des]
-    if f_est != "ALL": df_visual = df_visual[df_visual["ESTATUS_CALCULADO"] == f_est]
+    if f_cli != "ALL":
+        df_visual = df_visual[df_visual["NO CLIENTE"] == f_cli]
+    if f_car != "ALL":
+        df_visual = df_visual[df_visual["FLETERA"] == f_car]
+    if f_des != "ALL":
+        df_visual = df_visual[df_visual["DESTINO"] == f_des]
+    if f_est != "ALL":
+        df_visual = df_visual[df_visual["ESTATUS_CALCULADO"] == f_est]
 
-    
+    # COLUMNAS A MOSTRAR
+    COLUMNAS_VISTA = [
+        "NO CLIENTE",
+        "NÚMERO DE PEDIDO",
+        "NOMBRE DEL CLIENTE",
+        "DESTINO",
+        "FECHA DE ENVÍO",
+        "FLETERA",
+        "NÚMERO DE GUÍA",
+        "ESTATUS_CALCULADO"
+    ]
+
     df_visual = df_visual.reset_index(drop=True)
+
+    # FORMATO FECHA (SOLO FECHA, SIN HORA)
+    df_visual["FECHA DE ENVÍO"] = (
+        pd.to_datetime(df_visual["FECHA DE ENVÍO"], errors="coerce")
+        .dt.strftime("%d/%m/%Y")
+    )
+
+    # RENDER HTML
     components.html(
-    f"""
-    <div style="
-        width:100%;
-        overflow-x:hidden;
-    ">
-        {tabla_estilizada(df_visual).to_html()}
-    </div>
-    """,
-    height=600,
-    scrolling=True
-)
+        f"""
+        <div style="width:100%; overflow-x:hidden;">
+            {tabla_estilizada(df_visual[COLUMNAS_VISTA]).to_html()}
+        </div>
+        """,
+        height=600,
+        scrolling=True
+    )
 
 
 
