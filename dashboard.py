@@ -2,123 +2,92 @@ import streamlit as st
 import time
 
 # 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="NEXION | Logistics Core", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="NEXION | Core Logistics", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. PALETA DE COLORES SOFISTICADA
-# Fondo: Negro Azulado Profundo (#0A0C10)
-# Tarjetas: Gris Antracita (#161B22)
-# Acento: Plata / Gris Frío (#8B949E)
-# Texto: Blanco Humo (#F0F6FC)
+# 2. GESTIÓN DE TEMA (SESIÓN)
+if "tema" not in st.session_state:
+    st.session_state.tema = "oscuro"
 
+if st.session_state.tema == "oscuro":
+    bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#0A0C10", "#161B22", "#F0F6FC", "#8B949E", "#30363D", "#21262D"
+else:
+    bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#F6F8FA", "#FFFFFF", "#1F2328", "#656D76", "#D0D7DE", "#F3F4F6"
+
+# 3. CSS DINÁMICO
 st.markdown(f"""
     <style>
-        /* Fondo Principal Estilo Dark Premium */
-        .stApp {{
-            background-color: #0A0C10 !important;
-            color: #F0F6FC !important;
-            font-family: 'Inter', -apple-system, sans-serif;
-        }}
-
-        /* Ocultar elementos de Streamlit */
         header, footer, #MainMenu, div[data-testid="stDecoration"] {{visibility: hidden;}}
-
-        /* --- NAVEGACIÓN SUPERIOR MINIMALISTA --- */
-        .nav-block {{
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px 0;
-            border-bottom: 1px solid #21262D;
-        }}
-
-        /* BOTONES GRISES FORMALES */
+        .stApp {{ background-color: {bg_color} !important; color: {text_main} !important; transition: all 0.4s ease; }}
+        
         div.stButton > button {{
-            background-color: #161B22 !important;
-            color: #C9D1D9 !important;
-            border: 1px solid #30363D !important;
-            border-radius: 6px !important;
-            padding: 0.5rem 1.5rem !important;
-            font-weight: 500 !important;
-            font-size: 13px !important;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
+            background-color: {card_bg} !important; color: {text_main} !important;
+            border: 1px solid {border_color} !important; border-radius: 6px !important;
+            font-size: 13px !important; font-weight: 500; letter-spacing: 0.5px; height: 40px; transition: all 0.2s ease;
         }}
-
-        div.stButton > button:hover {{
-            background-color: #21262D !important;
-            border-color: #8B949E !important;
-            color: #FFFFFF !important;
-        }}
-
-        /* Inputs de búsqueda serios */
+        div.stButton > button:hover {{ background-color: {btn_hover} !important; border-color: {text_sub} !important; }}
+        
         .stTextInput input {{
-            background-color: #0D1117 !important;
-            color: #F0F6FC !important;
-            border: 1px solid #30363D !important;
-            border-radius: 4px !important;
-            height: 45px !important;
+            background-color: {bg_color} !important; color: {text_main} !important;
+            border: 1px solid {border_color} !important; border-radius: 6px !important; height: 45px !important;
         }}
-
-        .stTextInput input:focus {{
-            border-color: #58A6FF !important; /* Azul sutil para foco */
-            box-shadow: none !important;
-        }}
+        div.stButton > button[kind="primary"] {{ background-color: {text_main} !important; color: {bg_color} !important; border: none !important; font-weight: 700 !important; }}
     </style>
 """, unsafe_allow_html=True)
 
-# 3. HEADER Y MENÚ
-# Logo minimalista y serio
-c_logo, c_nav = st.columns([1, 4])
+# 4. LÓGICA DE SPLASH SCREEN
+if "splash_completado" not in st.session_state:
+    st.session_state.splash_completado = False
 
+if not st.session_state.splash_completado:
+    placeholder = st.empty()
+    with placeholder.container():
+        # Animación minimalista tipo terminal
+        mensajes = ["ESTABLISHING SECURE CONNECTION...", "SYNCING NEXION DATABASE...", "SYSTEM READY"]
+        for m in mensajes:
+            st.markdown(f"""
+                <div style="height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: {bg_color};">
+                    <div style="width: 40px; height: 40px; border: 2px solid {border_color}; border-top: 2px solid {text_main}; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                    <p style="color: {text_main}; font-family: monospace; font-size: 12px; letter-spacing: 3px; margin-top: 30px; font-weight: 200;">{m}</p>
+                </div>
+                <style>@keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}</style>
+            """, unsafe_allow_html=True)
+            time.sleep(1.0)
+    st.session_state.splash_completado = True
+    st.rerun()
+
+# 5. HEADER Y NAVEGACIÓN
+c_logo, c_nav, c_theme = st.columns([1.5, 4, 0.5])
 with c_logo:
-    st.markdown("<h2 style='color: #F0F6FC; font-weight: 200; letter-spacing: 3px; margin: 0;'>NEXION</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #8B949E; font-size: 10px; margin-top: -5px;'>CORE LOGISTICS UNIT</p>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='color: {text_main}; font-weight: 200; letter-spacing: 3px; margin: 0;'>NEXION</h2>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color: {text_sub}; font-size: 10px; margin-top: -5px;'>CORE LOGISTICS UNIT</p>", unsafe_allow_html=True)
 
 with c_nav:
-    # Usamos columnas internas para el menú horizontal
-    m1, m2, m3, m4, m5 = st.columns(5)
-    if "pagina" not in st.session_state: st.session_state.pagina = "RASTREO"
-    
-    with m1: 
-        if st.button("RASTREO", use_container_width=True): st.session_state.pagina = "RASTREO"
-    with m2: 
-        if st.button("INTELIGENCIA", use_container_width=True): st.session_state.pagina = "KPIs"
-    with m3: 
-        if st.button("REPORTES", use_container_width=True): st.session_state.pagina = "REPORTES"
-    with m4:
-        if st.button("ESTATUS", use_container_width=True): st.session_state.pagina = "ESTATUS"
-    with m5:
-        # Botón de reset o salida
-        if st.button("✕", use_container_width=True): st.session_state.clear()
+    m = st.columns(4)
+    for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "ESTATUS"]):
+        with m[i]:
+            if st.button(b, use_container_width=True):
+                st.session_state.pagina = b
+                st.rerun()
 
-st.markdown("<div style='margin-bottom: 40px;'></div>", unsafe_allow_html=True)
+with c_theme:
+    icon = "☀️" if st.session_state.tema == "oscuro" else "🌙"
+    if st.button(icon):
+        st.session_state.tema = "claro" if st.session_state.tema == "oscuro" else "oscuro"
+        st.rerun()
 
-# 4. BUSCADOR CENTRAL SOFISTICADO
-_, col_search, _ = st.columns([1, 1.5, 1])
+st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True)
 
+# 6. BUSCADOR CENTRAL
+_, col_search, _ = st.columns([1, 1.8, 1])
 with col_search:
-    st.markdown("<h3 style='font-weight: 300; color: #8B949E; text-align: center; font-size: 18px;'>CONSULTA DE OPERACIONES</h3>", unsafe_allow_html=True)
-    guia = st.text_input("", placeholder="Referencia de envío o número de guía...", label_visibility="collapsed")
-    
-    # Botón de acción con estilo formal
-    st.markdown("""
-        <style>
-        div.stButton > button[kind="primary"] {
-            background-color: #F0F6FC !important;
-            color: #0A0C10 !important;
-            border: none !important;
-            font-weight: 800 !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    if st.button("EJECUTAR BÚSQUEDA", type="primary", use_container_width=True):
-        with st.spinner("Localizando unidad..."):
-            time.sleep(1)
-            st.session_state.busqueda = guia
+    st.markdown(f"<h3 style='font-weight: 300; color: {text_sub}; text-align: center; font-size: 14px; letter-spacing: 2px;'>OPERATIONAL QUERY</h3>", unsafe_allow_html=True)
+    guia = st.text_input("", placeholder="Referencia de envío...", label_visibility="collapsed")
+    if st.button("EXECUTE SEARCH", type="primary", use_container_width=True):
+        st.toast("Searching...", icon="🔍")
+        st.session_state.busqueda = guia
 
-# 5. LÍNEA DE SEPARACIÓN ELEGANTE
-st.markdown("<hr style='border: 0; border-top: 1px solid #21262D; margin: 40px 0;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='border: 0; border-top: 1px solid {border_color}; margin: 40px 0;'>", unsafe_allow_html=True)
+
 
 
 
