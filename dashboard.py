@@ -265,17 +265,27 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
             .dt.strftime("%d/%m/%Y")
         )
 
-    # RENDER HTML
     components.html(
-        f"""
-        <div style="width:100%; min-height:600px; overflow-x:hidden;">
+    f"""
+    <div style="
+        width:100%;
+        height:600px;
+        display:flex;
+        flex-direction:column;
+    ">
+        <div style="flex:0 0 auto;">
             {tabla_estilizada(df_visual[COLUMNAS_VISTA]).to_html()}
         </div>
-        """,
-        height=600,
-        scrolling=True
-    )
+
+        <!-- ESPACIADOR INVISIBLE -->
+        <div style="flex:1 1 auto;"></div>
+    </div>
+    """,
+    height=600,
+    scrolling=True
+)
     
+
 
 
 
