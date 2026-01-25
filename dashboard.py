@@ -10,21 +10,11 @@ if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
 if st.session_state.tema == "oscuro":
-    bg_color = "#05070A"
-    card_bg = "#0D1117"
-    text_main = "#F0F6FC"
-    text_sub = "#8B949E"
-    border_color = "#1B1F24"
-    btn_hover = "#161B22"
+    bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#05070A", "#0D1117", "#F0F6FC", "#8B949E", "#1B1F24", "#161B22"
 else:
-    bg_color = "#F5F7FA"
-    card_bg = "#FFFFFF"
-    text_main = "#1A1C1E"
-    text_sub = "#656D76"
-    border_color = "#D8DEE4"
-    btn_hover = "#EBEEF2"
+    bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#F5F7FA", "#FFFFFF", "#1A1C1E", "#656D76", "#D8DEE4", "#EBEEF2"
 
-# 3. CSS MAESTRO (AJUSTADO SIN CAMBIAR DISEÑO)
+# 3. CSS MAESTRO (TU DISEÑO EXACTO)
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
@@ -51,6 +41,15 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
 
 div.stButton > button:hover {{
     background-color: {btn_hover} !important;
+    border-color: {text_main} !important;
+}}
+
+/* BOTÓN DE BÚSQUEDA PRIMARIO (DHL STYLE) */
+div.stButton > button[kind="primary"] {{
+    background-color: {text_main} !important;
+    color: {bg_color} !important;
+    border: none !important;
+    font-weight: 700 !important;
 }}
 
 div[data-testid="stSelectbox"] label p {{
@@ -59,79 +58,43 @@ div[data-testid="stSelectbox"] label p {{
     letter-spacing: 2px !important;
     text-transform: uppercase !important;
 }}
-
-/* OCULTAR NUMERACIÓN DE FILAS */
-div[data-testid="stDataFrame"] th.row_heading,
-div[data-testid="stDataFrame"] td.row_heading,
-div[data-testid="stDataFrame"] th.blank {{
-    display: none !important;
-}}
-
-/* CONTENEDOR TABLA – ALTURA DINÁMICA */
-div[data-testid="stDataFrame"] {{
-    max-height: calc(100vh - 330px) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-}}
-
-/* TABLA */
-div[data-testid="stDataFrame"] table {{
-    width: 100% !important;
-    margin-left: 0 !important;
-    border-collapse: collapse !important;
-    table-layout: auto !important;
-}}
-
-/* CELDAS */
-th, td {{
-    white-space: normal !important;
-    word-break: break-word !important;
-    line-height: 1.2 !important;
-}}
-
-/* HEADERS */
-thead th {{
-    letter-spacing: 2px !important;
-}}
-
-/* SCROLLBAR DINÁMICO POR TEMA */
-div[data-testid="stDataFrame"]::-webkit-scrollbar {{
-    width: 6px;
-}}
-
-div[data-testid="stDataFrame"]::-webkit-scrollbar-track {{
-    background: transparent;
-}}
-
-div[data-testid="stDataFrame"]::-webkit-scrollbar-thumb {{
-    background-color: {border_color};
-    border-radius: 6px;
-}}
-
-div[data-testid="stDataFrame"]:hover::-webkit-scrollbar-thumb {{
-    background-color: {text_sub};
-}}
-
 </style>
 """, unsafe_allow_html=True)
 
+# 4. LÓGICA DE SPLASH SCREEN
+if "splash_completado" not in st.session_state:
+    st.session_state.splash_completado = False
 
+if not st.session_state.splash_completado:
+    placeholder = st.empty()
+    with placeholder.container():
+        mensajes = ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]
+        for m in mensajes:
+            st.markdown(f"""
+                <div style="height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: {bg_color};">
+                    <div style="width: 30px; height: 30px; border: 1px solid {border_color}; border-top: 1px solid {text_main}; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <p style="color: {text_main}; font-family: monospace; font-size: 10px; letter-spacing: 5px; margin-top: 40px; font-weight: 200;">{m}</p>
+                </div>
+                <style>@keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}</style>
+            """, unsafe_allow_html=True)
+            time.sleep(0.9)
+    st.session_state.splash_completado = True
+    st.rerun()
 
-# 4. HEADER
+# 5. HEADER
 c_logo, c_nav, c_theme = st.columns([1.5, 4, 0.5])
 with c_logo:
-    st.markdown(
-        f"<h2 style='color:{text_main};font-weight:300;letter-spacing:4px;margin:0;'>NEXION</h2>"
-        f"<p style='color:{text_sub};font-size:9px;margin-top:-5px;'>CORE INTELLIGENCE</p>",
-        unsafe_allow_html=True
-    )
+    st.markdown(f"<h2 style='color: {text_main}; font-weight: 300; letter-spacing: 4px; margin: 0;'>NEXION</h2><p style='color: {text_sub}; font-size: 9px; margin-top: -5px; letter-spacing: 1px;'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
+
 with c_nav:
     m = st.columns(4)
+    if "pagina" not in st.session_state: st.session_state.pagina = "RASTREO"
     for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "ESTATUS"]):
         with m[i]:
             if st.button(b, use_container_width=True):
                 st.session_state.pagina = b
                 st.rerun()
+
 with c_theme:
     if st.button("☀️" if st.session_state.tema == "oscuro" else "🌙"):
         st.session_state.tema = "claro" if st.session_state.tema == "oscuro" else "oscuro"
@@ -285,6 +248,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
