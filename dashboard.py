@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
+import time
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
@@ -248,6 +249,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
