@@ -67,10 +67,33 @@ div[data-testid="stDataFrame"] th.blank {{
 }}
 
 /* Ajuste fino del layout */
-div[data-testid="stDataFrame"] table {{
+div[data-testid="stDataFrame"] table {
     margin-left: 0 !important;
     border-collapse: collapse !important;
-}}
+    width: 100% !important;
+    table-layout: auto !important; /* deja respirar columnas */
+}
+
+/* Evita overflow horizontal sin romper diseño */
+div[data-testid="stDataFrame"] {
+    overflow-x: hidden !important;
+}
+
+/* Control inteligente de texto */
+th, td {
+    white-space: normal !important;   /* permite saltos */
+    word-break: break-word !important; /* evita empujar ancho */
+}
+
+/* Mantiene elegancia de headers */
+thead th {
+    letter-spacing: 2px !important;
+}
+
+/* Celdas más compactas sin perder look */
+td {
+    line-height: 1.2 !important;
+}
 
 </style>
 """, unsafe_allow_html=True)
@@ -183,11 +206,18 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
 
     
     df_visual = df_visual.reset_index(drop=True)
-    st.markdown(
-    tabla_estilizada(df_visual).to_html(),
-    unsafe_allow_html=True
+    components.html(
+    f"""
+    <div style="
+        width:100%;
+        overflow-x:hidden;
+    ">
+        {tabla_estilizada(df_visual).to_html()}
+    </div>
+    """,
+    height=600,
+    scrolling=True
 )
-
 
 
 
