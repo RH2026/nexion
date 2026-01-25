@@ -52,8 +52,22 @@ div[data-testid="stSelectbox"] label p {{
     letter-spacing: 2px !important;
     text-transform: uppercase !important;
 }}
+/* OCULTAR NUMERACIÓN DE FILAS EN TABLAS STYLER */
+div[data-testid="stDataFrame"] thead tr th:first-child,
+div[data-testid="stDataFrame"] tbody tr th:first-child,
+div[data-testid="stDataFrame"] tbody tr td:first-child {
+    display: none !important;
+}
+
+/* Ajuste fino del scroll al quitar gutter */
+div[data-testid="stDataFrame"] table {
+    margin-left: 0 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
+
+
 
 # 4. HEADER
 c_logo, c_nav, c_theme = st.columns([1.5, 4, 0.5])
@@ -162,6 +176,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     st.write(tabla_estilizada(df_visual))
 
  
+
 
 
 
