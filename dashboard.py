@@ -14,7 +14,7 @@ if st.session_state.tema == "oscuro":
     card_bg = "#0D1117"       # Un tono arriba para las tarjetas
     text_main = "#F0F6FC"
     text_sub = "#8B949E"
-    border_color = "#1B1F24"  # Borde casi invisible pero presente
+    border_color = "#21262D"  # Borde casi invisible pero presente
     btn_hover = "#161B22"
 else:
     # --- FONDO BLANCO MÁS PERLA ---
@@ -22,7 +22,7 @@ else:
     card_bg = "#FFFFFF"       
     text_main = "#1A1C1E"
     text_sub = "#656D76"
-    border_color = "#D8DEE4"
+    border_color = "#C9D1D9"
     btn_hover = "#EBEEF2"
 
 # 3. CSS DINÁMICO REFINADO (Estilo Minimalista Zara)
@@ -126,6 +126,7 @@ with col_search:
         st.session_state.busqueda = guia
 
 st.markdown(f"<hr style='border: 0; border-top: 1px solid {border_color}; margin: 50px 0;'>", unsafe_allow_html=True)
+
 
 
 
