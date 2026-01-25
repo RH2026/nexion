@@ -19,314 +19,95 @@ import plotly.graph_objects as go
 from streamlit_gsheets import GSheetsConnection
 
 
+# 1. CONFIGURACIÓN DE PÁGINA (Sin Sidebar y Limpio)
+st.set_page_config(page_title="NEXION CORE", layout="wide", initial_sidebar_state="collapsed")
 
-# --- FUNCIÓN PARA CARGAR EL LOGO ---
-def get_base64_bin(path):
-    try:
-        with open(path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    except Exception:
-        return ""
+# 2. GESTIÓN DE TEMA (SESIÓN)
+if "tema" not in st.session_state:
+    st.session_state.tema = "oscuro"
 
-# CARGAMOS LA VARIABLE ANTES DE USARLA
-logo_b64 = get_base64_bin("n1.png")# --- NUEVO PROTOCOLO DE IMPORTACIÓN PARA FPDF2 (BLOQUE ELITE) ---
-# --- PROTOCOLO DE CONEXIÓN FINAL ---
-try:
-    from fpdf import FPDF
-    PDF_READY = True
-except (ImportError, ModuleNotFoundError):
-    PDF_READY = False
+if st.session_state.tema == "oscuro":
+    bg_color, text_color, card_bg, border_color, accent = "#1B1C1F", "#FFFFFF", "#111111", "#333333", "#00FF00"
+else:
+    bg_color, text_color, card_bg, border_color, accent = "#FFFFFF", "#1B1C1F", "#F5F5 Balance", "#DDDDDD", "#00875A"
 
-# --- FUNCIÓN ELITE DE RENDERIZADO ---REPORTE DE OTS
-def render_card(label, value, footer, target_val=None, actual_val=None, inverse=False, border_base="border-blue"):
-    if target_val is None or actual_val is None:
-        color = "#f0f6fc"
-        border = border_base
-    else:
-        # Lógica: Si inverse=True (ej. OTD), mayor es mejor.
-        if inverse:
-            is_alert = actual_val < target_val
-        else:
-            is_alert = actual_val > target_val
-            
-        color = "#fb7185" if is_alert else "#00ffa2"
-        border = "border-red" if is_alert else "border-green"
-    
-    st.markdown(f"""
-        <div class='card-container {border}'>
-            <div class='card-label'>{label}</div>
-            <div class='card-value' style='color:{color}'>{value}</div>
-            <div class='card-footer'>{footer}</div>
-        </div>
-    """, unsafe_allow_html=True)
-
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="Distribucion y Logística Inteligente", layout="wide", initial_sidebar_state="expanded")
-
-
-# 2. ESTADOS DE SESIÓN
-if "logueado" not in st.session_state:
-    st.session_state.logueado = False
-if "splash_completado" not in st.session_state:
-    st.session_state.splash_completado = False
-if "motivo_splash" not in st.session_state:
-    st.session_state.motivo_splash = "inicio"
-if "usuario_actual" not in st.session_state:
-    st.session_state.usuario_actual = None
-if "pagina" not in st.session_state:
-    st.session_state.pagina = "principal"  # Controla qué sección del dashboard se ve
-if "ultimo_movimiento" not in st.session_state:
-    st.session_state.ultimo_movimiento = time.time() # Para control de inactividad
-if "tabla_expandida" not in st.session_state:
-    st.session_state.tabla_expandida = False
-
-
-# --- 2. LÓGICA DE MÁRGENES Y ALTURA (Flecha visible y espacios respetados) ---
-st.markdown("""
+# 3. ESTILOS CSS MAESTROS
+st.markdown(f"""
     <style>
-        /* Margen general del dashboard */
-        .block-container {
-            padding-top: 1.5rem !important;
-            padding-bottom: 1rem !important;
-            padding-left: 1.5rem !important;
-            padding-right: 1.5rem !important;
-        }
+        /* Ocultar elementos nativos de Streamlit */
+        #MainMenu, footer, header, div[data-testid="stDecoration"] {{visibility: hidden;}}
+        
+        .stApp {{
+            background-color: {bg_color} !important;
+            color: {text_color} !important;
+            transition: all 0.4s ease;
+        }}
 
-        /* Ocultamos solo el footer (la marca de Streamlit) */
-        footer {visibility: hidden;}
+        /* Estilo para los botones del Menú Superior */
+        div.stButton > button {{
+            background-color: transparent !important;
+            color: {text_color} !important;
+            border: 1px solid {border_color} !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            transition: 0.3s;
+        }}
         
-        /* ESPACIO DE BOTONES: Mantiene la cercanía profesional a la tabla */
-        div[data-testid="stVerticalBlock"] > div:has(div.stButton) {
-            margin-bottom: -0.5rem !important;
-        }
-        
-        /* ESPACIO DE DONITAS: Mantiene el despegue de los indicadores */
-        div[data-testid="stHorizontalBlock"]:has(div[style*="text-align:center"]) {
-            margin-bottom: 2rem !important;
-        }
+        div.stButton > button:hover {{
+            border-color: {accent} !important;
+            color: {accent} !important;
+        }}
+
+        /* Línea divisoria minimalista */
+        hr {{ border: 0.5px solid {border_color} !important; }}
     </style>
 """, unsafe_allow_html=True)
 
-# Altura dinámica según el botón presionado (Esto no cambia)
-if st.session_state.tabla_expandida:
-    h_dinamica = 850
-else:
-    h_dinamica = 200
-
-#---------------------------------------------------
-
-# Colores
-color_fondo_nativo = "#0e1117" 
-color_blanco = "#FFFFFF"
-color_verde = "#00FF00" 
-color_borde_gris = "#00ffa2"
-# --------------------------------------------------
-# 3. ESTILOS CSS (Corregido para NO ocultar la flecha)
-# --------------------------------------------------
-st.markdown(f"""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
-    
-    .stApp {{ background-color: {color_fondo_nativo} !important; }}
-    
-    /* Mostrar flecha de sidebar pero ocultar decoradores innecesarios */
-    header[data-testid="stHeader"] {{ background: rgba(0,0,0,0) !important; }}
-    footer {{ visibility: hidden !important; }}
-    div[data-testid="stDecoration"] {{ display: none !important; }}
-
-    /* Caja 3D Logística Sellada */
-    .scene {{ width: 100%; height: 120px; perspective: 600px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }}
-    .cube {{ width: 60px; height: 60px; position: relative; transform-style: preserve-3d; transform: rotateX(-20deg) rotateY(45deg); animation: move-pkg 6s infinite ease-in-out; }}
-    .cube-face {{ position: absolute; width: 60px; height: 60px; background: #d2a679; border: 1.5px solid #b08d5c; box-shadow: inset 0 0 15px rgba(0,0,0,0.1); }}
-    .cube-face::after {{ content: ''; position: absolute; top: 45%; width: 100%; height: 6px; background: rgba(0,0,0,0.15); }}
-    
-    .front  {{ transform: rotateY(0deg) translateZ(30px); }}
-    .back   {{ transform: rotateY(180deg) translateZ(30px); }}
-    .right  {{ transform: rotateY(90deg) translateZ(30px); }}
-    .left   {{ transform: rotateY(-90deg) translateZ(30px); }}
-    .top    {{ transform: rotateX(90deg) translateZ(30px); background: #e3bc94; }}
-    .bottom {{ transform: rotateX(-90deg) translateZ(30px); background: #b08d5c; }}
-    
-    @keyframes move-pkg {{ 0%, 100% {{ transform: translateY(0px) rotateX(-20deg) rotateY(45deg); }} 50% {{ transform: translateY(-15px) rotateX(-20deg) rotateY(225deg); }} }}
-    
-    /* Login Form */
-    .stForm {{ background-color: {color_fondo_nativo} !important; border: 1.5px solid {color_borde_gris} !important; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
-    .login-header {{ text-align: center; color: white; font-family: Arial; font-size: 24px; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; }}
-    input {{ font-family: 'Arial', monospace !important; color: white !important; }}
-</style>
-""", unsafe_allow_html=True)
-
-placeholder = st.empty()
-
-# --------------------------------------------------
-# 4. FLUJO DE PANTALLAS
-# --------------------------------------------------
-
-# --- 1. PREPARACIÓN DE RECURSOS (Asegúrate de tener esto al inicio) ---
-import base64
-import streamlit as st
-
-def get_base64_file(path):
-    try:
-        with open(path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    except:
-        return None
-
-logo_b64 = get_base64_file("n1.png")
-
-# --- 2. CASO A: LOGIN (ENSAMBLADO FINAL) ---
-if not st.session_state.logueado:
-    with placeholder.container():
-        col1, col2, col3 = st.columns([1.5, 1, 1.5])
-        with col2:
-            st.markdown('<div style="height:10vh"></div>', unsafe_allow_html=True)
-            with st.form("login_form"):
-                
-                # --- SECCIÓN VISUAL: LOGO + ANIMACIÓN ---
-                if logo_b64:
-                    st.markdown(f'<div style="text-align:center;margin-bottom:20px;"><img src="data:image/png;base64,{logo_b64}" style="width:250px;mix-blend-mode:screen;display:block;margin:0 auto;"><div style="width:160px;height:2px;background:#00FFAA;margin:15px auto 5px auto;box-shadow:0 0 12px #00FFAA;animation:s 2.5s infinite ease-in-out;"></div><div style="font-family:monospace;color:#00FFAA;font-size:11px;letter-spacing:4px;animation:b 1.5s infinite;">Distribucion y Logística: Inteligente</div></div><style>@keyframes s{{0%,100%{{width:0%;opacity:0;}}50%{{width:80%;opacity:1;}}}}@keyframes b{{0%,100%{{opacity:1;}}50%{{opacity:0.3;}}}}</style>', unsafe_allow_html=True)
-                
-                # --- EL RESTO DEL FORMULARIO SE QUEDA IGUAL ---
-                u_input = st.text_input("Usuario")
-                c_input = st.text_input("Contraseña", type="password")
-                
-                if st.form_submit_button("INGRESAR", use_container_width=True):
-                    usuarios = st.secrets["usuarios"]
-                    if u_input in usuarios and str(usuarios[u_input]) == str(c_input):
-                        st.session_state.logueado = True
-                        st.session_state.usuario_actual = u_input
-                        st.session_state.splash_completado = False
-                        st.session_state.motivo_splash = "inicio"
-                        st.rerun()
-                    else:
-                        st.error("Acceso Denegado")
-    st.stop()
-
-# CASO B: SPLASH SCREEN (Versión NEXION Premium - Con Círculo de Carga)
-elif not st.session_state.splash_completado:
-    with placeholder.container():
-        # El nombre del usuario resaltado en Blanco
-        usuario_highlight = st.session_state.usuario_actual.upper() if st.session_state.usuario_actual else "CLIENTE"
-        
-        color_fondo_st = "#0e1117" 
-        color_neon = "#00FFAA" 
-        
-        if st.session_state.motivo_splash == "logout":
-            mensajes = ["CERRANDO SESIÓN SEGURA", "RESGUARDANDO REGISTROS", "CONEXIÓN FINALIZADA"]
-        else:
-            mensajes = [
-                f"BIENVENIDO DE VUELTA, <span style='color:white; font-weight:700;'>{usuario_highlight}</span>",
-                "SINCRONIZANDO MANIFIESTOS NEXION",
-                "ACTUALIZANDO ESTATUS DE ENVÍOS",
-                "AUTENTICACIÓN COMPLETADA"
-            ]
-
-        splash_placeholder = st.empty()
-
-        for i, msg in enumerate(mensajes):
-            progreso = int(((i + 1) / len(mensajes)) * 100)
-            
-            splash_placeholder.markdown(f"""
-                <style>
-                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap');
-
-                    .corporate-splash {{
-                        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-                        background-color: {color_fondo_st}; 
-                        z-index: 999999;
-                        display: flex; flex-direction: column; justify-content: center; align-items: center;
-                        font-family: 'Inter', sans-serif;
-                    }}
-
-                    .branding-box {{
-                        text-align: center;
-                        width: 450px;
-                        padding: 20px;
-                    }}
-
-                    .logo-placeholder {{
-                        font-weight: 700;
-                        font-size: 11px;
-                        letter-spacing: 6px;
-                        color: rgba(255, 255, 255, 0.4);
-                        margin-bottom: 30px;
-                        justify-content: center;
-                        display: flex;
-                        align-items: center;
-                    }}
-
-                    /* --- CÍRCULO DE CARGA (SPINNER) --- */
-                    .loader-circle {{
-                        border: 3px solid rgba(255, 255, 255, 0.1);
-                        border-top: 3px solid {color_neon};
-                        border-radius: 50%;
-                        width: 90px;
-                        height: 90px;
-                        animation: spin 1s linear infinite;
-                        margin: 0 auto 30px auto;
-                        box-shadow: 0 0 15px {color_neon}33;
-                    }}
-
-                    @keyframes spin {{
-                        0% {{ transform: rotate(0deg); }}
-                        100% {{ transform: rotate(360deg); }}
-                    }}
-
-                    .main-msg {{
-                        color: {color_neon};
-                        font-size: 1.1rem;
-                        font-weight: 300;
-                        letter-spacing: 1.5px;
-                        margin-bottom: 25px;
-                        min-height: 60px;
-                        line-height: 1.4;
-                        text-shadow: 0 0 15px {color_neon}33;
-                    }}
-
-                    .footer-info {{
-                        margin-top: 30px;
-                        display: flex;
-                        justify-content: space-between;
-                        color: rgba(255, 255, 255, 0.3);
-                        font-size: 10px;
-                        font-weight: 700;
-                        font-family: monospace;
-                        border-top: 1px solid rgba(255,255,255,0.05);
-                        padding-top: 15px;
-                    }}
-                </style>
-                
-                <div class="corporate-splash">
-                    <div class="branding-box">
-                        <div class="logo-placeholder">NEXION LOGISTICS CORE</div>
-                        <div class="loader-circle"></div>
-                        <div class="main-msg">{msg}</div>
-                        <div class="footer-info">
-                            <span>SESSION_ID: NX-2026</span>
-                            <span style="color: {color_neon}">{progreso}%</span>
-                        </div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # --- LÓGICA DE TIEMPO PERSONALIZADA ---
-            if i == 0 and st.session_state.motivo_splash != "logout":
-                time.sleep(2.5) 
-            else:
-                time.sleep(0.7 if i < len(mensajes)-1 else 1.2)
-        
-        # Lógica de cierre de sesión
-        if st.session_state.motivo_splash == "logout":
-            st.session_state.logueado = False
-            st.session_state.usuario_actual = None
-            st.session_state.pagina = "principal"
-            st.session_state.motivo_splash = "inicio"
-            st.cache_data.clear()
-        
-        st.session_state.splash_completado = True
+# 4. BOTÓN DE CAMBIO DE TEMA (Posicionamiento arriba a la derecha)
+c_header1, c_header2 = st.columns([0.92, 0.08])
+with c_header2:
+    if st.button("🌓"):
+        st.session_state.tema = "claro" if st.session_state.tema == "oscuro" else "oscuro"
         st.rerun()
-    st.stop()
+
+# 5. LÓGICA DE SPLASH SCREEN (Solo la primera vez)
+if "splash_completado" not in st.session_state:
+    st.session_state.splash_completado = False
+
+if not st.session_state.splash_completado:
+    placeholder = st.empty()
+    with placeholder.container():
+        mensajes = ["Sincronizando Base de Datos...", "Configurando Entorno...", "Listo"]
+        for m in mensajes:
+            st.markdown(f"""
+                <div style="height: 70vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="border: 4px solid {border_color}; border-top: 4px solid {accent}; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;"></div>
+                    <h3 style="color: {accent}; font-family: monospace; margin-top: 20px;">{m}</h3>
+                </div>
+                <style>@keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}</style>
+            """, unsafe_allow_html=True)
+            time.sleep(0.8)
+    st.session_state.splash_completado = True
+    st.rerun()
+
+# 6. FILA DE MENÚS (Navegación Horizontal)
+if "pagina" not in st.session_state:
+    st.session_state.pagina = "TRACKING"
+
+# Fila de botones
+c_nav = st.columns([1, 1, 1, 1, 1])
+paginas = ["TRACKING", "KPIs", "REPORTES", "HUB", "OTD"]
+
+for i, p in enumerate(paginas):
+    with c_nav[i]:
+        if st.button(p, use_container_width=True):
+            st.session_state.pagina = p
+            st.rerun()
+
+st.divider()
+
+# Título de Sección
+st.markdown(f"<h2 style='text-align: center; letter-spacing: 2px;'>{st.session_state.pagina}</h2>", unsafe_allow_html=True)
 
 # 3. CONTENIDO PRIVADO (DASHBOARD)
 else:      
@@ -3599,6 +3380,7 @@ else:
     
    
         
+
 
 
 
