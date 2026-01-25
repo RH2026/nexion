@@ -26,7 +26,7 @@ else:
     border_color = "#D8DEE4"  # Bordes gris seda
     btn_hover = "#EBEEF2"
 
-# 3. CSS MAESTRO (CORREGIDO PARA FORZAR TABLA BLANCA/GRIS)
+# 3. CSS MAESTRO (REVISADO LETRA POR LETRA PARA FORZAR TABLA)
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
@@ -57,16 +57,20 @@ st.markdown(f"""
             border-color: {text_main} !important;
         }}
 
-        /* --- CORRECCIÓN DE TABLA --- */
-        /* Forzamos el fondo de la tabla y celdas */
-        div[data-testid="stDataFrame"] {{
+        /* --- CORRECCIÓN DEFINITIVA DE TABLA (SHADOW DOM BYPASS) --- */
+        /* Forzamos el fondo del contenedor de la tabla */
+        div[data-testid="stDataFrame"], 
+        div[data-testid="stDataFrame"] > div,
+        div[data-testid="stTable"] {{
             background-color: {card_bg} !important;
         }}
-        
-        /* Forzamos el color del texto y fondo en las celdas de la tabla para que sea gris legible en blanco */
-        div[data-testid="stDataFrame"] [data-testid="stTable"] {{
+
+        /* Esto obliga a las celdas de la tabla a respetar el fondo y color de texto */
+        div[data-testid="stDataFrame"] [data-testid="stTable"] td, 
+        div[data-testid="stDataFrame"] [data-testid="stTable"] th {{
             background-color: {card_bg} !important;
             color: {text_sub} !important;
+            border-bottom: 1px solid {border_color} !important;
         }}
 
         /* Títulos de filtros */
