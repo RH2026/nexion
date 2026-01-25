@@ -250,7 +250,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
         "NOMBRE DEL CLIENTE",
         "DESTINO",
         "FECHA DE ENVÍO",
-        "PROMESA",
+        "PROMESA DE ENTREGA",
         "FLETERA",
         "NÚMERO DE GUÍA",
         "ESTATUS_CALCULADO"
@@ -275,6 +275,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
         height=600,
         scrolling=True
     )
+
 
 
 
