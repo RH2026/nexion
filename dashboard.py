@@ -5,7 +5,7 @@ import time
 
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
-# ── TEMA ─────────────────────────────────────────────
+# ── TEMA (AJUSTADO PARA CONTRASTE ALTO) ────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -16,49 +16,41 @@ if tema == "oscuro":
         "bg": "#05070A", "card": "#0D1117",
         "text": "#F0F6FC", "sub": "#8B949E",
         "border": "#1B1F24", "hover": "#161B22",
+        "btn_nav_bg": "#0D1117", "btn_nav_txt": "#F0F6FC", # Botones oscuros en fondo oscuro
         "btn_primary_bg": "#F0F6FC", "btn_primary_txt": "#05070A"
     }
 else:
     vars_css = {
         "bg": "#F5F7FA", "card": "#FFFFFF",
-        "text": "#1A1C1E",
-        "sub": "#3A3F45",
-        "border": "#D8DEE4", "hover": "#EBEEF2",
+        "text": "#000000", # Negro puro para texto principal
+        "sub": "#656D76",
+        "border": "#D8DEE4", "hover": "#333333",
+        "btn_nav_bg": "#000000", "btn_nav_txt": "#FFFFFF", # <--- BOTONES NEGROS EN TEMA PERLA
         "btn_primary_bg": "#000000",
         "btn_primary_txt": "#FFFFFF"
     }
 
-# ── ALIAS DE COMPATIBILIDAD (OBLIGATORIO)
-bg_color     = vars_css["bg"]
-card_bg     = vars_css["card"]
-text_main   = vars_css["text"]
-text_sub    = vars_css["sub"]
-border_color= vars_css["border"]
-btn_hover   = vars_css["hover"]
-btn_primary_bg  = vars_css["btn_primary_bg"]
-btn_primary_txt = vars_css["btn_primary_txt"]
-
-
-# ── CSS MAESTRO ──────────────────────────────────────
+# ── CSS MAESTRO (CON FUERZA BRUTA PARA ICONOS Y BOTONES) ──
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 :root {{
   --bg:{vars_css["bg"]}; --card:{vars_css["card"]};
   --text:{vars_css["text"]}; --sub:{vars_css["sub"]};
   --border:{vars_css["border"]}; --hover:{vars_css["hover"]};
+  --btn-nav-bg:{vars_css["btn_nav_bg"]};
+  --btn-nav-txt:{vars_css["btn_nav_txt"]};
   --btnp-bg:{vars_css["btn_primary_bg"]};
   --btnp-txt:{vars_css["btn_primary_txt"]};
 }}
 
-* {{
-  transition: background-color .35s ease, color .35s ease, border-color .35s ease;
-}}
-
+/* FUERZA BRUTA PARA DESAPARECER ICONOS INFERIORES */
 header, footer, #MainMenu, div[data-testid="stDecoration"],
-[data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{
+[data-testid="stStatusWidget"], .viewerBadge_container__1QSob,
+.stActionButton, div[class^="viewerBadge"] {{
   display:none !important;
+  visibility: hidden !important;
 }}
 
 .main .block-container {{ padding-bottom:0 !important; }}
@@ -69,44 +61,56 @@ header, footer, #MainMenu, div[data-testid="stDecoration"],
   font-family:'Inter',sans-serif !important;
 }}
 
-div.stButton>button,
-div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
-  background:var(--card) !important;
-  color:var(--text) !important;
-  border:1px solid var(--border) !important;
-  border-radius:2px !important;
-  font-size:11px !important;
-  font-weight:600 !important;
-  letter-spacing:2px !important;
-  text-transform:uppercase;
+/* BOTONES DE NAVEGACIÓN (FORZADO) */
+div.stButton>button {{
+  background-color: var(--btn-nav-bg) !important;
+  color: var(--btn-nav-txt) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 2px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
 }}
 
 div.stButton>button:hover {{
-  background:var(--hover) !important;
-  border-color:var(--text) !important;
+  background: var(--hover) !important;
+  color: #FFFFFF !important;
+  border-color: var(--text) !important;
 }}
 
+/* SELECTORES */
+div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 2px !important;
+}}
+
+/* BOTÓN BUSCAR (DHL STYLE) */
 div.stButton>button[kind="primary"] {{
-  background:var(--btnp-bg) !important;
-  color:var(--btnp-txt) !important;
-  border:none !important;
-  font-weight:700 !important;
-  height:48px !important;
+  background: var(--btnp-bg) !important;
+  color: var(--btnp-txt) !important;
+  border: none !important;
+  font-weight: 800 !important;
+  height: 48px !important;
 }}
 
 .stTextInput input {{
-  background:var(--card) !important;
-  color:var(--text) !important;
-  border:1px solid var(--border) !important;
-  border-radius:2px !important;
-  height:48px !important;
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 2px !important;
+  height: 48px !important;
 }}
 
 div[data-testid="stSelectbox"] label p {{
-  font-size:10px !important;
-  color:var(--sub) !important;
-  letter-spacing:2px !important;
-  text-transform:uppercase !important;
+  font-size: 10px !important;
+  color: var(--text) !important;
+  font-weight: 800 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -134,8 +138,8 @@ if not st.session_state.splash_completado:
 # ── HEADER ───────────────────────────────────────────
 c1,c2,c3 = st.columns([1.5,4,.5])
 with c1:
-    st.markdown("<h2 style='letter-spacing:4px;font-weight:300;margin:0;'>NEXION</h2>"
-                "<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:var(--sub);'>CORE INTELLIGENCE</p>",
+    st.markdown(f"<h2 style='letter-spacing:4px;font-weight:300;margin:0;color:{vars_css['text']};'>NEXION</h2>"
+                f"<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:{vars_css['sub']};'>CORE INTELLIGENCE</p>",
                 unsafe_allow_html=True)
 
 with c2:
@@ -147,11 +151,12 @@ with c2:
                 st.session_state.pagina=b; st.rerun()
 
 with c3:
-    if st.button("☀️" if tema=="oscuro" else "🌙"):
+    label_t = "☀️" if tema=="oscuro" else "🌙"
+    if st.button(label_t):
         st.session_state.tema = "claro" if tema=="oscuro" else "oscuro"
         st.rerun()
 
-st.markdown("<hr style='border-top:1px solid var(--border);margin:10px 0 30px;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='border-top:1px solid {vars_css['border']};margin:10px 0 30px;'>", unsafe_allow_html=True)
 
 # 5. DATOS
 @st.cache_data
@@ -314,6 +319,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
