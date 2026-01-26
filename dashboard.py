@@ -3,8 +3,8 @@ import pandas as pd
 import streamlit.components.v1 as components
 import time
 
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
-
 
 # ── TEMA ACTUALIZADO (GRIS HUMO + TEXTO ALTO CONTRASTE) ────────
 if "tema" not in st.session_state:
@@ -23,8 +23,8 @@ else:
     vars_css = {
         "bg": "#E9ECF1", 
         "card": "#FFFFFF",
-        "text": "#111111", # <--- NEGRO MÁS PROFUNDO PARA MÁXIMA LEGIBILIDAD
-        "sub": "#2D3136",  # <--- SUBTEXTO MÁS OSCURO (GRAFITO)
+        "text": "#111111", 
+        "sub": "#2D3136", 
         "border": "#C9D1D9", 
         "hover": "#EBEEF2",
         "btn_primary_bg": "#000000",
@@ -42,7 +42,7 @@ btn_primary_bg  = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
 
-# ── CSS MAESTRO ──────────────────────────────────────
+# ── CSS MAESTRO (AJUSTADO PARA ELEVAR EL HEADER) ─────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -55,6 +55,12 @@ st.markdown(f"""
   --btnp-txt:{btn_primary_txt};
 }}
 
+/* ELEVAR TODO EL CONTENIDO (ELIMINAR PADDING SUPERIOR) */
+.block-container {{
+    padding-top: 1.5rem !important;
+    padding-bottom: 0rem !important;
+}}
+
 * {{
   transition: background-color .35s ease, color .35s ease, border-color .35s ease;
 }}
@@ -63,8 +69,6 @@ header, footer, #MainMenu, div[data-testid="stDecoration"],
 [data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{
   display:none !important;
 }}
-
-.main .block-container {{ padding-bottom:0 !important; }}
 
 .stApp {{
   background:var(--bg) !important;
@@ -77,10 +81,10 @@ div.stButton>button,
 div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
   background:var(--card) !important;
   color:var(--text) !important;
-  border:1px solid var(--border) !important;
+  border: 1px solid var(--border) !important;
   border-radius:2px !important;
   font-size:11px !important;
-  font-weight:700 !important; /* <--- UN POCO MÁS DE PESO PARA LEER MEJOR */
+  font-weight:700 !important;
   letter-spacing:2px !important;
   text-transform:uppercase;
 }}
@@ -105,18 +109,10 @@ div.stButton>button[kind="primary"] {{
   border-radius:2px !important;
   height:48px !important;
 }}
-
-div[data-testid="stSelectbox"] label p {{
-  font-size:10px !important;
-  color:var(--text) !important; /* <--- USAMOS EL TEXTO PRINCIPAL PARA LOS LABELS */
-  font-weight: 800 !important;
-  letter-spacing: 2px !important;
-  text-transform: uppercase !important;
-}}
 </style>
 """, unsafe_allow_html=True)
 
-# ── SPLASH ───────────────────────────────────────────
+# ── SPLASH (MANTENIDO) ───────────────────────────────────
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
 
@@ -136,12 +132,17 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── 5. HEADER Y NAVEGACIÓN PRINCIPAL ───────────────────────
-c1, c2, c3 = st.columns([1.5, 4, .5])
+# ── 5. HEADER Y NAVEGACIÓN (AJUSTE DE ALTURA) ───────────────
+# vertical_alignment="top" asegura que el menú suba al nivel del logo
+c1, c2, c3 = st.columns([1.5, 4, .5], vertical_alignment="top")
+
 with c1:
-    st.markdown(f"<h2 style='letter-spacing:4px;font-weight:300;margin:0;color:{text_main};'>NEXION</h2>"
-                f"<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:{text_sub};'>CORE INTELLIGENCE</p>",
-                unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style='margin-top: -10px;'>
+            <h2 style='letter-spacing:4px; font-weight:300; margin:0; color:{text_main}; line-height:1;'>NEXION</h2>
+            <p style='font-size:9px; margin:0; letter-spacing:1px; color:{text_sub}; text-transform:uppercase;'>Core Intelligence</p>
+        </div>
+    """, unsafe_allow_html=True)
 
 with c2:
     if "pagina" not in st.session_state: 
@@ -151,17 +152,18 @@ with c2:
     cols = st.columns(4)
     for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]):
         with cols[i]:
-            # Resaltamos el botón si la página está activa
             if st.button(b, use_container_width=True, key=f"main_nav_{b}"):
                 st.session_state.pagina = b
                 st.rerun()
 
 with c3:
+    # Ajuste de botón de tema para mantener la línea
     if st.button("☀️" if tema == "oscuro" else "🌙", key="theme_toggle"):
         st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
         st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {border_color};margin:10px 0 20px;'>", unsafe_allow_html=True)
+# Línea divisoria más pegada al menú para ahorrar espacio
+st.markdown(f"<hr style='border-top:1px solid {border_color}; margin:5px 0 20px;'>", unsafe_allow_html=True)
 
 # ── 6. LÓGICA DE SUBMENÚS (ESCALABLE) ──────────────────────
 # Aquí definimos qué submenús tiene cada sección
@@ -367,6 +369,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
