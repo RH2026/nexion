@@ -80,7 +80,7 @@ div[data-testid="stDecoration"],
   font-family: 'Inter', sans-serif !important;
 }}
 
-/* ── BOTONES NORMALES ───────────────────────── */
+/* ── BOTONES BASE ───────────────────────────── */
 div.stButton > button {{
   background: var(--card) !important;
   color: var(--text) !important;
@@ -97,9 +97,11 @@ div.stButton > button:hover {{
   border-color: var(--text) !important;
 }}
 
-/* ── BOTÓN PRIMARIO (EXECUTE SYSTEM SEARCH) ─── */
-div.stButton > button[data-testid="baseButton-primary"],
-div.stButton > button[kind="primary"] {{
+/* ── BOTÓN PRIMARIO (STREAMLIT REAL) ────────── */
+/* Gana contra BaseWeb y Railway */
+div.stButton > button:where(:not(:disabled))[style*="background"],
+div.stButton > button:has(svg),
+div.stButton > button[aria-label*="primary"] {{
   background-color: var(--btnp-bg) !important;
   color: var(--btnp-txt) !important;
   border: none !important;
@@ -107,7 +109,7 @@ div.stButton > button[kind="primary"] {{
   height: 48px !important;
 }}
 
-div.stButton > button[data-testid="baseButton-primary"]:hover {{
+div.stButton > button:where(:not(:disabled))[style*="background"]:hover {{
   filter: brightness(1.05);
 }}
 
@@ -333,6 +335,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
