@@ -18,60 +18,59 @@ vars_css = {
     "border": "#1B1F24" if tema == "oscuro" else "#C9D1D9"
 }
 
-# ── 3. CSS MAESTRO (TOTALMENTE LIMPIO + NITIDEZ) ──────
+# ── 3. CSS MAESTRO (ENCABEZADO ELEVADO Y NITIDEZ) ─────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* OCULTAR ELEMENTOS NATIVOS */
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{
-    display: none !important;
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
+    display: none !important; 
 }}
 
-.block-container {{
-    padding-top: 1.5rem !important;
-    padding-bottom: 0rem !important;
+.block-container {{ 
+    padding-top: 1.5rem !important; 
+    padding-bottom: 0rem !important; 
 }}
 
-.stApp {{
-    background: {vars_css["bg"]} !important;
-    color: {vars_css["text"]} !important;
-    font-family: 'Inter', sans-serif !important;
+.stApp {{ 
+    background: {vars_css["bg"]} !important; 
+    color: {vars_css["text"]} !important; 
+    font-family: 'Inter', sans-serif !important; 
 }}
 
-/* NITIDEZ LOGO */
-div[data-testid='stImage'] img {{
-    image-rendering: -webkit-optimize-contrast !important;
-    image-rendering: crisp-edges !important;
-    transform: translateZ(0);
+div[data-testid='stImage'] img {{ 
+    image-rendering: -webkit-optimize-contrast !important; 
+    transform: translateZ(0); 
 }}
 
-/* BOTÓN DE IMPRESIÓN ESTILO NEXION */
 .print-btn {{
-    width: 100%;
-    height: 48px;
-    background-color: transparent;
+    width: 100%; 
+    height: 48px; 
+    background-color: transparent; 
     color: {vars_css["text"]};
-    border: 1px solid {vars_css["border"]};
-    border-radius: 2px;
+    border: 1px solid {vars_css["border"]}; 
+    border-radius: 2px; 
     cursor: pointer;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+    font-weight: 700; 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
     margin-top: 20px;
-    transition: all 0.3s ease;
-}}
-
-.print-btn:hover {{
-    background-color: {vars_css["text"]};
-    color: {vars_css["bg"]};
 }}
 
 @media print {{
-    .no-print, [data-testid="stHeader"], button, .stButton, .stNav {{ display: none !important; }}
-    .stApp {{ background-color: white !important; color: black !important; }}
-    .block-container {{ padding: 0 !important; }}
-    hr {{ border-top: 1px solid #000 !important; }}
+    .no-print, [data-testid="stHeader"], button, .stButton, .stNav {{ 
+        display: none !important; 
+    }}
+    .stApp {{ 
+        background-color: white !important; 
+        color: black !important; 
+    }}
+    .block-container {{ 
+        padding: 0 !important; 
+    }}
+    hr {{ 
+        border-top: 1px solid #000 !important; 
+    }}
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -102,12 +101,11 @@ with c3:
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
-# ── 5. CARGA DE INVENTARIO (PROTECCIÓN TOTAL) ────────
+# ── 5. CARGA DE INVENTARIO ───────────────────────────
 @st.cache_data
 def get_inventory():
     for r in ["inventario.csv", "../inventario.csv"]:
         try: 
-            # sep=None detecta , o ; automáticamente
             df = pd.read_csv(r, sep=None, engine='python')
             df.columns = df.columns.str.strip().str.upper() 
             return df
@@ -121,36 +119,34 @@ st.markdown(f"<div style='text-align:center;'><p style='color:{vars_css['sub']};
 
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
-    h1.date_input("FECHA", value=datetime.now(), key="f_pt_final")
-    h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_pt_final")
-    h3.text_input("FOLIO", value="F-2026-001", key="fol_pt_final")
+    h1.date_input("FECHA", value=datetime.now(), key="f_pt_val")
+    h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_pt_val")
+    h3.text_input("FOLIO", value="F-2026-001", key="fol_pt_val")
 
-# Inicialización del DataFrame en el Session State
-if 'df_form' not in st.session_state:
-    st.session_state.df_form = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
+# --- LÓGICA DE ACTUALIZACIÓN ---
+if 'rows' not in st.session_state:
+    st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
 
-# FUNCIÓN DE BUSQUEDA AUTOMÁTICA
-def procesar_cambios():
-    if "editor_pt" in st.session_state:
-        # Detectar qué celdas cambiaron
-        cambios = st.session_state["editor_pt"].get("edited_rows", {})
-        for fila_idx, contenido in cambios.items():
-            fila_int = int(fila_idx)
-            if "CODIGO" in contenido:
-                cod_buscado = str(contenido["CODIGO"]).strip().upper()
-                if not df_inv.empty:
-                    match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == cod_buscado]
-                    if not match.empty:
-                        # Actualizamos la descripción en el DataFrame maestro
-                        st.session_state.df_form.at[fila_int, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
-                        st.session_state.df_form.at[fila_int, "CODIGO"] = cod_buscado
-
-# Ejecutamos la búsqueda antes de mostrar la tabla
-procesar_cambios()
+def handle_change():
+    state = st.session_state["editor_nexion"]
+    # Procesar filas editadas
+    for row_idx, changes in state.get("edited_rows", {}).items():
+        if "CODIGO" in changes:
+            cod = str(changes["CODIGO"]).strip().upper()
+            if not df_inv.empty:
+                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == cod]
+                if not match.empty:
+                    st.session_state.rows.at[int(row_idx), "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
+                    st.session_state.rows.at[int(row_idx), "CODIGO"] = cod
+    # Procesar filas agregadas
+    for row in state.get("added_rows", []):
+        if "CODIGO" in row:
+            # Esta parte requiere lógica adicional si quieres autocompletar al añadir
+            pass
 
 # RENDERIZADO DEL EDITOR
 st.data_editor(
-    st.session_state.df_form,
+    st.session_state.rows,
     num_rows="dynamic",
     use_container_width=True,
     column_config={
@@ -158,22 +154,23 @@ st.data_editor(
         "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
         "CANTIDAD": st.column_config.NumberColumn("CANTIDAD")
     },
-    key="editor_pt"
+    key="editor_nexion",
+    on_change=handle_change
 )
 
-# ── 7. SECCIÓN DE FIRMAS (REPLICANDO TU IMAGEN) ──────
+# ── 7. SECCIÓN DE FIRMAS (CARLOS FIALKO / JESUS MORENO) ──
 st.markdown("<br><br>", unsafe_allow_html=True)
 f1, f2, f3 = st.columns(3)
-linea = f"border-top: 1px solid {vars_css['sub']}; width: 80%; margin: auto;"
+linea_style = f"border-top: 1px solid {vars_css['sub']}; width: 80%; margin: auto;"
 
 with f1:
-    st.markdown(f"<hr style='{linea}'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='{linea_style}'>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; font-size:10px;'>ENTREGO<br><b>Analista de Inventario</b></p>", unsafe_allow_html=True)
 with f2:
-    st.markdown(f"<hr style='{linea}'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='{linea_style}'>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; font-size:10px;'>AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></p>", unsafe_allow_html=True)
 with f3:
-    st.markdown(f"<hr style='{linea}'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='{linea_style}'>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; font-size:10px;'>RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></p>", unsafe_allow_html=True)
 
 # ── 8. BOTÓN DE IMPRESIÓN ────────────────────────────
@@ -182,6 +179,7 @@ st.markdown(f"""
         🖨️ GENERAR PDF / IMPRIMIR
     </button>
 """, unsafe_allow_html=True)
+
 
 
 
