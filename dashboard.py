@@ -20,7 +20,7 @@ if tema == "oscuro":
     }
 else:
     vars_css = {
-        "bg": "#E2E4E9", # <--- CAMBIO A PERLA PLATINO (MÁS OSCURITO)
+        "bg": "##E9ECF1", # <--- CAMBIO A PERLA PLATINO (MÁS OSCURITO)
         "card": "#FFFFFF",
         "text": "#1A1C1E",
         "sub": "#3A3F45",
@@ -315,6 +315,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
