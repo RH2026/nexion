@@ -175,7 +175,5 @@ with st.container():
     if st.button("GUARDAR Y GENERAR FOLIO", type="primary", use_container_width=True, key="save_btn"):
         st.success("Formato guardado en sistema.")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("GUARDAR Y GENERAR FOLIO", type="primary", use_container_width=True):
-        st.success("Formato guardado en sistema.")
+    
 
