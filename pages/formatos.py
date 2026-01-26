@@ -131,6 +131,13 @@ with st.container(border=True):
 if "df_final" not in st.session_state:
     st.session_state.df_final = pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"])
 
+# ── 7.1. INICIALIZAR NUEVOS INPUTS DE FORMA SEGURA ─────
+if "new_codigo" not in st.session_state:
+    st.session_state.new_codigo = ""
+
+if "new_cant" not in st.session_state:
+    st.session_state.new_cant = 1
+
 # ── 8. FORMULARIO NUEVA FILA ──────────────────────────
 with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
     new_codigo = st.text_input("Código / Parte", key="new_codigo")
@@ -145,7 +152,7 @@ with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
 
             new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
             st.session_state.df_final = pd.concat([st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True)
-            # limpiar input
+            # limpiar input de forma segura
             st.session_state.new_codigo = ""
             st.session_state.new_cant = 1
             st.experimental_rerun()
@@ -189,6 +196,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
