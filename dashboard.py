@@ -3,7 +3,9 @@ import pandas as pd
 import streamlit.components.v1 as components
 import time
 
-# ── 1. TEMA ACTUALIZADO (PERLA PLATINO) ────────────────────────
+st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
+
+# ── TEMA ─────────────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -14,57 +16,52 @@ if tema == "oscuro":
         "bg": "#05070A", "card": "#0D1117",
         "text": "#F0F6FC", "sub": "#8B949E",
         "border": "#1B1F24", "hover": "#161B22",
-        "btn_nav_bg": "#0D1117", "btn_nav_txt": "#F0F6FC",
         "btn_primary_bg": "#F0F6FC", "btn_primary_txt": "#05070A"
     }
 else:
-    # PERLA MÁS OSCURITO (PLATINO)
     vars_css = {
-        "bg": "#E2E4E9",      # El tono platino que pediste
-        "card": "#FFFFFF",    
-        "text": "#1A1C1E",    
-        "sub": "#4A4F55",     
-        "border": "#C9D1D9",  
-        "hover": "#333333",
-        "btn_nav_bg": "#000000", # Botones negros en tema claro
-        "btn_nav_txt": "#FFFFFF",
+        "bg": "#F5F7FA", "card": "#FFFFFF",
+        "text": "#1A1C1E",
+        "sub": "#3A3F45",
+        "border": "#D8DEE4", "hover": "#EBEEF2",
         "btn_primary_bg": "#000000",
         "btn_primary_txt": "#FFFFFF"
     }
 
-# EXTRACCIÓN DE VARIABLES (PARA EVITAR NAMEERROR)
-bg_color = vars_css["bg"]
-card_bg = vars_css["card"]
-text_main = vars_css["text"]
-text_sub = vars_css["sub"]
-border_color = vars_css["border"]
-btn_hover = vars_css["hover"]
-btn_nav_bg = vars_css["btn_nav_bg"]
-btn_nav_txt = vars_css["btn_nav_txt"]
-btn_primary_bg = vars_css["btn_primary_bg"]
+# ── ALIAS DE COMPATIBILIDAD (OBLIGATORIO)
+bg_color     = vars_css["bg"]
+card_bg     = vars_css["card"]
+text_main   = vars_css["text"]
+text_sub    = vars_css["sub"]
+border_color= vars_css["border"]
+btn_hover   = vars_css["hover"]
+btn_primary_bg  = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
-# ── 2. CSS MAESTRO (CONTRASTE ALTO ZARA/DHL) ───────────────────
+
+# ── CSS MAESTRO ──────────────────────────────────────
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
 :root {{
-  --bg:{bg_color}; --card:{card_bg};
-  --text:{text_main}; --sub:{text_sub};
-  --border:{border_color}; --hover:{btn_hover};
-  --btn-nav-bg:{btn_nav_bg}; --btn-nav-txt:{btn_nav_txt};
-  --btnp-bg:{btn_primary_bg}; --btnp-txt:{btn_primary_txt};
+  --bg:{vars_css["bg"]}; --card:{vars_css["card"]};
+  --text:{vars_css["text"]}; --sub:{vars_css["sub"]};
+  --border:{vars_css["border"]}; --hover:{vars_css["hover"]};
+  --btnp-bg:{vars_css["btn_primary_bg"]};
+  --btnp-txt:{vars_css["btn_primary_txt"]};
 }}
 
 * {{
   transition: background-color .35s ease, color .35s ease, border-color .35s ease;
 }}
 
-/* ELEMENTOS OCULTOS */
-header, footer, #MainMenu, div[data-testid="stDecoration"] {{
+header, footer, #MainMenu, div[data-testid="stDecoration"],
+[data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{
   display:none !important;
 }}
+
+.main .block-container {{ padding-bottom:0 !important; }}
 
 .stApp {{
   background:var(--bg) !important;
@@ -72,34 +69,44 @@ header, footer, #MainMenu, div[data-testid="stDecoration"] {{
   font-family:'Inter',sans-serif !important;
 }}
 
-/* BOTONES DE NAVEGACIÓN */
-div.stButton>button {{
-  background-color: var(--btn-nav-bg) !important;
-  color: var(--btn-nav-txt) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 2px !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 2px !important;
-  text-transform: uppercase;
-  height: 42px;
+div.stButton>button,
+div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
+  background:var(--card) !important;
+  color:var(--text) !important;
+  border:1px solid var(--border) !important;
+  border-radius:2px !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  letter-spacing:2px !important;
+  text-transform:uppercase;
 }}
 
-/* BOTÓN BUSCAR (DHL STYLE) */
+div.stButton>button:hover {{
+  background:var(--hover) !important;
+  border-color:var(--text) !important;
+}}
+
 div.stButton>button[kind="primary"] {{
-  background: var(--btnp-bg) !important;
-  color: var(--btnp-txt) !important;
-  border: none !important;
-  font-weight: 800 !important;
-  height: 48px !important;
+  background:var(--btnp-bg) !important;
+  color:var(--btnp-txt) !important;
+  border:none !important;
+  font-weight:700 !important;
+  height:48px !important;
 }}
 
 .stTextInput input {{
-  background: var(--card) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 2px !important;
-  height: 48px !important;
+  background:var(--card) !important;
+  color:var(--text) !important;
+  border:1px solid var(--border) !important;
+  border-radius:2px !important;
+  height:48px !important;
+}}
+
+div[data-testid="stSelectbox"] label p {{
+  font-size:10px !important;
+  color:var(--sub) !important;
+  letter-spacing:2px !important;
+  text-transform:uppercase !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -307,8 +314,6 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
-
-
 
 
 
