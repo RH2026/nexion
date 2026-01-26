@@ -5,7 +5,7 @@ import time
 
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
-# ── 1. GESTIÓN DE TEMA (AJUSTADO PARA CONTRASTE ALTO) ──
+# ── 1. TEMA ─────────────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -30,7 +30,7 @@ else:
         "btn_primary_txt": "#FFFFFF"
     }
 
-# EXTRACCIÓN DE VARIABLES PARA EVITAR NAMEERROR
+# EXTRACCIÓN DE VARIABLES
 bg_color = vars_css["bg"]
 card_bg = vars_css["card"]
 text_main = vars_css["text"]
@@ -42,7 +42,7 @@ btn_nav_txt = vars_css["btn_nav_txt"]
 btn_primary_bg = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
-# ── 2. CSS MAESTRO (FUERZA BRUTA & DISEÑO ZARA) ──
+# ── 2. CSS MAESTRO ──────────────────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -55,21 +55,13 @@ st.markdown(f"""
   --btnp-bg:{btn_primary_bg}; --btnp-txt:{btn_primary_txt};
 }}
 
-/* OCULTAR ELEMENTOS NATIVOS E ICONOS INFERIORES */
-header, footer, #MainMenu, div[data-testid="stDecoration"],
-[data-testid="stStatusWidget"], .viewerBadge_container__1QSob,
-.stActionButton, div[class^="viewerBadge"] {{
-  display:none !important;
-  visibility: hidden !important;
-}}
-
 .stApp {{
   background:var(--bg) !important;
   color:var(--text) !important;
   font-family:'Inter',sans-serif !important;
 }}
 
-/* BOTONES DE NAVEGACIÓN (NEGROS EN TEMA CLARO) */
+/* BOTONES DE NAVEGACIÓN */
 div.stButton>button {{
   background-color: var(--btn-nav-bg) !important;
   color: var(--btn-nav-txt) !important;
@@ -82,12 +74,7 @@ div.stButton>button {{
   height: 42px;
 }}
 
-div.stButton>button:hover {{
-  background: var(--hover) !important;
-  color: #FFFFFF !important;
-}}
-
-/* BOTÓN DE BÚSQUEDA (ESTILO DHL) */
+/* BOTÓN BUSCAR (DHL STYLE) */
 div.stButton>button[kind="primary"] {{
   background: var(--btnp-bg) !important;
   color: var(--btnp-txt) !important;
@@ -103,10 +90,18 @@ div.stButton>button[kind="primary"] {{
   border-radius: 2px !important;
   height: 48px !important;
 }}
+
+div[data-testid="stSelectbox"] label p {{
+  font-size: 10px !important;
+  color: var(--text) !important;
+  font-weight: 800 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
-# ── 3. LÓGICA DE SPLASH ──
+# ── 3. SPLASH ───────────────────────────────────────────
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
 
@@ -122,11 +117,11 @@ if not st.session_state.splash_completado:
             </div>
             <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
             """, unsafe_allow_html=True)
-            time.sleep(.9) # Requiere import time
+            time.sleep(.9)
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── 4. HEADER & MENÚ ──
+# ── 4. HEADER ───────────────────────────────────────────
 c1,c2,c3 = st.columns([1.5,4,.5])
 with c1:
     st.markdown(f"<h2 style='letter-spacing:4px;font-weight:300;margin:0;'>NEXION</h2>"
@@ -138,27 +133,27 @@ with c2:
     cols = st.columns(4)
     for i,b in enumerate(["RASTREO","INTELIGENCIA","REPORTES","ESTATUS"]):
         with cols[i]:
-            if st.button(b, use_container_width=True):
+            if st.button(b, key=f"nav_{b}", use_container_width=True):
                 st.session_state.pagina=b; st.rerun()
 
 with c3:
-    if st.button("☀️" if tema=="oscuro" else "🌙"):
+    if st.button("☀️" if tema=="oscuro" else "🌙", key="theme_toggle"):
         st.session_state.tema = "claro" if tema=="oscuro" else "oscuro"
         st.rerun()
 
 st.markdown(f"<hr style='border-top:1px solid {border_color};margin:10px 0 30px;'>", unsafe_allow_html=True)
 
-# ── 5. SECCIÓN RASTREO (CENTRO DHL) ──
+# ── 5. SECCIÓN RASTREO (CORRECCIÓN DE ERROR) ───────────
 if st.session_state.pagina == "RASTREO":
     st.markdown("<div style='margin-bottom: 40px;'></div>", unsafe_allow_html=True)
     _, col_search, _ = st.columns([1, 1.8, 1])
     with col_search:
-        # Aquí se usa text_sub de forma segura
         st.markdown(f"<p style='text-align: center; color: {text_sub}; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;'>Operational Query</p>", unsafe_allow_html=True)
-        busqueda = st.text_input("", placeholder="REFERENCIA O NÚMERO DE GUÍA...", label_visibility="collapsed")
+        # Se agrega 'key' único para evitar DuplicateElementId
+        busqueda = st.text_input("", placeholder="REFERENCIA O NÚMERO DE GUÍA...", label_visibility="collapsed", key="main_search_input")
         st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-            st.toast("Accessing manifests...", icon="🔍")
+        if st.button("EXECUTE SYSTEM SEARCH", type="primary", key="main_search_btn", use_container_width=True):
+            st.toast("Searching manifests...", icon="🔍")
 
 # 5. DATOS
 @st.cache_data
@@ -321,6 +316,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
