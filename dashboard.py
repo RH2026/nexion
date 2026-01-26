@@ -36,10 +36,6 @@ text_sub    = vars_css["sub"]
 border_color= vars_css["border"]
 btn_hover   = vars_css["hover"]
 
-git add .
-git commit -m "fix theme vars alias"
-git push
-
 
 # ── CSS MAESTRO ──────────────────────────────────────
 st.markdown(f"""
@@ -316,6 +312,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
