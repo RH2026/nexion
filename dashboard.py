@@ -5,7 +5,8 @@ import time
 
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
-# ── TEMA ─────────────────────────────────────────────
+
+# ── TEMA ACTUALIZADO (GRIS HUMO + TEXTO ALTO CONTRASTE) ────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -20,16 +21,17 @@ if tema == "oscuro":
     }
 else:
     vars_css = {
-        "bg": "#E9ECF1", # <--- GRIS HUMO (DOS PELINES MÁS CLARO QUE EL ANTERIOR)
+        "bg": "#E9ECF1", 
         "card": "#FFFFFF",
-        "text": "#1A1C1E",
-        "sub": "#3A3F45",
-        "border": "#D8DEE4", "hover": "#EBEEF2",
+        "text": "#111111", # <--- NEGRO MÁS PROFUNDO PARA MÁXIMA LEGIBILIDAD
+        "sub": "#2D3136",  # <--- SUBTEXTO MÁS OSCURO (GRAFITO)
+        "border": "#C9D1D9", 
+        "hover": "#EBEEF2",
         "btn_primary_bg": "#000000",
         "btn_primary_txt": "#FFFFFF"
     }
 
-# ── ALIAS DE COMPATIBILIDAD (OBLIGATORIO)
+# ── ALIAS DE COMPATIBILIDAD
 bg_color      = vars_css["bg"]
 card_bg      = vars_css["card"]
 text_main    = vars_css["text"]
@@ -43,14 +45,14 @@ btn_primary_txt = vars_css["btn_primary_txt"]
 # ── CSS MAESTRO ──────────────────────────────────────
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 :root {{
-  --bg:{vars_css["bg"]}; --card:{vars_css["card"]};
-  --text:{vars_css["text"]}; --sub:{vars_css["sub"]};
-  --border:{vars_css["border"]}; --hover:{vars_css["hover"]};
-  --btnp-bg:{vars_css["btn_primary_bg"]};
-  --btnp-txt:{vars_css["btn_primary_txt"]};
+  --bg:{bg_color}; --card:{card_bg};
+  --text:{text_main}; --sub:{text_sub};
+  --border:{border_color}; --hover:{btn_hover};
+  --btnp-bg:{btn_primary_bg};
+  --btnp-txt:{btn_primary_txt};
 }}
 
 * {{
@@ -70,6 +72,7 @@ header, footer, #MainMenu, div[data-testid="stDecoration"],
   font-family:'Inter',sans-serif !important;
 }}
 
+/* BOTONES Y SELECTORES */
 div.stButton>button,
 div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
   background:var(--card) !important;
@@ -77,7 +80,7 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
   border:1px solid var(--border) !important;
   border-radius:2px !important;
   font-size:11px !important;
-  font-weight:600 !important;
+  font-weight:700 !important; /* <--- UN POCO MÁS DE PESO PARA LEER MEJOR */
   letter-spacing:2px !important;
   text-transform:uppercase;
 }}
@@ -91,7 +94,7 @@ div.stButton>button[kind="primary"] {{
   background:var(--btnp-bg) !important;
   color:var(--btnp-txt) !important;
   border:none !important;
-  font-weight:700 !important;
+  font-weight:800 !important;
   height:48px !important;
 }}
 
@@ -105,9 +108,10 @@ div.stButton>button[kind="primary"] {{
 
 div[data-testid="stSelectbox"] label p {{
   font-size:10px !important;
-  color:var(--sub) !important;
-  letter-spacing:2px !important;
-  text-transform:uppercase !important;
+  color:var(--text) !important; /* <--- USAMOS EL TEXTO PRINCIPAL PARA LOS LABELS */
+  font-weight: 800 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -315,6 +319,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
