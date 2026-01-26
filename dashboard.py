@@ -15,19 +15,19 @@ if st.session_state.tema == "oscuro":
 else:
     bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#F5F7FA", "#FFFFFF", "#1A1C1E", "#656D76", "#D8DEE4", "#EBEEF2"
 
-# 3. CSS MAESTRO (DISEÑO EXACTO + FUERZA BRUTA PARA ICONOS INFERIORES)
+# 3. CSS MAESTRO (EDICIÓN FINAL "CLEAN SLATE")
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-/* 1. OCULTAR CABECERA, DECORACIÓN Y FOOTER NATIVO */
+/* 1. DESAPARECER TODO RASTRO DE STREAMLIT (CABECERA, PIE Y DECORACIÓN) */
 header, footer, #MainMenu, div[data-testid="stDecoration"] {{ 
     visibility: hidden !important; 
     display: none !important;
 }}
 
-/* 2. FUERZA BRUTA PARA ICONOS INFERIORES (Manage App, Streamlit Cloud, etc.) */
-/* Atacamos por testid, clases dinámicas y selectores de posición */
+/* 2. FUERZA BRUTA PARA ICONOS INFERIORES (MEDALLAS, BOTONES DE NUBE Y STATUS) */
+/* Atacamos los contenedores por posición y etiquetas de sistema */
 [data-testid="stStatusWidget"], 
 [data-testid="stCloudGlutton"],
 .viewerBadge_container__1QSob, 
@@ -35,11 +35,18 @@ header, footer, #MainMenu, div[data-testid="stDecoration"] {{
 div[class^="viewerBadge"],
 div[class*="StyledStatusWidget"],
 div[data-testid="stBaseButton-toolbar"],
-#tabs-bue-container + div {{
+div[data-testid="stStatusWidget"] {{
     display: none !important;
     visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
     opacity: 0 !important;
     pointer-events: none !important;
+}}
+
+/* ELIMINAR EL ESPACIADO DEL FOOTER PARA QUE NO QUEDE HUECO BLANCO ABAJO */
+.main .block-container {{
+    padding-bottom: 0px !important;
 }}
 
 /* 3. ESTILO BASE DE LA APP */
@@ -49,7 +56,7 @@ div[data-testid="stBaseButton-toolbar"],
     font-family: 'Inter', sans-serif !important;
 }}
 
-/* BOTONES Y SELECTORES */
+/* BOTONES Y SELECTORES (ESTILO ZARA) */
 div.stButton > button,
 div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
     background-color: {card_bg} !important;
@@ -68,7 +75,7 @@ div.stButton > button:hover {{
     border-color: {text_main} !important;
 }}
 
-/* BOTÓN DE BÚSQUEDA PRIMARIO */
+/* BOTÓN DE BÚSQUEDA PRIMARIO (TIPO DHL) */
 div.stButton > button[kind="primary"] {{
     background-color: {text_main} !important;
     color: {bg_color} !important;
@@ -296,6 +303,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
