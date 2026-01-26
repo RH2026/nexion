@@ -190,7 +190,7 @@ if st.session_state.pagina in submenus:
         if seleccion == "SALIDA PT":
             st.toast("Redirigiendo a Formatos...", icon="📄")
             time.sleep(0.5)
-            st.switch_page("formatos.py") # Asegúrate de que formatos.py esté en la raíz o en /pages
+            st.switch_page("pages/formatos.py") # Asegúrate de que formatos.py esté en la raíz o en /pages
 
 if st.session_state.pagina == "FORMATOS":
     st.markdown("<div style='margin-top: 15vh;'></div>", unsafe_allow_html=True)
@@ -367,6 +367,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
