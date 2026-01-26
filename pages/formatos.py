@@ -18,7 +18,7 @@ vars_css = {
     "border": "#1B1F24" if tema == "oscuro" else "#C9D1D9"
 }
 
-# ── 3. CSS MAESTRO (ENCABEZADO ELEVADO Y NITIDEZ) ─────
+# ── 3. CSS MAESTRO (TOTALMENTE LIMPIO + NITIDEZ) ──────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -44,33 +44,17 @@ div[data-testid='stImage'] img {{
 }}
 
 .print-btn {{
-    width: 100%; 
-    height: 48px; 
-    background-color: transparent; 
-    color: {vars_css["text"]};
-    border: 1px solid {vars_css["border"]}; 
-    border-radius: 2px; 
-    cursor: pointer;
-    font-weight: 700; 
-    letter-spacing: 2px; 
-    text-transform: uppercase; 
-    margin-top: 20px;
+    width: 100%; height: 48px; background-color: transparent; 
+    color: {vars_css["text"]}; border: 1px solid {vars_css["border"]}; 
+    border-radius: 2px; cursor: pointer; font-weight: 700; 
+    letter-spacing: 2px; text-transform: uppercase; margin-top: 20px;
 }}
 
 @media print {{
-    .no-print, [data-testid="stHeader"], button, .stButton, .stNav {{ 
-        display: none !important; 
-    }}
-    .stApp {{ 
-        background-color: white !important; 
-        color: black !important; 
-    }}
-    .block-container {{ 
-        padding: 0 !important; 
-    }}
-    hr {{ 
-        border-top: 1px solid #000 !important; 
-    }}
+    .no-print, [data-testid="stHeader"], button, .stButton, .stNav {{ display: none !important; }}
+    .stApp {{ background-color: white !important; color: black !important; }}
+    .block-container {{ padding: 0 !important; }}
+    hr {{ border-top: 1px solid #000 !important; }}
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -96,8 +80,7 @@ with c2:
 
 with c3:
     if st.button("☀️" if tema == "oscuro" else "🌙", key="t_btn_fmt"):
-        st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
-        st.rerun()
+        st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"; st.rerun()
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
@@ -123,30 +106,14 @@ with st.container(border=True):
     h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_pt_val")
     h3.text_input("FOLIO", value="F-2026-001", key="fol_pt_val")
 
-# --- LÓGICA DE ACTUALIZACIÓN ---
-if 'rows' not in st.session_state:
-    st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
+# --- GESTIÓN DE DATOS ---
+if 'df_final' not in st.session_state:
+    st.session_state.df_final = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
 
-def handle_change():
-    state = st.session_state["editor_nexion"]
-    # Procesar filas editadas
-    for row_idx, changes in state.get("edited_rows", {}).items():
-        if "CODIGO" in changes:
-            cod = str(changes["CODIGO"]).strip().upper()
-            if not df_inv.empty:
-                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == cod]
-                if not match.empty:
-                    st.session_state.rows.at[int(row_idx), "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
-                    st.session_state.rows.at[int(row_idx), "CODIGO"] = cod
-    # Procesar filas agregadas
-    for row in state.get("added_rows", []):
-        if "CODIGO" in row:
-            # Esta parte requiere lógica adicional si quieres autocompletar al añadir
-            pass
-
-# RENDERIZADO DEL EDITOR
-st.data_editor(
-    st.session_state.rows,
+# EDITOR DE DATOS
+# Capturamos la salida del editor directamente
+edited_df = st.data_editor(
+    st.session_state.df_final,
     num_rows="dynamic",
     use_container_width=True,
     column_config={
@@ -154,24 +121,35 @@ st.data_editor(
         "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
         "CANTIDAD": st.column_config.NumberColumn("CANTIDAD")
     },
-    key="editor_nexion",
-    on_change=handle_change
+    key="editor_nexion"
 )
 
-# ── 7. SECCIÓN DE FIRMAS (CARLOS FIALKO / JESUS MORENO) ──
+# LÓGICA DE BÚSQUEDA MANUAL (CRUCE DE DATOS)
+# Si hubo cambios en el editor, los procesamos y actualizamos la sesión
+if not df_inv.empty:
+    for idx, row in edited_df.iterrows():
+        cod_input = str(row["CODIGO"]).strip().upper()
+        if cod_input:
+            match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == cod_input]
+            if not match.empty:
+                desc_match = match.iloc[0]['DESCRIPCION']
+                # Solo actualizamos el state si la descripción es diferente
+                if edited_df.at[idx, "DESCRIPCION"] != desc_match:
+                    st.session_state.df_final.at[idx, "CODIGO"] = cod_input
+                    st.session_state.df_final.at[idx, "DESCRIPCION"] = desc_match
+                    st.rerun() # Forzamos el refresco para mostrar la descripción
+
+# ── 7. FIRMAS ────────────────────────────────────────
 st.markdown("<br><br>", unsafe_allow_html=True)
 f1, f2, f3 = st.columns(3)
-linea_style = f"border-top: 1px solid {vars_css['sub']}; width: 80%; margin: auto;"
+linea = f"border-top: 1px solid {vars_css['sub']}; width: 80%; margin: auto;"
 
 with f1:
-    st.markdown(f"<hr style='{linea_style}'>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:10px;'>ENTREGO<br><b>Analista de Inventario</b></p>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='{linea}'><p style='text-align:center; font-size:10px;'>ENTREGÓ<br><b>Analista de Inventario</b></p>", unsafe_allow_html=True)
 with f2:
-    st.markdown(f"<hr style='{linea_style}'>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:10px;'>AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></p>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='{linea}'><p style='text-align:center; font-size:10px;'>AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></p>", unsafe_allow_html=True)
 with f3:
-    st.markdown(f"<hr style='{linea_style}'>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:10px;'>RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></p>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='{linea}'><p style='text-align:center; font-size:10px;'>RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></p>", unsafe_allow_html=True)
 
 # ── 8. BOTÓN DE IMPRESIÓN ────────────────────────────
 st.markdown(f"""
@@ -179,6 +157,7 @@ st.markdown(f"""
         🖨️ GENERAR PDF / IMPRIMIR
     </button>
 """, unsafe_allow_html=True)
+
 
 
 
