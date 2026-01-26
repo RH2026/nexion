@@ -20,7 +20,8 @@ if tema == "oscuro":
     }
 else:
     vars_css = {
-        "bg": "#F5F7FA", "card": "#FFFFFF",
+        "bg": "#E2E4E9", # <--- CAMBIO A PERLA PLATINO (MÁS OSCURITO)
+        "card": "#FFFFFF",
         "text": "#1A1C1E",
         "sub": "#3A3F45",
         "border": "#D8DEE4", "hover": "#EBEEF2",
@@ -29,12 +30,12 @@ else:
     }
 
 # ── ALIAS DE COMPATIBILIDAD (OBLIGATORIO)
-bg_color     = vars_css["bg"]
-card_bg     = vars_css["card"]
-text_main   = vars_css["text"]
-text_sub    = vars_css["sub"]
-border_color= vars_css["border"]
-btn_hover   = vars_css["hover"]
+bg_color      = vars_css["bg"]
+card_bg      = vars_css["card"]
+text_main    = vars_css["text"]
+text_sub     = vars_css["sub"]
+border_color = vars_css["border"]
+btn_hover    = vars_css["hover"]
 btn_primary_bg  = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
@@ -314,6 +315,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
