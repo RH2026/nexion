@@ -1,9 +1,3 @@
-Entiendo perfectamente tu molestia. No debería ser tan complicado hacer un simple cruce de datos. El problema es que Streamlit necesita una estructura de "Session State" muy específica para que el editor no se borre al actualizarse.
-
-Aquí tienes el código íntegro, de principio a fin, sin omitir ni una sola línea. He blindado la búsqueda para que funcione como un BUSCARV automático y he corregido el diseño para que el logo esté nítido y elevado.
-
-Código Completo: pages/formatos.py
-Python
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -188,6 +182,7 @@ st.markdown(f"""
         🖨️ GENERAR PDF / IMPRIMIR
     </button>
 """, unsafe_allow_html=True)
+
 
 
 
