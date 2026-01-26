@@ -137,15 +137,13 @@ if not st.session_state.splash_completado:
 c1, c2, c3 = st.columns([1.5, 4, .5], vertical_alignment="top")
 
 with c1:
-    # Lógica de Logo Dinámico
-    # n1.png para Oscuro, n2.png para Claro (Platino)
     logo_actual = "n1.png" if tema == "oscuro" else "n2.png"
     
     try:
-        # Renderizado del Logo según el tema
+        # Renderizado del Logo
         st.image(logo_actual, width=140)
         
-        # El lema con color dinámico text_sub
+        # El lema con color dinámico
         st.markdown(f"""
             <div style='margin-top: -15px;'>
                 <p style='font-size:9px; margin:0; letter-spacing:1px; 
@@ -155,10 +153,21 @@ with c1:
             </div>
         """, unsafe_allow_html=True)
         
-        # Ajuste de posición para eliminar espacios muertos
-        st.markdown("<style>div[data-testid='stImage'] {margin-top: -15px !important; margin-bottom: 0px !important;}</style>", unsafe_allow_html=True)
+        # AJUSTE DE POSICIÓN + TRUCO DE NITIDEZ (Smoothing)
+        st.markdown(f"""
+            <style>
+                div[data-testid='stImage'] {{
+                    margin-top: -15px !important; 
+                    margin-bottom: 0px !important;
+                }}
+                div[data-testid='stImage'] img {{
+                    image-rendering: -webkit-optimize-contrast !important; /* Nitidez Chrome/Safari */
+                    image-rendering: crisp-edges !important;               /* Nitidez Firefox */
+                    transform: translateZ(0);                               /* Fuerza aceleración GPU */
+                }}
+            </style>
+        """, unsafe_allow_html=True)
     except:
-        # Respaldo visual si no encuentra las imágenes
         st.markdown(f"<h2 style='letter-spacing:4px; font-weight:300; margin-top:-10px; color:{text_main};'>NEXION</h2>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-size:9px; margin-top:-5px; color:{text_sub};'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
 
@@ -387,6 +396,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
