@@ -198,6 +198,21 @@ if st.session_state.pagina in submenus:
             st.toast("Redirigiendo a Formatos...", icon="📄")
             time.sleep(0.5)
             st.switch_page("formatos.py") # Asegúrate de que formatos.py esté en la raíz o en /pages
+
+if st.session_state.pagina == "FORMATOS":
+    st.markdown("<div style='margin-top: 15vh;'></div>", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style='text-align: center;'>
+            <p style='color: {text_sub}; font-size: 12px; letter-spacing: 4px; text-transform: uppercase;'>
+                Módulo de Formatos Operativos
+            </p>
+            <p style='color: {text_main}; font-size: 10px; opacity: 0.6;'>
+                Seleccione el documento requerido en el menú superior para continuar.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+
 # 5. DATOS
 @st.cache_data
 def cargar_datos():
@@ -359,6 +374,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
