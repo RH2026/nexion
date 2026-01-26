@@ -45,75 +45,87 @@ st.markdown(f"""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
 :root {{
-  --bg:{vars_css["bg"]}; --card:{vars_css["card"]};
-  --text:{vars_css["text"]}; --sub:{vars_css["sub"]};
-  --border:{vars_css["border"]}; --hover:{vars_css["hover"]};
+  --bg:{vars_css["bg"]};
+  --card:{vars_css["card"]};
+  --text:{vars_css["text"]};
+  --sub:{vars_css["sub"]};
+  --border:{vars_css["border"]};
+  --hover:{vars_css["hover"]};
   --btnp-bg:{vars_css["btn_primary_bg"]};
   --btnp-txt:{vars_css["btn_primary_txt"]};
 }}
 
 * {{
-  transition: background-color .35s ease, color .35s ease, border-color .35s ease;
+  transition: background-color .35s ease,
+              color .35s ease,
+              border-color .35s ease;
 }}
 
-header, footer, #MainMenu, div[data-testid="stDecoration"],
-[data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{
-  display:none !important;
+header,
+footer,
+#MainMenu,
+div[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+.viewerBadge_container__1QSob {{
+  display: none !important;
 }}
 
-.main .block-container {{ padding-bottom:0 !important; }}
+.main .block-container {{
+  padding-bottom: 0 !important;
+}}
 
 .stApp {{
-  background:var(--bg) !important;
-  color:var(--text) !important;
-  font-family:'Inter',sans-serif !important;
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  font-family: 'Inter', sans-serif !important;
 }}
 
-div.stButton>button,
-div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
-  background:var(--card) !important;
-  color:var(--text) !important;
-  border:1px solid var(--border) !important;
-  border-radius:2px !important;
-  font-size:11px !important;
-  font-weight:600 !important;
-  letter-spacing:2px !important;
-  text-transform:uppercase;
+/* ── BOTONES NORMALES ───────────────────────── */
+div.stButton > button {{
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 2px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
 }}
 
-div.stButton>button:hover {{
-  background:var(--hover) !important;
-  border-color:var(--text) !important;
+div.stButton > button:hover {{
+  background: var(--hover) !important;
+  border-color: var(--text) !important;
 }}
 
-/* BOTÓN PRIMARIO REAL */
+/* ── BOTÓN PRIMARIO (EXECUTE SYSTEM SEARCH) ─── */
 div.stButton > button[data-testid="baseButton-primary"],
-div.stButton > button[kind="primary"] {
+div.stButton > button[kind="primary"] {{
   background-color: var(--btnp-bg) !important;
   color: var(--btnp-txt) !important;
   border: none !important;
   font-weight: 700 !important;
   height: 48px !important;
-}
-
-/* hover del primario */
-div.stButton > button[data-testid="baseButton-primary"]:hover {
-  filter: brightness(1.05);
-}
-
-.stTextInput input {{
-  background:var(--card) !important;
-  color:var(--text) !important;
-  border:1px solid var(--border) !important;
-  border-radius:2px !important;
-  height:48px !important;
 }}
 
+div.stButton > button[data-testid="baseButton-primary"]:hover {{
+  filter: brightness(1.05);
+}}
+
+/* ── INPUT TEXTO ────────────────────────────── */
+.stTextInput input {{
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 2px !important;
+  height: 48px !important;
+}}
+
+/* ── SELECTBOX LABEL ────────────────────────── */
 div[data-testid="stSelectbox"] label p {{
-  font-size:10px !important;
-  color:var(--sub) !important;
-  letter-spacing:2px !important;
-  text-transform:uppercase !important;
+  font-size: 10px !important;
+  color: var(--sub) !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -321,6 +333,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
