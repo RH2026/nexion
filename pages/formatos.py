@@ -108,12 +108,31 @@ with c3:
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
 # ── 5. LÓGICA DE BÚSQUEDA (INVENTARIO.CSV) ────────────
+# ── 5. LÓGICA DE BÚSQUEDA ROBUSTA ────────────────────
 @st.cache_data
 def get_inventory():
-    try: return pd.read_csv("inventario.csv")
-    except: return pd.DataFrame(columns=['codigo', 'descripcion'])
+    try: 
+        df = pd.read_csv("inventario.csv")
+        # Limpiamos nombres de columnas: quitamos espacios y pasamos a minúsculas
+        df.columns = df.columns.str.strip().str.lower()
+        return df
+    except Exception as e:
+        st.error(f"Error al leer inventario.csv: {e}")
+        return pd.DataFrame(columns=['codigo', 'descripcion'])
 
 df_inv = get_inventory()
+
+# ... (en el bloque del editor de datos) ...
+
+# Cruce automático con inventario.csv (Ajustado para evitar KeyError)
+for idx, row in edited_df.iterrows():
+    cod = str(row["CODIGO"]).strip()
+    if cod and not df_inv.empty:
+        # Verificamos si la columna 'codigo' existe tras la normalización
+        if 'codigo' in df_inv.columns:
+            match = df_inv[df_inv['codigo'].astype(str) == cod]
+            if not match.empty and 'descripcion' in df_inv.columns:
+                edited_df.at[idx, "DESCRIPCION"] = match.iloc[0]['descripcion']
 
 # ── 6. CUERPO DEL FORMATO ────────────────────────────
 st.markdown(f"<div style='text-align:center;'><p style='color:{vars_css['sub']}; font-size:11px; letter-spacing:3px; text-transform:uppercase;'>Formato de Entrega de Materiales PT</p></div>", unsafe_allow_html=True)
@@ -182,6 +201,7 @@ with b_col2:
     """, unsafe_allow_html=True)
 
     
+
 
 
 
