@@ -86,13 +86,20 @@ div.stButton>button:hover {{
   border-color:var(--text) !important;
 }}
 
-div.stButton>button[kind="primary"] {{
-  background:var(--btnp-bg) !important;
-  color:var(--btnp-txt) !important;
-  border:none !important;
-  font-weight:700 !important;
-  height:48px !important;
-}}
+/* BOTÓN PRIMARIO REAL */
+div.stButton > button[data-testid="baseButton-primary"],
+div.stButton > button[kind="primary"] {
+  background-color: var(--btnp-bg) !important;
+  color: var(--btnp-txt) !important;
+  border: none !important;
+  font-weight: 700 !important;
+  height: 48px !important;
+}
+
+/* hover del primario */
+div.stButton > button[data-testid="baseButton-primary"]:hover {
+  filter: brightness(1.05);
+}
 
 .stTextInput input {{
   background:var(--card) !important;
@@ -314,6 +321,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
