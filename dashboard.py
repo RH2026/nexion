@@ -143,21 +143,61 @@ with c1:
                 "<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:var(--sub);'>CORE INTELLIGENCE</p>",
                 unsafe_allow_html=True)
 
+# ── 5. HEADER Y NAVEGACIÓN PRINCIPAL ───────────────────────
+c1, c2, c3 = st.columns([1.5, 4, .5])
+with c1:
+    st.markdown(f"<h2 style='letter-spacing:4px;font-weight:300;margin:0;color:{text_main};'>NEXION</h2>"
+                f"<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:{text_sub};'>CORE INTELLIGENCE</p>",
+                unsafe_allow_html=True)
+
 with c2:
-    if "pagina" not in st.session_state: st.session_state.pagina="RASTREO"
+    if "pagina" not in st.session_state: 
+        st.session_state.pagina = "RASTREO"
+    
+    # Menú Principal
     cols = st.columns(4)
-    for i,b in enumerate(["RASTREO","INTELIGENCIA","REPORTES","ESTATUS"]):
+    for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]):
         with cols[i]:
-            if st.button(b, use_container_width=True):
-                st.session_state.pagina=b; st.rerun()
+            # Resaltamos el botón si la página está activa
+            if st.button(b, use_container_width=True, key=f"main_nav_{b}"):
+                st.session_state.pagina = b
+                st.rerun()
 
 with c3:
-    if st.button("☀️" if tema=="oscuro" else "🌙"):
-        st.session_state.tema = "claro" if tema=="oscuro" else "oscuro"
+    if st.button("☀️" if tema == "oscuro" else "🌙", key="theme_toggle"):
+        st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
         st.rerun()
 
-st.markdown("<hr style='border-top:1px solid var(--border);margin:10px 0 30px;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='border-top:1px solid {border_color};margin:10px 0 20px;'>", unsafe_allow_html=True)
 
+# ── 6. LÓGICA DE SUBMENÚS (ESCALABLE) ──────────────────────
+# Aquí definimos qué submenús tiene cada sección
+submenus = {
+    "FORMATOS": ["SELECCIONE...", "SALIDA PT", "ENTRADA MP", "INVENTARIOS"],
+    "REPORTES": ["SELECCIONE...", "KPI SEMANAL", "REPORTE MENSUAL"]
+}
+
+# Si la página actual tiene submenús, los mostramos
+if st.session_state.pagina in submenus:
+    st.markdown("<div style='margin-bottom: -10px;'></div>", unsafe_allow_html=True)
+    _, col_sub, _ = st.columns([1, 1.5, 1])
+    
+    with col_sub:
+        st.markdown(f"<p style='text-align: center; color: {text_sub}; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px;'>Submenú {st.session_state.pagina}</p>", unsafe_allow_html=True)
+        
+        # Selectbox que actúa como disparador de páginas
+        seleccion = st.selectbox(
+            "",
+            options=submenus[st.session_state.pagina],
+            label_visibility="collapsed",
+            key=f"sub_{st.session_state.pagina}"
+        )
+
+        # Lógica de redirección específica
+        if seleccion == "SALIDA PT":
+            st.toast("Redirigiendo a Formatos...", icon="📄")
+            time.sleep(0.5)
+            st.switch_page("formatos.py") # Asegúrate de que formatos.py esté en la raíz o en /pages
 # 5. DATOS
 @st.cache_data
 def cargar_datos():
@@ -319,6 +359,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
