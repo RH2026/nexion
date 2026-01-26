@@ -107,6 +107,11 @@ def get_inventory():
         try:
             df = pd.read_csv(r, sep=None, engine="python")
             df.columns = df.columns.str.strip().str.upper()
+            
+            # LIMPIAR CODIGO Y DESCRIPCION
+            df["CODIGO"] = df["CODIGO"].astype(str).str.strip().str.upper()
+            df["DESCRIPCION"] = df["DESCRIPCION"].astype(str).str.strip()
+            
             return df
         except:
             pass
@@ -126,9 +131,10 @@ with st.container(border=True):
     c2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_pt_val")
     c3.text_input("FOLIO", value="F-2026-001", key="fol_pt_val")
 
-#Forrmulario----------------
+# ── 7. DATAFRAME EN SESSION ───────────────────────────
 st.session_state.setdefault("df_final", pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"]))
 
+# ── 8. FORMULARIO NUEVA FILA ──────────────────────────
 with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
     with st.form("form_nueva_fila", clear_on_submit=True):
         new_codigo = st.text_input("Código / Parte")
@@ -142,11 +148,12 @@ with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
             desc_series = df_inv.loc[df_inv["CODIGO"] == cod_upper, "DESCRIPCION"]
             desc = desc_series.iloc[0] if not desc_series.empty else ""
             
-            # AÑADIR FILA AL DATAFRAME
+            # AÑADIR FILA AL DATAFRAME FINAL
             new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
             st.session_state.df_final = pd.concat(
                 [st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True
             )
+
 # ── 9. DATA EDITOR ────────────────────────────────────
 edited_df = st.data_editor(
     st.session_state.df_final,
@@ -186,6 +193,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
