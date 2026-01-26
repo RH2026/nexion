@@ -126,7 +126,7 @@ with st.container(border=True):
     c2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_pt_val")
     c3.text_input("FOLIO", value="F-2026-001", key="fol_pt_val")
 
-# ── 7. DATAFRAME EN SESSION ───────────────────────────
+#Forrmulario----------------
 st.session_state.setdefault("df_final", pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"]))
 
 with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
@@ -137,11 +137,16 @@ with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
         
         if submitted and new_codigo.strip() != "":
             cod_upper = new_codigo.strip().upper()
-            desc = df_inv[df_inv["CODIGO"].astype(str).str.strip().str.upper() == cod_upper]["DESCRIPCION"].values
-            desc = desc[0] if len(desc) > 0 else ""
             
+            # BUSCAR DESCRIPCIÓN DE FORMA ROBUSTA
+            desc_series = df_inv.loc[df_inv["CODIGO"] == cod_upper, "DESCRIPCION"]
+            desc = desc_series.iloc[0] if not desc_series.empty else ""
+            
+            # AÑADIR FILA AL DATAFRAME
             new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
-            st.session_state.df_final = pd.concat([st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True)
+            st.session_state.df_final = pd.concat(
+                [st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True
+            )
 # ── 9. DATA EDITOR ────────────────────────────────────
 edited_df = st.data_editor(
     st.session_state.df_final,
@@ -181,6 +186,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
