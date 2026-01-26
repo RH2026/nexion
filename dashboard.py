@@ -137,12 +137,15 @@ if not st.session_state.splash_completado:
 c1, c2, c3 = st.columns([1.5, 4, .5], vertical_alignment="top")
 
 with c1:
-    st.markdown(f"""
-        <div style='margin-top: -10px;'>
-            <h2 style='letter-spacing:4px; font-weight:300; margin:0; color:{text_main}; line-height:1;'>NEXION</h2>
-            <p style='font-size:9px; margin:0; letter-spacing:1px; color:{text_sub}; text-transform:uppercase;'>Core Intelligence</p>
-        </div>
-    """, unsafe_allow_html=True)
+    # Usamos st.image para cargar tu logo n1.png
+    # Ajusta 'width' según el tamaño real de tu imagen para que no se vea gigante
+    try:
+        st.image("n1.png", width=140) 
+        # Si quieres que esté más arriba aún, puedes envolverlo en un div con margin negativo
+        st.markdown("<style>div[data-testid='stImage'] {margin-top: -15px !important;}</style>", unsafe_allow_html=True)
+    except:
+        # Respaldo por si el archivo no existe en la ruta
+        st.markdown(f"<h2 style='letter-spacing:4px; font-weight:300; margin-top:-10px; color:{text_main};'>NEXION</h2>", unsafe_allow_html=True)
 
 with c2:
     if "pagina" not in st.session_state: 
@@ -369,6 +372,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
