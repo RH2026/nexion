@@ -29,14 +29,14 @@ else:
     }
 
 # ── ALIAS DE COMPATIBILIDAD (OBLIGATORIO)
-bg_color      = vars_css["bg"]
-card_bg       = vars_css["card"]
-text_main     = vars_css["text"]
-text_sub      = vars_css["sub"]
-border_color  = vars_css["border"]
-btn_hover     = vars_css["hover"]
-
-st.write("DEBUG:", text_sub)
+bg_color     = vars_css["bg"]
+card_bg     = vars_css["card"]
+text_main   = vars_css["text"]
+text_sub    = vars_css["sub"]
+border_color= vars_css["border"]
+btn_hover   = vars_css["hover"]
+btn_primary_bg  = vars_css["btn_primary_bg"]
+btn_primary_txt = vars_css["btn_primary_txt"]
 
 
 # ── CSS MAESTRO ──────────────────────────────────────
@@ -314,6 +314,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
