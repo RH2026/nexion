@@ -5,7 +5,7 @@ import time
 
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
-# ── 1. TEMA ─────────────────────────────────────────────
+# ── TEMA ─────────────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -16,44 +16,52 @@ if tema == "oscuro":
         "bg": "#05070A", "card": "#0D1117",
         "text": "#F0F6FC", "sub": "#8B949E",
         "border": "#1B1F24", "hover": "#161B22",
-        "btn_nav_bg": "#0D1117", "btn_nav_txt": "#F0F6FC",
         "btn_primary_bg": "#F0F6FC", "btn_primary_txt": "#05070A"
     }
 else:
     vars_css = {
         "bg": "#F5F7FA", "card": "#FFFFFF",
-        "text": "#000000",
-        "sub": "#656D76",
-        "border": "#D8DEE4", "hover": "#333333",
-        "btn_nav_bg": "#000000", "btn_nav_txt": "#FFFFFF",
+        "text": "#1A1C1E",
+        "sub": "#3A3F45",
+        "border": "#D8DEE4", "hover": "#EBEEF2",
         "btn_primary_bg": "#000000",
         "btn_primary_txt": "#FFFFFF"
     }
 
-# EXTRACCIÓN DE VARIABLES
-bg_color = vars_css["bg"]
-card_bg = vars_css["card"]
-text_main = vars_css["text"]
-text_sub = vars_css["sub"]
-border_color = vars_css["border"]
-btn_hover = vars_css["hover"]
-btn_nav_bg = vars_css["btn_nav_bg"]
-btn_nav_txt = vars_css["btn_nav_txt"]
-btn_primary_bg = vars_css["btn_primary_bg"]
+# ── ALIAS DE COMPATIBILIDAD (OBLIGATORIO)
+bg_color     = vars_css["bg"]
+card_bg     = vars_css["card"]
+text_main   = vars_css["text"]
+text_sub    = vars_css["sub"]
+border_color= vars_css["border"]
+btn_hover   = vars_css["hover"]
+btn_primary_bg  = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
-# ── 2. CSS MAESTRO ──────────────────────────────────────
+
+# ── CSS MAESTRO ──────────────────────────────────────
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
 :root {{
-  --bg:{bg_color}; --card:{card_bg};
-  --text:{text_main}; --sub:{text_sub};
-  --border:{border_color}; --hover:{btn_hover};
-  --btn-nav-bg:{btn_nav_bg}; --btn-nav-txt:{btn_nav_txt};
-  --btnp-bg:{btn_primary_bg}; --btnp-txt:{btn_primary_txt};
+  --bg:{vars_css["bg"]}; --card:{vars_css["card"]};
+  --text:{vars_css["text"]}; --sub:{vars_css["sub"]};
+  --border:{vars_css["border"]}; --hover:{vars_css["hover"]};
+  --btnp-bg:{vars_css["btn_primary_bg"]};
+  --btnp-txt:{vars_css["btn_primary_txt"]};
 }}
+
+* {{
+  transition: background-color .35s ease, color .35s ease, border-color .35s ease;
+}}
+
+header, footer, #MainMenu, div[data-testid="stDecoration"],
+[data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{
+  display:none !important;
+}}
+
+.main .block-container {{ padding-bottom:0 !important; }}
 
 .stApp {{
   background:var(--bg) !important;
@@ -61,47 +69,49 @@ st.markdown(f"""
   font-family:'Inter',sans-serif !important;
 }}
 
-/* BOTONES DE NAVEGACIÓN */
-div.stButton>button {{
-  background-color: var(--btn-nav-bg) !important;
-  color: var(--btn-nav-txt) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 2px !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 2px !important;
-  text-transform: uppercase;
-  height: 42px;
+div.stButton>button,
+div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
+  background:var(--card) !important;
+  color:var(--text) !important;
+  border:1px solid var(--border) !important;
+  border-radius:2px !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  letter-spacing:2px !important;
+  text-transform:uppercase;
 }}
 
-/* BOTÓN BUSCAR (DHL STYLE) */
+div.stButton>button:hover {{
+  background:var(--hover) !important;
+  border-color:var(--text) !important;
+}}
+
 div.stButton>button[kind="primary"] {{
-  background: var(--btnp-bg) !important;
-  color: var(--btnp-txt) !important;
-  border: none !important;
-  font-weight: 800 !important;
-  height: 48px !important;
+  background:var(--btnp-bg) !important;
+  color:var(--btnp-txt) !important;
+  border:none !important;
+  font-weight:700 !important;
+  height:48px !important;
 }}
 
 .stTextInput input {{
-  background: var(--card) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 2px !important;
-  height: 48px !important;
+  background:var(--card) !important;
+  color:var(--text) !important;
+  border:1px solid var(--border) !important;
+  border-radius:2px !important;
+  height:48px !important;
 }}
 
 div[data-testid="stSelectbox"] label p {{
-  font-size: 10px !important;
-  color: var(--text) !important;
-  font-weight: 800 !important;
-  letter-spacing: 2px !important;
-  text-transform: uppercase !important;
+  font-size:10px !important;
+  color:var(--sub) !important;
+  letter-spacing:2px !important;
+  text-transform:uppercase !important;
 }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── 3. SPLASH ───────────────────────────────────────────
+# ── SPLASH ───────────────────────────────────────────
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
 
@@ -121,11 +131,11 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── 4. HEADER ───────────────────────────────────────────
+# ── HEADER ───────────────────────────────────────────
 c1,c2,c3 = st.columns([1.5,4,.5])
 with c1:
-    st.markdown(f"<h2 style='letter-spacing:4px;font-weight:300;margin:0;'>NEXION</h2>"
-                f"<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:{text_sub};'>CORE INTELLIGENCE</p>",
+    st.markdown("<h2 style='letter-spacing:4px;font-weight:300;margin:0;'>NEXION</h2>"
+                "<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:var(--sub);'>CORE INTELLIGENCE</p>",
                 unsafe_allow_html=True)
 
 with c2:
@@ -133,27 +143,15 @@ with c2:
     cols = st.columns(4)
     for i,b in enumerate(["RASTREO","INTELIGENCIA","REPORTES","ESTATUS"]):
         with cols[i]:
-            if st.button(b, key=f"nav_{b}", use_container_width=True):
+            if st.button(b, use_container_width=True):
                 st.session_state.pagina=b; st.rerun()
 
 with c3:
-    if st.button("☀️" if tema=="oscuro" else "🌙", key="theme_toggle"):
+    if st.button("☀️" if tema=="oscuro" else "🌙"):
         st.session_state.tema = "claro" if tema=="oscuro" else "oscuro"
         st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {border_color};margin:10px 0 30px;'>", unsafe_allow_html=True)
-
-# ── 5. SECCIÓN RASTREO (CORRECCIÓN DE ERROR) ───────────
-if st.session_state.pagina == "RASTREO":
-    st.markdown("<div style='margin-bottom: 40px;'></div>", unsafe_allow_html=True)
-    _, col_search, _ = st.columns([1, 1.8, 1])
-    with col_search:
-        st.markdown(f"<p style='text-align: center; color: {text_sub}; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;'>Operational Query</p>", unsafe_allow_html=True)
-        # Se agrega 'key' único para evitar DuplicateElementId
-        busqueda = st.text_input("", placeholder="REFERENCIA O NÚMERO DE GUÍA...", label_visibility="collapsed", key="main_search_input")
-        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("EXECUTE SYSTEM SEARCH", type="primary", key="main_search_btn", use_container_width=True):
-            st.toast("Searching manifests...", icon="🔍")
+st.markdown("<hr style='border-top:1px solid var(--border);margin:10px 0 30px;'>", unsafe_allow_html=True)
 
 # 5. DATOS
 @st.cache_data
@@ -316,9 +314,6 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
-
-
-
 
 
 
