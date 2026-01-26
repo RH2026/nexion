@@ -5,175 +5,147 @@ import time
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Formatos", layout="wide", initial_sidebar_state="collapsed")
 
-# ── 2. GESTIÓN DE TEMA (ESPEJO DEL CORE) ────────────────
+# ── 2. TEMA ───────────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
 tema = st.session_state.tema
+vars_css = {
+    "bg": "#05070A" if tema == "oscuro" else "#E9ECF1",
+    "card": "#0D1117" if tema == "oscuro" else "#FFFFFF",
+    "text": "#F0F6FC" if tema == "oscuro" else "#111111",
+    "sub": "#8B949E" if tema == "oscuro" else "#2D3136",
+    "border": "#1B1F24" if tema == "oscuro" else "#C9D1D9",
+    "hover": "#161B22" if tema == "oscuro" else "#EBEEF2",
+    "btn_p_bg": "#F0F6FC" if tema == "oscuro" else "#000000",
+    "btn_p_txt": "#05070A" if tema == "oscuro" else "#FFFFFF"
+}
 
-if tema == "oscuro":
-    vars_css = {
-        "bg": "#05070A", "card": "#0D1117",
-        "text": "#F0F6FC", "sub": "#8B949E",
-        "border": "#1B1F24", "hover": "#161B22",
-        "btn_primary_bg": "#F0F6FC", "btn_primary_txt": "#05070A"
-    }
-else:
-    vars_css = {
-        "bg": "#E9ECF1", # Gris Humo Platino
-        "card": "#FFFFFF",
-        "text": "#111111", 
-        "sub": "#2D3136",
-        "border": "#C9D1D9", "hover": "#EBEEF2",
-        "btn_primary_bg": "#000000",
-        "btn_primary_txt": "#FFFFFF"
-    }
-
-# ALIAS DE COMPATIBILIDAD
-bg_color = vars_css["bg"]
-card_bg = vars_css["card"]
-text_main = vars_css["text"]
-text_sub = vars_css["sub"]
-border_color = vars_css["border"]
-btn_hover = vars_css["hover"]
-btn_primary_bg = vars_css["btn_primary_bg"]
-btn_primary_txt = vars_css["btn_primary_txt"]
-
-# ── 3. CSS MAESTRO (AJUSTADO PARA ELEVAR HEADER) ────────────────
+# ── 3. CSS MAESTRO + LÓGICA DE IMPRESIÓN ──────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+/* ESTILO DE IMPRESIÓN (OCULTA TODO LO INNECESARIO) */
+@media print {{
+    header, footer, [data-testid="stHeader"], [data-testid="stSidebar"], 
+    .stButton, .no-print, hr {{ display: none !important; }}
+    .stApp {{ background-color: white !important; color: black !important; }}
+    .print-container {{ border: 1px solid #000 !important; padding: 20px !important; }}
+    .block-container {{ padding-top: 0 !important; }}
+}}
+
 :root {{
-  --bg:{bg_color}; --card:{card_bg};
-  --text:{text_main}; --sub:{text_sub};
-  --border:{border_color}; --hover:{btn_hover};
-  --btnp-bg:{btn_primary_bg}; --btnp-txt:{btn_primary_txt};
+  --bg:{vars_css["bg"]}; --card:{vars_css["card"]};
+  --text:{vars_css["text"]}; --sub:{vars_css["sub"]};
+  --border:{vars_css["border"]}; --hover:{vars_css["hover"]};
 }}
 
-/* ELEVAR TODO EL CONTENIDO */
-.block-container {{
-    padding-top: 1.5rem !important;
-    padding-bottom: 0rem !important;
+.block-container {{ padding-top: 1.5rem !important; }}
+
+header, footer, #MainMenu, div[data-testid="stDecoration"] {{ display:none !important; }}
+
+.stApp {{ background:var(--bg) !important; color:var(--text) !important; font-family:'Inter',sans-serif !important; }}
+
+/* NITIDEZ LOGO */
+div[data-testid='stImage'] img {{
+    image-rendering: -webkit-optimize-contrast !important;
+    image-rendering: crisp-edges !important;
+    transform: translateZ(0);
 }}
 
-header, footer, #MainMenu, div[data-testid="stDecoration"] {{
-  display:none !important;
-}}
-
-.stApp {{
-  background:var(--bg) !important;
-  color:var(--text) !important;
-  font-family:'Inter',sans-serif !important;
-}}
-
-/* BOTONES Y SELECTORES */
-div.stButton>button,
-div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
-  background:var(--card) !important;
-  color:var(--text) !important;
-  border:1px solid var(--border) !important;
-  border-radius:2px !important;
-  font-size:11px !important;
-  font-weight:700 !important;
-  letter-spacing:2px !important;
-  text-transform:uppercase;
-}}
-
-div.stButton>button:hover {{
-  background:var(--hover) !important;
-  border-color:var(--text) !important;
+/* BOTONES */
+div.stButton>button {{
+    background:var(--card) !important; color:var(--text) !important;
+    border: 1px solid var(--border) !important; border-radius: 2px !important;
+    font-size: 11px !important; font-weight: 700 !important; letter-spacing: 2px !important; text-transform: uppercase;
 }}
 
 div.stButton>button[kind="primary"] {{
-  background:var(--btnp-bg) !important;
-  color:var(--btnp-txt) !important;
-  border:none !important;
-  font-weight:800 !important;
-  height:48px !important;
-}}
-
-div[data-testid="stSelectbox"] label p {{
-  font-size:10px !important;
-  color:var(--text) !important;
-  font-weight: 800 !important;
-  letter-spacing: 2px !important;
-  text-transform: uppercase !important;
+    background: {vars_css["btn_p_bg"]} !important; color: {vars_css["btn_p_txt"]} !important;
+    border: none !important; font-weight: 800 !important; height: 48px !important;
 }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── 4. LÓGICA DE SPLASH ──────────────────────────────────
-if "splash_formatos" not in st.session_state:
-    st.session_state.splash_formatos = False
-
-if not st.session_state.splash_formatos:
-    p = st.empty()
-    with p.container():
-        for m in ["ACCESSING DOCUMENT CORE", "LOADING OPERATIONAL TEMPLATES", "SYSTEM READY"]:
-            st.markdown(f"""
-            <div style="height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-              <div style="width:40px;height:40px;border:1px solid var(--border);
-              border-top:1px solid var(--text);border-radius:50%;animation:spin 1s linear infinite;"></div>
-              <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:var(--text);">{m}</p>
-            </div>
-            <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
-            """, unsafe_allow_html=True)
-            time.sleep(.8)
-    st.session_state.splash_formatos = True
-    st.rerun()
-
-# ── 5. HEADER Y NAVEGACIÓN (ALINEACIÓN SUPERIOR) ───────────────
+# ── 4. HEADER DINÁMICO (LOGO n1/n2) ──────────────────
 c1, c2, c3 = st.columns([1.5, 4, .5], vertical_alignment="top")
-
 with c1:
-    st.markdown(f"""
-        <div style='margin-top: -10px;'>
-            <h2 style='letter-spacing:4px; font-weight:300; margin:0; color:{text_main}; line-height:1;'>NEXION</h2>
-            <p style='font-size:9px; margin:0; letter-spacing:1px; color:{text_sub}; text-transform:uppercase;'>Core Intelligence</p>
-        </div>
-    """, unsafe_allow_html=True)
+    logo_actual = "n1.png" if tema == "oscuro" else "n2.png"
+    try:
+        st.image(logo_actual, width=140)
+        st.markdown(f"<div style='margin-top:-15px;'><p style='font-size:9px; color:{vars_css['sub']}; letter-spacing:1px; text-transform:uppercase;'>Core Intelligence</p></div>", unsafe_allow_html=True)
+    except:
+        st.markdown(f"<h2 style='color:{vars_css['text']}; margin-top:-10px;'>NEXION</h2>", unsafe_allow_html=True)
 
 with c2:
-    # Lógica de navegación para volver al dashboard principal
     cols = st.columns(4)
-    menu_items = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
-    for i, b in enumerate(menu_items):
+    for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]):
         with cols[i]:
             if st.button(b, key=f"nav_form_{b}", use_container_width=True):
-                st.session_state.pagina = b
-                if b != "FORMATOS":
-                    st.switch_page("dashboard.py")
-                else:
-                    st.rerun()
+                if b != "FORMATOS": st.switch_page("dashboard.py")
+                else: st.rerun()
 
 with c3:
-    if st.button("☀️" if tema == "oscuro" else "🌙", key="theme_toggle_form"):
+    if st.button("☀️" if tema == "oscuro" else "🌙", key="theme_toggle"):
         st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
         st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {border_color}; margin:5px 0 15px;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
-# ── 6. CUERPO DE LA PÁGINA (SALIDA PT) ────────────────
-st.markdown(f"""
-    <div style='text-align: center; margin-bottom: 30px; margin-top: 10px;'>
-        <p style='color: {text_sub}; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin:0;'>Documento Activo</p>
-        <h3 style='font-weight: 300; letter-spacing: 2px; margin:0;'>SALIDA DE PRODUCTO TERMINADO (PT)</h3>
-    </div>
-""", unsafe_allow_html=True)
+# ── 5. BÚSQUEDA EN INVENTARIO.CSV ────────────────────
+def buscar_producto(codigo):
+    try:
+        df_inv = pd.read_csv("inventario.csv")
+        # Asegúrate de que el CSV tenga columnas 'codigo' y 'descripcion'
+        resultado = df_inv[df_inv['codigo'].astype(str) == str(codigo)]
+        if not resultado.empty:
+            return resultado.iloc[0]['descripcion']
+    except:
+        return None
+    return None
 
-with st.container():
+# ── 6. CUERPO DEL FORMATO ────────────────────────────
+st.markdown(f"<div style='text-align:center; margin-bottom:20px;'><p style='color:{vars_css['sub']}; font-size:11px; letter-spacing:3px; text-transform:uppercase;'>SALIDA PRODUCTO TERMINADO</p></div>", unsafe_allow_html=True)
+
+# Datos Generales
+with st.container(border=True):
     col_a, col_b = st.columns(2)
     with col_a:
-        st.text_input("ORDEN DE CARGA", placeholder="Ej: OC-9988", key="oc_input")
-        st.date_input("FECHA DE SALIDA", key="fecha_input")
+        oc = st.text_input("ORDEN DE CARGA", placeholder="OC-XXXX", key="oc")
+        fecha = st.date_input("FECHA", key="fecha")
     with col_b:
-        st.selectbox("CHOFER / TRANSPORTISTA", ["UNIDAD 01", "UNIDAD 02", "EXTERNO"], key="chofer_select")
-        st.text_input("DESTINO FINAL", key="destino_input")
+        transporte = st.selectbox("TRANSPORTE", ["UNIDAD 01", "UNIDAD 02", "EXTERNO"], key="trans")
+        destino = st.text_input("DESTINO", key="dest")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("GUARDAR Y GENERAR FOLIO", type="primary", use_container_width=True, key="save_btn"):
-        st.success("Formato guardado en sistema.")
+# Detalle de Productos
+st.markdown("---")
+col_cod, col_desc, col_cant = st.columns([1, 2, 1])
+with col_cod:
+    codigo_input = st.text_input("CÓDIGO PT")
+with col_desc:
+    descripcion_auto = buscar_producto(codigo_input) if codigo_input else ""
+    st.text_input("DESCRIPCIÓN", value=descripcion_auto, disabled=True)
+with col_cant:
+    cantidad = st.number_input("CANTIDAD", min_value=0)
+
+# ── 7. BOTONES DE ACCIÓN ─────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+c_save, c_print = st.columns(2)
+
+with c_save:
+    if st.button("💾 GUARDAR EN SISTEMA", use_container_width=True, type="primary"):
+        st.success("Manifest registrado.")
+
+with c_print:
+    # Este botón activa el menú de impresión del navegador
+    st.markdown("""
+        <button onclick="window.print()" style="width:100%; height:48px; background-color:transparent; 
+        color:inherit; border:1px solid gray; cursor:pointer; font-weight:700; letter-spacing:2px;">
+            🖨️ IMPRIMIR / PDF
+        </button>
+    """, unsafe_allow_html=True)
 
     
+
 
