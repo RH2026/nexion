@@ -1,3 +1,8 @@
+import streamlit as st
+import pandas as pd
+import streamlit.components.v1 as components
+import time
+
 # ── 1. TEMA ACTUALIZADO (PERLA PLATINO) ────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
@@ -302,6 +307,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
