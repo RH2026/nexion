@@ -15,19 +15,37 @@ if st.session_state.tema == "oscuro":
 else:
     bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#F5F7FA", "#FFFFFF", "#1A1C1E", "#656D76", "#D8DEE4", "#EBEEF2"
 
-# 3. CSS MAESTRO (DISEÑO EXACTO)
+# 3. CSS MAESTRO (DISEÑO EXACTO + FUERZA BRUTA PARA ICONOS INFERIORES)
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-header, footer, #MainMenu, div[data-testid="stDecoration"] {{ visibility: hidden; }}
+/* 1. OCULTAR CABECERA Y DECORACIÓN SUPERIOR */
+header, footer, #MainMenu, div[data-testid="stDecoration"] {{ 
+    visibility: hidden !important; 
+    display: none !important;
+}}
 
+/* 2. FUERZA BRUTA PARA ICONOS INFERIORES (Streamlit Cloud, Manage App, etc.) */
+/* Atacamos el widget de estatus y los contenedores de medallas por clase y atributo */
+[data-testid="stStatusWidget"], 
+[data-testid="stCloudGlutton"],
+.viewerBadge_container__1QSob, 
+.stActionButton,
+div[class^="viewerBadge"],
+div[class*="StyledStatusWidget"] {{
+    display: none !important;
+    visibility: hidden !important;
+}}
+
+/* 3. ESTILO BASE DE LA APP */
 .stApp {{
     background-color: {bg_color} !important;
     color: {text_main} !important;
     font-family: 'Inter', sans-serif !important;
 }}
 
+/* BOTONES Y SELECTORES */
 div.stButton > button,
 div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
     background-color: {card_bg} !important;
@@ -46,7 +64,7 @@ div.stButton > button:hover {{
     border-color: {text_main} !important;
 }}
 
-/* BOTÓN DE BÚSQUEDA PRIMARIO (ESTILO DHL ALTO CONTRASTE) */
+/* BOTÓN DE BÚSQUEDA PRIMARIO */
 div.stButton > button[kind="primary"] {{
     background-color: {text_main} !important;
     color: {bg_color} !important;
@@ -274,6 +292,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
