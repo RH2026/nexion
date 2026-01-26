@@ -129,10 +129,10 @@ with st.container(border=True):
 # ── 7. DATAFRAME EN SESSION ───────────────────────────
 st.session_state.setdefault("df_final", pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"]))
 
-# ── 7.1. INICIALIZAR NUEVOS INPUTS DE FORMA SEGURA ─────
+# Inicializar session_state de forma segura
 st.session_state.setdefault("new_codigo", "")
 st.session_state.setdefault("new_cant", 1)
-
+st.session_state.setdefault("df_final", pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"]))
 # ── 8. FORMULARIO NUEVA FILA ──────────────────────────
 with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
     new_codigo = st.text_input("Código / Parte", key="new_codigo")
@@ -141,20 +141,15 @@ with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
     if st.button("Añadir y Sincronizar"):
         if new_codigo.strip() != "":
             cod_upper = new_codigo.strip().upper()
-            desc = ""
-            match = df_inv[df_inv["CODIGO"].astype(str).str.strip().str.upper() == cod_upper]
-            if not match.empty:
-                desc = match.iloc[0]["DESCRIPCION"]
-
-            new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
-            st.session_state.df_final = pd.concat(
-                [st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True
-            )
+            desc = df_inv[df_inv["CODIGO"].astype(str).str.strip().str.upper() == cod_upper]["DESCRIPCION"].values
+            desc = desc[0] if len(desc) > 0 else ""
             
-            # Limpiar inputs de forma segura
+            new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
+            st.session_state.df_final = pd.concat([st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True)
+            
+            # Limpiar inputs de manera segura
             st.session_state.update({"new_codigo": "", "new_cant": 1})
             st.experimental_rerun()
-
 # ── 9. DATA EDITOR ────────────────────────────────────
 edited_df = st.data_editor(
     st.session_state.df_final,
@@ -194,6 +189,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
