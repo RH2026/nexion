@@ -136,13 +136,6 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── HEADER ───────────────────────────────────────────
-c1,c2,c3 = st.columns([1.5,4,.5])
-with c1:
-    st.markdown("<h2 style='letter-spacing:4px;font-weight:300;margin:0;'>NEXION</h2>"
-                "<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:var(--sub);'>CORE INTELLIGENCE</p>",
-                unsafe_allow_html=True)
-
 # ── 5. HEADER Y NAVEGACIÓN PRINCIPAL ───────────────────────
 c1, c2, c3 = st.columns([1.5, 4, .5])
 with c1:
@@ -374,6 +367,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
