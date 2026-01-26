@@ -143,6 +143,7 @@ with c1:
         st.image("n1.png", width=140) 
         # Si quieres que esté más arriba aún, puedes envolverlo en un div con margin negativo
         st.markdown("<style>div[data-testid='stImage'] {margin-top: -15px !important;}</style>", unsafe_allow_html=True)
+        <p style='font-size:9px; margin:0; letter-spacing:1px; color:{text_sub}; text-transform:uppercase;'>Core Intelligence</p>
     except:
         # Respaldo por si el archivo no existe en la ruta
         st.markdown(f"<h2 style='letter-spacing:4px; font-weight:300; margin-top:-10px; color:{text_main};'>NEXION</h2>", unsafe_allow_html=True)
@@ -372,6 +373,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
