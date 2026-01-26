@@ -11,10 +11,9 @@ st.set_page_config(
 )
 
 # ── 2. TEMA DINÁMICO ──────────────────────────────────
-if "tema" not in st.session_state:
-    st.session_state.tema = "oscuro"
-
+st.session_state.setdefault("tema", "oscuro")
 tema = st.session_state.tema
+
 vars_css = {
     "bg": "#05070A" if tema == "oscuro" else "#E9ECF1",
     "card": "#0D1117" if tema == "oscuro" else "#FFFFFF",
@@ -128,21 +127,13 @@ with st.container(border=True):
     c3.text_input("FOLIO", value="F-2026-001", key="fol_pt_val")
 
 # ── 7. DATAFRAME EN SESSION ───────────────────────────
-if "df_final" not in st.session_state:
-    st.session_state.df_final = pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"])
+st.session_state.setdefault("df_final", pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"]))
 
 # ── 7.1. INICIALIZAR NUEVOS INPUTS DE FORMA SEGURA ─────
-if "new_codigo" not in st.session_state:
-    st.session_state.new_codigo = ""
-
-if "new_cant" not in st.session_state:
-    st.session_state.new_cant = 1
-
-# Inicialización segura al inicio del script
 st.session_state.setdefault("new_codigo", "")
 st.session_state.setdefault("new_cant", 1)
 
-# ── Formulario ──
+# ── 8. FORMULARIO NUEVA FILA ──────────────────────────
 with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
     new_codigo = st.text_input("Código / Parte", key="new_codigo")
     cantidad = st.number_input("Cantidad", min_value=1, step=1, key="new_cant")
@@ -160,12 +151,10 @@ with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
                 [st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True
             )
             
-            # En lugar de asignar directamente, usar 'clear' de la sesión
-            st.session_state.new_codigo = ""
-            st.session_state.new_cant = 1
-            
-            # Llamar a rerun al final
+            # Limpiar inputs de forma segura
+            st.session_state.update({"new_codigo": "", "new_cant": 1})
             st.experimental_rerun()
+
 # ── 9. DATA EDITOR ────────────────────────────────────
 edited_df = st.data_editor(
     st.session_state.df_final,
@@ -205,6 +194,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
