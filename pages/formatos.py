@@ -49,10 +49,10 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     background-color: transparent;
     color: {vars_css["text"]};
     border: 1px solid {vars_css["border"]};
-    border-radius: 2px;
+    border-radius: 4px;
     cursor: pointer;
     font-weight: 700;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-top: 20px;
 }}
@@ -68,6 +68,7 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     .block-container {{
         padding: 0 !important;
     }}
+    hr {{ border-top: 1px solid #000 !important; }}
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -114,7 +115,7 @@ def get_inventory():
 
 df_inv = get_inventory()
 
-# ── 6. FORMATO ────────────────────────────────────────
+# ── 6. FORMATO PRINCIPAL ───────────────────────────────
 st.markdown(
     f"<p style='text-align:center;color:{vars_css['sub']};letter-spacing:3px;font-size:11px;'>ENTREGA DE MATERIALES PT</p>",
     unsafe_allow_html=True
@@ -122,21 +123,39 @@ st.markdown(
 
 with st.container(border=True):
     c1, c2, c3 = st.columns(3)
-    c1.date_input("FECHA", value=datetime.now())
-    c2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"])
-    c3.text_input("FOLIO", value="F-2026-001")
+    c1.date_input("FECHA", value=datetime.now(), key="f_pt_val")
+    c2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_pt_val")
+    c3.text_input("FOLIO", value="F-2026-001", key="fol_pt_val")
 
-# ── 7. DATA EDITOR ────────────────────────────────────
+# ── 7. DATAFRAME EN SESSION ───────────────────────────
 if "df_final" not in st.session_state:
-    st.session_state.df_final = pd.DataFrame(
-        [{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10
-    )
+    st.session_state.df_final = pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"])
 
+# ── 8. FORMULARIO NUEVA FILA ──────────────────────────
+with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
+    new_codigo = st.text_input("Código / Parte", key="new_codigo")
+    cantidad = st.number_input("Cantidad", min_value=1, value=1, step=1, key="new_cant")
+    if st.button("Añadir y Sincronizar"):
+        if new_codigo.strip() != "":
+            cod_upper = new_codigo.strip().upper()
+            desc = ""
+            match = df_inv[df_inv["CODIGO"].astype(str).str.strip().str.upper() == cod_upper]
+            if not match.empty:
+                desc = match.iloc[0]["DESCRIPCION"]
+
+            new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
+            st.session_state.df_final = pd.concat([st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True)
+            # limpiar input
+            st.session_state.new_codigo = ""
+            st.session_state.new_cant = 1
+            st.experimental_rerun()
+
+# ── 9. DATA EDITOR ────────────────────────────────────
 edited_df = st.data_editor(
     st.session_state.df_final,
+    use_container_width=True,
     num_rows="dynamic",
     hide_index=True,
-    use_container_width=True,
     column_config={
         "CODIGO": st.column_config.TextColumn("CÓDIGO / PARTE"),
         "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
@@ -145,25 +164,7 @@ edited_df = st.data_editor(
     key="editor_nexion"
 )
 
-# ── 8. AUTOLLENADO REAL (EVENT-DRIVEN) ─────────────────
-if not df_inv.empty and "editor_nexion" in st.session_state:
-    cambios = st.session_state["editor_nexion"].get("edited_rows", {})
-
-    for fila, cambio in cambios.items():
-        if "CODIGO" in cambio:
-            codigo = str(cambio["CODIGO"]).strip().upper()
-
-            match = df_inv[
-                df_inv["CODIGO"].astype(str).str.strip().str.upper() == codigo
-            ]
-
-            if not match.empty:
-                st.session_state.df_final.at[fila, "CODIGO"] = codigo
-                st.session_state.df_final.at[fila, "DESCRIPCION"] = match.iloc[0]["DESCRIPCION"]
-            else:
-                st.session_state.df_final.at[fila, "DESCRIPCION"] = ""
-
-# ── 9. FIRMAS ─────────────────────────────────────────
+# ── 10. FIRMAS ────────────────────────────────────────
 st.markdown("<br><br>", unsafe_allow_html=True)
 f1, f2, f3 = st.columns(3)
 linea = f"border-top:1px solid {vars_css['sub']};width:80%;margin:auto;"
@@ -179,7 +180,7 @@ for col, titulo, nombre in [
             unsafe_allow_html=True
         )
 
-# ── 10. BOTÓN IMPRIMIR ─────────────────────────────────
+# ── 11. BOTÓN IMPRIMIR / GENERAR PDF ──────────────────
 components.html(
     """
     <button class="print-btn" onclick="window.print()">
@@ -188,6 +189,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
