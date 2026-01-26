@@ -5,7 +5,7 @@ import time
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Formatos", layout="wide", initial_sidebar_state="collapsed")
 
-# ── 2. GESTIÓN DE TEMA (IGUAL AL CORE) ────────────────
+# ── 2. GESTIÓN DE TEMA (ESPEJO DEL CORE) ────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -20,7 +20,7 @@ if tema == "oscuro":
     }
 else:
     vars_css = {
-        "bg": "#E9ECF1", # Gris Humo (tu tono preferido)
+        "bg": "#E9ECF1", # Gris Humo Platino
         "card": "#FFFFFF",
         "text": "#111111", 
         "sub": "#2D3136",
@@ -39,7 +39,7 @@ btn_hover = vars_css["hover"]
 btn_primary_bg = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
-# ── 3. CSS MAESTRO (IDÉNTICO AL CORE) ────────────────
+# ── 3. CSS MAESTRO (AJUSTADO PARA ELEVAR HEADER) ────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -49,6 +49,12 @@ st.markdown(f"""
   --text:{text_main}; --sub:{text_sub};
   --border:{border_color}; --hover:{btn_hover};
   --btnp-bg:{btn_primary_bg}; --btnp-txt:{btn_primary_txt};
+}}
+
+/* ELEVAR TODO EL CONTENIDO */
+.block-container {{
+    padding-top: 1.5rem !important;
+    padding-bottom: 0rem !important;
 }}
 
 header, footer, #MainMenu, div[data-testid="stDecoration"] {{
@@ -61,6 +67,7 @@ header, footer, #MainMenu, div[data-testid="stDecoration"] {{
   font-family:'Inter',sans-serif !important;
 }}
 
+/* BOTONES Y SELECTORES */
 div.stButton>button,
 div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
   background:var(--card) !important;
@@ -96,7 +103,7 @@ div[data-testid="stSelectbox"] label p {{
 </style>
 """, unsafe_allow_html=True)
 
-# ── 4. LÓGICA DE SPLASH (INDIVIDUAL PARA ESTA PÁGINA) ──
+# ── 4. LÓGICA DE SPLASH ──────────────────────────────────
 if "splash_formatos" not in st.session_state:
     st.session_state.splash_formatos = False
 
@@ -116,51 +123,59 @@ if not st.session_state.splash_formatos:
     st.session_state.splash_formatos = True
     st.rerun()
 
-# ── 5. HEADER Y NAVEGACIÓN (CONSISTENCIA TOTAL) ────────
-c1,c2,c3 = st.columns([1.5,4,.5])
+# ── 5. HEADER Y NAVEGACIÓN (ALINEACIÓN SUPERIOR) ───────────────
+c1, c2, c3 = st.columns([1.5, 4, .5], vertical_alignment="top")
+
 with c1:
-    st.markdown(f"<h2 style='letter-spacing:4px;font-weight:300;margin:0;'>NEXION</h2>"
-                f"<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:{text_sub};'>CORE INTELLIGENCE</p>",
-                unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style='margin-top: -10px;'>
+            <h2 style='letter-spacing:4px; font-weight:300; margin:0; color:{text_main}; line-height:1;'>NEXION</h2>
+            <p style='font-size:9px; margin:0; letter-spacing:1px; color:{text_sub}; text-transform:uppercase;'>Core Intelligence</p>
+        </div>
+    """, unsafe_allow_html=True)
 
 with c2:
-    # Mantenemos el estado de la página para que el usuario pueda volver
+    # Lógica de navegación para volver al dashboard principal
     cols = st.columns(4)
-    for i,b in enumerate(["RASTREO","INTELIGENCIA","REPORTES","FORMATOS"]):
+    menu_items = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
+    for i, b in enumerate(menu_items):
         with cols[i]:
             if st.button(b, key=f"nav_form_{b}", use_container_width=True):
-                st.session_state.pagina=b
-                # Si elige algo distinto a FORMATOS, regresa al archivo principal
+                st.session_state.pagina = b
                 if b != "FORMATOS":
                     st.switch_page("dashboard.py")
                 else:
                     st.rerun()
 
 with c3:
-    if st.button("☀️" if tema=="oscuro" else "🌙", key="theme_toggle_form"):
-        st.session_state.tema = "claro" if tema=="oscuro" else "oscuro"
+    if st.button("☀️" if tema == "oscuro" else "🌙", key="theme_toggle_form"):
+        st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
         st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {border_color};margin:10px 0 30px;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='border-top:1px solid {border_color}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
 # ── 6. CUERPO DE LA PÁGINA (SALIDA PT) ────────────────
 st.markdown(f"""
-    <div style='text-align: center; margin-bottom: 40px;'>
-        <p style='color: {text_sub}; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;'>Documento Activo</p>
-        <h3 style='font-weight: 300; letter-spacing: 2px;'>SALIDA DE PRODUCTO TERMINADO (PT)</h3>
+    <div style='text-align: center; margin-bottom: 30px; margin-top: 10px;'>
+        <p style='color: {text_sub}; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin:0;'>Documento Activo</p>
+        <h3 style='font-weight: 300; letter-spacing: 2px; margin:0;'>SALIDA DE PRODUCTO TERMINADO (PT)</h3>
     </div>
 """, unsafe_allow_html=True)
 
-# Ejemplo de Formulario con tu estilo
 with st.container():
     col_a, col_b = st.columns(2)
     with col_a:
-        st.text_input("ORDEN DE CARGA", placeholder="Ej: OC-9988")
-        st.date_input("FECHA DE SALIDA")
+        st.text_input("ORDEN DE CARGA", placeholder="Ej: OC-9988", key="oc_input")
+        st.date_input("FECHA DE SALIDA", key="fecha_input")
     with col_b:
-        st.selectbox("CHOFER / TRANSPORTISTA", ["UNIDAD 01", "UNIDAD 02", "EXTERNO"])
-        st.text_input("DESTINO FINAL")
+        st.selectbox("CHOFER / TRANSPORTISTA", ["UNIDAD 01", "UNIDAD 02", "EXTERNO"], key="chofer_select")
+        st.text_input("DESTINO FINAL", key="destino_input")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("GUARDAR Y GENERAR FOLIO", type="primary", use_container_width=True, key="save_btn"):
+        st.success("Formato guardado en sistema.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("GUARDAR Y GENERAR FOLIO", type="primary", use_container_width=True):
         st.success("Formato guardado en sistema.")
+
