@@ -138,10 +138,15 @@ if "new_codigo" not in st.session_state:
 if "new_cant" not in st.session_state:
     st.session_state.new_cant = 1
 
-# ── 8. FORMULARIO NUEVA FILA ──────────────────────────
+# Inicialización segura al inicio del script
+st.session_state.setdefault("new_codigo", "")
+st.session_state.setdefault("new_cant", 1)
+
+# ── Formulario ──
 with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
-    new_codigo = st.text_input("Código / Parte", key="new_codigo")  # no value=
-    cantidad = st.number_input("Cantidad", min_value=1, step=1, key="new_cant")  # quitar value=
+    new_codigo = st.text_input("Código / Parte", key="new_codigo")
+    cantidad = st.number_input("Cantidad", min_value=1, step=1, key="new_cant")
+    
     if st.button("Añadir y Sincronizar"):
         if new_codigo.strip() != "":
             cod_upper = new_codigo.strip().upper()
@@ -151,10 +156,15 @@ with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
                 desc = match.iloc[0]["DESCRIPCION"]
 
             new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
-            st.session_state.df_final = pd.concat([st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True)
-            # limpiar input de forma segura
+            st.session_state.df_final = pd.concat(
+                [st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True
+            )
+            
+            # En lugar de asignar directamente, usar 'clear' de la sesión
             st.session_state.new_codigo = ""
             st.session_state.new_cant = 1
+            
+            # Llamar a rerun al final
             st.experimental_rerun()
 # ── 9. DATA EDITOR ────────────────────────────────────
 edited_df = st.data_editor(
@@ -195,6 +205,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
