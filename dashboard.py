@@ -5,7 +5,7 @@ import time
 
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
-# ── TEMA (AJUSTADO PARA CONTRASTE ALTO) ────────────────
+# ── 1. GESTIÓN DE TEMA (AJUSTADO PARA CONTRASTE ALTO) ──
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -16,36 +16,46 @@ if tema == "oscuro":
         "bg": "#05070A", "card": "#0D1117",
         "text": "#F0F6FC", "sub": "#8B949E",
         "border": "#1B1F24", "hover": "#161B22",
-        "btn_nav_bg": "#0D1117", "btn_nav_txt": "#F0F6FC", # Botones oscuros en fondo oscuro
+        "btn_nav_bg": "#0D1117", "btn_nav_txt": "#F0F6FC",
         "btn_primary_bg": "#F0F6FC", "btn_primary_txt": "#05070A"
     }
 else:
     vars_css = {
         "bg": "#F5F7FA", "card": "#FFFFFF",
-        "text": "#000000", # Negro puro para texto principal
+        "text": "#000000",
         "sub": "#656D76",
         "border": "#D8DEE4", "hover": "#333333",
-        "btn_nav_bg": "#000000", "btn_nav_txt": "#FFFFFF", # <--- BOTONES NEGROS EN TEMA PERLA
+        "btn_nav_bg": "#000000", "btn_nav_txt": "#FFFFFF",
         "btn_primary_bg": "#000000",
         "btn_primary_txt": "#FFFFFF"
     }
 
-# ── CSS MAESTRO (CON FUERZA BRUTA PARA ICONOS Y BOTONES) ──
+# EXTRACCIÓN DE VARIABLES PARA EVITAR NAMEERROR
+bg_color = vars_css["bg"]
+card_bg = vars_css["card"]
+text_main = vars_css["text"]
+text_sub = vars_css["sub"]
+border_color = vars_css["border"]
+btn_hover = vars_css["hover"]
+btn_nav_bg = vars_css["btn_nav_bg"]
+btn_nav_txt = vars_css["btn_nav_txt"]
+btn_primary_bg = vars_css["btn_primary_bg"]
+btn_primary_txt = vars_css["btn_primary_txt"]
+
+# ── 2. CSS MAESTRO (FUERZA BRUTA & DISEÑO ZARA) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 :root {{
-  --bg:{vars_css["bg"]}; --card:{vars_css["card"]};
-  --text:{vars_css["text"]}; --sub:{vars_css["sub"]};
-  --border:{vars_css["border"]}; --hover:{vars_css["hover"]};
-  --btn-nav-bg:{vars_css["btn_nav_bg"]};
-  --btn-nav-txt:{vars_css["btn_nav_txt"]};
-  --btnp-bg:{vars_css["btn_primary_bg"]};
-  --btnp-txt:{vars_css["btn_primary_txt"]};
+  --bg:{bg_color}; --card:{card_bg};
+  --text:{text_main}; --sub:{text_sub};
+  --border:{border_color}; --hover:{btn_hover};
+  --btn-nav-bg:{btn_nav_bg}; --btn-nav-txt:{btn_nav_txt};
+  --btnp-bg:{btn_primary_bg}; --btnp-txt:{btn_primary_txt};
 }}
 
-/* FUERZA BRUTA PARA DESAPARECER ICONOS INFERIORES */
+/* OCULTAR ELEMENTOS NATIVOS E ICONOS INFERIORES */
 header, footer, #MainMenu, div[data-testid="stDecoration"],
 [data-testid="stStatusWidget"], .viewerBadge_container__1QSob,
 .stActionButton, div[class^="viewerBadge"] {{
@@ -53,15 +63,13 @@ header, footer, #MainMenu, div[data-testid="stDecoration"],
   visibility: hidden !important;
 }}
 
-.main .block-container {{ padding-bottom:0 !important; }}
-
 .stApp {{
   background:var(--bg) !important;
   color:var(--text) !important;
   font-family:'Inter',sans-serif !important;
 }}
 
-/* BOTONES DE NAVEGACIÓN (FORZADO) */
+/* BOTONES DE NAVEGACIÓN (NEGROS EN TEMA CLARO) */
 div.stButton>button {{
   background-color: var(--btn-nav-bg) !important;
   color: var(--btn-nav-txt) !important;
@@ -71,24 +79,15 @@ div.stButton>button {{
   font-weight: 700 !important;
   letter-spacing: 2px !important;
   text-transform: uppercase;
-  transition: all 0.3s ease;
+  height: 42px;
 }}
 
 div.stButton>button:hover {{
   background: var(--hover) !important;
   color: #FFFFFF !important;
-  border-color: var(--text) !important;
 }}
 
-/* SELECTORES */
-div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
-  background: var(--card) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 2px !important;
-}}
-
-/* BOTÓN BUSCAR (DHL STYLE) */
+/* BOTÓN DE BÚSQUEDA (ESTILO DHL) */
 div.stButton>button[kind="primary"] {{
   background: var(--btnp-bg) !important;
   color: var(--btnp-txt) !important;
@@ -104,18 +103,10 @@ div.stButton>button[kind="primary"] {{
   border-radius: 2px !important;
   height: 48px !important;
 }}
-
-div[data-testid="stSelectbox"] label p {{
-  font-size: 10px !important;
-  color: var(--text) !important;
-  font-weight: 800 !important;
-  letter-spacing: 2px !important;
-  text-transform: uppercase !important;
-}}
 </style>
 """, unsafe_allow_html=True)
 
-# ── SPLASH ───────────────────────────────────────────
+# ── 3. LÓGICA DE SPLASH ──
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
 
@@ -131,15 +122,15 @@ if not st.session_state.splash_completado:
             </div>
             <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
             """, unsafe_allow_html=True)
-            time.sleep(.9)
+            time.sleep(.9) # Requiere import time
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── HEADER ───────────────────────────────────────────
+# ── 4. HEADER & MENÚ ──
 c1,c2,c3 = st.columns([1.5,4,.5])
 with c1:
-    st.markdown(f"<h2 style='letter-spacing:4px;font-weight:300;margin:0;color:{vars_css['text']};'>NEXION</h2>"
-                f"<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:{vars_css['sub']};'>CORE INTELLIGENCE</p>",
+    st.markdown(f"<h2 style='letter-spacing:4px;font-weight:300;margin:0;'>NEXION</h2>"
+                f"<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:{text_sub};'>CORE INTELLIGENCE</p>",
                 unsafe_allow_html=True)
 
 with c2:
@@ -151,12 +142,23 @@ with c2:
                 st.session_state.pagina=b; st.rerun()
 
 with c3:
-    label_t = "☀️" if tema=="oscuro" else "🌙"
-    if st.button(label_t):
+    if st.button("☀️" if tema=="oscuro" else "🌙"):
         st.session_state.tema = "claro" if tema=="oscuro" else "oscuro"
         st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']};margin:10px 0 30px;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='border-top:1px solid {border_color};margin:10px 0 30px;'>", unsafe_allow_html=True)
+
+# ── 5. SECCIÓN RASTREO (CENTRO DHL) ──
+if st.session_state.pagina == "RASTREO":
+    st.markdown("<div style='margin-bottom: 40px;'></div>", unsafe_allow_html=True)
+    _, col_search, _ = st.columns([1, 1.8, 1])
+    with col_search:
+        # Aquí se usa text_sub de forma segura
+        st.markdown(f"<p style='text-align: center; color: {text_sub}; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;'>Operational Query</p>", unsafe_allow_html=True)
+        busqueda = st.text_input("", placeholder="REFERENCIA O NÚMERO DE GUÍA...", label_visibility="collapsed")
+        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+        if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
+            st.toast("Accessing manifests...", icon="🔍")
 
 # 5. DATOS
 @st.cache_data
@@ -319,6 +321,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
