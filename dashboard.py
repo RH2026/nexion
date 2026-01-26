@@ -137,12 +137,15 @@ if not st.session_state.splash_completado:
 c1, c2, c3 = st.columns([1.5, 4, .5], vertical_alignment="top")
 
 with c1:
-    # Contenedor para el Logo y el Lema
+    # Lógica de Logo Dinámico
+    # n1.png para Oscuro, n2.png para Claro (Platino)
+    logo_actual = "n1.png" if tema == "oscuro" else "n2.png"
+    
     try:
-        # Mostramos el logo n1.png
-        st.image("n1.png", width=140)
+        # Renderizado del Logo según el tema
+        st.image(logo_actual, width=140)
         
-        # El lema justo debajo con el color dinámico text_sub
+        # El lema con color dinámico text_sub
         st.markdown(f"""
             <div style='margin-top: -15px;'>
                 <p style='font-size:9px; margin:0; letter-spacing:1px; 
@@ -152,16 +155,12 @@ with c1:
             </div>
         """, unsafe_allow_html=True)
         
-        # Ajuste fino de posición para el contenedor de la imagen
+        # Ajuste de posición para eliminar espacios muertos
         st.markdown("<style>div[data-testid='stImage'] {margin-top: -15px !important; margin-bottom: 0px !important;}</style>", unsafe_allow_html=True)
     except:
-        # Respaldo visual en caso de error con la imagen
-        st.markdown(f"""
-            <div style='margin-top: -10px;'>
-                <h2 style='letter-spacing:4px; font-weight:300; margin:0; color:{text_main}; line-height:1;'>NEXION</h2>
-                <p style='font-size:9px; margin:0; letter-spacing:1px; color:{text_sub}; text-transform:uppercase;'>Core Intelligence</p>
-            </div>
-        """, unsafe_allow_html=True)
+        # Respaldo visual si no encuentra las imágenes
+        st.markdown(f"<h2 style='letter-spacing:4px; font-weight:300; margin-top:-10px; color:{text_main};'>NEXION</h2>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size:9px; margin-top:-5px; color:{text_sub};'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
 
 with c2:
     if "pagina" not in st.session_state: 
@@ -388,6 +387,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
