@@ -28,6 +28,19 @@ else:
         "btn_primary_txt": "#FFFFFF"
     }
 
+# ── ALIAS DE COMPATIBILIDAD (NO TOCAR EL RESTO DEL CÓDIGO)
+bg_color     = vars_css["bg"]
+card_bg     = vars_css["card"]
+text_main   = vars_css["text"]
+text_sub    = vars_css["sub"]
+border_color= vars_css["border"]
+btn_hover   = vars_css["hover"]
+
+git add .
+git commit -m "fix theme vars alias"
+git push
+
+
 # ── CSS MAESTRO ──────────────────────────────────────
 st.markdown(f"""
 <style>
@@ -303,6 +316,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
