@@ -7,7 +7,9 @@ from datetime import datetime
 st.set_page_config(page_title="NEXION | Formatos", layout="wide", initial_sidebar_state="collapsed")
 
 # ── 2. TEMA DINÁMICO ──────────────────────────────────
-if "tema" not in st.session_state: st.session_state.tema = "oscuro"
+if "tema" not in st.session_state: 
+    st.session_state.tema = "oscuro"
+
 tema = st.session_state.tema
 vars_css = {
     "bg": "#05070A" if tema == "oscuro" else "#E9ECF1",
@@ -17,12 +19,11 @@ vars_css = {
     "border": "#1B1F24" if tema == "oscuro" else "#C9D1D9"
 }
 
-# ── 3. CSS MAESTRO (TOTALMENTE LIMPIO + FIX IMPRESIÓN) ─
+# ── 3. CSS MAESTRO (TOTALMENTE LIMPIO + FIX NITIDEZ) ───
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* OCULTAR ELEMENTOS NATIVOS */
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{
     display: none !important;
 }}
@@ -67,15 +68,14 @@ div[data-testid='stImage'] img {{
 }}
 
 @media print {{
-    header, footer, .no-print, [data-testid="stHeader"], button, .stButton {{ display: none !important; }}
+    .no-print, [data-testid="stHeader"], button, .stButton {{ display: none !important; }}
     .stApp {{ background-color: white !important; color: black !important; }}
     .block-container {{ padding: 0 !important; }}
-    hr {{ border-top: 1px solid #000 !important; }}
 }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── 4. HEADER ────────────────────────────────────────
+# ── 4. HEADER Y NAV (LOGO DINÁMICO n1/n2) ────────────
 c1, c2, c3 = st.columns([1.5, 4, .5], vertical_alignment="top")
 with c1:
     logo_actual = "n1.png" if tema == "oscuro" else "n2.png"
@@ -87,8 +87,8 @@ with c1:
 
 with c2:
     cols = st.columns(4)
-    menu_names = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
-    for i, b in enumerate(menu_names):
+    menu_nexion = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
+    for i, b in enumerate(menu_nexion):
         with cols[i]:
             if st.button(b, key=f"nav_fmt_{b}", use_container_width=True):
                 if b != "FORMATOS": st.switch_page("dashboard.py")
@@ -100,19 +100,18 @@ with c3:
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
-# ── 5. CARGA DE INVENTARIO (PROTECCIÓN CONTRA KEYERROR) ──
+# ── 5. CARGA DE INVENTARIO (PROTECCIÓN TOTAL) ────────
 @st.cache_data
 def get_inventory():
-    rutas = ["inventario.csv", "../inventario.csv", "pages/inventario.csv"]
+    rutas = ["inventario.csv", "../inventario.csv"]
     for r in rutas:
         try: 
-            # sep=None permite detectar si es , o ; automáticamente
+            # Cargamos el CSV y forzamos nombres de columnas a mayúsculas para coincidir con tu archivo
             df = pd.read_csv(r, sep=None, engine='python')
-            # Forzamos limpieza de nombres de columnas
-            df.columns = df.columns.str.strip().str.lower()
+            df.columns = df.columns.str.strip().str.upper() # <--- Crucial: Pasamos a mayúsculas
             return df
         except: continue
-    return pd.DataFrame(columns=['codigo', 'descripcion'])
+    return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
 
 df_inv = get_inventory()
 
@@ -121,13 +120,13 @@ st.markdown(f"<div style='text-align:center;'><p style='color:{vars_css['sub']};
 
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
-    fecha = h1.date_input("FECHA", key="f_pt_date")
-    turno = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO"], key="t_pt_sel")
-    folio = h3.text_input("FOLIO", value="F-2026-001", key="fol_pt_in")
+    fecha = h1.date_input("FECHA", value=datetime.now(), key="f_pt_val")
+    turno = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO"], key="t_pt_val")
+    folio = h3.text_input("FOLIO", value="F-2026-001", key="fol_pt_val")
 
-# Inicializar datos en sesión para el editor
+# Inicialización de filas
 if 'data_rows' not in st.session_state:
-    st.session_state.data_rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 8)
+    st.session_state.data_rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
 
 # EDITOR DE DATOS
 edited_df = st.data_editor(
@@ -139,41 +138,34 @@ edited_df = st.data_editor(
         "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
         "CANTIDAD": st.column_config.NumberColumn("CANTIDAD")
     },
-    key="editor_pt_final"
+    key="editor_formatos_final"
 )
 
-# LÓGICA DE BÚSQUEDA AUTOMÁTICA
-if not df_inv.empty and 'codigo' in df_inv.columns:
+# Lógica de autocompletado con sensibilidad a mayúsculas de tu CSV
+if not df_inv.empty:
     for idx, row in edited_df.iterrows():
         cod = str(row["CODIGO"]).strip()
-        if cod:
-            # Buscamos ignorando espacios y asegurando que ambos sean texto
-            match = df_inv[df_inv['codigo'].astype(str).str.strip() == cod]
-            if not match.empty and 'descripcion' in df_inv.columns:
-                desc_encontrada = match.iloc[0]['descripcion']
-                if edited_df.at[idx, "DESCRIPCION"] != desc_encontrada:
-                    edited_df.at[idx, "DESCRIPCION"] = desc_encontrada
+        if cod and 'CODIGO' in df_inv.columns:
+            # Buscamos ignorando espacios en el CSV
+            match = df_inv[df_inv['CODIGO'].astype(str).str.strip() == cod]
+            if not match.empty and 'DESCRIPCION' in df_inv.columns:
+                desc_actual = match.iloc[0]['DESCRIPCION']
+                if edited_df.at[idx, "DESCRIPCION"] != desc_actual:
+                    edited_df.at[idx, "DESCRIPCION"] = desc_actual
 
 # ── 7. FIRMAS ────────────────────────────────────────
 st.markdown("<br><br>", unsafe_allow_html=True)
 f1, f2, f3 = st.columns(3)
-linea_firma = f"border-top: 1px solid {vars_css['sub']}; width: 80%; margin: auto;"
+linea_style = f"border-top: 1px solid {vars_css['sub']}; width: 80%; margin: auto;"
 
-with f1:
-    st.markdown(f"<hr style='{linea_firma}'><p style='text-align:center; font-size:10px;'>ENTREGÓ</p>", unsafe_allow_html=True)
-with f2:
-    st.markdown(f"<hr style='{linea_firma}'><p style='text-align:center; font-size:10px;'>AUTORIZÓ</p>", unsafe_allow_html=True)
-with f3:
-    st.markdown(f"<hr style='{linea_firma}'><p style='text-align:center; font-size:10px;'>RECIBIÓ</p>", unsafe_allow_html=True)
+with f1: st.markdown(f"<hr style='{linea_style}'><p style='text-align:center; font-size:10px;'>ENTREGÓ</p>", unsafe_allow_html=True)
+with f2: st.markdown(f"<hr style='{linea_style}'><p style='text-align:center; font-size:10px;'>AUTORIZÓ</p>", unsafe_allow_html=True)
+with f3: st.markdown(f"<hr style='{linea_style}'><p style='text-align:center; font-size:10px;'>RECIBIÓ</p>", unsafe_allow_html=True)
 
 # ── 8. BOTÓN DE IMPRESIÓN ────────────────────────────
-st.markdown(f"""
-    <button class="print-btn" onclick="window.print()">
-        🖨️ GENERAR PDF / IMPRIMIR
-    </button>
-""", unsafe_allow_html=True)
-
+st.markdown(f'<button class="print-btn" onclick="window.print()">🖨️ GENERAR PDF / IMPRIMIR</button>', unsafe_allow_html=True)
     
+
 
 
 
