@@ -20,22 +20,26 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-/* 1. OCULTAR CABECERA Y DECORACIÓN SUPERIOR */
+/* 1. OCULTAR CABECERA, DECORACIÓN Y FOOTER NATIVO */
 header, footer, #MainMenu, div[data-testid="stDecoration"] {{ 
     visibility: hidden !important; 
     display: none !important;
 }}
 
-/* 2. FUERZA BRUTA PARA ICONOS INFERIORES (Streamlit Cloud, Manage App, etc.) */
-/* Atacamos el widget de estatus y los contenedores de medallas por clase y atributo */
+/* 2. FUERZA BRUTA PARA ICONOS INFERIORES (Manage App, Streamlit Cloud, etc.) */
+/* Atacamos por testid, clases dinámicas y selectores de posición */
 [data-testid="stStatusWidget"], 
 [data-testid="stCloudGlutton"],
 .viewerBadge_container__1QSob, 
 .stActionButton,
 div[class^="viewerBadge"],
-div[class*="StyledStatusWidget"] {{
+div[class*="StyledStatusWidget"],
+div[data-testid="stBaseButton-toolbar"],
+#tabs-bue-container + div {{
     display: none !important;
     visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }}
 
 /* 3. ESTILO BASE DE LA APP */
@@ -292,6 +296,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
