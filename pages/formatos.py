@@ -131,28 +131,29 @@ with st.container(border=True):
     c2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_pt_val")
     c3.text_input("FOLIO", value="F-2026-001", key="fol_pt_val")
 
-# ── 7. DATAFRAME EN SESSION ───────────────────────────
-st.session_state.setdefault("df_final", pd.DataFrame(columns=["CODIGO", "DESCRIPCION", "CANTIDAD"]))
+# --- Formulario con botón que añade código + descripción ---
+st.session_state.setdefault("df_final", pd.DataFrame(columns=["CODIGO","DESCRIPCION","CANTIDAD"]))
 
-# ── 8. FORMULARIO NUEVA FILA ──────────────────────────
 with st.expander("➕ Nuevo Registro de Actividad", expanded=True):
-    with st.form("form_nueva_fila", clear_on_submit=True):
-        new_codigo = st.text_input("Código / Parte")
-        cantidad = st.number_input("Cantidad", min_value=1, value=1, step=1)
-        submitted = st.form_submit_button("Añadir y Sincronizar")
+    new_codigo = st.text_input("Código / Parte")
+    cantidad = st.number_input("Cantidad", min_value=1, value=1, step=1)
+    
+    if st.button("Añadir y Sincronizar") and new_codigo.strip() != "":
+        cod_upper = new_codigo.strip().upper()
         
-        if submitted and new_codigo.strip() != "":
-            cod_upper = new_codigo.strip().upper()
-            
-            # BUSCAR DESCRIPCIÓN DE FORMA ROBUSTA
-            desc_series = df_inv.loc[df_inv["CODIGO"] == cod_upper, "DESCRIPCION"]
-            desc = desc_series.iloc[0] if not desc_series.empty else ""
-            
-            # AÑADIR FILA AL DATAFRAME FINAL
-            new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
-            st.session_state.df_final = pd.concat(
-                [st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True
-            )
+        # BUSCAR DESCRIPCION LIMPIA
+        df_inv["CODIGO"] = df_inv["CODIGO"].astype(str).str.strip().str.upper()
+        df_inv["DESCRIPCION"] = df_inv["DESCRIPCION"].astype(str).str.strip()
+        desc_series = df_inv.loc[df_inv["CODIGO"] == cod_upper, "DESCRIPCION"]
+        desc = desc_series.iloc[0] if not desc_series.empty else ""
+        
+        # AÑADIR FILA
+        new_row = {"CODIGO": cod_upper, "DESCRIPCION": desc, "CANTIDAD": cantidad}
+        st.session_state.df_final = pd.concat([st.session_state.df_final, pd.DataFrame([new_row])], ignore_index=True)
+        
+        # LIMPIAR INPUTS
+        st.session_state.new_codigo = ""
+        st.experimental_rerun()  # recarga la página y limpia el input
 
 # ── 9. DATA EDITOR ────────────────────────────────────
 edited_df = st.data_editor(
@@ -193,6 +194,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
