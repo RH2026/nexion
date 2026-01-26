@@ -134,37 +134,34 @@ if "df_final" not in st.session_state:
 
 edited_df = st.data_editor(
     st.session_state.df_final,
-    use_container_width=True,
     num_rows="dynamic",
     hide_index=True,
+    use_container_width=True,
     column_config={
         "CODIGO": st.column_config.TextColumn("CÓDIGO / PARTE"),
         "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
         "CANTIDAD": st.column_config.NumberColumn("CANTIDAD")
-    }
+    },
+    key="editor_nexion"
 )
 
-# ── 8. AUTOLLENADO DE DESCRIPCIÓN ─────────────────────
-if not df_inv.empty:
-    updated = False
+# ── 8. AUTOLLENADO REAL (EVENT-DRIVEN) ─────────────────
+if not df_inv.empty and "editor_nexion" in st.session_state:
+    cambios = st.session_state["editor_nexion"].get("edited_rows", {})
 
-    for idx, row in edited_df.iterrows():
-        cod = str(row["CODIGO"]).strip().upper()
-        if cod:
+    for fila, cambio in cambios.items():
+        if "CODIGO" in cambio:
+            codigo = str(cambio["CODIGO"]).strip().upper()
+
             match = df_inv[
-                df_inv["CODIGO"].astype(str).str.strip().str.upper() == cod
+                df_inv["CODIGO"].astype(str).str.strip().str.upper() == codigo
             ]
-            if not match.empty:
-                desc = match.iloc[0]["DESCRIPCION"]
-                if row["DESCRIPCION"] != desc:
-                    edited_df.at[idx, "DESCRIPCION"] = desc
-                    edited_df.at[idx, "CODIGO"] = cod
-                    updated = True
 
-    if updated:
-        st.session_state.df_final = edited_df
-    else:
-        st.session_state.df_final = edited_df
+            if not match.empty:
+                st.session_state.df_final.at[fila, "CODIGO"] = codigo
+                st.session_state.df_final.at[fila, "DESCRIPCION"] = match.iloc[0]["DESCRIPCION"]
+            else:
+                st.session_state.df_final.at[fila, "DESCRIPCION"] = ""
 
 # ── 9. FIRMAS ─────────────────────────────────────────
 st.markdown("<br><br>", unsafe_allow_html=True)
@@ -182,7 +179,7 @@ for col, titulo, nombre in [
             unsafe_allow_html=True
         )
 
-# ── 10. BOTÓN IMPRIMIR (FUNCIONAL) ────────────────────
+# ── 10. BOTÓN IMPRIMIR ─────────────────────────────────
 components.html(
     """
     <button class="print-btn" onclick="window.print()">
@@ -191,6 +188,7 @@ components.html(
     """,
     height=90,
 )
+
 
 
 
