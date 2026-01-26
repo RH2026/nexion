@@ -148,7 +148,8 @@ with c2:
 
 with c3:
     if st.button("☀️" if st.session_state.tema == "oscuro" else "🌙"):
-        st.session_state.tema = "claro" if st.session_state.tema == "oscuro" else "oscuro"
+    st.session_state.tema = "claro" if st.session_state.tema == "oscuro" else "oscuro"
+    st.rerun()
 
 st.markdown("<hr style='border-top:1px solid var(--border);margin:10px 0 30px;'>", unsafe_allow_html=True)
 
@@ -313,6 +314,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
