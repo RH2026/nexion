@@ -107,32 +107,50 @@ with c3:
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
-# ── 5. LÓGICA DE BÚSQUEDA (INVENTARIO.CSV) ────────────
 # ── 5. LÓGICA DE BÚSQUEDA ROBUSTA ────────────────────
 @st.cache_data
 def get_inventory():
-    try: 
-        df = pd.read_csv("inventario.csv")
-        # Limpiamos nombres de columnas: quitamos espacios y pasamos a minúsculas
-        df.columns = df.columns.str.strip().str.lower()
-        return df
-    except Exception as e:
-        st.error(f"Error al leer inventario.csv: {e}")
-        return pd.DataFrame(columns=['codigo', 'descripcion'])
+    # Buscamos en la raíz (../) porque este archivo está en /pages
+    rutas_a_probar = ["inventario.csv", "../inventario.csv"]
+    for ruta in rutas_a_probar:
+        try: 
+            df = pd.read_csv(ruta)
+            df.columns = df.columns.str.strip().str.lower()
+            return df
+        except:
+            continue
+    return pd.DataFrame(columns=['codigo', 'descripcion'])
 
 df_inv = get_inventory()
 
-# ... (en el bloque del editor de datos) ...
+# ── 6. CUERPO DEL FORMATO ────────────────────────────
+st.markdown(f"<div style='text-align:center;'><p style='color:{vars_css['sub']}; font-size:11px; letter-spacing:3px; text-transform:uppercase;'>Formato de Entrega de Materiales PT</p></div>", unsafe_allow_html=True)
 
-# Cruce automático con inventario.csv (Ajustado para evitar KeyError)
-for idx, row in edited_df.iterrows():
-    cod = str(row["CODIGO"]).strip()
-    if cod and not df_inv.empty:
-        # Verificamos si la columna 'codigo' existe tras la normalización
-        if 'codigo' in df_inv.columns:
-            match = df_inv[df_inv['codigo'].astype(str) == cod]
-            if not match.empty and 'descripcion' in df_inv.columns:
-                edited_df.at[idx, "DESCRIPCION"] = match.iloc[0]['descripcion']
+with st.container(border=True):
+    h1, h2, h3 = st.columns(3)
+    fecha_entrega = h1.date_input("FECHA", value=datetime.now())
+    turno = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"])
+    folio = h3.text_input("FOLIO", value="F-2026-001", disabled=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Inicializar filas si no existen
+if 'data_rows' not in st.session_state:
+    st.session_state.data_rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0, "MOTIVO": ""}] * 5)
+
+# Editor de datos
+edited_df = st.data_editor(
+    st.session_state.data_rows,
+    num_rows="dynamic",
+    use_container_width=True,
+    column_config={
+        "CODIGO": st.column_config.TextColumn("NÚMERO DE PARTE"),
+        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN", disabled=True),
+        "CANTIDAD": st.column_config.NumberColumn("CANTIDAD SURTIDA", min_value=0),
+        "MOTIVO": st.column_config.TextColumn("MOTIVO")
+    },
+    key="editor_entrega"
+)
 
 # ── 6. CUERPO DEL FORMATO ────────────────────────────
 st.markdown(f"<div style='text-align:center;'><p style='color:{vars_css['sub']}; font-size:11px; letter-spacing:3px; text-transform:uppercase;'>Formato de Entrega de Materiales PT</p></div>", unsafe_allow_html=True)
@@ -201,6 +219,7 @@ with b_col2:
     """, unsafe_allow_html=True)
 
     
+
 
 
 
