@@ -21,20 +21,22 @@ if tema == "oscuro":
 else:
     vars_css = {
         "bg": "#F5F7FA", "card": "#FFFFFF",
-        "text": "#1A1C1E",          # ⬅ más oscuro
-        "sub": "#3A3F45",           # ⬅ más contraste
+        "text": "#1A1C1E",
+        "sub": "#3A3F45",
         "border": "#D8DEE4", "hover": "#EBEEF2",
-        "btn_primary_bg": "#000000",# ⬅ botones negros
+        "btn_primary_bg": "#000000",
         "btn_primary_txt": "#FFFFFF"
     }
 
-# ── ALIAS DE COMPATIBILIDAD (NO TOCAR EL RESTO DEL CÓDIGO)
-bg_color     = vars_css["bg"]
-card_bg     = vars_css["card"]
-text_main   = vars_css["text"]
-text_sub    = vars_css["sub"]
-border_color= vars_css["border"]
-btn_hover   = vars_css["hover"]
+# ── ALIAS DE COMPATIBILIDAD (OBLIGATORIO)
+bg_color      = vars_css["bg"]
+card_bg       = vars_css["card"]
+text_main     = vars_css["text"]
+text_sub      = vars_css["sub"]
+border_color  = vars_css["border"]
+btn_hover     = vars_css["hover"]
+
+st.write("DEBUG:", text_sub)
 
 
 # ── CSS MAESTRO ──────────────────────────────────────
@@ -312,6 +314,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
