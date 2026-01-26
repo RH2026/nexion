@@ -1,9 +1,3 @@
-Entiendo la frustración, vamos a resolver esto de inmediato. El problema de la descripción suele ser un tema de "comunicación" entre el editor de datos y el archivo CSV, y el botón de imprimir a veces se bloquea por la seguridad de los navegadores.
-
-He simplificado el código al máximo, dejando solo el botón de imprimir y haciendo que la búsqueda sea más directa.
-
-Corrección Final para pages/formatos.py
-Python
 import streamlit as st
 import pandas as pd
 import time
@@ -165,6 +159,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
     
+
 
 
 
