@@ -112,7 +112,7 @@ if not st.session_state.splash_completado:
         for m in mensajes:
             st.markdown(f"""
                 <div style="height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: {bg_color};">
-                    <div style="width: 30px; height: 30px; border: 1px solid {border_color}; border-top: 1px solid {text_main}; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <div style="width: 40px; height: 40px; border: 1px solid {border_color}; border-top: 1px solid {text_main}; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                     <p style="color: {text_main}; font-family: monospace; font-size: 10px; letter-spacing: 5px; margin-top: 40px; font-weight: 200;">{m}</p>
                 </div>
                 <style>@keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}</style>
@@ -303,6 +303,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
