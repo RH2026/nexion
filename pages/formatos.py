@@ -24,12 +24,10 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* OCULTAR ELEMENTOS NATIVOS DE STREAMLIT */
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{
     display: none !important;
 }}
 
-/* AJUSTE DE CONTENEDOR PRINCIPAL */
 .block-container {{
     padding-top: 1.5rem !important;
     padding-bottom: 0rem !important;
@@ -41,14 +39,12 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important;
 }}
 
-/* NITIDEZ LOGOS */
 div[data-testid='stImage'] img {{
     image-rendering: -webkit-optimize-contrast !important;
     image-rendering: crisp-edges !important;
     transform: translateZ(0);
 }}
 
-/* ESTILO DE BOTONES (IDENTICO AL DASHBOARD) */
 div.stButton>button {{
     background: {vars_css["card"]} !important;
     color: {vars_css["text"]} !important;
@@ -67,9 +63,8 @@ div.stButton>button:hover {{
     border-color: {vars_css["text"]} !important;
 }}
 
-/* OPTIMIZACIÓN DE IMPRESIÓN */
 @media print {{
-    .no-print, .stButton, hr, [data-testid="stHeader"] {{ display: none !important; }}
+    .stButton, hr, [data-testid="stHeader"], [data-testid="stSidebar"] {{ display: none !important; }}
     .stApp {{ background-color: white !important; color: black !important; }}
     .block-container {{ padding: 0 !important; }}
     .print-format {{ border: 1px solid black !important; padding: 20px; }}
@@ -83,12 +78,7 @@ with c1:
     logo_actual = "n1.png" if tema == "oscuro" else "n2.png"
     try:
         st.image(logo_actual, width=140)
-        st.markdown(f"""
-            <div style='margin-top: -15px;'>
-                <p style='font-size:9px; margin:0; letter-spacing:1px; 
-                color:{vars_css['sub']}; text-transform:uppercase;'>Core Intelligence</p>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"<div style='margin-top: -15px;'><p style='font-size:9px; margin:0; letter-spacing:1px; color:{vars_css['sub']}; text-transform:uppercase;'>Core Intelligence</p></div>", unsafe_allow_html=True)
     except:
         st.markdown(f"<h2 style='color:{vars_css['text']}; margin:0;'>NEXION</h2>", unsafe_allow_html=True)
 
@@ -97,12 +87,12 @@ with c2:
     menu = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
     for i, b in enumerate(menu):
         with cols[i]:
-            if st.button(b, key=f"nav_form_{b}", use_container_width=True):
+            if st.button(b, key=f"nav_form_key_{b}", use_container_width=True):
                 if b != "FORMATOS": st.switch_page("dashboard.py")
                 else: st.rerun()
 
 with c3:
-    if st.button("☀️" if tema == "oscuro" else "🌙", key="theme_toggle"):
+    if st.button("☀️" if tema == "oscuro" else "🌙", key="theme_toggle_fmt"):
         st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"; st.rerun()
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
@@ -110,61 +100,29 @@ st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0
 # ── 5. LÓGICA DE BÚSQUEDA ROBUSTA ────────────────────
 @st.cache_data
 def get_inventory():
-    # Buscamos en la raíz (../) porque este archivo está en /pages
-    rutas_a_probar = ["inventario.csv", "../inventario.csv"]
-    for ruta in rutas_a_probar:
+    rutas = ["inventario.csv", "../inventario.csv"]
+    for r in rutas:
         try: 
-            df = pd.read_csv(ruta)
+            df = pd.read_csv(r)
             df.columns = df.columns.str.strip().str.lower()
             return df
-        except:
-            continue
+        except: continue
     return pd.DataFrame(columns=['codigo', 'descripcion'])
 
 df_inv = get_inventory()
 
-# ── 6. CUERPO DEL FORMATO ────────────────────────────
+# ── 6. CUERPO DEL FORMATO (LIMPIO Y SIN DUPLICADOS) ──
 st.markdown(f"<div style='text-align:center;'><p style='color:{vars_css['sub']}; font-size:11px; letter-spacing:3px; text-transform:uppercase;'>Formato de Entrega de Materiales PT</p></div>", unsafe_allow_html=True)
 
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
-    fecha_entrega = h1.date_input("FECHA", value=datetime.now())
-    turno = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"])
-    folio = h3.text_input("FOLIO", value="F-2026-001", disabled=True)
+    # Keys únicas para evitar DuplicateElementId
+    fecha_entrega = h1.date_input("FECHA", value=datetime.now(), key="f_entrega_pt")
+    turno_sel = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_entrega_pt")
+    folio_val = h3.text_input("FOLIO", value="F-2026-001", disabled=True, key="folio_pt")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Inicializar filas si no existen
-if 'data_rows' not in st.session_state:
-    st.session_state.data_rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0, "MOTIVO": ""}] * 5)
-
-# Editor de datos
-edited_df = st.data_editor(
-    st.session_state.data_rows,
-    num_rows="dynamic",
-    use_container_width=True,
-    column_config={
-        "CODIGO": st.column_config.TextColumn("NÚMERO DE PARTE"),
-        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN", disabled=True),
-        "CANTIDAD": st.column_config.NumberColumn("CANTIDAD SURTIDA", min_value=0),
-        "MOTIVO": st.column_config.TextColumn("MOTIVO")
-    },
-    key="editor_entrega"
-)
-
-# ── 6. CUERPO DEL FORMATO ────────────────────────────
-st.markdown(f"<div style='text-align:center;'><p style='color:{vars_css['sub']}; font-size:11px; letter-spacing:3px; text-transform:uppercase;'>Formato de Entrega de Materiales PT</p></div>", unsafe_allow_html=True)
-
-# Encabezado Manual
-with st.container(border=True):
-    h1, h2, h3 = st.columns(3)
-    fecha_entrega = h1.date_input("FECHA", value=datetime.now())
-    turno = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"])
-    folio = h3.text_input("FOLIO", value="F-2026-001", disabled=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# Tabla Dinámica de Productos
 if 'data_rows' not in st.session_state:
     st.session_state.data_rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0, "MOTIVO": ""}] * 5)
 
@@ -178,18 +136,21 @@ edited_df = st.data_editor(
         "CANTIDAD": st.column_config.NumberColumn("CANTIDAD SURTIDA", min_value=0),
         "MOTIVO": st.column_config.TextColumn("MOTIVO")
     },
-    key="editor_entrega"
+    key="editor_entrega_pt"
 )
 
-# Cruce automático con inventario.csv
-for idx, row in edited_df.iterrows():
-    cod = str(row["CODIGO"]).strip()
-    if cod:
-        match = df_inv[df_inv['codigo'].astype(str) == cod]
-        if not match.empty:
-            edited_df.at[idx, "DESCRIPCION"] = match.iloc[0]['descripcion']
+# Autocompletado (solo si hay inventario)
+if not df_inv.empty:
+    for idx, row in edited_df.iterrows():
+        cod = str(row["CODIGO"]).strip()
+        if cod and 'codigo' in df_inv.columns:
+            match = df_inv[df_inv['codigo'].astype(str) == cod]
+            if not match.empty:
+                desc_encontrada = match.iloc[0]['descripcion']
+                if edited_df.at[idx, "DESCRIPCION"] != desc_encontrada:
+                    edited_df.at[idx, "DESCRIPCION"] = desc_encontrada
 
-# ── 7. SECCIÓN DE FIRMAS (COMO TU IMAGEN) ─────────────
+# ── 7. SECCIÓN DE FIRMAS ─────────────────────────────
 st.markdown("<br><br>", unsafe_allow_html=True)
 f1, f2, f3 = st.columns(3)
 firma_style = f"border-top: 1px solid {vars_css['sub']}; width: 80%; margin: auto;"
@@ -208,7 +169,7 @@ with f3:
 st.markdown("<br>", unsafe_allow_html=True)
 b_col1, b_col2 = st.columns(2)
 with b_col1:
-    if st.button("💾 REGISTRAR EN MATRIZ", use_container_width=True, type="primary"):
+    if st.button("💾 REGISTRAR EN MATRIZ", use_container_width=True, type="primary", key="btn_reg_pt"):
         st.toast("Manifest guardado satisfactoriamente.", icon="✅")
 with b_col2:
     st.markdown("""
@@ -219,6 +180,7 @@ with b_col2:
     """, unsafe_allow_html=True)
 
     
+
 
 
 
