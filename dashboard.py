@@ -3,144 +3,144 @@ import pandas as pd
 import streamlit.components.v1 as components
 import time
 
-# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. GESTIÓN DE TEMA
+# ── TEMA ─────────────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
-if st.session_state.tema == "oscuro":
-    bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#05070A", "#0D1117", "#F0F6FC", "#8B949E", "#1B1F24", "#161B22"
-else:
-    bg_color, card_bg, text_main, text_sub, border_color, btn_hover = "#F5F7FA", "#FFFFFF", "#1A1C1E", "#656D76", "#D8DEE4", "#EBEEF2"
+tema = st.session_state.tema
 
-# 3. CSS MAESTRO (EDICIÓN FINAL "CLEAN SLATE")
+if tema == "oscuro":
+    vars_css = {
+        "bg": "#05070A", "card": "#0D1117",
+        "text": "#F0F6FC", "sub": "#8B949E",
+        "border": "#1B1F24", "hover": "#161B22",
+        "btn_primary_bg": "#F0F6FC", "btn_primary_txt": "#05070A"
+    }
+else:
+    vars_css = {
+        "bg": "#F5F7FA", "card": "#FFFFFF",
+        "text": "#1A1C1E",          # ⬅ más oscuro
+        "sub": "#3A3F45",           # ⬅ más contraste
+        "border": "#D8DEE4", "hover": "#EBEEF2",
+        "btn_primary_bg": "#000000",# ⬅ botones negros
+        "btn_primary_txt": "#FFFFFF"
+    }
+
+# ── CSS MAESTRO ──────────────────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-/* 1. DESAPARECER TODO RASTRO DE STREAMLIT (CABECERA, PIE Y DECORACIÓN) */
-header, footer, #MainMenu, div[data-testid="stDecoration"] {{ 
-    visibility: hidden !important; 
-    display: none !important;
+:root {{
+  --bg:{vars_css["bg"]}; --card:{vars_css["card"]};
+  --text:{vars_css["text"]}; --sub:{vars_css["sub"]};
+  --border:{vars_css["border"]}; --hover:{vars_css["hover"]};
+  --btnp-bg:{vars_css["btn_primary_bg"]};
+  --btnp-txt:{vars_css["btn_primary_txt"]};
 }}
 
-/* 2. FUERZA BRUTA PARA ICONOS INFERIORES (MEDALLAS, BOTONES DE NUBE Y STATUS) */
-/* Atacamos los contenedores por posición y etiquetas de sistema */
-[data-testid="stStatusWidget"], 
-[data-testid="stCloudGlutton"],
-.viewerBadge_container__1QSob, 
-.stActionButton,
-div[class^="viewerBadge"],
-div[class*="StyledStatusWidget"],
-div[data-testid="stBaseButton-toolbar"],
-div[data-testid="stStatusWidget"] {{
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    width: 0 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+* {{
+  transition: background-color .35s ease, color .35s ease, border-color .35s ease;
 }}
 
-/* ELIMINAR EL ESPACIADO DEL FOOTER PARA QUE NO QUEDE HUECO BLANCO ABAJO */
-.main .block-container {{
-    padding-bottom: 0px !important;
+header, footer, #MainMenu, div[data-testid="stDecoration"],
+[data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{
+  display:none !important;
 }}
 
-/* 3. ESTILO BASE DE LA APP */
+.main .block-container {{ padding-bottom:0 !important; }}
+
 .stApp {{
-    background-color: {bg_color} !important;
-    color: {text_main} !important;
-    font-family: 'Inter', sans-serif !important;
+  background:var(--bg) !important;
+  color:var(--text) !important;
+  font-family:'Inter',sans-serif !important;
 }}
 
-/* BOTONES Y SELECTORES (ESTILO ZARA) */
-div.stButton > button,
-div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
-    background-color: {card_bg} !important;
-    color: {text_main} !important;
-    border: 1px solid {border_color} !important;
-    border-radius: 2px !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    letter-spacing: 2px !important;
-    text-transform: uppercase;
-    transition: all 0.3s ease;
+div.stButton>button,
+div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
+  background:var(--card) !important;
+  color:var(--text) !important;
+  border:1px solid var(--border) !important;
+  border-radius:2px !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  letter-spacing:2px !important;
+  text-transform:uppercase;
 }}
 
-div.stButton > button:hover {{
-    background-color: {btn_hover} !important;
-    border-color: {text_main} !important;
+div.stButton>button:hover {{
+  background:var(--hover) !important;
+  border-color:var(--text) !important;
 }}
 
-/* BOTÓN DE BÚSQUEDA PRIMARIO (TIPO DHL) */
-div.stButton > button[kind="primary"] {{
-    background-color: {text_main} !important;
-    color: {bg_color} !important;
-    border: none !important;
-    font-weight: 700 !important;
-    height: 48px !important;
+div.stButton>button[kind="primary"] {{
+  background:var(--btnp-bg) !important;
+  color:var(--btnp-txt) !important;
+  border:none !important;
+  font-weight:700 !important;
+  height:48px !important;
 }}
 
 .stTextInput input {{
-    background-color: {card_bg} !important;
-    color: {text_main} !important;
-    border: 1px solid {border_color} !important;
-    border-radius: 2px !important;
-    height: 48px !important;
+  background:var(--card) !important;
+  color:var(--text) !important;
+  border:1px solid var(--border) !important;
+  border-radius:2px !important;
+  height:48px !important;
 }}
 
 div[data-testid="stSelectbox"] label p {{
-    font-size: 10px !important;
-    color: {text_sub} !important;
-    letter-spacing: 2px !important;
-    text-transform: uppercase !important;
+  font-size:10px !important;
+  color:var(--sub) !important;
+  letter-spacing:2px !important;
+  text-transform:uppercase !important;
 }}
 </style>
 """, unsafe_allow_html=True)
 
-# 4. LÓGICA DE SPLASH SCREEN
+# ── SPLASH ───────────────────────────────────────────
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
 
 if not st.session_state.splash_completado:
-    placeholder = st.empty()
-    with placeholder.container():
-        mensajes = ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]
-        for m in mensajes:
+    p = st.empty()
+    with p.container():
+        for m in ["ESTABLISHING SECURE ACCESS","PARSING LOGISTICS DATA","SYSTEM READY"]:
             st.markdown(f"""
-                <div style="height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: {bg_color};">
-                    <div style="width: 40px; height: 40px; border: 1px solid {border_color}; border-top: 1px solid {text_main}; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    <p style="color: {text_main}; font-family: monospace; font-size: 10px; letter-spacing: 5px; margin-top: 40px; font-weight: 200;">{m}</p>
-                </div>
-                <style>@keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}</style>
+            <div style="height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+              <div style="width:40px;height:40px;border:1px solid var(--border);
+              border-top:1px solid var(--text);border-radius:50%;animation:spin 1s linear infinite;"></div>
+              <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:var(--text);">{m}</p>
+            </div>
+            <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
             """, unsafe_allow_html=True)
-            time.sleep(0.9)
+            time.sleep(.9)
     st.session_state.splash_completado = True
     st.rerun()
 
-# 5. HEADER
-c_logo, c_nav, c_theme = st.columns([1.5, 4, 0.5])
-with c_logo:
-    st.markdown(f"<h2 style='color: {text_main}; font-weight: 300; letter-spacing: 4px; margin: 0;'>NEXION</h2><p style='color: {text_sub}; font-size: 9px; margin-top: -5px; letter-spacing: 1px;'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
+# ── HEADER ───────────────────────────────────────────
+c1,c2,c3 = st.columns([1.5,4,.5])
+with c1:
+    st.markdown("<h2 style='letter-spacing:4px;font-weight:300;margin:0;'>NEXION</h2>"
+                "<p style='font-size:9px;margin-top:-5px;letter-spacing:1px;color:var(--sub);'>CORE INTELLIGENCE</p>",
+                unsafe_allow_html=True)
 
-with c_nav:
-    m = st.columns(4)
-    if "pagina" not in st.session_state: st.session_state.pagina = "RASTREO"
-    for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "ESTATUS"]):
-        with m[i]:
+with c2:
+    if "pagina" not in st.session_state: st.session_state.pagina="RASTREO"
+    cols = st.columns(4)
+    for i,b in enumerate(["RASTREO","INTELIGENCIA","REPORTES","ESTATUS"]):
+        with cols[i]:
             if st.button(b, use_container_width=True):
-                st.session_state.pagina = b
-                st.rerun()
+                st.session_state.pagina=b; st.rerun()
 
-with c_theme:
-    if st.button("☀️" if st.session_state.tema == "oscuro" else "🌙"):
-        st.session_state.tema = "claro" if st.session_state.tema == "oscuro" else "oscuro"
+with c3:
+    if st.button("☀️" if tema=="oscuro" else "🌙"):
+        st.session_state.tema = "claro" if tema=="oscuro" else "oscuro"
         st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {border_color}; margin:10px 0 30px;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-top:1px solid var(--border);margin:10px 0 30px;'>", unsafe_allow_html=True)
 
 # 5. DATOS
 @st.cache_data
@@ -303,6 +303,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
