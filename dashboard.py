@@ -42,72 +42,80 @@ btn_primary_bg  = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
 
-# ── CSS MAESTRO (AJUSTADO PARA ELEVAR EL HEADER) ─────────────
+# ── 3. CSS MAESTRO (CON HOVER IDÉNTICO AL DASHBOARD + FIX DE LETRAS) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 :root {{
-  --bg:{bg_color}; --card:{card_bg};
-  --text:{text_main}; --sub:{text_sub};
-  --border:{border_color}; --hover:{btn_hover};
-  --btnp-bg:{btn_primary_bg};
-  --btnp-txt:{btn_primary_txt};
+  --bg: {v["bg"]}; 
+  --card: {v["card"]};
+  --text: {v["text"]}; 
+  --sub: {v["sub"]};
+  --border: {v["border"]}; 
+  --hover: {"#161B22" if tema == "oscuro" else "#EBEEF2"};
 }}
 
-/* ELEVAR TODO EL CONTENIDO (ELIMINAR PADDING SUPERIOR) */
-.block-container {{
-    padding-top: 1.5rem !important;
-    padding-bottom: 0rem !important;
+/* ELEVAR HEADER */
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
+    display:none !important; 
+}}
+
+.block-container {{ 
+    padding-top: 1.5rem !important; 
+    padding-bottom: 0rem !important; 
 }}
 
 * {{
-  transition: background-color .35s ease, color .35s ease, border-color .35s ease;
+    transition: background-color .35s ease, color .35s ease, border-color .35s ease;
 }}
 
-header, footer, #MainMenu, div[data-testid="stDecoration"],
-[data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{
-  display:none !important;
+.stApp {{ 
+    background: var(--bg) !important; 
+    color: var(--text) !important; 
+    font-family: 'Inter', sans-serif !important; 
 }}
 
-.stApp {{
-  background:var(--bg) !important;
-  color:var(--text) !important;
-  font-family:'Inter',sans-serif !important;
+/* FIX: VISIBILIDAD DE LETRAS (LABELS) */
+[data-testid="stWidgetLabel"] p {{
+    color: var(--text) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 1px !important;
 }}
 
-/* BOTONES Y SELECTORES */
-div.stButton>button,
-div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
-  background:var(--card) !important;
-  color:var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius:2px !important;
-  font-size:11px !important;
-  font-weight:700 !important;
-  letter-spacing:2px !important;
-  text-transform:uppercase;
+/* NITIDEZ LOGO */
+div[data-testid='stImage'] img {{ 
+    image-rendering: -webkit-optimize-contrast !important; 
+    transform: translateZ(0); 
+}}
+
+/* BOTONES CON HOVER DEL DASHBOARD PRINCIPAL */
+div.stButton>button {{
+    background: var(--card) !important; 
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important; 
+    border-radius: 2px !important;
+    font-size: 11px !important; 
+    font-weight: 700 !important; 
+    letter-spacing: 2px !important; 
+    text-transform: uppercase;
+    width: 100%;
 }}
 
 div.stButton>button:hover {{
-  background:var(--hover) !important;
-  border-color:var(--text) !important;
+    background: var(--hover) !important;
+    border-color: var(--text) !important;
 }}
 
+/* ESTILO PARA BOTÓN PRIMARIO (IMPRIMIR) */
 div.stButton>button[kind="primary"] {{
-  background:var(--btnp-bg) !important;
-  color:var(--btnp-txt) !important;
-  border:none !important;
-  font-weight:800 !important;
-  height:48px !important;
-}}
-
-.stTextInput input {{
-  background:var(--card) !important;
-  color:var(--text) !important;
-  border:1px solid var(--border) !important;
-  border-radius:2px !important;
-  height:48px !important;
+    background: var(--text) !important;
+    color: var(--bg) !important;
+    border: none !important;
+    font-weight: 800 !important;
+    height: 48px !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -396,6 +404,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
