@@ -110,6 +110,16 @@ with c3:
 
 st.markdown(f"<hr style='border-top:1px solid {v['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
+# ── 5. TÍTULO MINIMALISTA (ZARA / DHL STYLE) ──────────
+st.markdown(f"""
+    <div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
+        <h1 style="font-weight: 300; letter-spacing: 12px; text-transform: uppercase; font-size: 15px; color: {v['text']}; opacity: 0.9;">
+            E N T R E G A &nbsp; D E &nbsp; M A T E R I A L E S &nbsp; P T
+        </h1>
+    </div>
+""", unsafe_allow_html=True)
+
+
 # ── 5. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
 @st.cache_data
 def load_inventory():
@@ -186,6 +196,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
