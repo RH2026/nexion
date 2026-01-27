@@ -4,10 +4,10 @@ from datetime import datetime
 import os
 import streamlit.components.v1 as components
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="NEXION | Automatización de Procesos", layout="wide", initial_sidebar_state="collapsed")
+# 1. CONFIGURACIÓN DE PÁGINA (Título actualizado)
+st.set_page_config(page_title="NEXION | Automatizacion de Procesos", layout="wide", initial_sidebar_state="collapsed")
 
-# ── 2. TEMA DINÁMICO (Sincronizado) ────────────────────
+# ── 2. TEMA DINÁMICO (Sincronizado con Dashboard) ────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -18,74 +18,22 @@ if tema == "oscuro":
 else:
     v = {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9"}
 
-# ── 3. CSS MAESTRO (UNIFICACIÓN DE COLORES + HOVER INVERSO) ──
+# ── 3. CSS MAESTRO (HEADER ELEVADO + NITIDEZ LOGO) ───────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
-    display:none !important; 
-}}
-
-.block-container {{ padding-top: 1.5rem !important; }}
-
-* {{ transition: background-color .35s ease, color .35s ease, border-color .35s ease; }}
-
-.stApp {{ 
-    background:{v["bg"]} !important; 
-    color:{v["text"]} !important; 
-    font-family:'Inter',sans-serif !important; 
-}}
-
-/* VISIBILIDAD DE LABELS (FECHA, TURNO, FOLIO) */
-[data-testid="stWidgetLabel"] p {{
-    color: {v["text"]} !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    font-size: 11px !important;
-    letter-spacing: 1px !important;
-}}
-
-/* UNIFICACIÓN DE TODOS LOS INPUTS (PAREJOS EN TEMA CLARO) */
-div[data-testid="stdate_input"] > div > div,
-div[data-testid="stSelectbox"] > div > div,
-div[data-testid="stTextInput"] > div > div,
-.stTextInput input, .stSelectbox div[role="button"] {{
-    background-color: {v["card"]} !important;
-    color: {v["text"]} !important;
-    border: 1px solid {v["border"]} !important;
-    border-radius: 2px !important;
-    height: 42px !important;
-}}
-
-/* BOTONES CON HOVER DE ALTO CONTRASTE INVERTIDO */
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ display:none !important; }}
+.block-container {{ padding-top: 1.5rem !important; padding-bottom: 0rem !important; }}
+.stApp {{ background:{v["bg"]} !important; color:{v["text"]} !important; font-family:'Inter',sans-serif !important; }}
+div[data-testid='stImage'] img {{ image-rendering: -webkit-optimize-contrast !important; transform: translateZ(0); }}
 div.stButton>button {{
-    background:{v["card"]} !important; 
-    color:{v["text"]} !important;
-    border: 1px solid {v["border"]} !important; 
-    border-radius:2px !important;
-    font-size:11px !important; font-weight:700 !important; 
-    letter-spacing:2px !important; text-transform:uppercase;
-    width: 100%;
+    background:{v["card"]} !important; color:{v["text"]} !important;
+    border: 1px solid {v["border"]} !important; border-radius:2px !important;
+    font-size:11px !important; font-weight:700 !important; letter-spacing:2px !important; text-transform:uppercase;
 }}
-
-div.stButton>button:hover {{
-    background: {v["text"]} !important;
-    color: {v["bg"]} !important;
-    border-color: {v["text"]} !important;
-}}
-
-/* BOTÓN PRIMARIO (IMPRIMIR) */
-div.stButton>button[kind="primary"] {{
-    background: {v["text"]} !important;
-    color: {v["bg"]} !important;
-    border: none !important;
-    height: 48px !important;
-}}
-
-@media print {{ .no-print {{ display: none !important; }} }}
 </style>
 """, unsafe_allow_html=True)
+
 # ── 4. HEADER Y NAVEGACIÓN (Título Visual Actualizado) ───
 c1, c2, c3 = st.columns([2, 3.5, .5], vertical_alignment="top")
 with c1:
@@ -186,11 +134,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
-
-
-
-
-
 
 
 
