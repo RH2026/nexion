@@ -30,11 +30,6 @@ else:
         "border": "#C9D1D9"
     }
 
-Aquí tienes el bloque maestro de CSS consolidado. He unificado la lógica de tus dos códigos para que el contraste sea perfecto: las etiquetas (labels) cambiarán de color automáticamente y los botones mantendrán ese efecto "negativo" (hover invertido) que tanto te gustó del primero.
-
-Copia y reemplaza tu sección de CSS por esta:
-
-Python
 # ── 3. CSS MAESTRO (CONTRASTE TOTAL + HOVER INVERTIDO) ──
 st.markdown(f"""
 <style>
@@ -229,6 +224,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
