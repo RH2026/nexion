@@ -68,11 +68,6 @@ div.stButton>button {{
     .no-print, .stButton, [data-testid="stHeader"], header {{ 
         display: none !important; 
     }}
-    .stApp {{ 
-        background: white !important; 
-        color: black !important; 
-    }}
-    .block-container {{ padding: 0 !important; }}
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -125,7 +120,6 @@ st.markdown("<p class='no-print' style='text-align:center; font-size:11px; lette
 
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
-    # Definimos las variables que el HTML usará después
     fecha_val = h1.date_input("FECHA", value=datetime.now(), key="f_input")
     turno_val = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_input")
     folio_val = h3.text_input("FOLIO", value="F-2026-001", key="fol_input")
@@ -165,8 +159,8 @@ btn_imprimir = st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="prim
 if btn_imprimir:
     st.session_state.print_counter += 1
     
-    # Preparamos el HTML solo si se presiona el botón
-    filas_print = df_final[df_final["CODIGO"] != ""]
+    # Preparamos el HTML solo si se presiona el botón para asegurar que existan las variables
+    filas_print = df_final[df_final["CODIGO"].str.strip() != ""]
     tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
 
     form_html = f"""
@@ -174,9 +168,9 @@ if btn_imprimir:
         <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
             <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
             <div style="text-align:right; font-size:12px;">
-                <p style="margin:0;"><b>FOLIO:</b> {fol_val}</p>
-                <p style="margin:0;"><b>FECHA:</b> {f_val}</p>
-                <p style="margin:0;"><b>TURNO:</b> {t_val}</p>
+                <p style="margin:0;"><b>FOLIO:</b> {folio_val}</p>
+                <p style="margin:0;"><b>FECHA:</b> {fecha_val}</p>
+                <p style="margin:0;"><b>TURNO:</b> {turno_val}</p>
             </div>
         </div>
         <h3 style="text-align:center; letter-spacing:5px; margin-top:30px; text-decoration:underline;">ENTREGA DE MATERIALES PT</h3>
@@ -196,13 +190,14 @@ if btn_imprimir:
     </div>
     """
     
-    # Inyectamos el componente solo al hacer clic
+    # Inyectamos el componente
     components.html(
         f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", 
         height=1, 
-        key=f"print_op_{st.session_state.print_counter}"
+        key=f"print_job_{st.session_state.print_counter}"
     )
     st.toast("Generando documento JYPESA...", icon="📄")
+
 
 
 
