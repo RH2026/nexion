@@ -340,7 +340,7 @@ if st.session_state.pagina == "RASTREO":
             <p style='
                 text-align: center; 
                 color: {text_sub}; 
-                font-size: 10px; 
+                font-size: 15px; 
                 letter-spacing: 10px; 
                 text-transform: uppercase; 
                 font-weight: 300;
@@ -439,6 +439,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
