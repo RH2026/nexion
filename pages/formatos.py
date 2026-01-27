@@ -106,37 +106,36 @@ with c3:
 
 st.markdown(f"<hr class='no-print' style='border-top:1px solid {v['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
-    # ── 4.1 SUBMENÚ OPERATIVO (REPLICANDO DASHBOARD) ──────
-    st.markdown(f"<p style='text-align: center; color: {v['sub']}; font-size: 10px; letter-spacing: 5px; text-transform: uppercase; margin-top: 10px;'>Submenú Formatos</p>", unsafe_allow_html=True)
-    
-    _, col_sub, _ = st.columns([1, 1.8, 1])
-    with col_sub:
-        opcion_seleccionada = st.selectbox(
-            "", 
-            ["SELECCIONE...", "ENTREGA MATERIALES PT", "SALIDA PT", "ENTRADA MP", "INVENTARIOS"], 
-            index=0, 
-            label_visibility="collapsed",
-            key="sub_menu_selector"
-        )
-    
-    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-    
-    # ── 5. LÓGICA DINÁMICA DE CONTENIDO ───────────────────
-    
-    if opcion_seleccionada == "SELECCIONE...":
-        # Vista vacía minimalista
-        st.markdown(f"""
-            <div style="text-align: center; margin-top: 100px;">
-                <p style="color: {v['sub']}; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">
-                    Módulo de Formatos Operativos
-                </p>
-                <p style="color: {v['sub']}; font-size: 9px; opacity: 0.6;">
-                    Seleccione un documento en el menú superior para continuar.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    elif opcion_seleccionada == "ENTREGA MATERIALES PT":
+# ── 4.1 SUBMENÚ OPERATIVO (REPLICANDO DASHBOARD) ──────
+st.markdown(f"<p style='text-align: center; color: {v['sub']}; font-size: 10px; letter-spacing: 5px; text-transform: uppercase; margin-top: 10px;'>Submenú Formatos</p>", unsafe_allow_html=True)
+
+_, col_sub, _ = st.columns([1, 1.8, 1])
+with col_sub:
+    opcion_seleccionada = st.selectbox(
+        "", 
+        ["SELECCIONE...", "ENTREGA MATERIALES PT", "SALIDA PT", "ENTRADA MP", "INVENTARIOS"], 
+        index=0, 
+        label_visibility="collapsed",
+        key="sub_menu_selector"
+    )
+
+st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+
+# ── 5. LÓGICA DINÁMICA DE CONTENIDO ───────────────────
+
+if opcion_seleccionada == "SELECCIONE...":
+    st.markdown(f"""
+        <div style="text-align: center; margin-top: 100px;">
+            <p style="color: {v['sub']}; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">
+                Módulo de Formatos Operativos
+            </p>
+            <p style="color: {v['sub']}; font-size: 9px; opacity: 0.6;">
+                Seleccione un documento en el menú superior para continuar.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+elif opcion_seleccionada == "ENTREGA MATERIALES PT":
 
 # ── 5. TÍTULO MINIMALISTA (ZARA / DHL STYLE) ──────────
 st.markdown(f"""
@@ -224,6 +223,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
