@@ -214,7 +214,7 @@ form_html = f"""
     <div style="margin-top:80px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
         <div style="width:30%; border-top:1px solid black;">ENTREGÓ<br><b>Analista de Inventario</b></div>
         <div style="width:30%; border-top:1px solid black;">AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></div>
-        <div style="width:30%; border-top:1px solid black;">RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></div>
+        <div style="width:30%; border-top:1px solid black;">RECIBIÓ<br><b>Rigoberto Hernandez / Cord.Logística</b></div>
     </div>
 </div>
 """
@@ -224,6 +224,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
