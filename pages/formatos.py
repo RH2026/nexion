@@ -109,6 +109,25 @@ def load_inventory():
 
 df_inv = load_inventory()
 
+# ── 6. CUERPO DE ENTRADA (ESTILO MINIMALISTA) ──────────────
+
+# Título con estética Zara / DHL / Minimalist
+st.markdown(f"""
+    <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
+        <h1 style="
+            font-family: 'Inter', sans-serif; 
+            font-weight: 300; 
+            letter-spacing: 12px; 
+            text-transform: uppercase; 
+            font-size: 16px; 
+            color: {text_main}; 
+            opacity: 0.9;">
+            E N T R E G A &nbsp; D E &nbsp; M A T E R I A L E S &nbsp; P T
+        </h1>
+    </div>
+""", unsafe_allow_html=True)
+
+
 # ── 6. CUERPO DE ENTRADA (WEB) ────────────────────────
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
@@ -172,6 +191,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
