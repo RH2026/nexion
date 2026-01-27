@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import streamlit.components.v1 as components
+import plotly.express as px
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Automatizacion de Procesos", layout="wide", initial_sidebar_state="collapsed")
@@ -207,3 +208,4 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
