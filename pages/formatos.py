@@ -155,49 +155,55 @@ df_final = st.data_editor(
     on_change=handle_lookup
 )
 
-# ── 7. RENDERIZADO PRO JYPESA (HTML PARA PDF) ─────────
-filas_print = df_final[df_final["CODIGO"] != ""]
-tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
+# ── 7. LÓGICA DE IMPRESIÓN ───────────────────────────
+if "print_counter" not in st.session_state: 
+    st.session_state.print_counter = 0
 
-form_html = f"""
-<div style="font-family:sans-serif; padding:20px; color:black; background:white;">
-    <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
-        <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
-        <div style="text-align:right; font-size:12px;">
-            <p style="margin:0;"><b>FOLIO:</b> {folio_val}</p>
-            <p style="margin:0;"><b>FECHA:</b> {fecha_val}</p>
-            <p style="margin:0;"><b>TURNO:</b> {turno_val}</p>
+st.markdown("<br>", unsafe_allow_html=True)
+btn_imprimir = st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True)
+
+if btn_imprimir:
+    st.session_state.print_counter += 1
+    
+    # Preparamos el HTML solo si se presiona el botón
+    filas_print = df_final[df_final["CODIGO"] != ""]
+    tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
+
+    form_html = f"""
+    <div style="font-family:sans-serif; padding:20px; color:black; background:white;">
+        <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
+            <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
+            <div style="text-align:right; font-size:12px;">
+                <p style="margin:0;"><b>FOLIO:</b> {fol_val}</p>
+                <p style="margin:0;"><b>FECHA:</b> {f_val}</p>
+                <p style="margin:0;"><b>TURNO:</b> {t_val}</p>
+            </div>
+        </div>
+        <h3 style="text-align:center; letter-spacing:5px; margin-top:30px; text-decoration:underline;">ENTREGA DE MATERIALES PT</h3>
+        <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+            <thead><tr style="background:#f2f2f2;">
+                <th style="border:1px solid black;padding:10px;">CÓDIGO</th>
+                <th style="border:1px solid black;padding:10px;">DESCRIPCIÓN</th>
+                <th style="border:1px solid black;padding:10px;text-align:center;">CANTIDAD</th>
+            </tr></thead>
+            <tbody>{tabla_html}</tbody>
+        </table>
+        <div style="margin-top:80px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
+            <div style="width:30%; border-top:1px solid black;">ENTREGÓ<br><b>Analista de Inventario</b></div>
+            <div style="width:30%; border-top:1px solid black;">AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></div>
+            <div style="width:30%; border-top:1px solid black;">RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></div>
         </div>
     </div>
-    <h3 style="text-align:center; letter-spacing:5px; margin-top:30px; text-decoration:underline;">ENTREGA DE MATERIALES PT</h3>
-    <table style="width:100%; border-collapse:collapse; margin-top:20px;">
-        <thead><tr style="background:#f2f2f2;">
-            <th style="border:1px solid black;padding:10px;">CÓDIGO</th>
-            <th style="border:1px solid black;padding:10px;">DESCRIPCIÓN</th>
-            <th style="border:1px solid black;padding:10px;text-align:center;">CANTIDAD</th>
-        </tr></thead>
-        <tbody>{tabla_html}</tbody>
-    </table>
-    <div style="margin-top:80px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
-        <div style="width:30%; border-top:1px solid black;">ENTREGÓ<br><b>Analista de Inventario</b></div>
-        <div style="width:30%; border-top:1px solid black;">AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></div>
-        <div style="width:30%; border-top:1px solid black;">RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></div>
-    </div>
-</div>
-"""
-
-# ── 8. BOTÓN DE IMPRESIÓN REUTILIZABLE ────────────────
-st.markdown("<br>", unsafe_allow_html=True)
-if "print_counter" not in st.session_state: st.session_state.print_counter = 0
-
-if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
-    st.session_state.print_counter += 1
+    """
+    
+    # Inyectamos el componente solo al hacer clic
     components.html(
         f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", 
-        height=0, 
-        key=f"print_{st.session_state.print_counter}"
+        height=1, 
+        key=f"print_op_{st.session_state.print_counter}"
     )
     st.toast("Generando documento JYPESA...", icon="📄")
+
 
 
 
