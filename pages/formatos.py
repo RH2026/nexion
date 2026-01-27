@@ -24,13 +24,13 @@ st.markdown(f"""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 :root {{
-  --bg: {bg_color}; 
-  --card: {card_bg};
-  --text: {text_main}; 
-  --sub: {text_sub};
-  --border: {border_color}; 
-  --btnp-bg: {btn_primary_bg};
-  --btnp-txt: {btn_primary_txt};
+  --bg: {v["bg"]}; 
+  --card: {v["card"]};
+  --text: {v["text"]}; 
+  --sub: {v["sub"]};
+  --border: {v["border"]}; 
+  --btnp-bg: {v["text"]}; 
+  --btnp-txt: {v["bg"]};
 }}
 
 /* ELEVAR HEADER Y OCULTAR ELEMENTOS NATIVOS */
@@ -55,7 +55,7 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* FIX: VISIBILIDAD DE LETRAS (LABELS) */
+/* VISIBILIDAD DE LABELS (FECHA, TURNO, FOLIO) */
 [data-testid="stWidgetLabel"] p {{
     color: var(--text) !important;
     font-weight: 700 !important;
@@ -210,6 +210,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
