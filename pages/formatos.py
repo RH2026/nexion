@@ -161,6 +161,10 @@ def load_inventory():
 
 df_inv = load_inventory()
 
+if 'rows' not in st.session_state:
+    # Inicializamos con "0" (entre comillas) para que sea string
+    st.session_state.rows = pd.DataFrame([{"CANTIDAD": "0", "CODIGO": "", "DESCRIPCION": ""}] * 10)
+
 # ── 6. CUERPO DE ENTRADA (WEB) ────────────────────────
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
@@ -205,12 +209,10 @@ df_final = st.data_editor(
     use_container_width=True, 
     key="editor_pt", 
     on_change=lookup,
-    # Aquí controlamos la alineación visual
     column_config={
         "CANTIDAD": st.column_config.TextColumn(
             "CANTIDAD",
-            help="Introduce la cantidad",
-            default="0",
+            width="small"
         ),
         "CODIGO": st.column_config.TextColumn("CÓDIGO"),
         "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN")
@@ -268,6 +270,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
