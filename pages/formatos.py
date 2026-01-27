@@ -193,7 +193,7 @@ form_html = f"""
 <div style="font-family:sans-serif; padding:20px; color:black; background:white;">
     <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
         <div>
-            <h2 style="margin:0; letter-spacing:2px;">NEXION LOGISTICS</h2>
+            <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
             <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
         </div>
         <div style="text-align:right; font-size:12px;">
@@ -224,6 +224,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
