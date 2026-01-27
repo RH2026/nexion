@@ -3,7 +3,8 @@ import pandas as pd
 from datetime import datetime
 import os
 import streamlit.components.v1 as components
-import plotly.express as px
+import plotly.figure_factory as ff
+import plotly.graph_objects as go
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Automatizacion de Procesos", layout="wide", initial_sidebar_state="collapsed")
@@ -246,5 +247,6 @@ def generar_gantt_pro(df_list, color_map, text_color, bg_color, border_color):
 # Usando las variables 'v' de tu script original
 gantt_fig = generar_gantt_pro(df_gantt, colors, v["text"], v["bg"], v["border"])
 st.plotly_chart(gantt_fig, use_container_width=True, config={'displayModeBar': False})
+
 
 
