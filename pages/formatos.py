@@ -162,8 +162,10 @@ def load_inventory():
 df_inv = load_inventory()
 
 if 'rows' not in st.session_state:
-    # Inicializamos con "0" (entre comillas) para que sea string
-    st.session_state.rows = pd.DataFrame([{"CANTIDAD": "0", "CODIGO": "", "DESCRIPCION": ""}] * 10)
+    # Mantenemos tu orden: CODIGO, DESCRIPCION, CANTIDAD
+    st.session_state.rows = pd.DataFrame([
+        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
+    ] * 10)
 
 # ── 6. CUERPO DE ENTRADA (WEB) ────────────────────────
 with st.container(border=True):
@@ -210,12 +212,12 @@ df_final = st.data_editor(
     key="editor_pt", 
     on_change=lookup,
     column_config={
-        "CANTIDAD": st.column_config.TextColumn(
-            "CANTIDAD",
-            width="small"
-        ),
         "CODIGO": st.column_config.TextColumn("CÓDIGO"),
-        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN")
+        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
+        "CANTIDAD": st.column_config.TextColumn(
+            "CANTIDAD", 
+            width="small"
+        )
     }
 )
 # ── 7. RENDERIZADO PRO (HTML PARA IMPRESIÓN) ───────────
@@ -270,6 +272,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
