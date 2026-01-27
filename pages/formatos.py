@@ -18,19 +18,19 @@ if tema == "oscuro":
 else:
     v = {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9"}
 
-# ── 3. CSS MAESTRO (CON HOVER DE ALTO CONTRASTE INVERTIDO) ──
+# ── 3. CSS MAESTRO (CON HOVER DE ALTO CONTRASTE INVERTIDO CORREGIDO) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 :root {{
-  --bg: {bg_color}; 
-  --card: {card_bg};
-  --text: {text_main}; 
-  --sub: {text_sub};
-  --border: {border_color}; 
-  --btnp-bg: {btn_primary_bg};
-  --btnp-txt: {btn_primary_txt};
+  --bg: {v["bg"]}; 
+  --card: {v["card"]};
+  --text: {v["text"]}; 
+  --sub: {v["sub"]};
+  --border: {v["border"]}; 
+  --btnp-bg: {v["text"]}; /* Usamos el texto como fondo del primario para alto contraste */
+  --btnp-txt: {v["bg"]};   /* Usamos el fondo como texto del primario */
 }}
 
 /* ELEVAR HEADER Y OCULTAR ELEMENTOS NATIVOS */
@@ -55,7 +55,7 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* FIX: VISIBILIDAD DE LETRAS (LABELS) */
+/* VISIBILIDAD DE LETRAS (LABELS) */
 [data-testid="stWidgetLabel"] p {{
     color: var(--text) !important;
     font-weight: 700 !important;
@@ -91,7 +91,7 @@ div.stButton>button:hover {{
     border-color: var(--text) !important;
 }}
 
-/* BOTÓN PRIMARIO MANTIENE SU IDENTIDAD */
+/* BOTÓN PRIMARIO (IMPRIMIR / EJECUTAR) */
 div.stButton>button[kind="primary"] {{
     background: var(--btnp-bg) !important;
     color: var(--btnp-txt) !important;
@@ -211,6 +211,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
