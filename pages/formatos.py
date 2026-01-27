@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-import time
 from datetime import datetime
 import os
+import time
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Formatos", layout="wide", initial_sidebar_state="collapsed")
@@ -12,19 +12,28 @@ if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
 tema = st.session_state.tema
-vars_css = {
-    "bg": "#05070A" if tema == "oscuro" else "#E9ECF1",
-    "card": "#0D1117" if tema == "oscuro" else "#FFFFFF",
-    "text": "#F0F6FC" if tema == "oscuro" else "#111111",
-    "sub": "#8B949E" if tema == "oscuro" else "#2D3136",
-    "border": "#1B1F24" if tema == "oscuro" else "#C9D1D9"
-}
 
-# ── 3. CSS MAESTRO (HEADER ELEVADO + NITIDEZ LOGO) ───────
+if tema == "oscuro":
+    vars_css = {
+        "bg": "#05070A", "card": "#0D1117",
+        "text": "#F0F6FC", "sub": "#8B949E",
+        "border": "#1B1F24", "hover": "#161B22",
+        "btn_p_bg": "#F0F6FC", "btn_p_txt": "#05070A"
+    }
+else:
+    vars_css = {
+        "bg": "#E9ECF1", "card": "#FFFFFF",
+        "text": "#111111", "sub": "#2D3136",
+        "border": "#C9D1D9", "hover": "#EBEEF2",
+        "btn_p_bg": "#000000", "btn_p_txt": "#FFFFFF"
+    }
+
+# ── 3. CSS MAESTRO (HEADER ELEVADO + MOTOR DE IMPRESIÓN) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+/* OCULTAR ELEMENTOS NATIVOS */
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
     display:none !important; 
 }}
@@ -40,11 +49,13 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family:'Inter',sans-serif !important; 
 }}
 
+/* NITIDEZ LOGO */
 div[data-testid='stImage'] img {{ 
     image-rendering: -webkit-optimize-contrast !important; 
     transform: translateZ(0); 
 }}
 
+/* ESTILO DE BOTONES NATIVOS */
 div.stButton>button {{
     background:{vars_css["card"]} !important; 
     color:{vars_css["text"]} !important;
@@ -56,17 +67,22 @@ div.stButton>button {{
     text-transform:uppercase;
 }}
 
-.print-btn {{
-    width: 100%; height: 48px; background: transparent; color: {vars_css["text"]};
-    border: 1px solid {vars_css["border"]}; border-radius: 2px; cursor: pointer;
-    font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 20px;
-}}
-
+/* LÓGICA DE IMPRESIÓN PRO */
 @media print {{
-    .no-print, [data-testid="stHeader"], button, .stButton, .stNav {{ display: none !important; }}
-    .stApp {{ background-color: white !important; color: black !important; }}
+    .no-print, .stButton, [data-testid="stHeader"], header {{ 
+        display: none !important; 
+    }}
+    .stApp {{ 
+        background: white !important; 
+        color: black !important; 
+    }}
+    .print-only {{
+        display: block !important;
+        position: relative;
+    }}
     .block-container {{ padding: 0 !important; }}
 }}
+.print-only {{ display: none; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -83,97 +99,124 @@ with c1:
 
 with c2:
     cols = st.columns(4)
-    for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]):
-        if cols[i].button(b, key=f"nav_f_{b}", use_container_width=True):
-            if b != "FORMATOS":
-                # Al salir de formatos, volvemos a la raíz
+    menu_items = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
+    for i, item in enumerate(menu_items):
+        if cols[i].button(item, key=f"btn_{item}", use_container_width=True):
+            if item != "FORMATOS":
                 st.switch_page("dashboard.py")
             else:
                 st.rerun()
 
 with c3:
-    if st.button("☀️" if tema == "oscuro" else "🌙", key="t_btn"):
+    if st.button("☀️" if tema == "oscuro" else "🌙", key="toggle_theme"):
         st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
         st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
+st.markdown(f"<hr class='no-print' style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
 # ── 5. CARGA DE INVENTARIO (BÚSQUEDA EN RAÍZ) ───────────
 @st.cache_data
 def load_inventory():
-    # Buscamos específicamente en la raíz (../) porque estamos en /pages/
-    ruta_raiz = os.path.join(os.getcwd(), "inventario.csv")
-    ruta_atras = os.path.join(os.getcwd(), "..", "inventario.csv")
-    
-    for r in [ruta_atras, ruta_raiz]:
-        if os.path.exists(r):
-            try:
-                df = pd.read_csv(r, sep=None, engine='python', encoding='utf-8-sig')
-                # Normalización agresiva: quitar espacios y pasar a mayúsculas
-                df.columns = [str(c).strip().upper() for c in df.columns]
-                return df
-            except:
-                continue
-    return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
+    ruta = os.path.join(os.getcwd(), "inventario.csv")
+    if not os.path.exists(ruta):
+        ruta = os.path.join(os.getcwd(), "..", "inventario.csv")
+    try:
+        df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
+        df.columns = [str(c).strip().upper() for c in df.columns]
+        return df
+    except:
+        return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
 
 df_inv = load_inventory()
 
-# ── 6. CUERPO DEL FORMATO ───────────────────────────────
-st.markdown(f"<div style='text-align:center;'><p style='color:{vars_css['sub']}; font-size:11px; letter-spacing:3px; text-transform:uppercase;'>Entrega de Materiales PT</p></div>", unsafe_allow_html=True)
+# ── 6. CUERPO DEL FORMULARIO (INTERFAZ WEB) ──────────────
+st.markdown("<p class='no-print' style='text-align:center; font-size:11px; letter-spacing:3px; text-transform:uppercase;'>Entrega de Materiales PT</p>", unsafe_allow_html=True)
 
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
-    h1.date_input("FECHA", value=datetime.now(), key="f_pt")
-    h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_pt")
-    h3.text_input("FOLIO", value="F-2026-001", key="fol_pt")
+    fecha_val = h1.date_input("FECHA", value=datetime.now(), key="f_input")
+    turno_val = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_input")
+    folio_val = h3.text_input("FOLIO", value="F-2026-001", key="fol_input")
 
 if 'rows' not in st.session_state:
     st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
 
-# FUNCIÓN LOOKUP (VLOOKUP)
-def lookup():
-    edits = st.session_state["editor_nexion"].get("edited_rows", {})
+def handle_lookup():
+    edits = st.session_state["editor_pt"].get("edited_rows", {})
     for idx_str, info in edits.items():
         idx = int(idx_str)
         if "CODIGO" in info:
             val = str(info["CODIGO"]).strip().upper()
             if not df_inv.empty:
-                # Detectar columna de código (la que más se parezca a 'CODIGO')
-                col_busca = next((c for c in df_inv.columns if "COD" in c), df_inv.columns[0])
-                col_desc = next((c for c in df_inv.columns if "DESC" in c), df_inv.columns[1])
-                
-                match = df_inv[df_inv[col_busca].astype(str).str.strip().str.upper() == val]
+                col_cod = next((c for c in df_inv.columns if "COD" in c), df_inv.columns[0])
+                col_des = next((c for c in df_inv.columns if "DESC" in c), df_inv.columns[1])
+                match = df_inv[df_inv[col_cod].astype(str).str.strip().str.upper() == val]
                 if not match.empty:
-                    st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0][col_desc]
+                    st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0][col_des]
                     st.session_state.rows.at[idx, "CODIGO"] = val
 
-st.data_editor(
+df_final = st.data_editor(
     st.session_state.rows,
     num_rows="dynamic",
     use_container_width=True,
-    column_config={
-        "CODIGO": st.column_config.TextColumn("CÓDIGO / PARTE"),
-        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
-        "CANTIDAD": st.column_config.NumberColumn("CANTIDAD")
-    },
-    key="editor_nexion",
-    on_change=lookup
+    key="editor_pt",
+    on_change=handle_lookup
 )
 
-# ── 7. FIRMAS (FIALKO / MORENO) ─────────────────────────
-st.markdown("<br><br>", unsafe_allow_html=True)
-f1, f2, f3 = st.columns(3)
-l_style = f"border-top: 1px solid {vars_css['sub']}; width: 80%; margin: auto;"
+# ── 7. RENDERIZADO PROFESIONAL PARA PDF (PRINT-ONLY) ─────
+# Solo mostramos filas con código en el documento final
+filas_impresion = df_final[df_final["CODIGO"] != ""]
 
-with f1:
-    st.markdown(f"<hr style='{l_style}'><p style='text-align:center; font-size:10px;'>ENTREGÓ<br><b>Analista de Inventario</b></p>", unsafe_allow_html=True)
-with f2:
-    st.markdown(f"<hr style='{l_style}'><p style='text-align:center; font-size:10px;'>AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></p>", unsafe_allow_html=True)
-with f3:
-    st.markdown(f"<hr style='{l_style}'><p style='text-align:center; font-size:10px;'>RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></p>", unsafe_allow_html=True)
+html_template = f"""
+<div class="print-only" style="color: black; background: white; padding: 10px; font-family: 'Inter', sans-serif;">
+    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid black; padding-bottom: 5px;">
+        <div style="text-align: left;">
+            <h2 style="margin:0; letter-spacing:2px;">NEXION LOGISTICS</h2>
+            <p style="margin:0; font-size:10px; letter-spacing:1px;">CORE INTELLIGENCE</p>
+        </div>
+        <div style="text-align: right; font-size: 12px;">
+            <p style="margin:0;"><b>FOLIO:</b> {folio_val}</p>
+            <p style="margin:0;"><b>FECHA:</b> {fecha_val}</p>
+            <p style="margin:0;"><b>TURNO:</b> {turno_val}</p>
+        </div>
+    </div>
+    
+    <h3 style="text-align: center; letter-spacing: 5px; margin-top: 25px; text-decoration: underline;">ENTREGA DE MATERIALES PT</h3>
+    
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black; padding: 8px;">CÓDIGO</th>
+                <th style="border: 1px solid black; padding: 8px;">DESCRIPCIÓN</th>
+                <th style="border: 1px solid black; padding: 8px;">CANTIDAD</th>
+            </tr>
+        </thead>
+        <tbody>
+            {"".join([f'<tr><td style="border: 1px solid black; padding: 8px;">{r["CODIGO"]}</td><td style="border: 1px solid black; padding: 8px;">{r["DESCRIPCION"]}</td><td style="border: 1px solid black; padding: 8px; text-align: center;">{r["CANTIDAD"]}</td></tr>' for _, r in filas_impresion.iterrows()])}
+        </tbody>
+    </table>
 
-# ── 8. BOTÓN DE IMPRESIÓN ───────────────────────────────
-st.markdown(f'<button class="print-btn" onclick="window.print()">🖨️ GENERAR PDF / IMPRIMIR</button>', unsafe_allow_html=True)
+    <div style="margin-top: 80px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
+        <div style="width: 30%; border-top: 1px solid black; padding-top: 5px;">
+            ENTREGÓ<br><b>Analista de Inventario</b>
+        </div>
+        <div style="width: 30%; border-top: 1px solid black; padding-top: 5px;">
+            AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b>
+        </div>
+        <div style="width: 30%; border-top: 1px solid black; padding-top: 5px;">
+            RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b>
+        </div>
+    </div>
+</div>
+"""
+st.markdown(html_template, unsafe_allow_html=True)
+
+# ── 8. BOTÓN DE ACCIÓN ─────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
+    st.components.v1.html("<script>window.print();</script>", height=0)
+    st.toast("Generando vista previa...", icon="📄")
+
 
 
 
