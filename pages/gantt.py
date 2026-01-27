@@ -168,85 +168,104 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# --- DATOS DE PRUEBA (Estructura para Grupos, Progreso e Hitos) ---
-df_gantt = [
-    # INITIATION
-    dict(Task="Requirements", Start='2026-03-01', Finish='2026-03-05', Resource='INITIATION', Complete=100),
-    dict(Task="Stakeholder Workshop", Start='2026-03-04', Finish='2026-03-08', Resource='INITIATION', Complete=70),
-    dict(Task="Initiation Complete", Start='2026-03-08', Finish='2026-03-08', Resource='INITIATION', Complete=100), # Hito
-    
-    # DESIGN
-    dict(Task="E2E Solution Design", Start='2026-03-07', Finish='2026-03-18', Resource='DESIGN', Complete=45),
-    dict(Task="Wireframes", Start='2026-03-12', Finish='2026-03-16', Resource='DESIGN', Complete=80),
-    
-    # IMPLEMENTATION
-    dict(Task="ETL Development", Start='2026-03-15', Finish='2026-03-25', Resource='IMPLEMENTATION', Complete=20),
-]
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from datetime import timedelta
 
-# Colores basados en tu tema Ónix + Acentos
-colors = {
-    'INITIATION': '#3A86FF',   # Azul corporativo
-    'DESIGN': '#00F5D4',       # Verde neón/menta
-    'IMPLEMENTATION': '#BE95FF' # Púrpura suave
-}
+# URL de tu repositorio
+GITHUB_URL = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/tareas.csv"
 
-# --- GENERACIÓN DEL GANTT ---
-def generar_gantt_pro(df_list, color_map, text_color, bg_color, border_color):
-    # Crear el objeto base
-    fig = ff.create_gantt(
-        df_list, 
-        colors=color_map, 
-        index_col='Resource', 
-        show_colorbar=True,
-        group_tasks=True,
-        showgrid_x=True, 
-        showgrid_y=True
+@st.cache_data(ttl=60) # Actualiza cada minuto
+def load_nexion_tasks(url):
+    try:
+        df = pd.read_csv(url, encoding='utf-8')
+        # Limpiar espacios en nombres de columnas
+        df.columns = [c.strip().upper() for c in df.columns]
+        
+        # Convertir fechas
+        df['FECHA'] = pd.to_datetime(df['FECHA'])
+        
+        # Lógica para FECHA FIN: si no existe en el CSV, sumamos 1 día para visualizar la barra
+        if 'FECHA_FIN' in df.columns:
+            df['FECHA_FIN'] = pd.to_datetime(df['FECHA_FIN'])
+        else:
+            df['FECHA_FIN'] = df['FECHA'] + pd.to_timedelta(1, unit='d')
+            
+        return df
+    except Exception as e:
+        st.error(f"Error cargando base de datos: {e}")
+        return pd.DataFrame()
+
+# 1. CARGAR DATOS
+df_tareas = load_nexion_tasks(GITHUB_URL)
+
+# 2. RENDERIZAR GANTT
+if not df_tareas.empty:
+    st.markdown(f"""
+        <div style='text-align: center; margin-bottom: 20px;'>
+            <p style='color:{v['sub']}; font-size:10px; letter-spacing:3px; text-transform:uppercase;'>Timeline Operativo</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Definir colores según importancia (estilo Ónix)
+    color_map = {
+        "Urgente": "#FF4B4B", # Rojo
+        "Alta": "#FFBD45",    # Naranja
+        "Media": "#3A86FF",   # Azul
+        "Baja": "#8B949E"     # Gris
+    }
+
+    fig = px.timeline(
+        df_tareas, 
+        x_start="FECHA", 
+        x_end="FECHA_FIN", 
+        y="TAREA", 
+        color="IMPORTANCIA",
+        color_discrete_map=color_map,
+        hover_data={"ULTIMO ACCION": True, "FECHA": "|%d %b", "FECHA_FIN": "|%d %b", "IMPORTANCIA": True}
     )
 
-    # Inyectar Barras de Progreso (Overlay)
-    for i in range(len(df_list)):
-        task = df_list[i]
-        # Si es un hito (Duración 0), dibujamos un diamante
-        if task['Start'] == task['Finish']:
-            fig.add_trace(go.Scatter(
-                x=[task['Start']],
-                y=[len(df_list) - 1 - i],
-                mode='markers',
-                marker=dict(symbol='diamond', size=12, color=color_map[task['Resource']]),
-                name="Milestone",
-                showlegend=False
-            ))
-        # Si tiene progreso, añadimos una sub-barra más oscura
-        elif task['Complete'] > 0:
-            progreso = task['Complete'] / 100
-            # Cálculo simple de fecha de corte para el progreso
-            # (En producción se usaría timedelta para precisión exacta)
-            fig.add_trace(go.Scatter(
-                x=[task['Start'], task['Start']], # Lógica simplificada para visual
-                y=[len(df_list) - 1 - i, len(df_list) - 1 - i],
-                mode='lines',
-                line=dict(width=15, color='rgba(255,255,255,0.3)'),
-                showlegend=False
-            ))
+    # Invertir eje Y para ver lo más reciente arriba
+    fig.update_yaxes(autorange="reversed")
 
-    # Estilización estética NEXION
+    # Diseño Onix Dark
     fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color=text_color, family="Inter", size=11),
-        xaxis=dict(gridcolor=border_color, zeroline=False),
-        yaxis=dict(gridcolor=border_color, zeroline=False),
-        margin=dict(l=150, r=20, t=40, b=20), # Espacio para nombres de tareas
-        height=450,
-        hovermode='closest'
+        plot_bgcolor='rgba(0,0,0,0)',
+        font_color=v["text"],
+        xaxis=dict(
+            gridcolor=v["border"],
+            tickfont=dict(size=10, color=v["sub"]),
+            title=""
+        ),
+        yaxis=dict(
+            gridcolor=v["border"],
+            tickfont=dict(size=10),
+            title=""
+        ),
+        margin=dict(l=10, r=10, t=10, b=10),
+        height=400,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
     )
-    
-    return fig
 
-# --- RENDERIZADO EN STREAMLIT ---
-# Usando las variables 'v' de tu script original
-gantt_fig = generar_gantt_pro(df_gantt, colors, v["text"], v["bg"], v["border"])
-st.plotly_chart(gantt_fig, use_container_width=True, config={'displayModeBar': False})
+    # Mostrar en Streamlit
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # Mostrar la tabla detallada debajo
+    with st.expander("VER DETALLE DE ACCIONES"):
+        st.dataframe(
+            df_tareas[['FECHA', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']], 
+            use_container_width=True,
+            hide_index=True
+        )
 
 
 
