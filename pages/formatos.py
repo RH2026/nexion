@@ -172,16 +172,32 @@ if 'rows' not in st.session_state:
     st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
 
 def lookup():
+    # 1. Obtener los cambios del editor
     edits = st.session_state["editor_pt"].get("edited_rows", {})
+    added = st.session_state["editor_pt"].get("added_rows", [])
+    
+    # 2. Sincronizar filas añadidas (si las hay) para que coincidan con la estructura
+    for row in added:
+        new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
+        new_row.update(row)
+        st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
+
+    # 3. Procesar ediciones en filas existentes
     for idx_str, info in edits.items():
         idx = int(idx_str)
+        
+        # Sincronizamos cualquier cambio (Cantidad, Código, etc.) al session_state
+        for col, val in info.items():
+            st.session_state.rows.at[idx, col] = val
+        
+        # Si el cambio fue en el CÓDIGO, hacemos el lookup de la DESCRIPCIÓN
         if "CODIGO" in info:
-            val = str(info["CODIGO"]).strip().upper()
+            val_codigo = str(info["CODIGO"]).strip().upper()
             if not df_inv.empty:
-                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val]
+                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val_codigo]
                 if not match.empty:
                     st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
-                    st.session_state.rows.at[idx, "CODIGO"] = val
+                    st.session_state.rows.at[idx, "CODIGO"] = val_codigo
 
 df_final = st.data_editor(st.session_state.rows, num_rows="dynamic", use_container_width=True, key="editor_pt", on_change=lookup)
 
@@ -237,6 +253,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
