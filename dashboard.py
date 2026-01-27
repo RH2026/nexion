@@ -329,15 +329,35 @@ def tabla_estilizada(df):
 if st.session_state.pagina == "RASTREO":
     st.markdown("<div style='margin-bottom: 40px;'></div>", unsafe_allow_html=True)
     
-    # --- CAJA DE BÚSQUEDA CENTRALIZADA ---
+    # --- CAJA DE BÚSQUEDA CENTRALIZADA (MINIMALISTA ZARA/DHL STYLE) ---
+    st.markdown("<div style='margin-bottom: 40px;'></div>", unsafe_allow_html=True)
+    
     _, col_search, _ = st.columns([1, 1.8, 1])
+    
     with col_search:
-        st.markdown(f"<p style='text-align: center; color: {text_sub}; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;'>Operational Query</p>", unsafe_allow_html=True)
+        # Título Operacional con tracking extendido
+        st.markdown(f"""
+            <p style='
+                text-align: center; 
+                color: {text_sub}; 
+                font-size: 10px; 
+                letter-spacing: 10px; 
+                text-transform: uppercase; 
+                font-weight: 300;
+                margin-bottom: 20px;'>
+                O P E R A T I O N A L &nbsp; Q U E R Y
+            </p>
+        """, unsafe_allow_html=True)
+        
+        # Input de búsqueda (El estilo ya viene del CSS Maestro que inyectamos)
         busqueda = st.text_input("", placeholder="REFERENCIA O NÚMERO DE GUÍA...", label_visibility="collapsed")
-        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+        
+        st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+        
+        # Botón de ejecución (Primary)
         btn_search = st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True)
-
-    st.markdown("<div style='margin-bottom: 60px;'></div>", unsafe_allow_html=True)
+    
+    st.markdown("<div style='margin-bottom: 80px;'></div>", unsafe_allow_html=True)
 
 
 # 7. RENDER
@@ -419,6 +439,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
