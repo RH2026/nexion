@@ -199,8 +199,23 @@ def lookup():
                     st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
                     st.session_state.rows.at[idx, "CODIGO"] = val_codigo
 
-df_final = st.data_editor(st.session_state.rows, num_rows="dynamic", use_container_width=True, key="editor_pt", on_change=lookup)
-
+df_final = st.data_editor(
+    st.session_state.rows, 
+    num_rows="dynamic", 
+    use_container_width=True, 
+    key="editor_pt", 
+    on_change=lookup,
+    # Aquí controlamos la alineación visual
+    column_config={
+        "CANTIDAD": st.column_config.TextColumn(
+            "CANTIDAD",
+            help="Introduce la cantidad",
+            default="0",
+        ),
+        "CODIGO": st.column_config.TextColumn("CÓDIGO"),
+        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN")
+    }
+)
 # ── 7. RENDERIZADO PRO (HTML PARA IMPRESIÓN) ───────────
 filas_print = df_final[df_final["CODIGO"] != ""]
 tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
@@ -253,6 +268,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
