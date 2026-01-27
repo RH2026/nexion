@@ -30,13 +30,19 @@ else:
         "border": "#C9D1D9"
     }
 
-# ── 3. CSS MAESTRO (CON EFECTO HOVER INVERTIDO) ───────
+Aquí tienes el bloque maestro de CSS consolidado. He unificado la lógica de tus dos códigos para que el contraste sea perfecto: las etiquetas (labels) cambiarán de color automáticamente y los botones mantendrán ese efecto "negativo" (hover invertido) que tanto te gustó del primero.
+
+Copia y reemplaza tu sección de CSS por esta:
+
+Python
+# ── 3. CSS MAESTRO (CONTRASTE TOTAL + HOVER INVERTIDO) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* OCULTAR ELEMENTOS NATIVOS */
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
+/* 1. OCULTAR ELEMENTOS NATIVOS PARA DISEÑO LIMPIO */
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"] {{ 
     display:none !important; 
 }}
 
@@ -45,27 +51,33 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     padding-bottom: 0rem !important; 
 }}
 
-/* TRANSICIONES SUAVES */
+/* 2. TRANSICIONES GLOBALES (SUAVIDAD AL CAMBIAR TEMA) */
 * {{
     transition: background-color .3s ease, color .3s ease, border-color .3s ease;
 }}
 
 .stApp {{ 
-    background:{v["bg"]} !important; 
-    color:{v["text"]} !important; 
-    font-family:'Inter', sans-serif !important; 
+    background: {v["bg"]} !important; 
+    color: {v["text"]} !important; 
+    font-family: 'Inter', sans-serif !important; 
 }}
 
-/* NITIDEZ LOGO */
-div[data-testid='stImage'] img {{ 
-    image-rendering: -webkit-optimize-contrast !important; 
-    transform: translateZ(0); 
+/* 3. SOLUCIÓN A TÍTULOS INVISIBLES (LABELS) */
+/* Forzamos a que "FECHA", "TURNO", etc. usen el color de texto del tema */
+[data-testid="stWidgetLabel"] p {{
+    color: {v["text"]} !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 1.5px !important;
+    background-color: transparent !important;
 }}
 
-/* BOTONES ESTILO BASE */
-div.stButton>button {{
-    background:{v["card"]} !important; 
-    color:{v["text"]} !important;
+/* 4. ESTILO DE BOTONES BASE */
+div.stButton>button,
+div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
+    background: {v["card"]} !important; 
+    color: {v["text"]} !important;
     border: 1px solid {v["border"]} !important; 
     border-radius: 2px !important;
     font-size: 11px !important; 
@@ -73,14 +85,35 @@ div.stButton>button {{
     letter-spacing: 2px !important; 
     text-transform: uppercase;
     width: 100%;
-    cursor: pointer;
 }}
 
-/* ── EL CAMBIO CLAVE: HOVER INVERTIDO (ALTO CONTRASTE) ── */
+/* 5. EL EFECTO HOVER INVERTIDO (TU SELLO DISTINTIVO) */
 div.stButton>button:hover {{
-    background: {v["text"]} !important;   /* El fondo toma el color de la letra */
-    color: {v["bg"]} !important;         /* La letra toma el color del fondo general */
+    background: {v["text"]} !important;   /* Fondo blanco en oscuro / negro en claro */
+    color: {v["bg"]} !important;         /* Texto negro en oscuro / blanco en claro */
     border-color: {v["text"]} !important;
+}}
+
+/* 6. INPUTS Y CAMPOS DE TEXTO */
+.stTextInput input {{
+    background: {v["card"]} !important;
+    color: {v["text"]} !important;
+    border: 1px solid {v["border"]} !important;
+    border-radius: 2px !important;
+    height: 42px !important;
+}}
+
+/* 7. TEXTO CENTRAL O MARKDOWN */
+/* Asegura que "ENTREGA DE MATERIALES" se vea en ambos temas */
+.stMarkdown p, .stMarkdown h1, .stMarkdown h2 {{
+    color: {v["text"]} !important;
+    letter-spacing: 2px !important;
+}}
+
+/* NITIDEZ DEL LOGO NEXION */
+div[data-testid='stImage'] img {{ 
+    image-rendering: -webkit-optimize-contrast !important; 
+    transform: translateZ(0); 
 }}
 
 </style>
@@ -196,6 +229,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
