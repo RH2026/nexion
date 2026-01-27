@@ -5,7 +5,7 @@ import os
 import streamlit.components.v1 as components
 
 # 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="NEXION | Formatos", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="JYPESA | Automatización de Procesos", layout="wide", initial_sidebar_state="collapsed")
 
 # ── 2. TEMA DINÁMICO (Sincronizado con Dashboard) ────────
 if "tema" not in st.session_state:
@@ -33,7 +33,6 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* OCULTAR ELEMENTOS NATIVOS */
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
     display:none !important; 
 }}
@@ -49,13 +48,11 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family:'Inter',sans-serif !important; 
 }}
 
-/* NITIDEZ LOGO */
 div[data-testid='stImage'] img {{ 
     image-rendering: -webkit-optimize-contrast !important; 
     transform: translateZ(0); 
 }}
 
-/* ESTILO DE BOTONES NATIVOS */
 div.stButton>button {{
     background:{vars_css["card"]} !important; 
     color:{vars_css["text"]} !important;
@@ -67,7 +64,6 @@ div.stButton>button {{
     text-transform:uppercase;
 }}
 
-/* LÓGICA DE IMPRESIÓN PRO */
 @media print {{
     .no-print, .stButton, [data-testid="stHeader"], header {{ 
         display: none !important; 
@@ -76,26 +72,21 @@ div.stButton>button {{
         background: white !important; 
         color: black !important; 
     }}
-    .print-only {{
-        display: block !important;
-        position: relative;
-    }}
     .block-container {{ padding: 0 !important; }}
 }}
-.print-only {{ display: none; }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── 4. HEADER Y NAVEGACIÓN ───────────────────────────────
-c1, c2, c3 = st.columns([1.5, 4, .5], vertical_alignment="top")
+# ── 4. HEADER Y NAVEGACIÓN (LOGO JYPESA) ─────────────────
+c1, c2, c3 = st.columns([2, 3.5, .5], vertical_alignment="top")
 
 with c1:
-    logo = "n1.png" if tema == "oscuro" else "n2.png"
     try:
-        st.image(logo, width=140)
-        st.markdown(f"<div style='margin-top:-15px;'><p style='font-size:9px; color:{vars_css['sub']}; letter-spacing:1px; text-transform:uppercase;'>CORE INTELLIGENCE</p></div>", unsafe_allow_html=True)
+        # Cargamos el logo de JYPESA directamente
+        st.image("jypesa.png", width=160)
+        st.markdown(f"<div style='margin-top:-15px;'><p style='font-size:9px; color:{vars_css['sub']}; letter-spacing:1px; text-transform:uppercase;'>AUTOMATIZACIÓN DE PROCESOS</p></div>", unsafe_allow_html=True)
     except:
-        st.markdown(f"<h2 style='color:{vars_css['text']}; margin:0;'>NEXION</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color:{vars_css['text']}; margin:0;'>JYPESA</h2>", unsafe_allow_html=True)
 
 with c2:
     cols = st.columns(4)
@@ -114,7 +105,7 @@ with c3:
 
 st.markdown(f"<hr class='no-print' style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
-# ── 5. CARGA DE INVENTARIO (BÚSQUEDA EN RAÍZ) ───────────
+# ── 5. CARGA DE INVENTARIO ───────────────────────────
 @st.cache_data
 def load_inventory():
     ruta = os.path.join(os.getcwd(), "inventario.csv")
@@ -134,6 +125,7 @@ st.markdown("<p class='no-print' style='text-align:center; font-size:11px; lette
 
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
+    # Definimos las variables que el HTML usará después
     fecha_val = h1.date_input("FECHA", value=datetime.now(), key="f_input")
     turno_val = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_input")
     folio_val = h3.text_input("FOLIO", value="F-2026-001", key="fol_input")
@@ -163,7 +155,6 @@ df_final = st.data_editor(
     on_change=handle_lookup
 )
 
-# ── 7. GENERACIÓN DEL HTML DE IMPRESIÓN (PRO RENDER) ──
 # ── 7. RENDERIZADO PRO JYPESA (HTML PARA PDF) ─────────
 filas_print = df_final[df_final["CODIGO"] != ""]
 tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
@@ -173,9 +164,9 @@ form_html = f"""
     <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
         <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
         <div style="text-align:right; font-size:12px;">
-            <p style="margin:0;"><b>FOLIO:</b> {fol_val}</p>
-            <p style="margin:0;"><b>FECHA:</b> {f_val}</p>
-            <p style="margin:0;"><b>TURNO:</b> {t_val}</p>
+            <p style="margin:0;"><b>FOLIO:</b> {folio_val}</p>
+            <p style="margin:0;"><b>FECHA:</b> {fecha_val}</p>
+            <p style="margin:0;"><b>TURNO:</b> {turno_val}</p>
         </div>
     </div>
     <h3 style="text-align:center; letter-spacing:5px; margin-top:30px; text-decoration:underline;">ENTREGA DE MATERIALES PT</h3>
@@ -207,6 +198,7 @@ if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_co
         key=f"print_{st.session_state.print_counter}"
     )
     st.toast("Generando documento JYPESA...", icon="📄")
+
 
 
 
