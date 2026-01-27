@@ -111,16 +111,31 @@ st.markdown(f"<p style='text-align: center; color: {v['sub']}; font-size: 10px; 
 
 _, col_sub, _ = st.columns([1, 1.8, 1])
 with col_sub:
-    # Selector idéntico a la imagen image_8f7f01.png
-    submenu = st.selectbox(
+    opcion_seleccionada = st.selectbox(
         "", 
         ["SELECCIONE...", "ENTREGA MATERIALES PT", "SALIDA PT", "ENTRADA MP", "INVENTARIOS"], 
-        index=1, # Por defecto en Entrega Materiales PT para esta página
+        index=0, 
         label_visibility="collapsed",
         key="sub_menu_selector"
     )
-    
+
 st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+
+# ── 5. LÓGICA DINÁMICA DE CONTENIDO ───────────────────
+
+if opcion_seleccionada == "SELECCIONE...":
+    st.markdown(f"""
+        <div style="text-align: center; margin-top: 100px;">
+            <p style="color: {v['sub']}; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">
+                Módulo de Formatos Operativos
+            </p>
+            <p style="color: {v['sub']}; font-size: 9px; opacity: 0.6;">
+                Seleccione un documento en el menú superior para continuar.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+elif opcion_seleccionada == "ENTREGA MATERIALES PT":
     # Título Minimalista Zara/DHL Style
     st.markdown(f"""
         <div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
@@ -196,6 +211,7 @@ st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
 
 else:
     st.markdown(f"<div style='text-align:center; margin-top:50px; color:{v['sub']}; font-size:11px;'>Módulo de {opcion_seleccionada} en desarrollo.</div>", unsafe_allow_html=True)
+
 
 
 
