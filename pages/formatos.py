@@ -30,87 +30,78 @@ else:
         "border": "#C9D1D9"
     }
 
-# ── 3. CSS MAESTRO (CONTRASTE TOTAL + HOVER INVERTIDO) ──
+# ── 3. CSS MAESTRO (UNIFICACIÓN TOTAL DE CAJAS) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. OCULTAR ELEMENTOS NATIVOS PARA DISEÑO LIMPIO */
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"],
-[data-testid="stStatusWidget"] {{ 
+/* 1. LIMPIEZA DE INTERFAZ */
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
     display:none !important; 
 }}
 
 .block-container {{ 
     padding-top: 1.5rem !important; 
-    padding-bottom: 0rem !important; 
 }}
 
-/* 2. TRANSICIONES GLOBALES (SUAVIDAD AL CAMBIAR TEMA) */
-* {{
-    transition: background-color .3s ease, color .3s ease, border-color .3s ease;
-}}
-
+/* 2. FONDO Y TEXTO GLOBAL */
 .stApp {{ 
     background: {v["bg"]} !important; 
     color: {v["text"]} !important; 
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* 3. SOLUCIÓN A TÍTULOS INVISIBLES (LABELS) */
-/* Forzamos a que "FECHA", "TURNO", etc. usen el color de texto del tema */
+/* 3. TÍTULOS (LABELS) - SIEMPRE VISIBLES */
 [data-testid="stWidgetLabel"] p {{
     color: {v["text"]} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     font-size: 11px !important;
     letter-spacing: 1.5px !important;
-    background-color: transparent !important;
 }}
 
-/* 4. ESTILO DE BOTONES BASE */
-div.stButton>button,
-div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
-    background: {v["card"]} !important; 
-    color: {v["text"]} !important;
-    border: 1px solid {v["border"]} !important; 
-    border-radius: 2px !important;
-    font-size: 11px !important; 
-    font-weight: 700 !important; 
-    letter-spacing: 2px !important; 
-    text-transform: uppercase;
-    width: 100%;
-}}
-
-/* 5. EL EFECTO HOVER INVERTIDO (TU SELLO DISTINTIVO) */
-div.stButton>button:hover {{
-    background: {v["text"]} !important;   /* Fondo blanco en oscuro / negro en claro */
-    color: {v["bg"]} !important;         /* Texto negro en oscuro / blanco en claro */
-    border-color: {v["text"]} !important;
-}}
-
-/* 6. INPUTS Y CAMPOS DE TEXTO */
-.stTextInput input {{
-    background: {v["card"]} !important;
+/* 4. UNIFICACIÓN DE TODAS LAS CAJAS (INPUTS, SELECTS, DATES) */
+/* Esto obliga a que todas tengan el mismo fondo y borde */
+div[data-baseweb="input"], 
+div[data-baseweb="select"] > div, 
+div[data-baseweb="base-input"],
+.stTextInput input,
+.stDateInput input {{
+    background-color: {v["card"]} !important;
     color: {v["text"]} !important;
     border: 1px solid {v["border"]} !important;
     border-radius: 2px !important;
     height: 42px !important;
 }}
 
-/* 7. TEXTO CENTRAL O MARKDOWN */
-/* Asegura que "ENTREGA DE MATERIALES" se vea en ambos temas */
+/* Forzar color de texto en los inputs para evitar que se queden blancos en fondo blanco */
+input {{
+    color: {v["text"]} !important;
+    -webkit-text-fill-color: {v["text"]} !important;
+}}
+
+/* 5. BOTONES CON HOVER INVERTIDO */
+div.stButton>button {{
+    background: {v["card"]} !important; 
+    color: {v["text"]} !important;
+    border: 1px solid {v["border"]} !important;
+    border-radius: 2px !important;
+    width: 100%;
+    transition: all .3s ease;
+}}
+
+div.stButton>button:hover {{
+    background: {v["text"]} !important;
+    color: {v["bg"]} !important;
+    border-color: {v["text"]} !important;
+}}
+
+/* 6. TÍTULO CENTRAL */
 .stMarkdown p, .stMarkdown h1, .stMarkdown h2 {{
     color: {v["text"]} !important;
-    letter-spacing: 2px !important;
+    text-align: center;
+    letter-spacing: 4px !important;
 }}
-
-/* NITIDEZ DEL LOGO NEXION */
-div[data-testid='stImage'] img {{ 
-    image-rendering: -webkit-optimize-contrast !important; 
-    transform: translateZ(0); 
-}}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -224,6 +215,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
