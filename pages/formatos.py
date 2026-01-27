@@ -53,7 +53,6 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
 }}
 
 /* 3. ARREGLO DE ALINEACIÓN LOGO Y SUBTÍTULO */
-/* Forzamos que el contenedor de la imagen no empuje el texto */
 div[data-testid="stImage"] {{
     text-align: left !important;
     width: fit-content !important;
@@ -65,13 +64,12 @@ div[data-testid="stImage"] img {{
     margin-left: 0 !important;
 }}
 
-/* Ajuste específico para el texto de 'AUTOMATIZACIÓN DE PROCESOS' */
 .stMarkdown p {{
     margin-left: 0 !important;
     text-align: left !important;
 }}
 
-/* 4. TÍTULOS DE CAMPOS (FECHA, TURNO, ETC) */
+/* 4. TÍTULOS DE CAMPOS */
 [data-testid="stWidgetLabel"] p {{
     color: {v["text"]} !important;
     font-weight: 700 !important;
@@ -81,18 +79,27 @@ div[data-testid="stImage"] img {{
     text-align: left !important;
 }}
 
-/* 5. UNIFICACIÓN DE CAJAS (INPUTS, SELECTS, DATES) */
-/* Todas las cajas ahora tendrán el mismo color de fondo y borde */
+/* 5. UNIFICACIÓN DE CAJAS (CORREGIDO PARA GROSOR IDENTICO) */
+/* Aplicamos el borde al contenedor raíz de cada widget para que pesen lo mismo visualmente */
 div[data-baseweb="input"], 
 div[data-baseweb="select"] > div, 
-div[data-baseweb="base-input"],
-.stTextInput input,
-.stDateInput input {{
+div[data-baseweb="calendar"] {{
     background-color: {v["card"]} !important;
+    border: 1px solid {v["border"]} !important; /* Mismo grosor para todos */
+    border-radius: 4px !important;
+    min-height: 42px !important;
+}}
+
+/* Forzamos que los inputs internos no tengan borde propio para no sumar grosores */
+.stTextInput input, .stDateInput input {{
+    border: none !important;
+    background-color: transparent !important;
     color: {v["text"]} !important;
-    border: 1px solid {v["border"]} !important;
-    border-radius: 2px !important;
-    height: 42px !important;
+}}
+
+/* Ajuste específico para el texto del selectbox */
+div[data-testid="stSelectbox"] div[data-baseweb="select"] {{
+    color: {v["text"]} !important;
 }}
 
 /* 6. BOTONES CON HOVER INVERTIDO */
@@ -100,9 +107,10 @@ div.stButton>button {{
     background: {v["card"]} !important; 
     color: {v["text"]} !important;
     border: 1px solid {v["border"]} !important;
-    border-radius: 2px !important;
+    border-radius: 4px !important;
     width: 100%;
     transition: all .3s ease;
+    height: 42px !important;
 }}
 
 div.stButton>button:hover {{
@@ -272,6 +280,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
