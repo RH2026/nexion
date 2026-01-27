@@ -1,24 +1,4 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-import os
-import streamlit.components.v1 as components
-
-# 1. CONFIGURACIÓN DE PÁGINA (Título actualizado)
-st.set_page_config(page_title="NEXION | Automatizacion de Procesos", layout="wide", initial_sidebar_state="collapsed")
-
-# ── 2. TEMA DINÁMICO (Sincronizado con Dashboard) ────────
-if "tema" not in st.session_state:
-    st.session_state.tema = "oscuro"
-
-tema = st.session_state.tema
-
-if tema == "oscuro":
-    v = {"bg": "#05070A", "card": "#0D1117", "text": "#F0F6FC", "sub": "#8B949E", "border": "#1B1F24"}
-else:
-    v = {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9"}
-
-# ── 3. CSS MAESTRO (CON HOVER DE ALTO CONTRASTE INVERTIDO) ──
+# ── 3. CSS MAESTRO (UNIFICACIÓN DE COLORES E INPUTS) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -33,21 +13,12 @@ st.markdown(f"""
   --btnp-txt: {v["bg"]};
 }}
 
-/* ELEVAR HEADER Y OCULTAR ELEMENTOS NATIVOS */
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"],
-[data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{ 
+/* OCULTAR ELEMENTOS NATIVOS */
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
     display:none !important; 
 }}
 
-.block-container {{ 
-    padding-top: 1.5rem !important; 
-    padding-bottom: 0rem !important; 
-}}
-
-/* TRANSICIONES GLOBALES */
-* {{
-    transition: background-color .35s ease, color .35s ease, border-color .35s ease;
-}}
+.block-container {{ padding-top: 1.5rem !important; }}
 
 .stApp {{ 
     background: var(--bg) !important; 
@@ -55,7 +26,7 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* VISIBILIDAD DE LABELS (FECHA, TURNO, FOLIO) */
+/* VISIBILIDAD DE LABELS */
 [data-testid="stWidgetLabel"] p {{
     color: var(--text) !important;
     font-weight: 700 !important;
@@ -64,15 +35,21 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     letter-spacing: 1px !important;
 }}
 
-/* NITIDEZ LOGO */
-div[data-testid='stImage'] img {{ 
-    image-rendering: -webkit-optimize-contrast !important; 
-    transform: translateZ(0); 
+/* UNIFICACIÓN DE TODOS LOS INPUTS (FECHA, SELECT, TEXTO) */
+/* Esto asegura que se vean parejos en tema claro */
+div[data-testid="stdate_input"] > div > div,
+div[data-testid="stSelectbox"] > div > div,
+div[data-testid="stTextInput"] > div > div,
+.stTextInput input, .stSelectbox div[role="button"] {{
+    background-color: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 2px !important;
+    height: 42px !important;
 }}
 
-/* BOTONES CON ESTILO BASE */
-div.stButton>button,
-div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
+/* BOTONES CON HOVER INVERTIDO */
+div.stButton>button {{
     background: var(--card) !important; 
     color: var(--text) !important;
     border: 1px solid var(--border) !important; 
@@ -82,30 +59,21 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
     letter-spacing: 2px !important; 
     text-transform: uppercase;
     width: 100%;
+    transition: all .3s ease;
 }}
 
-/* ── EL CAMBIO CLAVE: HOVER INVERTIDO ── */
 div.stButton>button:hover {{
-    background: var(--text) !important;   /* Fondo blanco en oscuro / negro en claro */
-    color: var(--bg) !important;         /* Letra negra en oscuro / blanca en claro */
+    background: var(--text) !important;
+    color: var(--bg) !important;
     border-color: var(--text) !important;
 }}
 
-/* BOTÓN PRIMARIO MANTIENE SU IDENTIDAD */
+/* BOTÓN PRIMARIO */
 div.stButton>button[kind="primary"] {{
     background: var(--btnp-bg) !important;
     color: var(--btnp-txt) !important;
     border: none !important;
     font-weight: 800 !important;
-    height: 48px !important;
-}}
-
-/* INPUTS */
-.stTextInput input {{
-    background: var(--card) !important;
-    color: var(--text) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 2px !important;
     height: 48px !important;
 }}
 </style>
@@ -210,6 +178,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
