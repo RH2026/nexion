@@ -164,17 +164,14 @@ df_final = st.data_editor(
 )
 
 # ── 7. GENERACIÓN DEL HTML DE IMPRESIÓN (PRO RENDER) ──
-# ── 7. RENDERIZADO PROFESIONAL PARA PDF ───────────────
+# ── 7. RENDERIZADO PRO JYPESA (HTML PARA PDF) ─────────
 filas_print = df_final[df_final["CODIGO"] != ""]
 tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
 
 form_html = f"""
-<div id="print-area" style="font-family:sans-serif; padding:20px; color:black; background:white;">
+<div style="font-family:sans-serif; padding:20px; color:black; background:white;">
     <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
-        <div>
-            <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
-            <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
-        </div>
+        <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
         <div style="text-align:right; font-size:12px;">
             <p style="margin:0;"><b>FOLIO:</b> {fol_val}</p>
             <p style="margin:0;"><b>FECHA:</b> {f_val}</p>
@@ -200,20 +197,17 @@ form_html = f"""
 
 # ── 8. BOTÓN DE IMPRESIÓN REUTILIZABLE ────────────────
 st.markdown("<br>", unsafe_allow_html=True)
-
-# Usamos un contador en el Session State para forzar que el componente de impresión sea "nuevo" cada vez
-if "print_counter" not in st.session_state:
-    st.session_state.print_counter = 0
+if "print_counter" not in st.session_state: st.session_state.print_counter = 0
 
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     st.session_state.print_counter += 1
-    # El componente se renderiza con una key única para que no se bloquee tras el primer uso
     components.html(
         f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", 
         height=0, 
-        key=f"print_trigger_{st.session_state.print_counter}"
+        key=f"print_{st.session_state.print_counter}"
     )
     st.toast("Generando documento JYPESA...", icon="📄")
+
 
 
 
