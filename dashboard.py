@@ -42,7 +42,7 @@ btn_primary_bg  = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
 
-# ── 3. CSS MAESTRO (CORREGIDO Y SIN ERRORES) ──
+# ── 3. CSS MAESTRO (CON HOVER DE ALTO CONTRASTE INVERTIDO) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -53,7 +53,6 @@ st.markdown(f"""
   --text: {text_main}; 
   --sub: {text_sub};
   --border: {border_color}; 
-  --hover: {btn_hover};
   --btnp-bg: {btn_primary_bg};
   --btnp-txt: {btn_primary_txt};
 }}
@@ -80,7 +79,7 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* FIX: VISIBILIDAD DE LETRAS (LABELS) EN TEMA CLARO/OSCURO */
+/* FIX: VISIBILIDAD DE LETRAS (LABELS) */
 [data-testid="stWidgetLabel"] p {{
     color: var(--text) !important;
     font-weight: 700 !important;
@@ -95,7 +94,7 @@ div[data-testid='stImage'] img {{
     transform: translateZ(0); 
 }}
 
-/* BOTONES CON HOVER IDÉNTICO AL DASHBOARD */
+/* BOTONES CON ESTILO BASE */
 div.stButton>button,
 div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
     background: var(--card) !important; 
@@ -109,13 +108,14 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
     width: 100%;
 }}
 
+/* ── EL CAMBIO CLAVE: HOVER INVERTIDO ── */
 div.stButton>button:hover {{
-    background: var(--hover) !important;
+    background: var(--text) !important;   /* Fondo blanco en oscuro / negro en claro */
+    color: var(--bg) !important;         /* Letra negra en oscuro / blanca en claro */
     border-color: var(--text) !important;
-    color: var(--text) !important;
 }}
 
-/* ESTILO PARA BOTÓN PRIMARIO (IMPRIMIR / ACCIÓN) */
+/* BOTÓN PRIMARIO MANTIENE SU IDENTIDAD */
 div.stButton>button[kind="primary"] {{
     background: var(--btnp-bg) !important;
     color: var(--btnp-txt) !important;
@@ -124,7 +124,7 @@ div.stButton>button[kind="primary"] {{
     height: 48px !important;
 }}
 
-/* INPUTS DE TEXTO */
+/* INPUTS */
 .stTextInput input {{
     background: var(--card) !important;
     color: var(--text) !important;
@@ -419,6 +419,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
