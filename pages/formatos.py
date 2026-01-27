@@ -106,23 +106,28 @@ with c3:
 
 st.markdown(f"<hr class='no-print' style='border-top:1px solid {v['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
-# ── 4.1 SUBMENÚ OPERATIVO (REPLICANDO DASHBOARD) ──────
-st.markdown(f"<p style='text-align: center; color: {v['sub']}; font-size: 10px; letter-spacing: 5px; text-transform: uppercase; margin-top: 10px;'>Submenú Formatos</p>", unsafe_allow_html=True)
-
-_, col_sub, _ = st.columns([1, 1.8, 1])
-with col_sub:
-    opcion_seleccionada = st.selectbox(
-        "", 
-        ["SELECCIONE...", "ENTREGA MATERIALES PT", "SALIDA PT", "ENTRADA MP", "INVENTARIOS"], 
-        index=0, 
-        label_visibility="collapsed",
-        key="sub_menu_selector"
-    )
-
-st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+# ── 4.1 LÓGICA DE SUBMENÚ QUE DESAPARECE AL SELECCIONAR ──
+if "sub_menu_selector" not in st.session_state or st.session_state.sub_menu_selector == "SELECCIONE...":
+    st.markdown(f"<p style='text-align: center; color: {v['sub']}; font-size: 10px; letter-spacing: 5px; text-transform: uppercase; margin-top: 10px;'>Submenú Formatos</p>", unsafe_allow_html=True)
+    _, col_sub, _ = st.columns([1, 1.8, 1])
+    with col_sub:
+        opcion_seleccionada = st.selectbox(
+            "", 
+            ["SELECCIONE...", "ENTREGA MATERIALES PT", "SALIDA PT", "ENTRADA MP", "INVENTARIOS"], 
+            index=0, 
+            label_visibility="collapsed",
+            key="sub_menu_selector"
+        )
+    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+else:
+    # Si ya hay una opción, la tomamos del session_state para que el menú no se muestre
+    opcion_seleccionada = st.session_state.sub_menu_selector
+    # Botón minimalista para volver al menú
+    if st.sidebar.button("← VOLVER AL MENÚ", use_container_width=True):
+        st.session_state.sub_menu_selector = "SELECCIONE..."
+        st.rerun()
 
 # ── 5. LÓGICA DINÁMICA DE CONTENIDO ───────────────────
-
 if opcion_seleccionada == "SELECCIONE...":
     st.markdown(f"""
         <div style="text-align: center; margin-top: 100px;">
@@ -130,13 +135,12 @@ if opcion_seleccionada == "SELECCIONE...":
                 Módulo de Formatos Operativos
             </p>
             <p style="color: {v['sub']}; font-size: 9px; opacity: 0.6;">
-                Seleccione un documento en el menú superior para continuar.
+                Seleccione un documento para continuar.
             </p>
         </div>
     """, unsafe_allow_html=True)
 
 elif opcion_seleccionada == "ENTREGA MATERIALES PT":
-    # Título Minimalista Zara/DHL Style
     st.markdown(f"""
         <div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
             <h1 style="font-weight: 300; letter-spacing: 12px; text-transform: uppercase; font-size: 15px; color: {v['text']}; opacity: 0.9;">
@@ -211,6 +215,7 @@ elif opcion_seleccionada == "ENTREGA MATERIALES PT":
 
 else:
     st.markdown(f"<div style='text-align:center; margin-top:50px; color:{v['sub']}; font-size:11px;'>Módulo de {opcion_seleccionada} en desarrollo.</div>", unsafe_allow_html=True)
+
 
 
 
