@@ -164,58 +164,56 @@ df_final = st.data_editor(
 )
 
 # ── 7. GENERACIÓN DEL HTML DE IMPRESIÓN (PRO RENDER) ──
-# Filtramos solo las filas que tienen datos para un reporte limpio
-filas_llenas = df_final[df_final["CODIGO"] != ""]
-tabla_html = "".join([f"""
-    <tr>
-        <td style="border:1px solid black; padding:8px;">{r['CODIGO']}</td>
-        <td style="border:1px solid black; padding:8px;">{r['DESCRIPCION']}</td>
-        <td style="border:1px solid black; padding:8px; text-align:center;">{r['CANTIDAD']}</td>
-    </tr>""" for _, r in filas_llenas.iterrows()])
+# ── 7. RENDERIZADO PROFESIONAL PARA PDF ───────────────
+filas_print = df_final[df_final["CODIGO"] != ""]
+tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
 
 form_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        body {{ font-family: 'Inter', sans-serif; padding: 20px; color: black; background: white; }}
-        .header {{ display: flex; justify-content: space-between; border-bottom: 2px solid black; padding-bottom: 10px; }}
-        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-        th {{ background-color: #f2f2f2; border: 1px solid black; padding: 10px; text-align: left; font-size: 12px; }}
-        .signatures {{ margin-top: 80px; display: flex; justify-content: space-around; text-align: center; font-size: 10px; }}
-        .sig-box {{ width: 30%; border-top: 1px solid black; padding-top: 5px; }}
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div><h2 style="margin:0; letter-spacing:2px;">NEXION LOGISTICS</h2><p style="margin:0; font-size:10px;">CORE INTELLIGENCE</p></div>
-        <div style="text-align: right; font-size: 12px;">
-            <p style="margin:0;"><b>FOLIO:</b> {folio_val}</p>
-            <p style="margin:0;"><b>FECHA:</b> {fecha_val}</p>
-            <p style="margin:0;"><b>TURNO:</b> {turno_val}</p>
+<div id="print-area" style="font-family:sans-serif; padding:20px; color:black; background:white;">
+    <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
+        <div>
+            <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
+            <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+        </div>
+        <div style="text-align:right; font-size:12px;">
+            <p style="margin:0;"><b>FOLIO:</b> {fol_val}</p>
+            <p style="margin:0;"><b>FECHA:</b> {f_val}</p>
+            <p style="margin:0;"><b>TURNO:</b> {t_val}</p>
         </div>
     </div>
-    <h3 style="text-align:center; letter-spacing:5px; margin-top:40px; text-decoration: underline;">ENTREGA DE MATERIALES PT</h3>
-    <table>
-        <thead><tr><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th style="text-align:center;">CANTIDAD</th></tr></thead>
+    <h3 style="text-align:center; letter-spacing:5px; margin-top:30px; text-decoration:underline;">ENTREGA DE MATERIALES PT</h3>
+    <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+        <thead><tr style="background:#f2f2f2;">
+            <th style="border:1px solid black;padding:10px;">CÓDIGO</th>
+            <th style="border:1px solid black;padding:10px;">DESCRIPCIÓN</th>
+            <th style="border:1px solid black;padding:10px;text-align:center;">CANTIDAD</th>
+        </tr></thead>
         <tbody>{tabla_html}</tbody>
     </table>
-    <div class="signatures">
-        <div class="sig-box">ENTREGÓ<br><b>Analista de Inventario</b></div>
-        <div class="sig-box">AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></div>
-        <div class="sig-box">RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></div>
+    <div style="margin-top:80px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
+        <div style="width:30%; border-top:1px solid black;">ENTREGÓ<br><b>Analista de Inventario</b></div>
+        <div style="width:30%; border-top:1px solid black;">AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></div>
+        <div style="width:30%; border-top:1px solid black;">RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></div>
     </div>
-</body>
-</html>
+</div>
 """
 
-# ── 8. BOTÓN Y COMPONENTE DE DISPARO (RENDERIZADO FORZADO) ──
+# ── 8. BOTÓN DE IMPRESIÓN REUTILIZABLE ────────────────
 st.markdown("<br>", unsafe_allow_html=True)
+
+# Usamos un contador en el Session State para forzar que el componente de impresión sea "nuevo" cada vez
+if "print_counter" not in st.session_state:
+    st.session_state.print_counter = 0
+
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
-    # El IFrame aísla el contenido de Streamlit para que el navegador lo renderice 1:1
-    components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
-    st.toast("Preparando documento para impresión...", icon="📄")
+    st.session_state.print_counter += 1
+    # El componente se renderiza con una key única para que no se bloquee tras el primer uso
+    components.html(
+        f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", 
+        height=0, 
+        key=f"print_trigger_{st.session_state.print_counter}"
+    )
+    st.toast("Generando documento JYPESA...", icon="📄")
 
 
 
