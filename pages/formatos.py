@@ -190,6 +190,19 @@ filas_print = df_final[df_final["CODIGO"] != ""]
 tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
 
 form_html = f"""
+<style>
+    @media print {{
+        @page {{ 
+            margin: 0.5cm; /* Ajusta el margen a tu gusto */
+        }}
+        /* Oculta encabezados y pies de página en algunos navegadores */
+        header, footer, .no-print {{
+            display: none !important;
+        }}
+    }}
+</style>
+<div style="font-family:sans-serif; padding:20px; color:black; background:white;">
+
 <div style="font-family:sans-serif; padding:20px; color:black; background:white;">
     <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
         <div>
@@ -224,6 +237,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
