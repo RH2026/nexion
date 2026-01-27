@@ -4,21 +4,29 @@ from datetime import datetime
 import os
 import streamlit.components.v1 as components
 
-# 1. CONFIGURACIÓN DE PÁGINA (Título actualizado)
-st.set_page_config(page_title="NEXION | Automatizacion de Procesos", layout="wide", initial_sidebar_state="collapsed")
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(page_title="NEXION | Automatización de Procesos", layout="wide", initial_sidebar_state="collapsed")
 
-# ── 2. TEMA DINÁMICO (Sincronizado con Dashboard) ────────
+# ── 2. TEMA DINÁMICO (Sincronizado) ────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
 tema = st.session_state.tema
 
 if tema == "oscuro":
-    v = {"bg": "#05070A", "card": "#0D1117", "text": "#F0F6FC", "sub": "#8B949E", "border": "#1B1F24"}
+    v = {
+        "bg": "#05070A", "card": "#0D1117", 
+        "text": "#F0F6FC", "sub": "#8B949E", 
+        "border": "#1B1F24"
+    }
 else:
-    v = {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9"}
+    v = {
+        "bg": "#E9ECF1", "card": "#FFFFFF", 
+        "text": "#111111", "sub": "#2D3136", 
+        "border": "#C9D1D9"
+    }
 
-# ── 3. CSS MAESTRO (RESTABLECIENDO HOVER + VISIBILIDAD DE LETRAS) ──
+# ── 3. CSS MAESTRO (HOVER INVERTIDO + FIX LABELS) ──────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -27,10 +35,9 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     display:none !important; 
 }}
 
-.block-container {{ 
-    padding-top: 1.5rem !important; 
-    padding-bottom: 0rem !important; 
-}}
+.block-container {{ padding-top: 1.5rem !important; }}
+
+* {{ transition: background-color .35s ease, color .35s ease, border-color .35s ease; }}
 
 .stApp {{ 
     background:{v["bg"]} !important; 
@@ -38,30 +45,24 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family:'Inter',sans-serif !important; 
 }}
 
-/* FIX: VISIBILIDAD DE LETRAS (LABELS) EN TEMA CLARO */
+/* VISIBILIDAD DE LABELS (FECHA, TURNO, FOLIO) */
 [data-testid="stWidgetLabel"] p {{
     color: {v["text"]} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 1px !important;
 }}
 
-/* NITIDEZ LOGO */
-div[data-testid='stImage'] img {{ 
-    image-rendering: -webkit-optimize-contrast !important; 
-    transform: translateZ(0); 
-}}
-
-/* RESTABLECIENDO HOVER Y ESTILO DE BOTONES */
+/* BOTONES CON HOVER DE ALTO CONTRASTE INVERTIDO */
 div.stButton>button {{
     background:{v["card"]} !important; 
     color:{v["text"]} !important;
     border: 1px solid {v["border"]} !important; 
     border-radius:2px !important;
-    font-size:11px !important; 
-    font-weight:700 !important; 
-    letter-spacing:2px !important; 
-    text-transform:uppercase;
-    transition: all .3s ease !important;
+    font-size:11px !important; font-weight:700 !important; 
+    letter-spacing:2px !important; text-transform:uppercase;
+    width: 100%;
 }}
 
 div.stButton>button:hover {{
@@ -69,23 +70,32 @@ div.stButton>button:hover {{
     color: {v["bg"]} !important;
     border-color: {v["text"]} !important;
 }}
+
+/* BOTÓN PRIMARIO (IMPRIMIR) */
+div.stButton>button[kind="primary"] {{
+    background: {v["text"]} !important;
+    color: {v["bg"]} !important;
+    border: none !important;
+    height: 48px !important;
+}}
+
+@media print {{ .no-print {{ display: none !important; }} }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── 4. HEADER Y NAVEGACIÓN (Título Visual Actualizado) ───
+# ── 4. HEADER NEXION ──────────────────────────────────
 c1, c2, c3 = st.columns([2, 3.5, .5], vertical_alignment="top")
 with c1:
     logo = "n1.png" if tema == "oscuro" else "n2.png"
     try:
         st.image(logo, width=140)
-        # Actualización de subtítulo visual
-        st.markdown(f"<div style='margin-top:-15px;'><p style='font-size:9px; color:{v['sub']}; letter-spacing:1px; text-transform:uppercase;'>Automatización de Procesos</p></div>", unsafe_allow_html=True)
-    except: 
-        st.markdown(f"<h2 style='color:{v['text']}; margin:0;'>NEXION</h2>", unsafe_allow_html=True)
+        st.markdown(f"<div style='margin-top:-15px;'><p style='font-size:9px; color:{v['sub']}; letter-spacing:1px; text-transform:uppercase;'>Core Intelligence</p></div>", unsafe_allow_html=True)
+    except: st.title("NEXION")
 
 with c2:
     cols = st.columns(4)
-    for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]):
+    menu = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
+    for i, b in enumerate(menu):
         if cols[i].button(b, key=f"nav_{b}", use_container_width=True):
             if b != "FORMATOS": st.switch_page("dashboard.py")
             else: st.rerun()
@@ -94,7 +104,16 @@ with c3:
     if st.button("☀️" if tema == "oscuro" else "🌙", key="t_btn"):
         st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"; st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {v['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
+st.markdown(f"<hr class='no-print' style='border-top:1px solid {v['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
+
+# ── 5. TÍTULO MINIMALISTA (ZARA / DHL STYLE) ──────────
+st.markdown(f"""
+    <div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
+        <h1 style="font-weight: 300; letter-spacing: 12px; text-transform: uppercase; font-size: 15px; color: {v['text']}; opacity: 0.9;">
+            E N T R E G A &nbsp; D E &nbsp; M A T E R I A L E S &nbsp; P T
+        </h1>
+    </div>
+""", unsafe_allow_html=True)
 
 # ── 5. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
 @st.cache_data
@@ -108,24 +127,6 @@ def load_inventory():
     except: return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
 
 df_inv = load_inventory()
-
-# ── 6. CUERPO DE ENTRADA (ESTILO MINIMALISTA) ──────────────
-
-# Título con estética Zara / DHL / Minimalist
-st.markdown(f"""
-    <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
-        <h1 style="
-            font-family: 'Inter', sans-serif; 
-            font-weight: 300; 
-            letter-spacing: 12px; 
-            text-transform: uppercase; 
-            font-size: 16px; 
-            color: {text_main}; 
-            opacity: 0.9;">
-            E N T R E G A &nbsp; D E &nbsp; M A T E R I A L E S &nbsp; P T
-        </h1>
-    </div>
-""", unsafe_allow_html=True)
 
 
 # ── 6. CUERPO DE ENTRADA (WEB) ────────────────────────
@@ -191,6 +192,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
