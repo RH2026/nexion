@@ -94,8 +94,8 @@ with c1:
 
 with c2:
     cols = st.columns(4)
-    menu = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
-    for i, b in enumerate(menu):
+    menu_superior = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
+    for i, b in enumerate(menu_superior):
         if cols[i].button(b, key=f"nav_{b}", use_container_width=True):
             if b != "FORMATOS": st.switch_page("dashboard.py")
             else: st.rerun()
@@ -105,6 +105,22 @@ with c3:
         st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"; st.rerun()
 
 st.markdown(f"<hr class='no-print' style='border-top:1px solid {v['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
+
+# ── 4.1 SUBMENÚ OPERATIVO (REPLICANDO DASHBOARD) ──────
+st.markdown(f"<p style='text-align: center; color: {v['sub']}; font-size: 10px; letter-spacing: 5px; text-transform: uppercase; margin-top: 10px;'>Submenú Formatos</p>", unsafe_allow_html=True)
+
+_, col_sub, _ = st.columns([1, 1.8, 1])
+with col_sub:
+    # Selector idéntico a la imagen image_8f7f01.png
+    submenu = st.selectbox(
+        "", 
+        ["SELECCIONE...", "ENTREGA MATERIALES PT", "SALIDA PT", "ENTRADA MP", "INVENTARIOS"], 
+        index=1, # Por defecto en Entrega Materiales PT para esta página
+        label_visibility="collapsed",
+        key="sub_menu_selector"
+    )
+    
+st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
 
 # ── 5. TÍTULO MINIMALISTA (ZARA / DHL STYLE) ──────────
 st.markdown(f"""
@@ -192,6 +208,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
