@@ -136,93 +136,82 @@ if opcion_seleccionada == "SELECCIONE...":
     """, unsafe_allow_html=True)
 
 elif opcion_seleccionada == "ENTREGA MATERIALES PT":
+    # Título Minimalista Zara/DHL Style
+    st.markdown(f"""
+        <div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
+            <h1 style="font-weight: 300; letter-spacing: 12px; text-transform: uppercase; font-size: 15px; color: {v['text']}; opacity: 0.9;">
+                E N T R E G A &nbsp; D E &nbsp; M A T E R I A L E S &nbsp; P T
+            </h1>
+        </div>
+    """, unsafe_allow_html=True)
 
-# ── 5. TÍTULO MINIMALISTA (ZARA / DHL STYLE) ──────────
-st.markdown(f"""
-    <div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
-        <h1 style="font-weight: 300; letter-spacing: 12px; text-transform: uppercase; font-size: 15px; color: {v['text']}; opacity: 0.9;">
-            E N T R E G A &nbsp; D E &nbsp; M A T E R I A L E S &nbsp; P T
-        </h1>
-    </div>
-""", unsafe_allow_html=True)
+    @st.cache_data
+    def load_inv():
+        ruta = "inventario.csv"
+        if not os.path.exists(ruta): ruta = os.path.join(os.getcwd(), "inventario.csv")
+        try:
+            df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
+            df.columns = [str(c).strip().upper() for c in df.columns]
+            return df
+        except: return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
 
-# ── 5. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
-@st.cache_data
-def load_inventory():
-    ruta = os.path.join(os.getcwd(), "inventario.csv")
-    if not os.path.exists(ruta): ruta = os.path.join(os.getcwd(), "..", "inventario.csv")
-    try:
-        df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
-        df.columns = [str(c).strip().upper() for c in df.columns] # CODIGO, DESCRIPCION
-        return df
-    except: return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
+    df_inv = load_inv()
 
-df_inv = load_inventory()
+    with st.container(border=True):
+        h1, h2, h3 = st.columns(3)
+        fecha_val = h1.date_input("FECHA", value=datetime.now())
+        turno_val = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"])
+        folio_val = h3.text_input("FOLIO", value="F-2026-001")
 
+    if 'rows' not in st.session_state:
+        st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
 
-# ── 6. CUERPO DE ENTRADA (WEB) ────────────────────────
-with st.container(border=True):
-    h1, h2, h3 = st.columns(3)
-    f_val = h1.date_input("FECHA", value=datetime.now(), key="f_in")
-    t_val = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in")
-    fol_val = h3.text_input("FOLIO", value="F-2026-001", key="fol_in")
-
-if 'rows' not in st.session_state:
-    st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
-
-def lookup():
-    edits = st.session_state["editor_pt"].get("edited_rows", {})
-    for idx_str, info in edits.items():
-        idx = int(idx_str)
-        if "CODIGO" in info:
-            val = str(info["CODIGO"]).strip().upper()
-            if not df_inv.empty:
-                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val]
+    def lookup():
+        edits = st.session_state["editor_pt"].get("edited_rows", {})
+        for idx_str, info in edits.items():
+            idx = int(idx_str)
+            if "CODIGO" in info:
+                val = str(info["CODIGO"]).strip().upper()
+                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val] if not df_inv.empty else pd.DataFrame()
                 if not match.empty:
                     st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
                     st.session_state.rows.at[idx, "CODIGO"] = val
 
-df_final = st.data_editor(st.session_state.rows, num_rows="dynamic", use_container_width=True, key="editor_pt", on_change=lookup)
+    df_final = st.data_editor(st.session_state.rows, num_rows="dynamic", use_container_width=True, key="editor_pt", on_change=lookup)
 
-# ── 7. RENDERIZADO PRO (HTML PARA IMPRESIÓN) ───────────
-filas_print = df_final[df_final["CODIGO"] != ""]
-tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
+    if "print_counter" not in st.session_state: st.session_state.print_counter = 0
 
-form_html = f"""
-<div style="font-family:sans-serif; padding:20px; color:black; background:white;">
-    <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
-        <div>
-            <h2 style="margin:0; letter-spacing:2px;">NEXION LOGISTICS</h2>
-            <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🖨️ GENERAR FORMATO PROFESIONAL", type="primary", use_container_width=True):
+        st.session_state.print_counter += 1
+        filas = df_final[df_final["CODIGO"].str.strip() != ""]
+        tabla = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas.iterrows()])
+        
+        form_html = f"""
+        <div style="font-family:sans-serif; padding:20px; color:black; background:white;">
+            <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
+                <div><h2 style="margin:0;">NEXION LOGISTICS</h2><p style="margin:0; font-size:10px;">CORE INTELLIGENCE</p></div>
+                <div style="text-align:right; font-size:12px;">
+                    <p style="margin:0;"><b>FOLIO:</b> {folio_val}</p><p style="margin:0;"><b>FECHA:</b> {fecha_val}</p><p style="margin:0;"><b>TURNO:</b> {turno_val}</p>
+                </div>
+            </div>
+            <h3 style="text-align:center; letter-spacing:5px; margin-top:30px; text-decoration:underline;">ENTREGA DE MATERIALES PT</h3>
+            <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                <thead><tr style="background:#f2f2f2;"><th style="border:1px solid black;padding:10px;">CÓDIGO</th><th style="border:1px solid black;padding:10px;">DESCRIPCIÓN</th><th style="border:1px solid black;padding:10px;text-align:center;">CANTIDAD</th></tr></thead>
+                <tbody>{tabla}</tbody>
+            </table>
+            <div style="margin-top:80px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
+                <div style="width:30%; border-top:1px solid black;">ENTREGÓ<br><b>Analista de Inventario</b></div>
+                <div style="width:30%; border-top:1px solid black;">AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></div>
+                <div style="width:30%; border-top:1px solid black;">RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></div>
+            </div>
         </div>
-        <div style="text-align:right; font-size:12px;">
-            <p style="margin:0;"><b>FOLIO:</b> {fol_val}</p>
-            <p style="margin:0;"><b>FECHA:</b> {f_val}</p>
-            <p style="margin:0;"><b>TURNO:</b> {t_val}</p>
-        </div>
-    </div>
-    <h3 style="text-align:center; letter-spacing:5px; margin-top:30px; text-decoration:underline;">ENTREGA DE MATERIALES PT</h3>
-    <table style="width:100%; border-collapse:collapse; margin-top:20px;">
-        <thead><tr style="background:#f2f2f2;">
-            <th style="border:1px solid black;padding:10px;">CÓDIGO</th>
-            <th style="border:1px solid black;padding:10px;">DESCRIPCIÓN</th>
-            <th style="border:1px solid black;padding:10px;text-align:center;">CANTIDAD</th>
-        </tr></thead>
-        <tbody>{tabla_html}</tbody>
-    </table>
-    <div style="margin-top:80px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
-        <div style="width:30%; border-top:1px solid black;">ENTREGÓ<br><b>Analista de Inventario</b></div>
-        <div style="width:30%; border-top:1px solid black;">AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></div>
-        <div style="width:30%; border-top:1px solid black;">RECIBIÓ<br><b>Jesus Moreno / Aux. Logística</b></div>
-    </div>
-</div>
-"""
+        """
+        components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=1, key=f"p_{st.session_state.print_counter}")
 
-# ── 8. BOTÓN DE ACCIÓN FINAL ───────────────────────────
-st.markdown("<br>", unsafe_allow_html=True)
-if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
-    components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
-    st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+else:
+    st.markdown(f"<div style='text-align:center; margin-top:50px; color:{v['sub']}; font-size:11px;'>Módulo de {opcion_seleccionada} en desarrollo.</div>", unsafe_allow_html=True)
+
 
 
 
