@@ -42,22 +42,25 @@ btn_primary_bg  = vars_css["btn_primary_bg"]
 btn_primary_txt = vars_css["btn_primary_txt"]
 
 
-# ── 3. CSS MAESTRO (CON HOVER IDÉNTICO AL DASHBOARD + FIX DE LETRAS) ──
+# ── 3. CSS MAESTRO (CORREGIDO Y SIN ERRORES) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 :root {{
-  --bg: {v["bg"]}; 
-  --card: {v["card"]};
-  --text: {v["text"]}; 
-  --sub: {v["sub"]};
-  --border: {v["border"]}; 
-  --hover: {"#161B22" if tema == "oscuro" else "#EBEEF2"};
+  --bg: {bg_color}; 
+  --card: {card_bg};
+  --text: {text_main}; 
+  --sub: {text_sub};
+  --border: {border_color}; 
+  --hover: {btn_hover};
+  --btnp-bg: {btn_primary_bg};
+  --btnp-txt: {btn_primary_txt};
 }}
 
-/* ELEVAR HEADER */
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
+/* ELEVAR HEADER Y OCULTAR ELEMENTOS NATIVOS */
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"], .viewerBadge_container__1QSob {{ 
     display:none !important; 
 }}
 
@@ -66,6 +69,7 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     padding-bottom: 0rem !important; 
 }}
 
+/* TRANSICIONES GLOBALES */
 * {{
     transition: background-color .35s ease, color .35s ease, border-color .35s ease;
 }}
@@ -76,7 +80,7 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* FIX: VISIBILIDAD DE LETRAS (LABELS) */
+/* FIX: VISIBILIDAD DE LETRAS (LABELS) EN TEMA CLARO/OSCURO */
 [data-testid="stWidgetLabel"] p {{
     color: var(--text) !important;
     font-weight: 700 !important;
@@ -91,8 +95,9 @@ div[data-testid='stImage'] img {{
     transform: translateZ(0); 
 }}
 
-/* BOTONES CON HOVER DEL DASHBOARD PRINCIPAL */
-div.stButton>button {{
+/* BOTONES CON HOVER IDÉNTICO AL DASHBOARD */
+div.stButton>button,
+div[data-testid="stSelectbox"] div[data-baseweb="select"]>div {{
     background: var(--card) !important; 
     color: var(--text) !important;
     border: 1px solid var(--border) !important; 
@@ -107,14 +112,24 @@ div.stButton>button {{
 div.stButton>button:hover {{
     background: var(--hover) !important;
     border-color: var(--text) !important;
+    color: var(--text) !important;
 }}
 
-/* ESTILO PARA BOTÓN PRIMARIO (IMPRIMIR) */
+/* ESTILO PARA BOTÓN PRIMARIO (IMPRIMIR / ACCIÓN) */
 div.stButton>button[kind="primary"] {{
-    background: var(--text) !important;
-    color: var(--bg) !important;
+    background: var(--btnp-bg) !important;
+    color: var(--btnp-txt) !important;
     border: none !important;
     font-weight: 800 !important;
+    height: 48px !important;
+}}
+
+/* INPUTS DE TEXTO */
+.stTextInput input {{
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 2px !important;
     height: 48px !important;
 }}
 </style>
@@ -404,6 +419,7 @@ if st.session_state.get("pagina", "RASTREO") == "RASTREO":
     scrolling=True
 )
     
+
 
 
 
