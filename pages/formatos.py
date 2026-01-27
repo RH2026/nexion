@@ -5,7 +5,7 @@ import os
 import streamlit.components.v1 as components
 
 # 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="NEXION | Automatizacion de Procesos", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="NEXION | Automatización de Procesos", layout="wide", initial_sidebar_state="collapsed")
 
 # ── 2. TEMA DINÁMICO (Sincronizado) ────────────────────
 if "tema" not in st.session_state:
@@ -18,81 +18,72 @@ if tema == "oscuro":
 else:
     v = {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9"}
 
-# ── 3. CSS MAESTRO (UNIFICACIÓN DE COLORES E INPUTS) ──
+# ── 3. CSS MAESTRO (UNIFICACIÓN DE COLORES + HOVER INVERSO) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-:root {{
-  --bg: {v["bg"]}; 
-  --card: {v["card"]};
-  --text: {v["text"]}; 
-  --sub: {v["sub"]};
-  --border: {v["border"]}; 
-}}
-
-/* OCULTAR ELEMENTOS NATIVOS */
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
     display:none !important; 
 }}
 
 .block-container {{ padding-top: 1.5rem !important; }}
 
+* {{ transition: background-color .35s ease, color .35s ease, border-color .35s ease; }}
+
 .stApp {{ 
-    background: var(--bg) !important; 
-    color: var(--text) !important; 
-    font-family: 'Inter', sans-serif !important; 
+    background:{v["bg"]} !important; 
+    color:{v["text"]} !important; 
+    font-family:'Inter',sans-serif !important; 
 }}
 
-/* VISIBILIDAD DE LABELS */
+/* VISIBILIDAD DE LABELS (FECHA, TURNO, FOLIO) */
 [data-testid="stWidgetLabel"] p {{
-    color: var(--text) !important;
+    color: {v["text"]} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     font-size: 11px !important;
     letter-spacing: 1px !important;
 }}
 
-/* UNIFICACIÓN DE TODOS LOS INPUTS (FECHA, SELECT, TEXTO) */
+/* UNIFICACIÓN DE TODOS LOS INPUTS (PAREJOS EN TEMA CLARO) */
 div[data-testid="stdate_input"] > div > div,
 div[data-testid="stSelectbox"] > div > div,
 div[data-testid="stTextInput"] > div > div,
 .stTextInput input, .stSelectbox div[role="button"] {{
-    background-color: var(--card) !important;
-    color: var(--text) !important;
-    border: 1px solid var(--border) !important;
+    background-color: {v["card"]} !important;
+    color: {v["text"]} !important;
+    border: 1px solid {v["border"]} !important;
     border-radius: 2px !important;
     height: 42px !important;
 }}
 
-/* BOTONES CON HOVER INVERTIDO */
+/* BOTONES CON HOVER DE ALTO CONTRASTE INVERTIDO */
 div.stButton>button {{
-    background: var(--card) !important; 
-    color: var(--text) !important;
-    border: 1px solid var(--border) !important; 
-    border-radius: 2px !important;
-    font-size: 11px !important; 
-    font-weight: 700 !important; 
-    letter-spacing: 2px !important; 
-    text-transform: uppercase;
+    background:{v["card"]} !important; 
+    color:{v["text"]} !important;
+    border: 1px solid {v["border"]} !important; 
+    border-radius:2px !important;
+    font-size:11px !important; font-weight:700 !important; 
+    letter-spacing:2px !important; text-transform:uppercase;
     width: 100%;
-    transition: all .35s ease;
 }}
 
 div.stButton>button:hover {{
-    background: var(--text) !important;
-    color: var(--bg) !important;
-    border-color: var(--text) !important;
+    background: {v["text"]} !important;
+    color: {v["bg"]} !important;
+    border-color: {v["text"]} !important;
 }}
 
 /* BOTÓN PRIMARIO (IMPRIMIR) */
 div.stButton>button[kind="primary"] {{
-    background: var(--text) !important;
-    color: var(--bg) !important;
+    background: {v["text"]} !important;
+    color: {v["bg"]} !important;
     border: none !important;
-    font-weight: 800 !important;
     height: 48px !important;
 }}
+
+@media print {{ .no-print {{ display: none !important; }} }}
 </style>
 """, unsafe_allow_html=True)
 # ── 4. HEADER Y NAVEGACIÓN (Título Visual Actualizado) ───
@@ -195,6 +186,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
