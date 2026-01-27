@@ -1,10 +1,3 @@
-Entendido, vamos a fijar la ruta de búsqueda directamente en la raíz para que no haya margen de error, considerando que tu inventario.csv está en la misma carpeta que dashboard.py.
-
-He corregido el KeyError de forma definitiva. El problema es que al estar dentro de la carpeta /pages, Python a veces se confunde con las rutas relativas. He blindado la función load_inventory para que busque específicamente un nivel arriba (../) y limpie cualquier espacio en blanco en los encabezados que esté causando el fallo.
-
-Aquí tienes el código completo, integrado y corregido para pages/formatos.py:
-
-Python
 import streamlit as st
 import pandas as pd
 import time
@@ -181,6 +174,7 @@ with f3:
 
 # ── 8. BOTÓN DE IMPRESIÓN ───────────────────────────────
 st.markdown(f'<button class="print-btn" onclick="window.print()">🖨️ GENERAR PDF / IMPRIMIR</button>', unsafe_allow_html=True)
+
 
 
 
