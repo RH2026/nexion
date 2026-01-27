@@ -3,6 +3,9 @@ import pandas as pd
 from datetime import datetime
 import os
 import streamlit.components.v1 as components
+import requests
+from io import StringIO
+from github import Github
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 
@@ -168,104 +171,135 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-from datetime import timedelta
+# --- 1. CONFIGURACIÓN DE CRÉDENCIALES ---
+TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+REPO_NAME = "RH2026/nexion"
+FILE_PATH = "tareas.csv"
+CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
 
-# URL de tu repositorio
-GITHUB_URL = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/tareas.csv"
+# --- 2. UTILIDADES DE DATOS ---
+def obtener_fecha_mexico():
+    utc_ahora = datetime.datetime.now(datetime.timezone.utc)
+    return (utc_ahora - datetime.timedelta(hours=6)).date()
 
-@st.cache_data(ttl=60) # Actualiza cada minuto
-def load_nexion_tasks(url):
+def cargar_datos():
     try:
-        df = pd.read_csv(url, encoding='utf-8')
-        # Limpiar espacios en nombres de columnas
-        df.columns = [c.strip().upper() for c in df.columns]
-        
-        # Convertir fechas
-        df['FECHA'] = pd.to_datetime(df['FECHA'])
-        
-        # Lógica para FECHA FIN: si no existe en el CSV, sumamos 1 día para visualizar la barra
-        if 'FECHA_FIN' in df.columns:
-            df['FECHA_FIN'] = pd.to_datetime(df['FECHA_FIN'])
-        else:
-            df['FECHA_FIN'] = df['FECHA'] + pd.to_timedelta(1, unit='d')
-            
-        return df
-    except Exception as e:
-        st.error(f"Error cargando base de datos: {e}")
-        return pd.DataFrame()
+        response = requests.get(CSV_URL)
+        if response.status_code == 200:
+            df = pd.read_csv(StringIO(response.text))
+            df.columns = [c.strip().upper() for c in df.columns]
+            # Asegurar que existan todas las columnas necesarias
+            for col in ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']:
+                if col not in df.columns: df[col] = ""
+            return df
+        return pd.DataFrame(columns=['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION'])
+    except:
+        return pd.DataFrame(columns=['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION'])
 
-# 1. CARGAR DATOS
-df_tareas = load_nexion_tasks(GITHUB_URL)
+def guardar_cambios(df):
+    if not TOKEN:
+        st.error("Falta GITHUB_TOKEN"); return
+    try:
+        g = Github(TOKEN)
+        repo = g.get_repo(REPO_NAME)
+        contents = repo.get_contents(FILE_PATH, ref="main")
+        repo.update_file(contents.path, f"Update Gantt {obtener_fecha_mexico()}", df.to_csv(index=False), contents.sha, branch="main")
+        st.toast("Sincronización Exitosa", icon="✅")
+    except Exception as e: st.error(f"Error: {e}")
 
-# 2. RENDERIZAR GANTT
-if not df_tareas.empty:
-    st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 20px;'>
-            <p style='color:{v['sub']}; font-size:10px; letter-spacing:3px; text-transform:uppercase;'>Timeline Operativo</p>
-        </div>
-    """, unsafe_allow_html=True)
+# --- 3. PROCESAMIENTO DE DATOS ---
+if 'df_gantt' not in st.session_state:
+    st.session_state.df_gantt = cargar_datos()
 
-    # Definir colores según importancia (estilo Ónix)
-    color_map = {
-        "Urgente": "#FF4B4B", # Rojo
-        "Alta": "#FFBD45",    # Naranja
-        "Media": "#3A86FF",   # Azul
-        "Baja": "#8B949E"     # Gris
+df_trabajo = st.session_state.df_gantt.copy()
+
+# --- 4. DISEÑO DE INTERFAZ (GANTT DE ALTA CALIDAD) ---
+st.markdown(f"<h1 style='text-align:center; color:{v['text']}; font-weight:300; letter-spacing:10px;'>NEXION FLOW</h1>", unsafe_allow_html=True)
+
+if not df_trabajo.empty:
+    # Preparar DF para el gráfico (Plotly FF requiere nombres específicos)
+    df_plot = df_trabajo.copy()
+    df_plot = df_plot.rename(columns={'TAREA': 'Task', 'FECHA': 'Start', 'FECHA_FIN': 'Finish', 'IMPORTANCIA': 'Resource'})
+    
+    # Colores Premium (Ónix + Acentos)
+    colors = {
+        'Urgente': '#FF3131', # Rojo Neón
+        'Alta': '#FF914D',    # Naranja Intenso
+        'Media': '#00D2FF',   # Cyan
+        'Baja': '#444E5E'     # Gris Azulado
     }
 
-    fig = px.timeline(
-        df_tareas, 
-        x_start="FECHA", 
-        x_end="FECHA_FIN", 
-        y="TAREA", 
-        color="IMPORTANCIA",
-        color_discrete_map=color_map,
-        hover_data={"ULTIMO ACCION": True, "FECHA": "|%d %b", "FECHA_FIN": "|%d %b", "IMPORTANCIA": True}
+    # Crear Gantt con Figure Factory
+    fig = ff.create_gantt(
+        df_plot, 
+        colors=colors, 
+        index_col='Resource', 
+        show_colorbar=True,
+        group_tasks=True, 
+        showgrid_x=True, 
+        showgrid_y=True
     )
 
-    # Invertir eje Y para ver lo más reciente arriba
-    fig.update_yaxes(autorange="reversed")
-
-    # Diseño Onix Dark
+    # Inyectar Estilo con Graph Objects (Acabado Profesional)
     fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font_color=v["text"],
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color=v['text'], family="Inter", size=12),
+        height=450,
+        margin=dict(l=150, r=20, t=50, b=50),
         xaxis=dict(
-            gridcolor=v["border"],
-            tickfont=dict(size=10, color=v["sub"]),
-            title=""
+            gridcolor=v['border'], 
+            linecolor=v['border'],
+            tickformat="%d %b",
+            rangebreaks=[dict(bounds=["sat", "mon"])] # Opcional: ocultar fines de semana
         ),
-        yaxis=dict(
-            gridcolor=v["border"],
-            tickfont=dict(size=10),
-            title=""
-        ),
-        margin=dict(l=10, r=10, t=10, b=10),
-        height=400,
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        )
+        yaxis=dict(gridcolor=v['border'], linecolor=v['border'], autorange="reversed"),
+        hoverlabel=dict(bgcolor=v['card'], font_size=13, font_family="Inter")
     )
 
-    # Mostrar en Streamlit
+    # Añadir diamantes en los puntos finales (Hitos visuales)
+    for i, row in df_plot.iterrows():
+        fig.add_trace(go.Scatter(
+            x=[row['Finish']],
+            y=[len(df_plot) - 1 - i],
+            mode='markers',
+            marker=dict(symbol='diamond-tall', size=10, color='white'),
+            showlegend=False,
+            hoverinfo='skip'
+        ))
+
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # Mostrar la tabla detallada debajo
-    with st.expander("VER DETALLE DE ACCIONES"):
-        st.dataframe(
-            df_tareas[['FECHA', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']], 
-            use_container_width=True,
-            hide_index=True
-        )
+# --- 5. EDITOR INTEGRADO (SIN POPUPS) ---
+st.markdown(f"<p style='color:{v['sub']}; font-size:11px; letter-spacing:2px; text-transform:uppercase;'>Editor Maestro de Tareas</p>", unsafe_allow_html=True)
+
+with st.container(border=True):
+    # Editor dinámico
+    df_editado = st.data_editor(
+        df_trabajo,
+        use_container_width=True,
+        num_rows="dynamic",
+        key="main_editor",
+        column_config={
+            "FECHA": st.column_config.DateColumn("📆 Inicio"),
+            "FECHA_FIN": st.column_config.DateColumn("🏁 Fin"),
+            "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
+            "TAREA": st.column_config.TextColumn("📝 Tarea Principal", width="large"),
+            "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus Actual", width="medium"),
+        },
+        hide_index=True,
+    )
+
+    c1, c2, c3 = st.columns([1,1,1])
+    if c2.button("💾 SINCRONIZAR CON REPOSITORIO GITHUB", use_container_width=True, type="primary"):
+        st.session_state.df_gantt = df_editado
+        guardar_cambios(df_editado)
+        st.rerun()
+
+    if c3.button("🔄 REFRESCAR DATOS"):
+        st.session_state.df_gantt = cargar_datos()
+        st.rerun()
+
 
 
 
