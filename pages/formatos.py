@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
-import time
+import streamlit.components.v1 as components
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Formatos", layout="wide", initial_sidebar_state="collapsed")
@@ -216,6 +216,7 @@ if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_co
     # El IFrame aísla el contenido de Streamlit para que el navegador lo renderice 1:1
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Preparando documento para impresión...", icon="📄")
+
 
 
 
