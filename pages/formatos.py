@@ -149,17 +149,15 @@ df_final = st.data_editor(
     on_change=handle_lookup
 )
 
-# ── 7. LÓGICA DE IMPRESIÓN ───────────────────────────
+# ── 7. LÓGICA DE IMPRESIÓN (SIN TYPEERROR) ───────────
 if "print_counter" not in st.session_state: 
     st.session_state.print_counter = 0
 
 st.markdown("<br>", unsafe_allow_html=True)
-btn_imprimir = st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True)
-
-if btn_imprimir:
+if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     st.session_state.print_counter += 1
     
-    # Preparamos el HTML solo si se presiona el botón para asegurar que existan las variables
+    # Preparamos los datos solo al presionar el botón
     filas_print = df_final[df_final["CODIGO"].str.strip() != ""]
     tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
 
@@ -190,13 +188,14 @@ if btn_imprimir:
     </div>
     """
     
-    # Inyectamos el componente
+    # ESTO EVITA EL TYPEERROR: El componente solo existe cuando el botón es True
     components.html(
         f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", 
-        height=1, 
+        height=1, # Altura mínima necesaria para que no se ignore
         key=f"print_job_{st.session_state.print_counter}"
     )
     st.toast("Generando documento JYPESA...", icon="📄")
+
 
 
 
