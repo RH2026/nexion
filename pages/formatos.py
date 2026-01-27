@@ -1,3 +1,23 @@
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+import os
+import streamlit.components.v1 as components
+
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(page_title="NEXION | Automatizacion de Procesos", layout="wide", initial_sidebar_state="collapsed")
+
+# ── 2. TEMA DINÁMICO (Sincronizado) ────────────────────
+if "tema" not in st.session_state:
+    st.session_state.tema = "oscuro"
+
+tema = st.session_state.tema
+
+if tema == "oscuro":
+    v = {"bg": "#05070A", "card": "#0D1117", "text": "#F0F6FC", "sub": "#8B949E", "border": "#1B1F24"}
+else:
+    v = {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9"}
+
 # ── 3. CSS MAESTRO (UNIFICACIÓN DE COLORES E INPUTS) ──
 st.markdown(f"""
 <style>
@@ -9,8 +29,6 @@ st.markdown(f"""
   --text: {v["text"]}; 
   --sub: {v["sub"]};
   --border: {v["border"]}; 
-  --btnp-bg: {v["text"]}; 
-  --btnp-txt: {v["bg"]};
 }}
 
 /* OCULTAR ELEMENTOS NATIVOS */
@@ -36,7 +54,6 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
 }}
 
 /* UNIFICACIÓN DE TODOS LOS INPUTS (FECHA, SELECT, TEXTO) */
-/* Esto asegura que se vean parejos en tema claro */
 div[data-testid="stdate_input"] > div > div,
 div[data-testid="stSelectbox"] > div > div,
 div[data-testid="stTextInput"] > div > div,
@@ -59,7 +76,7 @@ div.stButton>button {{
     letter-spacing: 2px !important; 
     text-transform: uppercase;
     width: 100%;
-    transition: all .3s ease;
+    transition: all .35s ease;
 }}
 
 div.stButton>button:hover {{
@@ -68,10 +85,10 @@ div.stButton>button:hover {{
     border-color: var(--text) !important;
 }}
 
-/* BOTÓN PRIMARIO */
+/* BOTÓN PRIMARIO (IMPRIMIR) */
 div.stButton>button[kind="primary"] {{
-    background: var(--btnp-bg) !important;
-    color: var(--btnp-txt) !important;
+    background: var(--text) !important;
+    color: var(--bg) !important;
     border: none !important;
     font-weight: 800 !important;
     height: 48px !important;
@@ -178,6 +195,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
