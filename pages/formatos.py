@@ -79,27 +79,37 @@ div[data-testid="stImage"] img {{
     text-align: left !important;
 }}
 
-/* 5. UNIFICACIÓN DE CAJAS (CORREGIDO PARA GROSOR IDENTICO) */
-/* Aplicamos el borde al contenedor raíz de cada widget para que pesen lo mismo visualmente */
+/* 5. UNIFICACIÓN DE CAJAS (ELIMINA BORDES DOBLES Y GROSORES) */
+/* Aplicamos el borde base a los contenedores de los tres tipos de widget */
 div[data-baseweb="input"], 
-div[data-baseweb="select"] > div, 
-div[data-baseweb="calendar"] {{
+div[data-baseweb="select"] > div,
+div[data-testid="stDateInput"] > div[data-baseweb="input"] {{
     background-color: {v["card"]} !important;
-    border: 1px solid {v["border"]} !important; /* Mismo grosor para todos */
+    border: 1px solid {v["border"]} !important; 
     border-radius: 4px !important;
     min-height: 42px !important;
+    box-shadow: none !important; /* Quita el efecto de sombra/bisel */
 }}
 
-/* Forzamos que los inputs internos no tengan borde propio para no sumar grosores */
-.stTextInput input, .stDateInput input {{
+/* Eliminamos el borde de los elementos internos para que no se sumen */
+.stTextInput input, .stDateInput input, div[data-baseweb="base-input"] {{
     border: none !important;
+    box-shadow: none !important;
     background-color: transparent !important;
     color: {v["text"]} !important;
+    height: 40px !important;
 }}
 
-/* Ajuste específico para el texto del selectbox */
+/* Aseguramos que el texto del Selectbox sea visible en ambos temas */
 div[data-testid="stSelectbox"] div[data-baseweb="select"] {{
     color: {v["text"]} !important;
+    padding-left: 10px !important;
+}}
+
+/* Quitamos el borde azul/rojo molesto al hacer clic (opcional, para estética limpia) */
+div[data-baseweb="input"]:focus-within, 
+div[data-baseweb="select"] > div:focus-within {{
+    border-color: {v["text"]} !important; /* El borde se ilumina con el color del texto actual */
 }}
 
 /* 6. BOTONES CON HOVER INVERTIDO */
@@ -280,6 +290,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
