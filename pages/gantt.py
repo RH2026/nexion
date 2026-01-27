@@ -161,51 +161,90 @@ st.markdown(f"<hr style='border-top:1px solid {v['border']}; margin:5px 0 15px;'
 st.markdown(f"""
     <div style="text-align: center; margin-top: 10px; margin-bottom: 25px;">
         <h1 style="font-weight: 300; letter-spacing: 12px; text-transform: uppercase; font-size: 15px; color: {v['text']}; opacity: 0.9;">
-            D I A G R A M A &nbsp; D E &nbsp; G A N T T&nbsp; P T
+            D I A G R A M A &nbsp; D E &nbsp; G A N T T&nbsp; 
         </h1>
     </div>
 """, unsafe_allow_html=True)
 
 
-# --- SECCIÓN GANTT (Añadir donde desees mostrar el rastreo) ---
-st.markdown(f"<h2 style='font-weight: 300; font-size: 13px; color: {v['sub']}; letter-spacing: 2px; margin-bottom: 20px;'>PROGRAMACIÓN DE ENTREGAS</h2>", unsafe_allow_html=True)
+# --- DATOS DE PRUEBA (Estructura para Grupos, Progreso e Hitos) ---
+df_gantt = [
+    # INITIATION
+    dict(Task="Requirements", Start='2026-03-01', Finish='2026-03-05', Resource='INITIATION', Complete=100),
+    dict(Task="Stakeholder Workshop", Start='2026-03-04', Finish='2026-03-08', Resource='INITIATION', Complete=70),
+    dict(Task="Initiation Complete", Start='2026-03-08', Finish='2026-03-08', Resource='INITIATION', Complete=100), # Hito
+    
+    # DESIGN
+    dict(Task="E2E Solution Design", Start='2026-03-07', Finish='2026-03-18', Resource='DESIGN', Complete=45),
+    dict(Task="Wireframes", Start='2026-03-12', Finish='2026-03-16', Resource='DESIGN', Complete=80),
+    
+    # IMPLEMENTATION
+    dict(Task="ETL Development", Start='2026-03-15', Finish='2026-03-25', Resource='IMPLEMENTATION', Complete=20),
+]
 
-# Datos de ejemplo (puedes conectarlos a tu df_inv o a un CSV de fechas)
-df_gantt = pd.DataFrame([
-    dict(Tarea="Pedido F-2026-001", Inicio='2026-01-20', Fin='2026-01-25', Estado='ENTREGADO'),
-    dict(Tarea="Pedido F-2026-002", Inicio='2026-01-22', Fin='2026-01-28', Estado='EN PROCESO'),
-    dict(Tarea="Carga de Lote PT-99", Inicio='2026-01-27', Fin='2026-02-02', Estado='PENDIENTE'),
-])
+# Colores basados en tu tema Ónix + Acentos
+colors = {
+    'INITIATION': '#3A86FF',   # Azul corporativo
+    'DESIGN': '#00F5D4',       # Verde neón/menta
+    'IMPLEMENTATION': '#BE95FF' # Púrpura suave
+}
 
-fig = px.timeline(
-    df_gantt, 
-    x_start="Inicio", 
-    x_end="Fin", 
-    y="Tarea", 
-    color="Estado",
-    color_discrete_map={"ENTREGADO": "#4CAF50", "EN PROCESO": "#FFC107", "PENDIENTE": v["sub"]}
-)
+# --- GENERACIÓN DEL GANTT ---
+def generar_gantt_pro(df_list, color_map, text_color, bg_color, border_color):
+    # Crear el objeto base
+    fig = ff.create_gantt(
+        df_list, 
+        colors=color_map, 
+        index_col='Resource', 
+        show_colorbar=True,
+        group_tasks=True,
+        showgrid_x=True, 
+        showgrid_y=True
+    )
 
-# --- ESTILIZACIÓN ONIX / DARK MODE ---
-fig.update_layout(
-    paper_bgcolor='rgba(0,0,0,0)', # Transparente para usar el de Streamlit
-    plot_bgcolor='rgba(0,0,0,0)',
-    font_color=v["text"],
-    margin=dict(l=20, r=20, t=20, b=20),
-    height=300,
-    xaxis=dict(
-        gridcolor=v["border"],
-        linecolor=v["border"],
-        tickfont=dict(size=10, color=v["sub"])
-    ),
-    yaxis=dict(
-        gridcolor=v["border"],
-        linecolor=v["border"],
-        autorange="reversed"
-    ),
-    showlegend=True,
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-)
+    # Inyectar Barras de Progreso (Overlay)
+    for i in range(len(df_list)):
+        task = df_list[i]
+        # Si es un hito (Duración 0), dibujamos un diamante
+        if task['Start'] == task['Finish']:
+            fig.add_trace(go.Scatter(
+                x=[task['Start']],
+                y=[len(df_list) - 1 - i],
+                mode='markers',
+                marker=dict(symbol='diamond', size=12, color=color_map[task['Resource']]),
+                name="Milestone",
+                showlegend=False
+            ))
+        # Si tiene progreso, añadimos una sub-barra más oscura
+        elif task['Complete'] > 0:
+            progreso = task['Complete'] / 100
+            # Cálculo simple de fecha de corte para el progreso
+            # (En producción se usaría timedelta para precisión exacta)
+            fig.add_trace(go.Scatter(
+                x=[task['Start'], task['Start']], # Lógica simplificada para visual
+                y=[len(df_list) - 1 - i, len(df_list) - 1 - i],
+                mode='lines',
+                line=dict(width=15, color='rgba(255,255,255,0.3)'),
+                showlegend=False
+            ))
 
-st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    # Estilización estética NEXION
+    fig.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color=text_color, family="Inter", size=11),
+        xaxis=dict(gridcolor=border_color, zeroline=False),
+        yaxis=dict(gridcolor=border_color, zeroline=False),
+        margin=dict(l=150, r=20, t=40, b=20), # Espacio para nombres de tareas
+        height=450,
+        hovermode='closest'
+    )
+    
+    return fig
+
+# --- RENDERIZADO EN STREAMLIT ---
+# Usando las variables 'v' de tu script original
+gantt_fig = generar_gantt_pro(df_gantt, colors, v["text"], v["bg"], v["border"])
+st.plotly_chart(gantt_fig, use_container_width=True, config={'displayModeBar': False})
+
 
