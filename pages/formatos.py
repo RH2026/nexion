@@ -30,18 +30,19 @@ else:
         "border": "#C9D1D9"
     }
 
-# ── 3. CSS MAESTRO (UNIFICACIÓN TOTAL DE CAJAS) ──
+# ── 3. CSS MAESTRO (ALINEACIÓN DE LOGO Y UNIFICACIÓN TOTAL) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. LIMPIEZA DE INTERFAZ */
+/* 1. LIMPIEZA Y OCULTAR ELEMENTOS NATIVOS */
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
     display:none !important; 
 }}
 
 .block-container {{ 
-    padding-top: 1.5rem !important; 
+    padding-top: 1rem !important; 
+    padding-bottom: 0rem !important;
 }}
 
 /* 2. FONDO Y TEXTO GLOBAL */
@@ -51,17 +52,37 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* 3. TÍTULOS (LABELS) - SIEMPRE VISIBLES */
+/* 3. ARREGLO DE ALINEACIÓN LOGO Y SUBTÍTULO */
+/* Forzamos que el contenedor de la imagen no empuje el texto */
+div[data-testid="stImage"] {{
+    text-align: left !important;
+    width: fit-content !important;
+}}
+
+div[data-testid="stImage"] img {{ 
+    image-rendering: -webkit-optimize-contrast !important; 
+    transform: translateZ(0);
+    margin-left: 0 !important;
+}}
+
+/* Ajuste específico para el texto de 'AUTOMATIZACIÓN DE PROCESOS' */
+.stMarkdown p {{
+    margin-left: 0 !important;
+    text-align: left !important;
+}}
+
+/* 4. TÍTULOS DE CAMPOS (FECHA, TURNO, ETC) */
 [data-testid="stWidgetLabel"] p {{
     color: {v["text"]} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     font-size: 11px !important;
     letter-spacing: 1.5px !important;
+    text-align: left !important;
 }}
 
-/* 4. UNIFICACIÓN DE TODAS LAS CAJAS (INPUTS, SELECTS, DATES) */
-/* Esto obliga a que todas tengan el mismo fondo y borde */
+/* 5. UNIFICACIÓN DE CAJAS (INPUTS, SELECTS, DATES) */
+/* Todas las cajas ahora tendrán el mismo color de fondo y borde */
 div[data-baseweb="input"], 
 div[data-baseweb="select"] > div, 
 div[data-baseweb="base-input"],
@@ -74,13 +95,7 @@ div[data-baseweb="base-input"],
     height: 42px !important;
 }}
 
-/* Forzar color de texto en los inputs para evitar que se queden blancos en fondo blanco */
-input {{
-    color: {v["text"]} !important;
-    -webkit-text-fill-color: {v["text"]} !important;
-}}
-
-/* 5. BOTONES CON HOVER INVERTIDO */
+/* 6. BOTONES CON HOVER INVERTIDO */
 div.stButton>button {{
     background: {v["card"]} !important; 
     color: {v["text"]} !important;
@@ -96,12 +111,6 @@ div.stButton>button:hover {{
     border-color: {v["text"]} !important;
 }}
 
-/* 6. TÍTULO CENTRAL */
-.stMarkdown p, .stMarkdown h1, .stMarkdown h2 {{
-    color: {v["text"]} !important;
-    text-align: center;
-    letter-spacing: 4px !important;
-}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -215,6 +224,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
