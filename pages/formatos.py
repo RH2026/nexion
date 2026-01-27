@@ -4,10 +4,10 @@ from datetime import datetime
 import os
 import streamlit.components.v1 as components
 
-# 1. CONFIGURACIÓN DE PÁGINA
+# 1. CONFIGURACIÓN DE PÁGINA (Título actualizado)
 st.set_page_config(page_title="NEXION | Automatizacion de Procesos", layout="wide", initial_sidebar_state="collapsed")
 
-# ── 2. TEMA DINÁMICO
+# ── 2. TEMA DINÁMICO (Sincronizado con Dashboard) ────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
 
@@ -18,22 +18,13 @@ if tema == "oscuro":
 else:
     v = {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9"}
 
-# ── 3. CSS MAESTRO (SOLO CORRECCIÓN DE VISIBILIDAD) ──────
+# ── 3. CSS MAESTRO (HEADER ELEVADO + NITIDEZ LOGO) ───────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ display:none !important; }}
 .block-container {{ padding-top: 1.5rem !important; padding-bottom: 0rem !important; }}
 .stApp {{ background:{v["bg"]} !important; color:{v["text"]} !important; font-family:'Inter',sans-serif !important; }}
-
-/* --- ESTA ES LA CORRECCIÓN PARA LAS LETRAS INVISIBLES --- */
-[data-testid="stWidgetLabel"] p {{
-    color: {v["text"]} !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-}}
-/* ------------------------------------------------------- */
-
 div[data-testid='stImage'] img {{ image-rendering: -webkit-optimize-contrast !important; transform: translateZ(0); }}
 div.stButton>button {{
     background:{v["card"]} !important; color:{v["text"]} !important;
@@ -43,12 +34,13 @@ div.stButton>button {{
 </style>
 """, unsafe_allow_html=True)
 
-# ── 4. HEADER Y NAVEGACIÓN
+# ── 4. HEADER Y NAVEGACIÓN (Título Visual Actualizado) ───
 c1, c2, c3 = st.columns([2, 3.5, .5], vertical_alignment="top")
 with c1:
     logo = "n1.png" if tema == "oscuro" else "n2.png"
     try:
         st.image(logo, width=140)
+        # Actualización de subtítulo visual
         st.markdown(f"<div style='margin-top:-15px;'><p style='font-size:9px; color:{v['sub']}; letter-spacing:1px; text-transform:uppercase;'>Automatización de Procesos</p></div>", unsafe_allow_html=True)
     except: 
         st.markdown(f"<h2 style='color:{v['text']}; margin:0;'>NEXION</h2>", unsafe_allow_html=True)
@@ -66,20 +58,20 @@ with c3:
 
 st.markdown(f"<hr style='border-top:1px solid {v['border']}; margin:5px 0 15px;'>", unsafe_allow_html=True)
 
-# ── 5. CARGA DE INVENTARIO
+# ── 5. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
 @st.cache_data
 def load_inventory():
     ruta = os.path.join(os.getcwd(), "inventario.csv")
     if not os.path.exists(ruta): ruta = os.path.join(os.getcwd(), "..", "inventario.csv")
     try:
         df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
-        df.columns = [str(c).strip().upper() for c in df.columns]
+        df.columns = [str(c).strip().upper() for c in df.columns] # CODIGO, DESCRIPCION
         return df
     except: return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
 
 df_inv = load_inventory()
 
-# ── 6. CUERPO DE ENTRADA
+# ── 6. CUERPO DE ENTRADA (WEB) ────────────────────────
 with st.container(border=True):
     h1, h2, h3 = st.columns(3)
     f_val = h1.date_input("FECHA", value=datetime.now(), key="f_in")
@@ -103,7 +95,7 @@ def lookup():
 
 df_final = st.data_editor(st.session_state.rows, num_rows="dynamic", use_container_width=True, key="editor_pt", on_change=lookup)
 
-# ── 7. RENDERIZADO PRO (PARA IMPRESIÓN)
+# ── 7. RENDERIZADO PRO (HTML PARA IMPRESIÓN) ───────────
 filas_print = df_final[df_final["CODIGO"] != ""]
 tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
 
@@ -112,7 +104,7 @@ form_html = f"""
     <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
         <div>
             <h2 style="margin:0; letter-spacing:2px;">NEXION LOGISTICS</h2>
-            <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESos</p>
+            <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
         </div>
         <div style="text-align:right; font-size:12px;">
             <p style="margin:0;"><b>FOLIO:</b> {fol_val}</p>
@@ -137,12 +129,12 @@ form_html = f"""
 </div>
 """
 
-# ── 8. BOTÓN DE IMPRESIÓN
+# ── 8. BOTÓN DE ACCIÓN FINAL ───────────────────────────
 st.markdown("<br>", unsafe_allow_html=True)
-if "print_counter" not in st.session_state: st.session_state.print_counter = 0
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
-    st.session_state.print_counter += 1
-    components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=1, key=f"p_{st.session_state.print_counter}")
+    components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
+    st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
