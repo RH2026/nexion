@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
 
-# --- CARGAR INVENTARIO REAL ---
-# Reemplaza la ruta con tu archivo
+# --- CARGAR INVENTARIO REAL DESDE LA CARPETA SUPERIOR ---
 try:
-    df_inv = pd.read_csv("inventario.csv")  # o "../inventario.csv"
-except:
+    df_inv = pd.read_csv("../inventario.csv")  # <-- aquí la ruta correcta
+except FileNotFoundError:
     st.error("No se pudo cargar inventario.csv")
     df_inv = pd.DataFrame(columns=["CODIGO", "DESCRIPCION"])
 
@@ -38,6 +37,7 @@ if st.button("Añadir a tabla") and new_codigo:
 
 # --- Mostrar tabla final ---
 st.dataframe(st.session_state.df_final)
+
 
 
 
