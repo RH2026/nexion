@@ -18,18 +18,56 @@ if tema == "oscuro":
 else:
     v = {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9"}
 
-# ── 3. CSS MAESTRO (HEADER ELEVADO + NITIDEZ LOGO) ───────
+# ── 3. CSS MAESTRO (RESTABLECIENDO HOVER + VISIBILIDAD DE LETRAS) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ display:none !important; }}
-.block-container {{ padding-top: 1.5rem !important; padding-bottom: 0rem !important; }}
-.stApp {{ background:{v["bg"]} !important; color:{v["text"]} !important; font-family:'Inter',sans-serif !important; }}
-div[data-testid='stImage'] img {{ image-rendering: -webkit-optimize-contrast !important; transform: translateZ(0); }}
+
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
+    display:none !important; 
+}}
+
+.block-container {{ 
+    padding-top: 1.5rem !important; 
+    padding-bottom: 0rem !important; 
+}}
+
+.stApp {{ 
+    background:{v["bg"]} !important; 
+    color:{v["text"]} !important; 
+    font-family:'Inter',sans-serif !important; 
+}}
+
+/* FIX: VISIBILIDAD DE LETRAS (LABELS) EN TEMA CLARO */
+[data-testid="stWidgetLabel"] p {{
+    color: {v["text"]} !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+}}
+
+/* NITIDEZ LOGO */
+div[data-testid='stImage'] img {{ 
+    image-rendering: -webkit-optimize-contrast !important; 
+    transform: translateZ(0); 
+}}
+
+/* RESTABLECIENDO HOVER Y ESTILO DE BOTONES */
 div.stButton>button {{
-    background:{v["card"]} !important; color:{v["text"]} !important;
-    border: 1px solid {v["border"]} !important; border-radius:2px !important;
-    font-size:11px !important; font-weight:700 !important; letter-spacing:2px !important; text-transform:uppercase;
+    background:{v["card"]} !important; 
+    color:{v["text"]} !important;
+    border: 1px solid {v["border"]} !important; 
+    border-radius:2px !important;
+    font-size:11px !important; 
+    font-weight:700 !important; 
+    letter-spacing:2px !important; 
+    text-transform:uppercase;
+    transition: all .3s ease !important;
+}}
+
+div.stButton>button:hover {{
+    background: {v["text"]} !important;
+    color: {v["bg"]} !important;
+    border-color: {v["text"]} !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -134,6 +172,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
