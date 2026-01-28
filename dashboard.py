@@ -532,3 +532,4 @@ st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // GUADALAJARA, JAL. 
 
 
 
+
