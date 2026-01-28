@@ -17,11 +17,12 @@ vars_css = {
     "claro": {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9", "logo": "n2.png"}
 }[tema]
 
-# ── CSS MAESTRO (CENTRADO VERTICAL + TEXTO PEQUEÑO) ────────
+# ── CSS MAESTRO (INTERFACE & INTERACTIVITY) ──────────────
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
+    /* ELIMINAR ELEMENTOS NATIVOS */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
     .block-container {{ 
@@ -29,6 +30,7 @@ st.markdown(f"""
         padding-bottom: 0rem !important; 
     }}
 
+    /* TRANSICIÓN DE TEMA */
     .stApp {{ 
         background: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
@@ -36,36 +38,27 @@ st.markdown(f"""
         transition: background-color 0.8s ease, color 0.8s ease !important;
     }}
 
-    /* INPUT DE BÚSQUEDA OPTIMIZADO */
+    /* ── INPUT DE BÚSQUEDA (CENTRADO + PEQUEÑO) ── */
     .stTextInput input {{
         background: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important;
         border-radius: 2px !important;
-        
-        /* Ajustes de tamaño y centrado */
-        height: 42px !important;          /* Un poco más bajo para elegancia */
-        font-size: 11px !important;       /* Texto más pequeño */
-        text-align: center !important;    /* Centrado horizontal */
-        line-height: 42px !important;     /* Ayuda al centrado vertical */
-        padding: 0px !important;          /* Limpia paddings que desvían el texto */
-        
+        height: 42px !important;
+        font-size: 11px !important;
+        text-align: center !important;
+        line-height: 42px !important;
+        padding: 0px !important;
         letter-spacing: 2px;
-        transition: all 0.4s ease;
+        transition: all 0.3s ease;
     }}
 
-    /* FIX VISIBILIDAD PLACEHOLDER */
+    /* VISIBILIDAD DE PLACEHOLDER (FIX MODO CLARO) */
     .stTextInput input::placeholder {{ color: {vars_css['sub']} !important; opacity: 1; font-size: 11px; }}
-    .stTextInput input::-webkit-input-placeholder {{ color: {vars_css['sub']} !important; font-size: 11px; }}
+    .stTextInput input::-webkit-input-placeholder {{ color: {vars_css['sub']} !important; }}
+    .stTextInput input::-moz-placeholder {{ color: {vars_css['sub']} !important; }}
 
-    /* LOGO Y MARGENES */
-    div[data-testid='stImage'] img {{
-        image-rendering: -webkit-optimize-contrast !important;
-        image-rendering: crisp-edges !important;
-    }}
-    div[data-testid='stImage'] {{ margin-top: -20px !important; }}
-    
-    /* BOTONES */
+    /* ── BOTONES CON HOVER FUNCIONAL ── */
     div.stButton>button {{
         background: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -75,8 +68,39 @@ st.markdown(f"""
         text-transform: uppercase;
         font-size: 10px !important;
         height: 35px !important;
+        transition: all 0.3s ease-in-out !important;
+        width: 100%;
     }}
 
+    /* HOVER INVERTIDO */
+    div.stButton>button:hover {{
+        background: {vars_css['text']} !important; 
+        color: {vars_css['bg']} !important; 
+        border-color: {vars_css['text']} !important;
+    }}
+
+    /* BOTÓN PRIMARIO (EXECUTE SEARCH) */
+    div.stButton>button[kind="primary"] {{
+        height: 45px !important;
+        background: {vars_css['text']} !important;
+        color: {vars_css['bg']} !important;
+        border: none !important;
+        font-size: 11px !important;
+    }}
+    
+    div.stButton>button[kind="primary"]:hover {{
+        opacity: 0.8 !important;
+        transform: translateY(-1px);
+    }}
+
+    /* LOGO Y NITIDEZ */
+    div[data-testid='stImage'] img {{
+        image-rendering: -webkit-optimize-contrast !important;
+        image-rendering: crisp-edges !important;
+    }}
+    div[data-testid='stImage'] {{ margin-top: -20px !important; }}
+
+    /* FOOTER FIJO */
     .footer {{
         position: fixed;
         bottom: 0; left: 0; width: 100%;
@@ -88,14 +112,16 @@ st.markdown(f"""
         letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']};
         z-index: 100;
+        transition: background-color 0.8s ease;
     }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── HEADER ──────────────────────────────────────────────────
+# ── HEADER Y NAVEGACIÓN ─────────────────────────────────────
 header_zone = st.container()
 with header_zone:
     c1, c2, c3 = st.columns([1.5, 5, 0.4], vertical_alignment="center")
+
     with c1:
         try:
             st.image(vars_css["logo"], width=120)
@@ -105,7 +131,8 @@ with header_zone:
 
     with c2:
         cols = st.columns(4)
-        for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]):
+        btn_labels = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
+        for i, b in enumerate(btn_labels):
             with cols[i]:
                 if st.button(b, use_container_width=True, key=f"nav_{b}"):
                     st.session_state.pagina = b
@@ -118,22 +145,48 @@ with header_zone:
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:-5px 0 20px;'>", unsafe_allow_html=True)
 
-# ── CONTENEDOR CENTRAL ──────────────────────────────────────
+# ── CONTENEDOR DE CONTENIDO DINÁMICO ────────────────────────
 main_container = st.container()
+
 with main_container:
     if st.session_state.pagina == "RASTREO":
         st.markdown("<div style='margin-top: 10vh;'></div>", unsafe_allow_html=True)
+        
         _, col_search, _ = st.columns([1, 1.6, 1])
         with col_search:
-            st.markdown(f"<p style='text-align:center; color:{vars_css['sub']}; font-size:11px; letter-spacing:8px; margin-bottom:20px;'>OPERATIONAL QUERY</p>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <p style='text-align:center; color:{vars_css['sub']}; font-size:11px; letter-spacing:8px; margin-bottom:20px; text-transform:uppercase;'>
+                    O P E R A T I O N A L &nbsp; Q U E R Y
+                </p>
+            """, unsafe_allow_html=True)
+            
             busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
             
             st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-                st.toast(f"Buscando: {busqueda}")
+                with st.status("Accesando a Core Intelligence...", expanded=False):
+                    time.sleep(1)
+                st.toast(f"Buscando guía: {busqueda}")
 
-# ── FOOTER ──────────────────────────────────────────────────
-st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026</div>""", unsafe_allow_html=True)
+    elif st.session_state.pagina == "INTELIGENCIA":
+        st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
+        st.subheader("Módulo de Inteligencia Logística")
+        st.write("Contenido en desarrollo para Xenocode...")
+
+    elif st.session_state.pagina == "REPORTES":
+        st.subheader("Reportes Operativos")
+        st.write("Sección de análisis de datos SAP.")
+
+    elif st.session_state.pagina == "FORMATOS":
+        st.subheader("Formatos y Documentación")
+        st.write("Descarga de formatos logísticos.")
+
+# ── FOOTER FIJO ──────────────────────────────────────────────
+st.markdown(f"""
+    <div class="footer">
+        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
+    </div>
+""", unsafe_allow_html=True)
 
 
 
