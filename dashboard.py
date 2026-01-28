@@ -1,10 +1,3 @@
-Entiendo el problema, Rigoberto. Lo que sucede es que el "placeholder" (el texto de fondo) tiene un color predeterminado por el navegador que, en fondos blancos, se pierde por falta de contraste.
-
-He añadido una regla específica en el CSS Maestro para forzar que el color del placeholder use siempre el color de contraste (--sub) definido en tu diccionario de variables. Así se verá nítido tanto en modo oscuro como en el modo claro que me mostraste.
-
-Aquí tienes el código corregido:
-
-Python
 import streamlit as st
 import pandas as pd
 import time
@@ -156,6 +149,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
