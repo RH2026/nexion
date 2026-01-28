@@ -79,38 +79,42 @@ div[data-testid="stImage"] img {{
     text-align: left !important;
 }}
 
-/* 5. UNIFICACIÓN DE CAJAS (ELIMINA BORDES DOBLES Y GROSORES) */
-/* Aplicamos el borde base a los contenedores de los tres tipos de widget */
+/* 5. UNIFICACIÓN DE CAJAS (SOLUCIÓN DEFINITIVA) */
+/* 1. Forzamos el marco exterior de los tres */
 div[data-baseweb="input"], 
 div[data-baseweb="select"] > div,
-div[data-testid="stDateInput"] > div[data-baseweb="input"] {{
+div[data-testid="stDateInput"] > div {{
     background-color: {v["card"]} !important;
     border: 1px solid {v["border"]} !important; 
     border-radius: 4px !important;
     min-height: 42px !important;
-    box-shadow: none !important; /* Quita el efecto de sombra/bisel */
-}}
-
-/* Eliminamos el borde de los elementos internos para que no se sumen */
-.stTextInput input, .stDateInput input, div[data-baseweb="base-input"] {{
-    border: none !important;
     box-shadow: none !important;
+}}
+
+/* 2. Forzamos que el texto sea visible y esté alineado en todos */
+/* Esto arregla el 'fantasma' del Turno */
+.stTextInput input, 
+.stDateInput input, 
+div[data-testid="stSelectbox"] [data-baseweb="select"] div {{
+    color: {v["text"]} !important;
+    -webkit-text-fill-color: {v["text"]} !important; /* Para evitar transparencias en algunos navegadores */
     background-color: transparent !important;
-    color: {v["text"]} !important;
-    height: 40px !important;
+    border: none !important;
+    font-size: 14px !important;
+    opacity: 1 !important; /* Asegura que no se vea pálido */
 }}
 
-/* Aseguramos que el texto del Selectbox sea visible en ambos temas */
-div[data-testid="stSelectbox"] div[data-baseweb="select"] {{
-    color: {v["text"]} !important;
-    padding-left: 10px !important;
-}}
-
-/* Quitamos el borde azul/rojo molesto al hacer clic (opcional, para estética limpia) */
+/* 3. Quitamos el sombreado azul que pone Streamlit al hacer clic */
 div[data-baseweb="input"]:focus-within, 
 div[data-baseweb="select"] > div:focus-within {{
-    border-color: {v["text"]} !important; /* El borde se ilumina con el color del texto actual */
+    border-color: {v["text"]} !important;
 }}
+
+/* 4. Color de la flecha del Turno */
+[data-testid="stSelectbox"] svg {{
+    fill: {v["text"]} !important;
+}}
+
 
 /* 6. BOTONES CON HOVER INVERTIDO */
 div.stButton>button {{
@@ -290,6 +294,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
