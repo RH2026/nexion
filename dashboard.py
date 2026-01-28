@@ -53,12 +53,11 @@ st.markdown(f"""
         transition: all 0.3s ease;
     }}
 
-    /* VISIBILIDAD DE PLACEHOLDER (FIX MODO CLARO) */
+    /* VISIBILIDAD DE PLACEHOLDER */
     .stTextInput input::placeholder {{ color: {vars_css['sub']} !important; opacity: 1; font-size: 11px; }}
     .stTextInput input::-webkit-input-placeholder {{ color: {vars_css['sub']} !important; }}
-    .stTextInput input::-moz-placeholder {{ color: {vars_css['sub']} !important; }}
 
-    /* ── BOTONES CON HOVER FUNCIONAL ── */
+    /* ── BOTONES: ESTILO BASE ── */
     div.stButton>button {{
         background: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -70,27 +69,32 @@ st.markdown(f"""
         height: 35px !important;
         transition: all 0.3s ease-in-out !important;
         width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }}
 
-    /* HOVER INVERTIDO */
+    /* ── HOVER INVERTIDO (PARA TODOS LOS BOTONES) ── */
     div.stButton>button:hover {{
         background: {vars_css['text']} !important; 
         color: {vars_css['bg']} !important; 
         border-color: {vars_css['text']} !important;
     }}
 
-    /* BOTÓN PRIMARIO (EXECUTE SEARCH) */
+    /* ── AJUSTE ESPECÍFICO PARA EL BOTÓN DE BÚSQUEDA (PRIMARY) ── */
     div.stButton>button[kind="primary"] {{
+        background: {vars_css['card']} !important; /* Empezar igual que los otros */
+        color: {vars_css['text']} !important;
+        border: 1px solid {vars_css['border']} !important;
         height: 45px !important;
-        background: {vars_css['text']} !important;
-        color: {vars_css['bg']} !important;
-        border: none !important;
         font-size: 11px !important;
     }}
-    
+
+    /* Forzar el hover invertido en el botón primario también */
     div.stButton>button[kind="primary"]:hover {{
-        opacity: 0.8 !important;
-        transform: translateY(-1px);
+        background: {vars_css['text']} !important;
+        color: {vars_css['bg']} !important;
+        border-color: {vars_css['text']} !important;
     }}
 
     /* LOGO Y NITIDEZ */
@@ -163,6 +167,7 @@ with main_container:
             busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
             
             st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+            # Botón de búsqueda (Primary)
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
                 with st.status("Accesando a Core Intelligence...", expanded=False):
                     time.sleep(1)
@@ -187,6 +192,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
