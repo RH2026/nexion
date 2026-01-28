@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 
-# 1. CONFIGURACIÓN DE PÁGINA (Sin márgenes superiores)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
 # ── TEMA Y VARIABLES ──────────────────────────────────────
@@ -17,35 +17,48 @@ vars_css = {
     "claro": {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9", "logo": "n2.png"}
 }[tema]
 
-# ── CSS MAESTRO (OPTIMIZACIÓN DE ESPACIO SUPERIOR) ──────────
+# ── CSS MAESTRO (TRANSICIÓN SUAVE + CENTRADO) ──────────────
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
-    /* ELIMINAR ESPACIO SUPERIOR NATIVO DE STREAMLIT */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
     .block-container {{ 
-        padding-top: 0.5rem !important;  /* Casi pegado al borde superior */
+        padding-top: 0.5rem !important; 
         padding-bottom: 0rem !important; 
     }}
 
+    /* TRANSICIÓN SUAVE DE TEMA (Fade effect) */
     .stApp {{ 
         background: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
-        font-family: 'Inter', sans-serif !important; 
+        font-family: 'Inter', sans-serif !important;
+        transition: background-color 0.8s ease, color 0.8s ease !important;
     }}
 
-    /* NITIDEZ EXTREMA PARA LOGOS Y REDUCCIÓN DE MARGEN */
+    /* CENTRADO DE TEXTO EN BUSCADOR */
+    .stTextInput input {{
+        background: {vars_css['card']} !important;
+        color: {vars_css['text']} !important;
+        border: 1px solid {vars_css['border']} !important;
+        border-radius: 2px !important;
+        height: 48px !important;
+        text-align: center !important; /* Texto centrado */
+        letter-spacing: 2px;
+        transition: all 0.4s ease;
+    }}
+
+    /* NITIDEZ Y POSICIÓN DE LOGO */
     div[data-testid='stImage'] img {{
         image-rendering: -webkit-optimize-contrast !important;
         image-rendering: crisp-edges !important;
     }}
     div[data-testid='stImage'] {{
-        margin-top: -20px !important; /* Sube el logo al máximo */
+        margin-top: -20px !important;
     }}
     
-    /* Botones de menú ultra-compactos */
+    /* BOTONES DE MENÚ */
     div.stButton>button {{
         background: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -55,13 +68,14 @@ st.markdown(f"""
         text-transform: uppercase;
         font-size: 10px !important;
         height: 35px !important;
+        transition: all 0.3s ease !important;
     }}
     div.stButton>button:hover {{
         background: {vars_css['text']} !important; 
         color: {vars_css['bg']} !important; 
     }}
 
-    /* Estilo del Pie de Página */
+    /* FOOTER */
     .footer {{
         position: fixed;
         bottom: 0; left: 0; width: 100%;
@@ -73,12 +87,12 @@ st.markdown(f"""
         letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']};
         z-index: 100;
+        transition: background-color 0.8s ease;
     }}
 </style>
 """, unsafe_allow_html=True)
 
 # ── HEADER ULTRA-COMPACTO ───────────────────────────────────
-# Usamos un contenedor para forzar que todo esté en la "zona cero"
 header_zone = st.container()
 with header_zone:
     c1, c2, c3 = st.columns([1.5, 5, 0.4], vertical_alignment="center")
@@ -100,39 +114,40 @@ with header_zone:
                     st.rerun()
 
     with c3:
-        if st.button("☀️" if tema == "oscuro" else "🌙"):
+        # Toggle de tema con icono dinámico y transición suave
+        if st.button("☾" if tema == "oscuro" else "☀", key="theme_btn"):
             st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
             st.rerun()
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:-5px 0 20px;'>", unsafe_allow_html=True)
 
-# ── CONTENEDOR DE RENDERIZADO (ESPACIO DE TRABAJO) ──────────
+# ── CONTENEDOR DE RENDERIZADO ──────────────────────────────
 main_container = st.container()
 
 with main_container:
     if st.session_state.pagina == "RASTREO":
-        # Empuja el contenido un poco hacia abajo del header para que respire
-        st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 8vh;'></div>", unsafe_allow_html=True)
         
         _, col_search, _ = st.columns([1, 1.8, 1])
         with col_search:
             st.markdown(f"<p style='text-align:center; color:{vars_css['sub']}; font-size:12px; letter-spacing:8px; margin-bottom:20px;'>OPERATIONAL QUERY</p>", unsafe_allow_html=True)
+            
+            # El texto aquí aparecerá centrado por el CSS
             busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
+            
+            st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-                with st.status("Consultando Servidores...", expanded=True) as status:
-                    st.write("Buscando en SAP...")
+                with st.status("Accesando a Core...", expanded=False):
                     time.sleep(1)
-                    st.write("Verificando Tracking con Transportista...")
-                    time.sleep(1)
-                    status.update(label="Búsqueda Completada", state="complete", expanded=False)
-                    st.success(f"Resultados para: {busqueda}")
+                st.toast(f"Consultando: {busqueda}")
 
 # ── FOOTER FIJO ──────────────────────────────────────────────
 st.markdown(f"""
     <div class="footer">
-        NEXION // LOGISTICS OS // GUADALAJARA, JAL.
+        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
