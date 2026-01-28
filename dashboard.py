@@ -81,16 +81,15 @@ st.markdown(f"""
         border-color: {vars_css['text']} !important;
     }}
 
-    /* ── AJUSTE ESPECÍFICO PARA EL BOTÓN DE BÚSQUEDA (PRIMARY) ── */
+    /* ── AJUSTE PARA BOTÓN PRIMARIO ── */
     div.stButton>button[kind="primary"] {{
-        background: {vars_css['card']} !important; /* Empezar igual que los otros */
+        background: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important;
         height: 45px !important;
         font-size: 11px !important;
     }}
 
-    /* Forzar el hover invertido en el botón primario también */
     div.stButton>button[kind="primary"]:hover {{
         background: {vars_css['text']} !important;
         color: {vars_css['bg']} !important;
@@ -120,6 +119,26 @@ st.markdown(f"""
     }}
 </style>
 """, unsafe_allow_html=True)
+
+# ── 4. SPLASH SCREEN (MANTENIDO) ───────────────────────────
+if "splash_completado" not in st.session_state:
+    st.session_state.splash_completado = False
+
+if not st.session_state.splash_completado:
+    p = st.empty()
+    with p.container():
+        for m in ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]:
+            st.markdown(f"""
+            <div style="height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+              <div style="width:40px;height:40px;border:1px solid {vars_css['border']};
+              border-top:1px solid {vars_css['text']};border-radius:50%;animation:spin 1s linear infinite;"></div>
+              <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:{vars_css['text']};">{m}</p>
+            </div>
+            <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
+            """, unsafe_allow_html=True)
+            time.sleep(.9)
+    st.session_state.splash_completado = True
+    st.rerun()
 
 # ── HEADER Y NAVEGACIÓN ─────────────────────────────────────
 header_zone = st.container()
@@ -151,7 +170,6 @@ st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:-5px 
 
 # ── CONTENEDOR DE CONTENIDO DINÁMICO ────────────────────────
 main_container = st.container()
-
 with main_container:
     if st.session_state.pagina == "RASTREO":
         st.markdown("<div style='margin-top: 10vh;'></div>", unsafe_allow_html=True)
@@ -167,7 +185,6 @@ with main_container:
             busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
             
             st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-            # Botón de búsqueda (Primary)
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
                 with st.status("Accesando a Core Intelligence...", expanded=False):
                     time.sleep(1)
@@ -176,7 +193,7 @@ with main_container:
     elif st.session_state.pagina == "INTELIGENCIA":
         st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
         st.subheader("Módulo de Inteligencia Logística")
-        st.write("Contenido en desarrollo para Xenocode...")
+        st.write("Contenido en desarrollo...")
 
     elif st.session_state.pagina == "REPORTES":
         st.subheader("Reportes Operativos")
@@ -192,6 +209,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
