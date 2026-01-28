@@ -171,23 +171,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-Entiendo perfectamente tu frustración. Ese error de _check_type_compatibilities es el "talón de Aquiles" del st.data_editor. Ocurre porque, aunque visualmente veas fechas, internamente Pandas las está tratando como objetos mixtos (un poco de texto, un poco de fecha, o valores nulos) y Streamlit bloquea la edición para no corromper los datos.
-
-Vamos a aplicar una "limpieza profunda" antes de que los datos toquen el editor. He reestructurado el bloque para que sea extremadamente robusto con los tipos de datos.
-
-El Bloque Maestro Corregido
-Copia y reemplaza todo tu código actual por este. He añadido un paso intermedio que fuerza a cada celda a ser del tipo correcto antes de renderizar la tabla:
-
-Python
-import streamlit as st
-import pandas as pd
-import datetime
-import requests
-from io import StringIO
-from github import Github
-import plotly.figure_factory as ff
-import plotly.graph_objects as go
-
 # --- 1. CONFIGURACIÓN ---
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
@@ -297,6 +280,7 @@ with st.container(border=True):
     if col2.button("🔄 RECARGAR DATOS", use_container_width=True):
         st.session_state.df_tareas = cargar_datos_seguro()
         st.rerun()
+
 
 
 
