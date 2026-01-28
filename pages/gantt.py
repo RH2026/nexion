@@ -186,18 +186,17 @@ def cargar_datos_seguro():
     columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
     hoy_local = obtener_fecha_mexico()
     try:
-        response = requests.get(CSV_URL)
+        # Añadimos un parámetro aleatorio a la URL para saltar el caché de GitHub
+        response = requests.get(f"{CSV_URL}?nocache={datetime.datetime.now().timestamp()}")
         if response.status_code == 200:
             df = pd.read_csv(StringIO(response.text))
             df.columns = [c.strip().upper() for c in df.columns]
             
             for col in columnas_base:
-                if col not in df.columns:
-                    df[col] = ""
+                if col not in df.columns: df[col] = ""
             
             for col in ['FECHA', 'FECHA_FIN']:
                 df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
-                # Usamos hoy_local definido arriba
                 df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy_local)
             
             df['IMPORTANCIA'] = df['IMPORTANCIA'].astype(str).replace('nan', 'Media')
@@ -217,28 +216,17 @@ def guardar_en_github(df):
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
         
-        # 1. Convertir datos a CSV
         df_save = df.copy()
         df_save['FECHA'] = df_save['FECHA'].astype(str)
         df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
         csv_data = df_save.to_csv(index=False)
         
-        # 2. OBTENER EL SHA MÁS RECIENTE (Aquí está la solución al error 409)
-        # Forzamos a traer la versión que está en GitHub justo AHORA
+        # OBTENER SHA FRESCO JUSTO ANTES DE GUARDAR
         contents = repo.get_contents(FILE_PATH, ref="main")
-        
-        # 3. Intentar la actualización con el SHA fresco
-        repo.update_file(
-            path=contents.path, 
-            message=f"Actualización NEXION {hoy_sync}", 
-            content=csv_data, 
-            sha=contents.sha, # Este SHA ahora es el actual
-            branch="main"
-        )
+        repo.update_file(contents.path, f"Sync {hoy_sync}", csv_data, contents.sha, branch="main")
         st.toast("✅ Sincronizado con GitHub", icon="🚀")
         return True
     except Exception as e:
-        # Si el error persiste, lo mostramos detallado
         st.error(f"Error de Sincronización: {e}")
         return False
 
@@ -246,13 +234,14 @@ def guardar_en_github(df):
 if 'df_tareas' not in st.session_state:
     st.session_state.df_tareas = cargar_datos_seguro()
 
-# --- 4. INTERFAZ VISUAL ---
+# --- 4. INTERFAZ VISUAL (GANTT) ---
+st.markdown(f"<h1 style='text-align:center; font-weight:300; letter-spacing:8px; color:{v['text']};'>NEXION PROJECT FLOW</h1>", unsafe_allow_html=True)
+
 if not st.session_state.df_tareas.empty:
     try:
         df_p = st.session_state.df_tareas.copy()
         df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
         colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
-        
         fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', group_tasks=True, showgrid_x=True, showgrid_y=True)
         fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color=v['text']), height=350)
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -267,7 +256,7 @@ with st.container(border=True):
         df_input,
         num_rows="dynamic",
         use_container_width=True,
-        key="nexion_editor_v4", # Nueva key para refrescar cache
+        key="nexion_editor_final_v5", # Nueva key para evitar conflictos
         column_config={
             "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
             "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
@@ -279,14 +268,21 @@ with st.container(border=True):
     )
 
     col1, col2 = st.columns(2)
+    
     if col1.button("💾 GUARDAR CAMBIOS", use_container_width=True, type="primary"):
         st.session_state.df_tareas = df_editado
         if guardar_en_github(df_editado):
             st.rerun()
 
-    if col2.button("🔄 RECARGAR", use_container_width=True):
+    # --- BOTÓN RECARGAR OPTIMIZADO ---
+    if col2.button("🔄 RECARGAR DESDE GITHUB", use_container_width=True):
+        # 1. Limpiar el estado de la sesión
+        st.session_state.df_tareas = None
+        # 2. Forzar la recarga de datos
         st.session_state.df_tareas = cargar_datos_seguro()
+        # 3. Refrescar la aplicación completa
         st.rerun()
+
 
 
 
