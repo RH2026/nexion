@@ -186,7 +186,6 @@ def cargar_datos_seguro():
     columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
     hoy = obtener_fecha_mexico()
     try:
-        # Forzar lectura fresca de GitHub
         response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
         if response.status_code == 200:
             df = pd.read_csv(StringIO(response.text))
@@ -194,7 +193,6 @@ def cargar_datos_seguro():
             for col in columnas_base:
                 if col not in df.columns: df[col] = ""
             
-            # Limpieza estricta de fechas para evitar errores de tipo
             for col in ['FECHA', 'FECHA_FIN']:
                 df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
                 df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
@@ -206,31 +204,37 @@ def cargar_datos_seguro():
 
 def guardar_en_github(df):
     if not TOKEN:
-        st.error("No se encontró el TOKEN"); return False
+        st.error("Error: GITHUB_TOKEN no configurado"); return False
     try:
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
         
-        # Convertir a texto para el CSV físico
+        # Preparar datos para CSV
         df_save = df.copy()
         df_save['FECHA'] = df_save['FECHA'].astype(str)
         df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
         csv_data = df_save.to_csv(index=False)
         
-        # Obtener SHA actualizado justo antes de guardar
+        # Obtener SHA actualizado y guardar
         contents = repo.get_contents(FILE_PATH, ref="main")
-        repo.update_file(contents.path, f"Actualización NEXION {obtener_fecha_mexico()}", csv_data, contents.sha, branch="main")
-        st.toast("✅ ¡Guardado en GitHub!", icon="🚀")
+        repo.update_file(
+            contents.path, 
+            f"Actualización NEXION {obtener_fecha_mexico()}", 
+            csv_data, 
+            contents.sha, 
+            branch="main"
+        )
+        st.toast("🚀 ¡Sincronizado con GitHub!", icon="✅")
         return True
     except Exception as e:
-        st.error(f"Error al guardar: {e}")
+        st.error(f"Error al sincronizar: {e}")
         return False
 
-# --- 3. CARGA INICIAL ---
+# --- 3. GESTIÓN DE ESTADO ---
 if 'df_tareas' not in st.session_state:
     st.session_state.df_tareas = cargar_datos_seguro()
 
-# --- 4. TÍTULO Y GANTT ---
+# --- 4. TÍTULO Y GRÁFICO GANTT ---
 st.markdown(f"<h1 style='text-align:center; font-weight:300; letter-spacing:8px; color:{v['text']};'>NEXION PROJECT FLOW</h1>", unsafe_allow_html=True)
 
 if not st.session_state.df_tareas.empty:
@@ -238,21 +242,28 @@ if not st.session_state.df_tareas.empty:
         df_p = st.session_state.df_tareas.copy()
         df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
         colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
+        
+        # Crear Gantt con Plotly
         fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', group_tasks=True, showgrid_x=True, showgrid_y=True)
-        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color=v['text']), height=300)
+        fig.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)', 
+            paper_bgcolor='rgba(0,0,0,0)', 
+            font=dict(color=v['text'], family="Inter"),
+            height=350,
+            margin=dict(l=150, r=20, t=20, b=50)
+        )
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
     except:
-        st.info("Ingresa fechas válidas para ver el Gantt.")
+        st.info("💡 Consejo: Completa las fechas de Inicio y Fin para ver el gráfico.")
 
-# --- 5. EDITOR Y BOTONES ---
-# Usamos un contenedor para organizar el editor y el botón
+# --- 5. EDITOR Y BOTÓN ÚNICO ---
 with st.container(border=True):
-    # IMPORTANTE: El editor debe usar los datos del session_state
+    # El editor se alimenta y mantiene lo que el usuario escribe
     df_editado = st.data_editor(
         st.session_state.df_tareas,
         num_rows="dynamic",
         use_container_width=True,
-        key="nexion_editor_final_v6",
+        key="nexion_editor_v7",
         column_config={
             "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
             "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
@@ -263,17 +274,16 @@ with st.container(border=True):
         hide_index=True
     )
 
-    col1, col2 = st.columns(2)
-    
-    # El botón ahora usa 'df_editado' que es el resultado directo del widget
-    if col1.button("💾 GUARDAR CAMBIOS", use_container_width=True, type="primary"):
-        if guardar_en_github(df_editado):
-            st.session_state.df_tareas = df_editado # Actualizamos memoria
-            st.rerun() # Refrescamos para ver cambios en el Gantt
-
-    if col2.button("🔄 RECARGAR DATOS", use_container_width=True):
-        st.session_state.df_tareas = cargar_datos_seguro()
-        st.rerun()
+    # BOTÓN ÚNICO DE GUARDADO Y ACTUALIZACIÓN
+    if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
+        # 1. Guardamos los cambios en GitHub
+        exito = guardar_en_github(df_editado)
+        
+        if exito:
+            # 2. Actualizamos la memoria de la app con lo que acabamos de editar
+            st.session_state.df_tareas = df_editado
+            # 3. Forzamos el refresco para que el gráfico se redibuje con los nuevos datos
+            st.rerun()
 
 
 
