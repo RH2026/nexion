@@ -127,15 +127,15 @@ with main_container:
                     status.update(label="Búsqueda Completada", state="complete", expanded=False)
                     st.success(f"Resultados para: {busqueda}")
 
-# ── FOOTER FIJO ──────────────────────────────────────────────
+# ── FOOTER ──────────────────────────────────────────────────
 st.markdown(f"""
     <div class="footer">
-        NEXION // LOGISTICS OS // GUADALAJARA, JAL.
+        NEXION SYSTEM v2.0.4 // JALISCO, MX. © 2026
     </div>
 """, unsafe_allow_html=True)
 
-
     
+
 
 
 
