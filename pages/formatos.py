@@ -31,20 +31,17 @@ else:
     }
 
 # ── 3. CSS MAESTRO (ALINEACIÓN DE LOGO Y UNIFICACIÓN TOTAL) ──
-# ── 3. CSS MAESTRO (UNIFICACIÓN TOTAL Y CORRECCIÓN DE INPUTS) ──
+# ── 3. CSS MAESTRO (UNIFICACIÓN TOTAL - VERSIÓN FINAL) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. LIMPIEZA DE INTERFAZ NATIVA */
+/* 1. LIMPIEZA DE INTERFAZ */
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
     display:none !important; 
 }}
 
-.block-container {{ 
-    padding-top: 1rem !important; 
-    padding-bottom: 0rem !important;
-}}
+.block-container {{ padding-top: 1rem !important; padding-bottom: 0rem !important; }}
 
 /* 2. BASE GLOBAL */
 .stApp {{ 
@@ -53,12 +50,11 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* 3. ALINEACIÓN DE LOGO Y TEXTOS */
+/* 3. ALINEACIÓN DE LOGOS */
 div[data-testid="stImage"] {{ text-align: left !important; width: fit-content !important; }}
-div[data-testid="stImage"] img {{ image-rendering: -webkit-optimize-contrast !important; }}
 .stMarkdown p {{ margin-left: 0 !important; text-align: left !important; }}
 
-/* 4. ETIQUETAS DE CAMPOS (FECHA, TURNO, FOLIO) */
+/* 4. ETIQUETAS DE CAMPOS */
 [data-testid="stWidgetLabel"] p {{
     color: {v["text"]} !important;
     font-weight: 700 !important;
@@ -67,12 +63,19 @@ div[data-testid="stImage"] img {{ image-rendering: -webkit-optimize-contrast !im
     letter-spacing: 1.5px !important;
 }}
 
-/* 5. EL BENDITO BLOQUE DE CAJAS (UNIFICACIÓN REAL) */
+/* 5. EL BENDITO BLOQUE DE CAJAS (RESETEO AGRESIVO) */
 
-/* A. El marco exterior de todas las cajas */
+/* A. Forzamos el contenedor raíz de cada uno para que sea transparente y no herede sombras */
+div[data-testid="stDateInput"], 
+div[data-testid="stSelectbox"], 
+div[data-testid="stTextInput"] {{
+    background-color: transparent !important;
+    border: none !important;
+}}
+
+/* B. Unificamos el Marco (lo que el usuario ve como la caja) */
 div[data-baseweb="input"], 
-div[data-baseweb="select"] > div,
-div[data-testid="stDateInput"] > div {{
+div[data-baseweb="select"] > div {{
     background-color: {v["card"]} !important;
     border: 1px solid {v["border"]} !important; 
     border-radius: 4px !important;
@@ -80,35 +83,34 @@ div[data-testid="stDateInput"] > div {{
     box-shadow: none !important;
 }}
 
-/* B. El contenido interno (Texto de entrada y de selección) */
-/* Esto quita el fondo negro del Folio y el texto fantasma del Turno */
+/* C. Forzamos el color del TEXTO y eliminamos fondos negros internos */
 input, 
-div[data-baseweb="select"] div,
-div[role="button"],
-.stTextInput input {{
+div[data-baseweb="select"] div[role="button"],
+div[data-baseweb="select"] span {{
     color: {v["text"]} !important;
     -webkit-text-fill-color: {v["text"]} !important;
-    background-color: transparent !important; /* Fundamental para evitar el bloque negro */
-    border: none !important;
-    font-size: 14px !important;
-    opacity: 1 !important;
-    box-shadow: none !important;
-}}
-
-/* C. Específico para DateInput para que no herede bordes grises */
-div[data-testid="stDateInput"] {{
     background-color: transparent !important;
+    font-size: 14px !important;
+    border: none !important;
 }}
 
-/* D. Iconos y flechas */
+/* D. Arreglo específico para el Folio (que se veía negro) */
+[data-testid="stTextInput"] input {{
+    background-color: {v["card"]} !important;
+    color: {v["text"]} !important;
+    border: none !important;
+}}
+
+/* E. Flechas e iconos */
 [data-testid="stSelectbox"] svg, [data-testid="stDateInput"] svg {{
     fill: {v["text"]} !important;
 }}
 
-/* E. Estado de Foco (cuando haces clic) */
+/* F. Foco (cuando el usuario entra al campo) */
 div[data-baseweb="input"]:focus-within, 
 div[data-baseweb="select"] > div:focus-within {{
     border-color: {v["text"]} !important;
+    outline: none !important;
 }}
 
 /* 6. BOTONES */
@@ -122,11 +124,9 @@ div.stButton>button {{
     height: 42px !important;
     font-weight: 600 !important;
 }}
-
 div.stButton>button:hover {{
     background: {v["text"]} !important;
     color: {v["bg"]} !important;
-    border-color: {v["text"]} !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -289,6 +289,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
