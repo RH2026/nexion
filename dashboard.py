@@ -8,8 +8,10 @@ st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_st
 # ── TEMA Y VARIABLES ──────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
-if "pagina" not in st.session_state: 
-    st.session_state.pagina = "RASTREO"
+if "menu_main" not in st.session_state: 
+    st.session_state.menu_main = "TRACKING"
+if "menu_sub" not in st.session_state:
+    st.session_state.menu_sub = "GENERAL"
 
 tema = st.session_state.tema
 vars_css = {
@@ -21,8 +23,6 @@ vars_css = {
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-    
-    /* ELIMINAR ELEMENTOS NATIVOS */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
     .block-container {{ 
@@ -30,7 +30,6 @@ st.markdown(f"""
         padding-bottom: 0rem !important; 
     }}
 
-    /* TRANSICIÓN DE TEMA */
     .stApp {{ 
         background: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
@@ -38,7 +37,7 @@ st.markdown(f"""
         transition: background-color 0.8s ease, color 0.8s ease !important;
     }}
 
-    /* ── INPUT DE BÚSQUEDA (CENTRADO + PEQUEÑO) ── */
+    /* INPUT DE BÚSQUEDA */
     .stTextInput input {{
         background: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
@@ -50,14 +49,10 @@ st.markdown(f"""
         line-height: 42px !important;
         padding: 0px !important;
         letter-spacing: 2px;
-        transition: all 0.3s ease;
     }}
-
-    /* VISIBILIDAD DE PLACEHOLDER */
     .stTextInput input::placeholder {{ color: {vars_css['sub']} !important; opacity: 1; font-size: 11px; }}
-    .stTextInput input::-webkit-input-placeholder {{ color: {vars_css['sub']} !important; }}
 
-    /* ── BOTONES: ESTILO BASE ── */
+    /* BOTONES Y HOVER INVERTIDO */
     div.stButton>button {{
         background: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -66,34 +61,19 @@ st.markdown(f"""
         font-weight: 700 !important; 
         text-transform: uppercase;
         font-size: 10px !important;
-        height: 35px !important;
+        height: 32px !important;
         transition: all 0.3s ease-in-out !important;
         width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
     }}
-
-    /* ── HOVER INVERTIDO (PARA TODOS LOS BOTONES) ── */
     div.stButton>button:hover {{
         background: {vars_css['text']} !important; 
         color: {vars_css['bg']} !important; 
         border-color: {vars_css['text']} !important;
     }}
 
-    /* ── AJUSTE PARA BOTÓN PRIMARIO ── */
-    div.stButton>button[kind="primary"] {{
-        background: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important;
-        height: 45px !important;
-        font-size: 11px !important;
-    }}
-
-    div.stButton>button[kind="primary"]:hover {{
-        background: {vars_css['text']} !important;
-        color: {vars_css['bg']} !important;
-        border-color: {vars_css['text']} !important;
+    /* RESALTADO DE MENÚ ACTIVO */
+    div.stButton>button[kind="secondary"] {{
+        border-bottom: 2px solid {vars_css['text']} !important;
     }}
 
     /* LOGO Y NITIDEZ */
@@ -103,7 +83,6 @@ st.markdown(f"""
     }}
     div[data-testid='stImage'] {{ margin-top: -20px !important; }}
 
-    /* FOOTER FIJO */
     .footer {{
         position: fixed;
         bottom: 0; left: 0; width: 100%;
@@ -115,12 +94,11 @@ st.markdown(f"""
         letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']};
         z-index: 100;
-        transition: background-color 0.8s ease;
     }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── 4. SPLASH SCREEN (MANTENIDO) ───────────────────────────
+# ── 4. SPLASH SCREEN ──────────────────────────────────────
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
 
@@ -136,11 +114,11 @@ if not st.session_state.splash_completado:
             </div>
             <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
             """, unsafe_allow_html=True)
-            time.sleep(.9)
+            time.sleep(.7)
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── HEADER Y NAVEGACIÓN ─────────────────────────────────────
+# ── HEADER Y NAVEGACIÓN PRINCIPAL ──────────────────────────
 header_zone = st.container()
 with header_zone:
     c1, c2, c3 = st.columns([1.5, 5, 0.4], vertical_alignment="center")
@@ -153,12 +131,14 @@ with header_zone:
             st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0;'>NEXION</h3>", unsafe_allow_html=True)
 
     with c2:
-        cols = st.columns(4)
-        btn_labels = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
-        for i, b in enumerate(btn_labels):
-            with cols[i]:
-                if st.button(b, use_container_width=True, key=f"nav_{b}"):
-                    st.session_state.pagina = b
+        # 4 MENÚS PRINCIPALES SEGÚN IMAGEN
+        cols_main = st.columns(4)
+        main_menus = ["TRACKING", "SEGUIMIENTO", "REPORTES", "FORMATOS"]
+        for i, m in enumerate(main_menus):
+            with cols_main[i]:
+                if st.button(m, use_container_width=True, key=f"main_{m}"):
+                    st.session_state.menu_main = m
+                    st.session_state.menu_sub = "GENERAL" # Reset sub al cambiar main
                     st.rerun()
 
     with c3:
@@ -166,42 +146,79 @@ with header_zone:
             st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
             st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:-5px 0 20px;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:-5px 0 10px;'>", unsafe_allow_html=True)
+
+# ── NAVEGACIÓN DE SUB MENÚS (DINÁMICO SEGÚN SELECCIÓN) ──────
+sub_zone = st.container()
+with sub_zone:
+    # Definición de Submenús basados en las imágenes
+    sub_map = {
+        "TRACKING": [], # Sin submenús visibles en imagen
+        "SEGUIMIENTO": ["TRK", "GANTT"],
+        "REPORTES": ["APQ", "OPS", "OTD"],
+        "FORMATOS": ["SALIDA DE PT"]
+    }
+    
+    current_subs = sub_map[st.session_state.menu_main]
+    
+    if current_subs:
+        # Columnas dinámicas para submenús
+        cols_sub = st.columns(len(current_subs) + 4) # +4 para empujar a la izquierda
+        for i, s in enumerate(current_subs):
+            with cols_sub[i]:
+                if st.button(s, use_container_width=True, key=f"sub_{s}"):
+                    st.session_state.menu_sub = s
+                    st.rerun()
+        st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; opacity:0.3; margin:0px 0 20px;'>", unsafe_allow_html=True)
 
 # ── CONTENEDOR DE CONTENIDO DINÁMICO ────────────────────────
 main_container = st.container()
 with main_container:
-    if st.session_state.pagina == "RASTREO":
-        st.markdown("<div style='margin-top: 10vh;'></div>", unsafe_allow_html=True)
-        
+    # LÓGICA DE RENDERIZADO POR BLOQUES
+    
+    # 1. TRACKING
+    if st.session_state.menu_main == "TRACKING":
+        st.markdown("<div style='margin-top: 8vh;'></div>", unsafe_allow_html=True)
         _, col_search, _ = st.columns([1, 1.6, 1])
         with col_search:
-            st.markdown(f"""
-                <p style='text-align:center; color:{vars_css['sub']}; font-size:11px; letter-spacing:8px; margin-bottom:20px; text-transform:uppercase;'>
-                    O P E R A T I O N A L &nbsp; Q U E R Y
-                </p>
-            """, unsafe_allow_html=True)
-            
+            st.markdown(f"<p style='text-align:center; color:{vars_css['sub']}; font-size:11px; letter-spacing:8px; margin-bottom:20px;'>O P E R A T I O N A L &nbsp; Q U E R Y</p>", unsafe_allow_html=True)
             busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
-            
             st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-                with st.status("Accesando a Core Intelligence...", expanded=False):
-                    time.sleep(1)
-                st.toast(f"Buscando guía: {busqueda}")
+                st.toast(f"Buscando: {busqueda}")
 
-    elif st.session_state.pagina == "INTELIGENCIA":
-        st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
-        st.subheader("Módulo de Inteligencia Logística")
-        st.write("Contenido en desarrollo...")
+    # 2. SEGUIMIENTO
+    elif st.session_state.menu_main == "SEGUIMIENTO":
+        if st.session_state.menu_sub == "TRK":
+            st.subheader("SEGUIMIENTO > TRK")
+            # TU CONTENIDO AQUÍ
+        elif st.session_state.menu_sub == "GANTT":
+            st.subheader("SEGUIMIENTO > GANTT")
+            # TU CONTENIDO AQUÍ
+        else:
+            st.write("Seleccione una opción de seguimiento superior.")
 
-    elif st.session_state.pagina == "REPORTES":
-        st.subheader("Reportes Operativos")
-        st.write("Sección de análisis de datos SAP.")
+    # 3. REPORTES
+    elif st.session_state.menu_main == "REPORTES":
+        if st.session_state.menu_sub == "APQ":
+            st.subheader("REPORTES > APQ")
+            # TU CONTENIDO AQUÍ
+        elif st.session_state.menu_sub == "OPS":
+            st.subheader("REPORTES > OPS")
+            # TU CONTENIDO AQUÍ
+        elif st.session_state.menu_sub == "OTD":
+            st.subheader("REPORTES > OTD")
+            # TU CONTENIDO AQUÍ
+        else:
+            st.write("Seleccione un reporte operativo.")
 
-    elif st.session_state.pagina == "FORMATOS":
-        st.subheader("Formatos y Documentación")
-        st.write("Descarga de formatos logísticos.")
+    # 4. FORMATOS
+    elif st.session_state.menu_main == "FORMATOS":
+        if st.session_state.menu_sub == "SALIDA DE PT":
+            st.subheader("FORMATOS > SALIDA DE PT")
+            # TU CONTENIDO AQUÍ
+        else:
+            st.write("Gestión de formatos y documentos.")
 
 # ── FOOTER FIJO ──────────────────────────────────────────────
 st.markdown(f"""
@@ -209,6 +226,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
