@@ -17,7 +17,7 @@ vars_css = {
     "claro": {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9", "logo": "n2.png"}
 }[tema]
 
-# ── CSS MAESTRO (TRANSICIÓN + CENTRADO + FIX PLACEHOLDER) ──
+# ── CSS MAESTRO (CENTRADO VERTICAL + TEXTO PEQUEÑO) ────────
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -36,32 +36,36 @@ st.markdown(f"""
         transition: background-color 0.8s ease, color 0.8s ease !important;
     }}
 
-    /* CENTRADO Y ESTILO DE BUSCADOR */
+    /* INPUT DE BÚSQUEDA OPTIMIZADO */
     .stTextInput input {{
         background: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important;
         border-radius: 2px !important;
-        height: 48px !important;
-        text-align: center !important;
+        
+        /* Ajustes de tamaño y centrado */
+        height: 42px !important;          /* Un poco más bajo para elegancia */
+        font-size: 11px !important;       /* Texto más pequeño */
+        text-align: center !important;    /* Centrado horizontal */
+        line-height: 42px !important;     /* Ayuda al centrado vertical */
+        padding: 0px !important;          /* Limpia paddings que desvían el texto */
+        
         letter-spacing: 2px;
         transition: all 0.4s ease;
     }}
 
-    /* FIX: COLOR DEL TEXTO "INGRESE GUÍA O REFERENCIA..." */
-    /* Se aplica a todos los motores de búsqueda para asegurar visibilidad */
-    .stTextInput input::placeholder {{ color: {vars_css['sub']} !important; opacity: 1; }}
-    .stTextInput input::-webkit-input-placeholder {{ color: {vars_css['sub']} !important; }}
-    .stTextInput input::-moz-placeholder {{ color: {vars_css['sub']} !important; }}
+    /* FIX VISIBILIDAD PLACEHOLDER */
+    .stTextInput input::placeholder {{ color: {vars_css['sub']} !important; opacity: 1; font-size: 11px; }}
+    .stTextInput input::-webkit-input-placeholder {{ color: {vars_css['sub']} !important; font-size: 11px; }}
 
-    /* LOGO */
+    /* LOGO Y MARGENES */
     div[data-testid='stImage'] img {{
         image-rendering: -webkit-optimize-contrast !important;
         image-rendering: crisp-edges !important;
     }}
     div[data-testid='stImage'] {{ margin-top: -20px !important; }}
     
-    /* MENÚ */
+    /* BOTONES */
     div.stButton>button {{
         background: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -71,14 +75,8 @@ st.markdown(f"""
         text-transform: uppercase;
         font-size: 10px !important;
         height: 35px !important;
-        transition: all 0.3s ease !important;
-    }}
-    div.stButton>button:hover {{
-        background: {vars_css['text']} !important; 
-        color: {vars_css['bg']} !important; 
     }}
 
-    /* FOOTER */
     .footer {{
         position: fixed;
         bottom: 0; left: 0; width: 100%;
@@ -90,7 +88,6 @@ st.markdown(f"""
         letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']};
         z-index: 100;
-        transition: background-color 0.8s ease;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -99,7 +96,6 @@ st.markdown(f"""
 header_zone = st.container()
 with header_zone:
     c1, c2, c3 = st.columns([1.5, 5, 0.4], vertical_alignment="center")
-
     with c1:
         try:
             st.image(vars_css["logo"], width=120)
@@ -109,8 +105,7 @@ with header_zone:
 
     with c2:
         cols = st.columns(4)
-        btn_labels = ["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]
-        for i, b in enumerate(btn_labels):
+        for i, b in enumerate(["RASTREO", "INTELIGENCIA", "REPORTES", "FORMATOS"]):
             with cols[i]:
                 if st.button(b, use_container_width=True, key=f"nav_{b}"):
                     st.session_state.pagina = b
@@ -125,30 +120,21 @@ st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:-5px 
 
 # ── CONTENEDOR CENTRAL ──────────────────────────────────────
 main_container = st.container()
-
 with main_container:
     if st.session_state.pagina == "RASTREO":
-        st.markdown("<div style='margin-top: 8vh;'></div>", unsafe_allow_html=True)
-        
-        _, col_search, _ = st.columns([1, 1.8, 1])
+        st.markdown("<div style='margin-top: 10vh;'></div>", unsafe_allow_html=True)
+        _, col_search, _ = st.columns([1, 1.6, 1])
         with col_search:
-            st.markdown(f"<p style='text-align:center; color:{vars_css['sub']}; font-size:12px; letter-spacing:8px; margin-bottom:20px;'>OPERATIONAL QUERY</p>", unsafe_allow_html=True)
-            
-            # Buscador con placeholder ahora visible en blanco
+            st.markdown(f"<p style='text-align:center; color:{vars_css['sub']}; font-size:11px; letter-spacing:8px; margin-bottom:20px;'>OPERATIONAL QUERY</p>", unsafe_allow_html=True)
             busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
             
             st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-                with st.status("Accesando a Core...", expanded=False):
-                    time.sleep(1)
-                st.toast(f"Consultando: {busqueda}")
+                st.toast(f"Buscando: {busqueda}")
 
 # ── FOOTER ──────────────────────────────────────────────────
-st.markdown(f"""
-    <div class="footer">
-        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
-    </div>
-""", unsafe_allow_html=True)
+st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026</div>""", unsafe_allow_html=True)
+
 
 
 
