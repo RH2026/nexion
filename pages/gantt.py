@@ -171,21 +171,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-
-¡Ay, perdón! Se me escapó definir esa variable dentro de la función de guardado. Como esa parte del código se ejecuta solo cuando presionas el botón, no encontraba la variable hoy que estaba fuera de su alcance.
-
-Aquí tienes el bloque corregido. He definido hoy dentro de la función guardar_en_github para que la sincronización sea perfecta.
-
-Python
-import streamlit as st
-import pandas as pd
-import datetime 
-import requests
-from io import StringIO
-from github import Github
-import plotly.figure_factory as ff
-import plotly.graph_objects as go
-
 # --- 1. CONFIGURACIÓN ---
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
@@ -296,6 +281,7 @@ with st.container(border=True):
     if col2.button("🔄 RECARGAR", use_container_width=True):
         st.session_state.df_tareas = cargar_datos_seguro()
         st.rerun()
+
 
 
 
