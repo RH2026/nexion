@@ -63,19 +63,12 @@ div[data-testid="stImage"] {{ text-align: left !important; width: fit-content !i
     letter-spacing: 1.5px !important;
 }}
 
-/* 5. EL BENDITO BLOQUE DE CAJAS (RESETEO AGRESIVO) */
+/* 5. UNIFICACIÓN DE CAJAS (RESETEO TOTAL Y VISIBILIDAD) */
 
-/* A. Forzamos el contenedor raíz de cada uno para que sea transparente y no herede sombras */
-div[data-testid="stDateInput"], 
-div[data-testid="stSelectbox"], 
-div[data-testid="stTextInput"] {{
-    background-color: transparent !important;
-    border: none !important;
-}}
-
-/* B. Unificamos el Marco (lo que el usuario ve como la caja) */
+/* A. Forzamos el marco exterior y fondo de las tres cajas */
 div[data-baseweb="input"], 
-div[data-baseweb="select"] > div {{
+div[data-baseweb="select"] > div,
+div[data-testid="stDateInput"] > div {{
     background-color: {v["card"]} !important;
     border: 1px solid {v["border"]} !important; 
     border-radius: 4px !important;
@@ -83,30 +76,32 @@ div[data-baseweb="select"] > div {{
     box-shadow: none !important;
 }}
 
-/* C. Forzamos el color del TEXTO y eliminamos fondos negros internos */
+/* B. EL ARREGLO DEL TEXTO INVISIBLE (TURNO Y FOLIO) */
+/* Atacamos directamente los contenedores de texto de BaseWeb */
 input, 
-div[data-baseweb="select"] div[role="button"],
-div[data-baseweb="select"] span {{
+div[data-baseweb="select"] div[role="button"], 
+div[data-baseweb="select"] span,
+.stTextInput input {{
     color: {v["text"]} !important;
-    -webkit-text-fill-color: {v["text"]} !important;
+    -webkit-text-fill-color: {v["text"]} !important; /* Fuerza el color en Chrome/Safari */
     background-color: transparent !important;
     font-size: 14px !important;
     border: none !important;
+    opacity: 1 !important;
 }}
 
-/* D. Arreglo específico para el Folio (que se veía negro) */
-[data-testid="stTextInput"] input {{
-    background-color: {v["card"]} !important;
+/* C. Específico para el Folio: Evitar que Streamlit lo ponga negro */
+div[data-testid="stTextInput"] input {{
+    background-color: transparent !important;
     color: {v["text"]} !important;
-    border: none !important;
 }}
 
-/* E. Flechas e iconos */
+/* D. Flecha del Turno e Icono de Fecha */
 [data-testid="stSelectbox"] svg, [data-testid="stDateInput"] svg {{
     fill: {v["text"]} !important;
 }}
 
-/* F. Foco (cuando el usuario entra al campo) */
+/* E. Quitar el resalte azul/rojo al hacer foco para que no se vea "grueso" */
 div[data-baseweb="input"]:focus-within, 
 div[data-baseweb="select"] > div:focus-within {{
     border-color: {v["text"]} !important;
@@ -289,6 +284,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
