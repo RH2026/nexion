@@ -32,11 +32,12 @@ else:
 
 # ── 3. CSS MAESTRO (ALINEACIÓN DE LOGO Y UNIFICACIÓN TOTAL) ──
 # ── 3. CSS MAESTRO (UNIFICACIÓN TOTAL - VERSIÓN FINAL) ──
+# ── 3. CSS MAESTRO (VERSIÓN FINAL Y SANEADA) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. LIMPIEZA DE INTERFAZ */
+/* 1. LIMPIEZA TOTAL */
 header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
     display:none !important; 
 }}
@@ -50,11 +51,11 @@ header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* 3. ALINEACIÓN DE LOGOS */
+/* 3. LOGO Y TEXTOS */
 div[data-testid="stImage"] {{ text-align: left !important; width: fit-content !important; }}
 .stMarkdown p {{ margin-left: 0 !important; text-align: left !important; }}
 
-/* 4. ETIQUETAS DE CAMPOS */
+/* 4. LABELS (FECHA, TURNO, ETC) */
 [data-testid="stWidgetLabel"] p {{
     color: {v["text"]} !important;
     font-weight: 700 !important;
@@ -63,12 +64,11 @@ div[data-testid="stImage"] {{ text-align: left !important; width: fit-content !i
     letter-spacing: 1.5px !important;
 }}
 
-/* 5. UNIFICACIÓN DE CAJAS (RESETEO TOTAL Y VISIBILIDAD) */
+/* 5. UNIFICACIÓN DE CAJAS - ELIMINACIÓN DE CAPAS PARÁSITAS */
 
-/* A. Forzamos el marco exterior y fondo de las tres cajas */
+/* Contenedor principal de los 3 widgets */
 div[data-baseweb="input"], 
-div[data-baseweb="select"] > div,
-div[data-testid="stDateInput"] > div {{
+div[data-baseweb="select"] > div {{
     background-color: {v["card"]} !important;
     border: 1px solid {v["border"]} !important; 
     border-radius: 4px !important;
@@ -76,37 +76,29 @@ div[data-testid="stDateInput"] > div {{
     box-shadow: none !important;
 }}
 
-/* B. EL ARREGLO DEL TEXTO INVISIBLE (TURNO Y FOLIO) */
-/* Atacamos directamente los contenedores de texto de BaseWeb */
-input, 
-div[data-baseweb="select"] div[role="button"], 
-div[data-baseweb="select"] span,
-.stTextInput input {{
+/* Forzar visibilidad del texto en el SELECTBOX (Turno) */
+div[data-testid="stSelectbox"] div[role="button"],
+div[data-testid="stSelectbox"] span {{
     color: {v["text"]} !important;
-    -webkit-text-fill-color: {v["text"]} !important; /* Fuerza el color en Chrome/Safari */
+    -webkit-text-fill-color: {v["text"]} !important;
     background-color: transparent !important;
-    font-size: 14px !important;
-    border: none !important;
     opacity: 1 !important;
 }}
 
-/* C. Específico para el Folio: Evitar que Streamlit lo ponga negro */
-div[data-testid="stTextInput"] input {{
-    background-color: transparent !important;
+/* Forzar visibilidad y fondo en INPUTS (Folio y Fecha) */
+/* Esto elimina el bloque negro que viste en el Folio */
+input[data-testid="stWidgetInput-f_in"],
+input[aria-label="FOLIO"],
+.stTextInput input {{
     color: {v["text"]} !important;
+    -webkit-text-fill-color: {v["text"]} !important;
+    background-color: {v["card"]} !important; /* Forzamos el color de tu variable */
+    border: none !important;
+    box-shadow: none !important;
 }}
 
-/* D. Flecha del Turno e Icono de Fecha */
-[data-testid="stSelectbox"] svg, [data-testid="stDateInput"] svg {{
-    fill: {v["text"]} !important;
-}}
-
-/* E. Quitar el resalte azul/rojo al hacer foco para que no se vea "grueso" */
-div[data-baseweb="input"]:focus-within, 
-div[data-baseweb="select"] > div:focus-within {{
-    border-color: {v["text"]} !important;
-    outline: none !important;
-}}
+/* Color de flechas e iconos */
+svg {{ fill: {v["text"]} !important; }}
 
 /* 6. BOTONES */
 div.stButton>button {{
@@ -115,7 +107,6 @@ div.stButton>button {{
     border: 1px solid {v["border"]} !important;
     border-radius: 4px !important;
     width: 100%;
-    transition: all .3s ease;
     height: 42px !important;
     font-weight: 600 !important;
 }}
@@ -284,6 +275,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
