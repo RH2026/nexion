@@ -30,76 +30,105 @@ else:
         "border": "#C9D1D9"
     }
 
-# ── 3. CSS MAESTRO (BORRÓN Y CUENTA NUEVA - UNIFICACIÓN TOTAL) ──
+# ── 3. CSS MAESTRO (ALINEACIÓN DE LOGO Y UNIFICACIÓN TOTAL) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* LIMPIEZA NATIVA */
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ display:none !important; }}
-.block-container {{ padding-top: 1rem !important; padding-bottom: 0rem !important; }}
+/* 1. LIMPIEZA Y OCULTAR ELEMENTOS NATIVOS */
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
+    display:none !important; 
+}}
 
-/* BASE GLOBAL */
-.stApp {{ background: {v["bg"]} !important; color: {v["text"]} !important; font-family: 'Inter', sans-serif !important; }}
+.block-container {{ 
+    padding-top: 1rem !important; 
+    padding-bottom: 0rem !important;
+}}
 
-/* ETIQUETAS DE CAMPOS */
+/* 2. FONDO Y TEXTO GLOBAL */
+.stApp {{ 
+    background: {v["bg"]} !important; 
+    color: {v["text"]} !important; 
+    font-family: 'Inter', sans-serif !important; 
+}}
+
+/* 3. ARREGLO DE ALINEACIÓN LOGO Y SUBTÍTULO */
+div[data-testid="stImage"] {{
+    text-align: left !important;
+    width: fit-content !important;
+}}
+
+div[data-testid="stImage"] img {{ 
+    image-rendering: -webkit-optimize-contrast !important; 
+    transform: translateZ(0);
+    margin-left: 0 !important;
+}}
+
+.stMarkdown p {{
+    margin-left: 0 !important;
+    text-align: left !important;
+}}
+
+/* 4. TÍTULOS DE CAMPOS */
 [data-testid="stWidgetLabel"] p {{
     color: {v["text"]} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     font-size: 11px !important;
     letter-spacing: 1.5px !important;
+    text-align: left !important;
 }}
 
-/* EL BENDITO BLOQUE DE CAJAS (UNIFICACIÓN REAL) */
-/* 1. Marco exterior de los 3 widgets */
+/* 5. UNIFICACIÓN DE CAJAS (ELIMINA BORDES DOBLES Y GROSORES) */
+/* Aplicamos el borde base a los contenedores de los tres tipos de widget */
 div[data-baseweb="input"], 
 div[data-baseweb="select"] > div,
-div[data-testid="stDateInput"] > div {{
+div[data-testid="stDateInput"] > div[data-baseweb="input"] {{
     background-color: {v["card"]} !important;
     border: 1px solid {v["border"]} !important; 
     border-radius: 4px !important;
     min-height: 42px !important;
-    box-shadow: none !important;
+    box-shadow: none !important; /* Quita el efecto de sombra/bisel */
 }}
 
-/* 2. FORZAR VISIBILIDAD DE TEXTO (ARREGLA TURNO Y FOLIO) */
-input, 
-div[role="button"], 
-div[data-baseweb="select"] span,
-.stTextInput input {{
-    color: {v["text"]} !important;
-    -webkit-text-fill-color: {v["text"]} !important;
-    background-color: transparent !important;
-    font-size: 14px !important;
+/* Eliminamos el borde de los elementos internos para que no se sumen */
+.stTextInput input, .stDateInput input, div[data-baseweb="base-input"] {{
     border: none !important;
-    opacity: 1 !important;
-}}
-
-/* Eliminar fondos negros residuales de Streamlit */
-div[data-testid="stTextInput"] input, 
-div[data-testid="stDateInput"] input {{
+    box-shadow: none !important;
     background-color: transparent !important;
+    color: {v["text"]} !important;
+    height: 40px !important;
 }}
 
-/* Flechas e iconos */
-svg {{ fill: {v["text"]} !important; }}
+/* Aseguramos que el texto del Selectbox sea visible en ambos temas */
+div[data-testid="stSelectbox"] div[data-baseweb="select"] {{
+    color: {v["text"]} !important;
+    padding-left: 10px !important;
+}}
 
-/* 6. BOTONES */
+/* Quitamos el borde azul/rojo molesto al hacer clic (opcional, para estética limpia) */
+div[data-baseweb="input"]:focus-within, 
+div[data-baseweb="select"] > div:focus-within {{
+    border-color: {v["text"]} !important; /* El borde se ilumina con el color del texto actual */
+}}
+
+/* 6. BOTONES CON HOVER INVERTIDO */
 div.stButton>button {{
     background: {v["card"]} !important; 
     color: {v["text"]} !important;
     border: 1px solid {v["border"]} !important;
     border-radius: 4px !important;
     width: 100%;
-    height: 42px !important;
-    font-weight: 600 !important;
     transition: all .3s ease;
+    height: 42px !important;
 }}
+
 div.stButton>button:hover {{
     background: {v["text"]} !important;
     color: {v["bg"]} !important;
+    border-color: {v["text"]} !important;
 }}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -261,13 +290,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
-
-
-
-
-
-
-
 
 
 
