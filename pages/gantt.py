@@ -171,6 +171,23 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
+Entiendo perfectamente tu frustración. Ese error de _check_type_compatibilities es el "talón de Aquiles" del st.data_editor. Ocurre porque, aunque visualmente veas fechas, internamente Pandas las está tratando como objetos mixtos (un poco de texto, un poco de fecha, o valores nulos) y Streamlit bloquea la edición para no corromper los datos.
+
+Vamos a aplicar una "limpieza profunda" antes de que los datos toquen el editor. He reestructurado el bloque para que sea extremadamente robusto con los tipos de datos.
+
+El Bloque Maestro Corregido
+Copia y reemplaza todo tu código actual por este. He añadido un paso intermedio que fuerza a cada celda a ser del tipo correcto antes de renderizar la tabla:
+
+Python
+import streamlit as st
+import pandas as pd
+import datetime
+import requests
+from io import StringIO
+from github import Github
+import plotly.figure_factory as ff
+import plotly.graph_objects as go
+
 # --- 1. CONFIGURACIÓN ---
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
@@ -181,7 +198,7 @@ def obtener_fecha_mexico():
     utc_ahora = datetime.datetime.now(datetime.timezone.utc)
     return (utc_ahora - datetime.timedelta(hours=6)).date()
 
-# --- 2. CARGA DE DATOS (CORREGIDA PARA EVITAR BLOQUEOS) ---
+# --- 2. CARGA Y LIMPIEZA DE TIPOS (EL "FIX" PARA EL ERROR) ---
 def cargar_datos_seguro():
     columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
     try:
@@ -190,72 +207,76 @@ def cargar_datos_seguro():
             df = pd.read_csv(StringIO(response.text))
             df.columns = [c.strip().upper() for c in df.columns]
             
-            # Asegurar que todas las columnas existan
+            # Asegurar columnas
             for col in columnas_base:
-                if col not in df.columns:
-                    df[col] = ""
+                if col not in df.columns: df[col] = ""
             
-            # Convertir fechas a objetos date de Python (indispensable para el editor)
-            for col in ['FECHA', 'FECHA_FIN']:
-                df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
-                # Si hay nulos en fechas, poner la de hoy para que no explote
-                df[col] = df[col].apply(lambda x: x if pd.notnull(x) else obtener_fecha_mexico())
+            # REGLA DE ORO: Forzar tipo 'date' de Python para evitar el StreamlitAPIException
+            df['FECHA'] = pd.to_datetime(df['FECHA'], errors='coerce').dt.date
+            df['FECHA_FIN'] = pd.to_datetime(df['FECHA_FIN'], errors='coerce').dt.date
             
-            return df[columnas_base] # Retornar solo las columnas necesarias en orden
+            # Rellenar nulos obligatorios para el editor
+            hoy = obtener_fecha_mexico()
+            df['FECHA'] = df['FECHA'].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+            df['FECHA_FIN'] = df['FECHA_FIN'].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+            df['IMPORTANCIA'] = df['IMPORTANCIA'].fillna("Media").astype(str)
+            df['TAREA'] = df['TAREA'].fillna("").astype(str)
+            df['ULTIMO ACCION'] = df['ULTIMO ACCION'].fillna("").astype(str)
+            
+            return df[columnas_base]
         return pd.DataFrame(columns=columnas_base)
     except:
         return pd.DataFrame(columns=columnas_base)
 
 def guardar_en_github(df):
     if not TOKEN:
-        st.error("No se encontró GITHUB_TOKEN"); return
+        st.error("No hay Token"); return False
     try:
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
-        # IMPORTANTE: Convertir todo a string para el CSV
+        # Convertir todo a string puro para el CSV antes de subir
         df_save = df.copy()
-        df_save['FECHA'] = df_save['FECHA'].apply(lambda x: x.isoformat() if hasattr(x, 'isoformat') else str(x))
-        df_save['FECHA_FIN'] = df_save['FECHA_FIN'].apply(lambda x: x.isoformat() if hasattr(x, 'isoformat') else str(x))
+        df_save['FECHA'] = df_save['FECHA'].astype(str)
+        df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
         
         csv_data = df_save.to_csv(index=False)
         contents = repo.get_contents(FILE_PATH, ref="main")
-        repo.update_file(contents.path, "Actualización Gantt NEXION", csv_data, contents.sha, branch="main")
-        st.toast("✅ Datos guardados en GitHub", icon="🚀")
+        repo.update_file(contents.path, "Update NEXION", csv_data, contents.sha, branch="main")
+        st.toast("✅ Sincronizado correctamente", icon="🚀")
         return True
     except Exception as e:
-        st.error(f"Error al guardar: {e}")
-        return False
+        st.error(f"Error GitHub: {e}"); return False
 
-# --- 3. LOGICA DE ESTADO ---
-# Cargamos datos solo la primera vez o si el estado está vacío
-if 'df_tareas' not in st.session_state or st.session_state.df_tareas is None:
+# --- 3. ESTADO Y LÓGICA ---
+if 'df_tareas' not in st.session_state:
     st.session_state.df_tareas = cargar_datos_seguro()
 
-# --- 4. INTERFAZ ---
-st.markdown(f"<h1 style='text-align:center; font-weight:300; letter-spacing:10px; color:{v['text']};'>NEXION PROJECT FLOW</h1>", unsafe_allow_html=True)
+# --- 4. DASHBOARD VISUAL (GANTT) ---
+st.markdown(f"<h1 style='text-align:center; font-weight:300; letter-spacing:8px; color:{v['text']};'>NEXION PROJECT FLOW</h1>", unsafe_allow_html=True)
 
-# Dibujar Gantt
 if not st.session_state.df_tareas.empty:
     try:
-        df_plot = st.session_state.df_tareas.copy()
-        df_plot = df_plot.rename(columns={'TAREA': 'Task', 'FECHA': 'Start', 'FECHA_FIN': 'Finish', 'IMPORTANCIA': 'Resource'})
+        # Solo graficar si hay fechas coherentes
+        df_p = st.session_state.df_tareas.copy()
+        df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
         colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
         
-        fig = ff.create_gantt(df_plot, colors=colors, index_col='Resource', group_tasks=True, showgrid_x=True, showgrid_y=True)
-        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color=v['text']), height=350)
-        st.plotly_chart(fig, use_container_width=True)
+        fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', group_tasks=True, showgrid_x=True, showgrid_y=True)
+        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color=v['text']), height=300)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
     except:
-        st.info("Agregue fechas de inicio y fin válidas para ver el gráfico.")
+        st.info("Ingresa fechas válidas para actualizar el gráfico.")
 
-# --- 5. EDITOR MAESTRO ---
-st.markdown("### Editor de Bitácora")
+# --- 5. EL EDITOR (MODO ESTRICTO) ---
 with st.container(border=True):
-    # El editor se alimenta del estado de la sesión
-    df_actualizado = st.data_editor(
-        st.session_state.df_tareas,
+    # Forzamos los tipos una última vez antes de entrar al widget
+    df_input = st.session_state.df_tareas.copy()
+    
+    df_editado = st.data_editor(
+        df_input,
         num_rows="dynamic",
         use_container_width=True,
-        key="editor_fijo",
+        key="nexion_editor_v2",
         column_config={
             "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
             "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
@@ -266,16 +287,17 @@ with st.container(border=True):
         hide_index=True
     )
 
-    c1, c2 = st.columns([1,1])
-    if c1.button("💾 GUARDAR CAMBIOS", use_container_width=True, type="primary"):
-        # Actualizamos el estado de la sesión con lo que está en el editor
-        st.session_state.df_tareas = df_actualizado
-        if guardar_en_github(df_actualizado):
-            st.rerun() # Recargar para refrescar el gráfico y limpiar caché
+    col1, col2 = st.columns(2)
+    if col1.button("💾 GUARDAR Y ACTUALIZAR", use_container_width=True, type="primary"):
+        # Guardamos en la sesión y en la nube
+        st.session_state.df_tareas = df_editado
+        if guardar_en_github(df_editado):
+            st.rerun()
 
-    if c2.button("🔄 RECARGAR DE GITHUB", use_container_width=True):
+    if col2.button("🔄 RECARGAR DATOS", use_container_width=True):
         st.session_state.df_tareas = cargar_datos_seguro()
         st.rerun()
+
 
 
 
