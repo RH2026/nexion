@@ -171,145 +171,112 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# --- 1. CONFIGURACIÓN DE CRÉDENCIALES Y REPO ---
+# --- 1. CONFIGURACIÓN ---
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
 FILE_PATH = "tareas.csv"
 CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
 
-# --- 2. UTILIDADES ---
 def obtener_fecha_mexico():
     utc_ahora = datetime.datetime.now(datetime.timezone.utc)
     return (utc_ahora - datetime.timedelta(hours=6)).date()
 
+# --- 2. CARGA DE DATOS (CORREGIDA PARA EVITAR BLOQUEOS) ---
 def cargar_datos_seguro():
+    columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
     try:
         response = requests.get(CSV_URL)
         if response.status_code == 200:
             df = pd.read_csv(StringIO(response.text))
             df.columns = [c.strip().upper() for c in df.columns]
             
-            # Forzar conversión de fechas para evitar errores en st.data_editor
-            for col in ['FECHA', 'FECHA_FIN']:
-                if col in df.columns:
-                    df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
-                else:
-                    df[col] = obtener_fecha_mexico()
+            # Asegurar que todas las columnas existan
+            for col in columnas_base:
+                if col not in df.columns:
+                    df[col] = ""
             
-            # Limpiar nulos
-            df['FECHA'] = df['FECHA'].fillna(obtener_fecha_mexico())
-            df['FECHA_FIN'] = df['FECHA_FIN'].fillna(obtener_fecha_mexico())
-            df['IMPORTANCIA'] = df['IMPORTANCIA'].fillna("Media")
-            return df
-        return pd.DataFrame(columns=['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION'])
-    except Exception:
-        return pd.DataFrame(columns=['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION'])
+            # Convertir fechas a objetos date de Python (indispensable para el editor)
+            for col in ['FECHA', 'FECHA_FIN']:
+                df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
+                # Si hay nulos en fechas, poner la de hoy para que no explote
+                df[col] = df[col].apply(lambda x: x if pd.notnull(x) else obtener_fecha_mexico())
+            
+            return df[columnas_base] # Retornar solo las columnas necesarias en orden
+        return pd.DataFrame(columns=columnas_base)
+    except:
+        return pd.DataFrame(columns=columnas_base)
 
 def guardar_en_github(df):
     if not TOKEN:
-        st.error("No se encontró GITHUB_TOKEN en st.secrets")
-        return
+        st.error("No se encontró GITHUB_TOKEN"); return
     try:
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
-        contents = repo.get_contents(FILE_PATH, ref="main")
-        # Convertir fechas a string para el CSV
+        # IMPORTANTE: Convertir todo a string para el CSV
         df_save = df.copy()
-        df_save['FECHA'] = df_save['FECHA'].astype(str)
-        df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
+        df_save['FECHA'] = df_save['FECHA'].apply(lambda x: x.isoformat() if hasattr(x, 'isoformat') else str(x))
+        df_save['FECHA_FIN'] = df_save['FECHA_FIN'].apply(lambda x: x.isoformat() if hasattr(x, 'isoformat') else str(x))
         
-        repo.update_file(
-            path=contents.path,
-            message=f"Sincronización NEXION - {obtener_fecha_mexico()}",
-            content=df_save.to_csv(index=False),
-            sha=contents.sha,
-            branch="main"
-        )
-        st.toast("✅ Sincronizado con GitHub", icon="🚀")
+        csv_data = df_save.to_csv(index=False)
+        contents = repo.get_contents(FILE_PATH, ref="main")
+        repo.update_file(contents.path, "Actualización Gantt NEXION", csv_data, contents.sha, branch="main")
+        st.toast("✅ Datos guardados en GitHub", icon="🚀")
+        return True
     except Exception as e:
-        st.error(f"❌ Error al sincronizar: {e}")
+        st.error(f"Error al guardar: {e}")
+        return False
 
-# --- 3. INICIALIZACIÓN DE ESTADO ---
-if 'df_tareas' not in st.session_state:
+# --- 3. LOGICA DE ESTADO ---
+# Cargamos datos solo la primera vez o si el estado está vacío
+if 'df_tareas' not in st.session_state or st.session_state.df_tareas is None:
     st.session_state.df_tareas = cargar_datos_seguro()
 
-# --- 4. VISUALIZACIÓN GANTT (ALTA CALIDAD) ---
-st.markdown(f"<h1 style='text-align: center; font-weight: 300; letter-spacing: 12px; font-size: 20px; color: {v['text']};'>NEXION PROJECT FLOW</h1>", unsafe_allow_html=True)
-st.markdown(f"<hr style='border-top:1px solid {v['border']}; margin:10px 0 30px;'>", unsafe_allow_html=True)
+# --- 4. INTERFAZ ---
+st.markdown(f"<h1 style='text-align:center; font-weight:300; letter-spacing:10px; color:{v['text']};'>NEXION PROJECT FLOW</h1>", unsafe_allow_html=True)
 
+# Dibujar Gantt
 if not st.session_state.df_tareas.empty:
-    # Preparar DF para Plotly
-    df_plot = st.session_state.df_tareas.copy()
-    df_plot = df_plot.rename(columns={'TAREA': 'Task', 'FECHA': 'Start', 'FECHA_FIN': 'Finish', 'IMPORTANCIA': 'Resource'})
-    
-    # Colores temáticos NEXION
-    colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
-
     try:
-        # Generar Gantt Base
-        fig = ff.create_gantt(
-            df_plot, colors=colors, index_col='Resource', 
-            show_colorbar=True, group_tasks=True, showgrid_x=True, showgrid_y=True
-        )
-
-        # Inyectar Estilo Premium con Graph Objects
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color=v['text'], family="Inter", size=12),
-            height=400,
-            margin=dict(l=150, r=20, t=20, b=50),
-            xaxis=dict(gridcolor=v['border'], linecolor=v['border'], tickformat="%d %b"),
-            yaxis=dict(gridcolor=v['border'], linecolor=v['border'], autorange="reversed"),
-        )
+        df_plot = st.session_state.df_tareas.copy()
+        df_plot = df_plot.rename(columns={'TAREA': 'Task', 'FECHA': 'Start', 'FECHA_FIN': 'Finish', 'IMPORTANCIA': 'Resource'})
+        colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
         
-        # Añadir Hitos (diamantes blancos al final de cada barra)
-        for i, row in df_plot.iterrows():
-            fig.add_trace(go.Scatter(
-                x=[row['Finish']], y=[len(df_plot) - 1 - i],
-                mode='markers', marker=dict(symbol='diamond', size=8, color='white'),
-                showlegend=False, hoverinfo='skip'
-            ))
+        fig = ff.create_gantt(df_plot, colors=colors, index_col='Resource', group_tasks=True, showgrid_x=True, showgrid_y=True)
+        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color=v['text']), height=350)
+        st.plotly_chart(fig, use_container_width=True)
+    except:
+        st.info("Agregue fechas de inicio y fin válidas para ver el gráfico.")
 
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-    except Exception as e:
-        st.warning("Agregue datos válidos en la tabla para generar el gráfico.")
-
-# --- 5. EDITOR MAESTRO (INTEGRADO) ---
-st.markdown(f"<div style='margin-top:20px; margin-bottom:10px;'><p style='font-size:11px; color:{v['sub']}; letter-spacing:2px; text-transform:uppercase;'>Consola de Edición en Tiempo Real</p></div>", unsafe_allow_html=True)
-
+# --- 5. EDITOR MAESTRO ---
+st.markdown("### Editor de Bitácora")
 with st.container(border=True):
-    # Asegurar que el dataframe que entra al editor tenga fechas reales de Python
-    df_para_editar = st.session_state.df_tareas.copy()
-    df_para_editar['FECHA'] = pd.to_datetime(df_para_editar['FECHA']).dt.date
-    df_para_editar['FECHA_FIN'] = pd.to_datetime(df_para_editar['FECHA_FIN']).dt.date
-
-    edited_df = st.data_editor(
-        df_para_editar,
-        use_container_width=True,
+    # El editor se alimenta del estado de la sesión
+    df_actualizado = st.data_editor(
+        st.session_state.df_tareas,
         num_rows="dynamic",
-        key="editor_maestro",
+        use_container_width=True,
+        key="editor_fijo",
         column_config={
-            "FECHA": st.column_config.DateColumn("📆 Inicio", format="DD/MM/YYYY", required=True),
-            "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", format="DD/MM/YYYY", required=True),
-            "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"], required=True),
-            "TAREA": st.column_config.TextColumn("📝 Tarea", width="large"),
-            "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus", width="medium"),
+            "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
+            "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
+            "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
+            "TAREA": st.column_config.TextColumn("📝 Tarea"),
+            "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
         },
-        hide_index=True,
+        hide_index=True
     )
 
-    # Botonera de Acciones
-    col_btn1, col_btn2 = st.columns([1, 1])
-    with col_btn1:
-        if st.button("💾 GUARDAR Y SINCRONIZAR GITHUB", use_container_width=True, type="primary"):
-            st.session_state.df_tareas = edited_df
-            guardar_en_github(edited_df)
-            st.rerun()
-    with col_btn2:
-        if st.button("🔄 RECARGAR DESDE NUBE", use_container_width=True):
-            st.session_state.df_tareas = cargar_datos_seguro()
-            st.rerun()
+    c1, c2 = st.columns([1,1])
+    if c1.button("💾 GUARDAR CAMBIOS", use_container_width=True, type="primary"):
+        # Actualizamos el estado de la sesión con lo que está en el editor
+        st.session_state.df_tareas = df_actualizado
+        if guardar_en_github(df_actualizado):
+            st.rerun() # Recargar para refrescar el gráfico y limpiar caché
+
+    if c2.button("🔄 RECARGAR DE GITHUB", use_container_width=True):
+        st.session_state.df_tareas = cargar_datos_seguro()
+        st.rerun()
+
 
 
 
