@@ -213,28 +213,34 @@ def guardar_en_github(df):
     if not TOKEN:
         st.error("No se encontró el GITHUB_TOKEN"); return False
     try:
-        # Definimos hoy aquí para evitar el error 'name hoy is not defined'
         hoy_sync = obtener_fecha_mexico()
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
         
+        # 1. Convertir datos a CSV
         df_save = df.copy()
         df_save['FECHA'] = df_save['FECHA'].astype(str)
         df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
-        
         csv_data = df_save.to_csv(index=False)
+        
+        # 2. OBTENER EL SHA MÁS RECIENTE (Aquí está la solución al error 409)
+        # Forzamos a traer la versión que está en GitHub justo AHORA
         contents = repo.get_contents(FILE_PATH, ref="main")
+        
+        # 3. Intentar la actualización con el SHA fresco
         repo.update_file(
-            contents.path, 
-            f"Actualización NEXION {hoy_sync}", 
-            csv_data, 
-            contents.sha, 
+            path=contents.path, 
+            message=f"Actualización NEXION {hoy_sync}", 
+            content=csv_data, 
+            sha=contents.sha, # Este SHA ahora es el actual
             branch="main"
         )
         st.toast("✅ Sincronizado con GitHub", icon="🚀")
         return True
     except Exception as e:
-        st.error(f"Error GitHub: {e}"); return False
+        # Si el error persiste, lo mostramos detallado
+        st.error(f"Error de Sincronización: {e}")
+        return False
 
 # --- 3. GESTIÓN DE ESTADO ---
 if 'df_tareas' not in st.session_state:
@@ -281,6 +287,7 @@ with st.container(border=True):
     if col2.button("🔄 RECARGAR", use_container_width=True):
         st.session_state.df_tareas = cargar_datos_seguro()
         st.rerun()
+
 
 
 
