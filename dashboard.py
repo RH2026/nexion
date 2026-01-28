@@ -1,3 +1,10 @@
+Entiendo el problema, Rigoberto. Lo que sucede es que el "placeholder" (el texto de fondo) tiene un color predeterminado por el navegador que, en fondos blancos, se pierde por falta de contraste.
+
+He añadido una regla específica en el CSS Maestro para forzar que el color del placeholder use siempre el color de contraste (--sub) definido en tu diccionario de variables. Así se verá nítido tanto en modo oscuro como en el modo claro que me mostraste.
+
+Aquí tienes el código corregido:
+
+Python
 import streamlit as st
 import pandas as pd
 import time
@@ -17,7 +24,7 @@ vars_css = {
     "claro": {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9", "logo": "n2.png"}
 }[tema]
 
-# ── CSS MAESTRO (TRANSICIÓN SUAVE + CENTRADO) ──────────────
+# ── CSS MAESTRO (TRANSICIÓN + CENTRADO + FIX PLACEHOLDER) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -29,7 +36,6 @@ st.markdown(f"""
         padding-bottom: 0rem !important; 
     }}
 
-    /* TRANSICIÓN SUAVE DE TEMA (Fade effect) */
     .stApp {{ 
         background: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
@@ -37,28 +43,32 @@ st.markdown(f"""
         transition: background-color 0.8s ease, color 0.8s ease !important;
     }}
 
-    /* CENTRADO DE TEXTO EN BUSCADOR */
+    /* CENTRADO Y ESTILO DE BUSCADOR */
     .stTextInput input {{
         background: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important;
         border-radius: 2px !important;
         height: 48px !important;
-        text-align: center !important; /* Texto centrado */
+        text-align: center !important;
         letter-spacing: 2px;
         transition: all 0.4s ease;
     }}
 
-    /* NITIDEZ Y POSICIÓN DE LOGO */
+    /* FIX: COLOR DEL TEXTO "INGRESE GUÍA O REFERENCIA..." */
+    /* Se aplica a todos los motores de búsqueda para asegurar visibilidad */
+    .stTextInput input::placeholder {{ color: {vars_css['sub']} !important; opacity: 1; }}
+    .stTextInput input::-webkit-input-placeholder {{ color: {vars_css['sub']} !important; }}
+    .stTextInput input::-moz-placeholder {{ color: {vars_css['sub']} !important; }}
+
+    /* LOGO */
     div[data-testid='stImage'] img {{
         image-rendering: -webkit-optimize-contrast !important;
         image-rendering: crisp-edges !important;
     }}
-    div[data-testid='stImage'] {{
-        margin-top: -20px !important;
-    }}
+    div[data-testid='stImage'] {{ margin-top: -20px !important; }}
     
-    /* BOTONES DE MENÚ */
+    /* MENÚ */
     div.stButton>button {{
         background: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -92,7 +102,7 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# ── HEADER ULTRA-COMPACTO ───────────────────────────────────
+# ── HEADER ──────────────────────────────────────────────────
 header_zone = st.container()
 with header_zone:
     c1, c2, c3 = st.columns([1.5, 5, 0.4], vertical_alignment="center")
@@ -114,14 +124,13 @@ with header_zone:
                     st.rerun()
 
     with c3:
-        # Toggle de tema con icono dinámico y transición suave
         if st.button("☾" if tema == "oscuro" else "☀", key="theme_btn"):
             st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
             st.rerun()
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:-5px 0 20px;'>", unsafe_allow_html=True)
 
-# ── CONTENEDOR DE RENDERIZADO ──────────────────────────────
+# ── CONTENEDOR CENTRAL ──────────────────────────────────────
 main_container = st.container()
 
 with main_container:
@@ -132,7 +141,7 @@ with main_container:
         with col_search:
             st.markdown(f"<p style='text-align:center; color:{vars_css['sub']}; font-size:12px; letter-spacing:8px; margin-bottom:20px;'>OPERATIONAL QUERY</p>", unsafe_allow_html=True)
             
-            # El texto aquí aparecerá centrado por el CSS
+            # Buscador con placeholder ahora visible en blanco
             busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
             
             st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
@@ -141,7 +150,7 @@ with main_container:
                     time.sleep(1)
                 st.toast(f"Consultando: {busqueda}")
 
-# ── FOOTER FIJO ──────────────────────────────────────────────
+# ── FOOTER ──────────────────────────────────────────────────
 st.markdown(f"""
     <div class="footer">
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
