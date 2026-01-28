@@ -30,32 +30,19 @@ else:
         "border": "#C9D1D9"
     }
 
-# ── 3. CSS MAESTRO (ALINEACIÓN DE LOGO Y UNIFICACIÓN TOTAL) ──
-# ── 3. CSS MAESTRO (UNIFICACIÓN TOTAL - VERSIÓN FINAL) ──
-# ── 3. CSS MAESTRO (VERSIÓN FINAL Y SANEADA) ──
+# ── 3. CSS MAESTRO (BORRÓN Y CUENTA NUEVA - UNIFICACIÓN TOTAL) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. LIMPIEZA TOTAL */
-header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ 
-    display:none !important; 
-}}
-
+/* LIMPIEZA NATIVA */
+header, footer, #MainMenu, [data-testid="stHeader"], [data-testid="stDecoration"] {{ display:none !important; }}
 .block-container {{ padding-top: 1rem !important; padding-bottom: 0rem !important; }}
 
-/* 2. BASE GLOBAL */
-.stApp {{ 
-    background: {v["bg"]} !important; 
-    color: {v["text"]} !important; 
-    font-family: 'Inter', sans-serif !important; 
-}}
+/* BASE GLOBAL */
+.stApp {{ background: {v["bg"]} !important; color: {v["text"]} !important; font-family: 'Inter', sans-serif !important; }}
 
-/* 3. LOGO Y TEXTOS */
-div[data-testid="stImage"] {{ text-align: left !important; width: fit-content !important; }}
-.stMarkdown p {{ margin-left: 0 !important; text-align: left !important; }}
-
-/* 4. LABELS (FECHA, TURNO, ETC) */
+/* ETIQUETAS DE CAMPOS */
 [data-testid="stWidgetLabel"] p {{
     color: {v["text"]} !important;
     font-weight: 700 !important;
@@ -64,11 +51,11 @@ div[data-testid="stImage"] {{ text-align: left !important; width: fit-content !i
     letter-spacing: 1.5px !important;
 }}
 
-/* 5. UNIFICACIÓN DE CAJAS - ELIMINACIÓN DE CAPAS PARÁSITAS */
-
-/* Contenedor principal de los 3 widgets */
+/* EL BENDITO BLOQUE DE CAJAS (UNIFICACIÓN REAL) */
+/* 1. Marco exterior de los 3 widgets */
 div[data-baseweb="input"], 
-div[data-baseweb="select"] > div {{
+div[data-baseweb="select"] > div,
+div[data-testid="stDateInput"] > div {{
     background-color: {v["card"]} !important;
     border: 1px solid {v["border"]} !important; 
     border-radius: 4px !important;
@@ -76,28 +63,26 @@ div[data-baseweb="select"] > div {{
     box-shadow: none !important;
 }}
 
-/* Forzar visibilidad del texto en el SELECTBOX (Turno) */
-div[data-testid="stSelectbox"] div[role="button"],
-div[data-testid="stSelectbox"] span {{
-    color: {v["text"]} !important;
-    -webkit-text-fill-color: {v["text"]} !important;
-    background-color: transparent !important;
-    opacity: 1 !important;
-}}
-
-/* Forzar visibilidad y fondo en INPUTS (Folio y Fecha) */
-/* Esto elimina el bloque negro que viste en el Folio */
-input[data-testid="stWidgetInput-f_in"],
-input[aria-label="FOLIO"],
+/* 2. FORZAR VISIBILIDAD DE TEXTO (ARREGLA TURNO Y FOLIO) */
+input, 
+div[role="button"], 
+div[data-baseweb="select"] span,
 .stTextInput input {{
     color: {v["text"]} !important;
     -webkit-text-fill-color: {v["text"]} !important;
-    background-color: {v["card"]} !important; /* Forzamos el color de tu variable */
+    background-color: transparent !important;
+    font-size: 14px !important;
     border: none !important;
-    box-shadow: none !important;
+    opacity: 1 !important;
 }}
 
-/* Color de flechas e iconos */
+/* Eliminar fondos negros residuales de Streamlit */
+div[data-testid="stTextInput"] input, 
+div[data-testid="stDateInput"] input {{
+    background-color: transparent !important;
+}}
+
+/* Flechas e iconos */
 svg {{ fill: {v["text"]} !important; }}
 
 /* 6. BOTONES */
@@ -109,6 +94,7 @@ div.stButton>button {{
     width: 100%;
     height: 42px !important;
     font-weight: 600 !important;
+    transition: all .3s ease;
 }}
 div.stButton>button:hover {{
     background: {v["text"]} !important;
@@ -275,6 +261,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
     components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+
 
 
 
