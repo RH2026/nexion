@@ -234,9 +234,7 @@ def guardar_en_github(df):
 if 'df_tareas' not in st.session_state:
     st.session_state.df_tareas = cargar_datos_seguro()
 
-# --- 4. TÍTULO Y GRÁFICO GANTT ---
-st.markdown(f"<h1 style='text-align:center; font-weight:300; letter-spacing:8px; color:{v['text']};'>NEXION PROJECT FLOW</h1>", unsafe_allow_html=True)
-
+# --- 4 GRÁFICO GANTT ---
 if not st.session_state.df_tareas.empty:
     try:
         df_p = st.session_state.df_tareas.copy()
@@ -284,6 +282,7 @@ with st.container(border=True):
             st.session_state.df_tareas = df_editado
             # 3. Forzamos el refresco para que el gráfico se redibuje con los nuevos datos
             st.rerun()
+
 
 
 
