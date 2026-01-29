@@ -11,6 +11,7 @@ import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import time
 import plotly.express as px
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 # ── CONFIGURACIÓN DE PÁGINA ──────────────────────────────────
 st.set_page_config(
@@ -444,6 +445,7 @@ elif st.session_state.menu_main == "FORMATOS":
         st.subheader("FORMATOS > SALIDA DE PT")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
