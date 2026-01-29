@@ -273,11 +273,10 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-            # --- 4. GRÁFICO GANTT (CORREGIDO) ---
+            # --- 4. GRÁFICO GANTT (OPTIMIZADO PARA TEMA CLARO Y OSCURO) ---
             if not st.session_state.df_tareas.empty:
                 try:
                     df_p = st.session_state.df_tareas.copy()
-                    # Renombramos para que Figure Factory lo entienda
                     df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
                     
                     # Colores NEXION
@@ -287,18 +286,46 @@ with main_container:
                     fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', 
                                         group_tasks=True, showgrid_x=True, showgrid_y=True)
                     
+                    # Configuración dinámica según el tema seleccionado
+                    color_texto_ejes = vars_css['text']  # Se adapta a blanco o negro
+                    color_lineas_malla = vars_css['border']
+                    
                     fig.update_layout(
                         plot_bgcolor='rgba(0,0,0,0)', 
                         paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=vars_css['text'], family="Inter"), # <--- CORREGIDO v por vars_css
-                        height=400,
-                        margin=dict(l=150, r=20, t=20, b=50),
-                        xaxis=dict(tickfont=dict(color=vars_css['sub']), gridcolor=vars_css['border']),
-                        yaxis=dict(tickfont=dict(color=vars_css['sub']), gridcolor=vars_css['border'])
+                        font=dict(color=color_texto_ejes, family="Inter", size=11),
+                        height=450,
+                        margin=dict(l=180, r=20, t=40, b=80),
+                        showlegend=True,
+                        legend=dict(
+                            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+                            font=dict(color=vars_css['sub'], size=10)
+                        )
                     )
+            
+                    # Ajuste de Ejes (Crucial para el Tema Claro)
+                    fig.update_xaxes(
+                        tickfont=dict(color=vars_css['sub'], size=10),
+                        gridcolor=color_lineas_malla, 
+                        linecolor=color_lineas_malla,
+                        zeroline=False,
+                        dtick="D1",
+                        tickformat="%d %b"
+                    )
+            
+                    fig.update_yaxes(
+                        # Aquí forzamos el color del texto de las tareas para que se vea en blanco
+                        tickfont=dict(color=color_texto_ejes, size=11), 
+                        gridcolor=color_lineas_malla,
+                        linecolor=color_lineas_malla,
+                        autorange="reversed"
+                    )
+            
+                    
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                    
                 except Exception as e:
-                    st.info(f"💡 Consejo: Completa las fechas de Inicio y Fin para ver el gráfico. (Info: {e})")
+                    st.info(f"💡 Consejo: Asegúrate de completar fechas de Inicio y Fin. (Error: {e})")
             
             # --- 5. EDITOR ---
             with st.container(border=True):
@@ -342,6 +369,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
