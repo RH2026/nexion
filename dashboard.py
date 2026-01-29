@@ -308,36 +308,31 @@ with main_container:
                     color_lineas_malla = vars_css['border']
                     
                     fig.update_layout(
-                        plot_bgcolor='rgba(0,0,0,0)', 
-                        paper_bgcolor='rgba(0,0,0,0)', 
-                        # Aquí forzamos el color del texto global del gráfico
-                        font=dict(color=vars_css['text'], family="Inter", size=11),
-                        height=450,
-                        margin=dict(l=180, r=20, t=40, b=80),
-                        showlegend=True,
-                        legend=dict(
-                            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-                            font=dict(color=vars_css['sub'], size=10)
-                        )
+                    plot_bgcolor='rgba(0,0,0,0)', 
+                    paper_bgcolor='rgba(0,0,0,0)', 
+                    font=dict(color=vars_css['text'], family="Inter", size=11), # Texto general
+                    height=450,
+                    margin=dict(l=180, r=20, t=40, b=80),
+                    showlegend=True,
+                    legend=dict(
+                        font=dict(color=vars_css['sub'], size=10)
                     )
-            
-                    # Etiquetas de las tareas (el lado izquierdo que se veía mal)
+                    )
+                    
+                    # Etiquetas de las Tareas (Eje Y)
                     fig.update_yaxes(
-                        tickfont=dict(color=vars_css['text'], size=11), 
+                        tickfont=dict(color=vars_css['text'], size=11), # Esto corrige el nombre de las tareas
                         gridcolor=vars_css['border'],
                         linecolor=vars_css['border'],
                         autorange="reversed"
                     )
                     
-                    # Etiquetas de las fechas (abajo)
+                    # Etiquetas de Fechas (Eje X)
                     fig.update_xaxes(
                         tickfont=dict(color=vars_css['sub'], size=10),
                         gridcolor=vars_css['border'], 
-                        linecolor=vars_css['border'],
-                        dtick="D1",
-                        tickformat="%d %b"
+                        linecolor=vars_css['border']
                     )
-            
                     
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
                     
@@ -386,6 +381,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
