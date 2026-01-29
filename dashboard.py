@@ -1,9 +1,3 @@
-¡Excelente! Vamos a armar una versión "NEXION Pro" básica. Este código está diseñado para que lo pegues en tu dashboard.py.
-
-Incluye una tabla profesional (AG Grid) que te permite editar los datos, filtros automáticos y un diseño oscuro que se ve mucho más moderno que el Streamlit estándar.
-
-1. El código para dashboard.py
-Python
 import os
 import pandas as pd
 from nicegui import ui
@@ -56,6 +50,7 @@ with ui.column().classes('w-full p-8 items-center'):
 # Esto es vital para que no te salga la tetera ASCII
 port = int(os.environ.get("PORT", 8080))
 ui.run(title='NEXION Logística', host='0.0.0.0', port=port, dark=True)
+
 
 
 
