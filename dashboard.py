@@ -273,6 +273,141 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
     elif st.session_state.menu_sub == "GANTT":
         st.subheader("SEGUIMIENTO > GANTT")
         # ⬅️ AQUÍ VA TODO TU CÓDIGO GANTT ORIGINAL SIN CAMBIOS
+        # --- 1. CONFIGURACIÓN ---
+        TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+        REPO_NAME = "RH2026/nexion"
+        FILE_PATH = "tareas.csv"
+        CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
+        
+        def obtener_fecha_mexico():
+            utc_ahora = datetime.datetime.now(datetime.timezone.utc)
+            return (utc_ahora - datetime.timedelta(hours=6)).date()
+        
+        # --- 2. FUNCIONES DE DATOS ---
+        def cargar_datos_seguro():
+            columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
+            hoy = obtener_fecha_mexico()
+            try:
+                response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
+                if response.status_code == 200:
+                    df = pd.read_csv(StringIO(response.text))
+                    df.columns = [c.strip().upper() for c in df.columns]
+                    for col in columnas_base:
+                        if col not in df.columns: df[col] = ""
+                    
+                    for col in ['FECHA', 'FECHA_FIN']:
+                        df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
+                        df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+                    
+                    return df[columnas_base]
+                return pd.DataFrame(columns=columnas_base)
+            except:
+                return pd.DataFrame(columns=columnas_base)
+        
+        def guardar_en_github(df):
+            if not TOKEN:
+                st.error("Error: GITHUB_TOKEN no configurado"); return False
+            try:
+                g = Github(TOKEN)
+                repo = g.get_repo(REPO_NAME)
+                df_save = df.copy()
+                df_save['FECHA'] = df_save['FECHA'].astype(str)
+                df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
+                csv_data = df_save.to_csv(index=False)
+                contents = repo.get_contents(FILE_PATH, ref="main")
+                repo.update_file(
+                    contents.path, 
+                    f"Actualización NEXION {obtener_fecha_mexico()}", 
+                    csv_data, 
+                    contents.sha, 
+                    branch="main"
+                )
+                st.toast("🚀 ¡Sincronizado con GitHub!", icon="✅")
+                return True
+            except Exception as e:
+                st.error(f"Error al sincronizar: {e}")
+                return False
+        
+        # --- 3. GESTIÓN DE ESTADO ---
+        if 'df_tareas' not in st.session_state:
+            st.session_state.df_tareas = cargar_datos_seguro()
+        
+        # --- 4. GRÁFICO GANTT (OPTIMIZADO PARA TEMA CLARO Y OSCURO) ---
+        if not st.session_state.df_tareas.empty:
+            try:
+                df_p = st.session_state.df_tareas.copy()
+                df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
+                
+                # Colores NEXION
+                colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
+                
+                # Crear Gantt
+                fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', 
+                                    group_tasks=True, showgrid_x=True, showgrid_y=True)
+                
+                # Configuración dinámica según el tema seleccionado
+                color_texto_ejes = vars_css['text']  # Se adapta a blanco o negro
+                color_lineas_malla = vars_css['border']
+                
+                fig.update_layout(
+                    plot_bgcolor='rgba(0,0,0,0)', 
+                    paper_bgcolor='rgba(0,0,0,0)', 
+                    font=dict(color=color_texto_ejes, family="Inter", size=11),
+                    height=450,
+                    margin=dict(l=180, r=20, t=40, b=80),
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+                        font=dict(color=vars_css['sub'], size=10)
+                    )
+                )
+        
+                # Ajuste de Ejes (Crucial para el Tema Claro)
+                fig.update_xaxes(
+                    tickfont=dict(color=vars_css['sub'], size=10),
+                    gridcolor=color_lineas_malla, 
+                    linecolor=color_lineas_malla,
+                    zeroline=False,
+                    dtick="D1",
+                    tickformat="%d %b"
+                )
+        
+                fig.update_yaxes(
+                    # Aquí forzamos el color del texto de las tareas para que se vea en blanco
+                    tickfont=dict(color=color_texto_ejes, size=11), 
+                    gridcolor=color_lineas_malla,
+                    linecolor=color_lineas_malla,
+                    autorange="reversed"
+                )
+        
+                
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                
+            except Exception as e:
+                st.info(f"💡 Consejo: Asegúrate de completar fechas de Inicio y Fin. (Error: {e})")
+        
+        # --- 5. EDITOR ---
+        with st.container(border=True):
+            df_editado = st.data_editor(
+                st.session_state.df_tareas,
+                num_rows="dynamic",
+                use_container_width=True,
+                key="nexion_editor_final",
+                column_config={
+                    "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
+                    "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
+                    "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
+                    "TAREA": st.column_config.TextColumn("📝 Tarea"),
+                    "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
+                },
+                hide_index=True
+            )
+        
+            if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
+                if guardar_en_github(df_editado):
+                    st.session_state.df_tareas = df_editado
+                    st.rerun()
+
 
 # 3. REPORTES
 elif st.session_state.menu_main == "REPORTES":
@@ -293,6 +428,7 @@ elif st.session_state.menu_main == "FORMATOS":
         st.subheader("FORMATOS > SALIDA DE PT")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
