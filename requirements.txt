@@ -1,18 +1,5 @@
-streamlit
+nicegui
 pandas
-altair
-fpdf2
-reportlab
-pypdf
-PyGithub
-requests
-plotly
-st-gsheets-connection
-numpy
-gspread
-google-auth
-google-auth-oauthlib
-google-auth-httplib2
-streamlit-aggrid
+openpyxl
 
 
