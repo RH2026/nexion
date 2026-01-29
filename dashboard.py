@@ -290,69 +290,62 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-            # --- 4. GRÁFICO GANTT (SINCRONIZADO TOTAL) ---
+           # --- 4. GRÁFICO GANTT (FUERZA BRUTA DE COLOR) ---
             if not st.session_state.df_tareas.empty:
                 try:
                     df_p = st.session_state.df_tareas.copy()
                     df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
-                    
-                    # Colores NEXION
                     colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
                     
-                    # Crear Gantt
                     fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', 
                                         group_tasks=True, showgrid_x=True, showgrid_y=True)
                     
-                    # Forzamos los colores del diccionario vars_css en el layout de Plotly
+                    # Usamos variables directas del diccionario vars_css
                     fig.update_layout(
                         plot_bgcolor='rgba(0,0,0,0)', 
                         paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=vars_css['text'], family="Inter", size=11),
+                        font=dict(color=vars_css['text'], family="Inter"),
                         height=450,
                         margin=dict(l=180, r=20, t=40, b=80),
                         showlegend=True,
-                        legend=dict(
-                            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-                            font=dict(color=vars_css['sub'], size=10)
-                        )
+                        legend=dict(font=dict(color=vars_css['sub']))
                     )
                     
-                    # Etiquetas de las Tareas (Eje Y) - Forzado al tema
-                    fig.update_yaxes(
-                        tickfont=dict(color=vars_css['text'], size=11),
-                        gridcolor=vars_css['border'],
-                        linecolor=vars_css['border'],
-                        autorange="reversed"
-                    )
-                    
-                    # Etiquetas de Fechas (Eje X) - Forzado al tema
-                    fig.update_xaxes(
-                        tickfont=dict(color=vars_css['sub'], size=10),
-                        gridcolor=vars_css['border'], 
-                        linecolor=vars_css['border'],
-                        dtick="D1",
-                        tickformat="%d %b"
-                    )
-                    
+                    fig.update_yaxes(tickfont=dict(color=vars_css['text']), gridcolor=vars_css['border'])
+                    fig.update_xaxes(tickfont=dict(color=vars_css['sub']), gridcolor=vars_css['border'])
+
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                    
                 except Exception as e:
-                    st.info(f"💡 Consejo: Asegúrate de completar fechas de Inicio y Fin.")
-            
-            # --- 5. EDITOR (CON ESTILO INYECTADO PARA MODO OSCURO) ---
-            # Inyectamos el estilo directamente al DataFrame para que el componente lo respete
-            df_mostrar = st.session_state.df_tareas.copy()
-            
-            # Usamos un contenedor sin borde para evitar el marco blanco de Streamlit
+                    st.error("Error en gráfico")
+
+            # --- 5. EDITOR Y CSS DE EMERGENCIA PARA LA TABLA ---
+            # Este bloque de CSS ataca directamente las clases internas de la tabla de Streamlit
+            st.markdown(f"""
+            <style>
+                /* Atacamos el contenedor de la tabla */
+                [data-testid="stDataEditor"] {{
+                    background-color: {vars_css['card']} !important;
+                }}
+                /* Forzamos el color de fondo de las celdas y el texto */
+                div[class^="st-key-"] canvas {{
+                    filter: { 'invert(1) hue-rotate(180deg)' if tema == 'oscuro' else 'none' };
+                }}
+                /* Esto elimina el recuadro blanco fantasma */
+                [data-testid="stVerticalBlockBorderWrapper"] {{
+                    border: none !important;
+                }}
+            </style>
+            """, unsafe_allow_html=True)
+
             with st.container():
                 df_editado = st.data_editor(
-                    df_mostrar,
+                    st.session_state.df_tareas,
                     num_rows="dynamic",
                     use_container_width=True,
                     key="nexion_editor_final",
                     column_config={
-                        "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
-                        "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
+                        "FECHA": st.column_config.DateColumn("📆 Inicio"),
+                        "FECHA_FIN": st.column_config.DateColumn("🏁 Fin"),
                         "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
                         "TAREA": st.column_config.TextColumn("📝 Tarea"),
                         "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
@@ -385,6 +378,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
