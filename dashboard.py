@@ -34,71 +34,82 @@ vars_css = {
     "logo": "n2.png"
 }
 
-# ── CSS MAESTRO (INPUT REPARADO) ────────────────────────────
+# ── CSS MAESTRO (REDISEÑADO Y LIMPIO) ────────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-header, footer, [data-testid="stHeader"] {{
+/* 1. OCULTAR ELEMENTOS NATIVOS */
+header, footer, [data-testid="stHeader"], [data-testid="stDecoration"] {{
     visibility: hidden;
+    display: none;
     height: 0px;
 }}
 
 .block-container {{
-    padding-top: 0.5rem !important;
+    padding-top: 1rem !important;
     padding-bottom: 0rem !important;
 }}
 
+/* 2. CONFIGURACIÓN DE APP */
 .stApp {{
     background: {vars_css['bg']} !important;
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
 }}
 
+/* Animación de entrada */
 @keyframes fadeInUp {{
-    from {{ opacity: 0; transform: translateY(15px); }}
+    from {{ opacity: 0; transform: translateY(10px); }}
     to {{ opacity: 1; transform: translateY(0); }}
 }}
 
 [data-testid="stVerticalBlock"] > div {{
-    animation: fadeInUp 0.6s ease-out;
+    animation: fadeInUp 0.5s ease-out;
 }}
 
-/* ── INPUT TEXT (FIX DEFINITIVO) ───────────────────────── */
+/* 3. INPUT TEXT - FIX PARA BORDE ROJO Y ESTILO */
+/* Eliminamos el borde de error/validación que Streamlit hereda de BaseWeb */
+[data-baseweb="input"] {{
+    border: none !important;
+    background-color: transparent !important;
+}}
+
 .stTextInput input {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 2px !important;
-
     height: 42px !important;
     font-size: 11px !important;
     text-align: center !important;
-
-    /* FIXES CLAVE */
     padding: 0 10px !important;
     line-height: normal !important;
     box-sizing: border-box !important;
-
     letter-spacing: 2px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.2s ease;
 }}
 
-/* PLACEHOLDER VISIBLE Y ELEGANTE */
-.stTextInput input::placeholder {{
-    color: {vars_css['sub']} !important;
-    opacity: 1 !important;
-    letter-spacing: 1.5px;
+/* ELIMINAR BORDE ROJO (Invalid state) */
+.stTextInput input:invalid {{
+    box-shadow: none !important;
+    border-color: {vars_css['border']} !important;
 }}
 
-/* SIN SALTOS AL FOCUS */
 .stTextInput input:focus {{
     border-color: {vars_css['text']} !important;
     outline: none !important;
-    box-shadow: 0 0 6px rgba(0,0,0,0.12) !important;
+    box-shadow: 0 0 8px rgba(0,0,0,0.08) !important;
 }}
 
-/* ── BOTONES ───────────────────────────────────────────── */
+/* Placeholder */
+.stTextInput input::placeholder {{
+    color: {vars_css['sub']} !important;
+    opacity: 0.6 !important;
+    letter-spacing: 1.5px;
+}}
+
+/* 4. BOTONES */
 div.stButton > button {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -110,24 +121,34 @@ div.stButton > button {{
     height: 32px !important;
     width: 100%;
     transition: all 0.25s ease;
+    letter-spacing: 1px;
 }}
 
 div.stButton > button:hover {{
     background: {vars_css['text']} !important;
     color: {vars_css['bg']} !important;
+    border-color: {vars_css['text']} !important;
     transform: translateY(-1px);
 }}
 
-/* ── IMÁGENES ──────────────────────────────────────────── */
+div.stButton > button:active {{
+    transform: translateY(0px);
+}}
+
+/* 5. IMÁGENES Y OTROS */
 div[data-testid='stImage'] img {{
-    image-rendering: crisp-edges !important;
+    image-rendering: auto !important;
 }}
 
-div[data-testid='stImage'] {{
-    margin-top: -20px !important;
+/* Línea divisoria personalizada */
+hr {{
+    border: 0;
+    border-top: 1px solid {vars_css['border']};
+    margin: 10px 0;
+    opacity: 0.5;
 }}
 
-/* ── FOOTER ────────────────────────────────────────────── */
+/* 6. FOOTER */
 .footer {{
     position: fixed;
     bottom: 0;
@@ -136,11 +157,17 @@ div[data-testid='stImage'] {{
     background-color: {vars_css['bg']};
     color: {vars_css['sub']};
     text-align: center;
-    padding: 10px;
+    padding: 12px;
     font-size: 9px;
     letter-spacing: 2px;
     border-top: 1px solid {vars_css['border']};
     z-index: 100;
+    text-transform: uppercase;
+}}
+
+/* Ajuste para que el contenido no quede debajo del footer */
+.main {{
+    padding-bottom: 50px !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -272,6 +299,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
