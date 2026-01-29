@@ -290,7 +290,7 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-           # --- 4. GRÁFICO GANTT (FUERZA BRUTA DE COLOR) ---
+            # --- 4. GRÁFICO GANTT (SIN FILTROS, DIRECTO AL GRANO) ---
             if not st.session_state.df_tareas.empty:
                 try:
                     df_p = st.session_state.df_tareas.copy()
@@ -300,63 +300,54 @@ with main_container:
                     fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', 
                                         group_tasks=True, showgrid_x=True, showgrid_y=True)
                     
-                    # Usamos variables directas del diccionario vars_css
+                    # Forzado manual de colores en el objeto Plotly
                     fig.update_layout(
-                        plot_bgcolor='rgba(0,0,0,0)', 
-                        paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=vars_css['text'], family="Inter"),
-                        height=450,
-                        margin=dict(l=180, r=20, t=40, b=80),
-                        showlegend=True,
-                        legend=dict(font=dict(color=vars_css['sub']))
+                        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', 
+                        font=dict(color=vars_css['text']), height=450,
+                        margin=dict(l=180, r=20, t=40, b=80), showlegend=True
                     )
-                    
                     fig.update_yaxes(tickfont=dict(color=vars_css['text']), gridcolor=vars_css['border'])
                     fig.update_xaxes(tickfont=dict(color=vars_css['sub']), gridcolor=vars_css['border'])
 
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                except Exception as e:
-                    st.error("Error en gráfico")
+                except:
+                    st.write("Error en gráfico")
 
-            # --- 5. EDITOR Y CSS DE EMERGENCIA PARA LA TABLA ---
-            # Este bloque de CSS ataca directamente las clases internas de la tabla de Streamlit
+            # --- 5. EL HACK DEFINITIVO PARA LA TABLA (FUERZA BRUTA) ---
+            # Inyectamos CSS que rompe el Shadow DOM del editor
+            filtro = "invert(0.9) hue-rotate(180deg) brightness(1.2)" if tema == "oscuro" else "none"
+            
             st.markdown(f"""
-            <style>
-                /* Atacamos el contenedor de la tabla */
-                [data-testid="stDataEditor"] {{
+                <style>
+                /* Forzamos que el fondo del editor sea el de tu variable 'card' */
+                div[data-testid="stDataEditor"] {{
                     background-color: {vars_css['card']} !important;
                 }}
-                /* Forzamos el color de fondo de las celdas y el texto */
-                div[class^="st-key-"] canvas {{
-                    filter: { 'invert(1) hue-rotate(180deg)' if tema == 'oscuro' else 'none' };
+                /* ESTO ES LO QUE MANDA: Invierte el canvas si es modo oscuro */
+                div[data-testid="stDataEditor"] canvas {{
+                    filter: {filtro} !important;
                 }}
-                /* Esto elimina el recuadro blanco fantasma */
+                /* Eliminamos cualquier borde blanco que Streamlit quiera meter */
                 [data-testid="stVerticalBlockBorderWrapper"] {{
                     border: none !important;
+                    background-color: transparent !important;
                 }}
-            </style>
-            """, unsafe_allow_html=True)
+                </style>
+                """, unsafe_allow_html=True)
 
-            with st.container():
-                df_editado = st.data_editor(
-                    st.session_state.df_tareas,
-                    num_rows="dynamic",
-                    use_container_width=True,
-                    key="nexion_editor_final",
-                    column_config={
-                        "FECHA": st.column_config.DateColumn("📆 Inicio"),
-                        "FECHA_FIN": st.column_config.DateColumn("🏁 Fin"),
-                        "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
-                        "TAREA": st.column_config.TextColumn("📝 Tarea"),
-                        "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
-                    },
-                    hide_index=True
-                )
-            
-                if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
-                    if guardar_en_github(df_editado):
-                        st.session_state.df_tareas = df_editado
-                        st.rerun()
+            # Editor limpio
+            df_editado = st.data_editor(
+                st.session_state.df_tareas,
+                num_rows="dynamic",
+                use_container_width=True,
+                key="nexion_editor_final",
+                hide_index=True,
+                column_config={{
+                    "FECHA": st.column_config.DateColumn("📆 Inicio"),
+                    "FECHA_FIN": st.column_config.DateColumn("🏁 Fin"),
+                    "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
+                }}
+            )
     
     # 3. REPORTES
     elif st.session_state.menu_main == "REPORTES":
@@ -378,6 +369,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
