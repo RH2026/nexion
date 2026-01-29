@@ -25,7 +25,7 @@ if "menu_sub" not in st.session_state:
 tema = st.session_state.tema
 vars_css = {
     "oscuro": {"bg": "#0E1117", "card": "#111827", "text": "#F0F6FC", "sub": "#8B949E", "border": "#1B1F24", "logo": "n1.png"},
-    "claro": {"bg": "#E9ECF1", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9", "logo": "n2.png"}
+    "claro": {"bg": "#ffffff", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9", "logo": "n2.png"}
 }[tema]
 
 # ── CSS MAESTRO (CON ANIMACIONES ELITE) ─────────────────────
@@ -342,6 +342,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
