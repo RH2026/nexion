@@ -34,7 +34,7 @@ vars_css = {
     "logo": "n2.png"
 }
 
-# ── CSS MAESTRO (REDISEÑADO Y LIMPIO) ────────────────────────────
+# ── CSS MAESTRO (FIX DE BORDES RESIDUALES) ────────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -47,8 +47,7 @@ header, footer, [data-testid="stHeader"], [data-testid="stDecoration"] {{
 }}
 
 .block-container {{
-    padding-top: 1rem !important;
-    padding-bottom: 0rem !important;
+    padding-top: 1.5rem !important;
 }}
 
 /* 2. CONFIGURACIÓN DE APP */
@@ -58,97 +57,63 @@ header, footer, [data-testid="stHeader"], [data-testid="stDecoration"] {{
     font-family: 'Inter', sans-serif !important;
 }}
 
-/* Animación de entrada */
-@keyframes fadeInUp {{
-    from {{ opacity: 0; transform: translateY(10px); }}
-    to {{ opacity: 1; transform: translateY(0); }}
-}}
-
-[data-testid="stVerticalBlock"] > div {{
-    animation: fadeInUp 0.5s ease-out;
-}}
-
-/* 3. INPUT TEXT - FIX PARA BORDE ROJO Y ESTILO */
-/* Eliminamos el borde de error/validación que Streamlit hereda de BaseWeb */
-[data-baseweb="input"] {{
+/* 3. INPUT TEXT - ELIMINACIÓN TOTAL DE BORDES INTERNOS */
+/* Forzamos a que todos los contenedores de BaseWeb sean invisibles */
+[data-baseweb="input"], [data-baseweb="input"] > div, .stTextInput > div {{
     border: none !important;
     background-color: transparent !important;
+    box-shadow: none !important;
 }}
 
 .stTextInput input {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
+    
+    /* Definimos el borde solo aquí */
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
+    border-radius: 4px !important; /* Un poco de radio suaviza la estética */
+    
     height: 42px !important;
     font-size: 11px !important;
     text-align: center !important;
     padding: 0 10px !important;
-    line-height: normal !important;
-    box-sizing: border-box !important;
     letter-spacing: 2px;
     transition: all 0.2s ease;
-}}
-
-/* ELIMINAR BORDE ROJO (Invalid state) */
-.stTextInput input:invalid {{
-    box-shadow: none !important;
-    border-color: {vars_css['border']} !important;
-}}
-
-.stTextInput input:focus {{
-    border-color: {vars_css['text']} !important;
     outline: none !important;
-    box-shadow: 0 0 8px rgba(0,0,0,0.08) !important;
 }}
 
-/* Placeholder */
+/* Eliminar el borde rojo/negro de estado inválido o focus nativo */
+.stTextInput input:focus, .stTextInput input:active, .stTextInput input:invalid {{
+    border-color: {vars_css['text']} !important;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05) !important;
+    outline: none !important;
+}}
+
 .stTextInput input::placeholder {{
     color: {vars_css['sub']} !important;
-    opacity: 0.6 !important;
-    letter-spacing: 1.5px;
+    opacity: 0.5 !important;
 }}
 
-/* 4. BOTONES */
+/* 4. BOTONES Y OTROS */
 div.stButton > button {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
+    border-radius: 4px !important;
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 32px !important;
+    height: 36px !important;
     width: 100%;
     transition: all 0.25s ease;
-    letter-spacing: 1px;
 }}
 
 div.stButton > button:hover {{
     background: {vars_css['text']} !important;
     color: {vars_css['bg']} !important;
-    border-color: {vars_css['text']} !important;
-    transform: translateY(-1px);
 }}
 
-div.stButton > button:active {{
-    transform: translateY(0px);
-}}
-
-/* 5. IMÁGENES Y OTROS */
-div[data-testid='stImage'] img {{
-    image-rendering: auto !important;
-}}
-
-/* Línea divisoria personalizada */
-hr {{
-    border: 0;
-    border-top: 1px solid {vars_css['border']};
-    margin: 10px 0;
-    opacity: 0.5;
-}}
-
-/* 6. FOOTER */
+/* 5. FOOTER */
 .footer {{
     position: fixed;
     bottom: 0;
@@ -162,12 +127,6 @@ hr {{
     letter-spacing: 2px;
     border-top: 1px solid {vars_css['border']};
     z-index: 100;
-    text-transform: uppercase;
-}}
-
-/* Ajuste para que el contenido no quede debajo del footer */
-.main {{
-    padding-bottom: 50px !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -299,6 +258,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
