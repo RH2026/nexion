@@ -34,7 +34,7 @@ vars_css = {
     "logo": "n2.png"
 }
 
-# ── CSS MAESTRO ─────────────────────────────────────────────
+# ── CSS MAESTRO (INPUT REPARADO) ────────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -64,25 +64,42 @@ header, footer, [data-testid="stHeader"] {{
     animation: fadeInUp 0.6s ease-out;
 }}
 
+/* ── INPUT TEXT (FIX DEFINITIVO) ───────────────────────── */
 .stTextInput input {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 2px !important;
+
     height: 42px !important;
     font-size: 11px !important;
     text-align: center !important;
-    line-height: 42px !important;
-    padding: 0px !important;
+
+    /* FIXES CLAVE */
+    padding: 0 10px !important;
+    line-height: normal !important;
+    box-sizing: border-box !important;
+
     letter-spacing: 2px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }}
 
+/* PLACEHOLDER VISIBLE Y ELEGANTE */
+.stTextInput input::placeholder {{
+    color: {vars_css['sub']} !important;
+    opacity: 1 !important;
+    letter-spacing: 1.5px;
+}}
+
+/* SIN SALTOS AL FOCUS */
 .stTextInput input:focus {{
     border-color: {vars_css['text']} !important;
-    box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    outline: none !important;
+    box-shadow: 0 0 6px rgba(0,0,0,0.12) !important;
 }}
 
-div.stButton>button {{
+/* ── BOTONES ───────────────────────────────────────────── */
+div.stButton > button {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -95,12 +112,13 @@ div.stButton>button {{
     transition: all 0.25s ease;
 }}
 
-div.stButton>button:hover {{
+div.stButton > button:hover {{
     background: {vars_css['text']} !important;
     color: {vars_css['bg']} !important;
     transform: translateY(-1px);
 }}
 
+/* ── IMÁGENES ──────────────────────────────────────────── */
 div[data-testid='stImage'] img {{
     image-rendering: crisp-edges !important;
 }}
@@ -109,6 +127,7 @@ div[data-testid='stImage'] {{
     margin-top: -20px !important;
 }}
 
+/* ── FOOTER ────────────────────────────────────────────── */
 .footer {{
     position: fixed;
     bottom: 0;
@@ -253,6 +272,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
