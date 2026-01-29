@@ -34,7 +34,7 @@ vars_css = {
     "logo": "n2.png"
 }
 
-# ── CSS MAESTRO (FIX DE BORDES RESIDUALES) ────────────────────────────
+# ── CSS MAESTRO (LIMPIEZA TOTAL DE BORDES) ────────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -46,66 +46,61 @@ header, footer, [data-testid="stHeader"], [data-testid="stDecoration"] {{
     height: 0px;
 }}
 
-.block-container {{
-    padding-top: 1.5rem !important;
-}}
-
-/* 2. CONFIGURACIÓN DE APP */
-.stApp {{
-    background: {vars_css['bg']} !important;
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
-}}
-
-/* 3. INPUT TEXT - ELIMINACIÓN TOTAL DE BORDES INTERNOS */
-/* Forzamos a que todos los contenedores de BaseWeb sean invisibles */
-[data-baseweb="input"], [data-baseweb="input"] > div, .stTextInput > div {{
+/* 2. ELIMINAR EL BORDE NEGRO/ROJO INTERNO (ESTO ES LO CLAVE) */
+/* Atacamos todas las capas posibles que Streamlit pone sobre el input */
+div[data-baseweb="input"], 
+div[data-baseweb="input"] > div, 
+.stTextInput > div,
+.stTextInput > div > div,
+.stTextInput > div > div > div {{
     border: none !important;
     background-color: transparent !important;
     box-shadow: none !important;
+    outline: none !important;
 }}
 
+/* 3. TU INPUT PERSONALIZADO */
 .stTextInput input {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     
-    /* Definimos el borde solo aquí */
+    /* El único borde que debe existir */
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important; /* Un poco de radio suaviza la estética */
+    border-radius: 2px !important;
     
     height: 42px !important;
     font-size: 11px !important;
     text-align: center !important;
     padding: 0 10px !important;
     letter-spacing: 2px;
-    transition: all 0.2s ease;
-    outline: none !important;
+    transition: all 0.2s ease-out;
 }}
 
-/* Eliminar el borde rojo/negro de estado inválido o focus nativo */
-.stTextInput input:focus, .stTextInput input:active, .stTextInput input:invalid {{
+/* Estado Focus y Hover */
+.stTextInput input:focus {{
     border-color: {vars_css['text']} !important;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05) !important;
+    box-shadow: 0 0 8px rgba(0,0,0,0.05) !important;
     outline: none !important;
 }}
 
-.stTextInput input::placeholder {{
-    color: {vars_css['sub']} !important;
-    opacity: 0.5 !important;
+/* Forzar que el estado de error no se vea rojo */
+.stTextInput input:invalid, .stTextInput input:focus:invalid {{
+    border-color: {vars_css['border']} !important;
+    box-shadow: none !important;
+    color: {vars_css['text']} !important;
 }}
 
-/* 4. BOTONES Y OTROS */
+/* 4. BOTONES Y ESTILO GENERAL */
 div.stButton > button {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
+    border-radius: 2px !important;
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 36px !important;
-    width: 100%;
-    transition: all 0.25s ease;
+    height: 32px !important;
+    transition: all 0.2s ease;
 }}
 
 div.stButton > button:hover {{
@@ -258,6 +253,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
