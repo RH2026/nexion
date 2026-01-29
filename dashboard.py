@@ -148,6 +148,22 @@ div[data-testid="stImage"] img {{
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* === AG GRID DARK FIX === */
+.ag-theme-alpine-dark {
+    --ag-background-color: #0D1117;
+    --ag-header-background-color: #111827;
+    --ag-odd-row-background-color: #0B1220;
+    --ag-foreground-color: #F0F6FC;
+    --ag-header-foreground-color: #F0F6FC;
+    --ag-border-color: #1F2937;
+    --ag-row-border-color: #1F2937;
+    --ag-font-family: Inter, sans-serif;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 # ── SPLASH ───────────────────────────────────────────────────
 if not st.session_state.splash_completado:
@@ -266,107 +282,94 @@ if st.session_state.menu_main == "TRACKING":
         if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
             st.toast(f"Buscando: {busqueda}")
 
-# 2. SEGUIMIENTO
-elif st.session_state.menu_main == "SEGUIMIENTO":
-
-    if st.session_state.menu_sub == "TRK":
-        st.subheader("SEGUIMIENTO > TRK")
-
-    elif st.session_state.menu_sub == "GANTT":
-
-        st.subheader("SEGUIMIENTO > GANTT")
-    
-        # ── CONFIGURACIÓN ─────────────────────────────
-        TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-        REPO_NAME = "RH2026/nexion"
-        FILE_PATH = "tareas.csv"
-        CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
-    
-        def obtener_fecha_mexico():
-            utc = datetime.datetime.now(datetime.timezone.utc)
-            return (utc - datetime.timedelta(hours=6)).date()
-    
-        # ── CARGA DE DATOS ─────────────────────────────
-        def cargar_datos():
-            cols = ["FECHA", "FECHA_FIN", "IMPORTANCIA", "TAREA", "ULTIMO ACCION"]
-            hoy = obtener_fecha_mexico()
-            try:
-                r = requests.get(f"{CSV_URL}?t={time.time()}")
-                if r.status_code == 200:
-                    df = pd.read_csv(StringIO(r.text))
-                    df.columns = [c.strip().upper() for c in df.columns]
-                    for c in cols:
-                        if c not in df.columns:
-                            df[c] = ""
-                    for c in ["FECHA", "FECHA_FIN"]:
-                        df[c] = pd.to_datetime(df[c], errors="coerce").dt.date.fillna(hoy)
-                    return df[cols]
-            except:
-                pass
-            return pd.DataFrame(columns=cols)
-    
-        def guardar_en_github(df):
-            if not TOKEN:
-                st.error("GITHUB_TOKEN no configurado")
-                return False
-            try:
-                g = Github(TOKEN)
-                repo = g.get_repo(REPO_NAME)
-                df_save = df.copy()
-                df_save["FECHA"] = df_save["FECHA"].astype(str)
-                df_save["FECHA_FIN"] = df_save["FECHA_FIN"].astype(str)
-                csv = df_save.to_csv(index=False)
-                content = repo.get_contents(FILE_PATH, ref="main")
-                repo.update_file(
-                    content.path,
-                    f"Actualización {obtener_fecha_mexico()}",
-                    csv,
-                    content.sha,
-                    branch="main"
-                )
-                st.toast("🚀 Sincronizado", icon="✅")
-                return True
-            except Exception as e:
-                st.error(f"GitHub: {e}")
-                return False
-    
-        if "df_tareas" not in st.session_state:
-            st.session_state.df_tareas = cargar_datos()
-    
-        # ── GANTT (ESTABLE) ────────────────────────────
-        if not st.session_state.df_tareas.empty:
-            df_p = st.session_state.df_tareas.rename(columns={
-                "TAREA": "Task",
-                "FECHA": "Start",
-                "FECHA_FIN": "Finish",
-                "IMPORTANCIA": "Prioridad"
-            })
-    
-            fig = px.timeline(
-                df_p,
-                x_start="Start",
-                x_end="Finish",
-                y="Task",
-                color="Prioridad",
-                color_discrete_map={
-                    "Urgente": "#FF3131",
-                    "Alta": "#FF914D",
-                    "Media": "#00D2FF",
-                    "Baja": "#444E5E"
-                }
-            )
-    
-            fig.update_layout(
-                template="plotly_dark" if tema == "oscuro" else "plotly_white",
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color=vars_css["text"], family="Inter"),
-                height=420,
-                margin=dict(l=200, r=20, t=30, b=40)
-            )
-    
-            fig.update_yaxes(autorange="reversed")
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            # 2. SEGUIMIENTO
+            elif st.session_state.menu_main == "SEGUIMIENTO":
+            
+                if st.session_state.menu_sub == "TRK":
+                    st.subheader("SEGUIMIENTO > TRK")
+            
+                if not st.session_state.df_tareas.empty:
+                try:
+                    df_gantt = st.session_state.df_tareas.copy()
+            
+                    # Normalizar columnas
+                    df_gantt = df_gantt.rename(columns={
+                        "TAREA": "Task",
+                        "FECHA": "Start",
+                        "FECHA_FIN": "Finish",
+                        "IMPORTANCIA": "Priority"
+                    })
+            
+                    # Asegurar fechas válidas
+                    df_gantt["Start"] = pd.to_datetime(df_gantt["Start"], errors="coerce")
+                    df_gantt["Finish"] = pd.to_datetime(df_gantt["Finish"], errors="coerce")
+            
+                    df_gantt = df_gantt.dropna(subset=["Start", "Finish", "Task"])
+            
+                    # Colores por prioridad (no dependen del tema)
+                    colors = {
+                        "Urgente": "#FF3131",
+                        "Alta": "#FF914D",
+                        "Media": "#00D2FF",
+                        "Baja": "#6B7280"
+                    }
+            
+                    # Crear Gantt
+                    fig = ff.create_gantt(
+                        df_gantt,
+                        index_col="Priority",
+                        colors=colors,
+                        group_tasks=True,
+                        showgrid_x=True,
+                        showgrid_y=False
+                    )
+            
+                    # Estilo base neutro (el fondo lo manda tu CSS)
+                    fig.update_layout(
+                        height=420,
+                        margin=dict(l=220, r=30, t=40, b=60),
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        font=dict(
+                            family="Inter",
+                            size=11,
+                            color=vars_css["text"]
+                        ),
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=1.02,
+                            xanchor="right",
+                            x=1,
+                            font=dict(color=vars_css["sub"], size=10)
+                        )
+                    )
+            
+                    # Eje X (fechas)
+                    fig.update_xaxes(
+                        gridcolor=vars_css["border"],
+                        tickfont=dict(color=vars_css["sub"], size=10),
+                        linecolor=vars_css["border"],
+                        zeroline=False,
+                        dtick="D1",
+                        tickformat="%d %b"
+                    )
+            
+                    # Eje Y (tareas)
+                    fig.update_yaxes(
+                        autorange="reversed",
+                        tickfont=dict(color=vars_css["text"], size=11),
+                        linecolor=vars_css["border"]
+                    )
+            
+                    st.plotly_chart(
+                        fig,
+                        use_container_width=True,
+                        config={"displayModeBar": False}
+                    )
+            
+                except Exception as e:
+                    st.error(f"Error en Gantt: {e}")
     
         # ── AG GRID (TEMA REAL OSCURO) ──────────────────
         gb = GridOptionsBuilder.from_dataframe(st.session_state.df_tareas)
@@ -428,6 +431,7 @@ elif st.session_state.menu_main == "FORMATOS":
         st.subheader("FORMATOS > SALIDA DE PT")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
