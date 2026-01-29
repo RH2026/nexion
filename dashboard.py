@@ -290,7 +290,7 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-            # --- 4. GRÁFICO GANTT (OPTIMIZADO PARA TEMA CLARO Y OSCURO) ---
+            # --- 4. GRÁFICO GANTT (SINCRONIZADO TOTAL) ---
             if not st.session_state.df_tareas.empty:
                 try:
                     df_p = st.session_state.df_tareas.copy()
@@ -303,46 +303,50 @@ with main_container:
                     fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', 
                                         group_tasks=True, showgrid_x=True, showgrid_y=True)
                     
-                    # Configuración dinámica según el tema seleccionado
-                    color_texto_ejes = vars_css['text']  # Se adapta a blanco o negro
-                    color_lineas_malla = vars_css['border']
-                    
+                    # Forzamos los colores del diccionario vars_css en el layout de Plotly
                     fig.update_layout(
-                    plot_bgcolor='rgba(0,0,0,0)', 
-                    paper_bgcolor='rgba(0,0,0,0)', 
-                    font=dict(color=vars_css['text'], family="Inter", size=11), # Texto general
-                    height=450,
-                    margin=dict(l=180, r=20, t=40, b=80),
-                    showlegend=True,
-                    legend=dict(
-                        font=dict(color=vars_css['sub'], size=10)
-                    )
+                        plot_bgcolor='rgba(0,0,0,0)', 
+                        paper_bgcolor='rgba(0,0,0,0)', 
+                        font=dict(color=vars_css['text'], family="Inter", size=11),
+                        height=450,
+                        margin=dict(l=180, r=20, t=40, b=80),
+                        showlegend=True,
+                        legend=dict(
+                            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+                            font=dict(color=vars_css['sub'], size=10)
+                        )
                     )
                     
-                    # Etiquetas de las Tareas (Eje Y)
+                    # Etiquetas de las Tareas (Eje Y) - Forzado al tema
                     fig.update_yaxes(
-                        tickfont=dict(color=vars_css['text'], size=11), # Esto corrige el nombre de las tareas
+                        tickfont=dict(color=vars_css['text'], size=11),
                         gridcolor=vars_css['border'],
                         linecolor=vars_css['border'],
                         autorange="reversed"
                     )
                     
-                    # Etiquetas de Fechas (Eje X)
+                    # Etiquetas de Fechas (Eje X) - Forzado al tema
                     fig.update_xaxes(
                         tickfont=dict(color=vars_css['sub'], size=10),
                         gridcolor=vars_css['border'], 
-                        linecolor=vars_css['border']
+                        linecolor=vars_css['border'],
+                        dtick="D1",
+                        tickformat="%d %b"
                     )
                     
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
                     
                 except Exception as e:
-                    st.info(f"💡 Consejo: Asegúrate de completar fechas de Inicio y Fin. (Error: {e})")
+                    st.info(f"💡 Consejo: Asegúrate de completar fechas de Inicio y Fin.")
             
-            # --- 5. EDITOR ---
-            with st.container(border=True):
+            # --- 5. EDITOR (CON ESTILO INYECTADO PARA MODO OSCURO) ---
+            # Inyectamos el estilo directamente al DataFrame para que el componente lo respete
+            df_mostrar = st.session_state.df_tareas.copy()
+            
+            # Usamos un contenedor sin borde para evitar el marco blanco de Streamlit
+            with st.container():
                 df_editado = st.data_editor(
-                    st.session_state.df_tareas,
+                    df_mostrar,
                     num_rows="dynamic",
                     use_container_width=True,
                     key="nexion_editor_final",
@@ -381,6 +385,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
