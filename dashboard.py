@@ -288,149 +288,144 @@ if st.session_state.menu_main == "TRACKING":
                 if st.session_state.menu_sub == "TRK":
                     st.subheader("SEGUIMIENTO > TRK")
             
-                if not st.session_state.df_tareas.empty:
-                try:
-                    df_gantt = st.session_state.df_tareas.copy()
+                elif st.session_state.menu_sub == "GANTT":
+                    st.subheader("SEGUIMIENTO > GANTT")
             
-                    # Normalizar columnas
-                    df_gantt = df_gantt.rename(columns={
-                        "TAREA": "Task",
-                        "FECHA": "Start",
-                        "FECHA_FIN": "Finish",
-                        "IMPORTANCIA": "Priority"
-                    })
+                    # ── GANTT ─────────────────────────────────────
+                    if st.session_state.df_tareas.empty:
+                        st.info("No hay tareas para mostrar en el cronograma.")
+                    else:
+                        try:
+                            df_gantt = st.session_state.df_tareas.copy()
             
-                    # Asegurar fechas válidas
-                    df_gantt["Start"] = pd.to_datetime(df_gantt["Start"], errors="coerce")
-                    df_gantt["Finish"] = pd.to_datetime(df_gantt["Finish"], errors="coerce")
+                            df_gantt = df_gantt.rename(columns={
+                                "TAREA": "Task",
+                                "FECHA": "Start",
+                                "FECHA_FIN": "Finish",
+                                "IMPORTANCIA": "Priority"
+                            })
             
-                    df_gantt = df_gantt.dropna(subset=["Start", "Finish", "Task"])
+                            df_gantt["Start"] = pd.to_datetime(df_gantt["Start"], errors="coerce")
+                            df_gantt["Finish"] = pd.to_datetime(df_gantt["Finish"], errors="coerce")
             
-                    # Colores por prioridad (no dependen del tema)
-                    colors = {
-                        "Urgente": "#FF3131",
-                        "Alta": "#FF914D",
-                        "Media": "#00D2FF",
-                        "Baja": "#6B7280"
-                    }
+                            df_gantt = df_gantt.dropna(subset=["Start", "Finish", "Task"])
             
-                    # Crear Gantt
-                    fig = ff.create_gantt(
-                        df_gantt,
-                        index_col="Priority",
-                        colors=colors,
-                        group_tasks=True,
-                        showgrid_x=True,
-                        showgrid_y=False
+                            if df_gantt.empty:
+                                st.warning("Las tareas no tienen fechas válidas.")
+                            else:
+                                colors = {
+                                    "Urgente": "#FF3131",
+                                    "Alta": "#FF914D",
+                                    "Media": "#00D2FF",
+                                    "Baja": "#6B7280"
+                                }
+            
+                                fig = ff.create_gantt(
+                                    df_gantt,
+                                    index_col="Priority",
+                                    colors=colors,
+                                    group_tasks=True,
+                                    showgrid_x=True,
+                                    showgrid_y=False
+                                )
+            
+                                fig.update_layout(
+                                    height=420,
+                                    margin=dict(l=220, r=30, t=40, b=60),
+                                    plot_bgcolor="rgba(0,0,0,0)",
+                                    paper_bgcolor="rgba(0,0,0,0)",
+                                    font=dict(
+                                        family="Inter",
+                                        size=11,
+                                        color=vars_css["text"]
+                                    ),
+                                    legend=dict(
+                                        orientation="h",
+                                        yanchor="bottom",
+                                        y=1.02,
+                                        xanchor="right",
+                                        x=1,
+                                        font=dict(
+                                            color=vars_css["sub"],
+                                            size=10
+                                        )
+                                    )
+                                )
+            
+                                fig.update_xaxes(
+                                    gridcolor=vars_css["border"],
+                                    linecolor=vars_css["border"],
+                                    tickfont=dict(
+                                        color=vars_css["sub"],
+                                        size=10
+                                    ),
+                                    zeroline=False,
+                                    dtick="D1",
+                                    tickformat="%d %b"
+                                )
+            
+                                fig.update_yaxes(
+                                    autorange="reversed",
+                                    tickfont=dict(
+                                        color=vars_css["text"],
+                                        size=11
+                                    ),
+                                    linecolor=vars_css["border"]
+                                )
+            
+                                st.plotly_chart(
+                                    fig,
+                                    use_container_width=True,
+                                    config={"displayModeBar": False}
+                                )
+            
+                        except Exception as e:
+                            st.error(f"Error en Gantt: {e}")
+            
+                    # ── AG GRID ───────────────────────────────────
+                    gb = GridOptionsBuilder.from_dataframe(st.session_state.df_tareas)
+            
+                    gb.configure_default_column(
+                        editable=True,
+                        resizable=True,
+                        sortable=True,
+                        filter=True
                     )
             
-                    # Estilo base neutro (el fondo lo manda tu CSS)
-                    fig.update_layout(
-                        height=420,
-                        margin=dict(l=220, r=30, t=40, b=60),
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        font=dict(
-                            family="Inter",
-                            size=11,
-                            color=vars_css["text"]
-                        ),
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=1.02,
-                            xanchor="right",
-                            x=1,
-                            font=dict(color=vars_css["sub"], size=10)
-                        )
+                    gb.configure_column(
+                        "IMPORTANCIA",
+                        cellEditor="agSelectCellEditor",
+                        cellEditorParams={"values": ["Baja", "Media", "Alta", "Urgente"]}
                     )
             
-                    # Eje X (fechas)
-                    fig.update_xaxes(
-                        gridcolor=vars_css["border"],
-                        tickfont=dict(color=vars_css["sub"], size=10),
-                        linecolor=vars_css["border"],
-                        zeroline=False,
-                        dtick="D1",
-                        tickformat="%d %b"
+                    gb.configure_column("FECHA", type=["dateColumnFilter"])
+                    gb.configure_column("FECHA_FIN", type=["dateColumnFilter"])
+            
+                    gb.configure_grid_options(
+                        domLayout="normal",
+                        rowHeight=38,
+                        headerHeight=42
                     )
             
-                    # Eje Y (tareas)
-                    fig.update_yaxes(
-                        autorange="reversed",
-                        tickfont=dict(color=vars_css["text"], size=11),
-                        linecolor=vars_css["border"]
+                    grid_theme = "ag-theme-alpine-dark" if tema == "oscuro" else "ag-theme-alpine"
+            
+                    grid_response = AgGrid(
+                        st.session_state.df_tareas,
+                        gridOptions=gb.build(),
+                        theme=grid_theme,
+                        update_mode=GridUpdateMode.VALUE_CHANGED,
+                        fit_columns_on_grid_load=True,
+                        height=350,
+                        allow_unsafe_jscode=True
                     )
             
-                    st.plotly_chart(
-                        fig,
-                        use_container_width=True,
-                        config={"displayModeBar": False}
-                    )
+                    df_editado = pd.DataFrame(grid_response["data"])
             
-                except Exception as e:
-                    st.error(f"Error en Gantt: {e}")
-    
-        # ── AG GRID (TEMA REAL OSCURO) ──────────────────
-        gb = GridOptionsBuilder.from_dataframe(st.session_state.df_tareas)
-    
-        gb.configure_default_column(
-            editable=True,
-            resizable=True,
-            sortable=True,
-            filter=True
-        )
-    
-        gb.configure_column("IMPORTANCIA", cellEditor="agSelectCellEditor",
-                            cellEditorParams={"values": ["Baja", "Media", "Alta", "Urgente"]})
-    
-        gb.configure_column("FECHA", type=["dateColumnFilter"])
-        gb.configure_column("FECHA_FIN", type=["dateColumnFilter"])
-    
-        gb.configure_grid_options(
-            domLayout="normal",
-            rowHeight=38,
-            headerHeight=42
-        )
-    
-        grid_theme = "ag-theme-alpine-dark" if tema == "oscuro" else "ag-theme-alpine"
-    
-        grid_response = AgGrid(
-            st.session_state.df_tareas,
-            gridOptions=gb.build(),
-            theme=grid_theme,
-            update_mode=GridUpdateMode.VALUE_CHANGED,
-            fit_columns_on_grid_load=True,
-            height=350,
-            allow_unsafe_jscode=True
-        )
-    
-        df_editado = pd.DataFrame(grid_response["data"])
-    
-        if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
-            if guardar_en_github(df_editado):
-                st.session_state.df_tareas = df_editado
-                st.rerun()
+                    if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
+                        if guardar_en_github(df_editado):
+                            st.session_state.df_tareas = df_editado
+                            st.rerun()
 
-# 3. REPORTES
-elif st.session_state.menu_main == "REPORTES":
-
-    if st.session_state.menu_sub == "APQ":
-        st.subheader("REPORTES > APQ")
-
-    elif st.session_state.menu_sub == "OPS":
-        st.subheader("REPORTES > OPS")
-
-    elif st.session_state.menu_sub == "OTD":
-        st.subheader("REPORTES > OTD")
-
-# 4. FORMATOS
-elif st.session_state.menu_main == "FORMATOS":
-
-    if st.session_state.menu_sub == "SALIDA DE PT":
-        st.subheader("FORMATOS > SALIDA DE PT")
-
-st.markdown("</div>", unsafe_allow_html=True)
 
 
 
