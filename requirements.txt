@@ -2,5 +2,7 @@ nicegui
 pandas
 openpyxl
 requests
+plotly
+
 
 
