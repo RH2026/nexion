@@ -319,22 +319,21 @@ with main_container:
                         )
                     )
             
-                    # Ajuste de Ejes (Crucial para el Tema Claro)
+                    # Etiquetas de las tareas (el lado izquierdo que se veía mal)
+                    fig.update_yaxes(
+                        tickfont=dict(color=vars_css['text'], size=11), 
+                        gridcolor=vars_css['border'],
+                        linecolor=vars_css['border'],
+                        autorange="reversed"
+                    )
+                    
+                    # Etiquetas de las fechas (abajo)
                     fig.update_xaxes(
                         tickfont=dict(color=vars_css['sub'], size=10),
-                        gridcolor=color_lineas_malla, 
-                        linecolor=color_lineas_malla,
-                        zeroline=False,
+                        gridcolor=vars_css['border'], 
+                        linecolor=vars_css['border'],
                         dtick="D1",
                         tickformat="%d %b"
-                    )
-            
-                    fig.update_yaxes(
-                        # Aquí forzamos el color del texto de las tareas para que se vea en blanco
-                        tickfont=dict(color=color_texto_ejes, size=11), 
-                        gridcolor=color_lineas_malla,
-                        linecolor=color_lineas_malla,
-                        autorange="reversed"
                     )
             
                     
@@ -385,6 +384,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
