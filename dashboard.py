@@ -282,7 +282,6 @@ if st.session_state.menu_main == "TRACKING":
         if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
             st.toast(f"Buscando: {busqueda}")
 
-            # 2. SEGUIMIENTO
             if st.session_state.menu_main == "SEGUIMIENTO":
 
             if st.session_state.menu_sub == "TRK":
@@ -296,7 +295,7 @@ if st.session_state.menu_main == "TRACKING":
                     st.info("No hay tareas para mostrar en el cronograma.")
                 else:
                     try:
-                        # ── COPIA SEGURA ─────────────────────────
+                        # ── PREPARAR DATA ───────────────────────
                         df_gantt = st.session_state.df_tareas.copy()
         
                         df_gantt = df_gantt.rename(columns={
@@ -309,7 +308,7 @@ if st.session_state.menu_main == "TRACKING":
                         df_gantt["Start"] = pd.to_datetime(df_gantt["Start"], errors="coerce")
                         df_gantt["Finish"] = pd.to_datetime(df_gantt["Finish"], errors="coerce")
         
-                        df_gantt = df_gantt.dropna(subset=["Start", "Finish", "Task"])
+                        df_gantt = df_gantt.dropna(subset=["Task", "Start", "Finish"])
         
                         if df_gantt.empty:
                             st.warning("Las tareas no tienen fechas válidas.")
@@ -322,6 +321,7 @@ if st.session_state.menu_main == "TRACKING":
                                 "Baja": "#6B7280"
                             }
         
+                            # ── GANTT ───────────────────────────
                             fig = ff.create_gantt(
                                 df_gantt,
                                 index_col="Priority",
@@ -417,10 +417,15 @@ if st.session_state.menu_main == "TRACKING":
         
                 df_editado = pd.DataFrame(grid_response["data"])
         
-                if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
+                if st.button(
+                    "💾 GUARDAR Y ACTUALIZAR CRONOGRAMA",
+                    use_container_width=True,
+                    type="primary"
+                ):
                     if guardar_en_github(df_editado):
                         st.session_state.df_tareas = df_editado
                         st.rerun()
+
 
 
 
