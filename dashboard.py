@@ -29,9 +29,11 @@ vars_css = {
 }[tema]
 
 # ── CSS MAESTRO (CON ANIMACIONES ELITE) ─────────────────────
+# ── CSS MAESTRO CORREGIDO (TABLAS + FIX DE LLAVES) ─────────────
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
     .block-container {{ 
@@ -46,28 +48,28 @@ st.markdown(f"""
         transition: background-color 0.8s ease, color 0.8s ease !important;
     }}
 
-    /* --- NUEVO: Forzar colores en el Data Editor --- */
-    [data-testid="stDataEditor"] {
+    /* --- FIX DATA EDITOR (TABLAS) --- */
+    [data-testid="stDataEditor"] {{
         background-color: {vars_css['card']} !important;
-    }
+        border: 1px solid {vars_css['border']} !important;
+    }}
 
-    /* Quitar el fondo blanco de las celdas del editor */
-    .stDataEditor div[data-testid="stCanvas"] {
+    /* Fondo de las celdas del editor */
+    .stDataEditor div[data-testid="stCanvas"] {{
         background-color: {vars_css['card']} !important;
-    }
+    }}
 
-    /* Asegurar que el texto sea legible en las celdas */
-    .stDataEditor div {
+    /* Color de texto en las celdas */
+    .stDataEditor div {{
         color: {vars_css['text']} !important;
-    }
+    }}
     
-    /* ── ANIMACIÓN DE ENTRADA (FADE & SLIDE) ── */
+    /* ── ANIMACIÓN DE ENTRADA ── */
     @keyframes fadeInUp {{
         from {{ opacity: 0; transform: translateY(15px); }}
         to {{ opacity: 1; transform: translateY(0); }}
     }}
 
-    /* Aplicar a los contenedores principales */
     [data-testid="stVerticalBlock"] > div {{
         animation: fadeInUp 0.6s ease-out;
     }}
@@ -81,17 +83,16 @@ st.markdown(f"""
         height: 42px !important;
         font-size: 11px !important;
         text-align: center !important;
-        line-height: 42px !important;
-        padding: 0px !important;
         letter-spacing: 2px;
         transition: all 0.3s ease;
     }}
+
     .stTextInput input:focus {{
         border-color: {vars_css['text']} !important;
         box-shadow: 0 0 10px rgba(240, 246, 252, 0.1);
     }}
 
-    /* BOTONES Y HOVER */
+    /* BOTONES */
     div.stButton>button {{
         background: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -104,6 +105,7 @@ st.markdown(f"""
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         width: 100%;
     }}
+
     div.stButton>button:hover {{
         background: {vars_css['text']} !important; 
         color: {vars_css['bg']} !important; 
@@ -384,6 +386,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
