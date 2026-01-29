@@ -1,7 +1,7 @@
 import os
 from nicegui import ui
 
-ui.label('Hola Railway 🚄🔥')
+ui.label('NiceGUI vivo en Railway')
 
 if __name__ in {"__main__", "__mp_main__"}:
     ui.run(
