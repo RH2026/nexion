@@ -10,6 +10,7 @@ from github import Github
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import time
+import plotly.express as px
 
 # ── CONFIGURACIÓN DE PÁGINA ──────────────────────────────────
 st.set_page_config(
@@ -271,9 +272,8 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
         st.subheader("SEGUIMIENTO > TRK")
 
     elif st.session_state.menu_sub == "GANTT":
-
         st.subheader("SEGUIMIENTO > GANTT")
-    
+
         # ── 1. CONFIGURACIÓN ─────────────────────────────
         TOKEN = st.secrets.get("GITHUB_TOKEN", None)
         REPO_NAME = "RH2026/nexion"
@@ -281,8 +281,8 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
         CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
     
         def obtener_fecha_mexico():
-            utc_ahora = datetime.datetime.now(datetime.timezone.utc)
-            return (utc_ahora - datetime.timedelta(hours=6)).date()
+            utc = datetime.datetime.now(datetime.timezone.utc)
+            return (utc - datetime.timedelta(hours=6)).date()
     
         # ── 2. FUNCIONES DE DATOS ────────────────────────
         def cargar_datos_seguro():
@@ -303,10 +303,10 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
                         df[c] = df[c].fillna(hoy)
     
                     return df[columnas]
-    
-                return pd.DataFrame(columns=columnas)
             except:
-                return pd.DataFrame(columns=columnas)
+                pass
+    
+            return pd.DataFrame(columns=columnas)
     
         def guardar_en_github(df):
             if not TOKEN:
@@ -327,7 +327,7 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
                     contenido.sha,
                     branch="main"
                 )
-                st.toast("🚀 Sincronizado con GitHub", icon="✅")
+                st.toast("🚀 Cronograma sincronizado", icon="✅")
                 return True
             except Exception as e:
                 st.error(f"Error GitHub: {e}")
@@ -337,64 +337,69 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
         if "df_tareas" not in st.session_state:
             st.session_state.df_tareas = cargar_datos_seguro()
     
-        # ── 4. GANTT (PLOTLY EXPRESS LIMPIO) ─────────────
+        # ── 4. GANTT (RESPETA TEMA) ──────────────────────
         if not st.session_state.df_tareas.empty:
-            try:
-                df_p = st.session_state.df_tareas.rename(columns={
-                    "TAREA": "Task",
-                    "FECHA": "Start",
-                    "FECHA_FIN": "Finish",
-                    "IMPORTANCIA": "Prioridad"
-                })
+            df_p = st.session_state.df_tareas.rename(columns={
+                "TAREA": "Task",
+                "FECHA": "Start",
+                "FECHA_FIN": "Finish",
+                "IMPORTANCIA": "Prioridad"
+            })
     
-                fig = px.timeline(
-                    df_p,
-                    x_start="Start",
-                    x_end="Finish",
-                    y="Task",
-                    color="Prioridad",
-                    color_discrete_map={
-                        "Urgente": "#FF3131",
-                        "Alta": "#FF914D",
-                        "Media": "#00D2FF",
-                        "Baja": "#444E5E"
-                    }
-                )
+            fig = px.timeline(
+                df_p,
+                x_start="Start",
+                x_end="Finish",
+                y="Task",
+                color="Prioridad",
+                color_discrete_map={
+                    "Urgente": "#FF3131",
+                    "Alta": "#FF914D",
+                    "Media": "#00D2FF",
+                    "Baja": "#444E5E"
+                }
+            )
     
-                fig.update_layout(
-                    template="plotly_dark" if tema == "oscuro" else "plotly_white",
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(
-                        family="Inter",
-                        color=vars_css["text"],
-                        size=12
-                    ),
-                    height=420,
-                    margin=dict(l=200, r=20, t=30, b=40),
-                    showlegend=True
-                )
+            fig.update_layout(
+                template="plotly_dark" if tema == "oscuro" else "plotly_white",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(
+                    family="Inter",
+                    color=vars_css["text"],
+                    size=12
+                ),
+                height=420,
+                margin=dict(l=200, r=20, t=30, b=40),
+                showlegend=True
+            )
     
-                fig.update_xaxes(
-                    gridcolor=vars_css["border"],
-                    tickfont=dict(color=vars_css["sub"])
-                )
+            fig.update_xaxes(
+                gridcolor=vars_css["border"],
+                tickfont=dict(color=vars_css["sub"])
+            )
     
-                fig.update_yaxes(
-                    autorange="reversed",
-                    tickfont=dict(color=vars_css["text"])
-                )
+            fig.update_yaxes(
+                autorange="reversed",
+                tickfont=dict(color=vars_css["text"])
+            )
     
-                st.plotly_chart(
-                    fig,
-                    use_container_width=True,
-                    config={"displayModeBar": False}
-                )
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     
-            except Exception as e:
-                st.error(f"Error en Gantt: {e}")
+        # ── 5. ZONA DE EDICIÓN (DISEÑADA, NO HACK) ────────
+        st.markdown(
+            f"""
+            <div style="
+                background:{vars_css['card']};
+                padding:16px;
+                border-radius:6px;
+                border:1px solid {vars_css['border']};
+                margin-top:20px;
+            ">
+            """,
+            unsafe_allow_html=True
+        )
     
-        # ── 5. TABLA (ESTABLE, SIN HACKS PELIGROSOS) ─────
         df_editado = st.data_editor(
             st.session_state.df_tareas,
             num_rows="dynamic",
@@ -413,11 +418,12 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
             }
         )
     
+        st.markdown("</div>", unsafe_allow_html=True)
+    
         if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
             if guardar_en_github(df_editado):
                 st.session_state.df_tareas = df_editado
                 st.rerun()
-
 
 # 3. REPORTES
 elif st.session_state.menu_main == "REPORTES":
@@ -438,6 +444,7 @@ elif st.session_state.menu_main == "FORMATOS":
         st.subheader("FORMATOS > SALIDA DE PT")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
