@@ -59,6 +59,20 @@ header, footer, [data-testid="stHeader"] {{
     height: 0px;
 }}
 
+/* PLACEHOLDER FIX (CLARO + OSCURO) */
+.stTextInput input::placeholder {
+    color: {vars_css['sub']} !important;
+    opacity: 1 !important;
+}
+
+.stTextInput input::-webkit-input-placeholder {
+    color: {vars_css['sub']} !important;
+}
+
+.stTextInput input:-ms-input-placeholder {
+    color: {vars_css['sub']} !important;
+}
+
 .block-container {{
     padding-top: 0.5rem !important;
     padding-bottom: 0rem !important;
@@ -278,6 +292,7 @@ elif st.session_state.menu_main == "FORMATOS":
         st.subheader("FORMATOS > SALIDA DE PT")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
