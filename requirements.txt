@@ -1,5 +1,6 @@
 nicegui
 pandas
 openpyxl
+requests
 
 
