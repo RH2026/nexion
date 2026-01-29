@@ -152,58 +152,132 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── HEADER ───────────────────────────────────────────────────
-c1, c2, c3 = st.columns([1.5, 5, .4], vertical_alignment="center")
+# ── HEADER Y NAVEGACIÓN PRINCIPAL ──────────────────────────
+header_zone = st.container()
+with header_zone:
+    c1, c2, c3 = st.columns([1.5, 5, 0.4], vertical_alignment="center")
 
-with c1:
-    st.image(vars_css["logo"], width=120)
-    st.markdown(
-        f"<p style='font-size:8px;letter-spacing:2px;color:{vars_css['sub']};margin-top:-20px;'>CORE INTELLIGENCE</p>",
-        unsafe_allow_html=True
-    )
+    with c1:
+        try:
+            st.image(vars_css["logo"], width=120)
+            st.markdown(
+                f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; "
+                f"margin-top:-22px; margin-left:2px;'>CORE INTELLIGENCE</p>",
+                unsafe_allow_html=True
+            )
+        except:
+            st.markdown(
+                "<h3 style='letter-spacing:4px; font-weight:800; margin:0;'>NEXION</h3>",
+                unsafe_allow_html=True
+            )
 
-with c2:
-    menus = ["TRACKING", "SEGUIMIENTO", "REPORTES", "FORMATOS"]
-    cols = st.columns(len(menus))
-    for i, m in enumerate(menus):
-        with cols[i]:
-            label = f"● {m}" if st.session_state.menu_main == m else m
-            if st.button(label, key=f"main_{m}"):
-                st.session_state.menu_main = m
-                st.session_state.menu_sub = "GENERAL"
-                st.rerun()
+    with c2:
+        cols_main = st.columns(4)
+        main_menus = ["TRACKING", "SEGUIMIENTO", "REPORTES", "FORMATOS"]
 
-with c3:
-    icon = "☾" if tema == "oscuro" else "☀"
-    if st.button(icon, key="theme_btn"):
-        st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
-        st.rerun()
+        for i, m in enumerate(main_menus):
+            with cols_main[i]:
+                label = f"● {m}" if st.session_state.menu_main == m else m
+                if st.button(label, key=f"main_{m}", use_container_width=True):
+                    st.session_state.menu_main = m
+                    st.session_state.menu_sub = "GENERAL"
+                    st.rerun()
 
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']};'>", unsafe_allow_html=True)
+    with c3:
+        icon = "☾" if tema == "oscuro" else "☀"
+        if st.button(icon, key="theme_btn"):
+            st.session_state.tema = "claro" if tema == "oscuro" else "oscuro"
+            st.rerun()
 
-# ── CONTENIDO ────────────────────────────────────────────────
-st.markdown("<div class='main-content'>", unsafe_allow_html=True)
+st.markdown(
+    f"<hr style='border-top:1px solid {vars_css['border']}; margin:-5px 0 10px;'>",
+    unsafe_allow_html=True
+)
 
-if st.session_state.menu_main == "TRACKING":
-    st.markdown("<div style='margin-top:8vh'></div>", unsafe_allow_html=True)
-    _, c, _ = st.columns([1, 1.6, 1])
-    with c:
+# ── SUB MENÚS (RESTAURADOS, ESTABLES, SIN ANIMACIÓN) ─────────
+sub_zone = st.container()
+with sub_zone:
+    sub_map = {
+        "TRACKING": [],
+        "SEGUIMIENTO": ["TRK", "GANTT"],
+        "REPORTES": ["APQ", "OPS", "OTD"],
+        "FORMATOS": ["SALIDA DE PT"]
+    }
+
+    current_subs = sub_map.get(st.session_state.menu_main, [])
+
+    if current_subs:
+        cols_sub = st.columns(len(current_subs) + 4)
+
+        for i, s in enumerate(current_subs):
+            with cols_sub[i]:
+                label = f"» {s}" if st.session_state.menu_sub == s else s
+                if st.button(label, key=f"sub_{s}", use_container_width=True):
+                    st.session_state.menu_sub = s
+                    st.rerun()
+
         st.markdown(
-            f"<p style='text-align:center;color:{vars_css['sub']};letter-spacing:8px;font-size:11px;'>OPERATIONAL QUERY</p>",
+            f"<hr style='border-top:1px solid {vars_css['border']}; "
+            f"opacity:0.3; margin:0px 0 20px;'>",
             unsafe_allow_html=True
         )
-        ref = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA", label_visibility="collapsed")
-        if st.button("EXECUTE SYSTEM SEARCH"):
-            st.toast(f"Buscando: {ref}")
+
+# ── CONTENIDO (ÚNICO BLOQUE ANIMADO) ────────────────────────
+st.markdown("<div class='main-content'>", unsafe_allow_html=True)
+
+# 1. TRACKING
+if st.session_state.menu_main == "TRACKING":
+    st.markdown("<div style='margin-top: 8vh;'></div>", unsafe_allow_html=True)
+    _, col_search, _ = st.columns([1, 1.6, 1])
+
+    with col_search:
+        st.markdown(
+            f"<p style='text-align:center; color:{vars_css['sub']}; "
+            f"font-size:11px; letter-spacing:8px; margin-bottom:20px;'>"
+            f"O P E R A T I O N A L &nbsp; Q U E R Y</p>",
+            unsafe_allow_html=True
+        )
+
+        busqueda = st.text_input(
+            "REF",
+            placeholder="INGRESE GUÍA O REFERENCIA...",
+            label_visibility="collapsed"
+        )
+
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+
+        if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
+            st.toast(f"Buscando: {busqueda}")
+
+# 2. SEGUIMIENTO
+elif st.session_state.menu_main == "SEGUIMIENTO":
+
+    if st.session_state.menu_sub == "TRK":
+        st.subheader("SEGUIMIENTO > TRK")
+
+    elif st.session_state.menu_sub == "GANTT":
+        st.subheader("SEGUIMIENTO > GANTT")
+        # ⬅️ AQUÍ VA TODO TU CÓDIGO GANTT ORIGINAL SIN CAMBIOS
+
+# 3. REPORTES
+elif st.session_state.menu_main == "REPORTES":
+
+    if st.session_state.menu_sub == "APQ":
+        st.subheader("REPORTES > APQ")
+
+    elif st.session_state.menu_sub == "OPS":
+        st.subheader("REPORTES > OPS")
+
+    elif st.session_state.menu_sub == "OTD":
+        st.subheader("REPORTES > OTD")
+
+# 4. FORMATOS
+elif st.session_state.menu_main == "FORMATOS":
+
+    if st.session_state.menu_sub == "SALIDA DE PT":
+        st.subheader("FORMATOS > SALIDA DE PT")
 
 st.markdown("</div>", unsafe_allow_html=True)
-
-# ── FOOTER ───────────────────────────────────────────────────
-st.markdown("""
-<div class="footer">
-NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
-</div>
-""", unsafe_allow_html=True)
 
 
 
