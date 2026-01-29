@@ -46,6 +46,21 @@ st.markdown(f"""
         transition: background-color 0.8s ease, color 0.8s ease !important;
     }}
 
+    /* --- NUEVO: Forzar colores en el Data Editor --- */
+    [data-testid="stDataEditor"] {
+        background-color: {vars_css['card']} !important;
+    }
+
+    /* Quitar el fondo blanco de las celdas del editor */
+    .stDataEditor div[data-testid="stCanvas"] {
+        background-color: {vars_css['card']} !important;
+    }
+
+    /* Asegurar que el texto sea legible en las celdas */
+    .stDataEditor div {
+        color: {vars_css['text']} !important;
+    }
+    
     /* ── ANIMACIÓN DE ENTRADA (FADE & SLIDE) ── */
     @keyframes fadeInUp {{
         from {{ opacity: 0; transform: translateY(15px); }}
@@ -293,7 +308,8 @@ with main_container:
                     fig.update_layout(
                         plot_bgcolor='rgba(0,0,0,0)', 
                         paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=color_texto_ejes, family="Inter", size=11),
+                        # Aquí forzamos el color del texto global del gráfico
+                        font=dict(color=vars_css['text'], family="Inter", size=11),
                         height=450,
                         margin=dict(l=180, r=20, t=40, b=80),
                         showlegend=True,
@@ -369,6 +385,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
