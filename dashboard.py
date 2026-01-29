@@ -34,37 +34,35 @@ vars_css = {
     "logo": "n2.png"
 }
 
-# ── CSS MAESTRO (RECONSTRUCCIÓN ESTABLE) ────────────────────────────
+# ── CSS MAESTRO (VERSIÓN FINAL A PRUEBA DE ERRORES) ────────────────────────────
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-
-/* 1. OCULTAR ELEMENTOS NATIVOS */
+/* 1. RESET ESTRUCTURAL */
 header, footer, [data-testid="stHeader"], [data-testid="stDecoration"] {{
-    display: none;
+    display: none !important;
 }}
 
-/* 2. LIMPIEZA DEL CONTENEDOR (SIN ROMPER LA ESTRUCTURA) */
-/* Esto elimina los bordes de "error" y "focus" nativos que causan el ruido visual */
-[data-baseweb="input"] {{
-    border: none !important;
+/* 2. MATAR EL CONTENEDOR NEGRO INTERNO */
+/* Atacamos el contenedor de BaseWeb que causa las esquinas negras */
+[data-baseweb="input"], [data-baseweb="input"] > div {{
     background-color: transparent !important;
-}}
-
-.stTextInput > div > div {{
     border: none !important;
-    background-color: transparent !important;
     box-shadow: none !important;
 }}
 
-/* 3. TU INPUT (EL PROTAGONISTA) */
+/* Eliminamos cualquier borde de enfoque de Streamlit */
+.stTextInput > div {{
+    border: none !important;
+    background-color: transparent !important;
+}}
+
+/* 3. RECONSTRUCCIÓN TOTAL DEL INPUT */
 .stTextInput input {{
+    /* Usamos !important en cada línea para ganar la prioridad */
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
-    
-    /* Borde limpio y controlado */
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
+    border-radius: 2px !important;
     
     height: 42px !important;
     font-size: 11px !important;
@@ -72,49 +70,39 @@ header, footer, [data-testid="stHeader"], [data-testid="stDecoration"] {{
     padding: 0 10px !important;
     letter-spacing: 2px;
     
-    /* Evita que el navegador ponga bordes extra al escribir */
+    /* Esto elimina el anillo de enfoque del navegador */
     outline: none !important;
-    transition: all 0.2s ease;
+    box-shadow: none !important;
+    appearance: none !important;
 }}
 
+/* Forzar estado Focus sin bordes raros */
 .stTextInput input:focus {{
-    border-color: {vars_css['text']} !important;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05) !important;
+    border: 1px solid {vars_css['text']} !important;
+    box-shadow: 0 0 12px rgba(0,0,0,0.1) !important;
+    outline: none !important;
 }}
 
-/* 4. BOTONES (RESTABLECIDOS) */
+/* 4. FIX PARA EL TEXTO "OPERATIONAL QUERY" */
+/* Aseguramos que el texto superior no se pierda en el fondo */
+p {{
+    margin-bottom: 0px !important;
+}}
+
+/* 5. BOTONES */
 div.stButton > button {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    font-size: 10px !important;
+    border-radius: 2px !important;
     height: 36px !important;
-    width: 100%;
-    letter-spacing: 1px;
+    font-weight: 700 !important;
+    transition: all 0.3s ease;
 }}
 
 div.stButton > button:hover {{
     background: {vars_css['text']} !important;
     color: {vars_css['bg']} !important;
-}}
-
-/* 5. FOOTER FIX */
-.footer {{
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: {vars_css['bg']};
-    color: {vars_css['sub']};
-    text-align: center;
-    padding: 10px;
-    font-size: 9px;
-    letter-spacing: 2px;
-    border-top: 1px solid {vars_css['border']};
-    z-index: 100;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -246,6 +234,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
