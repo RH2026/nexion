@@ -13,6 +13,24 @@ import time
 import plotly.express as px
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
+# ── SESSION STATE BASE ─────────────────────────────────────
+if "df_tareas" not in st.session_state:
+    st.session_state.df_tareas = pd.DataFrame(
+        columns=[
+            "TAREA",
+            "FECHA",
+            "FECHA_FIN",
+            "IMPORTANCIA"
+        ]
+    )
+
+if "menu_main" not in st.session_state:
+    st.session_state.menu_main = "TRACKING"
+
+if "menu_sub" not in st.session_state:
+    st.session_state.menu_sub = "TRK"
+
+
 # ── CONFIGURACIÓN DE PÁGINA ──────────────────────────────────
 st.set_page_config(
     page_title="NEXION | Core",
@@ -443,6 +461,7 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
                 st.rerun()
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
