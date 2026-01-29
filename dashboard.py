@@ -223,11 +223,11 @@ with main_container:
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
                 st.toast(f"Buscando: {busqueda}")
 
+    
     # 2. SEGUIMIENTO
     elif st.session_state.menu_main == "SEGUIMIENTO":
         if st.session_state.menu_sub == "TRK":
             st.subheader("SEGUIMIENTO > TRK")
-            # ESPACIO PARA TU CONTENIDO
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
             
@@ -235,62 +235,17 @@ with main_container:
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
-            CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
+            CSV_URL = f"https://raw.githubusercontent.com/{{REPO_NAME}}/main/{{FILE_PATH}}"
             
             def obtener_fecha_mexico():
                 utc_ahora = datetime.datetime.now(datetime.timezone.utc)
                 return (utc_ahora - datetime.timedelta(hours=6)).date()
             
-            # --- 2. FUNCIONES DE DATOS ---
-            def cargar_datos_seguro():
-                columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
-                hoy = obtener_fecha_mexico()
-                try:
-                    response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
-                    if response.status_code == 200:
-                        df = pd.read_csv(StringIO(response.text))
-                        df.columns = [c.strip().upper() for c in df.columns]
-                        for col in columnas_base:
-                            if col not in df.columns: df[col] = ""
-                        
-                        for col in ['FECHA', 'FECHA_FIN']:
-                            df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
-                            df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
-                        
-                        return df[columnas_base]
-                    return pd.DataFrame(columns=columnas_base)
-                except:
-                    return pd.DataFrame(columns=columnas_base)
-            
-            def guardar_en_github(df):
-                if not TOKEN:
-                    st.error("Error: GITHUB_TOKEN no configurado"); return False
-                try:
-                    g = Github(TOKEN)
-                    repo = g.get_repo(REPO_NAME)
-                    df_save = df.copy()
-                    df_save['FECHA'] = df_save['FECHA'].astype(str)
-                    df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
-                    csv_data = df_save.to_csv(index=False)
-                    contents = repo.get_contents(FILE_PATH, ref="main")
-                    repo.update_file(
-                        contents.path, 
-                        f"Actualización NEXION {obtener_fecha_mexico()}", 
-                        csv_data, 
-                        contents.sha, 
-                        branch="main"
-                    )
-                    st.toast("🚀 ¡Sincronizado con GitHub!", icon="✅")
-                    return True
-                except Exception as e:
-                    st.error(f"Error al sincronizar: {e}")
-                    return False
-            
-            # --- 3. GESTIÓN DE ESTADO ---
+            # --- 2. CARGA DE DATOS ---
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
-            
-            # --- 4. GRÁFICO GANTT (SIN FILTROS, DIRECTO AL GRANO) ---
+
+            # --- 4. GRÁFICO GANTT (FUERZA BRUTA DE COLOR) ---
             if not st.session_state.df_tareas.empty:
                 try:
                     df_p = st.session_state.df_tareas.copy()
@@ -300,54 +255,60 @@ with main_container:
                     fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', 
                                         group_tasks=True, showgrid_x=True, showgrid_y=True)
                     
-                    # Forzado manual de colores en el objeto Plotly
                     fig.update_layout(
-                        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=vars_css['text']), height=450,
-                        margin=dict(l=180, r=20, t=40, b=80), showlegend=True
+                        plot_bgcolor='rgba(0,0,0,0)', 
+                        paper_bgcolor='rgba(0,0,0,0)', 
+                        font=dict(color=vars_css['text'], family="Inter"),
+                        height=450,
+                        margin=dict(l=180, r=20, t=40, b=80),
+                        showlegend=True,
+                        legend=dict(font=dict(color=vars_css['sub']))
                     )
+                    
                     fig.update_yaxes(tickfont=dict(color=vars_css['text']), gridcolor=vars_css['border'])
                     fig.update_xaxes(tickfont=dict(color=vars_css['sub']), gridcolor=vars_css['border'])
 
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                except:
-                    st.write("Error en gráfico")
+                except Exception as e:
+                    st.error("Error en gráfico")
 
-            # --- 5. EL HACK DEFINITIVO PARA LA TABLA (FUERZA BRUTA) ---
-            # Inyectamos CSS que rompe el Shadow DOM del editor
-            filtro = "invert(0.9) hue-rotate(180deg) brightness(1.2)" if tema == "oscuro" else "none"
+            # --- 5. HACK DE CSS PARA FORZAR MODO OSCURO EN TABLA ---
+            filtro_tabla = "invert(0.9) hue-rotate(180deg) brightness(1.2)" if tema == "oscuro" else "none"
             
             st.markdown(f"""
                 <style>
-                /* Forzamos que el fondo del editor sea el de tu variable 'card' */
-                div[data-testid="stDataEditor"] {{
+                [data-testid="stDataEditor"] {{
                     background-color: {vars_css['card']} !important;
                 }}
-                /* ESTO ES LO QUE MANDA: Invierte el canvas si es modo oscuro */
-                div[data-testid="stDataEditor"] canvas {{
-                    filter: {filtro} !important;
+                [data-testid="stDataEditor"] canvas {{
+                    filter: {filtro_tabla} !important;
                 }}
-                /* Eliminamos cualquier borde blanco que Streamlit quiera meter */
                 [data-testid="stVerticalBlockBorderWrapper"] {{
                     border: none !important;
-                    background-color: transparent !important;
                 }}
                 </style>
                 """, unsafe_allow_html=True)
 
-            # Editor limpio
+            # --- 6. EDITOR DE DATOS ---
             df_editado = st.data_editor(
                 st.session_state.df_tareas,
                 num_rows="dynamic",
                 use_container_width=True,
                 key="nexion_editor_final",
                 hide_index=True,
-                column_config={{
+                column_config={
                     "FECHA": st.column_config.DateColumn("📆 Inicio"),
                     "FECHA_FIN": st.column_config.DateColumn("🏁 Fin"),
                     "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
-                }}
+                    "TAREA": st.column_config.TextColumn("📝 Tarea"),
+                    "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus")
+                }
             )
+
+            if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
+                if guardar_en_github(df_editado):
+                    st.session_state.df_tareas = df_editado
+                    st.rerun()
     
     # 3. REPORTES
     elif st.session_state.menu_main == "REPORTES":
@@ -369,6 +330,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
