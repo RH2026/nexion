@@ -273,9 +273,10 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
         st.subheader("SEGUIMIENTO > TRK")
 
     elif st.session_state.menu_sub == "GANTT":
-        st.subheader("SEGUIMIENTO > GANTT")
 
-        # ── 1. CONFIGURACIÓN ─────────────────────────────
+        st.subheader("SEGUIMIENTO > GANTT")
+    
+        # ── CONFIGURACIÓN ─────────────────────────────
         TOKEN = st.secrets.get("GITHUB_TOKEN", None)
         REPO_NAME = "RH2026/nexion"
         FILE_PATH = "tareas.csv"
@@ -285,29 +286,24 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
             utc = datetime.datetime.now(datetime.timezone.utc)
             return (utc - datetime.timedelta(hours=6)).date()
     
-        # ── 2. FUNCIONES DE DATOS ────────────────────────
-        def cargar_datos_seguro():
-            columnas = ["FECHA", "FECHA_FIN", "IMPORTANCIA", "TAREA", "ULTIMO ACCION"]
+        # ── CARGA DE DATOS ─────────────────────────────
+        def cargar_datos():
+            cols = ["FECHA", "FECHA_FIN", "IMPORTANCIA", "TAREA", "ULTIMO ACCION"]
             hoy = obtener_fecha_mexico()
             try:
                 r = requests.get(f"{CSV_URL}?t={time.time()}")
                 if r.status_code == 200:
                     df = pd.read_csv(StringIO(r.text))
                     df.columns = [c.strip().upper() for c in df.columns]
-    
-                    for c in columnas:
+                    for c in cols:
                         if c not in df.columns:
                             df[c] = ""
-    
                     for c in ["FECHA", "FECHA_FIN"]:
-                        df[c] = pd.to_datetime(df[c], errors="coerce").dt.date
-                        df[c] = df[c].fillna(hoy)
-    
-                    return df[columnas]
+                        df[c] = pd.to_datetime(df[c], errors="coerce").dt.date.fillna(hoy)
+                    return df[cols]
             except:
                 pass
-    
-            return pd.DataFrame(columns=columnas)
+            return pd.DataFrame(columns=cols)
     
         def guardar_en_github(df):
             if not TOKEN:
@@ -320,25 +316,24 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
                 df_save["FECHA"] = df_save["FECHA"].astype(str)
                 df_save["FECHA_FIN"] = df_save["FECHA_FIN"].astype(str)
                 csv = df_save.to_csv(index=False)
-                contenido = repo.get_contents(FILE_PATH, ref="main")
+                content = repo.get_contents(FILE_PATH, ref="main")
                 repo.update_file(
-                    contenido.path,
+                    content.path,
                     f"Actualización {obtener_fecha_mexico()}",
                     csv,
-                    contenido.sha,
+                    content.sha,
                     branch="main"
                 )
-                st.toast("🚀 Cronograma sincronizado", icon="✅")
+                st.toast("🚀 Sincronizado", icon="✅")
                 return True
             except Exception as e:
-                st.error(f"Error GitHub: {e}")
+                st.error(f"GitHub: {e}")
                 return False
     
-        # ── 3. ESTADO ────────────────────────────────────
         if "df_tareas" not in st.session_state:
-            st.session_state.df_tareas = cargar_datos_seguro()
+            st.session_state.df_tareas = cargar_datos()
     
-        # ── 4. GANTT (RESPETA TEMA) ──────────────────────
+        # ── GANTT (ESTABLE) ────────────────────────────
         if not st.session_state.df_tareas.empty:
             df_p = st.session_state.df_tareas.rename(columns={
                 "TAREA": "Task",
@@ -365,61 +360,49 @@ elif st.session_state.menu_main == "SEGUIMIENTO":
                 template="plotly_dark" if tema == "oscuro" else "plotly_white",
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(
-                    family="Inter",
-                    color=vars_css["text"],
-                    size=12
-                ),
+                font=dict(color=vars_css["text"], family="Inter"),
                 height=420,
-                margin=dict(l=200, r=20, t=30, b=40),
-                showlegend=True
+                margin=dict(l=200, r=20, t=30, b=40)
             )
     
-            fig.update_xaxes(
-                gridcolor=vars_css["border"],
-                tickfont=dict(color=vars_css["sub"])
-            )
-    
-            fig.update_yaxes(
-                autorange="reversed",
-                tickfont=dict(color=vars_css["text"])
-            )
-    
+            fig.update_yaxes(autorange="reversed")
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     
-        # ── 5. ZONA DE EDICIÓN (DISEÑADA, NO HACK) ────────
-        st.markdown(
-            f"""
-            <div style="
-                background:{vars_css['card']};
-                padding:16px;
-                border-radius:6px;
-                border:1px solid {vars_css['border']};
-                margin-top:20px;
-            ">
-            """,
-            unsafe_allow_html=True
+        # ── AG GRID (TEMA REAL OSCURO) ──────────────────
+        gb = GridOptionsBuilder.from_dataframe(st.session_state.df_tareas)
+    
+        gb.configure_default_column(
+            editable=True,
+            resizable=True,
+            sortable=True,
+            filter=True
         )
     
-        df_editado = st.data_editor(
+        gb.configure_column("IMPORTANCIA", cellEditor="agSelectCellEditor",
+                            cellEditorParams={"values": ["Baja", "Media", "Alta", "Urgente"]})
+    
+        gb.configure_column("FECHA", type=["dateColumnFilter"])
+        gb.configure_column("FECHA_FIN", type=["dateColumnFilter"])
+    
+        gb.configure_grid_options(
+            domLayout="normal",
+            rowHeight=38,
+            headerHeight=42
+        )
+    
+        grid_theme = "ag-theme-alpine-dark" if tema == "oscuro" else "ag-theme-alpine"
+    
+        grid_response = AgGrid(
             st.session_state.df_tareas,
-            num_rows="dynamic",
-            use_container_width=True,
-            key="editor_gantt",
-            hide_index=True,
-            column_config={
-                "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
-                "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
-                "IMPORTANCIA": st.column_config.SelectboxColumn(
-                    "🚦 Prioridad",
-                    options=["Baja", "Media", "Alta", "Urgente"]
-                ),
-                "TAREA": st.column_config.TextColumn("📝 Tarea"),
-                "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus")
-            }
+            gridOptions=gb.build(),
+            theme=grid_theme,
+            update_mode=GridUpdateMode.VALUE_CHANGED,
+            fit_columns_on_grid_load=True,
+            height=350,
+            allow_unsafe_jscode=True
         )
     
-        st.markdown("</div>", unsafe_allow_html=True)
+        df_editado = pd.DataFrame(grid_response["data"])
     
         if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
             if guardar_en_github(df_editado):
@@ -445,6 +428,7 @@ elif st.session_state.menu_main == "FORMATOS":
         st.subheader("FORMATOS > SALIDA DE PT")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
