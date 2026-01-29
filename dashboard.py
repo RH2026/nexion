@@ -283,7 +283,7 @@ if st.session_state.menu_main == "TRACKING":
             st.toast(f"Buscando: {busqueda}")
 
             # 2. SEGUIMIENTO
-            elif st.session_state.menu_main == "SEGUIMIENTO":
+            if st.session_state.menu_main == "SEGUIMIENTO":
             
                 if st.session_state.menu_sub == "TRK":
                     st.subheader("SEGUIMIENTO > TRK")
@@ -425,6 +425,7 @@ if st.session_state.menu_main == "TRACKING":
                         if guardar_en_github(df_editado):
                             st.session_state.df_tareas = df_editado
                             st.rerun()
+
 
 
 
