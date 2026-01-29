@@ -34,73 +34,66 @@ vars_css = {
     "logo": "n2.png"
 }
 
-# ── CSS MAESTRO (LIMPIEZA TOTAL DE BORDES) ────────────────────────────
+# ── CSS MAESTRO (RECONSTRUCCIÓN ESTABLE) ────────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 /* 1. OCULTAR ELEMENTOS NATIVOS */
 header, footer, [data-testid="stHeader"], [data-testid="stDecoration"] {{
-    visibility: hidden;
     display: none;
-    height: 0px;
 }}
 
-/* 2. ELIMINAR EL BORDE NEGRO/ROJO INTERNO (ESTO ES LO CLAVE) */
-/* Atacamos todas las capas posibles que Streamlit pone sobre el input */
-div[data-baseweb="input"], 
-div[data-baseweb="input"] > div, 
-.stTextInput > div,
-.stTextInput > div > div,
-.stTextInput > div > div > div {{
+/* 2. LIMPIEZA DEL CONTENEDOR (SIN ROMPER LA ESTRUCTURA) */
+/* Esto elimina los bordes de "error" y "focus" nativos que causan el ruido visual */
+[data-baseweb="input"] {{
+    border: none !important;
+    background-color: transparent !important;
+}}
+
+.stTextInput > div > div {{
     border: none !important;
     background-color: transparent !important;
     box-shadow: none !important;
-    outline: none !important;
 }}
 
-/* 3. TU INPUT PERSONALIZADO */
+/* 3. TU INPUT (EL PROTAGONISTA) */
 .stTextInput input {{
-    background: {vars_css['card']} !important;
+    background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     
-    /* El único borde que debe existir */
+    /* Borde limpio y controlado */
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
+    border-radius: 4px !important;
     
     height: 42px !important;
     font-size: 11px !important;
     text-align: center !important;
     padding: 0 10px !important;
     letter-spacing: 2px;
-    transition: all 0.2s ease-out;
+    
+    /* Evita que el navegador ponga bordes extra al escribir */
+    outline: none !important;
+    transition: all 0.2s ease;
 }}
 
-/* Estado Focus y Hover */
 .stTextInput input:focus {{
     border-color: {vars_css['text']} !important;
-    box-shadow: 0 0 8px rgba(0,0,0,0.05) !important;
-    outline: none !important;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05) !important;
 }}
 
-/* Forzar que el estado de error no se vea rojo */
-.stTextInput input:invalid, .stTextInput input:focus:invalid {{
-    border-color: {vars_css['border']} !important;
-    box-shadow: none !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* 4. BOTONES Y ESTILO GENERAL */
+/* 4. BOTONES (RESTABLECIDOS) */
 div.stButton > button {{
     background: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
+    border-radius: 4px !important;
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 32px !important;
-    transition: all 0.2s ease;
+    height: 36px !important;
+    width: 100%;
+    letter-spacing: 1px;
 }}
 
 div.stButton > button:hover {{
@@ -108,7 +101,7 @@ div.stButton > button:hover {{
     color: {vars_css['bg']} !important;
 }}
 
-/* 5. FOOTER */
+/* 5. FOOTER FIX */
 .footer {{
     position: fixed;
     bottom: 0;
@@ -117,7 +110,7 @@ div.stButton > button:hover {{
     background-color: {vars_css['bg']};
     color: {vars_css['sub']};
     text-align: center;
-    padding: 12px;
+    padding: 10px;
     font-size: 9px;
     letter-spacing: 2px;
     border-top: 1px solid {vars_css['border']};
@@ -253,6 +246,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
