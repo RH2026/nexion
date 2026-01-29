@@ -258,16 +258,25 @@ with sub_zone:
 # ── CONTENIDO (ÚNICO BLOQUE ANIMADO) ────────────────────────
 st.markdown("<div class='main-content'>", unsafe_allow_html=True)
 
-# 1. TRACKING
+# ───────────────── TRACKING ─────────────────
 if st.session_state.menu_main == "TRACKING":
+
     st.markdown("<div style='margin-top: 8vh;'></div>", unsafe_allow_html=True)
     _, col_search, _ = st.columns([1, 1.6, 1])
 
     with col_search:
         st.markdown(
-            f"<p style='text-align:center; color:{vars_css['sub']}; "
-            f"font-size:11px; letter-spacing:8px; margin-bottom:20px;'>"
-            f"O P E R A T I O N A L &nbsp; Q U E R Y</p>",
+            f"""
+            <p style="
+                text-align:center;
+                color:{vars_css['sub']};
+                font-size:11px;
+                letter-spacing:8px;
+                margin-bottom:20px;
+            ">
+            O P E R A T I O N A L &nbsp; Q U E R Y
+            </p>
+            """,
             unsafe_allow_html=True
         )
 
@@ -282,149 +291,159 @@ if st.session_state.menu_main == "TRACKING":
         if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
             st.toast(f"Buscando: {busqueda}")
 
-            if st.session_state.menu_main == "SEGUIMIENTO":
 
-            if st.session_state.menu_sub == "TRK":
-                st.subheader("SEGUIMIENTO > TRK")
-        
-            elif st.session_state.menu_sub == "GANTT":
-                st.subheader("SEGUIMIENTO > GANTT")
-        
-                # ── VALIDACIÓN DATA ─────────────────────────────
-                if st.session_state.df_tareas.empty:
-                    st.info("No hay tareas para mostrar en el cronograma.")
+# ───────────────── SEGUIMIENTO ─────────────────
+elif st.session_state.menu_main == "SEGUIMIENTO":
+
+    # ───────────── TRK ─────────────
+    if st.session_state.menu_sub == "TRK":
+        st.subheader("SEGUIMIENTO > TRK")
+        st.info("Aquí va el contenido de TRK")
+
+    # ───────────── GANTT ─────────────
+    elif st.session_state.menu_sub == "GANTT":
+        st.subheader("SEGUIMIENTO > GANTT")
+
+        # ── VALIDACIÓN DATA ─────────────────────────
+        if st.session_state.df_tareas.empty:
+            st.info("No hay tareas para mostrar en el cronograma.")
+
+        else:
+            try:
+                # ── PREPARAR DATA ─────────────────────
+                df_gantt = st.session_state.df_tareas.copy()
+
+                df_gantt = df_gantt.rename(columns={
+                    "TAREA": "Task",
+                    "FECHA": "Start",
+                    "FECHA_FIN": "Finish",
+                    "IMPORTANCIA": "Priority"
+                })
+
+                df_gantt["Start"] = pd.to_datetime(df_gantt["Start"], errors="coerce")
+                df_gantt["Finish"] = pd.to_datetime(df_gantt["Finish"], errors="coerce")
+
+                df_gantt = df_gantt.dropna(subset=["Task", "Start", "Finish"])
+
+                if df_gantt.empty:
+                    st.warning("Las tareas no tienen fechas válidas.")
+
                 else:
-                    try:
-                        # ── PREPARAR DATA ───────────────────────
-                        df_gantt = st.session_state.df_tareas.copy()
-        
-                        df_gantt = df_gantt.rename(columns={
-                            "TAREA": "Task",
-                            "FECHA": "Start",
-                            "FECHA_FIN": "Finish",
-                            "IMPORTANCIA": "Priority"
-                        })
-        
-                        df_gantt["Start"] = pd.to_datetime(df_gantt["Start"], errors="coerce")
-                        df_gantt["Finish"] = pd.to_datetime(df_gantt["Finish"], errors="coerce")
-        
-                        df_gantt = df_gantt.dropna(subset=["Task", "Start", "Finish"])
-        
-                        if df_gantt.empty:
-                            st.warning("Las tareas no tienen fechas válidas.")
-                        else:
-                            # ── COLORES ──────────────────────────
-                            colors = {
-                                "Urgente": "#FF3131",
-                                "Alta": "#FF914D",
-                                "Media": "#00D2FF",
-                                "Baja": "#6B7280"
-                            }
-        
-                            # ── GANTT ───────────────────────────
-                            fig = ff.create_gantt(
-                                df_gantt,
-                                index_col="Priority",
-                                colors=colors,
-                                group_tasks=True,
-                                showgrid_x=True,
-                                showgrid_y=False
+                    # ── COLORES ───────────────────────
+                    colors = {
+                        "Urgente": "#FF3131",
+                        "Alta": "#FF914D",
+                        "Media": "#00D2FF",
+                        "Baja": "#6B7280"
+                    }
+
+                    # ── GANTT ─────────────────────────
+                    fig = ff.create_gantt(
+                        df_gantt,
+                        index_col="Priority",
+                        colors=colors,
+                        group_tasks=True,
+                        showgrid_x=True,
+                        showgrid_y=False
+                    )
+
+                    fig.update_layout(
+                        height=420,
+                        margin=dict(l=220, r=30, t=40, b=60),
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        font=dict(
+                            family="Inter",
+                            size=11,
+                            color=vars_css["text"]
+                        ),
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=1.02,
+                            xanchor="right",
+                            x=1,
+                            font=dict(
+                                color=vars_css["sub"],
+                                size=10
                             )
-        
-                            fig.update_layout(
-                                height=420,
-                                margin=dict(l=220, r=30, t=40, b=60),
-                                plot_bgcolor="rgba(0,0,0,0)",
-                                paper_bgcolor="rgba(0,0,0,0)",
-                                font=dict(
-                                    family="Inter",
-                                    size=11,
-                                    color=vars_css["text"]
-                                ),
-                                legend=dict(
-                                    orientation="h",
-                                    yanchor="bottom",
-                                    y=1.02,
-                                    xanchor="right",
-                                    x=1,
-                                    font=dict(
-                                        color=vars_css["sub"],
-                                        size=10
-                                    )
-                                )
-                            )
-        
-                            fig.update_xaxes(
-                                gridcolor=vars_css["border"],
-                                linecolor=vars_css["border"],
-                                tickfont=dict(color=vars_css["sub"], size=10),
-                                zeroline=False,
-                                dtick="D1",
-                                tickformat="%d %b"
-                            )
-        
-                            fig.update_yaxes(
-                                autorange="reversed",
-                                tickfont=dict(color=vars_css["text"], size=11),
-                                linecolor=vars_css["border"]
-                            )
-        
-                            st.plotly_chart(
-                                fig,
-                                use_container_width=True,
-                                config={"displayModeBar": False}
-                            )
-        
-                    except Exception as e:
-                        st.error(f"Error en Gantt: {e}")
-        
-                # ── AG GRID ─────────────────────────────────────
-                gb = GridOptionsBuilder.from_dataframe(st.session_state.df_tareas)
-        
-                gb.configure_default_column(
-                    editable=True,
-                    resizable=True,
-                    sortable=True,
-                    filter=True
-                )
-        
-                gb.configure_column(
-                    "IMPORTANCIA",
-                    cellEditor="agSelectCellEditor",
-                    cellEditorParams={"values": ["Baja", "Media", "Alta", "Urgente"]}
-                )
-        
-                gb.configure_column("FECHA", type=["dateColumnFilter"])
-                gb.configure_column("FECHA_FIN", type=["dateColumnFilter"])
-        
-                gb.configure_grid_options(
-                    domLayout="normal",
-                    rowHeight=38,
-                    headerHeight=42
-                )
-        
-                grid_theme = "ag-theme-alpine-dark" if tema == "oscuro" else "ag-theme-alpine"
-        
-                grid_response = AgGrid(
-                    st.session_state.df_tareas,
-                    gridOptions=gb.build(),
-                    theme=grid_theme,
-                    update_mode=GridUpdateMode.VALUE_CHANGED,
-                    fit_columns_on_grid_load=True,
-                    height=350,
-                    allow_unsafe_jscode=True
-                )
-        
-                df_editado = pd.DataFrame(grid_response["data"])
-        
-                if st.button(
-                    "💾 GUARDAR Y ACTUALIZAR CRONOGRAMA",
-                    use_container_width=True,
-                    type="primary"
-                ):
-                    if guardar_en_github(df_editado):
-                        st.session_state.df_tareas = df_editado
-                        st.rerun()
+                        )
+                    )
+
+                    fig.update_xaxes(
+                        gridcolor=vars_css["border"],
+                        linecolor=vars_css["border"],
+                        tickfont=dict(color=vars_css["sub"], size=10),
+                        zeroline=False,
+                        dtick="D1",
+                        tickformat="%d %b"
+                    )
+
+                    fig.update_yaxes(
+                        autorange="reversed",
+                        tickfont=dict(color=vars_css["text"], size=11),
+                        linecolor=vars_css["border"]
+                    )
+
+                    st.plotly_chart(
+                        fig,
+                        use_container_width=True,
+                        config={"displayModeBar": False}
+                    )
+
+            except Exception as e:
+                st.error(f"Error en Gantt: {e}")
+
+        # ── AG GRID ─────────────────────────────────
+        gb = GridOptionsBuilder.from_dataframe(st.session_state.df_tareas)
+
+        gb.configure_default_column(
+            editable=True,
+            resizable=True,
+            sortable=True,
+            filter=True
+        )
+
+        gb.configure_column(
+            "IMPORTANCIA",
+            cellEditor="agSelectCellEditor",
+            cellEditorParams={"values": ["Baja", "Media", "Alta", "Urgente"]}
+        )
+
+        gb.configure_column("FECHA", type=["dateColumnFilter"])
+        gb.configure_column("FECHA_FIN", type=["dateColumnFilter"])
+
+        gb.configure_grid_options(
+            domLayout="normal",
+            rowHeight=38,
+            headerHeight=42
+        )
+
+        grid_theme = "ag-theme-alpine-dark" if tema == "oscuro" else "ag-theme-alpine"
+
+        grid_response = AgGrid(
+            st.session_state.df_tareas,
+            gridOptions=gb.build(),
+            theme=grid_theme,
+            update_mode=GridUpdateMode.VALUE_CHANGED,
+            fit_columns_on_grid_load=True,
+            height=350,
+            allow_unsafe_jscode=True
+        )
+
+        df_editado = pd.DataFrame(grid_response["data"])
+
+        if st.button(
+            "💾 GUARDAR Y ACTUALIZAR CRONOGRAMA",
+            use_container_width=True,
+            type="primary"
+        ):
+            if guardar_en_github(df_editado):
+                st.session_state.df_tareas = df_editado
+                st.rerun()
+
+st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
