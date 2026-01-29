@@ -212,7 +212,7 @@ with main_container:
             # ESPACIO PARA TU CONTENIDO
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # ESPACIO PARA BLOQUE GANTT---
+            
             # --- 1. CONFIGURACIÓN ---
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
@@ -250,14 +250,10 @@ with main_container:
                 try:
                     g = Github(TOKEN)
                     repo = g.get_repo(REPO_NAME)
-                    
-                    # Preparar datos para CSV
                     df_save = df.copy()
                     df_save['FECHA'] = df_save['FECHA'].astype(str)
                     df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
                     csv_data = df_save.to_csv(index=False)
-                    
-                    # Obtener SHA actualizado y guardar
                     contents = repo.get_contents(FILE_PATH, ref="main")
                     repo.update_file(
                         contents.path, 
@@ -276,34 +272,40 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-            # --- 4 GRÁFICO GANTT ---
+            # --- 4. GRÁFICO GANTT (CORREGIDO) ---
             if not st.session_state.df_tareas.empty:
                 try:
                     df_p = st.session_state.df_tareas.copy()
+                    # Renombramos para que Figure Factory lo entienda
                     df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
+                    
+                    # Colores NEXION
                     colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
                     
-                    # Crear Gantt con Plotly
-                    fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', group_tasks=True, showgrid_x=True, showgrid_y=True)
+                    # Crear Gantt
+                    fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', 
+                                        group_tasks=True, showgrid_x=True, showgrid_y=True)
+                    
                     fig.update_layout(
                         plot_bgcolor='rgba(0,0,0,0)', 
                         paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=v['text'], family="Inter"),
-                        height=350,
-                        margin=dict(l=150, r=20, t=20, b=50)
+                        font=dict(color=vars_css['text'], family="Inter"), # <--- CORREGIDO v por vars_css
+                        height=400,
+                        margin=dict(l=150, r=20, t=20, b=50),
+                        xaxis=dict(tickfont=dict(color=vars_css['sub']), gridcolor=vars_css['border']),
+                        yaxis=dict(tickfont=dict(color=vars_css['sub']), gridcolor=vars_css['border'])
                     )
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                except:
-                    st.info("💡 Consejo: Completa las fechas de Inicio y Fin para ver el gráfico.")
+                except Exception as e:
+                    st.info(f"💡 Consejo: Completa las fechas de Inicio y Fin para ver el gráfico. (Info: {e})")
             
-            # --- 5. EDITOR Y BOTÓN ÚNICO ---
+            # --- 5. EDITOR ---
             with st.container(border=True):
-                # El editor se alimenta y mantiene lo que el usuario escribe
                 df_editado = st.data_editor(
                     st.session_state.df_tareas,
                     num_rows="dynamic",
                     use_container_width=True,
-                    key="nexion_editor_v7",
+                    key="nexion_editor_final",
                     column_config={
                         "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
                         "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
@@ -314,15 +316,9 @@ with main_container:
                     hide_index=True
                 )
             
-                # BOTÓN ÚNICO DE GUARDADO Y ACTUALIZACIÓN
                 if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
-                    # 1. Guardamos los cambios en GitHub
-                    exito = guardar_en_github(df_editado)
-                    
-                    if exito:
-                        # 2. Actualizamos la memoria de la app con lo que acabamos de editar
+                    if guardar_en_github(df_editado):
                         st.session_state.df_tareas = df_editado
-                        # 3. Forzamos el refresco para que el gráfico se redibuje con los nuevos datos
                         st.rerun()
     
     # 3. REPORTES
@@ -345,6 +341,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
