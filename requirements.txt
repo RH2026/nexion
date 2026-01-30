@@ -3,6 +3,8 @@ pandas
 openpyxl
 requests
 plotly
+uuid
+
 
 
 
