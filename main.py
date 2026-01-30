@@ -56,7 +56,7 @@ def navigate(s, m, sub_val=None):
 # ── COMPONENTES REFRESCABLES (CONTENIDO INTERNO) ──────
 @ui.refreshable
 def header_content():
-    s = app.storage.user.get('state', {'main': 'TRACKING', 'sub': 'GENERAL', 'dark': True})
+    s = app.storage.user.get('state', {'main': 'perro', 'sub': 'GENERAL', 'dark': True})
     with ui.row().classes("w-full items-center justify-between"):
         ui.label("NEXION").style("letter-spacing:10px; font-weight:900")
         
@@ -118,6 +118,7 @@ if __name__ in {"__main__", "__mp_main__"}:
         show=False,
         storage_secret="XENOCODE_ULTRA_SECRET"
     )
+
 
 
 
