@@ -93,17 +93,17 @@ st.markdown(f"""
         border-color: #000000 !important;
     }}
 
-    /* 5. INPUT DE BÚSQUEDA (Borde sólido corregido) */
-    .stTextInput > div > div > input {{
+     /* 6. INPUT DE BÚSQUEDA Y TEXTO OPERATIONAL */
+    .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important;
         border-radius: 2px !important;
-        height: 35px !important;
+        height: 45px !important;
         text-align: center !important;
-        font-size: 11px !important;
-        box-shadow: none !important;
+        letter-spacing: 2px;
     }}
+
 
     /* 6. FOOTER FIJO (Blindado) */
     .footer {{
@@ -347,6 +347,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
