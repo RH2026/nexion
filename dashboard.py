@@ -31,12 +31,12 @@ vars_css = {
     "logo": "n2.png"      # Logo
 }
 
-# ── CSS MAESTRO (BOTONES ULTRA-SLIM + ZERO AIRE ARRIBA) ──
+# ── CSS MAESTRO (BOTONES SLIM + AIRE EQUILIBRADO) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
-    /* 1. Limpieza y Pegado al Techo */
+    /* 1. Limpieza */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
     .stApp {{ 
@@ -45,66 +45,66 @@ st.markdown(f"""
         font-family: 'Inter', sans-serif !important;
     }}
 
-    /* ELIMINACIÓN DE AIRE SUPERIOR GLOBAL */
+    /* REPARACIÓN: BAJAMOS DEL CIELO (Aire moderado arriba) */
     .block-container {{ 
-        padding-top: 0rem !important; /* Cero espacio arriba */
-        margin-top: -30px !important; /* Subimos todo el bloque */
+        padding-top: 1.5rem !important; /* Un poco de aire real arriba */
+        margin-top: 0px !important;    /* Quitamos el negativo agresivo */
         padding-bottom: 5rem !important; 
     }}
 
-    /* 2. TÍTULOS Y OPERATIONAL QUERY (Ultra compactos) */
+    /* 2. TÍTULOS (Espaciado equilibrado) */
     h3, .op-query-text {{
         font-size: 11px !important; 
         letter-spacing: 8px !important;
         text-align: center !important;
-        margin-top: -15px !important; /* Pegado al submenú */
-        margin-bottom: 15px !important;
+        margin-top: 10px !important;  /* Bajamos el título un poco del submenú */
+        margin-bottom: 20px !important;
         color: {vars_css['sub']} !important;
         display: block !important;
         width: 100% !important;
     }}
 
-    /* 3. BOTONES ULTRA-DELGADOS (Look Minimalista) */
+    /* 3. BOTONES SLIM (Minimalismo Técnico) */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important; 
-        border-radius: 1px !important;
+        border-radius: 2px !important;
         font-weight: 700 !important; 
         text-transform: uppercase;
-        font-size: 9px !important; /* Letra pequeña para botón delgado */
+        font-size: 10px !important; 
         
-        height: 24px !important;    /* Muy delgado */
-        min-height: 24px !important;
-        line-height: 24px !important;
-        padding: 0px 5px !important;
+        height: 28px !important;    /* Un poquito más de cuerpo que el anterior */
+        min-height: 28px !important;
+        line-height: 28px !important;
+        padding: 0px 10px !important;
         
         transition: all 0.2s ease !important;
         width: 100% !important;
     }}
 
-    /* Hover Negro Intenso */
+    /* Hover Negro NEXION */
     div.stButton > button:hover {{
         background-color: #000000 !important; 
         color: #FFFFFF !important; 
         border-color: #000000 !important;
     }}
 
-    /* Submenús (Aún más sutiles) */
+    /* Submenús */
     div.stButton > button[key^="sub_"] {{
-        height: 20px !important;
-        min-height: 20px !important;
-        line-height: 20px !important;
-        font-size: 8px !important;
+        height: 25px !important;
+        min-height: 25px !important;
+        line-height: 25px !important;
+        font-size: 9px !important;
     }}
 
-    /* 4. INPUT DE BÚSQUEDA COMPACTO */
+    /* 4. BUSCADOR */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
-        border-radius: 1px !important;
-        height: 32px !important; /* Buscador más delgado también */
+        border: 1px solid {vars_css['border']} !important;
+        height: 35px !important;
         text-align: center !important;
-        font-size: 11px !important;
+        font-size: 12px !important;
     }}
 
     /* 5. FOOTER FIJO */
@@ -113,8 +113,8 @@ st.markdown(f"""
         bottom: 0 !important; left: 0 !important; width: 100% !important;
         background-color: {vars_css['bg']} !important;
         text-align: center;
-        padding: 10px 0px !important;
-        font-size: 8px;
+        padding: 12px 0px !important;
+        font-size: 9px;
         border-top: 1px solid {vars_css['border']} !important;
         z-index: 999999 !important;
     }}
@@ -343,6 +343,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
