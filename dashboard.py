@@ -65,15 +65,16 @@ st.markdown(f"""
         animation: fadeInUp 0.6s ease-out;
     }}
 
-    /* ── TÍTULOS ESTILO "OPERATIONAL QUERY" (H3) ── */
+    /* ── REPARACIÓN: QUITAR AIRE SOLO AQUÍ ── */
     h3 {{
-        font-size: 13px !important; /* Tamaño similar al de la captura */
+        font-size: 13px !important; 
         font-weight: 400 !important;
         text-transform: uppercase;
-        letter-spacing: 8px !important; /* El secreto del estilo */
+        letter-spacing: 8px !important;
         text-align: center !important;
-        margin-top: 30px !important;
-        margin-bottom: 25px !important;
+        /* Reducimos el margen superior de 30px a 5px para quitar el aire */
+        margin-top: 5px !important; 
+        margin-bottom: 20px !important;
         color: {vars_css['sub']} !important;
         display: block;
         width: 100%;
@@ -257,6 +258,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
