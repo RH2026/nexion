@@ -32,6 +32,7 @@ vars_css = {
 }
 
 # ── CSS MAESTRO INTEGRAL (80% ZOOM + ESTILO NEXION FINAL) ──
+# ── CSS MAESTRO INTEGRAL (ESCUDO NEXION - ESCALA 100%) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -39,17 +40,17 @@ st.markdown(f"""
     /* 1. Limpieza de Interfaz Nativa */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
-    /* 2. ESCALA GLOBAL AL 80% (Zoom solicitado) */
+    /* 2. CONFIGURACIÓN DE APP (Escala Normal 100%) */
     .stApp {{ 
-        zoom: 0.8; /* Chrome, Safari, Edge */
-        -moz-transform: scale(0.8); /* Firefox */
-        -moz-transform-origin: top center;
         background-color: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
         font-family: 'Inter', sans-serif !important;
     }}
 
+    /* Centrado de la zona de contenido dinámico */
     .block-container {{ 
+        max-width: 1200px !important; 
+        margin: 0 auto !important;
         padding-top: 1rem !important; 
         padding-bottom: 5rem !important; 
     }}
@@ -76,21 +77,21 @@ st.markdown(f"""
         animation: fadeInUp 0.6s ease-out;
     }}
 
-    /* 5. TÍTULOS ESTILO "OPERATIONAL QUERY" (H3 con poco aire) */
+    /* 5. TÍTULOS ESTILO "OPERATIONAL QUERY" (H3 sin aire excesivo) */
     h3 {{
         font-size: 13px !important; 
         font-weight: 400 !important;
         text-transform: uppercase;
         letter-spacing: 8px !important;
         text-align: center !important;
-        margin-top: 5px !important; /* Aire reducido */
+        margin-top: -5px !important; /* Subimos el título para quitar aire */
         margin-bottom: 20px !important;
         color: {vars_css['sub']} !important;
         display: block;
         width: 100%;
     }}
 
-    /* 6. ESTILO DE BOTONES (Principales y Submenús) */
+    /* 6. ESTILO DE BOTONES */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -111,14 +112,14 @@ st.markdown(f"""
         border-color: {vars_css['text']} !important;
     }}
 
-    /* Botones de Submenú (Segunda línea) */
+    /* Botones de Submenú */
     div.stButton > button[key^="sub_"] {{
         height: 32px !important;
         font-size: 10px !important;
         margin-top: 2px !important;
     }}
 
-    /* 7. INPUT DE BÚSQUEDA Y TEXTO ESPECIAL */
+    /* 7. INPUT DE BÚSQUEDA */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
@@ -138,7 +139,7 @@ st.markdown(f"""
         text-transform: uppercase;
     }}
 
-    /* 8. FOOTER FIJO (Inmune a saltos y animaciones) */
+    /* 8. FOOTER FIJO (Blindado) */
     .footer {{
         position: fixed;
         bottom: 0 !important; 
@@ -381,6 +382,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
