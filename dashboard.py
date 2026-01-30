@@ -31,12 +31,12 @@ vars_css = {
     "logo": "n2.png"      # Logo
 }
 
-# ── CSS MAESTRO (BOTONES SLIM + AIRE EQUILIBRADO) ──
+# ── CSS MAESTRO (VERSION FINAL: SLIM + AIRE AJUSTADO) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
-    /* 1. Limpieza */
+    /* 1. Limpieza de Interfaz */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
     .stApp {{ 
@@ -45,26 +45,25 @@ st.markdown(f"""
         font-family: 'Inter', sans-serif !important;
     }}
 
-    /* REPARACIÓN: BAJAMOS DEL CIELO (Aire moderado arriba) */
+    /* 2. REPARACIÓN: AIRE AJUSTADO (Ni al cielo, ni amontonado) */
     .block-container {{ 
-        padding-top: 1.5rem !important; /* Un poco de aire real arriba */
-        margin-top: 0px !important;    /* Quitamos el negativo agresivo */
+        padding-top: 0.8rem !important; /* Aire reducido y conforme */
         padding-bottom: 5rem !important; 
     }}
 
-    /* 2. TÍTULOS (Espaciado equilibrado) */
+    /* 3. TÍTULOS (Espaciado técnico) */
     h3, .op-query-text {{
         font-size: 11px !important; 
         letter-spacing: 8px !important;
         text-align: center !important;
-        margin-top: 10px !important;  /* Bajamos el título un poco del submenú */
-        margin-bottom: 20px !important;
+        margin-top: 8px !important; 
+        margin-bottom: 18px !important;
         color: {vars_css['sub']} !important;
         display: block !important;
         width: 100% !important;
     }}
 
-    /* 3. BOTONES SLIM (Minimalismo Técnico) */
+    /* 4. BOTONES SLIM DEFINITIVOS */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -74,7 +73,7 @@ st.markdown(f"""
         text-transform: uppercase;
         font-size: 10px !important; 
         
-        height: 28px !important;    /* Un poquito más de cuerpo que el anterior */
+        height: 28px !important; 
         min-height: 28px !important;
         line-height: 28px !important;
         padding: 0px 10px !important;
@@ -90,7 +89,7 @@ st.markdown(f"""
         border-color: #000000 !important;
     }}
 
-    /* Submenús */
+    /* Submenús Slim */
     div.stButton > button[key^="sub_"] {{
         height: 25px !important;
         min-height: 25px !important;
@@ -98,16 +97,17 @@ st.markdown(f"""
         font-size: 9px !important;
     }}
 
-    /* 4. BUSCADOR */
+    /* 5. INPUT DE BÚSQUEDA */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         border: 1px solid {vars_css['border']} !important;
         height: 35px !important;
         text-align: center !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
+        letter-spacing: 1px;
     }}
 
-    /* 5. FOOTER FIJO */
+    /* 6. FOOTER FIJO */
     .footer {{
         position: fixed;
         bottom: 0 !important; left: 0 !important; width: 100% !important;
@@ -115,6 +115,7 @@ st.markdown(f"""
         text-align: center;
         padding: 12px 0px !important;
         font-size: 9px;
+        letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']} !important;
         z-index: 999999 !important;
     }}
@@ -343,6 +344,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
