@@ -1,15 +1,14 @@
 from nicegui import ui
-import time
+import time, random
 
-print("NUEVA APP ARRANCADA")
-time.sleep(5)
+TOKEN = random.randint(100000, 999999)
+print("BUILD TOKEN:", TOKEN)
 
 @ui.page('/')
 def index():
-    ui.label('SOLO ESTA APP EXISTE').style('font-size:40px')
+    ui.label(f'BUILD TOKEN {TOKEN}').style('font-size:40px')
 
 ui.run(host='0.0.0.0', port=8080)
-
 
 
 
