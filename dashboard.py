@@ -31,7 +31,7 @@ vars_css = {
     "logo": "n2.png"      # Logo
 }
 
-# ── CSS MAESTRO (VERSION FINAL: SLIM + AIRE AJUSTADO + ANIMACIÓN) ──
+# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -45,30 +45,21 @@ st.markdown(f"""
         font-family: 'Inter', sans-serif !important;
     }}
 
-    /* 2. REPARACIÓN: AIRE AJUSTADO */
     .block-container {{ 
         padding-top: 0.8rem !important; 
         padding-bottom: 5rem !important; 
     }}
 
-    /* 3. ANIMACIÓN DE ENTRADA (Fade In Up) */
+    /* 2. ANIMACIÓN DE ENTRADA (Sintaxis blindada) */
     @keyframes fadeInUp {{
-        from {{ 
-            opacity: 0; 
-            transform: translateY(15px); 
-        }}
-        to {{ 
-            opacity: 1; 
-            transform: translateY(0); 
-        }}
+        from {{ opacity: 0; transform: translateY(15px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
     }}
-
-    /* Aplicar animación al contenido dinámico (excluyendo el footer) */
     [data-testid="stVerticalBlock"] > div:not(.element-container:has(.footer)) {{
         animation: fadeInUp 0.6s ease-out;
     }}
 
-    /* 4. TÍTULOS (Espaciado técnico) */
+    /* 3. TÍTULOS Y OPERATIONAL QUERY (Centrado Garantizado) */
     h3, .op-query-text {{
         font-size: 11px !important; 
         letter-spacing: 8px !important;
@@ -80,7 +71,7 @@ st.markdown(f"""
         width: 100% !important;
     }}
 
-    /* 5. BOTONES SLIM DEFINITIVOS */
+    /* 4. BOTONES SLIM CON HOVER NEGRO */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -89,64 +80,37 @@ st.markdown(f"""
         font-weight: 700 !important; 
         text-transform: uppercase;
         font-size: 10px !important; 
-        
         height: 28px !important; 
         min-height: 28px !important;
         line-height: 28px !important;
-        padding: 0px 10px !important;
-        
         transition: all 0.2s ease !important;
         width: 100% !important;
     }}
 
-    /* Hover Negro NEXION */
     div.stButton > button:hover {{
         background-color: #000000 !important; 
         color: #FFFFFF !important; 
         border-color: #000000 !important;
     }}
 
-    /* Submenús Slim */
-    div.stButton > button[key^="sub_"] {{
-        height: 25px !important;
-        min-height: 25px !important;
-        line-height: 25px !important;
-        font-size: 9px !important;
-    }}
-
-    /* 6. INPUT DE BÚSQUEDA (SINTAXIS REPARADA CON DOBLE LLAVE) */
+    /* 5. INPUT DE BÚSQUEDA (Borde sólido corregido) */
     .stTextInput > div > div > input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
-        /* Forzamos un borde sólido y fino */
         border: 1px solid {vars_css['border']} !important;
         border-radius: 2px !important;
         height: 35px !important;
         text-align: center !important;
         font-size: 11px !important;
-        letter-spacing: 1px;
-        /* Eliminamos sombras internas de Streamlit */
-        box-shadow: none !important;
-        transition: border-color 0.3s ease !important;
-    }}
-
-    /* Efecto al hacer clic en el input */
-    .stTextInput > div > div > input:focus {{
-        border-color: #000000 !important;
-        outline: none !important;
         box-shadow: none !important;
     }}
 
-    /* Quitamos el borde del contenedor externo que ensucia el diseño */
-    .stTextInput > div {{
-        border: none !important;
-        background: transparent !important;
-    }}
-
-    /* 7. FOOTER FIJO (Blindado de la animación) */
+    /* 6. FOOTER FIJO (Blindado) */
     .footer {{
         position: fixed;
-        bottom: 0 !important; left: 0 !important; width: 100% !important;
+        bottom: 0 !important; 
+        left: 0 !important; 
+        width: 100% !important;
         background-color: {vars_css['bg']} !important;
         color: {vars_css['sub']} !important;
         text-align: center;
@@ -155,7 +119,6 @@ st.markdown(f"""
         letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']} !important;
         z-index: 999999 !important;
-        /* Aseguramos que el footer NO se anime */
         animation: none !important;
         transform: none !important;
     }}
@@ -384,6 +347,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
