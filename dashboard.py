@@ -65,15 +65,18 @@ st.markdown(f"""
         animation: fadeInUp 0.6s ease-out;
     }}
 
-    /* 4. TÍTULOS (H3) */
+    /* ── TÍTULOS ESTILO "OPERATIONAL QUERY" (H3) ── */
     h3 {{
-        font-size: 16px !important; 
-        font-weight: 800 !important;
+        font-size: 13px !important; /* Tamaño similar al de la captura */
+        font-weight: 400 !important;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 20px !important;
-        margin-bottom: 10px !important;
-        color: {vars_css['text']} !important;
+        letter-spacing: 8px !important; /* El secreto del estilo */
+        text-align: center !important;
+        margin-top: 30px !important;
+        margin-bottom: 25px !important;
+        color: {vars_css['sub']} !important;
+        display: block;
+        width: 100%;
     }}
 
     /* 5. ESTILO DE BOTONES */
@@ -254,6 +257,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
