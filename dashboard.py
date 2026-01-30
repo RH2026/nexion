@@ -236,7 +236,7 @@ with main_container:
             st.info("Espacio para contenido de Tracking Operativo")
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # ---GANTT---CONFIGURACIÓN ---
+            #---GANTT---CONFIGURACIÓN ---
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
@@ -251,6 +251,7 @@ with main_container:
                 columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
                 hoy = obtener_fecha_mexico()
                 try:
+                    # Forzamos refresco de caché con timestamp
                     response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
                     if response.status_code == 200:
                         df = pd.read_csv(StringIO(response.text))
@@ -258,6 +259,7 @@ with main_container:
                         for col in columnas_base:
                             if col not in df.columns: df[col] = ""
                         
+                        # Limpieza y conversión estricta para Plotly
                         for col in ['FECHA', 'FECHA_FIN']:
                             df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
                             df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
@@ -271,16 +273,13 @@ with main_container:
                 if not TOKEN:
                     st.error("Error: GITHUB_TOKEN no configurado"); return False
                 try:
+                    from github import Github  # Aseguramos el import aquí
                     g = Github(TOKEN)
                     repo = g.get_repo(REPO_NAME)
-                    
-                    # Preparar datos para CSV
                     df_save = df.copy()
                     df_save['FECHA'] = df_save['FECHA'].astype(str)
                     df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
                     csv_data = df_save.to_csv(index=False)
-                    
-                    # Obtener SHA actualizado y guardar
                     contents = repo.get_contents(FILE_PATH, ref="main")
                     repo.update_file(
                         contents.path, 
@@ -299,34 +298,41 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-            # --- 4 GRÁFICO GANTT ---
+            # --- 4. GRÁFICO GANTT (REPARADO Y CENTRADO) ---
             if not st.session_state.df_tareas.empty:
                 try:
                     df_p = st.session_state.df_tareas.copy()
+                    # Conversión necesaria para que ff.create_gantt no falle
+                    df_p['FECHA'] = pd.to_datetime(df_p['FECHA'])
+                    df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'])
+                    
                     df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
                     colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
                     
-                    # Crear Gantt con Plotly
+                    import plotly.figure_factory as ff
                     fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', group_tasks=True, showgrid_x=True, showgrid_y=True)
+                    
                     fig.update_layout(
                         plot_bgcolor='rgba(0,0,0,0)', 
                         paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=v['text'], family="Inter"),
+                        font=dict(color=vars_css['text'], family="Inter"), # Corregido a vars_css
                         height=350,
-                        margin=dict(l=150, r=20, t=20, b=50)
+                        margin=dict(l=100, r=20, t=20, b=50),
+                        autosize=True
                     )
+                    # Centrado visual de la gráfica
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                except:
+                except Exception as e:
                     st.info("💡 Consejo: Completa las fechas de Inicio y Fin para ver el gráfico.")
             
-            # --- 5. EDITOR Y BOTÓN ÚNICO ---
-            with st.container(border=True):
-                # El editor se alimenta y mantiene lo que el usuario escribe
+            # --- 5. EDITOR Y BOTÓN ÚNICO (CENTRADO TOTAL) ---
+            # Usamos un contenedor para aplicar el centrado del CSS anterior
+            with st.container():
                 df_editado = st.data_editor(
                     st.session_state.df_tareas,
                     num_rows="dynamic",
-                    use_container_width=True,
-                    key="nexion_editor_v7",
+                    use_container_width=True, # Clave para el estiramiento y centrado
+                    key="nexion_editor_v8",
                     column_config={
                         "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
                         "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
@@ -337,15 +343,9 @@ with main_container:
                     hide_index=True
                 )
             
-                # BOTÓN ÚNICO DE GUARDADO Y ACTUALIZACIÓN
                 if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
-                    # 1. Guardamos los cambios en GitHub
-                    exito = guardar_en_github(df_editado)
-                    
-                    if exito:
-                        # 2. Actualizamos la memoria de la app con lo que acabamos de editar
+                    if guardar_en_github(df_editado):
                         st.session_state.df_tareas = df_editado
-                        # 3. Forzamos el refresco para que el gráfico se redibuje con los nuevos datos
                         st.rerun()
 
         
@@ -373,6 +373,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
