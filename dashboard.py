@@ -31,8 +31,7 @@ vars_css = {
     "logo": "n2.png"      # Logo
 }
 
-# ── CSS MAESTRO INTEGRAL (80% ZOOM + ESTILO NEXION FINAL) ──
-# ── CSS MAESTRO INTEGRAL (REPARADO: HOVER NEGRO + TÍTULOS CENTRADOS) ──
+# ── CSS MAESTRO (BOTONES MINIMALISTAS + HOVER + ESCALA 100%) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -40,7 +39,7 @@ st.markdown(f"""
     /* 1. Limpieza de Interfaz */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
-    /* 2. CONFIGURACIÓN GENERAL (Escala 100%) */
+    /* 2. CONFIGURACIÓN GENERAL */
     .stApp {{ 
         background-color: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
@@ -52,7 +51,7 @@ st.markdown(f"""
         padding-bottom: 5rem !important; 
     }}
 
-    /* 3. TÍTULOS Y OPERATIONAL QUERY (Centrado y Estilo) */
+    /* 3. TÍTULOS Y OPERATIONAL QUERY (Centrado) */
     h3, .op-query-text {{
         font-size: 13px !important; 
         font-weight: 400 !important;
@@ -66,7 +65,7 @@ st.markdown(f"""
         width: 100% !important;
     }}
 
-    /* 4. ESTILO DE BOTONES Y EFECTO HOVER NEGRO */
+    /* 4. ESTILO DE BOTONES MINIMALISTAS (MÁS DELGADOS) */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -74,36 +73,50 @@ st.markdown(f"""
         border-radius: 2px !important;
         font-weight: 700 !important; 
         text-transform: uppercase;
-        font-size: 11px !important;
-        height: 38px !important;
-        transition: all 0.3s ease !important; /* Animación suave del color */
+        font-size: 10px !important; /* Bajamos un punto la fuente para balancear */
+        height: 30px !important;    /* ANTES: 38px (Ahora más delgado) */
+        transition: all 0.3s ease !important;
         width: 100% !important;
+        line-height: 1 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }}
 
-    /* EL EFECTO QUE FALTABA: Fondo Negro al pasar el ratón */
+    /* Hover Negro */
     div.stButton > button:hover {{
         background-color: #000000 !important; 
         color: #FFFFFF !important; 
         border-color: #000000 !important;
     }}
 
+    /* Botones de Submenú (Aún más delgados) */
     div.stButton > button[key^="sub_"] {{
-        height: 32px !important;
-        font-size: 10px !important;
+        height: 26px !important;    /* ANTES: 32px */
+        font-size: 9px !important;
     }}
 
-    /* 5. INPUT DE BÚSQUEDA */
+    /* 5. TABLAS Y GRÁFICOS (Ancho total) */
+    [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
+        width: 100% !important;
+    }}
+    
+    [data-testid="stDataFrame"] canvas {{
+        width: 100% !important;
+    }}
+
+    /* 6. INPUT DE BÚSQUEDA */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important;
         border-radius: 2px !important;
-        height: 45px !important;
+        height: 40px !important; /* Ajustado ligeramente para armonía */
         text-align: center !important;
         letter-spacing: 2px;
     }}
 
-    /* 6. FOOTER FIJO */
+    /* 7. FOOTER FIJO */
     .footer {{
         position: fixed;
         bottom: 0 !important; 
@@ -344,6 +357,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
