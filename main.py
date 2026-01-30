@@ -1,14 +1,14 @@
 from nicegui import ui
+import time
+
+print("NUEVA APP ARRANCADA")
+time.sleep(5)
 
 @ui.page('/')
 def index():
-    ui.label('FUNCIONA ✔ VERSION MINIMA').style(
-        'font-size:32px; text-align:center; margin-top:40vh'
-    )
+    ui.label('SOLO ESTA APP EXISTE').style('font-size:40px')
 
-ui.run(host='0.0.0.0', port=8080, reload=False, show=False)
-
-
+ui.run(host='0.0.0.0', port=8080)
 
 
 
