@@ -1,60 +1,12 @@
-import os
-from nicegui import ui, app
+from nicegui import ui
 
-# 1. ESTILOS INYECTADOS (ESTILO ZARA / DHL)
-# Usamos un ID único para forzar al navegador a leer el CSS nuevo
-ui.add_head_html('''
-    <style id="v2026_01_29">
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;400;900&display=swap');
-        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        body { background-color: #0A0A0B; color: white; margin: 0; }
-        .zara-nav { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; opacity: 0.3; cursor: pointer; }
-        .ultra-title { letter-spacing: 25px; font-weight: 100; text-transform: uppercase; text-align: center; }
-        .zara-btn { border: 1px solid white !important; background: transparent !important; color: white !important; letter-spacing: 8px; font-size: 9px; border-radius: 0px !important; padding: 15px 40px; }
-    </style>
-''')
-
-# 2. ESTADO SIMPLE EN MEMORIA (No disco, no fallos)
-class Session:
-    main = "TRACKING"
-    sub = "GENERAL"
-state = Session()
-
-@ui.refreshable
-def content():
-    with ui.column().classes('w-full items-center mt-40'):
-        ui.label(state.main).style('font-size: 10px; letter-spacing: 12px; opacity: 0.3')
-        ui.label(state.sub).classes('ultra-title text-6xl my-10')
-        
-        if state.main == "TRACKING":
-            ui.input(placeholder='REFERENCE').classes('w-64 text-center').style('border-bottom: 1px solid white; color: white;').props('borderless')
-            ui.button('EXECUTE', on_click=lambda: ui.notify('SEARCHING...')).classes('zara-btn mt-10')
-
-def navigate(m):
-    state.main = m
-    state.sub = "GENERAL"
-    content.refresh()
-
-# 3. PÁGINA MAESTRA (SIN ELEMENTOS ANIDADOS)
 @ui.page('/')
 def index():
-    # Header estático (Obligatorio para evitar Error 500)
-    with ui.header().classes('bg-transparent p-10 items-center justify-between'):
-        ui.label('N E X I O N').style('letter-spacing: 10px; font-weight: 900')
-        with ui.row().classes('gap-10'):
-            ui.label('TRACKING').classes('zara-nav').on('click', lambda: navigate('TRACKING'))
-            ui.label('SEGUIMIENTO').classes('zara-nav').on('click', lambda: navigate('SEGUIMIENTO'))
+    ui.label('FUNCIONA ✔ VERSION MINIMA').style(
+        'font-size:32px; text-align:center; margin-top:40vh'
+    )
 
-    content()
-
-    with ui.footer().classes('bg-transparent p-10 text-center'):
-        ui.label('N E X I O N // L O G I S T I C S // 2 0 2 6').style('font-size: 7px; opacity: 0.1; letter-spacing: 10px')
-
-# 4. ARRANQUE SEGURO
-if __name__ in {"__main__", "__mp_main__"}:
-    port = int(os.environ.get("PORT", 8080))
-    # reload=False es vital para que Railway no mate el proceso por "cambios fantasmas"
-    ui.run(host='0.0.0.0', port=port, reload=False, show=False, title="NEXION")
+ui.run(host='0.0.0.0', port=8080, reload=False, show=False)
 
 
 
