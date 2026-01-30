@@ -145,10 +145,10 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── HEADER Y NAVEGACIÓN LIMPIA (SIN SUBMENÚS) ────────────────
+# ── HEADER Y NAVEGACIÓN REPARADA (CON SUBMENÚS Y MÁS AIRE) ──
 header_zone = st.container()
 with header_zone:
-    # Ajustamos columnas: c1 para logo, c2 para menú, eliminamos c3
+    # Restauramos c3 solo para dar margen al final si es necesario, o usamos 2 columnas
     c1, c2 = st.columns([1.5, 5.4], vertical_alignment="center")
 
     with c1:
@@ -159,28 +159,44 @@ with header_zone:
             st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0;'>NEXION</h3>", unsafe_allow_html=True)
 
     with c2:
-        # Menú simple de una sola línea
+        sub_map = {
+            "TRACKING": [],
+            "SEGUIMIENTO": ["TRK", "GANTT"],
+            "REPORTES": ["APQ", "OPS", "OTD"],
+            "FORMATOS": ["SALIDA DE PT"]
+        }
+        
         cols_main = st.columns(4)
         main_menus = ["TRACKING", "SEGUIMIENTO", "REPORTES", "FORMATOS"]
         
         for i, m in enumerate(main_menus):
             with cols_main[i]:
+                # 1. MENÚ PRINCIPAL
                 seleccionado = st.session_state.menu_main == m
                 btn_label = f"● {m}" if seleccionado else m
                 
                 if st.button(btn_label, use_container_width=True, key=f"main_{m}"):
                     st.session_state.menu_main = m
-                    # Resetear sub a GENERAL para no causar errores en la lógica de contenido
-                    st.session_state.menu_sub = "GENERAL" 
+                    st.session_state.menu_sub = "GENERAL"
                     st.rerun()
+                
+                # 2. SUBMENÚ RESTAURADO (Solo aparece si está seleccionado)
+                if seleccionado and sub_map[m]:
+                    st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
+                    for s in sub_map[m]:
+                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(sub_label, use_container_width=True, key=f"sub_{s}"):
+                            st.session_state.menu_sub = s
+                            # Opcional: Si quieres que se oculte al dar clic, 
+                            # podrías resetear menu_main aquí, pero por ahora lo dejo fijo.
+                            st.rerun()
 
-# Línea divisoria minimalista
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:10px 0 20px; opacity:0.5;'>", unsafe_allow_html=True)
+# Línea divisoria
+st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:15px 0 25px; opacity:0.4;'>", unsafe_allow_html=True)
 
-# ── CONTENEDOR DE CONTENIDO (LÓGICA SIMPLIFICADA) ────────────
+# ── CONTENEDOR DE CONTENIDO (DINÁMICO POR SUBMENÚ) ──────────
 main_container = st.container()
 with main_container:
-    
     # 1. TRACKING
     if st.session_state.menu_main == "TRACKING":
         st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
@@ -191,32 +207,20 @@ with main_container:
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
                 st.toast(f"Buscando: {busqueda}")
 
-    # 2. SEGUIMIENTO (Acceso directo al Editor de Datos)
+    # 2. SEGUIMIENTO
     elif st.session_state.menu_main == "SEGUIMIENTO":
-        st.subheader("GESTIÓN DE OPERACIONES")
-        
-        # Mantener funciones de GitHub (asegúrate que estén definidas arriba en tu script)
-        if 'df_tareas' not in st.session_state:
-            try: st.session_state.df_tareas = cargar_datos_seguro()
-            except: st.info("Conectando con base de datos GitHub...")
-
-        with st.container(border=True):
-            if 'df_tareas' in st.session_state:
-                df_editado = st.data_editor(
-                    st.session_state.df_tareas,
-                    num_rows="dynamic",
-                    use_container_width=True,
-                    key="nexion_editor_final_v3",
-                    hide_index=True
-                )
-                if st.button("💾 SINCRONIZAR CAMBIOS", use_container_width=True, type="primary"):
-                    # guardar_en_github(df_editado)
-                    st.toast("Actualizando repositorio...")
+        if st.session_state.menu_sub == "TRK":
+            st.subheader("SEGUIMIENTO > CONTROL DE TRK")
+            # Tu lógica de tabla aquí
+        elif st.session_state.menu_sub == "GANTT":
+            st.subheader("SEGUIMIENTO > CRONOGRAMA GANTT")
+            # Tu lógica de Gantt aquí
+        else:
+            st.info("Seleccione una opción del menú SEGUIMIENTO")
 
     # 3. REPORTES
     elif st.session_state.menu_main == "REPORTES":
-        st.subheader("MÓDULO DE INTELIGENCIA Y KPI")
-        st.info("Visualización de métricas generales activada.")
+        st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
 
     # 4. FORMATOS
     elif st.session_state.menu_main == "FORMATOS":
@@ -228,6 +232,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
