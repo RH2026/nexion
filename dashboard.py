@@ -32,7 +32,7 @@ vars_css = {
 }
 
 # ── CSS MAESTRO INTEGRAL (80% ZOOM + ESTILO NEXION FINAL) ──
-# ── CSS MAESTRO INTEGRAL (80% ZOOM + TABLA FULL WIDTH + SIN AIRE) ──
+# ── CSS MAESTRO INTEGRAL (80% ZOOM + CENTRADO TOTAL + FULL WIDTH) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -40,7 +40,7 @@ st.markdown(f"""
     /* 1. Limpieza de Interfaz Nativa */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
-    /* 2. ESCALA GLOBAL AL 80% */
+    /* 2. ESCALA AL 80% Y CENTRADO DE PÁGINA */
     .stApp {{ 
         zoom: 0.8; 
         -moz-transform: scale(0.8); 
@@ -50,16 +50,26 @@ st.markdown(f"""
         font-family: 'Inter', sans-serif !important;
     }}
 
+    /* Fuerza al contenedor a centrarse y usar el ancho correcto */
     .block-container {{ 
+        max-width: 1200px !important; /* Ajusta este valor si quieres que sea más ancho o angosto */
+        margin: 0 auto !important;
         padding-top: 1rem !important; 
         padding-bottom: 5rem !important; 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }}
 
-    /* 3. REPARACIÓN DE ANCHO TOTAL PARA TABLA (Quita el hueco gris) */
-    [data-testid="stDataFrame"], 
-    [data-testid="stDataFrame"] > div {{
+    /* Asegura que los bloques internos ocupen el ancho del contenedor centrado */
+    [data-testid="stVerticalBlock"], [data-testid="stVerticalBlock"] > div {{
         width: 100% !important;
-        display: block !important;
+    }}
+
+    /* 3. REPARACIÓN DE ANCHO PARA TABLA Y GRÁFICOS */
+    [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div, .js-plotly-plot {{
+        width: 100% !important;
+        margin: 0 auto !important;
     }}
     
     [data-testid="stDataFrame"] canvas {{
@@ -71,7 +81,7 @@ st.markdown(f"""
         gap: 0.6rem !important; 
     }}
 
-    /* 5. ANIMACIÓN DE ENTRADA (Fade In Up) */
+    /* 5. ANIMACIÓN DE ENTRADA */
     @keyframes fadeInUp {{
         from {{ opacity: 0; transform: translateY(15px); }}
         to {{ opacity: 1; transform: translateY(0); }}
@@ -81,17 +91,16 @@ st.markdown(f"""
         animation: fadeInUp 0.6s ease-out;
     }}
 
-    /* 6. TÍTULOS ESTILO NEXION (Compacto sin aire superior) */
+    /* 6. TÍTULOS ESTILO NEXION */
     h3 {{
         font-size: 13px !important; 
         font-weight: 400 !important;
         text-transform: uppercase;
         letter-spacing: 8px !important;
         text-align: center !important;
-        margin-top: -10px !important; /* REPARACIÓN: Subimos el título */
+        margin-top: -10px !important;
         margin-bottom: 20px !important;
         color: {vars_css['sub']} !important;
-        display: block;
         width: 100%;
     }}
 
@@ -105,32 +114,10 @@ st.markdown(f"""
         text-transform: uppercase;
         font-size: 11px !important;
         height: 38px !important;
-        transition: all 0.3s ease !important;
-        width: 100% !important; /* Asegura ancho total */
+        width: 100% !important;
     }}
 
-    div.stButton > button:hover {{
-        background-color: {vars_css['text']} !important; 
-        color: {vars_css['bg']} !important; 
-    }}
-
-    div.stButton > button[key^="sub_"] {{
-        height: 32px !important;
-        font-size: 10px !important;
-    }}
-
-    /* 8. INPUT DE BÚSQUEDA */
-    .stTextInput input {{
-        background-color: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important;
-        border-radius: 2px !important;
-        height: 45px !important;
-        text-align: center !important;
-        letter-spacing: 2px;
-    }}
-
-    /* 9. FOOTER FIJO E INMUNE */
+    /* 8. FOOTER FIJO */
     .footer {{
         position: fixed;
         bottom: 0 !important; 
@@ -145,7 +132,6 @@ st.markdown(f"""
         border-top: 1px solid {vars_css['border']} !important;
         z-index: 999999 !important;
         animation: none !important;
-        transform: none !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -372,6 +358,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
