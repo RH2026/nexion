@@ -32,7 +32,12 @@ vars_css = {
     "logo": "n2.png"      # Logo para versión clara
 }
 
-# ── CSS MAESTRO (OPTIMIZADO PARA NAVEGACIÓN COMPACTA) ──────
+Entiendo perfectamente. El diseño anterior era demasiado apretado y no dejaba respirar los elementos de NEXION. He ajustado el CSS Maestro para devolverle el "aire" al diseño, separando los bloques y dándole un aspecto mucho más limpio y profesional sin perder la elegancia.
+
+Aquí tienes el código reparado:
+
+Python
+# ── CSS MAESTRO (REPARADO: MÁS ESPACIO Y RESPIRO) ────────────
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -41,25 +46,25 @@ st.markdown(f"""
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
     .block-container {{ 
-        padding-top: 0.5rem !important; 
-        padding-bottom: 0rem !important; 
+        padding-top: 1.5rem !important; /* Más respiro superior */
+        padding-bottom: 2rem !important; 
     }}
 
-    /* 2. Fondo principal y limpieza de espacios */
+    /* 2. Fondo principal */
     .stApp {{ 
         background-color: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
         font-family: 'Inter', sans-serif !important;
     }}
 
-    /* ELIMINA EL ESPACIO ENTRE BOTONES (Reparación de captura) */
+    /* REPARACIÓN: SEPARACIÓN ENTRE BLOQUES */
     [data-testid="stVerticalBlock"] {{
-        gap: 0rem !important;
+        gap: 1.2rem !important; /* Aumentamos el espacio global entre secciones */
     }}
 
     /* 3. Animación de entrada */
     @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(15px); }}
+        from {{ opacity: 0; transform: translateY(10px); }}
         to {{ opacity: 1; transform: translateY(0); }}
     }}
     [data-testid="stVerticalBlock"] > div {{
@@ -71,42 +76,42 @@ st.markdown(f"""
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important; 
-        border-radius: 2px !important;
-        font-weight: 700 !important; 
+        border-radius: 4px !important; /* Bordes ligeramente más suaves */
+        font-weight: 600 !important; 
         text-transform: uppercase;
-        font-size: 10px !important;
-        height: 32px !important;
-        transition: all 0.2s ease-in-out !important;
+        font-size: 11px !important; /* Un poco más legible */
+        height: 38px !important; /* Más altura para no asfixiar el texto */
+        transition: all 0.3s ease !important;
         width: 100%;
-        margin-bottom: 2px !important;
+        margin-bottom: 8px !important; /* Separación individual */
     }}
 
     div.stButton > button:hover {{
         background-color: {vars_css['text']} !important; 
         color: {vars_css['bg']} !important; 
-        border-color: {vars_css['text']} !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }}
 
-    /* 5. ESTILO ESPECÍFICO PARA SUBMENÚS (Más compactos) */
+    /* 5. ESTILO PARA SUBMENÚS (Con su propio aire) */
     div.stButton > button[key^="sub_"] {{
-        height: 26px !important;
-        font-size: 9px !important;
-        background-color: transparent !important; /* Más sutil */
-        border-radius: 0px !important;
-        border-top: none !important; /* Une visualmente al botón de arriba */
-        margin-top: -1px !important;
+        height: 32px !important;
+        font-size: 10px !important;
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        border-radius: 4px !important;
+        margin-top: 4px !important; /* Separación del botón padre */
+        border: 1px solid {vars_css['border']} !important;
     }}
 
-    /* 6. Inputs y Búsqueda */
+    /* 6. Inputs de Búsqueda */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important;
-        border-radius: 2px !important;
-        height: 42px !important;
-        font-size: 11px !important;
+        border-radius: 4px !important;
+        height: 48px !important; /* Buscador más imponente */
+        font-size: 12px !important;
         text-align: center !important;
-        letter-spacing: 2px;
+        letter-spacing: 1px;
     }}
 
     /* 7. Footer Fijo */
@@ -116,8 +121,8 @@ st.markdown(f"""
         background-color: {vars_css['bg']};
         color: {vars_css['sub']};
         text-align: center;
-        padding: 10px;
-        font-size: 8px;
+        padding: 15px;
+        font-size: 9px;
         letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']};
         z-index: 100;
@@ -232,6 +237,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
