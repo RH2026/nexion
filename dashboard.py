@@ -32,8 +32,7 @@ vars_css = {
 }
 
 # ── CSS MAESTRO INTEGRAL (80% ZOOM + ESTILO NEXION FINAL) ──
-# ── CSS MAESTRO INTEGRAL (ESCALA 100% - SIN CENTRADO FORZADO) ──
-# ── CSS MAESTRO INTEGRAL (REPARADO: TÍTULOS CENTRADOS Y ESCALA 100%) ──
+# ── CSS MAESTRO INTEGRAL (REPARADO: HOVER NEGRO + TÍTULOS CENTRADOS) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -41,7 +40,7 @@ st.markdown(f"""
     /* 1. Limpieza de Interfaz */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
-    /* 2. CONFIGURACIÓN GENERAL */
+    /* 2. CONFIGURACIÓN GENERAL (Escala 100%) */
     .stApp {{ 
         background-color: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
@@ -53,29 +52,21 @@ st.markdown(f"""
         padding-bottom: 5rem !important; 
     }}
 
-    /* 3. TÍTULOS Y OPERATIONAL QUERY (FORZAR CENTRADO) */
+    /* 3. TÍTULOS Y OPERATIONAL QUERY (Centrado y Estilo) */
     h3, .op-query-text {{
         font-size: 13px !important; 
         font-weight: 400 !important;
         text-transform: uppercase;
         letter-spacing: 8px !important;
-        text-align: center !important; /* Alineación al centro */
+        text-align: center !important;
         margin-top: -5px !important; 
         margin-bottom: 25px !important;
         color: {vars_css['sub']} !important;
-        display: block !important; /* Ocupa todo el ancho para poder centrar el texto */
+        display: block !important;
         width: 100% !important;
     }}
 
-    /* 4. REPARACIÓN DE TABLA Y BOTONES (Full Width) */
-    [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
-        width: 100% !important;
-    }}
-    
-    [data-testid="stDataFrame"] canvas {{
-        width: 100% !important;
-    }}
-
+    /* 4. ESTILO DE BOTONES Y EFECTO HOVER NEGRO */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -85,10 +76,23 @@ st.markdown(f"""
         text-transform: uppercase;
         font-size: 11px !important;
         height: 38px !important;
+        transition: all 0.3s ease !important; /* Animación suave del color */
         width: 100% !important;
     }}
 
-    /* 5. INPUT DE BÚSQUEDA (Texto centrado dentro del input) */
+    /* EL EFECTO QUE FALTABA: Fondo Negro al pasar el ratón */
+    div.stButton > button:hover {{
+        background-color: #000000 !important; 
+        color: #FFFFFF !important; 
+        border-color: #000000 !important;
+    }}
+
+    div.stButton > button[key^="sub_"] {{
+        height: 32px !important;
+        font-size: 10px !important;
+    }}
+
+    /* 5. INPUT DE BÚSQUEDA */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
@@ -340,6 +344,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
