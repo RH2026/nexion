@@ -32,7 +32,7 @@ vars_css = {
 }
 
 # ── CSS MAESTRO INTEGRAL (80% ZOOM + ESTILO NEXION FINAL) ──
-# ── CSS MAESTRO INTEGRAL (ESCUDO NEXION - ESCALA 100%) ──
+# ── CSS MAESTRO INTEGRAL (ESCALA 100% - SIN CENTRADO FORZADO) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -40,58 +40,58 @@ st.markdown(f"""
     /* 1. Limpieza de Interfaz Nativa */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
-    /* 2. CONFIGURACIÓN DE APP (Escala Normal 100%) */
+    /* 2. CONFIGURACIÓN DE APP (Escala Estándar) */
     .stApp {{ 
         background-color: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
         font-family: 'Inter', sans-serif !important;
     }}
 
-    /* Centrado de la zona de contenido dinámico */
     .block-container {{ 
-        max-width: 1200px !important; 
-        margin: 0 auto !important;
         padding-top: 1rem !important; 
         padding-bottom: 5rem !important; 
     }}
 
-    /* 3. ESPACIADO DE BLOQUES (GAP equilibrado) */
+    /* 3. REPARACIÓN DE ANCHO PARA TABLA (Sin huecos grises) */
+    [data-testid="stDataFrame"], 
+    [data-testid="stDataFrame"] > div {{
+        width: 100% !important;
+    }}
+    
+    [data-testid="stDataFrame"] canvas {{
+        width: 100% !important;
+    }}
+
+    /* 4. ESPACIADO DE BLOQUES */
     [data-testid="stVerticalBlock"] {{
         gap: 0.8rem !important; 
     }}
 
-    /* 4. ANIMACIÓN DE ENTRADA (Fade In Up) */
+    /* 5. ANIMACIÓN DE ENTRADA */
     @keyframes fadeInUp {{
-        from {{ 
-            opacity: 0; 
-            transform: translateY(15px); 
-        }}
-        to {{ 
-            opacity: 1; 
-            transform: translateY(0); 
-        }}
+        from {{ opacity: 0; transform: translateY(15px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
     }}
 
-    /* Aplicar animación al contenido (excluyendo el footer) */
     [data-testid="stVerticalBlock"] > div:not(.element-container:has(.footer)) {{
         animation: fadeInUp 0.6s ease-out;
     }}
 
-    /* 5. TÍTULOS ESTILO "OPERATIONAL QUERY" (H3 sin aire excesivo) */
+    /* 6. TÍTULOS ESTILO NEXION (Compacto sin aire superior) */
     h3 {{
         font-size: 13px !important; 
         font-weight: 400 !important;
         text-transform: uppercase;
         letter-spacing: 8px !important;
         text-align: center !important;
-        margin-top: -5px !important; /* Subimos el título para quitar aire */
+        margin-top: -5px !important; 
         margin-bottom: 20px !important;
         color: {vars_css['sub']} !important;
         display: block;
         width: 100%;
     }}
 
-    /* 6. ESTILO DE BOTONES */
+    /* 7. ESTILO DE BOTONES */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -102,24 +102,20 @@ st.markdown(f"""
         font-size: 11px !important;
         height: 38px !important;
         transition: all 0.3s ease !important;
-        width: 100%;
-        box-shadow: none !important;
+        width: 100% !important;
     }}
 
     div.stButton > button:hover {{
         background-color: {vars_css['text']} !important; 
         color: {vars_css['bg']} !important; 
-        border-color: {vars_css['text']} !important;
     }}
 
-    /* Botones de Submenú */
     div.stButton > button[key^="sub_"] {{
         height: 32px !important;
         font-size: 10px !important;
-        margin-top: 2px !important;
     }}
 
-    /* 7. INPUT DE BÚSQUEDA */
+    /* 8. INPUT DE BÚSQUEDA */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
@@ -130,16 +126,7 @@ st.markdown(f"""
         letter-spacing: 2px;
     }}
 
-    .op-query-text {{
-        text-align: center;
-        color: {vars_css['sub']};
-        font-size: 11px;
-        letter-spacing: 8px;
-        margin-bottom: 25px;
-        text-transform: uppercase;
-    }}
-
-    /* 8. FOOTER FIJO (Blindado) */
+    /* 9. FOOTER FIJO E INMUNE */
     .footer {{
         position: fixed;
         bottom: 0 !important; 
@@ -382,6 +369,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
