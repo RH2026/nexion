@@ -14,7 +14,7 @@ import time
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
 # ── TEMA FIJO (MODO CLARO) ──────────────────────────────────
-# Forzamos el tema a claro eliminando la opción de alternar
+# Forzamos el estado a claro
 st.session_state.tema = "claro"
 
 if "menu_main" not in st.session_state: 
@@ -22,15 +22,22 @@ if "menu_main" not in st.session_state:
 if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
-tema = st.session_state.tema
+# Diccionario simplificado: eliminamos la estructura de "oscuro" para evitar errores
 vars_css = {
-    "claro": {"bg": "#E3E7ED", "card": "#FFFFFF", "text": "#111111", "sub": "#2D3136", "border": "#C9D1D9", "logo": "n2.png"}
-}[tema]
+    "bg": "#E3E7ED",      # Fondo principal solicitado
+    "card": "#FFFFFF",    # Fondo de tarjetas e inputs
+    "text": "#111111",    # Texto principal
+    "sub": "#2D3136",     # Texto secundario/subtítulos
+    "border": "#C9D1D9",  # Líneas y bordes
+    "logo": "n2.png"      # Logo para versión clara
+}
 
 # ── CSS MAESTRO (CON ANIMACIONES ELITE) ─────────────────────
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    
+    /* Ocultar elementos nativos de Streamlit */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
     .block-container {{ 
@@ -38,46 +45,44 @@ st.markdown(f"""
         padding-bottom: 0rem !important; 
     }}
 
+    /* Fondo principal de la App */
     .stApp {{ 
-        background: {vars_css['bg']} !important; 
+        background-color: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
         font-family: 'Inter', sans-serif !important;
-        transition: background-color 0.8s ease, color 0.8s ease !important;
     }}
 
-    /* ── ANIMACIÓN DE ENTRADA (FADE & SLIDE) ── */
+    /* ── ANIMACIÓN DE ENTRADA ── */
     @keyframes fadeInUp {{
         from {{ opacity: 0; transform: translateY(15px); }}
         to {{ opacity: 1; transform: translateY(0); }}
     }}
 
-    /* Aplicar a los contenedores principales */
     [data-testid="stVerticalBlock"] > div {{
         animation: fadeInUp 0.6s ease-out;
     }}
 
-    /* INPUT DE BÚSQUEDA */
+    /* INPUTS DE BÚSQUEDA */
     .stTextInput input {{
-        background: {vars_css['card']} !important;
+        background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important;
         border-radius: 2px !important;
         height: 42px !important;
         font-size: 11px !important;
         text-align: center !important;
-        line-height: 42px !important;
-        padding: 0px !important;
         letter-spacing: 2px;
         transition: all 0.3s ease;
     }}
+    
     .stTextInput input:focus {{
         border-color: {vars_css['text']} !important;
-        box-shadow: 0 0 10px rgba(240, 246, 252, 0.1);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
     }}
 
-    /* BOTONES Y HOVER */
+    /* BOTONES */
     div.stButton>button {{
-        background: {vars_css['card']} !important; 
+        background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important; 
         border-radius: 2px !important;
@@ -86,20 +91,18 @@ st.markdown(f"""
         font-size: 10px !important;
         height: 32px !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        width: 100%;
     }}
+    
     div.stButton>button:hover {{
-        background: {vars_css['text']} !important; 
+        background-color: {vars_css['text']} !important; 
         color: {vars_css['bg']} !important; 
         transform: translateY(-1px);
     }}
 
-    /* LOGO Y NITIDEZ */
+    /* LOGO Y FOOTER */
     div[data-testid='stImage'] img {{
         image-rendering: -webkit-optimize-contrast !important;
-        image-rendering: crisp-edges !important;
     }}
-    div[data-testid='stImage'] {{ margin-top: -20px !important; }}
 
     .footer {{
         position: fixed;
@@ -300,6 +303,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
