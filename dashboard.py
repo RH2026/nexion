@@ -32,40 +32,20 @@ vars_css = {
 }
 
 # ── CSS MAESTRO (BOTONES MINIMALISTAS + HOVER + ESCALA 100%) ──
+# ── CSS MAESTRO (BOTONES REALMENTE DELGADOS + SIN RELLENO EXTRA) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
-    /* 1. Limpieza de Interfaz */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
-    /* 2. CONFIGURACIÓN GENERAL */
     .stApp {{ 
         background-color: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
         font-family: 'Inter', sans-serif !important;
     }}
 
-    .block-container {{ 
-        padding-top: 1rem !important; 
-        padding-bottom: 5rem !important; 
-    }}
-
-    /* 3. TÍTULOS Y OPERATIONAL QUERY (Centrado) */
-    h3, .op-query-text {{
-        font-size: 13px !important; 
-        font-weight: 400 !important;
-        text-transform: uppercase;
-        letter-spacing: 8px !important;
-        text-align: center !important;
-        margin-top: -5px !important; 
-        margin-bottom: 25px !important;
-        color: {vars_css['sub']} !important;
-        display: block !important;
-        width: 100% !important;
-    }}
-
-    /* 4. ESTILO DE BOTONES MINIMALISTAS (MÁS DELGADOS) */
+    /* 4. BOTONES DELGADOS (REPARACIÓN AGRESIVA) */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -73,14 +53,20 @@ st.markdown(f"""
         border-radius: 2px !important;
         font-weight: 700 !important; 
         text-transform: uppercase;
-        font-size: 10px !important; /* Bajamos un punto la fuente para balancear */
-        height: 30px !important;    /* ANTES: 38px (Ahora más delgado) */
+        font-size: 10px !important;
+        
+        /* Forzamos altura mínima y máxima para que no crezca */
+        height: 28px !important; 
+        min-height: 28px !important;
+        line-height: 28px !important;
+        
+        /* Quitamos el padding (aire interno) que Streamlit pone por defecto */
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+        
         transition: all 0.3s ease !important;
         width: 100% !important;
-        line-height: 1 !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: block !important;
     }}
 
     /* Hover Negro */
@@ -90,50 +76,42 @@ st.markdown(f"""
         border-color: #000000 !important;
     }}
 
-    /* Botones de Submenú (Aún más delgados) */
+    /* Submenús aún más delgados */
     div.stButton > button[key^="sub_"] {{
-        height: 26px !important;    /* ANTES: 32px */
+        height: 24px !important;
+        min-height: 24px !important;
+        line-height: 24px !important;
         font-size: 9px !important;
     }}
 
-    /* 5. TABLAS Y GRÁFICOS (Ancho total) */
-    [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
-        width: 100% !important;
-    }}
-    
-    [data-testid="stDataFrame"] canvas {{
-        width: 100% !important;
-    }}
-
-    /* 6. INPUT DE BÚSQUEDA */
-    .stTextInput input {{
-        background-color: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important;
-        border-radius: 2px !important;
-        height: 40px !important; /* Ajustado ligeramente para armonía */
+    /* 5. TÍTULOS Y OTROS (Sin cambios) */
+    h3, .op-query-text {{
+        font-size: 13px !important; 
+        font-weight: 400 !important;
+        letter-spacing: 8px !important;
         text-align: center !important;
-        letter-spacing: 2px;
+        margin-top: -5px !important; 
+        margin-bottom: 25px !important;
+        color: {vars_css['sub']} !important;
     }}
 
-    /* 7. FOOTER FIJO */
+    .stTextInput input {{
+        height: 38px !important; /* También un poco más delgado para armonía */
+        text-align: center !important;
+    }}
+
     .footer {{
         position: fixed;
-        bottom: 0 !important; 
-        left: 0 !important; 
-        width: 100% !important;
+        bottom: 0 !important; left: 0 !important; width: 100% !important;
         background-color: {vars_css['bg']} !important;
-        color: {vars_css['sub']} !important;
         text-align: center;
         padding: 15px 0px !important;
         font-size: 9px;
-        letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']} !important;
         z-index: 999999 !important;
     }}
 </style>
 """, unsafe_allow_html=True)
-
 # ── 4. SPLASH SCREEN ──────────────────────────────────────
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
@@ -357,6 +335,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
