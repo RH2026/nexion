@@ -219,15 +219,15 @@ with main_container:
     # 2. SEGUIMIENTO
     elif st.session_state.menu_main == "SEGUIMIENTO":
         if st.session_state.menu_sub == "TRK":
-            st.subheader("SEGUIMIENTO > TRK")
+            st.subheader("S E G U I M I E N T O > T R K")
             st.info("Espacio para contenido de Tracking Operativo")
 
         elif st.session_state.menu_sub == "GANTT":
-            st.subheader("SEGUIMIENTO > GANTT")
+            st.subheader("S E G U I M I E N T O > G A N T T")
             st.info("Espacio para visualización de Cronograma")
 
         elif st.session_state.menu_sub == "QUEJAS":
-            st.subheader("SEGUIMIENTO > PORTAL DE QUEJAS")
+            st.subheader("S E G U I M I E N T O > P O R T A L D E Q U E J A S")
             st.info("Contenedor para registro y seguimiento de incidencias / quejas")
             # Aquí puedes insertar un st.form para capturar las quejas
 
@@ -257,6 +257,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
