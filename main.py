@@ -15,7 +15,7 @@ class SessionState:
 state = SessionState()
 
 def apply_styles():
-    # Paleta: Ónix Profundo vs. Platino Satinado
+    # Paleta Premium: Onix profundo y Platino satinado
     bg = "#0A0A0B" if state.dark_mode else "#F2F2F7"
     text = "#FFFFFF" if state.dark_mode else "#121212"
     border = "#1A1A1D" if state.dark_mode else "#D1D1D6"
@@ -26,7 +26,11 @@ def apply_styles():
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;400;900&display=swap');
             
-            * {{ font-family: 'Inter', sans-serif; color: inherit; -webkit-font-smoothing: antialiased; }}
+            * {{ 
+                font-family: 'Inter', sans-serif; 
+                color: inherit; 
+                -webkit-font-smoothing: antialiased; 
+            }}
             
             :root {{
                 --n-text: {text};
@@ -34,7 +38,7 @@ def apply_styles():
                 --n-border: {border};
             }}
 
-            /* Minimalismo Zara: Bordes casi invisibles y mucho aire */
+            /* Minimalismo Zara: Bordes rectos y espaciado agresivo */
             .nexion-border {{ border-color: var(--n-border) !important; }}
             
             /* Menú Dropdown Estilo Boutique */
@@ -53,7 +57,7 @@ def apply_styles():
             }}
             .q-item:hover {{ background-color: var(--n-text) !important; color: var(--n-bg) !important; }}
 
-            /* Navegación Estilo "Luxury Tech" */
+            /* Navegación "Luxury Tech" */
             .nexion-btn {{ 
                 text-transform: uppercase; 
                 letter-spacing: 5px !important; 
@@ -65,7 +69,7 @@ def apply_styles():
             }}
             .nexion-btn:hover {{ opacity: 1; }}
             
-            /* Títulos Principales: Espaciado Extremo */
+            /* Títulos Principales: Espaciado Extremo (Zara Look) */
             .ultra-spacing {{
                 letter-spacing: 20px !important;
                 text-transform: uppercase;
@@ -82,6 +86,7 @@ def apply_styles():
                 text-align: center !important;
             }}
             
+            /* Botón EXECUTE (Estilo Etiqueta DHL/FedEx) */
             .btn-execute {{
                 background-color: var(--n-text) !important;
                 color: var(--n-bg) !important;
@@ -109,12 +114,11 @@ def navigate(main, sub=None):
 @ui.refreshable
 def main_content():
     with ui.column().classes('w-full items-center px-8 mt-40 animate-fade-in'):
-        # Título de Sección con Estilo Editorial
         ui.label(state.menu_main).classes('text-[8px] ultra-spacing opacity-30 mb-6')
         ui.label(state.menu_sub).classes('text-6xl ultra-spacing mb-32')
 
         if state.menu_main == "TRACKING":
-            with ui.column().classes('w-full max-w-lg items-center gap-16'):
+            with ui.column().classes('w-full max-lg items-center gap-16'):
                 search = ui.input(placeholder='REFERENCE NUMBER').classes('w-full input-premium').props('borderless dark')
                 ui.button('E X E C U T E', on_click=lambda: ui.notify(f"Querying: {search.value}")) \
                     .classes('btn-execute w-full')
@@ -123,7 +127,6 @@ def main_content():
 async def index():
     apply_styles()
     
-    # 1. Splash Screen Ultra-Minimal
     if not state.splash_done:
         with ui.column().classes('fixed inset-0 items-center justify-center z-[100] bg-[#0A0A0B]') as splash:
             ui.label('N').classes('text-white text-9xl font-thin tracking-[50px] animate-pulse ml-[50px]')
@@ -131,15 +134,12 @@ async def index():
             splash.delete()
             state.splash_done = True
 
-    # 2. Header Estilo Zara (Minimalismo Extremo)
     with ui.header().classes('bg-transparent border-b nexion-border p-8').style('backdrop-filter: blur(25px)'):
         with ui.row().classes('w-full items-center justify-between'):
-            # Logo
             with ui.row().classes('items-center gap-10'):
                 logo_src = f'/static/n{"1" if state.dark_mode else "2"}.png'
                 ui.image(logo_src).style('width: 100px; opacity: 0.9;')
 
-            # Menú Dropdowns (Limpio y Espaciado)
             with ui.row().classes('gap-12'):
                 for main_item, subs in nav_map.items():
                     with ui.button(main_item).props('flat dense').classes('nexion-btn'):
@@ -154,7 +154,6 @@ async def index():
                           on_click=lambda: [setattr(state, 'dark_mode', not state.dark_mode), ui.run_javascript('window.location.reload()')]) \
                     .props('flat').classes('opacity-20 ml-8')
 
-    # 3. Footer Estilo DHL/FedEx (Información técnica sutil)
     with ui.footer().classes('bg-transparent p-12 border-t nexion-border'):
         ui.label('N E X I O N // G D L // L O G I S T I C S // 2 0 2 6').classes('text-[7px] tracking-[10px] opacity-10 w-full text-center')
 
@@ -163,6 +162,7 @@ async def index():
 if __name__ in {"__main__", "nicegui"}:
     port = int(os.environ.get("PORT", 8080))
     ui.run(host='0.0.0.0', port=port, title="NEXION", dark=True, reload=False, show=False)
+
 
 
 
