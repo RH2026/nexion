@@ -31,7 +31,7 @@ vars_css = {
     "logo": "n2.png"      # Logo
 }
 
-# ── CSS MAESTRO (VERSION FINAL: SLIM + AIRE AJUSTADO) ──
+# ── CSS MAESTRO (VERSION FINAL: SLIM + AIRE AJUSTADO + ANIMACIÓN) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -45,13 +45,30 @@ st.markdown(f"""
         font-family: 'Inter', sans-serif !important;
     }}
 
-    /* 2. REPARACIÓN: AIRE AJUSTADO (Ni al cielo, ni amontonado) */
+    /* 2. REPARACIÓN: AIRE AJUSTADO */
     .block-container {{ 
-        padding-top: 0.8rem !important; /* Aire reducido y conforme */
+        padding-top: 0.8rem !important; 
         padding-bottom: 5rem !important; 
     }}
 
-    /* 3. TÍTULOS (Espaciado técnico) */
+    /* 3. ANIMACIÓN DE ENTRADA (Fade In Up) */
+    @keyframes fadeInUp {{
+        from {{ 
+            opacity: 0; 
+            transform: translateY(15px); 
+        }}
+        to {{ 
+            opacity: 1; 
+            transform: translateY(0); 
+        }}
+    }}
+
+    /* Aplicar animación al contenido dinámico (excluyendo el footer) */
+    [data-testid="stVerticalBlock"] > div:not(.element-container:has(.footer)) {{
+        animation: fadeInUp 0.6s ease-out;
+    }}
+
+    /* 4. TÍTULOS (Espaciado técnico) */
     h3, .op-query-text {{
         font-size: 11px !important; 
         letter-spacing: 8px !important;
@@ -63,7 +80,7 @@ st.markdown(f"""
         width: 100% !important;
     }}
 
-    /* 4. BOTONES SLIM DEFINITIVOS */
+    /* 5. BOTONES SLIM DEFINITIVOS */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -97,7 +114,7 @@ st.markdown(f"""
         font-size: 9px !important;
     }}
 
-    /* 5. INPUT DE BÚSQUEDA */
+    /* 6. INPUT DE BÚSQUEDA */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         border: 1px solid {vars_css['border']} !important;
@@ -107,17 +124,21 @@ st.markdown(f"""
         letter-spacing: 1px;
     }}
 
-    /* 6. FOOTER FIJO */
+    /* 7. FOOTER FIJO (Blindado de la animación) */
     .footer {{
         position: fixed;
         bottom: 0 !important; left: 0 !important; width: 100% !important;
         background-color: {vars_css['bg']} !important;
+        color: {vars_css['sub']} !important;
         text-align: center;
         padding: 12px 0px !important;
         font-size: 9px;
         letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']} !important;
         z-index: 999999 !important;
+        /* Aseguramos que el footer NO se anime */
+        animation: none !important;
+        transform: none !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -344,6 +365,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
