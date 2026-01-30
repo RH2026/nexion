@@ -149,7 +149,7 @@ with header_zone:
 # ── SUBMENÚS (LÍNEA 2) ─────────────────────────────────────
 sub_map = {
     "TRACKING": [],
-    "SEGUIMIENTO": ["TRK", "GANTT"],
+    "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
     "REPORTES": ["APQ", "OPS", "OTD"],
     "FORMATOS": ["SALIDA DE PT", "PAGOS"] # Se agregó PAGOS aquí
 }
@@ -189,12 +189,15 @@ with main_container:
         if st.session_state.menu_sub == "TRK":
             st.subheader("SEGUIMIENTO > TRK")
             st.info("Espacio para contenido de Tracking Operativo")
-            # Tu nuevo contenido aquí
 
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
             st.info("Espacio para visualización de Cronograma")
-            # Tu nuevo contenido aquí
+
+        elif st.session_state.menu_sub == "QUEJAS":
+            st.subheader("SEGUIMIENTO > PORTAL DE QUEJAS")
+            st.info("Contenedor para registro y seguimiento de incidencias / quejas")
+            # Aquí puedes insertar un st.form para capturar las quejas
 
     # 3. REPORTES
     elif st.session_state.menu_main == "REPORTES":
@@ -222,6 +225,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
