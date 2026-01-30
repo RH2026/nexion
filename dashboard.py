@@ -32,99 +32,80 @@ vars_css = {
 }
 
 # ── CSS MAESTRO INTEGRAL (80% ZOOM + ESTILO NEXION FINAL) ──
-# ── CSS MAESTRO INTEGRAL (80% ZOOM + CENTRADO TOTAL + FULL WIDTH) ──
+# ── CSS MAESTRO (HEADER FULL WIDTH + CONTENIDO DINÁMICO CENTRADO) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
-    /* 1. Limpieza de Interfaz Nativa */
+    /* 1. Limpieza y Fondo */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
-    /* 2. ESCALA AL 80% Y CENTRADO DE PÁGINA */
     .stApp {{ 
         zoom: 0.8; 
         -moz-transform: scale(0.8); 
         -moz-transform-origin: top center;
         background-color: {vars_css['bg']} !important; 
-        color: {vars_css['text']} !important; 
-        font-family: 'Inter', sans-serif !important;
     }}
 
-    /* Fuerza al contenedor a centrarse y usar el ancho correcto */
+    /* 2. CONTENEDOR PRINCIPAL: Permite que el header use todo el ancho */
     .block-container {{ 
-        max-width: 1200px !important; /* Ajusta este valor si quieres que sea más ancho o angosto */
+        max-width: 95% !important; 
         margin: 0 auto !important;
         padding-top: 1rem !important; 
-        padding-bottom: 5rem !important; 
-        display: flex;
-        flex-direction: column;
-        align-items: center;
     }}
 
-    /* Asegura que los bloques internos ocupen el ancho del contenedor centrado */
-    [data-testid="stVerticalBlock"], [data-testid="stVerticalBlock"] > div {{
-        width: 100% !important;
+    /* 3. CENTRADO EXCLUSIVO DEL CONTENIDO DINÁMICO */
+    /* Usamos el contenedor principal de contenido para limitar su ancho y centrarlo */
+    /* Esto no afectará al header_zone porque el header está en su propio contenedor superior */
+    [data-testid="stVerticalBlock"] > div.element-container {{
+        width: 100%;
     }}
 
-    /* 3. REPARACIÓN DE ANCHO PARA TABLA Y GRÁFICOS */
-    [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div, .js-plotly-plot {{
+    /* Ajustamos el ancho de la zona de trabajo (tablas, gráficas, buscador) */
+    /* Dejamos el header fuera de esta regla mediante la estructura del código */
+    .dynamic-content-area {{
+        max-width: 1100px;
+        margin: 0 auto;
+    }}
+
+    /* 4. REPARACIÓN DE TABLA Y GANTT (Full Width dentro de su centro) */
+    [data-testid="stDataFrame"], .js-plotly-plot {{
         width: 100% !important;
-        margin: 0 auto !important;
     }}
     
     [data-testid="stDataFrame"] canvas {{
         width: 100% !important;
     }}
 
-    /* 4. ESPACIADO DE BLOQUES */
-    [data-testid="stVerticalBlock"] {{
-        gap: 0.6rem !important; 
-    }}
-
-    /* 5. ANIMACIÓN DE ENTRADA */
-    @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(15px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
-
-    [data-testid="stVerticalBlock"] > div:not(.element-container:has(.footer)) {{
-        animation: fadeInUp 0.6s ease-out;
-    }}
-
-    /* 6. TÍTULOS ESTILO NEXION */
+    /* 5. TÍTULOS (S e g u i m i e n t o...) */
     h3 {{
         font-size: 13px !important; 
         font-weight: 400 !important;
-        text-transform: uppercase;
         letter-spacing: 8px !important;
         text-align: center !important;
-        margin-top: -10px !important;
+        margin-top: -5px !important;
         margin-bottom: 20px !important;
         color: {vars_css['sub']} !important;
         width: 100%;
     }}
 
-    /* 7. ESTILO DE BOTONES */
+    /* 6. BOTONES Y FOOTER (Sin cambios) */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
         border: 1px solid {vars_css['border']} !important; 
         border-radius: 2px !important;
         font-weight: 700 !important; 
-        text-transform: uppercase;
-        font-size: 11px !important;
         height: 38px !important;
         width: 100% !important;
     }}
 
-    /* 8. FOOTER FIJO */
     .footer {{
         position: fixed;
         bottom: 0 !important; 
         left: 0 !important; 
         width: 100% !important;
         background-color: {vars_css['bg']} !important;
-        color: {vars_css['sub']} !important;
         text-align: center;
         padding: 15px 0px !important;
         font-size: 9px;
@@ -202,10 +183,13 @@ if current_subs:
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.3;'>", unsafe_allow_html=True)
 
-# ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
+# ── CONTENEDOR DE CONTENIDO (DINÁMICO CON CENTRADO REPARADO) ──
 main_container = st.container()
 with main_container:
-    # 1. TRACKING
+    # 1. Envolvemos el contenido en el div de área dinámica para el centrado CSS
+    st.markdown('<div class="dynamic-content-area">', unsafe_allow_html=True)
+    
+    # ── BLOQUE 1: TRACKING ──
     if st.session_state.menu_main == "TRACKING":
         st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
         _, col_search, _ = st.columns([1, 1.6, 1])
@@ -215,13 +199,15 @@ with main_container:
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
                 st.toast(f"Buscando: {busqueda}")
 
-    # 2. SEGUIMIENTO
+    # ── BLOQUE 2: SEGUIMIENTO ──
     elif st.session_state.menu_main == "SEGUIMIENTO":
         if st.session_state.menu_sub == "TRK":
             st.subheader("SEGUIMIENTO > TRK")
             st.info("Espacio para contenido de Tracking Operativo")
+            
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
+            
             # ---GANTT---CONFIGURACIÓN ---
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
@@ -232,24 +218,19 @@ with main_container:
                 utc_ahora = datetime.datetime.now(datetime.timezone.utc)
                 return (utc_ahora - datetime.timedelta(hours=6)).date()
             
-            # --- 2. FUNCIONES DE DATOS ---
             def cargar_datos_seguro():
                 columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
                 hoy = obtener_fecha_mexico()
                 try:
-                    # Forzamos refresco de caché con timestamp
                     response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
                     if response.status_code == 200:
                         df = pd.read_csv(StringIO(response.text))
                         df.columns = [c.strip().upper() for c in df.columns]
                         for col in columnas_base:
                             if col not in df.columns: df[col] = ""
-                        
-                        # Limpieza y conversión estricta para Plotly
                         for col in ['FECHA', 'FECHA_FIN']:
                             df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
                             df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
-                        
                         return df[columnas_base]
                     return pd.DataFrame(columns=columnas_base)
                 except:
@@ -259,7 +240,7 @@ with main_container:
                 if not TOKEN:
                     st.error("Error: GITHUB_TOKEN no configurado"); return False
                 try:
-                    from github import Github  # Aseguramos el import aquí
+                    from github import Github
                     g = Github(TOKEN)
                     repo = g.get_repo(REPO_NAME)
                     df_save = df.copy()
@@ -267,57 +248,45 @@ with main_container:
                     df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
                     csv_data = df_save.to_csv(index=False)
                     contents = repo.get_contents(FILE_PATH, ref="main")
-                    repo.update_file(
-                        contents.path, 
-                        f"Actualización NEXION {obtener_fecha_mexico()}", 
-                        csv_data, 
-                        contents.sha, 
-                        branch="main"
-                    )
+                    repo.update_file(contents.path, f"Actualización NEXION {obtener_fecha_mexico()}", csv_data, contents.sha, branch="main")
                     st.toast("🚀 ¡Sincronizado con GitHub!", icon="✅")
                     return True
                 except Exception as e:
                     st.error(f"Error al sincronizar: {e}")
                     return False
             
-            # --- 3. GESTIÓN DE ESTADO ---
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-            # --- 4. GRÁFICO GANTT (REPARADO Y CENTRADO) ---
+            # --- 4. GRÁFICO GANTT ---
             if not st.session_state.df_tareas.empty:
                 try:
                     df_p = st.session_state.df_tareas.copy()
-                    # Conversión necesaria para que ff.create_gantt no falle
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'])
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'])
-                    
                     df_p = df_p.rename(columns={'TAREA':'Task', 'FECHA':'Start', 'FECHA_FIN':'Finish', 'IMPORTANCIA':'Resource'})
                     colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
                     
                     import plotly.figure_factory as ff
                     fig = ff.create_gantt(df_p, colors=colors, index_col='Resource', group_tasks=True, showgrid_x=True, showgrid_y=True)
-                    
                     fig.update_layout(
                         plot_bgcolor='rgba(0,0,0,0)', 
                         paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=vars_css['text'], family="Inter"), # Corregido a vars_css
+                        font=dict(color=vars_css['text'], family="Inter"),
                         height=350,
                         margin=dict(l=100, r=20, t=20, b=50),
                         autosize=True
                     )
-                    # Centrado visual de la gráfica
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
                 except Exception as e:
                     st.info("💡 Consejo: Completa las fechas de Inicio y Fin para ver el gráfico.")
             
-            # --- 5. EDITOR Y BOTÓN ÚNICO (CENTRADO TOTAL) ---
-            # Usamos un contenedor para aplicar el centrado del CSS anterior
+            # --- 5. EDITOR ---
             with st.container():
                 df_editado = st.data_editor(
                     st.session_state.df_tareas,
                     num_rows="dynamic",
-                    use_container_width=True, # Clave para el estiramiento y centrado
+                    use_container_width=True,
                     key="nexion_editor_v8",
                     column_config={
                         "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
@@ -328,7 +297,6 @@ with main_container:
                     },
                     hide_index=True
                 )
-            
                 if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
                     if guardar_en_github(df_editado):
                         st.session_state.df_tareas = df_editado
@@ -338,11 +306,11 @@ with main_container:
             st.subheader("SEGUIMIENTO > PORTAL DE QUEJAS")
             st.info("Contenedor para registro y seguimiento de quejas")
 
-    # 3. REPORTES
+    # ── BLOQUE 3: REPORTES ──
     elif st.session_state.menu_main == "REPORTES":
         st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
 
-    # 4. FORMATOS
+    # ── BLOQUE 4: FORMATOS ──
     elif st.session_state.menu_main == "FORMATOS":
         if st.session_state.menu_sub == "SALIDA DE PT":
             st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
@@ -352,12 +320,16 @@ with main_container:
             st.subheader("CENTRO DE DOCUMENTACIÓN")
             st.write("Seleccione un formato del submenú superior.")
 
+    # 2. Cerramos el área dinámica
+    st.markdown('</div>', unsafe_allow_html=True)
+
 # ── FOOTER FIJO (SOLUCIÓN DEFINITIVA) ────────────────────────
 st.markdown(f"""
     <div class="footer">
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
