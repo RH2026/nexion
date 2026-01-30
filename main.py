@@ -75,7 +75,7 @@ def header_content():
 
 @ui.refreshable
 def main_content():
-    s = app.storage.user.get('state', {'main': 'TRACKING', 'sub': 'GENERAL'})
+    s = app.storage.user.get('state', {'main': 'PERRO', 'sub': 'GENERAL'})
     with ui.column().classes("w-full items-center mt-32"):
         ui.label(s['main']).style("font-size:10px; letter-spacing:15px; opacity:.2")
         ui.label(s['sub']).style("font-size:58px; font-weight:100; letter-spacing:25px; margin:40px 0; text-transform:uppercase; text-align:center")
@@ -118,6 +118,7 @@ if __name__ in {"__main__", "__mp_main__"}:
         show=False,
         storage_secret="XENOCODE_ULTRA_SECRET"
     )
+
 
 
 
