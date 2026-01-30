@@ -32,11 +32,7 @@ vars_css = {
     "logo": "n2.png"      # Logo para versión clara
 }
 
-Entiendo perfectamente. El diseño anterior era demasiado apretado y no dejaba respirar los elementos de NEXION. He ajustado el CSS Maestro para devolverle el "aire" al diseño, separando los bloques y dándole un aspecto mucho más limpio y profesional sin perder la elegancia.
 
-Aquí tienes el código reparado:
-
-Python
 # ── CSS MAESTRO (REPARADO: MÁS ESPACIO Y RESPIRO) ────────────
 st.markdown(f"""
 <style>
@@ -237,6 +233,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
