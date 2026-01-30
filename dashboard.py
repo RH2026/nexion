@@ -67,7 +67,7 @@ st.markdown(f"""
 
     /* 4. TÍTULOS (H3) */
     h3 {{
-        font-size: 22px !important; 
+        font-size: 16px !important; 
         font-weight: 800 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -254,6 +254,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
