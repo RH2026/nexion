@@ -225,7 +225,8 @@ with main_container:
 
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            st.info("Módulo de Cronograma Visual")
+            if 'df_tareas' not in st.session_state:
+                st.session_state.df_tareas = cargar_datos_seguro()
 
     # 3. REPORTES
     elif st.session_state.menu_main == "REPORTES":
@@ -242,12 +243,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# ── FOOTER FIJO ──────────────────────────────────────────────
-st.markdown(f"""
-    <div class="footer">
-        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
-    </div>
-""", unsafe_allow_html=True)
+
 
 
 
