@@ -30,7 +30,7 @@ vars_css = {
     "logo": "n2.png"      # Logo
 }
 
-# ── CSS MAESTRO ──────────────────────────────────────────────
+# ── CSS MAESTRO (ANIMACIÓN RESTAURADA Y TÍTULOS CORREGIDOS) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -52,16 +52,36 @@ st.markdown(f"""
         gap: 0.6rem !important; 
     }}
 
-    /* --- ESTO CAMBIA EL TAMAÑO DE "CENTRO DE DOCUMENTACION" --- */
+    /* ── ANIMACIÓN DE ENTRADA (FADE IN UP) ── */
+    @keyframes fadeInUp {{
+        from {{ 
+            opacity: 0; 
+            transform: translateY(15px); 
+        }}
+        to {{ 
+            opacity: 1; 
+            transform: translateY(0); 
+        }}
+    }}
+
+    /* Aplicar animación a cada bloque de contenido */
+    [data-testid="stVerticalBlock"] > div {{
+        animation: fadeInUp 0.6s ease-out;
+    }}
+
+    /* ── TAMAÑO DE TÍTULOS (H3) ── */
     h3 {{
-        font-size: 14px !important; /* Prueba con 20px, 24px o 28px */
+        font-size: 16px !important; 
         font-weight: 800 !important;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-top: 10px !important;
+        margin-top: 15px !important;
+        margin-bottom: 5px !important;
         color: {vars_css['text']} !important;
+        animation: fadeInUp 0.8s ease-out; /* Animación ligeramente más lenta para el título */
     }}
 
+    /* ── BOTONES ── */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -87,6 +107,7 @@ st.markdown(f"""
         border-radius: 2px !important;
     }}
 
+    /* ── INPUTS ── */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
@@ -97,6 +118,7 @@ st.markdown(f"""
         text-align: center !important;
     }}
 
+    /* ── FOOTER ── */
     .footer {{
         position: fixed;
         bottom: 0; left: 0; width: 100%;
@@ -235,6 +257,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
