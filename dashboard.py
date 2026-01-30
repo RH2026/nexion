@@ -6,7 +6,6 @@ import os
 import streamlit.components.v1 as components
 import requests
 from io import StringIO
-from github import Github
 import plotly.graph_objects as go
 import time
 
@@ -21,17 +20,17 @@ if "menu_main" not in st.session_state:
 if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
-# Variables de diseño según tus preferencias
+# Variables de diseño
 vars_css = {
-    "bg": "#E3E7ED",      # Fondo principal solicitado
+    "bg": "#E3E7ED",      # Fondo principal
     "card": "#FFFFFF",    # Fondos de tarjetas e inputs
     "text": "#111111",    # Texto principal
     "sub": "#2D3136",     # Texto secundario
     "border": "#C9D1D9",  # Bordes y líneas
-    "logo": "n2.png"      # Logo para modo claro
+    "logo": "n2.png"      # Logo
 }
 
-# ── CSS MAESTRO (ESPACIOS EQUILIBRADOS Y DOS LÍNEAS) ────────
+# ── CSS MAESTRO ──────────────────────────────────────────────
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -49,12 +48,10 @@ st.markdown(f"""
         font-family: 'Inter', sans-serif !important;
     }}
 
-    /* Ajuste de GAP intermedio para evitar asfixia */
     [data-testid="stVerticalBlock"] {{
         gap: 0.6rem !important; 
     }}
 
-    /* Estilo de Botones Principales */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -73,7 +70,6 @@ st.markdown(f"""
         color: {vars_css['bg']} !important; 
     }}
 
-    /* Estilo de Botones de Submenú */
     div.stButton > button[key^="sub_"] {{
         height: 30px !important;
         font-size: 9px !important;
@@ -81,7 +77,6 @@ st.markdown(f"""
         border-radius: 2px !important;
     }}
 
-    /* Inputs de Búsqueda */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
@@ -156,7 +151,7 @@ sub_map = {
     "TRACKING": [],
     "SEGUIMIENTO": ["TRK", "GANTT"],
     "REPORTES": ["APQ", "OPS", "OTD"],
-    "FORMATOS": ["SALIDA DE PT"]
+    "FORMATOS": ["SALIDA DE PT", "PAGOS"] # Se agregó PAGOS aquí
 }
 
 current_subs = sub_map.get(st.session_state.menu_main, [])
@@ -174,35 +169,10 @@ if current_subs:
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.3;'>", unsafe_allow_html=True)
 
-# ── FUNCIONES DE SOPORTE (GITHUB) ──────────────────────────
-def obtener_fecha_mexico():
-    utc_ahora = datetime.datetime.now(datetime.timezone.utc)
-    return (utc_ahora - datetime.timedelta(hours=6)).date()
-
-def cargar_datos_seguro():
-    # Configuración de repositorio
-    REPO_NAME = "RH2026/nexion"
-    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
-    columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
-    hoy = obtener_fecha_mexico()
-    try:
-        response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
-        if response.status_code == 200:
-            df = pd.read_csv(StringIO(response.text))
-            df.columns = [c.strip().upper() for c in df.columns]
-            for col in columnas_base:
-                if col not in df.columns: df[col] = ""
-            for col in ['FECHA', 'FECHA_FIN']:
-                df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
-                df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
-            return df[columnas_base]
-        return pd.DataFrame(columns=columnas_base)
-    except:
-        return pd.DataFrame(columns=columnas_base)
-
 # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
 main_container = st.container()
 with main_container:
+    
     # 1. TRACKING
     if st.session_state.menu_main == "TRACKING":
         st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
@@ -212,29 +182,39 @@ with main_container:
             busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
                 st.toast(f"Buscando: {busqueda}")
+                # Agrega aquí tu lógica de búsqueda
 
     # 2. SEGUIMIENTO
     elif st.session_state.menu_main == "SEGUIMIENTO":
         if st.session_state.menu_sub == "TRK":
             st.subheader("SEGUIMIENTO > TRK")
-            if 'df_tareas' not in st.session_state:
-                st.session_state.df_tareas = cargar_datos_seguro()
-            
-            with st.container(border=True):
-                st.data_editor(st.session_state.df_tareas, use_container_width=True, hide_index=True)
+            st.info("Espacio para contenido de Tracking Operativo")
+            # Tu nuevo contenido aquí
 
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            if 'df_tareas' not in st.session_state:
-                st.session_state.df_tareas = cargar_datos_seguro()
+            st.info("Espacio para visualización de Cronograma")
+            # Tu nuevo contenido aquí
 
     # 3. REPORTES
     elif st.session_state.menu_main == "REPORTES":
         st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
+        st.info(f"Contenedor para reporte {st.session_state.menu_sub}")
+        # Tu nuevo contenido aquí
 
     # 4. FORMATOS
     elif st.session_state.menu_main == "FORMATOS":
-        st.subheader("CENTRO DE DOCUMENTACIÓN")
+        if st.session_state.menu_sub == "SALIDA DE PT":
+            st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
+            st.info("Formulario o visor de Salidas")
+        
+        elif st.session_state.menu_sub == "PAGOS":
+            st.subheader("FORMATOS > CONTROL DE PAGOS")
+            st.info("Espacio para gestión de pagos y facturación")
+        
+        else:
+            st.subheader("CENTRO DE DOCUMENTACIÓN")
+            st.write("Seleccione un formato del submenú superior.")
 
 # ── FOOTER FIJO ──────────────────────────────────────────────
 st.markdown(f"""
@@ -242,6 +222,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
