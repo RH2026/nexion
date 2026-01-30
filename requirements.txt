@@ -1,9 +1,10 @@
-pip install streamlit
+streamlit
 pandas
 openpyxl
 requests
 plotly
 uuid
+
 
 
 
