@@ -52,6 +52,16 @@ st.markdown(f"""
         gap: 0.6rem !important; 
     }}
 
+    /* --- ESTO CAMBIA EL TAMAÑO DE "CENTRO DE DOCUMENTACION" --- */
+    h3 {{
+        font-size: 14px !important; /* Prueba con 20px, 24px o 28px */
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 10px !important;
+        color: {vars_css['text']} !important;
+    }}
+
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -225,6 +235,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
