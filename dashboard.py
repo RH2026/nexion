@@ -30,57 +30,66 @@ vars_css = {
     "logo": "n2.png"      # Logo
 }
 
-# ── CSS MAESTRO (REPARADO: ESPACIO, ANIMACIÓN Y FOOTER FIJO) ──
+# ── CSS MAESTRO INTEGRAL (80% ZOOM + ESTILO NEXION FINAL) ──
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
-    /* 1. Limpieza de Interfaz */
+    /* 1. Limpieza de Interfaz Nativa */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     
-    .block-container {{ 
-        padding-top: 2rem !important; 
-        padding-bottom: 5rem !important; 
-    }}
-
+    /* 2. ESCALA GLOBAL AL 80% (Zoom solicitado) */
     .stApp {{ 
+        zoom: 0.8; /* Chrome, Safari, Edge */
+        -moz-transform: scale(0.8); /* Firefox */
+        -moz-transform-origin: top center;
         background-color: {vars_css['bg']} !important; 
         color: {vars_css['text']} !important; 
         font-family: 'Inter', sans-serif !important;
     }}
 
-    /* 2. ESPACIADO DE BLOQUES */
+    .block-container {{ 
+        padding-top: 1rem !important; 
+        padding-bottom: 5rem !important; 
+    }}
+
+    /* 3. ESPACIADO DE BLOQUES (GAP equilibrado) */
     [data-testid="stVerticalBlock"] {{
         gap: 0.8rem !important; 
     }}
 
-    /* 3. ANIMACIÓN DE ENTRADA (Fade In Up) */
+    /* 4. ANIMACIÓN DE ENTRADA (Fade In Up) */
     @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(15px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
+        from {{ 
+            opacity: 0; 
+            transform: translateY(15px); 
+        }}
+        to {{ 
+            opacity: 1; 
+            transform: translateY(0); 
+        }}
     }}
 
-    /* Aplicar animación SOLO al contenido (excluyendo el footer) */
+    /* Aplicar animación al contenido (excluyendo el footer) */
     [data-testid="stVerticalBlock"] > div:not(.element-container:has(.footer)) {{
         animation: fadeInUp 0.6s ease-out;
     }}
 
-    /* ── REPARACIÓN: QUITAR AIRE SOLO AQUÍ ── */
+    /* 5. TÍTULOS ESTILO "OPERATIONAL QUERY" (H3 con poco aire) */
     h3 {{
         font-size: 13px !important; 
         font-weight: 400 !important;
         text-transform: uppercase;
         letter-spacing: 8px !important;
         text-align: center !important;
-        /* Reducimos el margen superior de 30px a 5px para quitar el aire */
-        margin-top: 5px !important; 
+        margin-top: 5px !important; /* Aire reducido */
         margin-bottom: 20px !important;
         color: {vars_css['sub']} !important;
         display: block;
         width: 100%;
     }}
 
-    /* 5. ESTILO DE BOTONES */
+    /* 6. ESTILO DE BOTONES (Principales y Submenús) */
     div.stButton > button {{
         background-color: {vars_css['card']} !important; 
         color: {vars_css['text']} !important;
@@ -92,6 +101,7 @@ st.markdown(f"""
         height: 38px !important;
         transition: all 0.3s ease !important;
         width: 100%;
+        box-shadow: none !important;
     }}
 
     div.stButton > button:hover {{
@@ -100,14 +110,14 @@ st.markdown(f"""
         border-color: {vars_css['text']} !important;
     }}
 
-    /* Botones de Submenú */
+    /* Botones de Submenú (Segunda línea) */
     div.stButton > button[key^="sub_"] {{
         height: 32px !important;
         font-size: 10px !important;
         margin-top: 2px !important;
     }}
 
-    /* 6. INPUT DE BÚSQUEDA Y TEXTO OPERATIONAL */
+    /* 7. INPUT DE BÚSQUEDA Y TEXTO ESPECIAL */
     .stTextInput input {{
         background-color: {vars_css['card']} !important;
         color: {vars_css['text']} !important;
@@ -127,16 +137,16 @@ st.markdown(f"""
         text-transform: uppercase;
     }}
 
-    /* 7. FOOTER DEFINITIVO (INMUNE A ANIMACIONES) */
+    /* 8. FOOTER FIJO (Inmune a saltos y animaciones) */
     .footer {{
         position: fixed;
         bottom: 0 !important; 
         left: 0 !important; 
-        width: 100vw !important;
+        width: 100% !important;
         background-color: {vars_css['bg']} !important;
         color: {vars_css['sub']} !important;
         text-align: center;
-        padding: 12px 0px !important;
+        padding: 15px 0px !important;
         font-size: 9px;
         letter-spacing: 2px;
         border-top: 1px solid {vars_css['border']} !important;
@@ -258,6 +268,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
