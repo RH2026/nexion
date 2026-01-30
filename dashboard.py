@@ -236,7 +236,7 @@ with main_container:
             st.info("Espacio para contenido de Tracking Operativo")
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            #---GANTT---CONFIGURACIÓN ---
+            # ---GANTT---CONFIGURACIÓN ---
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
@@ -347,7 +347,6 @@ with main_container:
                     if guardar_en_github(df_editado):
                         st.session_state.df_tareas = df_editado
                         st.rerun()
-
         
         elif st.session_state.menu_sub == "QUEJAS":
             st.subheader("SEGUIMIENTO > PORTAL DE QUEJAS")
@@ -373,6 +372,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
