@@ -114,15 +114,34 @@ st.markdown(f"""
         font-size: 9px !important;
     }}
 
-    /* 6. INPUT DE BÚSQUEDA */
-    .stTextInput input {{
+    /* 6. INPUT DE BÚSQUEDA (BORDE CORREGIDO) */
+    .stTextInput > div > div > input {
         background-color: {vars_css['card']} !important;
+        color: {vars_css['text']} !important;
+        /* Forzamos un borde sólido y fino */
         border: 1px solid {vars_css['border']} !important;
+        border-radius: 2px !important;
         height: 35px !important;
         text-align: center !important;
         font-size: 11px !important;
         letter-spacing: 1px;
-    }}
+        /* Eliminamos sombras internas de Streamlit */
+        box-shadow: none !important;
+        transition: border-color 0.3s ease !important;
+    }
+
+    /* Efecto al hacer clic en el input */
+    .stTextInput > div > div > input:focus {
+        border-color: #000000 !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Quitamos el borde del contenedor externo que a veces ensucia el diseño */
+    .stTextInput > div {
+        border: none !important;
+        background: transparent !important;
+    }
 
     /* 7. FOOTER FIJO (Blindado de la animación) */
     .footer {{
@@ -365,6 +384,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
