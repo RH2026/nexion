@@ -230,13 +230,13 @@ with main_container:
             FILE_PATH = "tareas.csv"
             CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
             
-            # ── FECHA MX ─────────────────────────────────────────────────────────────
+            # ── FECHA MX ────────────────────────────────────────────────
             def obtener_fecha_mexico():
                 return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
             
-            # ── CARGA SEGURA ─────────────────────────────────────────────────────────
+            # ── CARGA SEGURA ────────────────────────────────────────────
             def cargar_datos_seguro():
-                columnas_base = [
+                columnas = [
                     "FECHA","FECHA_FIN","IMPORTANCIA","TAREA","ULTIMO ACCION",
                     "PROGRESO","DEPENDENCIAS","TIPO","GRUPO"
                 ]
@@ -248,27 +248,31 @@ with main_container:
                         df = pd.read_csv(StringIO(r.text))
                         df.columns = [c.strip().upper() for c in df.columns]
             
-                        for c in columnas_base:
+                        for c in columnas:
                             if c not in df.columns:
                                 df[c] = ""
             
-                        for c in ["FECHA","FECHA_FIN"]:
-                            df[c] = pd.to_datetime(df[c], errors="coerce").dt.date
-                            df[c] = df[c].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+                        df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
+                        df["FECHA_FIN"] = pd.to_datetime(df["FECHA_FIN"], errors="coerce").dt.date
             
-                        df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0)
+                        df["FECHA"] = df["FECHA"].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+                        df["FECHA_FIN"] = df["FECHA_FIN"].apply(
+                            lambda x: x if isinstance(x, datetime.date) else hoy + datetime.timedelta(days=1)
+                        )
+            
+                        df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0).astype(int)
+                        df["IMPORTANCIA"] = df["IMPORTANCIA"].fillna("Media")
+                        df["TIPO"] = df["TIPO"].fillna("Tarea")
                         df["GRUPO"] = df["GRUPO"].fillna("General")
-                        df["TIPO"] = df["TIPO"].fillna("tarea")
                         df["DEPENDENCIAS"] = df["DEPENDENCIAS"].fillna("")
             
-                        return df[columnas_base]
-            
+                        return df[columnas]
                 except:
                     pass
             
-                return pd.DataFrame(columns=columnas_base)
+                return pd.DataFrame(columns=columnas)
             
-            # ── GUARDAR ──────────────────────────────────────────────────────────────
+            # ── GUARDAR ────────────────────────────────────────────────
             def guardar_en_github(df):
                 if not TOKEN:
                     st.error("GITHUB_TOKEN no configurado")
@@ -278,8 +282,8 @@ with main_container:
                     repo = g.get_repo(REPO_NAME)
             
                     df_save = df.copy()
-                    for c in ["FECHA","FECHA_FIN"]:
-                        df_save[c] = df_save[c].astype(str)
+                    df_save["FECHA"] = df_save["FECHA"].astype(str)
+                    df_save["FECHA_FIN"] = df_save["FECHA_FIN"].astype(str)
             
                     csv = df_save.to_csv(index=False)
                     contents = repo.get_contents(FILE_PATH, ref="main")
@@ -291,89 +295,21 @@ with main_container:
                         contents.sha,
                         branch="main"
                     )
-                    st.toast("🚀 Sincronizado", icon="✅")
+                    st.toast("🚀 Sincronizado con GitHub", icon="✅")
                     return True
                 except Exception as e:
                     st.error(e)
                     return False
             
-            # ── SESSION ──────────────────────────────────────────────────────────────
+            # ── SESSION ────────────────────────────────────────────────
             if "df_tareas" not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
             df = st.session_state.df_tareas.copy()
             
-            # ── GANTT PLOTLY (COMO EL TUYO, LÍNEAS DELGADAS) ───────────────────────────
-            try:
-                import plotly.express as px
-            
-                df_p = df[df["TAREA"].astype(str).str.strip() != ""].copy()
-            
-                df_p["FECHA"] = pd.to_datetime(df_p["FECHA"], errors="coerce")
-                df_p["FECHA_FIN"] = pd.to_datetime(df_p["FECHA_FIN"], errors="coerce")
-            
-                df_p = df_p.dropna(subset=["FECHA"])
-            
-                df_p["FECHA_FIN"] = df_p.apply(
-                    lambda r: r["FECHA"] + pd.Timedelta(days=1)
-                    if pd.isna(r["FECHA_FIN"]) or r["FECHA_FIN"] <= r["FECHA"]
-                    else r["FECHA_FIN"],
-                    axis=1
-                )
-            
-                colors = {
-                    "Urgente": "#FF3131",
-                    "Alta": "#FF914D",
-                    "Media": "#00D2FF",
-                    "Baja": "#4B5563"
-                }
-            
-                fig = px.timeline(
-                    df_p,
-                    x_start="FECHA",
-                    x_end="FECHA_FIN",
-                    y="TAREA",
-                    color="IMPORTANCIA",
-                    color_discrete_map=colors,
-                    category_orders={"IMPORTANCIA": ["Urgente","Alta","Media","Baja"]}
-                )
-            
-                # líneas delgadas como querías
-                fig.update_traces(width=0.22)
-            
-                fig.update_yaxes(
-                    autorange="reversed",
-                    title=""
-                )
-            
-                fig.update_layout(
-                    height=200 + len(df_p) * 30,
-                    bargap=0.85,
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    margin=dict(l=20, r=20, t=10, b=20),
-                    showlegend=True
-                )
-            
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-            
-            except Exception as e:
-                st.error(f"Error en Gantt Plotly: {e}")
-            
-            # ── NORMALIZAR TIPOS PARA DATA_EDITOR ─────────────────────────────
-            df_editor = df.copy()
-            
-            df_editor["FECHA"] = pd.to_datetime(df_editor["FECHA"], errors="coerce").dt.date
-            df_editor["FECHA_FIN"] = pd.to_datetime(df_editor["FECHA_FIN"], errors="coerce").dt.date
-            
-            df_editor["PROGRESO"] = pd.to_numeric(df_editor["PROGRESO"], errors="coerce").fillna(0).astype(int)
-            
-            for col in ["IMPORTANCIA", "TIPO", "GRUPO", "DEPENDENCIAS"]:
-                df_editor[col] = df_editor[col].astype(str).replace("nan", "")
-            
-            # ── DATA EDITOR ESTABLE ───────────────────────────────────────────
+            # ── TABLA EDITABLE ─────────────────────────────────────────
             df_editado = st.data_editor(
-                df_editor,
+                df,
                 hide_index=True,
                 use_container_width=True,
                 num_rows="dynamic",
@@ -382,21 +318,18 @@ with main_container:
                     "FECHA_FIN": st.column_config.DateColumn("Fin"),
                     "IMPORTANCIA": st.column_config.SelectboxColumn(
                         "Importancia",
-                        options=["Urgente", "Alta", "Media", "Baja"]
+                        options=["Urgente","Alta","Media","Baja"]
                     ),
                     "PROGRESO": st.column_config.ProgressColumn(
-                        "Progreso",
-                        min_value=0,
-                        max_value=100
+                        "Progreso", min_value=0, max_value=100
                     ),
                     "TAREA": st.column_config.TextColumn("Tarea"),
                     "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
                     "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
                     "TIPO": st.column_config.SelectboxColumn(
-                        "Tipo",
-                        options=["Tarea", "Hito"]
+                        "Tipo", options=["Tarea","Hito"]
                     ),
-                    "GRUPO": st.column_config.TextColumn("Grupo")
+                    "GRUPO": st.column_config.TextColumn("Grupo"),
                 }
             )
             
@@ -405,9 +338,11 @@ with main_container:
                     st.session_state.df_tareas = df_editado
                     st.rerun()
             
-            # ── FRAPPE GANTT PRO ──────────────────────────────────────────────────────
+            # ── FRAPPE GANTT ───────────────────────────────────────────
             tasks = []
-            for i,r in df_editado.iterrows():
+            for i, r in df_editado.iterrows():
+                if str(r["TAREA"]).strip() == "":
+                    continue
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
@@ -422,6 +357,13 @@ with main_container:
             <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
             <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
             
+            <style>
+            .bar.urgente {{ fill:#FF3131; }}
+            .bar.alta {{ fill:#FF914D; }}
+            .bar.media {{ fill:#00D2FF; }}
+            .bar.baja {{ fill:#4B5563; }}
+            </style>
+            
             <div id="gantt"></div>
             
             <script>
@@ -431,7 +373,7 @@ with main_container:
               padding: 40
             }});
             </script>
-            """, height=340 + len(tasks)*28)
+            """, height=320 + len(tasks)*28)
 
 
         
@@ -459,6 +401,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
