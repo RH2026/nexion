@@ -224,168 +224,176 @@ with main_container:
             st.info("Espacio para contenido de Tracking Operativo")
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # ─────────────────────────────────────────────
-            # UTIL
-            # ─────────────────────────────────────────────
+            # ── CONFIG ───────────────────────────────────────────────────────────────
+            TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+            REPO_NAME = "RH2026/nexion"
+            FILE_PATH = "tareas.csv"
+            CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+            
+            # ── FECHA MX ─────────────────────────────────────────────────────────────
             def obtener_fecha_mexico():
-                return pd.Timestamp.now(tz="America/Mexico_City").date()
+                return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
             
+            # ── CARGA SEGURA ─────────────────────────────────────────────────────────
+            def cargar_datos_seguro():
+                columnas_base = [
+                    "FECHA","FECHA_FIN","IMPORTANCIA","TAREA","ULTIMO ACCION",
+                    "PROGRESO","DEPENDENCIAS","TIPO","GRUPO"
+                ]
+                hoy = obtener_fecha_mexico()
             
-            # ─────────────────────────────────────────────
-            # EDITOR DE DATOS
-            # ─────────────────────────────────────────────
-            st.markdown(
-                "<p style='font-size:10px;letter-spacing:2px;'>DATA MANAGEMENT SYSTEM</p>",
-                unsafe_allow_html=True
+                try:
+                    r = requests.get(f"{CSV_URL}?t={int(time.time())}")
+                    if r.status_code == 200:
+                        df = pd.read_csv(StringIO(r.text))
+                        df.columns = [c.strip().upper() for c in df.columns]
+            
+                        for c in columnas_base:
+                            if c not in df.columns:
+                                df[c] = ""
+            
+                        for c in ["FECHA","FECHA_FIN"]:
+                            df[c] = pd.to_datetime(df[c], errors="coerce").dt.date
+                            df[c] = df[c].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+            
+                        df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0)
+                        df["GRUPO"] = df["GRUPO"].fillna("General")
+                        df["TIPO"] = df["TIPO"].fillna("tarea")
+                        df["DEPENDENCIAS"] = df["DEPENDENCIAS"].fillna("")
+            
+                        return df[columnas_base]
+            
+                except:
+                    pass
+            
+                return pd.DataFrame(columns=columnas_base)
+            
+            # ── GUARDAR ──────────────────────────────────────────────────────────────
+            def guardar_en_github(df):
+                if not TOKEN:
+                    st.error("GITHUB_TOKEN no configurado")
+                    return False
+                try:
+                    g = Github(TOKEN)
+                    repo = g.get_repo(REPO_NAME)
+            
+                    df_save = df.copy()
+                    for c in ["FECHA","FECHA_FIN"]:
+                        df_save[c] = df_save[c].astype(str)
+            
+                    csv = df_save.to_csv(index=False)
+                    contents = repo.get_contents(FILE_PATH, ref="main")
+            
+                    repo.update_file(
+                        contents.path,
+                        f"Sync NEXION {obtener_fecha_mexico()}",
+                        csv,
+                        contents.sha,
+                        branch="main"
+                    )
+                    st.toast("🚀 Sincronizado", icon="✅")
+                    return True
+                except Exception as e:
+                    st.error(e)
+                    return False
+            
+            # ── SESSION ──────────────────────────────────────────────────────────────
+            if "df_tareas" not in st.session_state:
+                st.session_state.df_tareas = cargar_datos_seguro()
+            
+            df = st.session_state.df_tareas.copy()
+            
+            # ── GANTT PLOTLY (COMO EL TUYO) ───────────────────────────────────────────
+            df_p = df[df["TAREA"].astype(str).str.strip() != ""].copy()
+            df_p["FECHA"] = pd.to_datetime(df_p["FECHA"])
+            df_p["FECHA_FIN"] = pd.to_datetime(df_p["FECHA_FIN"])
+            
+            df_p["FECHA_FIN"] = df_p.apply(
+                lambda r: r["FECHA"] + pd.Timedelta(days=1)
+                if r["FECHA_FIN"] <= r["FECHA"] else r["FECHA_FIN"],
+                axis=1
             )
             
+            colors = {
+                "Urgente":"#FF3131",
+                "Alta":"#FF914D",
+                "Media":"#00D2FF",
+                "Baja":"#4B5563"
+            }
+            
+            fig = px.timeline(
+                df_p,
+                x_start="FECHA",
+                x_end="FECHA_FIN",
+                y="TAREA",
+                color="IMPORTANCIA",
+                color_discrete_map=colors
+            )
+            
+            fig.update_traces(width=0.22)
+            fig.update_yaxes(autorange="reversed")
+            fig.update_layout(
+                height=200 + len(df_p)*30,
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                margin=dict(l=20,r=20,t=10,b=20),
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+            
+            # ── EDITOR ───────────────────────────────────────────────────────────────
             df_editado = st.data_editor(
-                st.session_state.df_tareas,
+                df,
                 num_rows="dynamic",
                 use_container_width=True,
-                key="editor_nexion_gantt",
                 column_config={
-                    "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
+                    "FECHA": st.column_config.DateColumn("📆 Inicio"),
                     "FECHA_FIN": st.column_config.DateColumn("🏁 Fin"),
                     "IMPORTANCIA": st.column_config.SelectboxColumn(
-                        "🚦 Prioridad",
-                        options=["Baja", "Media", "Alta", "Urgente"]
+                        "🚦 Prioridad", options=["Baja","Media","Alta","Urgente"]
                     ),
                     "TAREA": st.column_config.TextColumn("📝 Tarea"),
                     "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
-                    "PROGRESO": st.column_config.NumberColumn("📊 %", min_value=0, max_value=100),
-                    "DEPENDENCIAS": st.column_config.TextColumn("🔗 Dependencias"),
-                    "TIPO": st.column_config.SelectboxColumn(
-                        "📌 Tipo",
-                        options=["tarea", "milestone"]
-                    ),
-                    "GRUPO": st.column_config.TextColumn("🧩 Grupo"),
+                    "PROGRESO": st.column_config.NumberColumn("📊 %"),
+                    "DEPENDENCIAS": st.column_config.TextColumn("🔗 Depends"),
+                    "TIPO": st.column_config.TextColumn("📌 Tipo"),
+                    "GRUPO": st.column_config.TextColumn("📂 Grupo"),
                 },
                 hide_index=True
             )
             
-            if st.button("💾 SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
+            if st.button("💾 SINCRONIZAR CON GITHUB", use_container_width=True):
                 if guardar_en_github(df_editado):
                     st.session_state.df_tareas = df_editado
-                    st.toast("Sincronizado", icon="✅")
                     st.rerun()
             
-            
-            # ─────────────────────────────────────────────
-            # NORMALIZACIÓN SEGURA
-            # ─────────────────────────────────────────────
-            df = st.session_state.df_tareas.copy()
-            df.columns = [c.strip().upper() for c in df.columns]
-            
-            df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce")
-            df["FECHA_FIN"] = pd.to_datetime(df["FECHA_FIN"], errors="coerce")
-            
-            df = df[df["TAREA"].astype(str).str.strip() != ""]
-            df = df.dropna(subset=["FECHA"])
-            
-            df["FECHA_FIN"] = df.apply(
-                lambda r: r["FECHA"] + pd.Timedelta(days=1)
-                if pd.isna(r["FECHA_FIN"]) or r["FECHA_FIN"] <= r["FECHA"]
-                else r["FECHA_FIN"],
-                axis=1
-            )
-            
-            df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0)
-            df["DEPENDENCIAS"] = df["DEPENDENCIAS"].fillna("").astype(str)
-            df["TIPO"] = df["TIPO"].fillna("tarea")
-            df["GRUPO"] = df["GRUPO"].fillna("General")
-            
-            
-            # ─────────────────────────────────────────────
-            # CONSTRUCCIÓN FRAPPE TASKS
-            # ─────────────────────────────────────────────
+            # ── FRAPPE GANTT PRO ──────────────────────────────────────────────────────
             tasks = []
-            for i, r in df.iterrows():
+            for i,r in df_editado.iterrows():
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
-                    "start": r["FECHA"].strftime("%Y-%m-%d"),
-                    "end": r["FECHA_FIN"].strftime("%Y-%m-%d"),
+                    "start": str(r["FECHA"]),
+                    "end": str(r["FECHA_FIN"]),
                     "progress": int(r["PROGRESO"]),
                     "dependencies": r["DEPENDENCIAS"],
                     "custom_class": r["IMPORTANCIA"].lower()
                 })
             
-            tasks_json = json.dumps(tasks)
-            hoy = obtener_fecha_mexico().strftime("%Y-%m-%d")
-            
-            
-            # ─────────────────────────────────────────────
-            # GANTT FRAPPE PRO
-            # ─────────────────────────────────────────────
-            st.markdown(
-                "<p style='font-size:10px;letter-spacing:2px;'>ADVANCED GANTT ENGINE</p>",
-                unsafe_allow_html=True
-            )
-            
             components.html(f"""
             <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
-            
-            <style>
-            #gantt {{ font-family: Inter, sans-serif; }}
-            
-            .bar {{ rx: 3; ry: 3; }}
-            
-            .bar-wrapper.urgente .bar {{ fill: #EF4444; }}
-            .bar-wrapper.alta .bar {{ fill: #F97316; }}
-            .bar-wrapper.media .bar {{ fill: #0EA5E9; }}
-            .bar-wrapper.baja .bar {{ fill: #64748B; }}
-            
-            .bar-progress {{ opacity: 0.85; }}
-            </style>
+            <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
             
             <div id="gantt"></div>
             
-            <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
-            
             <script>
-            const tasks = {tasks_json};
-            
-            const gantt = new Gantt("#gantt", tasks, {{
+            const gantt = new Gantt("#gantt", {json.dumps(tasks)}, {{
               view_mode: "Day",
-              bar_height: 14,
-              padding: 40,
-              popup_trigger: "click",
+              bar_height: 16,
+              padding: 40
             }});
-            
-            // ── ZOOM ──
-            document.addEventListener("keydown", e => {{
-              if (e.key === "1") gantt.change_view_mode("Day");
-              if (e.key === "2") gantt.change_view_mode("Week");
-              if (e.key === "3") gantt.change_view_mode("Month");
-            }});
-            
-            // ── LÍNEA DE HOY ──
-            setTimeout(() => {{
-              const today = "{hoy}";
-              const svg = document.querySelector("#gantt svg");
-              if (!svg) return;
-            
-              const dates = gantt.dates;
-              const idx = dates.findIndex(d => d.format("YYYY-MM-DD") === today);
-              if (idx < 0) return;
-            
-              const x = gantt.get_x_by_date(dates[idx]);
-              const height = svg.getBBox().height;
-            
-              const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-              line.setAttribute("x1", x);
-              line.setAttribute("x2", x);
-              line.setAttribute("y1", 0);
-              line.setAttribute("y2", height);
-              line.setAttribute("stroke", "#DC2626");
-              line.setAttribute("stroke-width", "2");
-              line.setAttribute("stroke-dasharray", "6,4");
-            
-              svg.appendChild(line);
-            }}, 300);
             </script>
-            """, height=320 + len(df) * 26)
+            """, height=340 + len(tasks)*28)
 
 
         
@@ -413,6 +421,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
