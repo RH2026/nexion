@@ -223,7 +223,152 @@ with main_container:
             st.info("Espacio para contenido de Tracking Operativo")
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            st.info("Espacio para contenido de GANTT")
+            # 1. GANTT
+            TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+            REPO_NAME = "RH2026/nexion"
+            FILE_PATH = "tareas.csv"
+            CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+            
+            def obtener_fecha_mexico():
+                # Retorna un objeto datetime.date compatible con el editor
+                return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
+            
+            def cargar_datos_seguro():
+                columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
+                hoy = obtener_fecha_mexico()
+                try:
+                    # Añadimos timestamp para evitar caché de GitHub
+                    response = requests.get(f"{CSV_URL}?t={int(time.time())}")
+                    if response.status_code == 200:
+                        df = pd.read_csv(StringIO(response.text))
+                        df.columns = [c.strip().upper() for c in df.columns]
+                        for col in columnas_base:
+                            if col not in df.columns: df[col] = ""
+                        for col in ['FECHA', 'FECHA_FIN']:
+                            df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
+                            df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+                        return df[columnas_base]
+                    return pd.DataFrame(columns=columnas_base)
+                except:
+                    return pd.DataFrame(columns=columnas_base)
+            
+            def guardar_en_github(df):
+                if not TOKEN:
+                    st.error("GITHUB_TOKEN no configurado en Secrets")
+                    return False
+                try:
+                    g = Github(TOKEN)
+                    repo = g.get_repo(REPO_NAME)
+                    df_save = df.copy()
+                    df_save['FECHA'] = df_save['FECHA'].astype(str)
+                    df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
+                    csv_data = df_save.to_csv(index=False)
+                    contents = repo.get_contents(FILE_PATH, ref="main")
+                    repo.update_file(
+                        contents.path,
+                        f"Sync NEXION {obtener_fecha_mexico()}",
+                        csv_data,
+                        contents.sha,
+                        branch="main"
+                    )
+                    st.toast("🚀 ¡Sincronizado con el Core!", icon="✅")
+                    return True
+                except Exception as e:
+                    st.error(f"Error de conexión: {e}")
+                    return False
+            
+            # 2. CARGA CON ANIMACIÓN
+            if 'df_tareas' not in st.session_state:
+                placeholder = st.empty()
+                with placeholder.container():
+                    st.markdown(f"""
+                        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 200px;">
+                            <div style="width: 40px; height: 40px; border: 3px solid {vars_css['border']}; 
+                                border-top: 3px solid {vars_css['text']}; border-radius: 50%; 
+                                animation: spin 1s linear infinite;">
+                            </div>
+                            <p style="font-family: monospace; font-size: 10px; letter-spacing: 3px; margin-top: 20px; color: {vars_css['text']};">LOADING GANTT CORE</p>
+                        </div>
+                        <style> @keyframes spin {{ to {{ transform: rotate(360deg); }} }} </style>
+                    """, unsafe_allow_html=True)
+                    st.session_state.df_tareas = cargar_datos_seguro()
+                    time.sleep(0.8)
+                placeholder.empty()
+            
+            # 3. RENDER GANTT (Optimizado para modo Oscuro)
+            if not st.session_state.df_tareas.empty:
+                try:
+                    import plotly.express as px
+                    df_p = st.session_state.df_tareas.copy()
+                    df_p = df_p[df_p['TAREA'].astype(str).str.strip() != ""]
+                    
+                    # Asegurar fechas para Plotly
+                    df_p['FECHA'] = pd.to_datetime(df_p['FECHA'])
+                    df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'])
+                    
+                    # Duración mínima para visualización de líneas
+                    df_p['FECHA_FIN'] = df_p.apply(
+                        lambda r: r['FECHA'] + pd.Timedelta(days=1)
+                        if pd.isna(r['FECHA_FIN']) or r['FECHA_FIN'] <= r['FECHA']
+                        else r['FECHA_FIN'], axis=1
+                    )
+            
+                    colors_nexion = {"Urgente": "#FF3131", "Alta": "#FF914D", "Media": "#00D2FF", "Baja": "#4B5563"}
+            
+                    fig = px.timeline(
+                        df_p, x_start="FECHA", x_end="FECHA_FIN", y="TAREA",
+                        color="IMPORTANCIA", color_discrete_map=colors_nexion,
+                        category_orders={"IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]}
+                    )
+            
+                    # Ajuste estético para modo Ónix
+                    fig.update_traces(marker=dict(line=dict(width=0)), width=0.25)
+                    fig.update_yaxes(autorange="reversed", title="", tickfont=dict(size=11, color=vars_css['text']))
+                    fig.update_xaxes(
+                        title="", 
+                        gridcolor="rgba(255,255,255,0.05)", # Líneas de guía sutiles en oscuro
+                        tickfont=dict(size=10, color=vars_css['sub'])
+                    )
+            
+                    fig.update_layout(
+                        height=200 + len(df_p) * 30,
+                        bargap=0.8,
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        margin=dict(l=20, r=20, t=10, b=20),
+                        font=dict(family="Inter", size=11, color=vars_css['text']),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, title=None)
+                    )
+            
+                    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            
+                except Exception as e:
+                    st.error(f"Error visual: {e}")
+            
+            # 4. EDITOR DE DATOS
+            st.markdown(f"<p style='font-size: 10px; letter-spacing: 2px; color: {vars_css['sub']};'>DATA MANAGEMENT SYSTEM</p>", unsafe_allow_html=True)
+            df_editado = st.data_editor(
+                st.session_state.df_tareas,
+                num_rows="dynamic",
+                use_container_width=True,
+                key="nexion_editor_v2026",
+                column_config={
+                    "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
+                    "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
+                    "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
+                    "TAREA": st.column_config.TextColumn("📝 Tarea"),
+                    "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
+                },
+                hide_index=True
+            )
+            
+            if st.button("💾 SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
+                if guardar_en_github(df_editado):
+                    st.session_state.df_tareas = df_editado
+                    st.rerun()
+
+
+        
         elif st.session_state.menu_sub == "QUEJAS":
             st.subheader("SEGUIMIENTO > QUEJAS")
             st.info("Gestión de incidencias")
@@ -248,6 +393,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
