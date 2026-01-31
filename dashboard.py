@@ -210,7 +210,7 @@ with main_container:
             st.info("Espacio para contenido de Tracking Operativo")
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # --- 1. CONFIGURACIÓN DE REPOSITORIO ---
+            # 1. CONFIGURACIÓN DE DATOS (GITHUB)
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
@@ -219,20 +219,18 @@ with main_container:
             def obtener_fecha_mexico():
                 return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
         
-            # --- 2. CARGA DE DATOS DESDE GITHUB ---
+            # 2. FUNCIONES DE CARGA Y GUARDADO
             def cargar_datos_seguro():
                 columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
                 hoy = obtener_fecha_mexico()
                 try:
-                    # Timestamp para evitar caché de GitHub
                     response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
                     if response.status_code == 200:
                         df = pd.read_csv(StringIO(response.text))
                         df.columns = [c.strip().upper() for c in df.columns]
-                        # Asegurar que existan todas las columnas
                         for col in columnas_base:
                             if col not in df.columns: df[col] = ""
-                        # Conversión de fechas para evitar errores en Plotly
+                        # Limpieza de fechas para el gráfico
                         for col in ['FECHA', 'FECHA_FIN']:
                             df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
                             df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
@@ -241,101 +239,87 @@ with main_container:
                 except:
                     return pd.DataFrame(columns=columnas_base)
         
-            # --- 3. ESCRITURA EN GITHUB ---
             def guardar_en_github(df):
                 if not TOKEN: 
-                    st.error("Error: GITHUB_TOKEN no configurado en Secrets")
+                    st.error("Error: Token de GitHub no encontrado en Secrets.")
                     return False
                 try:
                     g = Github(TOKEN)
                     repo = g.get_repo(REPO_NAME)
-                    # Preparar CSV (Fechas como String)
                     df_save = df.copy()
                     df_save['FECHA'] = df_save['FECHA'].astype(str)
                     df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
                     csv_data = df_save.to_csv(index=False)
-                    
-                    # Actualizar archivo existente
                     contents = repo.get_contents(FILE_PATH, ref="main")
-                    repo.update_file(
-                        contents.path, 
-                        f"Sync NEXION {obtener_fecha_mexico()}", 
-                        csv_data, 
-                        contents.sha, 
-                        branch="main"
-                    )
-                    st.toast("🚀 ¡Cronograma sincronizado!", icon="✅")
+                    repo.update_file(contents.path, f"Sync NEXION {obtener_fecha_mexico()}", csv_data, contents.sha, branch="main")
+                    st.toast("🚀 ¡Sistema sincronizado!", icon="✅")
                     return True
                 except Exception as e:
-                    st.error(f"Error de sincronización: {e}")
-                    return False
+                    st.error(f"Fallo en GitHub: {e}"); return False
         
-            # --- 4. GESTIÓN DE MEMORIA (STATE) ---
+            # Inicializar datos en el estado de la sesión
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
         
-            # --- 5. RENDERIZADO DEL GRÁFICO GANTT ---
+            # 3. RENDERIZADO DEL GRÁFICO (MODERNO PX)
             if not st.session_state.df_tareas.empty:
                 try:
+                    import plotly.express as px
                     df_p = st.session_state.df_tareas.copy()
-                    # Conversión forzada a Datetime para FF Plotly
-                    df_p['FECHA'] = pd.to_datetime(df_p['FECHA'])
-                    df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'])
                     
-                    # Renombrar para que la librería entienda las columnas
-                    df_p = df_p.rename(columns={
-                        'TAREA':'Task', 
-                        'FECHA':'Start', 
-                        'FECHA_FIN':'Finish', 
-                        'IMPORTANCIA':'Resource'
-                    })
-                    
-                    colors = {'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E'}
-                    
-                    fig = ff.create_gantt(
-                        df_p, 
-                        colors=colors, 
-                        index_col='Resource', 
-                        group_tasks=True, 
-                        showgrid_x=True, 
-                        showgrid_y=True
-                    )
-                    
-                    fig.update_layout(
-                        plot_bgcolor='rgba(0,0,0,0)', 
-                        paper_bgcolor='rgba(0,0,0,0)', 
-                        font=dict(color=vars_css['text'], family="Inter"),
-                        height=350,
-                        margin=dict(l=150, r=20, t=20, b=50)
-                    )
-                    
-                    # Ajuste de ejes para legibilidad
-                    fig.update_yaxes(tickfont=dict(color=vars_css['text']))
-                    fig.update_xaxes(tickfont=dict(color=vars_css['sub']))
+                    # Formateo estricto para Plotly Express
+                    df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
+                    df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
+                    df_p = df_p.dropna(subset=['FECHA', 'FECHA_FIN', 'TAREA'])
         
-                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                
+                    if not df_p.empty:
+                        colors_nexion = {
+                            'Urgente': '#FF3131', 'Alta': '#FF914D', 
+                            'Media': '#00D2FF', 'Baja': '#444E5E'
+                        }
+        
+                        fig = px.timeline(
+                            df_p, start="FECHA", finish="FECHA_FIN", y="TAREA",
+                            color="IMPORTANCIA", color_discrete_map=colors_nexion,
+                            category_orders={"IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]}
+                        )
+                        
+                        fig.update_yaxes(autorange="reversed", title="")
+                        fig.update_xaxes(title="", gridcolor='rgba(0,0,0,0.1)')
+                        
+                        fig.update_layout(
+                            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color=vars_css['text'], family="Inter", size=10),
+                            height=280, margin=dict(l=10, r=10, t=10, b=10),
+                            showlegend=True,
+                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                        )
+        
+                        fig.update_traces(marker_line_width=0, opacity=0.9)
+                        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.info("💡 Ingrese tareas y fechas en la tabla inferior.")
                 except Exception as e:
-                    st.info("💡 Consejo: Completa las fechas de Inicio y Fin para visualizar el gráfico.")
+                    st.error(f"Error visual: {e}")
         
-            # --- 6. DATA EDITOR Y BOTÓN ÚNICO ---
+            # 4. EDITOR DE DATOS Y ACCIÓN
             with st.container():
                 df_editado = st.data_editor(
                     st.session_state.df_tareas,
                     num_rows="dynamic",
                     use_container_width=True,
-                    key="nexion_gantt_vFinal",
+                    key="nexion_editor_v2026",
                     column_config={
                         "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
                         "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
                         "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
-                        "TAREA": st.column_config.TextColumn("📝 Tarea"),
-                        "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
+                        "TAREA": st.column_config.TextColumn("📝 Descripción de Tarea"),
+                        "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus/Acción"),
                     },
                     hide_index=True
                 )
         
-                if st.button("💾 GUARDAR Y ACTUALIZAR CRONOGRAMA", use_container_width=True, type="primary"):
+                if st.button("💾 SINCRONIZAR CRONOGRAMA CON GITHUB", type="primary", use_container_width=True):
                     if guardar_en_github(df_editado):
                         st.session_state.df_tareas = df_editado
                         st.rerun()
@@ -365,6 +349,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
