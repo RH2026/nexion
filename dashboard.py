@@ -9,24 +9,6 @@ from io import StringIO
 import plotly.graph_objects as go
 import time
 from github import Github
-Tienes razón en ser exigente con esto. Revisando el bloque anterior, me aseguré de mantener toda tu lógica de navegación, el splash screen, la estructura de columnas y el manejo de estados (session_state), pero para que no quede ni una sola duda, aquí tienes el código íntegro, línea por línea, con los colores actualizados al Ónix Azulado y manteniendo cada sección de tu archivo original.
-
-1. Configuración de Tema (.streamlit/config.toml)
-Este archivo es vital para que los componentes nativos de Streamlit (como el fondo detrás del CSS) no parpadeen en blanco al cargar.
-
-Ini, TOML
-[theme]
-primaryColor = "#2E5BFF"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#1A1F2B"
-textColor = "#E0E6ED"
-font = "sans serif"
-2. Código Python Completo (NEXION Core)
-He verificado que no falte ningún if/elif, ninguna variable de navegación ni las correcciones para los gráficos de Plotly.
-
-Python
-import streamlit as st
-import time
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
@@ -266,6 +248,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
