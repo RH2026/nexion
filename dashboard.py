@@ -224,7 +224,7 @@ with main_container:
         
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # 1. CONFIGURACIÓN Y FUNCIONES (Declaradas primero)
+            # 1. CONFIGURACIÓN Y FUNCIONES
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
             CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
@@ -250,12 +250,27 @@ with main_container:
                 except:
                     return pd.DataFrame(columns=columnas_base)
 
-            # 2. CARGA CON ANIMACIÓN (Solo ocurre aquí)
+            # 2. CARGA CON ANIMACIÓN CIRCULAR CENTRADA
             if 'df_tareas' not in st.session_state:
-                with st.spinner('🔄 SYNCHRONIZING WITH NEXION CORE...'):
+                placeholder = st.empty()
+                with placeholder.container():
+                    st.markdown(f"""
+                        <div style="display: flex; justify-content: center; align-items: center; height: 200px;">
+                            <div style="width: 40px; height: 40px; border: 3px solid {vars_css['border']}; 
+                                border-top: 3px solid {vars_css['text']}; border-radius: 50%; 
+                                animation: spin 1s linear infinite;">
+                            </div>
+                        </div>
+                        <style>
+                            @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+                        </style>
+                    """, unsafe_allow_html=True)
+                    
+                    # Ejecutamos la carga real
                     st.session_state.df_tareas = cargar_datos_seguro()
-                    time.sleep(1.2)  # Tiempo para que la animación luzca
-                st.toast("Gantt manifests parsed successfully", icon="📡")
+                    time.sleep(0.8) # Para que la animación sea fluida
+                
+                placeholder.empty() # Quitamos el círculo antes de mostrar el Gantt
             # ----------------------------------------------
             # ── GANTT ────────────────────────────────────────────────────────────────
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
@@ -447,6 +462,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
