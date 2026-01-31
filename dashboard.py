@@ -272,25 +272,19 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
 
-            # ── 3. RENDERIZADO DEL GANTT (REPARACIÓN TOTAL) ─────────────────────
+            # ── 3. RENDERIZADO DEL GANTT (LÍNEAS REALES, SIN ROMPER NADA) ────────
             if not st.session_state.df_tareas.empty:
                 try:
-                    import plotly.express as px
+                    import plotly.graph_objects as go
             
-                    # COPIA SEGURA
                     df_p = st.session_state.df_tareas.copy()
-            
-                    # ── NORMALIZACIÓN DE COLUMNAS ──
                     df_p.columns = [c.strip().upper() for c in df_p.columns]
             
-                    # ── CONVERSIÓN ESTRICTA DE FECHAS ──
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
             
-                    # ── LIMPIEZA DE TAREAS VACÍAS ──
                     df_p = df_p[df_p['TAREA'].astype(str).str.strip() != ""]
             
-                    # ── DURACIÓN MÍNIMA GARANTIZADA (CLAVE) ──
                     df_p['FECHA_FIN'] = df_p.apply(
                         lambda r: r['FECHA'] + pd.Timedelta(days=1)
                         if pd.isna(r['FECHA_FIN']) or r['FECHA_FIN'] <= r['FECHA']
@@ -298,64 +292,56 @@ with main_container:
                         axis=1
                     )
             
-                    # ── ÚLTIMA VALIDACIÓN ──
-                    df_p = df_p.dropna(subset=['FECHA', 'FECHA_FIN', 'TAREA'])
+                    df_p = df_p.dropna(subset=['FECHA', 'FECHA_FIN'])
             
                     if df_p.empty:
                         st.info("No hay tareas válidas para mostrar en el Gantt.")
                     else:
-                        # ── COLORES CORPORATIVOS ──
                         colors_nexion = {
-                            'Urgente': '#FF3131',
-                            'Alta': '#FF914D',
-                            'Media': '#00D2FF',
-                            'Baja': '#4B5563'
+                            "Urgente": "#FF3131",
+                            "Alta": "#FF914D",
+                            "Media": "#00D2FF",
+                            "Baja": "#4B5563"
                         }
             
-                        # ── CREACIÓN DEL GANTT ──
-                        fig = px.timeline(
-                        df_p,
-                        x_start="FECHA",
-                        x_end="FECHA_FIN",
-                        y="TAREA",
-                        color="IMPORTANCIA",
-                        color_discrete_map=colors_nexion,
-                        category_orders={"IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]}
-                    )
-                    
-                    fig.update_yaxes(
-                        autorange="reversed",
-                        title="",
-                        tickfont=dict(size=11, color=vars_css['text']),
-                        automargin=True
-                    )
-                    
-                    fig.update_xaxes(
-                        title="",
-                        gridcolor="rgba(0,0,0,0.08)",
-                        tickfont=dict(size=10, color=vars_css['sub'])
-                    )
-                    
-                    fig.update_layout(
-                        height=260,
-                        bargap=0.55,
-                        bargroupgap=0.1,
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        font=dict(family="Inter", size=11, color=vars_css['text']),
-                        margin=dict(l=20, r=20, t=10, b=20),
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=1.05,
-                            xanchor="right",
-                            x=1,
-                            title=None
+                        fig = go.Figure()
+            
+                        for _, row in df_p.iterrows():
+                            fig.add_trace(go.Bar(
+                                x=[(row['FECHA_FIN'] - row['FECHA']).days],
+                                y=[row['TAREA']],
+                                base=row['FECHA'],
+                                orientation="h",
+                                marker=dict(color=colors_nexion.get(row['IMPORTANCIA'], "#999999")),
+                                width=0.18,   # ← AQUÍ está el grosor REAL de la línea
+                                hovertemplate=(
+                                    f"<b>{row['TAREA']}</b><br>"
+                                    f"Inicio: {row['FECHA'].date()}<br>"
+                                    f"Fin: {row['FECHA_FIN'].date()}<br>"
+                                    f"Prioridad: {row['IMPORTANCIA']}"
+                                ),
+                                showlegend=False
+                            ))
+            
+                        fig.update_layout(
+                            height=200 + len(df_p) * 28,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(l=20, r=20, t=10, b=20),
+                            font=dict(family="Inter", size=11, color=vars_css['text']),
+                            xaxis=dict(
+                                title="",
+                                gridcolor="rgba(0,0,0,0.08)",
+                                tickfont=dict(size=10, color=vars_css['sub'])
+                            ),
+                            yaxis=dict(
+                                autorange="reversed",
+                                tickfont=dict(size=11, color=vars_css['text'])
+                            )
                         )
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-                                
+            
+                        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            
                 except Exception as e:
                     st.error(f"Error al generar el Gantt: {e}")
 
@@ -403,6 +389,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
