@@ -230,7 +230,6 @@ with main_container:
                         df.columns = [c.strip().upper() for c in df.columns]
                         for col in columnas_base:
                             if col not in df.columns: df[col] = ""
-                        # Limpieza de fechas para el gráfico
                         for col in ['FECHA', 'FECHA_FIN']:
                             df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
                             df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
@@ -241,8 +240,7 @@ with main_container:
         
             def guardar_en_github(df):
                 if not TOKEN: 
-                    st.error("Error: Token de GitHub no encontrado en Secrets.")
-                    return False
+                    st.error("Error: Token de GitHub no encontrado."); return False
                 try:
                     g = Github(TOKEN)
                     repo = g.get_repo(REPO_NAME)
@@ -252,22 +250,20 @@ with main_container:
                     csv_data = df_save.to_csv(index=False)
                     contents = repo.get_contents(FILE_PATH, ref="main")
                     repo.update_file(contents.path, f"Sync NEXION {obtener_fecha_mexico()}", csv_data, contents.sha, branch="main")
-                    st.toast("🚀 ¡Sistema sincronizado!", icon="✅")
+                    st.toast("🚀 ¡Sincronizado!", icon="✅")
                     return True
                 except Exception as e:
-                    st.error(f"Fallo en GitHub: {e}"); return False
+                    st.error(f"Fallo: {e}"); return False
         
-            # Inicializar datos en el estado de la sesión
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
         
-            # 3. RENDERIZADO DEL GRÁFICO (MODERNO PX)
+            # 3. RENDERIZADO DEL GRÁFICO (CORREGIDO: x_start / x_end)
             if not st.session_state.df_tareas.empty:
                 try:
                     import plotly.express as px
                     df_p = st.session_state.df_tareas.copy()
                     
-                    # Formateo estricto para Plotly Express
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
                     df_p = df_p.dropna(subset=['FECHA', 'FECHA_FIN', 'TAREA'])
@@ -278,9 +274,14 @@ with main_container:
                             'Media': '#00D2FF', 'Baja': '#444E5E'
                         }
         
+                        # CAMBIO CLAVE AQUÍ: x_start y x_end
                         fig = px.timeline(
-                            df_p, start="FECHA", finish="FECHA_FIN", y="TAREA",
-                            color="IMPORTANCIA", color_discrete_map=colors_nexion,
+                            df_p, 
+                            x_start="FECHA", 
+                            x_end="FECHA_FIN", 
+                            y="TAREA",
+                            color="IMPORTANCIA", 
+                            color_discrete_map=colors_nexion,
                             category_orders={"IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]}
                         )
                         
@@ -298,31 +299,28 @@ with main_container:
                         fig.update_traces(marker_line_width=0, opacity=0.9)
                         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
                     else:
-                        st.info("💡 Ingrese tareas y fechas en la tabla inferior.")
+                        st.info("💡 Ingrese tareas y fechas para activar el gráfico.")
                 except Exception as e:
                     st.error(f"Error visual: {e}")
         
-            # 4. EDITOR DE DATOS Y ACCIÓN
-            with st.container():
-                df_editado = st.data_editor(
-                    st.session_state.df_tareas,
-                    num_rows="dynamic",
-                    use_container_width=True,
-                    key="nexion_editor_v2026",
-                    column_config={
-                        "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
-                        "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
-                        "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
-                        "TAREA": st.column_config.TextColumn("📝 Descripción de Tarea"),
-                        "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus/Acción"),
-                    },
-                    hide_index=True
-                )
+            # 4. EDITOR DE DATOS
+            df_editado = st.data_editor(
+                st.session_state.df_tareas,
+                num_rows="dynamic",
+                use_container_width=True,
+                key="nexion_editor_v2026",
+                column_config={
+                    "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
+                    "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
+                    "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
+                },
+                hide_index=True
+            )
         
-                if st.button("💾 SINCRONIZAR CRONOGRAMA CON GITHUB", type="primary", use_container_width=True):
-                    if guardar_en_github(df_editado):
-                        st.session_state.df_tareas = df_editado
-                        st.rerun()
+            if st.button("💾 SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
+                if guardar_en_github(df_editado):
+                    st.session_state.df_tareas = df_editado
+                    st.rerun()
 
         
         elif st.session_state.menu_sub == "QUEJAS":
@@ -349,6 +347,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
