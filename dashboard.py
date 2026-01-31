@@ -298,20 +298,28 @@ with main_container:
                     df_p = st.session_state.df_tareas.copy()
                     df_p.columns = [c.strip().upper() for c in df_p.columns]
             
+                    # ── FECHAS ──
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
             
                     df_p = df_p[df_p['TAREA'].astype(str).str.strip() != ""]
                     df_p = df_p.dropna(subset=['FECHA'])
             
+                    # ── MILESTONES ──
+                    df_p['ES_MILESTONE'] = df_p['FECHA'] == df_p['FECHA_FIN']
+            
+                    # ── DURACIÓN SEGURA ──
                     df_p['FECHA_FIN'] = df_p.apply(
                         lambda r: r['FECHA'] + pd.Timedelta(days=1)
-                        if pd.isna(r['FECHA_FIN']) or r['FECHA_FIN'] <= r['FECHA']
+                        if pd.isna(r['FECHA_FIN']) or r['FECHA_FIN'] < r['FECHA']
                         else r['FECHA_FIN'],
                         axis=1
                     )
-            
                     df_p['DURACION'] = (df_p['FECHA_FIN'] - df_p['FECHA']).dt.days.clip(lower=1)
+            
+                    # ── AGRUPACIÓN POR ESTATUS ──
+                    df_p['GRUPO'] = df_p['ULTIMO ACCION'].fillna("SIN ESTATUS")
+                    df_p = df_p.sort_values(['GRUPO', 'FECHA'])
             
                     if df_p.empty:
                         st.info("No hay tareas válidas para mostrar en el Gantt.")
@@ -325,40 +333,81 @@ with main_container:
             
                         fig = go.Figure()
             
+                        # ── BARRAS ──
                         for _, row in df_p.iterrows():
+                            etiqueta_y = f"{row['GRUPO']} ▸ {row['TAREA']}"
+            
                             fig.add_trace(go.Bar(
                                 x=[row['DURACION']],
-                                y=[row['TAREA']],
+                                y=[etiqueta_y],
                                 base=row['FECHA'],
                                 orientation="h",
                                 width=0.22,
                                 marker=dict(color=colors_importancia.get(row['IMPORTANCIA'], "#9CA3AF")),
                                 hovertemplate=(
                                     f"<b>{row['TAREA']}</b><br>"
+                                    f"Estatus: {row['GRUPO']}<br>"
                                     f"Inicio: {row['FECHA'].date()}<br>"
-                                    f"Fin: {row['FECHA_FIN'].date()}<br>"
-                                    f"Prioridad: {row['IMPORTANCIA']}<extra></extra>"
+                                    f"Fin: {row['FECHA_FIN'].date()}<extra></extra>"
                                 ),
                                 showlegend=False
                             ))
             
-                        # ── LÍNEA DE HOY (SHAPE, NO add_vline) ──
+                            # ── MILESTONE VISUAL ──
+                            if row['ES_MILESTONE']:
+                                fig.add_trace(go.Scatter(
+                                    x=[row['FECHA']],
+                                    y=[etiqueta_y],
+                                    mode="markers",
+                                    marker=dict(symbol="diamond", size=10, color="#000000"),
+                                    showlegend=False
+                                ))
+            
+                        # ── LÍNEA DE HOY ──
                         hoy = obtener_fecha_mexico()
             
                         fig.add_shape(
                             type="line",
                             x0=hoy,
                             x1=hoy,
-                            y0=-0.5,
-                            y1=len(df_p) - 0.5,
+                            y0=-1,
+                            y1=len(df_p),
                             line=dict(color="#EF4444", width=2, dash="dot")
                         )
             
+                        fig.add_annotation(
+                            x=hoy,
+                            y=len(df_p),
+                            text="HOY",
+                            showarrow=False,
+                            font=dict(color="#EF4444", size=10),
+                            yshift=10
+                        )
+            
+                        # ── DEPENDENCIAS (FLECHAS) ──
+                        for _, row in df_p.iterrows():
+                            if ">>" in str(row['TAREA']):
+                                actual, depende = [x.strip() for x in row['TAREA'].split(">>")]
+                                if depende in df_p['TAREA'].values:
+                                    y0 = df_p[df_p['TAREA'] == depende]['GRUPO'].iloc[0] + " ▸ " + depende
+                                    y1 = row['GRUPO'] + " ▸ " + row['TAREA']
+            
+                                    fig.add_annotation(
+                                        x=row['FECHA'],
+                                        y=y1,
+                                        ax=df_p[df_p['TAREA'] == depende]['FECHA_FIN'].iloc[0],
+                                        ay=y0,
+                                        arrowhead=3,
+                                        arrowsize=1,
+                                        arrowwidth=1,
+                                        arrowcolor="#6B7280"
+                                    )
+            
                         fig.update_layout(
-                            height=200 + len(df_p) * 30,
+                            height=240 + len(df_p) * 32,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
-                            margin=dict(l=20, r=20, t=10, b=20),
+                            margin=dict(l=20, r=20, t=20, b=20),
                             font=dict(family="Inter", size=11, color=vars_css['text']),
                             xaxis=dict(
                                 title="",
@@ -420,6 +469,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
