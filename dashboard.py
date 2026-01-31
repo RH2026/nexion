@@ -224,11 +224,30 @@ with main_container:
         
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # --- BLOQUE DE CARGA LOCALIZADO CON SPINNER ---
+            # 1. PRIMERO DEFINIMOS LA FUNCIÓN (Si no la tienes definida más arriba)
+            def cargar_datos_seguro():
+                columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
+                hoy = obtener_fecha_mexico()
+                try:
+                    response = requests.get(f"{CSV_URL}?t={time.time()}")
+                    if response.status_code == 200:
+                        df = pd.read_csv(StringIO(response.text))
+                        df.columns = [c.strip().upper() for c in df.columns]
+                        for col in columnas_base:
+                            if col not in df.columns: df[col] = ""
+                        for col in ['FECHA', 'FECHA_FIN']:
+                            df[col] = pd.to_datetime(df[col], errors='coerce').fillna(hoy)
+                        return df[columnas_base]
+                    return pd.DataFrame(columns=columnas_base)
+                except:
+                    return pd.DataFrame(columns=columnas_base)
+
+            # 2. AHORA SÍ LA LLAMAMOS CON EL SPINNER
             if 'df_tareas' not in st.session_state:
                 with st.spinner('🔄 SYNCHRONIZING WITH NEXION CORE...'):
+                    # Ahora Python ya sabe qué es cargar_datos_seguro
                     st.session_state.df_tareas = cargar_datos_seguro()
-                    time.sleep(0.8)  # Pequeño delay para suavizar la animación
+                    time.sleep(0.8)
                 st.toast("Gantt manifests parsed successfully", icon="📡")
             # ----------------------------------------------
             # ── GANTT ────────────────────────────────────────────────────────────────
@@ -421,6 +440,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
