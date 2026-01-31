@@ -224,28 +224,38 @@ with main_container:
         
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # 1. PRIMERO DEFINIMOS LA FUNCIÓN (Si no la tienes definida más arriba)
+            # 1. DEFINIR VARIABLES DE RUTA (Asegura que existan aquí)
+            REPO_NAME = "RH2026/nexion"
+            FILE_PATH = "tareas.csv"
+            CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+
+            # 2. DECLARAR FUNCIONES DE APOYO (Para evitar el NameError)
+            def obtener_fecha_mexico():
+                # Corregimos la resta para evitar el error de operandos anterior
+                return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
+            
             def cargar_datos_seguro():
                 columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
-                hoy = obtener_fecha_mexico()
+                hoy = obtener_fecha_mexico() # Ahora Python ya sabe qué es esta función
                 try:
-                    response = requests.get(f"{CSV_URL}?t={time.time()}")
+                    # Timestamp para evitar caché de GitHub
+                    response = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if response.status_code == 200:
                         df = pd.read_csv(StringIO(response.text))
                         df.columns = [c.strip().upper() for c in df.columns]
                         for col in columnas_base:
                             if col not in df.columns: df[col] = ""
                         for col in ['FECHA', 'FECHA_FIN']:
-                            df[col] = pd.to_datetime(df[col], errors='coerce').fillna(hoy)
+                            df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
+                            df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
                         return df[columnas_base]
                     return pd.DataFrame(columns=columnas_base)
                 except:
                     return pd.DataFrame(columns=columnas_base)
 
-            # 2. AHORA SÍ LA LLAMAMOS CON EL SPINNER
+            # 3. EJECUTAR CARGA CON SPINNER (Solo si no están cargados)
             if 'df_tareas' not in st.session_state:
                 with st.spinner('🔄 SYNCHRONIZING WITH NEXION CORE...'):
-                    # Ahora Python ya sabe qué es cargar_datos_seguro
                     st.session_state.df_tareas = cargar_datos_seguro()
                     time.sleep(0.8)
                 st.toast("Gantt manifests parsed successfully", icon="📡")
@@ -440,6 +450,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
