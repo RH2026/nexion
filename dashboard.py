@@ -272,36 +272,108 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
 
-            # 3. RENDERIZADO DEL GRÁFICO (PX MODERNO)
+            # ── 3. RENDERIZADO DEL GANTT (REPARACIÓN TOTAL) ─────────────────────
             if not st.session_state.df_tareas.empty:
                 try:
                     import plotly.express as px
+            
+                    # COPIA SEGURA
                     df_p = st.session_state.df_tareas.copy()
+            
+                    # ── NORMALIZACIÓN DE COLUMNAS ──
+                    df_p.columns = [c.strip().upper() for c in df_p.columns]
+            
+                    # ── CONVERSIÓN ESTRICTA DE FECHAS ──
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
-                    mask_iguales = (df_p['FECHA'] == df_p['FECHA_FIN'])
-                    df_p.loc[mask_iguales, 'FECHA_FIN'] = df_p.loc[mask_iguales, 'FECHA_FIN'] + pd.Timedelta(days=1)
+            
+                    # ── LIMPIEZA DE TAREAS VACÍAS ──
+                    df_p = df_p[df_p['TAREA'].astype(str).str.strip() != ""]
+            
+                    # ── DURACIÓN MÍNIMA GARANTIZADA (CLAVE) ──
+                    df_p['FECHA_FIN'] = df_p.apply(
+                        lambda r: r['FECHA'] + pd.Timedelta(days=1)
+                        if pd.isna(r['FECHA_FIN']) or r['FECHA_FIN'] <= r['FECHA']
+                        else r['FECHA_FIN'],
+                        axis=1
+                    )
+            
+                    # ── ÚLTIMA VALIDACIÓN ──
                     df_p = df_p.dropna(subset=['FECHA', 'FECHA_FIN', 'TAREA'])
-
-                    if not df_p.empty:
-                        colors_nexion = { 'Urgente': '#FF3131', 'Alta': '#FF914D', 'Media': '#00D2FF', 'Baja': '#444E5E' }
+            
+                    if df_p.empty:
+                        st.info("No hay tareas válidas para mostrar en el Gantt.")
+                    else:
+                        # ── COLORES CORPORATIVOS ──
+                        colors_nexion = {
+                            'Urgente': '#FF3131',
+                            'Alta': '#FF914D',
+                            'Media': '#00D2FF',
+                            'Baja': '#4B5563'
+                        }
+            
+                        # ── CREACIÓN DEL GANTT ──
                         fig = px.timeline(
-                            df_p, x_start="FECHA", x_end="FECHA_FIN", y="TAREA",
-                            color="IMPORTANCIA", color_discrete_map=colors_nexion,
-                            category_orders={"IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]}
+                            df_p,
+                            x_start="FECHA",
+                            x_end="FECHA_FIN",
+                            y="TAREA",
+                            color="IMPORTANCIA",
+                            color_discrete_map=colors_nexion,
+                            category_orders={
+                                "IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]
+                            }
                         )
-                        fig.update_yaxes(autorange="reversed", title="", tickfont=dict(size=10, color=vars_css['text']))
-                        fig.update_xaxes(title="", gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=10, color=vars_css['sub']))
-                        fig.update_traces(marker_line_color="white", marker_line_width=1, opacity=1.0, width=0.6)
+            
+                        # ── AJUSTES DE EJES ──
+                        fig.update_yaxes(
+                            autorange="reversed",
+                            title="",
+                            tickfont=dict(size=11, color=vars_css['text'])
+                        )
+            
+                        fig.update_xaxes(
+                            title="",
+                            gridcolor="rgba(0,0,0,0.08)",
+                            tickfont=dict(size=10, color=vars_css['sub'])
+                        )
+            
+                        # ── VISIBILIDAD TOTAL DE BARRAS ──
+                        fig.update_traces(
+                            opacity=1,
+                            marker=dict(line=dict(width=1, color="#FFFFFF"))
+                        )
+            
+                        # ── LAYOUT FINAL ──
                         fig.update_layout(
-                            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color=vars_css['text'], family="Inter", size=11),
-                            height=300, margin=dict(l=10, r=10, t=10, b=10),
-                            showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="right", x=1, title=None)
+                            height=420,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            font=dict(
+                                family="Inter",
+                                size=11,
+                                color=vars_css['text']
+                            ),
+                            margin=dict(l=20, r=20, t=10, b=20),
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.05,
+                                xanchor="right",
+                                x=1,
+                                title=None
+                            )
                         )
-                        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            
+                        # ── RENDER ──
+                        st.plotly_chart(
+                            fig,
+                            use_container_width=True,
+                            config={"displayModeBar": False}
+                        )
+            
                 except Exception as e:
-                    st.error(f"Error visual: {e}")
+                    st.error(f"Error al generar el Gantt: {e}")
 
             # 4. EDITOR DE DATOS
             df_editado = st.data_editor(
@@ -347,6 +419,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
