@@ -28,7 +28,7 @@ vars_css = {
     "text": "#E0E6ED",    # Texto principal (Gris Platino)
     "sub": "#8892B0",     # Texto secundario
     "border": "#2D333B",  # Bordes y líneas
-    "logo": "n2.png"      # Logo
+    "logo": "n1.png"      # Logo
 }
 
 # ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
@@ -248,6 +248,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
