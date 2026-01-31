@@ -303,43 +303,62 @@ with main_container:
             
             df = st.session_state.df_tareas.copy()
             
-            # ── GANTT PLOTLY (COMO EL TUYO) ───────────────────────────────────────────
-            df_p = df[df["TAREA"].astype(str).str.strip() != ""].copy()
-            df_p["FECHA"] = pd.to_datetime(df_p["FECHA"])
-            df_p["FECHA_FIN"] = pd.to_datetime(df_p["FECHA_FIN"])
+            # ── GANTT PLOTLY (COMO EL TUYO, LÍNEAS DELGADAS) ───────────────────────────
+            try:
+                import plotly.express as px
             
-            df_p["FECHA_FIN"] = df_p.apply(
-                lambda r: r["FECHA"] + pd.Timedelta(days=1)
-                if r["FECHA_FIN"] <= r["FECHA"] else r["FECHA_FIN"],
-                axis=1
-            )
+                df_p = df[df["TAREA"].astype(str).str.strip() != ""].copy()
             
-            colors = {
-                "Urgente":"#FF3131",
-                "Alta":"#FF914D",
-                "Media":"#00D2FF",
-                "Baja":"#4B5563"
-            }
+                df_p["FECHA"] = pd.to_datetime(df_p["FECHA"], errors="coerce")
+                df_p["FECHA_FIN"] = pd.to_datetime(df_p["FECHA_FIN"], errors="coerce")
             
-            fig = px.timeline(
-                df_p,
-                x_start="FECHA",
-                x_end="FECHA_FIN",
-                y="TAREA",
-                color="IMPORTANCIA",
-                color_discrete_map=colors
-            )
+                df_p = df_p.dropna(subset=["FECHA"])
             
-            fig.update_traces(width=0.22)
-            fig.update_yaxes(autorange="reversed")
-            fig.update_layout(
-                height=200 + len(df_p)*30,
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
-                margin=dict(l=20,r=20,t=10,b=20),
-            )
+                df_p["FECHA_FIN"] = df_p.apply(
+                    lambda r: r["FECHA"] + pd.Timedelta(days=1)
+                    if pd.isna(r["FECHA_FIN"]) or r["FECHA_FIN"] <= r["FECHA"]
+                    else r["FECHA_FIN"],
+                    axis=1
+                )
             
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+                colors = {
+                    "Urgente": "#FF3131",
+                    "Alta": "#FF914D",
+                    "Media": "#00D2FF",
+                    "Baja": "#4B5563"
+                }
+            
+                fig = px.timeline(
+                    df_p,
+                    x_start="FECHA",
+                    x_end="FECHA_FIN",
+                    y="TAREA",
+                    color="IMPORTANCIA",
+                    color_discrete_map=colors,
+                    category_orders={"IMPORTANCIA": ["Urgente","Alta","Media","Baja"]}
+                )
+            
+                # líneas delgadas como querías
+                fig.update_traces(width=0.22)
+            
+                fig.update_yaxes(
+                    autorange="reversed",
+                    title=""
+                )
+            
+                fig.update_layout(
+                    height=200 + len(df_p) * 30,
+                    bargap=0.85,
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    margin=dict(l=20, r=20, t=10, b=20),
+                    showlegend=True
+                )
+            
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            
+            except Exception as e:
+                st.error(f"Error en Gantt Plotly: {e}")
             
             # ── EDITOR ───────────────────────────────────────────────────────────────
             df_editado = st.data_editor(
@@ -421,6 +440,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
