@@ -1,157 +1,100 @@
+# ───────────────────────── IMPORTS ─────────────────────────
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-import datetime
-import os
-import streamlit.components.v1 as components
-import requests
+import datetime, time, os, requests
 from io import StringIO
 import plotly.graph_objects as go
-import time
+import plotly.express as px
+import streamlit.components.v1 as components
 from github import Github
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
+# ───────────────────── CONFIGURACIÓN ───────────────────────
+st.set_page_config(
+    page_title="NEXION | Core",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# ── TEMA FIJO (MODO CLARO FORZADO) ──────────────────────────
-if "tema" not in st.session_state:
-    st.session_state.tema = "claro"
-if "menu_main" not in st.session_state: 
-    st.session_state.menu_main = "TRACKING"
-if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "GENERAL"
+# ───────────────────── SESSION STATE ───────────────────────
+st.session_state.setdefault("tema", "claro")
+st.session_state.setdefault("menu_main", "TRACKING")
+st.session_state.setdefault("menu_sub", "GENERAL")
+st.session_state.setdefault("splash_completado", False)
 
-# Variables de diseño
+# ───────────────────── VARIABLES UI ────────────────────────
 vars_css = {
-    "bg": "#E3E7ED",      # Fondo principal solicitado
-    "card": "#FFFFFF",    # Fondos de tarjetas e inputs
-    "text": "#111111",    # Texto principal
-    "sub": "#2D3136",     # Texto secundario
-    "border": "#C9D1D9",  # Bordes y líneas
-    "logo": "n2.png"      # Logo
+    "bg": "#E3E7ED",
+    "card": "#FFFFFF",
+    "text": "#111111",
+    "sub": "#2D3136",
+    "border": "#C9D1D9",
+    "logo": "n2.png"
 }
 
-# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
+# ───────────────────── CSS MAESTRO ─────────────────────────
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-    
-    /* 1. Limpieza de Interfaz */
-    header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-    
-    .stApp {{ 
-        background-color: {vars_css['bg']} !important; 
-        color: {vars_css['text']} !important; 
-        font-family: 'Inter', sans-serif !important;
-    }}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-    .block-container {{ 
-        padding-top: 0.8rem !important; 
-        padding-bottom: 5rem !important; 
-    }}
+header, footer, [data-testid="stHeader"] {{visibility:hidden;height:0}}
+.stApp {{background:{vars_css['bg']}!important;color:{vars_css['text']}!important;font-family:Inter}}
+.block-container {{padding-top:.8rem;padding-bottom:5rem}}
 
-    /* 2. ANIMACIÓN DE ENTRADA (Sintaxis blindada) */
-    @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(15px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
-    [data-testid="stVerticalBlock"] > div:not(.element-container:has(.footer)) {{
-        animation: fadeInUp 0.6s ease-out;
-    }}
+@keyframes fadeInUp{{from{{opacity:0;transform:translateY(15px)}}to{{opacity:1}}}}
+[data-testid="stVerticalBlock"]>div:not(.element-container:has(.footer)){{animation:fadeInUp .6s ease-out}}
 
-    /* 3. TÍTULOS Y OPERATIONAL QUERY (Centrado Garantizado) */
-    h3, .op-query-text {{
-        font-size: 11px !important; 
-        letter-spacing: 8px !important;
-        text-align: center !important;
-        margin-top: 8px !important; 
-        margin-bottom: 18px !important;
-        color: {vars_css['sub']} !important;
-        display: block !important;
-        width: 100% !important;
-    }}
+h3,.op-query-text {{
+    font-size:11px;letter-spacing:8px;text-align:center;
+    margin:8px 0 18px;color:{vars_css['sub']};width:100%
+}}
 
-    /* 4. BOTONES SLIM CON HOVER NEGRO */
-    div.stButton > button {{
-        background-color: {vars_css['card']} !important; 
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important; 
-        border-radius: 2px !important;
-        font-weight: 700 !important; 
-        text-transform: uppercase;
-        font-size: 10px !important; 
-        height: 28px !important; 
-        min-height: 28px !important;
-        line-height: 28px !important;
-        transition: all 0.2s ease !important;
-        width: 100% !important;
-    }}
+.stButton>button {{
+    background:{vars_css['card']};color:{vars_css['text']};
+    border:1px solid {vars_css['border']};
+    border-radius:2px;font-weight:700;
+    text-transform:uppercase;font-size:10px;
+    height:28px;transition:.2s;width:100%
+}}
+.stButton>button:hover{{background:#000;color:#fff;border-color:#000}}
 
-    div.stButton > button:hover {{
-        background-color: #000000 !important; 
-        color: #FFFFFF !important; 
-        border-color: #000000 !important;
-    }}
+.stTextInput input {{
+    background:{vars_css['card']};color:{vars_css['text']};
+    border:1px solid {vars_css['border']};
+    border-radius:2px;height:45px;
+    text-align:center;letter-spacing:2px
+}}
 
-     /* 6. INPUT DE BÚSQUEDA Y TEXTO OPERATIONAL */
-    .stTextInput input {{
-        background-color: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important;
-        border-radius: 2px !important;
-        height: 45px !important;
-        text-align: center !important;
-        letter-spacing: 2px;
-    }}
+.footer {{
+    position:fixed;bottom:0;left:0;width:100%;
+    background:{vars_css['bg']};color:{vars_css['sub']};
+    text-align:center;padding:12px;
+    font-size:9px;letter-spacing:2px;
+    border-top:1px solid {vars_css['border']};
+    z-index:999999
+}}
 
-
-    /* 6. FOOTER FIJO (Blindado) */
-    .footer {{
-        position: fixed;
-        bottom: 0 !important; 
-        left: 0 !important; 
-        width: 100% !important;
-        background-color: {vars_css['bg']} !important;
-        color: {vars_css['sub']} !important;
-        text-align: center;
-        padding: 12px 0px !important;
-        font-size: 9px;
-        letter-spacing: 2px;
-        border-top: 1px solid {vars_css['border']} !important;
-        z-index: 999999 !important;
-        animation: none !important;
-        transform: none !important;
-    }}
-
-    /* 7. REPARACIÓN PARA GRÁFICOS (Asegura que las barras se vean) */
-    .stPlotlyChart {{
-        visibility: visible !important;
-        opacity: 1 !important;
-        min-height: 300px !important;
-    }}
-
-    /* Evitar que la animación oculte el gráfico */
-    [data-testid="stVerticalBlock"] > div:has(div.stPlotlyChart) {{
-        animation: none !important;
-        transform: none !important;
-        opacity: 1 !important;
-    }}    
-    
+.stPlotlyChart{{visibility:visible;opacity:1;min-height:300px}}
+[data-testid="stVerticalBlock"]>div:has(div.stPlotlyChart){{animation:none;opacity:1}}
 </style>
 """, unsafe_allow_html=True)
-# ── 4. SPLASH SCREEN ──────────────────────────────────────
-if "splash_completado" not in st.session_state:
-    st.session_state.splash_completado = False
 
+# ───────────────────── SPLASH SCREEN ───────────────────────
 if not st.session_state.splash_completado:
     p = st.empty()
     with p.container():
-        for m in ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]:
+        for m in [
+            "ESTABLISHING SECURE ACCESS",
+            "PARSING LOGISTICS DATA",
+            "SYSTEM READY"
+        ]:
             st.markdown(f"""
-            <div style="height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-              <div style="width:40px;height:40px;border:1px solid {vars_css['border']};
-              border-top:1px solid {vars_css['text']};border-radius:50%;animation:spin 1s linear infinite;"></div>
-              <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:{vars_css['text']};">{m}</p>
+            <div style="height:80vh;display:flex;flex-direction:column;
+            justify-content:center;align-items:center">
+            <div style="width:40px;height:40px;border:1px solid {vars_css['border']};
+            border-top:1px solid {vars_css['text']};border-radius:50%;
+            animation:spin 1s linear infinite"></div>
+            <p style="margin-top:40px;font-family:monospace;
+            font-size:10px;letter-spacing:5px;color:{vars_css['text']}">{m}</p>
             </div>
             <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
             """, unsafe_allow_html=True)
@@ -159,30 +102,31 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── HEADER Y NAVEGACIÓN (LÍNEA 1) ──────────────────────────
-header_zone = st.container()
-with header_zone:
+# ───────────────────── HEADER ──────────────────────────────
+with st.container():
     c1, c2 = st.columns([1.5, 5.4], vertical_alignment="center")
+
     with c1:
         try:
             st.image(vars_css["logo"], width=120)
-            st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px; margin-left:2px;'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
+            st.markdown(
+                f"<p style='font-size:8px;letter-spacing:2px;color:{vars_css['sub']};margin-top:-22px'>CORE INTELLIGENCE</p>",
+                unsafe_allow_html=True
+            )
         except:
-            st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0;'>NEXION</h3>", unsafe_allow_html=True)
+            st.markdown("<h3>NEXION</h3>", unsafe_allow_html=True)
 
     with c2:
-        cols_main = st.columns(4)
         main_menus = ["TRACKING", "SEGUIMIENTO", "REPORTES", "FORMATOS"]
-        for i, m in enumerate(main_menus):
-            with cols_main[i]:
-                seleccionado = st.session_state.menu_main == m
-                btn_label = f"● {m}" if seleccionado else m
-                if st.button(btn_label, use_container_width=True, key=f"main_{m}"):
+        for col, m in zip(st.columns(4), main_menus):
+            with col:
+                label = f"● {m}" if st.session_state.menu_main == m else m
+                if st.button(label, use_container_width=True, key=f"main_{m}"):
                     st.session_state.menu_main = m
                     st.session_state.menu_sub = "GENERAL"
                     st.rerun()
 
-# ── SUBMENÚS (LÍNEA 2 COMPLETA) ────────────────────────────
+# ───────────────────── SUBMENÚ ─────────────────────────────
 sub_map = {
     "TRACKING": [],
     "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
@@ -190,432 +134,130 @@ sub_map = {
     "FORMATOS": ["SALIDA DE PT", "PAGOS"]
 }
 
-current_subs = sub_map.get(st.session_state.menu_main, [])
-if current_subs:
-    sub_zone = st.container()
-    with sub_zone:
-        cols_sub = st.columns(len(current_subs) + 4)
-        for i, s in enumerate(current_subs):
-            with cols_sub[i]:
-                sub_activo = st.session_state.menu_sub == s
-                sub_label = f"» {s}" if sub_activo else s
-                if st.button(sub_label, use_container_width=True, key=f"sub_{s}"):
+subs = sub_map.get(st.session_state.menu_main, [])
+if subs:
+    with st.container():
+        for col, s in zip(st.columns(len(subs) + 4), subs):
+            with col:
+                label = f"» {s}" if st.session_state.menu_sub == s else s
+                if st.button(label, use_container_width=True, key=f"sub_{s}"):
                     st.session_state.menu_sub = s
                     st.rerun()
+    st.markdown(
+        f"<hr style='border-top:1px solid {vars_css['border']};opacity:.3'>",
+        unsafe_allow_html=True
+    )
 
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.3;'>", unsafe_allow_html=True)
+# ───────────────────── CONTENIDO ───────────────────────────
+with st.container():
 
-# ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
-main_container = st.container()
-with main_container:
-    # 1. TRACKING
+    # TRACKING
     if st.session_state.menu_main == "TRACKING":
-        st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
-        _, col_search, _ = st.columns([1, 1.6, 1])
-        with col_search:
-            st.markdown(f"<p class='op-query-text'>O P E R A T I O N A L &nbsp; Q U E R Y</p>", unsafe_allow_html=True)
-            busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
-            if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-                st.toast(f"Buscando: {busqueda}")
+        _, c, _ = st.columns([1, 1.6, 1])
+        with c:
+            st.markdown("<p class='op-query-text'>OPERATIONAL QUERY</p>", unsafe_allow_html=True)
+            ref = st.text_input("", placeholder="INGRESE GUÍA O REFERENCIA...")
+            if st.button("EXECUTE SYSTEM SEARCH", use_container_width=True):
+                st.toast(f"Buscando: {ref}")
 
-    # 2. SEGUIMIENTO
+    # SEGUIMIENTO
     elif st.session_state.menu_main == "SEGUIMIENTO":
+
         if st.session_state.menu_sub == "TRK":
             st.subheader("SEGUIMIENTO > TRK")
             st.info("Espacio para contenido de Tracking Operativo")
+
         elif st.session_state.menu_sub == "GANTT":
+
             st.subheader("SEGUIMIENTO > GANTT")
-            # 1. CONFIGURACIÓN DE DATOS
+
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
             CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
-        
+
             def obtener_fecha_mexico():
-                return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
-        
-            # 2. CARGA DE DATOS
+                return (datetime.datetime.now(datetime.timezone.utc)
+                        - datetime.timedelta(hours=6)).date()
+
             def cargar_datos_seguro():
-                columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
+                columnas = ['FECHA','FECHA_FIN','IMPORTANCIA','TAREA','ULTIMO ACCION']
                 hoy = obtener_fecha_mexico()
                 try:
-                    response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
-                    if response.status_code == 200:
-                        df = pd.read_csv(StringIO(response.text))
+                    r = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
+                    if r.status_code == 200:
+                        df = pd.read_csv(StringIO(r.text))
                         df.columns = [c.strip().upper() for c in df.columns]
-                        for col in columnas_base:
-                            if col not in df.columns: df[col] = ""
-                        for col in ['FECHA', 'FECHA_FIN']:
-                            df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
-                            df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
-                        return df[columnas_base]
-                    return pd.DataFrame(columns=columnas_base)
+                        for c in columnas:
+                            if c not in df.columns:
+                                df[c] = ""
+                        for c in ['FECHA','FECHA_FIN']:
+                            df[c] = pd.to_datetime(df[c], errors='coerce').dt.date
+                            df[c] = df[c].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+                        return df[columnas]
                 except:
-                    return pd.DataFrame(columns=columnas_base)
-        
-            if 'df_tareas' not in st.session_state:
+                    pass
+                return pd.DataFrame(columns=columnas)
+
+            if "df_tareas" not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
-        
-            import streamlit as st
-import pandas as pd
-from datetime import datetime
-import datetime
-import os
-import streamlit.components.v1 as components
-import requests
-from io import StringIO
-import plotly.graph_objects as go
-import time
-from github import Github
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
-
-# ── TEMA FIJO (MODO CLARO FORZADO) ──────────────────────────
-if "tema" not in st.session_state:
-    st.session_state.tema = "claro"
-if "menu_main" not in st.session_state: 
-    st.session_state.menu_main = "TRACKING"
-if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "GENERAL"
-
-# Variables de diseño
-vars_css = {
-    "bg": "#E3E7ED",      # Fondo principal solicitado
-    "card": "#FFFFFF",    # Fondos de tarjetas e inputs
-    "text": "#111111",    # Texto principal
-    "sub": "#2D3136",     # Texto secundario
-    "border": "#C9D1D9",  # Bordes y líneas
-    "logo": "n2.png"      # Logo
-}
-
-# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
-st.markdown(f"""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-    
-    /* 1. Limpieza de Interfaz */
-    header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-    
-    .stApp {{ 
-        background-color: {vars_css['bg']} !important; 
-        color: {vars_css['text']} !important; 
-        font-family: 'Inter', sans-serif !important;
-    }}
-
-    .block-container {{ 
-        padding-top: 0.8rem !important; 
-        padding-bottom: 5rem !important; 
-    }}
-
-    /* 2. ANIMACIÓN DE ENTRADA (Sintaxis blindada) */
-    @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(15px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
-    [data-testid="stVerticalBlock"] > div:not(.element-container:has(.footer)) {{
-        animation: fadeInUp 0.6s ease-out;
-    }}
-
-    /* 3. TÍTULOS Y OPERATIONAL QUERY (Centrado Garantizado) */
-    h3, .op-query-text {{
-        font-size: 11px !important; 
-        letter-spacing: 8px !important;
-        text-align: center !important;
-        margin-top: 8px !important; 
-        margin-bottom: 18px !important;
-        color: {vars_css['sub']} !important;
-        display: block !important;
-        width: 100% !important;
-    }}
-
-    /* 4. BOTONES SLIM CON HOVER NEGRO */
-    div.stButton > button {{
-        background-color: {vars_css['card']} !important; 
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important; 
-        border-radius: 2px !important;
-        font-weight: 700 !important; 
-        text-transform: uppercase;
-        font-size: 10px !important; 
-        height: 28px !important; 
-        min-height: 28px !important;
-        line-height: 28px !important;
-        transition: all 0.2s ease !important;
-        width: 100% !important;
-    }}
-
-    div.stButton > button:hover {{
-        background-color: #000000 !important; 
-        color: #FFFFFF !important; 
-        border-color: #000000 !important;
-    }}
-
-     /* 6. INPUT DE BÚSQUEDA Y TEXTO OPERATIONAL */
-    .stTextInput input {{
-        background-color: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important;
-        border-radius: 2px !important;
-        height: 45px !important;
-        text-align: center !important;
-        letter-spacing: 2px;
-    }}
-
-
-    /* 6. FOOTER FIJO (Blindado) */
-    .footer {{
-        position: fixed;
-        bottom: 0 !important; 
-        left: 0 !important; 
-        width: 100% !important;
-        background-color: {vars_css['bg']} !important;
-        color: {vars_css['sub']} !important;
-        text-align: center;
-        padding: 12px 0px !important;
-        font-size: 9px;
-        letter-spacing: 2px;
-        border-top: 1px solid {vars_css['border']} !important;
-        z-index: 999999 !important;
-        animation: none !important;
-        transform: none !important;
-    }}
-
-    /* 7. REPARACIÓN PARA GRÁFICOS (Asegura que las barras se vean) */
-    .stPlotlyChart {{
-        visibility: visible !important;
-        opacity: 1 !important;
-        min-height: 300px !important;
-    }}
-
-    /* Evitar que la animación oculte el gráfico */
-    [data-testid="stVerticalBlock"] > div:has(div.stPlotlyChart) {{
-        animation: none !important;
-        transform: none !important;
-        opacity: 1 !important;
-    }}    
-    
-</style>
-""", unsafe_allow_html=True)
-# ── 4. SPLASH SCREEN ──────────────────────────────────────
-if "splash_completado" not in st.session_state:
-    st.session_state.splash_completado = False
-
-if not st.session_state.splash_completado:
-    p = st.empty()
-    with p.container():
-        for m in ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]:
-            st.markdown(f"""
-            <div style="height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-              <div style="width:40px;height:40px;border:1px solid {vars_css['border']};
-              border-top:1px solid {vars_css['text']};border-radius:50%;animation:spin 1s linear infinite;"></div>
-              <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:{vars_css['text']};">{m}</p>
-            </div>
-            <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
-            """, unsafe_allow_html=True)
-            time.sleep(.7)
-    st.session_state.splash_completado = True
-    st.rerun()
-
-# ── HEADER Y NAVEGACIÓN (LÍNEA 1) ──────────────────────────
-header_zone = st.container()
-with header_zone:
-    c1, c2 = st.columns([1.5, 5.4], vertical_alignment="center")
-    with c1:
-        try:
-            st.image(vars_css["logo"], width=120)
-            st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px; margin-left:2px;'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
-        except:
-            st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0;'>NEXION</h3>", unsafe_allow_html=True)
-
-    with c2:
-        cols_main = st.columns(4)
-        main_menus = ["TRACKING", "SEGUIMIENTO", "REPORTES", "FORMATOS"]
-        for i, m in enumerate(main_menus):
-            with cols_main[i]:
-                seleccionado = st.session_state.menu_main == m
-                btn_label = f"● {m}" if seleccionado else m
-                if st.button(btn_label, use_container_width=True, key=f"main_{m}"):
-                    st.session_state.menu_main = m
-                    st.session_state.menu_sub = "GENERAL"
-                    st.rerun()
-
-# ── SUBMENÚS (LÍNEA 2 COMPLETA) ────────────────────────────
-sub_map = {
-    "TRACKING": [],
-    "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
-    "REPORTES": ["APQ", "OPS", "OTD"],
-    "FORMATOS": ["SALIDA DE PT", "PAGOS"]
-}
-
-current_subs = sub_map.get(st.session_state.menu_main, [])
-if current_subs:
-    sub_zone = st.container()
-    with sub_zone:
-        cols_sub = st.columns(len(current_subs) + 4)
-        for i, s in enumerate(current_subs):
-            with cols_sub[i]:
-                sub_activo = st.session_state.menu_sub == s
-                sub_label = f"» {s}" if sub_activo else s
-                if st.button(sub_label, use_container_width=True, key=f"sub_{s}"):
-                    st.session_state.menu_sub = s
-                    st.rerun()
-
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.3;'>", unsafe_allow_html=True)
-
-# ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
-main_container = st.container()
-with main_container:
-    # 1. TRACKING
-    if st.session_state.menu_main == "TRACKING":
-        st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
-        _, col_search, _ = st.columns([1, 1.6, 1])
-        with col_search:
-            st.markdown(f"<p class='op-query-text'>O P E R A T I O N A L &nbsp; Q U E R Y</p>", unsafe_allow_html=True)
-            busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
-            if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-                st.toast(f"Buscando: {busqueda}")
-
-    # 2. SEGUIMIENTO
-    elif st.session_state.menu_main == "SEGUIMIENTO":
-        if st.session_state.menu_sub == "TRK":
-            st.subheader("SEGUIMIENTO > TRK")
-            st.info("Espacio para contenido de Tracking Operativo")
-        elif st.session_state.menu_sub == "GANTT":
-            st.subheader("SEGUIMIENTO > GANTT")
-            # 1. CONFIGURACIÓN DE DATOS
-            TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-            REPO_NAME = "RH2026/nexion"
-            FILE_PATH = "tareas.csv"
-            CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
-        
-            def obtener_fecha_mexico():
-                return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
-        
-            # 2. CARGA DE DATOS
-            def cargar_datos_seguro():
-                columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
-                hoy = obtener_fecha_mexico()
-                try:
-                    response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
-                    if response.status_code == 200:
-                        df = pd.read_csv(StringIO(response.text))
-                        df.columns = [c.strip().upper() for c in df.columns]
-                        for col in columnas_base:
-                            if col not in df.columns: df[col] = ""
-                        for col in ['FECHA', 'FECHA_FIN']:
-                            df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
-                            df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
-                        return df[columnas_base]
-                    return pd.DataFrame(columns=columnas_base)
-                except:
-                    return pd.DataFrame(columns=columnas_base)
-        
-            if 'df_tareas' not in st.session_state:
-                st.session_state.df_tareas = cargar_datos_seguro()
-        
-            # 3. RENDERIZADO DEL GRÁFICO (REFORZADO Y CORREGIDO)
             if not st.session_state.df_tareas.empty:
-                try:
-                    import plotly.express as px
-                    df_p = st.session_state.df_tareas.copy()
-                    
-                    # --- LIMPIEZA Y FORMATEO ESTRICTO ---
-                    df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
-                    df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
-                    
-                    # PARCHE CRÍTICO: Si la fecha inicio y fin son iguales, Plotly no pinta nada. 
-                    # Forzamos 1 día de duración para que la línea sea visible.
-                    mask_iguales = (df_p['FECHA'] == df_p['FECHA_FIN'])
-                    df_p.loc[mask_iguales, 'FECHA_FIN'] = df_p.loc[mask_iguales, 'FECHA_FIN'] + pd.Timedelta(days=1)
-                    
-                    # Eliminamos filas que sigan teniendo valores nulos tras la conversión
-                    df_p = df_p.dropna(subset=['FECHA', 'FECHA_FIN', 'TAREA'])
-            
-                    if not df_p.empty:
-                        colors_nexion = {
-                            'Urgente': '#FF3131', 'Alta': '#FF914D', 
-                            'Media': '#00D2FF', 'Baja': '#444E5E'
-                        }
-            
-                        # Renderizado con x_start y x_end (Estándar PX)
-                        fig = px.timeline(
-                            df_p, 
-                            x_start="FECHA", 
-                            x_end="FECHA_FIN", 
-                            y="TAREA",
-                            color="IMPORTANCIA", 
-                            color_discrete_map=colors_nexion,
-                            category_orders={"IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]}
-                        )
-                        
-                        # Ajustes de Ejes
-                        fig.update_yaxes(autorange="reversed", title="", tickfont=dict(size=10, color=vars_css['text']))
-                        fig.update_xaxes(title="", gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=10, color=vars_css['sub']))
-                        
-                        # --- REFUERZO DE VISIBILIDAD DE BARRAS ---
-                        fig.update_traces(
-                            marker_line_color="white", 
-                            marker_line_width=1,       
-                            opacity=1.0,
-                            width=0.6 # Grosor de la barra en el eje Y
-                        )
-            
-                        fig.update_layout(
-                            plot_bgcolor='rgba(0,0,0,0)', 
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color=vars_css['text'], family="Inter", size=11),
-                            height=300, # Un poco más de altura para que respire
-                            margin=dict(l=10, r=10, t=10, b=10),
-                            showlegend=True,
-                            legend=dict(
-                                orientation="h", 
-                                yanchor="bottom", 
-                                y=1.1, 
-                                xanchor="right", 
-                                x=1,
-                                title=None
-                            )
-                        )
-            
-                        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                    else:
-                        st.info("💡 Por favor, asegúrese de que las tareas tengan Fecha de Inicio, Fin y Descripción para generar el gráfico.")
-                except Exception as e:
-                    st.error(f"Error visual: {e}")
-        
-            # 4. EDITOR DE DATOS Y BOTÓN DE SINCRONIZACIÓN
+                df = st.session_state.df_tareas.copy()
+                df['FECHA'] = pd.to_datetime(df['FECHA'])
+                df['FECHA_FIN'] = pd.to_datetime(df['FECHA_FIN'])
+
+                mask = df['FECHA'] == df['FECHA_FIN']
+                df.loc[mask, 'FECHA_FIN'] += pd.Timedelta(days=1)
+
+                df = df.dropna(subset=['FECHA','FECHA_FIN','TAREA'])
+
+                if not df.empty:
+                    colors = {
+                        'Urgente':'#FF3131',
+                        'Alta':'#FF914D',
+                        'Media':'#00D2FF',
+                        'Baja':'#444E5E'
+                    }
+
+                    fig = px.timeline(
+                        df,
+                        x_start="FECHA",
+                        x_end="FECHA_FIN",
+                        y="TAREA",
+                        color="IMPORTANCIA",
+                        color_discrete_map=colors,
+                        category_orders={"IMPORTANCIA":["Urgente","Alta","Media","Baja"]}
+                    )
+
+                    fig.update_yaxes(autorange="reversed", title="")
+                    fig.update_traces(marker_line_color="white", marker_line_width=1, width=.6)
+                    fig.update_layout(
+                        height=300,
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        margin=dict(l=10,r=10,t=10,b=10),
+                        legend=dict(orientation="h",y=1.1,x=1)
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar':False})
+
             df_editado = st.data_editor(
                 st.session_state.df_tareas,
                 num_rows="dynamic",
                 use_container_width=True,
-                key="nexion_editor_v2026",
-                column_config={
-                    "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
-                    "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
-                    "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
-                    "TAREA": st.column_config.TextColumn("📝 Tarea"),
-                    "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
-                },
                 hide_index=True
             )
-        
-            if st.button("💾 SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
-                # Función guardar_en_github ya definida previamente
-                if guardar_en_github(df_editado):
-                    st.session_state.df_tareas = df_editado
-                    st.rerun()
 
-        
         elif st.session_state.menu_sub == "QUEJAS":
             st.subheader("SEGUIMIENTO > PORTAL DE QUEJAS")
             st.info("Contenedor para registro y seguimiento de quejas")
 
-    # 3. REPORTES
+    # REPORTES
     elif st.session_state.menu_main == "REPORTES":
         st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
 
-    # 4. FORMATOS
+    # FORMATOS
     elif st.session_state.menu_main == "FORMATOS":
         if st.session_state.menu_sub == "SALIDA DE PT":
             st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
@@ -623,62 +265,14 @@ with main_container:
             st.subheader("FORMATOS > CONTROL DE PAGOS")
         else:
             st.subheader("CENTRO DE DOCUMENTACIÓN")
-            st.write("Seleccione un formato del submenú superior.")
 
-# ── FOOTER FIJO (SOLUCIÓN DEFINITIVA) ────────────────────────
-st.markdown(f"""
-    <div class="footer">
-        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
-    </div>
+# ───────────────────── FOOTER ──────────────────────────────
+st.markdown("""
+<div class="footer">
+NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
+</div>
 """, unsafe_allow_html=True)
-        
-            # 4. EDITOR DE DATOS Y BOTÓN DE SINCRONIZACIÓN
-            df_editado = st.data_editor(
-                st.session_state.df_tareas,
-                num_rows="dynamic",
-                use_container_width=True,
-                key="nexion_editor_v2026",
-                column_config={
-                    "FECHA": st.column_config.DateColumn("📆 Inicio", required=True),
-                    "FECHA_FIN": st.column_config.DateColumn("🏁 Fin", required=True),
-                    "IMPORTANCIA": st.column_config.SelectboxColumn("🚦 Prioridad", options=["Baja", "Media", "Alta", "Urgente"]),
-                    "TAREA": st.column_config.TextColumn("📝 Tarea"),
-                    "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
-                },
-                hide_index=True
-            )
-        
-            if st.button("💾 SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
-                # Función guardar_en_github ya definida previamente
-                if guardar_en_github(df_editado):
-                    st.session_state.df_tareas = df_editado
-                    st.rerun()
 
-        
-        elif st.session_state.menu_sub == "QUEJAS":
-            st.subheader("SEGUIMIENTO > PORTAL DE QUEJAS")
-            st.info("Contenedor para registro y seguimiento de quejas")
-
-    # 3. REPORTES
-    elif st.session_state.menu_main == "REPORTES":
-        st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
-
-    # 4. FORMATOS
-    elif st.session_state.menu_main == "FORMATOS":
-        if st.session_state.menu_sub == "SALIDA DE PT":
-            st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
-        elif st.session_state.menu_sub == "PAGOS":
-            st.subheader("FORMATOS > CONTROL DE PAGOS")
-        else:
-            st.subheader("CENTRO DE DOCUMENTACIÓN")
-            st.write("Seleccione un formato del submenú superior.")
-
-# ── FOOTER FIJO (SOLUCIÓN DEFINITIVA) ────────────────────────
-st.markdown(f"""
-    <div class="footer">
-        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
-    </div>
-""", unsafe_allow_html=True)
 
 
 
