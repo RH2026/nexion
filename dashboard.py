@@ -123,19 +123,7 @@ st.markdown(f"""
         transform: none !important;
     }}
 
-    /* 7. REPARACIÓN PARA GRÁFICOS (Asegura que las barras se vean) */
-    .stPlotlyChart {{
-        visibility: visible !important;
-        opacity: 1 !important;
-        min-height: 300px !important;
-    }}
-
-    /* Evitar que la animación oculte el gráfico */
-    [data-testid="stVerticalBlock"] > div:has(div.stPlotlyChart) {{
-        animation: none !important;
-        transform: none !important;
-        opacity: 1 !important;
-    }}
+    
     
 </style>
 """, unsafe_allow_html=True)
@@ -363,6 +351,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
