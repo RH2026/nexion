@@ -224,21 +224,18 @@ with main_container:
         
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # 1. DEFINIR VARIABLES DE RUTA (Asegura que existan aquí)
+            # 1. CONFIGURACIÓN Y FUNCIONES (Declaradas primero)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
             CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
 
-            # 2. DECLARAR FUNCIONES DE APOYO (Para evitar el NameError)
             def obtener_fecha_mexico():
-                # Corregimos la resta para evitar el error de operandos anterior
                 return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
             
             def cargar_datos_seguro():
                 columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
-                hoy = obtener_fecha_mexico() # Ahora Python ya sabe qué es esta función
+                hoy = obtener_fecha_mexico()
                 try:
-                    # Timestamp para evitar caché de GitHub
                     response = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if response.status_code == 200:
                         df = pd.read_csv(StringIO(response.text))
@@ -253,11 +250,11 @@ with main_container:
                 except:
                     return pd.DataFrame(columns=columnas_base)
 
-            # 3. EJECUTAR CARGA CON SPINNER (Solo si no están cargados)
+            # 2. CARGA CON ANIMACIÓN (Solo ocurre aquí)
             if 'df_tareas' not in st.session_state:
                 with st.spinner('🔄 SYNCHRONIZING WITH NEXION CORE...'):
                     st.session_state.df_tareas = cargar_datos_seguro()
-                    time.sleep(0.8)
+                    time.sleep(1.2)  # Tiempo para que la animación luzca
                 st.toast("Gantt manifests parsed successfully", icon="📡")
             # ----------------------------------------------
             # ── GANTT ────────────────────────────────────────────────────────────────
@@ -450,6 +447,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
