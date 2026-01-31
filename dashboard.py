@@ -314,64 +314,48 @@ with main_container:
             
                         # ── CREACIÓN DEL GANTT ──
                         fig = px.timeline(
-                            df_p,
-                            x_start="FECHA",
-                            x_end="FECHA_FIN",
-                            y="TAREA",
-                            color="IMPORTANCIA",
-                            color_discrete_map=colors_nexion,
-                            category_orders={
-                                "IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]
-                            }
+                        df_p,
+                        x_start="FECHA",
+                        x_end="FECHA_FIN",
+                        y="TAREA",
+                        color="IMPORTANCIA",
+                        color_discrete_map=colors_nexion,
+                        category_orders={"IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]}
+                    )
+                    
+                    fig.update_yaxes(
+                        autorange="reversed",
+                        title="",
+                        tickfont=dict(size=11, color=vars_css['text']),
+                        automargin=True
+                    )
+                    
+                    fig.update_xaxes(
+                        title="",
+                        gridcolor="rgba(0,0,0,0.08)",
+                        tickfont=dict(size=10, color=vars_css['sub'])
+                    )
+                    
+                    fig.update_layout(
+                        height=260,
+                        bargap=0.55,
+                        bargroupgap=0.1,
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        font=dict(family="Inter", size=11, color=vars_css['text']),
+                        margin=dict(l=20, r=20, t=10, b=20),
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=1.05,
+                            xanchor="right",
+                            x=1,
+                            title=None
                         )
-            
-                        # ── AJUSTES DE EJES ──
-                        fig.update_yaxes(
-                            autorange="reversed",
-                            title="",
-                            tickfont=dict(size=11, color=vars_css['text'])
-                        )
-            
-                        fig.update_xaxes(
-                            title="",
-                            gridcolor="rgba(0,0,0,0.08)",
-                            tickfont=dict(size=10, color=vars_css['sub'])
-                        )
-            
-                        # ── VISIBILIDAD TOTAL DE BARRAS ──
-                        fig.update_traces(
-                            opacity=1,
-                            marker=dict(line=dict(width=1, color="#FFFFFF"))
-                        )
-            
-                        # ── LAYOUT FINAL ──
-                        fig.update_layout(
-                            height=420,
-                            plot_bgcolor="rgba(0,0,0,0)",
-                            paper_bgcolor="rgba(0,0,0,0)",
-                            font=dict(
-                                family="Inter",
-                                size=11,
-                                color=vars_css['text']
-                            ),
-                            margin=dict(l=20, r=20, t=10, b=20),
-                            legend=dict(
-                                orientation="h",
-                                yanchor="bottom",
-                                y=1.05,
-                                xanchor="right",
-                                x=1,
-                                title=None
-                            )
-                        )
-            
-                        # ── RENDER ──
-                        st.plotly_chart(
-                            fig,
-                            use_container_width=True,
-                            config={"displayModeBar": False}
-                        )
-            
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                                
                 except Exception as e:
                     st.error(f"Error al generar el Gantt: {e}")
 
@@ -419,6 +403,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
