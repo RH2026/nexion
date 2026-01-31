@@ -360,25 +360,44 @@ with main_container:
             except Exception as e:
                 st.error(f"Error en Gantt Plotly: {e}")
             
-            # ── EDITOR ───────────────────────────────────────────────────────────────
+            # ── NORMALIZAR TIPOS PARA DATA_EDITOR ─────────────────────────────
+            df_editor = df.copy()
+            
+            df_editor["FECHA"] = pd.to_datetime(df_editor["FECHA"], errors="coerce").dt.date
+            df_editor["FECHA_FIN"] = pd.to_datetime(df_editor["FECHA_FIN"], errors="coerce").dt.date
+            
+            df_editor["PROGRESO"] = pd.to_numeric(df_editor["PROGRESO"], errors="coerce").fillna(0).astype(int)
+            
+            for col in ["IMPORTANCIA", "TIPO", "GRUPO", "DEPENDENCIAS"]:
+                df_editor[col] = df_editor[col].astype(str).replace("nan", "")
+            
+            # ── DATA EDITOR ESTABLE ───────────────────────────────────────────
             df_editado = st.data_editor(
-                df,
-                num_rows="dynamic",
+                df_editor,
+                hide_index=True,
                 use_container_width=True,
+                num_rows="dynamic",
                 column_config={
-                    "FECHA": st.column_config.DateColumn("📆 Inicio"),
-                    "FECHA_FIN": st.column_config.DateColumn("🏁 Fin"),
+                    "FECHA": st.column_config.DateColumn("Inicio"),
+                    "FECHA_FIN": st.column_config.DateColumn("Fin"),
                     "IMPORTANCIA": st.column_config.SelectboxColumn(
-                        "🚦 Prioridad", options=["Baja","Media","Alta","Urgente"]
+                        "Importancia",
+                        options=["Urgente", "Alta", "Media", "Baja"]
                     ),
-                    "TAREA": st.column_config.TextColumn("📝 Tarea"),
-                    "ULTIMO ACCION": st.column_config.TextColumn("🚚 Estatus"),
-                    "PROGRESO": st.column_config.NumberColumn("📊 %"),
-                    "DEPENDENCIAS": st.column_config.TextColumn("🔗 Depends"),
-                    "TIPO": st.column_config.TextColumn("📌 Tipo"),
-                    "GRUPO": st.column_config.TextColumn("📂 Grupo"),
-                },
-                hide_index=True
+                    "PROGRESO": st.column_config.ProgressColumn(
+                        "Progreso",
+                        min_value=0,
+                        max_value=100
+                    ),
+                    "TAREA": st.column_config.TextColumn("Tarea"),
+                    "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
+                    "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
+                    "TIPO": st.column_config.SelectboxColumn(
+                        "Tipo",
+                        options=["Tarea", "Hito"]
+                    ),
+                    "GRUPO": st.column_config.TextColumn("Grupo")
+                }
             )
             
             if st.button("💾 SINCRONIZAR CON GITHUB", use_container_width=True):
@@ -440,6 +459,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
