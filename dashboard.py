@@ -307,9 +307,38 @@ with main_container:
             
             df = st.session_state.df_tareas.copy()
             
-            # ── TABLA EDITABLE ─────────────────────────────────────────
+            # ── NORMALIZACIÓN ESTRICTA PARA DATA_EDITOR ─────────────────────
+            df_editor = df.copy()
+            
+            # Fechas 100% date
+            df_editor["FECHA"] = pd.to_datetime(df_editor["FECHA"], errors="coerce").dt.date
+            df_editor["FECHA_FIN"] = pd.to_datetime(df_editor["FECHA_FIN"], errors="coerce").dt.date
+            
+            hoy = obtener_fecha_mexico()
+            df_editor["FECHA"] = df_editor["FECHA"].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+            df_editor["FECHA_FIN"] = df_editor["FECHA_FIN"].apply(
+                lambda x: x if isinstance(x, datetime.date) else hoy + datetime.timedelta(days=1)
+            )
+            
+            # Progreso SIEMPRE int
+            df_editor["PROGRESO"] = (
+                pd.to_numeric(df_editor["PROGRESO"], errors="coerce")
+                .fillna(0)
+                .astype(int)
+            )
+            
+            # Strings limpios (NUNCA NaN)
+            for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
+                df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+            
+            # Valores por defecto válidos
+            df_editor["IMPORTANCIA"] = df_editor["IMPORTANCIA"].replace("", "Media")
+            df_editor["TIPO"] = df_editor["TIPO"].replace("", "Tarea")
+            df_editor["GRUPO"] = df_editor["GRUPO"].replace("", "General")
+            
+            # ── DATA EDITOR ESTABLE ─────────────────────────────────────────
             df_editado = st.data_editor(
-                df,
+                df_editor,
                 hide_index=True,
                 use_container_width=True,
                 num_rows="dynamic",
@@ -401,6 +430,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
