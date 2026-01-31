@@ -256,22 +256,31 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
         
-            # 3. RENDERIZADO DEL GRÁFICO (REFORZADO)
+            # 3. RENDERIZADO DEL GRÁFICO (REFORZADO Y CORREGIDO)
             if not st.session_state.df_tareas.empty:
                 try:
                     import plotly.express as px
                     df_p = st.session_state.df_tareas.copy()
                     
+                    # --- LIMPIEZA Y FORMATEO ESTRICTO ---
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
+                    
+                    # PARCHE CRÍTICO: Si la fecha inicio y fin son iguales, Plotly no pinta nada. 
+                    # Forzamos 1 día de duración para que la línea sea visible.
+                    mask_iguales = (df_p['FECHA'] == df_p['FECHA_FIN'])
+                    df_p.loc[mask_iguales, 'FECHA_FIN'] = df_p.loc[mask_iguales, 'FECHA_FIN'] + pd.Timedelta(days=1)
+                    
+                    # Eliminamos filas que sigan teniendo valores nulos tras la conversión
                     df_p = df_p.dropna(subset=['FECHA', 'FECHA_FIN', 'TAREA'])
-        
+            
                     if not df_p.empty:
                         colors_nexion = {
                             'Urgente': '#FF3131', 'Alta': '#FF914D', 
                             'Media': '#00D2FF', 'Baja': '#444E5E'
                         }
-        
+            
+                        # Renderizado con x_start y x_end (Estándar PX)
                         fig = px.timeline(
                             df_p, 
                             x_start="FECHA", 
@@ -282,37 +291,38 @@ with main_container:
                             category_orders={"IMPORTANCIA": ["Urgente", "Alta", "Media", "Baja"]}
                         )
                         
-                        # Invertir eje Y para que la última tarea esté arriba
-                        fig.update_yaxes(autorange="reversed", title="", tickfont=dict(size=10))
-                        fig.update_xaxes(title="", gridcolor='rgba(0,0,0,0.05)')
+                        # Ajustes de Ejes
+                        fig.update_yaxes(autorange="reversed", title="", tickfont=dict(size=10, color=vars_css['text']))
+                        fig.update_xaxes(title="", gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=10, color=vars_css['sub']))
                         
-                        # --- AQUÍ REFORZAMOS LA VISIBILIDAD ---
+                        # --- REFUERZO DE VISIBILIDAD DE BARRAS ---
                         fig.update_traces(
-                            marker_line_color="white", # Borde blanco para separar
-                            marker_line_width=1,       # Grosor del borde
-                            opacity=1.0                # Opacidad total (sin transparencia)
+                            marker_line_color="white", 
+                            marker_line_width=1,       
+                            opacity=1.0,
+                            width=0.6 # Grosor de la barra en el eje Y
                         )
-        
+            
                         fig.update_layout(
                             plot_bgcolor='rgba(0,0,0,0)', 
                             paper_bgcolor='rgba(0,0,0,0)',
                             font=dict(color=vars_css['text'], family="Inter", size=11),
-                            height=280, 
+                            height=300, # Un poco más de altura para que respire
                             margin=dict(l=10, r=10, t=10, b=10),
                             showlegend=True,
                             legend=dict(
                                 orientation="h", 
                                 yanchor="bottom", 
-                                y=1.05, 
+                                y=1.1, 
                                 xanchor="right", 
                                 x=1,
                                 title=None
                             )
                         )
-        
+            
                         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
                     else:
-                        st.info("💡 Ingrese tareas con fechas en el editor para visualizar.")
+                        st.info("💡 Por favor, asegúrese de que las tareas tengan Fecha de Inicio, Fin y Descripción para generar el gráfico.")
                 except Exception as e:
                     st.error(f"Error visual: {e}")
         
@@ -363,6 +373,7 @@ st.markdown(f"""
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
     </div>
 """, unsafe_allow_html=True)
+
 
 
 
