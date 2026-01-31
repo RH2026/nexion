@@ -225,17 +225,19 @@ with main_container:
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
             #---GANTTTT-----
+            # ── GANTT ────────────────────────────────────────────────────────────────
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
             CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
             
             def obtener_fecha_mexico():
-                return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)
+                return pd.Timestamp.utcnow() - pd.Timedelta(hours=6)
             
             def cargar_datos_seguro():
                 columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
                 hoy = obtener_fecha_mexico()
+            
                 try:
                     response = requests.get(f"{CSV_URL}?t={datetime.datetime.now().timestamp()}")
                     if response.status_code == 200:
@@ -253,6 +255,7 @@ with main_container:
                         return df[columnas_base]
             
                     return pd.DataFrame(columns=columnas_base)
+            
                 except:
                     return pd.DataFrame(columns=columnas_base)
             
@@ -295,15 +298,12 @@ with main_container:
                     df_p = st.session_state.df_tareas.copy()
                     df_p.columns = [c.strip().upper() for c in df_p.columns]
             
-                    # Fechas limpias
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
             
-                    # Limpieza
                     df_p = df_p[df_p['TAREA'].astype(str).str.strip() != ""]
                     df_p = df_p.dropna(subset=['FECHA'])
             
-                    # Fecha fin segura
                     df_p['FECHA_FIN'] = df_p.apply(
                         lambda r: r['FECHA'] + pd.Timedelta(days=1)
                         if pd.isna(r['FECHA_FIN']) or r['FECHA_FIN'] <= r['FECHA']
@@ -311,7 +311,6 @@ with main_container:
                         axis=1
                     )
             
-                    # DURACIÓN SEGURA (CLAVE DEL ERROR)
                     df_p['DURACION'] = (df_p['FECHA_FIN'] - df_p['FECHA']).dt.days.clip(lower=1)
             
                     if df_p.empty:
@@ -332,10 +331,8 @@ with main_container:
                                 y=[row['TAREA']],
                                 base=row['FECHA'],
                                 orientation="h",
-                                marker=dict(
-                                    color=colors_importancia.get(row['IMPORTANCIA'], "#999999")
-                                ),
                                 width=0.22,
+                                marker=dict(color=colors_importancia.get(row['IMPORTANCIA'], "#9CA3AF")),
                                 hovertemplate=(
                                     f"<b>{row['TAREA']}</b><br>"
                                     f"Inicio: {row['FECHA'].date()}<br>"
@@ -345,15 +342,16 @@ with main_container:
                                 showlegend=False
                             ))
             
-                        # ── LÍNEA DE HOY ──
+                        # ── LÍNEA DE HOY (SHAPE, NO add_vline) ──
                         hoy = obtener_fecha_mexico()
-                        fig.add_vline(
-                            x=hoy,
-                            line_width=2,
-                            line_dash="dot",
-                            line_color="#EF4444",
-                            annotation_text="HOY",
-                            annotation_position="top"
+            
+                        fig.add_shape(
+                            type="line",
+                            x0=hoy,
+                            x1=hoy,
+                            y0=-0.5,
+                            y1=len(df_p) - 0.5,
+                            line=dict(color="#EF4444", width=2, dash="dot")
                         )
             
                         fig.update_layout(
@@ -422,6 +420,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
