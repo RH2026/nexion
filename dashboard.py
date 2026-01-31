@@ -224,7 +224,7 @@ with main_container:
         
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            
+            #---GANTTTT-----
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
@@ -272,7 +272,7 @@ with main_container:
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
 
-            # ── 3. RENDERIZADO DEL GANTT (LÍNEAS REALES, SIN ROMPER NADA) ────────
+            # ── 3. RENDERIZADO DEL GANTT (REPARADO + HOY + HITOS + ESTATUS) ─────────
             if not st.session_state.df_tareas.empty:
                 try:
                     import plotly.graph_objects as go
@@ -280,11 +280,15 @@ with main_container:
                     df_p = st.session_state.df_tareas.copy()
                     df_p.columns = [c.strip().upper() for c in df_p.columns]
             
+                    # ── FECHAS ──
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
             
+                    # ── LIMPIEZA ──
                     df_p = df_p[df_p['TAREA'].astype(str).str.strip() != ""]
+                    df_p = df_p.dropna(subset=['FECHA'])
             
+                    # ── DURACIÓN MÍNIMA ──
                     df_p['FECHA_FIN'] = df_p.apply(
                         lambda r: r['FECHA'] + pd.Timedelta(days=1)
                         if pd.isna(r['FECHA_FIN']) or r['FECHA_FIN'] <= r['FECHA']
@@ -292,39 +296,93 @@ with main_container:
                         axis=1
                     )
             
-                    df_p = df_p.dropna(subset=['FECHA', 'FECHA_FIN'])
-            
                     if df_p.empty:
                         st.info("No hay tareas válidas para mostrar en el Gantt.")
                     else:
-                        colors_nexion = {
+                        # ── COLORES ──
+                        colors_prioridad = {
                             "Urgente": "#FF3131",
                             "Alta": "#FF914D",
                             "Media": "#00D2FF",
                             "Baja": "#4B5563"
                         }
             
+                        colors_estatus = {
+                            "PENDIENTE": "#9CA3AF",
+                            "EN PROCESO": "#F59E0B",
+                            "EN TRANSITO": "#A855F7",
+                            "COMPLETADO": "#10B981"
+                        }
+            
+                        # ── AGRUPACIÓN POR ESTATUS ──
+                        orden_estatus = ["PENDIENTE", "EN PROCESO", "EN TRANSITO", "COMPLETADO"]
+                        df_p['ULTIMO ACCION'] = df_p['ULTIMO ACCION'].fillna("PENDIENTE")
+                        df_p['ULTIMO ACCION'] = pd.Categorical(
+                            df_p['ULTIMO ACCION'],
+                            categories=orden_estatus,
+                            ordered=True
+                        )
+                        df_p = df_p.sort_values(['ULTIMO ACCION', 'FECHA'])
+            
                         fig = go.Figure()
             
+                        # ── BARRAS Y MILESTONES ──
                         for _, row in df_p.iterrows():
-                            fig.add_trace(go.Bar(
-                                x=[(row['FECHA_FIN'] - row['FECHA']).days],
-                                y=[row['TAREA']],
-                                base=row['FECHA'],
-                                orientation="h",
-                                marker=dict(color=colors_nexion.get(row['IMPORTANCIA'], "#999999")),
-                                width=0.18,   # ← AQUÍ está el grosor REAL de la línea
-                                hovertemplate=(
-                                    f"<b>{row['TAREA']}</b><br>"
-                                    f"Inicio: {row['FECHA'].date()}<br>"
-                                    f"Fin: {row['FECHA_FIN'].date()}<br>"
-                                    f"Prioridad: {row['IMPORTANCIA']}"
-                                ),
-                                showlegend=False
-                            ))
             
+                            duracion = (row['FECHA_FIN'] - row['FECHA']).days
+            
+                            # MILESTONE
+                            if duracion <= 1:
+                                fig.add_trace(go.Scatter(
+                                    x=[row['FECHA']],
+                                    y=[f"{row['ULTIMO ACCION']} | {row['TAREA']}"],
+                                    mode="markers",
+                                    marker=dict(
+                                        symbol="diamond",
+                                        size=14,
+                                        color=colors_estatus.get(row['ULTIMO ACCION'], "#000")
+                                    ),
+                                    hovertemplate=(
+                                        f"<b>{row['TAREA']}</b><br>"
+                                        f"Hito<br>"
+                                        f"Fecha: {row['FECHA'].date()}<extra></extra>"
+                                    ),
+                                    showlegend=False
+                                ))
+                            else:
+                                fig.add_trace(go.Bar(
+                                    x=[duracion],
+                                    y=[f"{row['ULTIMO ACCION']} | {row['TAREA']}"],
+                                    base=row['FECHA'],
+                                    orientation="h",
+                                    marker=dict(
+                                        color=colors_prioridad.get(row['IMPORTANCIA'], "#999999")
+                                    ),
+                                    width=0.22,
+                                    hovertemplate=(
+                                        f"<b>{row['TAREA']}</b><br>"
+                                        f"Estatus: {row['ULTIMO ACCION']}<br>"
+                                        f"Inicio: {row['FECHA'].date()}<br>"
+                                        f"Fin: {row['FECHA_FIN'].date()}<br>"
+                                        f"Prioridad: {row['IMPORTANCIA']}<extra></extra>"
+                                    ),
+                                    showlegend=False
+                                ))
+            
+                        # ── LÍNEA DE HOY ──
+                        hoy = pd.to_datetime(obtener_fecha_mexico())
+                        fig.add_vline(
+                            x=hoy,
+                            line_width=3,
+                            line_dash="dash",
+                            line_color="#EF4444",
+                            annotation_text="HOY",
+                            annotation_position="top"
+                        )
+            
+                        # ── LAYOUT ──
                         fig.update_layout(
-                            height=200 + len(df_p) * 28,
+                            height=240 + len(df_p) * 28,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
                             margin=dict(l=20, r=20, t=10, b=20),
@@ -389,6 +447,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
