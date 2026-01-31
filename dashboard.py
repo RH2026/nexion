@@ -387,51 +387,39 @@ with main_container:
             f"""
             <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
             <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
-        
+            
             <style>
               #gantt {{
                 width: 100%;
-                height: 100%;
+                height: 400px;
               }}
-        
+            
               .bar.urgente {{ fill: #FF3131; }}
               .bar.alta {{ fill: #FF914D; }}
               .bar.media {{ fill: #00D2FF; }}
               .bar.baja {{ fill: #4B5563; }}
             </style>
-        
+            
             <div id="gantt"></div>
-        
+            
             <script>
-              function renderGantt() {{
-                const tasks = {json.dumps(tasks)};
-        
-                if (!tasks || tasks.length === 0) {{
-                  console.warn("No hay tareas para Gantt");
-                  return;
-                }}
-        
-                const gantt = new Gantt("#gantt", tasks, {{
+              const tasks = {json.dumps(tasks)};
+            
+              if (tasks && tasks.length > 0) {{
+                new Gantt("#gantt", tasks, {{
                   view_mode: "Day",
                   bar_height: 18,
                   padding: 50,
-                  date_format: "YYYY-MM-DD",
-                }});
-              }}
-        
-              // Espera REAL al DOM
-              if (document.readyState === "loading") {{
-                document.addEventListener("DOMContentLoaded", () => {{
-                  setTimeout(renderGantt, 200);
+                  date_format: "YYYY-MM-DD"
                 }});
               }} else {{
-                setTimeout(renderGantt, 200);
+                console.warn("No hay tareas para el Gantt");
               }}
             </script>
             """,
-            height=360 + len(tasks) * 32,
+            height=450,
             scrolling=True
-        )
+            )
 
 
         
@@ -459,6 +447,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
