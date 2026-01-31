@@ -382,6 +382,7 @@ with main_container:
                     "custom_class": r["IMPORTANCIA"].lower()
                 })
             
+            st.write("Tareas para Gantt:", len(tasks))
             components.html(f"""
             <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
             <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
@@ -430,6 +431,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
