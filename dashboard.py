@@ -385,13 +385,17 @@ with main_container:
             st.write("Tareas para Gantt:", len(tasks))
             components.html(
             f"""
-            <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
-            <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
+            <link rel="stylesheet"
+             href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
+            
+            <script
+             src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js">
+            </script>
             
             <style>
               #gantt {{
                 width: 100%;
-                height: 400px;
+                height: 420px;
               }}
             
               .bar.urgente {{ fill: #FF3131; }}
@@ -404,16 +408,16 @@ with main_container:
             
             <script>
               const tasks = {json.dumps(tasks)};
+              console.log("Tareas:", tasks);
+              console.log("Gantt existe:", typeof Gantt);
             
-              if (tasks && tasks.length > 0) {{
+              if (tasks.length > 0 && typeof Gantt !== "undefined") {{
                 new Gantt("#gantt", tasks, {{
                   view_mode: "Day",
                   bar_height: 18,
                   padding: 50,
                   date_format: "YYYY-MM-DD"
                 }});
-              }} else {{
-                console.warn("No hay tareas para el Gantt");
               }}
             </script>
             """,
@@ -447,6 +451,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
