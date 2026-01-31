@@ -224,7 +224,13 @@ with main_container:
         
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            #---GANTTTT-----
+            # --- BLOQUE DE CARGA LOCALIZADO CON SPINNER ---
+            if 'df_tareas' not in st.session_state:
+                with st.spinner('🔄 SYNCHRONIZING WITH NEXION CORE...'):
+                    st.session_state.df_tareas = cargar_datos_seguro()
+                    time.sleep(0.8)  # Pequeño delay para suavizar la animación
+                st.toast("Gantt manifests parsed successfully", icon="📡")
+            # ----------------------------------------------
             # ── GANTT ────────────────────────────────────────────────────────────────
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
@@ -415,6 +421,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
