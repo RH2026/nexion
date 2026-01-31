@@ -229,10 +229,10 @@ with main_container:
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
             CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/tareas.csv"
-
+            
             def obtener_fecha_mexico():
-                return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
-
+                return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)
+            
             def cargar_datos_seguro():
                 columnas_base = ['FECHA', 'FECHA_FIN', 'IMPORTANCIA', 'TAREA', 'ULTIMO ACCION']
                 hoy = obtener_fecha_mexico()
@@ -241,38 +241,53 @@ with main_container:
                     if response.status_code == 200:
                         df = pd.read_csv(StringIO(response.text))
                         df.columns = [c.strip().upper() for c in df.columns]
+            
                         for col in columnas_base:
-                            if col not in df.columns: df[col] = ""
+                            if col not in df.columns:
+                                df[col] = ""
+            
                         for col in ['FECHA', 'FECHA_FIN']:
-                            df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
-                            df[col] = df[col].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+                            df[col] = pd.to_datetime(df[col], errors='coerce')
+                            df[col] = df[col].fillna(hoy)
+            
                         return df[columnas_base]
+            
                     return pd.DataFrame(columns=columnas_base)
                 except:
                     return pd.DataFrame(columns=columnas_base)
-
+            
             def guardar_en_github(df):
-                if not TOKEN: 
+                if not TOKEN:
                     st.error("GITHUB_TOKEN not configured")
                     return False
                 try:
                     g = Github(TOKEN)
                     repo = g.get_repo(REPO_NAME)
+            
                     df_save = df.copy()
                     df_save['FECHA'] = df_save['FECHA'].astype(str)
                     df_save['FECHA_FIN'] = df_save['FECHA_FIN'].astype(str)
+            
                     csv_data = df_save.to_csv(index=False)
                     contents = repo.get_contents(FILE_PATH, ref="main")
-                    repo.update_file(contents.path, f"Sync NEXION {obtener_fecha_mexico()}", csv_data, contents.sha, branch="main")
+            
+                    repo.update_file(
+                        contents.path,
+                        f"Sync NEXION {obtener_fecha_mexico().date()}",
+                        csv_data,
+                        contents.sha,
+                        branch="main"
+                    )
                     st.toast("🚀 ¡Sincronizado!", icon="✅")
                     return True
                 except Exception as e:
-                    st.error(f"Error: {e}"); return False
-
+                    st.error(f"Error: {e}")
+                    return False
+            
             if 'df_tareas' not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
-
-            # ── 3. RENDERIZADO DEL GANTT (REPARADO + HOY + HITOS + ESTATUS) ─────────
+            
+            # ── RENDER GANTT ─────────────────────────────────────────────────────────
             if not st.session_state.df_tareas.empty:
                 try:
                     import plotly.graph_objects as go
@@ -280,15 +295,15 @@ with main_container:
                     df_p = st.session_state.df_tareas.copy()
                     df_p.columns = [c.strip().upper() for c in df_p.columns]
             
-                    # ── FECHAS ──
+                    # Fechas limpias
                     df_p['FECHA'] = pd.to_datetime(df_p['FECHA'], errors='coerce')
                     df_p['FECHA_FIN'] = pd.to_datetime(df_p['FECHA_FIN'], errors='coerce')
             
-                    # ── LIMPIEZA ──
+                    # Limpieza
                     df_p = df_p[df_p['TAREA'].astype(str).str.strip() != ""]
                     df_p = df_p.dropna(subset=['FECHA'])
             
-                    # ── DURACIÓN MÍNIMA ──
+                    # Fecha fin segura
                     df_p['FECHA_FIN'] = df_p.apply(
                         lambda r: r['FECHA'] + pd.Timedelta(days=1)
                         if pd.isna(r['FECHA_FIN']) or r['FECHA_FIN'] <= r['FECHA']
@@ -296,93 +311,53 @@ with main_container:
                         axis=1
                     )
             
+                    # DURACIÓN SEGURA (CLAVE DEL ERROR)
+                    df_p['DURACION'] = (df_p['FECHA_FIN'] - df_p['FECHA']).dt.days.clip(lower=1)
+            
                     if df_p.empty:
                         st.info("No hay tareas válidas para mostrar en el Gantt.")
                     else:
-                        # ── COLORES ──
-                        colors_prioridad = {
+                        colors_importancia = {
                             "Urgente": "#FF3131",
                             "Alta": "#FF914D",
                             "Media": "#00D2FF",
                             "Baja": "#4B5563"
                         }
             
-                        colors_estatus = {
-                            "PENDIENTE": "#9CA3AF",
-                            "EN PROCESO": "#F59E0B",
-                            "EN TRANSITO": "#A855F7",
-                            "COMPLETADO": "#10B981"
-                        }
-            
-                        # ── AGRUPACIÓN POR ESTATUS ──
-                        orden_estatus = ["PENDIENTE", "EN PROCESO", "EN TRANSITO", "COMPLETADO"]
-                        df_p['ULTIMO ACCION'] = df_p['ULTIMO ACCION'].fillna("PENDIENTE")
-                        df_p['ULTIMO ACCION'] = pd.Categorical(
-                            df_p['ULTIMO ACCION'],
-                            categories=orden_estatus,
-                            ordered=True
-                        )
-                        df_p = df_p.sort_values(['ULTIMO ACCION', 'FECHA'])
-            
                         fig = go.Figure()
             
-                        # ── BARRAS Y MILESTONES ──
                         for _, row in df_p.iterrows():
-            
-                            duracion = (row['FECHA_FIN'] - row['FECHA']).days
-            
-                            # MILESTONE
-                            if duracion <= 1:
-                                fig.add_trace(go.Scatter(
-                                    x=[row['FECHA']],
-                                    y=[f"{row['ULTIMO ACCION']} | {row['TAREA']}"],
-                                    mode="markers",
-                                    marker=dict(
-                                        symbol="diamond",
-                                        size=14,
-                                        color=colors_estatus.get(row['ULTIMO ACCION'], "#000")
-                                    ),
-                                    hovertemplate=(
-                                        f"<b>{row['TAREA']}</b><br>"
-                                        f"Hito<br>"
-                                        f"Fecha: {row['FECHA'].date()}<extra></extra>"
-                                    ),
-                                    showlegend=False
-                                ))
-                            else:
-                                fig.add_trace(go.Bar(
-                                    x=[duracion],
-                                    y=[f"{row['ULTIMO ACCION']} | {row['TAREA']}"],
-                                    base=row['FECHA'],
-                                    orientation="h",
-                                    marker=dict(
-                                        color=colors_prioridad.get(row['IMPORTANCIA'], "#999999")
-                                    ),
-                                    width=0.22,
-                                    hovertemplate=(
-                                        f"<b>{row['TAREA']}</b><br>"
-                                        f"Estatus: {row['ULTIMO ACCION']}<br>"
-                                        f"Inicio: {row['FECHA'].date()}<br>"
-                                        f"Fin: {row['FECHA_FIN'].date()}<br>"
-                                        f"Prioridad: {row['IMPORTANCIA']}<extra></extra>"
-                                    ),
-                                    showlegend=False
-                                ))
+                            fig.add_trace(go.Bar(
+                                x=[row['DURACION']],
+                                y=[row['TAREA']],
+                                base=row['FECHA'],
+                                orientation="h",
+                                marker=dict(
+                                    color=colors_importancia.get(row['IMPORTANCIA'], "#999999")
+                                ),
+                                width=0.22,
+                                hovertemplate=(
+                                    f"<b>{row['TAREA']}</b><br>"
+                                    f"Inicio: {row['FECHA'].date()}<br>"
+                                    f"Fin: {row['FECHA_FIN'].date()}<br>"
+                                    f"Prioridad: {row['IMPORTANCIA']}<extra></extra>"
+                                ),
+                                showlegend=False
+                            ))
             
                         # ── LÍNEA DE HOY ──
-                        hoy = pd.to_datetime(obtener_fecha_mexico())
+                        hoy = obtener_fecha_mexico()
                         fig.add_vline(
                             x=hoy,
-                            line_width=3,
-                            line_dash="dash",
+                            line_width=2,
+                            line_dash="dot",
                             line_color="#EF4444",
                             annotation_text="HOY",
                             annotation_position="top"
                         )
             
-                        # ── LAYOUT ──
                         fig.update_layout(
-                            height=240 + len(df_p) * 28,
+                            height=200 + len(df_p) * 30,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
                             margin=dict(l=20, r=20, t=10, b=20),
@@ -447,6 +422,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
