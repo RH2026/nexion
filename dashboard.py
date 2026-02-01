@@ -551,7 +551,7 @@ with main_container:
                 </html>
                 """,
                 height=520,
-                scrolling=False
+                scrolling=True
             )
 
         
@@ -579,6 +579,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
