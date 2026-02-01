@@ -470,20 +470,20 @@ with main_container:
                 """
                 <div id="matrix-container">
                     <canvas id="matrix-canvas"></canvas>
-                    <div class="overlay-text">NEXION CORE: MODO ÓNIX</div>
+                    <div class="overlay-text">NEXION CORE: MODO MATRIX</div>
                 </div>
             
                 <style>
                     #matrix-container {
-                        height: 450px; background: #0E1117; border-radius: 10px;
+                        height: 450px; background: #0b0e14; border-radius: 10px;
                         position: relative; border: 1px solid #1e2530; overflow: hidden;
                     }
                     #matrix-canvas { display: block; }
                     .overlay-text {
                         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                        color: #4b5563; font-family: 'Segoe UI', sans-serif;
-                        font-weight: bold; letter-spacing: 10px; pointer-events: none;
-                        opacity: 0.3; font-size: 0.9rem; text-transform: uppercase;
+                        color: #00FF00; font-family: 'Courier New', Courier, monospace;
+                        font-weight: bold; letter-spacing: 5px; pointer-events: none;
+                        text-shadow: 0 0 10px #00FF00; font-size: 1.2rem;
                     }
                 </style>
             
@@ -492,16 +492,22 @@ with main_container:
                     const ctx = canvas.getContext('2d');
                     const container = document.getElementById('matrix-container');
             
+                    // Ajustar tamaño al contenedor
                     canvas.width = container.offsetWidth;
                     canvas.height = 450;
             
-                    // Mezcla de código binario y tu marca personal
-                    const alphabet = "01XENOCODENEXION0101";
-                    const fontSize = 14;
+                    const katakana = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン";
+                    const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                    const nums = "0123456789";
+                    const alphabet = katakana + latin + nums;
+            
+                    const fontSize = 16;
                     const columns = canvas.width / fontSize;
                     const rainDrops = Array.from({ length: columns }).fill(1);
             
+                    // Posición del ratón
                     let mouseX = -100, mouseY = -100;
+            
                     container.addEventListener('mousemove', (e) => {
                         const rect = container.getBoundingClientRect();
                         mouseX = e.clientX - rect.left;
@@ -509,8 +515,8 @@ with main_container:
                     });
             
                     function draw() {
-                        // Rastro muy oscuro que coincide con tu fondo Ónix
-                        ctx.fillStyle = 'rgba(14, 17, 23, 0.1)';
+                        // Fondo semi-transparente para el efecto rastro
+                        ctx.fillStyle = 'rgba(11, 14, 20, 0.05)';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
             
                         ctx.font = fontSize + 'px monospace';
@@ -520,16 +526,15 @@ with main_container:
                             const x = i * fontSize;
                             const y = rainDrops[i] * fontSize;
             
+                            // INTERACCIÓN: Si el ratón está cerca, el texto brilla en blanco o se aleja
                             const distance = Math.sqrt((x - mouseX) ** 2 + (y - mouseY) ** 2);
                             
-                            // Efecto al pasar el ratón: Azul sutil en lugar de blanco brillante
-                            if (distance < 100) {
-                                ctx.fillStyle = '#3b82f6';
-                                ctx.shadowBlur = 8;
-                                ctx.shadowColor = '#3b82f6';
+                            if (distance < 80) {
+                                ctx.fillStyle = '#FFFFFF'; // Brillo al tocar el mouse
+                                ctx.shadowBlur = 10;
+                                ctx.shadowColor = '#FFFFFF';
                             } else {
-                                // Color base: Un gris azulado muy oscuro (apenas visible)
-                                ctx.fillStyle = '#1e2530';
+                                ctx.fillStyle = '#00FF00'; // Verde puro que pediste
                                 ctx.shadowBlur = 0;
                             }
             
@@ -542,7 +547,7 @@ with main_container:
                         }
                     }
             
-                    setInterval(draw, 35);
+                    setInterval(draw, 30);
                 </script>
                 """, height=470
             )
@@ -553,6 +558,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
