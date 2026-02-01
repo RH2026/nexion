@@ -129,6 +129,28 @@ div[data-testid="stPopoverContent"] {{
     background-color: transparent !important;
 }}
 
+/* Forzar uniformidad en botones primarios de NEXION */
+div.stButton > button[kind="primary"] {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 2px !important;
+    height: 45px !important; /* Aumentamos altura para que luzcan pro */
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 12px !important;
+    letter-spacing: 2px !important;
+    transition: all 0.3s ease !important;
+    width: 100% !important;
+}}
+
+div.stButton > button[kind="primary"]:hover {{
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #ffffff !important;
+    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -622,6 +644,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
