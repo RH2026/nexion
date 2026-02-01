@@ -224,6 +224,27 @@ with main_container:
             st.info("Espacio para contenido de Tracking Operativo")
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
+            # ── CONTROLES GANTT ─────────────────────────────────────────────
+            c1, c2 = st.columns([1, 2])
+            
+            with c1:
+                gantt_view = st.radio(
+                    "Vista",
+                    ["Day", "Week", "Month", "Year"],
+                    horizontal=True,
+                    index=0
+                )
+            
+            with c2:
+                grupos_disponibles = sorted(df_editado["GRUPO"].unique())
+                grupos_sel = st.multiselect(
+                    "Filtrar por grupo",
+                    grupos_disponibles,
+                    default=grupos_disponibles
+                )
+            
+            df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
+            
             # ── CONFIG ───────────────────────────────────────────────────────────────
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
@@ -369,9 +390,12 @@ with main_container:
             
             # ── FRAPPE GANTT ───────────────────────────────────────────
             tasks = []
-            for i, r in df_editado.iterrows():
+            for i, r in df_gantt.iterrows():
                 if str(r["TAREA"]).strip() == "":
                     continue
+            
+                is_milestone = r["TIPO"].lower() == "hito"
+            
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
@@ -379,7 +403,9 @@ with main_container:
                     "end": str(r["FECHA_FIN"]),
                     "progress": int(r["PROGRESO"]),
                     "dependencies": r["DEPENDENCIAS"],
-                    "custom_class": r["IMPORTANCIA"].lower()
+                    "custom_class": (
+                        "milestone" if is_milestone else r["IMPORTANCIA"].lower()
+                    )
                 })
             
             st.write("Tareas para Gantt:", len(tasks))
@@ -393,35 +419,72 @@ with main_container:
             </script>
             
             <style>
+              body {{
+                background: #0E1117;
+              }}
+            
               #gantt {{
                 width: 100%;
                 height: 420px;
+                background: #0E1117;
               }}
             
+              /* Importancia */
               .bar.urgente {{ fill: #FF3131; }}
               .bar.alta {{ fill: #FF914D; }}
               .bar.media {{ fill: #00D2FF; }}
               .bar.baja {{ fill: #4B5563; }}
+            
+              /* Hitos */
+              .bar.milestone {{
+                fill: #FFD700;
+              }}
+            
+              /* Texto */
+              .gantt-container {{
+                background: #0E1117;
+                color: #E0E6ED;
+              }}
+            
+              .grid-header, .lower-text {{
+                fill: #8892B0 !important;
+              }}
             </style>
             
             <div id="gantt"></div>
             
             <script>
               const tasks = {json.dumps(tasks)};
-              console.log("Tareas:", tasks);
-              console.log("Gantt existe:", typeof Gantt);
+              let gantt = null;
             
-              if (tasks.length > 0 && typeof Gantt !== "undefined") {{
-                new Gantt("#gantt", tasks, {{
-                  view_mode: "Day",
+              function renderGantt() {{
+                if (!tasks || tasks.length === 0) return;
+            
+                gantt = new Gantt("#gantt", tasks, {{
+                  view_mode: "{gantt_view}",
                   bar_height: 18,
                   padding: 50,
-                  date_format: "YYYY-MM-DD"
+                  date_format: "YYYY-MM-DD",
+            
+                  on_date_change: function(task, start, end) {{
+                    window.parent.postMessage({{
+                      type: "gantt_update",
+                      id: task.id,
+                      start: start,
+                      end: end
+                    }}, "*");
+                  }}
                 }});
+              }}
+            
+              if (document.readyState === "loading") {{
+                document.addEventListener("DOMContentLoaded", renderGantt);
+              }} else {{
+                renderGantt();
               }}
             </script>
             """,
-            height=450,
+            height=460,
             scrolling=True
             )
 
@@ -451,6 +514,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
