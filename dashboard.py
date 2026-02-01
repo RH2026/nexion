@@ -370,8 +370,11 @@ with main_container:
                         "Importancia",
                         options=["Urgente","Alta","Media","Baja"]
                     ),
-                    "PROGRESO": st.column_config.ProgressColumn(
-                        "Progreso", min_value=0, max_value=100
+                    "PROGRESO": st.column_config.NumberColumn(
+                        "Progreso %",
+                        min_value=0,
+                        max_value=100,
+                        step=5
                     ),
                     "TAREA": st.column_config.TextColumn("Tarea"),
                     "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
@@ -511,6 +514,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
