@@ -159,7 +159,7 @@ with header_zone:
 
         st.markdown(f"""
             <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
-                <p style='font-size: 14px;  /* ← AQUÍ AJUSTAS EL TAMAÑO */
+                <p style='font-size: 12px;  /* ← AQUÍ AJUSTAS EL TAMAÑO */
                           letter-spacing: 5px; 
                           color: {vars_css['sub']}; 
                           margin: 0; 
@@ -307,6 +307,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
