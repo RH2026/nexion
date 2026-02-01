@@ -500,9 +500,9 @@ with main_container:
                     .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                     .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
             
-                    /* Fondo del día actual */
-                    .today {{
-                        fill: #FBBF24 !important;      /* amarillo brillante */
+                    /* Resaltado del día actual (columna completa) */
+                    .today, .today-bar {{
+                        fill: #FBBF24 !important;      /* amarillo resaltador */
                         fill-opacity: 0.2 !important;  /* semi-transparente */
                     }}
                 </style>
@@ -520,9 +520,9 @@ with main_container:
                                 date_format: 'YYYY-MM-DD'
                             }});
             
-                            // --- REPARADOR DE LÍNEAS ---
+                            // --- REPARADOR DE LÍNEAS Y RESALTADO ---
                             setTimeout(function() {{
-                                // Cambiar color de líneas horizontales y ocultar verticales
+                                // Líneas del Gantt
                                 var lines = document.querySelectorAll('#gantt svg line');
                                 lines.forEach(function(line) {{
                                     var x1 = line.getAttribute('x1');
@@ -541,12 +541,12 @@ with main_container:
                                     }}
                                 }});
             
-                                // Ajustar fondo del día actual
-                                var todayRect = document.querySelector('.today');
-                                if(todayRect){{
-                                    todayRect.setAttribute('fill', '#FBBF24');
-                                    todayRect.setAttribute('fill-opacity', '0.2');
-                                }}
+                                // Resaltado del día actual
+                                var todayRects = document.querySelectorAll('.today, .today-bar');
+                                todayRects.forEach(function(rect) {{
+                                    rect.setAttribute('fill', '#FBBF24');
+                                    rect.setAttribute('fill-opacity', '0.2');
+                                }});
                             }}, 100); // esperar a que se dibuje el SVG
                         }}
                     </script>
@@ -582,6 +582,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
