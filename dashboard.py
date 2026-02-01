@@ -606,25 +606,32 @@ with main_container:
             </div>
             """
          
-            # ── 8. BOTONES DE ACCIÓN FINAL (ESTILO UNIFICADO) ───────────────────────────
+            # ── 8. BOTONES DE ACCIÓN FINAL (CLONADOS) ───────────────────────────
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # Usamos columnas para que vivan en la misma línea
-            col_pdf, col_reset = st.columns([4, 1])
+            # Columnas 50/50 para asegurar simetría total
+            col_pdf, col_reset = st.columns(2) 
             
             with col_pdf:
-                # Botón PDF con estilo primary
-                if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
+                # Botón Original de Impresión
+                if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", 
+                             type="primary", 
+                             use_container_width=True, 
+                             key="btn_pdf_nexion"):
                     components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-                    st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+                    st.toast("Renderizando...", icon="⚙️")
             
             with col_reset:
-                # Botón ACTUALIZAR ahora también con type="primary" para igualar el estilo
-                if st.button("🔄 ACTUALIZAR", type="primary", use_container_width=True, help="Reiniciar folio y tabla"):
-                    # Lógica de reset
+                # CLON DEL BOTÓN: Misma estructura, diferente función
+                if st.button("🔄 ACTUALIZAR SISTEMA NEXION", 
+                             type="primary", 
+                             use_container_width=True, 
+                             key="btn_reset_nexion"):
+                    # Función de limpieza
                     if 'folio_nexion' in st.session_state:
                         del st.session_state.folio_nexion
                     
+                    # Reset de la tabla a su estado inicial
                     st.session_state.rows = pd.DataFrame([
                         {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
                     ] * 10)
@@ -646,6 +653,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
