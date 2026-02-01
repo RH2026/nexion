@@ -407,7 +407,6 @@ with main_container:
             )
             
             # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
-            st.markdown("---")
             st.subheader("EDITOR DE TAREAS")
             
             # Normalización para el Data Editor (Evitar strings "nan")
@@ -469,6 +468,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
