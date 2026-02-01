@@ -453,13 +453,13 @@ with main_container:
             ".grid-row:nth-child(even) { fill:#0F172A !important; }"
             ".grid-line { stroke:#374151 !important; }"
         
-            /* 🔥 DIA ACTUAL (ESTE ES EL BUENO) */
+            
             ".today-highlight { fill:#1F2937 !important; opacity:0.9 !important; }"
         
             ".bar { rx:3; ry:3; }"
             ".bar-progress { fill-opacity:0.85; }"
         
-            /* 🎨 IMPORTANCIA (CLASE REAL DE FRAPPE) */
+            
             ".bar-wrapper.imp-urgente .bar { fill:#DC2626 !important; }"
             ".bar-wrapper.imp-alta    .bar { fill:#F97316 !important; }"
             ".bar-wrapper.imp-media   .bar { fill:#3B82F6 !important; }"
@@ -519,6 +519,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
