@@ -224,27 +224,7 @@ with main_container:
             st.info("Espacio para contenido de Tracking Operativo")
         elif st.session_state.menu_sub == "GANTT":
             st.subheader("SEGUIMIENTO > GANTT")
-            # ── CONTROLES GANTT ─────────────────────────────────────────────
-            c1, c2 = st.columns([1, 2])
-            
-            with c1:
-                gantt_view = st.radio(
-                    "Vista",
-                    ["Day", "Week", "Month", "Year"],
-                    horizontal=True,
-                    index=0
-                )
-            
-            with c2:
-                grupos_disponibles = sorted(df_editado["GRUPO"].unique())
-                grupos_sel = st.multiselect(
-                    "Filtrar por grupo",
-                    grupos_disponibles,
-                    default=grupos_disponibles
-                )
-            
-            df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
-            
+                        
             # ── CONFIG ───────────────────────────────────────────────────────────────
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
@@ -388,25 +368,48 @@ with main_container:
                     st.session_state.df_tareas = df_editado
                     st.rerun()
             
-            # ── FRAPPE GANTT ───────────────────────────────────────────
-            tasks = []
-            for i, r in df_gantt.iterrows():
-                if str(r["TAREA"]).strip() == "":
-                    continue
+            # ── CONTROLES GANTT ─────────────────────────────────────────────
+            c1, c2 = st.columns([1, 2])
             
-                is_milestone = r["TIPO"].lower() == "hito"
+            with c1:
+                gantt_view = st.radio(
+                    "Vista",
+                    ["Day", "Week", "Month", "Year"],
+                    horizontal=True,
+                    index=0
+                )
             
-                tasks.append({
-                    "id": str(i),
-                    "name": f"[{r['GRUPO']}] {r['TAREA']}",
-                    "start": str(r["FECHA"]),
-                    "end": str(r["FECHA_FIN"]),
-                    "progress": int(r["PROGRESO"]),
-                    "dependencies": r["DEPENDENCIAS"],
-                    "custom_class": (
-                        "milestone" if is_milestone else r["IMPORTANCIA"].lower()
-                    )
-                })
+            with c2:
+                grupos_disponibles = sorted(
+                    df_editado["GRUPO"].astype(str).unique()
+                )
+                grupos_sel = st.multiselect(
+                    "Filtrar por grupo",
+                    grupos_disponibles,
+                    default=grupos_disponibles
+                )
+            
+            df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
+                        
+                        # ── FRAPPE GANTT ───────────────────────────────────────────
+                        tasks = []
+                        for i, r in df_gantt.iterrows():
+                            if str(r["TAREA"]).strip() == "":
+                                continue
+                        
+                            is_milestone = r["TIPO"].lower() == "hito"
+                        
+                            tasks.append({
+                                "id": str(i),
+                                "name": f"[{r['GRUPO']}] {r['TAREA']}",
+                                "start": str(r["FECHA"]),
+                                "end": str(r["FECHA_FIN"]),
+                                "progress": int(r["PROGRESO"]),
+                                "dependencies": r["DEPENDENCIAS"],
+                                "custom_class": (
+                                    "milestone" if is_milestone else r["IMPORTANCIA"].lower()
+                                )
+                            })
             
             st.write("Tareas para Gantt:", len(tasks))
             components.html(
@@ -514,6 +517,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
