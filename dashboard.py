@@ -246,7 +246,6 @@ with main_container:
             st.subheader("SEGUIMIENTO > TRK")
             st.info("Espacio para contenido de Tracking Operativo")
         elif st.session_state.menu_sub == "GANTT":
-            st.subheader("SEGUIMIENTO > GANTT")
             # ── CONFIG GANTT ───────────────────────────────────────────────────────────────
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
@@ -522,6 +521,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
