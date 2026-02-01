@@ -470,7 +470,7 @@ with main_container:
                 """
                 <div id="matrix-container">
                     <canvas id="matrix-canvas"></canvas>
-                    <div class="overlay-text">NEXION CORE: MODO EVASIÓN</div>
+                    <div class="overlay-text">NEXION CORE: ESPERANDO SELECCIÓN</div>
                 </div>
             
                 <style>
@@ -479,11 +479,22 @@ with main_container:
                         position: relative; border: 1px solid #1e2530; overflow: hidden;
                     }
                     #matrix-canvas { display: block; }
+                    
                     .overlay-text {
                         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                        color: #1e2530; font-family: 'Segoe UI', sans-serif;
+                        /* Color azul grisáceo más visible */
+                        color: #5d6d7e; 
+                        font-family: 'Segoe UI', Tahoma, sans-serif;
                         font-weight: bold; letter-spacing: 12px; pointer-events: none;
-                        opacity: 0.4; font-size: 0.7rem; text-transform: uppercase;
+                        font-size: 0.9rem; text-transform: uppercase;
+                        text-align: center; width: 100%;
+                        /* Animación de pulso para que sepa que está vivo */
+                        animation: pulse-text 4s infinite ease-in-out;
+                    }
+            
+                    @keyframes pulse-text {
+                        0%, 100% { opacity: 0.3; filter: blur(0px); }
+                        50% { opacity: 0.7; color: #3b82f6; filter: blur(1px); }
                     }
                 </style>
             
@@ -517,7 +528,6 @@ with main_container:
                     });
             
                     function draw() {
-                        // Fondo sólido Ónix para limpiar el rastro
                         ctx.fillStyle = '#0E1117';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
             
@@ -525,29 +535,24 @@ with main_container:
             
                         drops.forEach(drop => {
                             const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-                            
                             const dx = drop.currentX - mouseX;
                             const dy = drop.y - mouseY;
                             const distance = Math.sqrt(dx*dx + dy*dy);
-                            const forceArea = 120; // Radio de influencia del ratón
+                            const forceArea = 130; 
             
                             if (distance < forceArea) {
                                 const force = (forceArea - distance) / forceArea;
                                 const direction = dx > 0 ? 1 : -1;
+                                drop.currentX += direction * force * 20;
                                 
-                                // Movimiento de evasión
-                                drop.currentX += direction * force * 18;
-                                
-                                // AZUL BRILLANTE
-                                ctx.fillStyle = 'rgba(59, 130, 246, 1)'; 
-                                ctx.shadowBlur = 10;
+                                // AZUL FULL PARA EL MODO EVASIÓN
+                                ctx.fillStyle = '#3b82f6'; 
+                                ctx.shadowBlur = 12;
                                 ctx.shadowColor = '#3b82f6';
                             } else {
-                                // Retorno suave a posición base
                                 drop.currentX += (drop.baseX - drop.currentX) * 0.08;
-                                
-                                // CASI TRANSPARENTE (Gris muy oscuro)
-                                ctx.fillStyle = 'rgba(30, 37, 48, 0.2)'; 
+                                // GRIS OSCURO (casi invisible pero presente)
+                                ctx.fillStyle = 'rgba(45, 55, 72, 0.15)'; 
                                 ctx.shadowBlur = 0;
                             }
             
@@ -560,7 +565,6 @@ with main_container:
                             }
                         });
                     }
-            
                     setInterval(draw, 30);
                 </script>
                 """, height=470
@@ -572,6 +576,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
