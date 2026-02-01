@@ -396,7 +396,8 @@ with main_container:
                     "Vista",
                     ["Day", "Week", "Month", "Year"],
                     horizontal=True,
-                    index=0
+                    index=0,
+                    key="gantt_view"
                 )
             
             with c2:
@@ -404,7 +405,8 @@ with main_container:
                 grupos_sel = st.multiselect(
                     "Filtrar por grupo",
                     grupos_disponibles,
-                    default=grupos_disponibles
+                    default=grupos_disponibles,
+                    key="gantt_grupos"
                 )
             
             df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
@@ -415,21 +417,22 @@ with main_container:
                 if str(r["TAREA"]).strip() == "":
                     continue
             
+                importancia = str(r["IMPORTANCIA"]).strip().lower()
+            
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
                     "start": str(r["FECHA"]),
                     "end": str(r["FECHA_FIN"]),
                     "progress": int(r["PROGRESO"]),
-                    "dependencies": r["DEPENDENCIAS"]
+                    "dependencies": r["DEPENDENCIAS"],
+                    "custom_class": f"imp-{importancia}"
                 })
             
-            # 👇 PRIMERO convertir a JSON
+            # ── JSON ───────────────────────────────────────────────────
             tasks_js = json.dumps(tasks)
             
-           
-            
-            # 👇 Y LUEGO renderizar HTML
+            # ── HTML GANTT ─────────────────────────────────────────────
             components.html(
                 "<html>"
                 "<head>"
@@ -441,13 +444,25 @@ with main_container:
                 "#gantt { background:#111827; }"
                 ".gantt-container { background:#111827 !important; }"
                 "svg { background:#111827 !important; }"
+            
                 ".gantt text { fill:#E5E7EB !important; font-size:12px; }"
+            
                 ".grid-background { fill:#111827 !important; }"
-                ".grid-header { fill:#111827 !important; }"
+                ".grid-header { fill:#1F2937 !important; }"
                 ".grid-row { fill:#111827 !important; }"
+                ".grid-row:nth-child(even) { fill:#0F172A !important; }"
                 ".grid-line { stroke:#374151 !important; }"
-                ".bar { fill:#3B82F6 !important; }"
-                ".bar-progress { fill:#1D4ED8 !important; }"
+            
+                ".today { fill:#1F2937 !important; }"
+                ".today text { fill:#F9FAFB !important; font-weight:600; }"
+            
+                ".bar { rx:3; ry:3; }"
+                ".bar-progress { fill-opacity:0.85; }"
+            
+                ".bar.imp-urgente { fill:#DC2626 !important; }"
+                ".bar.imp-alta    { fill:#F97316 !important; }"
+                ".bar.imp-media   { fill:#3B82F6 !important; }"
+                ".bar.imp-baja    { fill:#22C55E !important; }"
                 "</style>"
                 "</head>"
             
@@ -456,14 +471,19 @@ with main_container:
             
                 "<script>"
                 "var tasks=" + tasks_js + ";"
+            
                 "setTimeout(function(){"
-                "if(!tasks || tasks.length===0){return;}"
-                "new Gantt('#gantt', tasks, {"
-                "view_mode:'Day',"
-                "bar_height:20,"
-                "padding:40"
-                "});"
-                "},100);"
+                " if(!tasks || tasks.length===0){ return; }"
+            
+                " document.getElementById('gantt').innerHTML='';"
+            
+                " new Gantt('#gantt', tasks, {"
+                f"  view_mode:'{gantt_view}',"
+                "  bar_height:20,"
+                "  padding:40,"
+                "  date_format:'YYYY-MM-DD'"
+                " });"
+                "},150);"
                 "</script>"
             
                 "</body>"
@@ -497,6 +517,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
