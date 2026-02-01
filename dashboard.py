@@ -477,37 +477,34 @@ with main_container:
                 html, body {{ background:#111827; margin:0; padding:0; }}
                 #gantt {{ background:#111827; }}
                 
-                /* 1. Líneas VERTICALES (las de los días) */
-                /* Las ponemos del mismo color que el fondo para que "desaparezcan" */
-                .gantt .grid-line[y1="0"] {{
-                    stroke: #111827 !important;
-                    stroke-opacity: 0.1 !important;
-                }}
-        
-                /* 2. Líneas HORIZONTALES (las de las filas) */
-                /* Las dejamos sutiles para guiar la vista */
+                /* FUERZA BRUTA CSS */
+                /* Buscamos todas las líneas y ocultamos las que no tengan clase horizontal */
                 .grid-line {{
                     stroke: #2d3748 !important;
                     stroke-opacity: 0.4 !important;
                 }}
         
-                /* 3. Conexiones (Flechas) */
-                /* Les damos fuerza para que no se confundan con nada */
-                .arrow {{
-                    stroke: #9ca3af !important;
-                    stroke-width: 1.5 !important;
-                    fill: none !important;
-                    opacity: 1 !important;
+                /* Si el SVG las dibuja sin clase, las capturamos por posición vertical */
+                line[y1="0"], .grid-line.vertical {{
+                    stroke: transparent !important;
+                    display: none !important;
                 }}
         
-                /* Estilos de texto y filas */
+                /* Resaltamos las flechas para que se vean sobre el fondo limpio */
+                .arrow {{
+                    stroke: #9ca3af !important;
+                    stroke-width: 1.6 !important;
+                    opacity: 1 !important;
+                    fill: none !important;
+                }}
+        
                 .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
                 .grid-background {{ fill:#111827 !important; }}
                 .grid-header {{ fill:#1F2937 !important; }}
                 .grid-row {{ fill:#111827 !important; }}
                 .grid-row:nth-child(even) {{ fill:#0F172A !important; }}
         
-                /* Colores de prioridad */
+                /* Colores de prioridad de tus tareas */
                 .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                 .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                 .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
@@ -520,12 +517,23 @@ with main_container:
                 <script>
                     var tasks = {tasks_js};
                     if(tasks && tasks.length){{
-                        new Gantt('#gantt', tasks, {{
+                        var gantt_chart = new Gantt('#gantt', tasks, {{
                             view_mode: '{gantt_view}',
                             bar_height: 20,
                             padding: 40,
                             date_format: 'YYYY-MM-DD'
                         }});
+        
+                        // --- EL "REPARADOR" DE LÍNEAS ---
+                        // Esperamos un milisegundo a que se dibuje y borramos las verticales
+                        setTimeout(function() {{
+                            var lines = document.querySelectorAll('.grid-line');
+                            lines.forEach(function(line) {{
+                                if (line.getAttribute('y1') === '0') {{
+                                    line.style.display = 'none';
+                                }}
+                            }});
+                        }}, 100);
                     }}
                 </script>
             </body>
@@ -560,6 +568,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
