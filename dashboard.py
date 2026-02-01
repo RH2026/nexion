@@ -477,16 +477,6 @@ with main_container:
                 html, body {{ background:#111827; margin:0; padding:0; }}
                 #gantt {{ background:#111827; }}
         
-                /* LÍNEAS DEL GANTT */
-                .grid-line.horizontal {{
-                    stroke: #4B5563 !important;  /* gris claro */
-                    stroke-opacity: 0.5 !important;
-                }}
-                .grid-line.vertical {{
-                    stroke: transparent !important;
-                    display: none !important;
-                }}
-        
                 /* Flechas de dependencia */
                 .arrow {{
                     stroke: #9ca3af !important;
@@ -526,15 +516,25 @@ with main_container:
         
                         // --- REPARADOR DE LÍNEAS ---
                         setTimeout(function() {{
-                            document.querySelectorAll('.grid-line').forEach(function(line) {{
-                                if (!line.classList.contains('vertical')) {{
-                                    line.setAttribute('stroke', '#4B5563'); // gris claro
-                                    line.setAttribute('stroke-opacity', '0.5');
-                                }} else {{
+                            // Capturamos todas las líneas del SVG del Gantt
+                            var lines = document.querySelectorAll('#gantt svg line');
+                            lines.forEach(function(line) {{
+                                var x1 = line.getAttribute('x1');
+                                var x2 = line.getAttribute('x2');
+                                var y1 = line.getAttribute('y1');
+                                var y2 = line.getAttribute('y2');
+        
+                                // Verticales (misma x) → ocultamos
+                                if(x1 === x2) {{
                                     line.style.display = 'none';
                                 }}
+                                // Horizontales (misma y) → gris claro
+                                else if(y1 === y2) {{
+                                    line.setAttribute('stroke', '#4B5563');
+                                    line.setAttribute('stroke-opacity', '0.5');
+                                }}
                             }});
-                        }}, 50);
+                        }}, 100); // esperamos que el SVG se dibuje
                     }}
                 </script>
             </body>
@@ -569,6 +569,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
