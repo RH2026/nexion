@@ -432,6 +432,7 @@ with main_container:
                 })
             
             st.write("Tareas para Gantt:", len(tasks))
+            tasks_js = json.dumps(tasks, ensure_ascii=False)
             components.html(
             f"""
             <script>
@@ -560,6 +561,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
