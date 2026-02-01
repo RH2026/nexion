@@ -377,7 +377,7 @@ with main_container:
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                         .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                         .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        .today-highlight {{ fill: #FF0000 !important; opacity: 0.35 !important; }}
+                        .today-highlight {{ fill: #00FF00 !important; opacity: 0.35 !important; }}
                     </style>
                 </head>
                 <body>
@@ -469,6 +469,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
