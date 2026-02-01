@@ -463,7 +463,6 @@ with main_container:
     elif st.session_state.menu_main == "FORMATOS":
         if st.session_state.menu_sub == "SALIDA DE PT":
             st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
-            # --- 5. LÓGICA DE CARGA (Mantener en la parte superior del script) ---
             # ── 5. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
             @st.cache_data
             def load_inventory():
@@ -477,8 +476,8 @@ with main_container:
             
             df_inv = load_inventory()
             
+            # Inicialización única de las filas en el session_state
             if 'rows' not in st.session_state:
-                # Mantenemos tu orden: CODIGO, DESCRIPCION, CANTIDAD
                 st.session_state.rows = pd.DataFrame([
                     {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
                 ] * 10)
@@ -486,19 +485,17 @@ with main_container:
             # ── 6. CUERPO DE ENTRADA (WEB) ────────────────────────
             with st.container(border=True):
                 h1, h2, h3 = st.columns(3)
-                f_val = h1.date_input("FECHA", value=datetime.now(), key="f_in")
+                # CORRECCIÓN: Usamos datetime.datetime.now() para evitar el conflicto de nombres
+                f_val = h1.date_input("FECHA", value=datetime.datetime.now(), key="f_in")
                 t_val = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in")
                 fol_val = h3.text_input("FOLIO", value="F-2026-001", key="fol_in")
-            
-            if 'rows' not in st.session_state:
-                st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
             
             def lookup():
                 # 1. Obtener los cambios del editor
                 edits = st.session_state["editor_pt"].get("edited_rows", {})
                 added = st.session_state["editor_pt"].get("added_rows", [])
                 
-                # 2. Sincronizar filas añadidas (si las hay) para que coincidan con la estructura
+                # 2. Sincronizar filas añadidas
                 for row in added:
                     new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
                     new_row.update(row)
@@ -508,11 +505,9 @@ with main_container:
                 for idx_str, info in edits.items():
                     idx = int(idx_str)
                     
-                    # Sincronizamos cualquier cambio (Cantidad, Código, etc.) al session_state
                     for col, val in info.items():
                         st.session_state.rows.at[idx, col] = val
                     
-                    # Si el cambio fue en el CÓDIGO, hacemos el lookup de la DESCRIPCIÓN
                     if "CODIGO" in info:
                         val_codigo = str(info["CODIGO"]).strip().upper()
                         if not df_inv.empty:
@@ -536,6 +531,7 @@ with main_container:
                     )
                 }
             )
+            
             # ── 7. RENDERIZADO PRO (HTML PARA IMPRESIÓN) ───────────
             filas_print = df_final[df_final["CODIGO"] != ""]
             tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
@@ -543,17 +539,10 @@ with main_container:
             form_html = f"""
             <style>
                 @media print {{
-                    @page {{ 
-                        margin: 0.5cm; /* Ajusta el margen a tu gusto */
-                    }}
-                    /* Oculta encabezados y pies de página en algunos navegadores */
-                    header, footer, .no-print {{
-                        display: none !important;
-                    }}
+                    @page {{ margin: 0.5cm; }}
+                    header, footer, .no-print {{ display: none !important; }}
                 }}
             </style>
-            <div style="font-family:sans-serif; padding:20px; color:black; background:white;">
-            
             <div style="font-family:sans-serif; padding:20px; color:black; background:white;">
                 <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
                     <div>
@@ -586,7 +575,7 @@ with main_container:
             # ── 8. BOTÓN DE ACCIÓN FINAL ───────────────────────────
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
-                components.html(f"{form_html}<script>window.onload = function() {{ window.print(); }}</script>", height=0)
+                components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
                 st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
                         
                     
@@ -604,6 +593,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
