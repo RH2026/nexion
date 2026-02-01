@@ -468,89 +468,108 @@ with main_container:
             
             st.components.v1.html(
                 """
-                <div id="matrix-container">
-                    <canvas id="matrix-canvas"></canvas>
-                    <div class="overlay-text">NEXION CORE: MODO MATRIX</div>
+                <div id="matrix-fear-container">
+                    <canvas id="matrix-fear-canvas"></canvas>
+                    <div class="overlay-text">MODO DEFENSIVO: ACTIVADO</div>
                 </div>
             
                 <style>
-                    #matrix-container {
+                    #matrix-fear-container {
                         height: 450px; background: #0b0e14; border-radius: 10px;
                         position: relative; border: 1px solid #1e2530; overflow: hidden;
                     }
-                    #matrix-canvas { display: block; }
+                    #matrix-fear-canvas { display: block; }
                     .overlay-text {
-                        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                        color: #00FF00; font-family: 'Courier New', Courier, monospace;
-                        font-weight: bold; letter-spacing: 5px; pointer-events: none;
-                        text-shadow: 0 0 10px #00FF00; font-size: 1.2rem;
+                        position: absolute; bottom: 20px; right: 20px;
+                        color: #00FF00; font-family: monospace;
+                        opacity: 0.5; font-size: 0.8rem; pointer-events: none;
                     }
                 </style>
             
                 <script>
-                    const canvas = document.getElementById('matrix-canvas');
+                    const canvas = document.getElementById('matrix-fear-canvas');
                     const ctx = canvas.getContext('2d');
-                    const container = document.getElementById('matrix-container');
+                    const container = document.getElementById('matrix-fear-container');
             
-                    // Ajustar tamaño al contenedor
                     canvas.width = container.offsetWidth;
                     canvas.height = 450;
             
-                    const katakana = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン";
-                    const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                    const nums = "0123456789";
-                    const alphabet = katakana + latin + nums;
-            
+                    const alphabet = "アカサタナハマヤラワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
                     const fontSize = 16;
-                    const columns = canvas.width / fontSize;
-                    const rainDrops = Array.from({ length: columns }).fill(1);
+                    const particles = [];
             
-                    // Posición del ratón
-                    let mouseX = -100, mouseY = -100;
+                    // Clase para cada letra individual (partícula)
+                    class Particle {
+                        constructor(x, y) {
+                            this.originX = x;
+                            this.originY = y;
+                            this.x = x;
+                            this.y = y;
+                            this.char = alphabet[Math.floor(Math.random() * alphabet.length)];
+                            this.vx = 0;
+                            this.vy = 0;
+                            this.friction = 0.95;
+                            this.springFactor = 0.05;
+                        }
             
+                        update(mouseX, mouseY) {
+                            const dx = mouseX - this.x;
+                            const dy = mouseY - this.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            const force = 100; // Intensidad del "miedo"
+            
+                            if (distance < 100) {
+                                const angle = Math.atan2(dy, dx);
+                                this.vx -= Math.cos(angle) * (force / distance);
+                                this.vy -= Math.sin(angle) * (force / distance);
+                            }
+            
+                            // Volver a su posición original (efecto resorte)
+                            this.vx += (this.originX - this.x) * this.springFactor;
+                            this.vy += (this.originY - this.y) * this.springFactor;
+            
+                            this.vx *= this.friction;
+                            this.vy *= this.friction;
+                            this.x += this.vx;
+                            this.y += this.vy;
+                        }
+            
+                        draw() {
+                            ctx.fillStyle = '#00FF00';
+                            ctx.fillText(this.char, this.x, this.y);
+                        }
+                    }
+            
+                    // Crear cuadrícula de partículas
+                    for (let y = 0; y < canvas.height; y += fontSize) {
+                        for (let x = 0; x < canvas.width; x += fontSize) {
+                            particles.push(new Particle(x, y));
+                        }
+                    }
+            
+                    let mouseX = -1000, mouseY = -1000;
                     container.addEventListener('mousemove', (e) => {
                         const rect = container.getBoundingClientRect();
                         mouseX = e.clientX - rect.left;
                         mouseY = e.clientY - rect.top;
                     });
             
-                    function draw() {
-                        // Fondo semi-transparente para el efecto rastro
-                        ctx.fillStyle = 'rgba(11, 14, 20, 0.05)';
+                    function animate() {
+                        ctx.fillStyle = 'rgba(11, 14, 20, 0.2)'; // Estilo Ónix
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
                         ctx.font = fontSize + 'px monospace';
             
-                        for (let i = 0; i < rainDrops.length; i++) {
-                            const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-                            const x = i * fontSize;
-                            const y = rainDrops[i] * fontSize;
-            
-                            // INTERACCIÓN: Si el ratón está cerca, el texto brilla en blanco o se aleja
-                            const distance = Math.sqrt((x - mouseX) ** 2 + (y - mouseY) ** 2);
-                            
-                            if (distance < 80) {
-                                ctx.fillStyle = '#FFFFFF'; // Brillo al tocar el mouse
-                                ctx.shadowBlur = 10;
-                                ctx.shadowColor = '#FFFFFF';
-                            } else {
-                                ctx.fillStyle = '#00FF00'; // Verde puro que pediste
-                                ctx.shadowBlur = 0;
-                            }
-            
-                            ctx.fillText(text, x, y);
-            
-                            if (y > canvas.height && Math.random() > 0.975) {
-                                rainDrops[i] = 0;
-                            }
-                            rainDrops[i]++;
-                        }
+                        particles.forEach(p => {
+                            p.update(mouseX, mouseY);
+                            p.draw();
+                        });
+                        requestAnimationFrame(animate);
                     }
             
-                    setInterval(draw, 30);
+                    animate();
                 </script>
                 """, height=470
-            )
+            ))
 
 # ── FOOTER FIJO ────────────────────────
 st.markdown(f"""
@@ -558,6 +577,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
