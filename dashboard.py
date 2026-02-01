@@ -463,6 +463,11 @@ with main_container:
     elif st.session_state.menu_main == "FORMATOS":
         if st.session_state.menu_sub == "SALIDA DE PT":
             st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
+            # ── 1. GENERACIÓN DE FOLIO AUTOMÁTICO (Agrégalo al inicio de la sección) ──
+            if 'folio_nexion' not in st.session_state:
+                # Formato: F - AÑO - MES - DÍA - HORA/MINUTO
+                now = datetime.datetime.now()
+                st.session_state.folio_nexion = f"F-{now.strftime('%Y%m%d-%H%M')}"                     
             # ── 5. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
             @st.cache_data
             def load_inventory():
@@ -481,14 +486,19 @@ with main_container:
                 st.session_state.rows = pd.DataFrame([
                     {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
                 ] * 10)
-            
-            # ── 6. CUERPO DE ENTRADA (WEB) ────────────────────────
+                                    
+            # ── 6. CUERPO DE ENTRADA (REPARADO) ────────────────────────
             with st.container(border=True):
                 h1, h2, h3 = st.columns(3)
-                # CORRECCIÓN: Usamos datetime.datetime.now() para evitar el conflicto de nombres
+                
+                # Fecha automática
                 f_val = h1.date_input("FECHA", value=datetime.datetime.now(), key="f_in")
+                
+                # Selección de turno
                 t_val = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in")
-                fol_val = h3.text_input("FOLIO", value="F-2026-001", key="fol_in")
+                
+                # Folio Automático (Se puede editar si es necesario, pero ya viene cargado)
+                fol_val = h3.text_input("FOLIO", value=st.session_state.folio_nexion, key="fol_in")
             
             def lookup():
                 # 1. Obtener los cambios del editor
@@ -593,6 +603,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
