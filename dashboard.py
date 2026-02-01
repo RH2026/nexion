@@ -465,63 +465,69 @@ with main_container:
             tasks_js = json.dumps(tasks)
             
             # ── HTML GANTT ─────────────────────────────────────────────
+            
             components.html(
-            "<html>"
-            "<head>"
-            "<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>"
-            "<script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>"
-        
-            "<style>"
-            "html, body { background:#111827; margin:0; padding:0; }"
-            "#gantt { background:#111827; }"
-            ".gantt-container { background:#111827 !important; }"
-            "svg { background:#111827 !important; }"
-        
-            ".gantt text { fill:#E5E7EB !important; font-size:12px; }"
-        
-            ".grid-background { fill:#111827 !important; }"
-            ".grid-header { fill:#1F2937 !important; }"
-            ".grid-row { fill:#111827 !important; }"
-            ".grid-row:nth-child(even) { fill:#0F172A !important; }"
+                f"""
+                <html>
+                <head>
+                <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
+                <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
             
-            /* REPARACIÓN DE LÍNEAS VERTICALES */
-            ".grid-line { stroke: #2d3748 !important; stroke-opacity: 0.6 !important; }" /* Horizontales por defecto */
-            ".gantt .grid-line[y1='0'] { stroke: #1f2937 !important; stroke-opacity: 0.2 !important; }" /* Verticales forzadas */
+                <style>
+                    html, body {{ background:#111827; margin:0; padding:0; }}
+                    #gantt {{ background:#111827; }}
+                    .gantt-container {{ background:#111827 !important; }}
+                    svg {{ background:#111827 !important; }}
             
-            ".arrow { stroke: #9ca3af !important; stroke-width: 1.5 !important; opacity: 1 !important; fill: none !important; }"
-        
-            ".today-highlight { fill:#0F172A !important; opacity:0.5 !important; }"
-        
-            ".bar { rx:3; ry:3; }"
-            ".bar-progress { fill-opacity:0.85; }"
-        
-            ".bar-wrapper.imp-urgente .bar { fill:#DC2626 !important; }"
-            ".bar-wrapper.imp-alta    .bar { fill:#F97316 !important; }"
-            ".bar-wrapper.imp-media   .bar { fill:#3B82F6 !important; }"
-            ".bar-wrapper.imp-baja    .bar { fill:#22C55E !important; }"
-            "</style>"
-            "</head>"
-        
-            "<body>"
-            "<div id='gantt'></div>"
-        
-            "<script>"
-            "var tasks=" + tasks_js + ";"
-            "if(tasks && tasks.length){"
-            "new Gantt('#gantt', tasks, {"
-            f"view_mode:'{gantt_view}',"
-            "bar_height:20,"
-            "padding:40,"
-            "date_format:'YYYY-MM-DD'"
-            "});"
-            "}"
-            "</script>"
-        
-            "</body>"
-            "</html>",
-            height=520,
-            scrolling=False
-        )
+                    .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
+            
+                    .grid-background {{ fill:#111827 !important; }}
+                    .grid-header {{ fill:#1F2937 !important; }}
+                    .grid-row {{ fill:#111827 !important; }}
+                    .grid-row:nth-child(even) {{ fill:#0F172A !important; }}
+                    
+                    /* Líneas base */
+                    .grid-line {{ stroke: #2d3748 !important; stroke-opacity: 0.6 !important; }}
+                    
+                    /* Líneas VERTICALES: Forzamos que sean casi invisibles */
+                    .gantt .grid-line[y1="0"] {{ 
+                        stroke: #111827 !important; 
+                        stroke-opacity: 0.1 !important; 
+                    }}
+                    
+                    .arrow {{ stroke: #9ca3af !important; stroke-width: 1.5 !important; opacity: 1 !important; fill: none !important; }}
+            
+                    .today-highlight {{ fill:#0F172A !important; opacity:0.5 !important; }}
+            
+                    .bar {{ rx:3; ry:3; }}
+                    .bar-progress {{ fill-opacity:0.85; }}
+            
+                    .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
+                    .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
+                    .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
+                    .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
+                </style>
+                </head>
+            
+                <body>
+                    <div id='gantt'></div>
+                    <script>
+                        var tasks = {tasks_js};
+                        if(tasks && tasks.length){{
+                            new Gantt('#gantt', tasks, {{
+                                view_mode: '{gantt_view}',
+                                bar_height: 20,
+                                padding: 40,
+                                date_format: 'YYYY-MM-DD'
+                            }});
+                        }}
+                    </script>
+                </body>
+                </html>
+                """,
+                height=520,
+                scrolling=False
+            )
 
         
         elif st.session_state.menu_sub == "QUEJAS":
@@ -548,6 +554,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
