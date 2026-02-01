@@ -137,11 +137,11 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── HEADER REESTRUCTURADO (INDICADOR IZQUIERDA | BOTÓN DERECHA) ──────────────────────────
+# ── HEADER REESTRUCTURADO (CENTRADITO Y BALANCEADO) ──────────────────────────
 header_zone = st.container()
 with header_zone:
-    # Ajustamos las columnas: Logo, Indicador (espacio flexible), y Botón (pequeño a la derecha)
-    c1, c2, c3 = st.columns([1.2, 5, 0.6], vertical_alignment="center")
+    # Usamos proporciones que den espacio suficiente a los lados para que el centro sea real
+    c1, c2, c3 = st.columns([1.5, 4, 1.5], vertical_alignment="center")
     
     with c1:
         try:
@@ -151,56 +151,60 @@ with header_zone:
             st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0; color:{vars_css['text']};'>NEXION</h3>", unsafe_allow_html=True)
 
     with c2:
-        # INDICADOR GENERAL (BREADCRUMB) - Aparece antes del botón
+        # INDICADOR GENERAL (CENTRADO ABSOLUTO)
         if st.session_state.menu_sub != "GENERAL":
-            ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['text']}; opacity:0.5;'>/</span> {st.session_state.menu_sub}"
-            st.markdown(f"""
-                <div style='display: flex; align-items: center; margin-left: 20px;'>
-                    <p style='font-size: 11px; letter-spacing: 3px; color: {vars_css['sub']}; margin: 0; font-weight: 600;'>
-                        {ruta}
-                    </p>
-                </div>
-            """, unsafe_allow_html=True)
+            ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 10px;'>|</span> {st.session_state.menu_sub}"
         else:
-            st.markdown(f"<p style='font-size: 11px; letter-spacing: 3px; color: {vars_css['sub']}; margin-left: 20px;'>{st.session_state.menu_main}</p>", unsafe_allow_html=True)
+            ruta = st.session_state.menu_main
+
+        st.markdown(f"""
+            <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
+                <p style='font-size: 10px; letter-spacing: 4px; color: {vars_css['sub']}; margin: 0; font-weight: 600; text-transform: uppercase;'>
+                    {ruta}
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 
     with c3:
-        # BOTÓN HAMBURGUESA - Al final a la derecha
-        with st.popover("☰", use_container_width=True):
-            st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
-            
-            # --- SECCIÓN TRACKING ---
-            if st.button("TRACKING", use_container_width=True, key="pop_trk"):
-                st.session_state.menu_main = "TRACKING"
-                st.session_state.menu_sub = "GENERAL"
-                st.rerun()
-            
-            # --- SECCIÓN SEGUIMIENTO ---
-            with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                for s in ["TRK", "GANTT", "QUEJAS"]:
-                    sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                    if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
-                        st.session_state.menu_main = "SEGUIMIENTO"
-                        st.session_state.menu_sub = s
-                        st.rerun()
+        # BOTÓN HAMBURGUESA - Alineado a la derecha del contenedor
+        # Usamos una columna anidada o un div para empujar el popover a la derecha
+        _, btn_col = st.columns([1, 2]) 
+        with btn_col:
+            with st.popover("☰", use_container_width=True):
+                st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
+                
+                # --- SECCIÓN TRACKING ---
+                if st.button("TRACKING", use_container_width=True, key="pop_trk"):
+                    st.session_state.menu_main = "TRACKING"
+                    st.session_state.menu_sub = "GENERAL"
+                    st.rerun()
+                
+                # --- SECCIÓN SEGUIMIENTO ---
+                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                    for s in ["TRK", "GANTT", "QUEJAS"]:
+                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
+                            st.session_state.menu_main = "SEGUIMIENTO"
+                            st.session_state.menu_sub = s
+                            st.rerun()
 
-            # --- SECCIÓN REPORTES ---
-            with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                for s in ["APQ", "OPS", "OTD"]:
-                    sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                    if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
-                        st.session_state.menu_main = "REPORTES"
-                        st.session_state.menu_sub = s
-                        st.rerun()
+                # --- SECCIÓN REPORTES ---
+                with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                    for s in ["APQ", "OPS", "OTD"]:
+                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
+                            st.session_state.menu_main = "REPORTES"
+                            st.session_state.menu_sub = s
+                            st.rerun()
 
-            # --- SECCIÓN FORMATOS ---
-            with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                for s in ["SALIDA DE PT", "PAGOS"]:
-                    sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                    if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
-                        st.session_state.menu_main = "FORMATOS"
-                        st.session_state.menu_sub = s
-                        st.rerun()
+                # --- SECCIÓN FORMATOS ---
+                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                    for s in ["SALIDA DE PT", "PAGOS"]:
+                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
+                            st.session_state.menu_main = "FORMATOS"
+                            st.session_state.menu_sub = s
+                            st.rerun()
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
 
@@ -298,6 +302,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
