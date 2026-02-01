@@ -324,8 +324,7 @@ with main_container:
             df_master = st.session_state.df_tareas.copy()
             
             # ── 1. FILTROS Y CONTROLES (PARTE SUPERIOR) ────────────────────────────────
-            st.title("NEXION - Gestión de Logística")
-            
+                      
             c1, c2 = st.columns([1, 2])
             with c1:
                 gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_v")
@@ -470,6 +469,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
