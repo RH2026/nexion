@@ -487,11 +487,14 @@ with main_container:
     elif st.session_state.menu_main == "FORMATOS":
         if st.session_state.menu_sub == "SALIDA DE PT":
             st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
-            # ── 1. GENERACIÓN DE FOLIO AUTOMÁTICO (Agrégalo al inicio de la sección) ──
+            # ── GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
             if 'folio_nexion' not in st.session_state:
-                # Formato: F - AÑO - MES - DÍA - HORA/MINUTO
-                now = datetime.datetime.now()
-                st.session_state.folio_nexion = f"F-{now.strftime('%Y%m%d-%H%M')}"                     
+                # Definimos la zona horaria de Guadalajara/CDMX
+                tz_gdl = pytz.timezone('America/Mexico_City') 
+                now_gdl = datetime.datetime.now(tz_gdl)
+                
+                # Formato: F - AÑO MES DÍA - HORA MINUTO (Hora local de GDL)
+                st.session_state.folio_nexion = f"F-{now_gdl.strftime('%Y%m%d-%H%M')}"                
             # ── 5. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
             @st.cache_data
             def load_inventory():
@@ -653,6 +656,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
