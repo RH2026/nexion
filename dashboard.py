@@ -432,109 +432,113 @@ with main_container:
                 })
             
             st.write("Tareas para Gantt:", len(tasks))
-            tasks_js = json.dumps(tasks, ensure_ascii=False)
+            tasks_js = json.dumps(tasks)
+
             components.html(
             f"""
-            <script>
-                window.tasks = {tasks_js};
-            </script>
-        
             <!DOCTYPE html>
-            <html lang="es">
+            <html>
             <head>
-            <meta charset="UTF-8">
-        
-            <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
-        
+            <link rel="stylesheet"
+             href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
+            
+            <script
+             src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js">
+            </script>
+            
             <style>
-                html, body {{
-                    margin: 0;
-                    padding: 0;
-                    background-color: #0E1117;
-                    color: #E0E6ED;
-                    font-family: Inter, sans-serif;
-                    overflow: hidden;
-                }}
-        
-                #gantt {{
-                    background-color: #0E1117;
-                    border: 1px solid #2D333B;
-                    border-radius: 4px;
-                    padding: 8px;
-                }}
-        
-                .grid-background {{ fill: #0E1117; }}
-                .grid-row {{ fill: #0E1117; }}
-        
-                .grid-header {{
-                    fill: #1A1F2B;
-                    stroke: #2D333B;
-                }}
-        
-                .grid-header text {{
-                    fill: #8892B0;
-                    font-size: 11px;
-                    letter-spacing: 1px;
-                }}
-        
-                .bar {{ fill: #4F8CFF; }}
-                .bar-progress {{ fill: #9FB8FF; }}
-        
-                .bar-label {{
-                    fill: #E0E6ED;
-                    font-size: 11px;
-                    letter-spacing: 0.5px;
-                }}
-        
-                .today-highlight {{
-                    stroke: #FF5C5C;
-                    stroke-width: 1;
-                    stroke-dasharray: 4,4;
-                }}
-        
-                .arrow {{
-                    stroke: #8892B0;
-                    fill: none;
-                    stroke-width: 1;
-                }}
-        
-                .popup-wrapper {{
-                    background-color: #1A1F2B !important;
-                    border: 1px solid #2D333B !important;
-                    color: #E0E6ED !important;
-                }}
+            body {{
+                margin: 0;
+                background: #0E1117;
+            }}
+            
+            #gantt {{
+                width: 100%;
+                height: 480px;
+                background: #0E1117;
+                overflow: hidden;
+            }}
+            
+            /* Texto */
+            .gantt-container text {{
+                fill: #E0E6ED !important;
+                font-size: 11px;
+            }}
+            
+            /* Grid */
+            .grid-background {{
+                fill: #0E1117;
+            }}
+            
+            .grid-row {{
+                fill: #1A1F2B;
+            }}
+            
+            .grid-row:nth-child(even) {{
+                fill: #151A23;
+            }}
+            
+            .grid-header {{
+                fill: #1A1F2B;
+            }}
+            
+            /* Barras */
+            .bar {{
+                rx: 2;
+            }}
+            
+            .bar-progress {{
+                fill-opacity: 0.85;
+            }}
+            
+            .bar.urgente {{ fill: #FF3131; }}
+            .bar.alta {{ fill: #FF914D; }}
+            .bar.media {{ fill: #00D2FF; }}
+            .bar.baja {{ fill: #4B5563; }}
+            
             </style>
             </head>
-        
+            
             <body>
-        
             <div id="gantt"></div>
-        
-            <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
-        
+            
             <script>
-                const tasks = window.tasks || [];
-        
-                if (tasks.length === 0) {{
-                    document.getElementById("gantt").innerHTML =
-                        "<div style='color:#8892B0;text-align:center;padding:40px;font-size:12px;letter-spacing:2px;'>SIN TAREAS PARA GANTT</div>";
-                }} else {{
+            document.addEventListener("DOMContentLoaded", function () {{
+                const tasks = {tasks_js};
+            
+                if (!tasks || tasks.length === 0) {{
+                    console.log("No hay tareas");
+                    return;
+                }}
+            
+                setTimeout(() => {{
                     new Gantt("#gantt", tasks, {{
                         view_mode: "Day",
-                        bar_height: 18,
-                        padding: 18,
-                        date_format: "YYYY-MM-DD"
-                    }});
-                }}
+                        bar_height: 16,
+                        padding: 40,
+                        date_format: "YYYY-MM-DD",
+                        custom_popup_html: function(task) {{
+                            return `
+                              <div style="padding:10px;
+                                          background:#1A1F2B;
+                                          color:#E0E6ED;
+                                          border-radius:4px">
+                                <b>${{task.name}}</b><br>
+                                Progreso: ${{task.progress}}%<br>
+                                Inicio: ${{task.start}}<br>
+                                Fin: ${{task.end}}
+                              </div>`;
+                        }}
+                    });
+                }}, 200);
+            });
             </script>
-        
             </body>
             </html>
             """,
             height=520,
-            scrolling=True
-        )
-
+            scrolling=False
+            )
 
         
         elif st.session_state.menu_sub == "QUEJAS":
@@ -561,6 +565,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
