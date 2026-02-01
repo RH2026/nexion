@@ -550,8 +550,8 @@ with main_container:
                 </body>
                 </html>
                 """,
-                height=520,
-                scrolling=True
+                height=420,
+                scrolling=False
             )
 
         
@@ -579,6 +579,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
