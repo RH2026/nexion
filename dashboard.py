@@ -468,33 +468,33 @@ with main_container:
             
             st.components.v1.html(
                 """
-                <div id="matrix-container">
+                <div id="matrix-container" style="width: 100%;">
                     <canvas id="matrix-canvas"></canvas>
-                    <div class="overlay-text">NEXION CORE: ESPERANDO SELECCIÓN</div>
+                    <div class="overlay-text">NEXION CORE: MODO EVASIÓN</div>
                 </div>
             
                 <style>
                     #matrix-container {
                         height: 450px; background: #0E1117; border-radius: 10px;
                         position: relative; border: 1px solid #1e2530; overflow: hidden;
+                        width: 100%;
                     }
-                    #matrix-canvas { display: block; }
+                    #matrix-canvas { display: block; width: 100%; }
                     
                     .overlay-text {
                         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                        /* Color azul grisáceo más visible */
                         color: #5d6d7e; 
                         font-family: 'Segoe UI', Tahoma, sans-serif;
                         font-weight: bold; letter-spacing: 12px; pointer-events: none;
                         font-size: 0.9rem; text-transform: uppercase;
                         text-align: center; width: 100%;
-                        /* Animación de pulso para que sepa que está vivo */
                         animation: pulse-text 4s infinite ease-in-out;
+                        z-index: 10;
                     }
             
                     @keyframes pulse-text {
-                        0%, 100% { opacity: 0.3; filter: blur(0px); }
-                        50% { opacity: 0.7; color: #3b82f6; filter: blur(1px); }
+                        0%, 100% { opacity: 0.3; }
+                        50% { opacity: 0.7; color: #3b82f6; }
                     }
                 </style>
             
@@ -503,22 +503,32 @@ with main_container:
                     const ctx = canvas.getContext('2d');
                     const container = document.getElementById('matrix-container');
             
-                    canvas.width = container.offsetWidth;
-                    canvas.height = 450;
+                    // FUNCIÓN CLAVE: Ajustar al ancho real del cliente (toda la pantalla)
+                    function resize() {
+                        canvas.width = container.clientWidth; 
+                        canvas.height = 450;
+                    }
+                    resize();
             
                     const alphabet = "01XENOCODENEXION0101";
                     const fontSize = 14;
-                    const columns = Math.floor(canvas.width / fontSize);
                     
+                    // Calcular columnas basadas en el ancho TOTAL
+                    let columns = Math.floor(canvas.width / fontSize);
                     const drops = [];
-                    for (let x = 0; x < columns; x++) {
-                        drops[x] = {
-                            currentX: x * fontSize,
-                            baseX: x * fontSize,
-                            y: Math.random() * -canvas.height,
-                            speed: Math.random() * 1.5 + 1
-                        };
+            
+                    function initDrops() {
+                        columns = Math.floor(canvas.width / fontSize);
+                        for (let x = 0; x < columns; x++) {
+                            drops[x] = {
+                                currentX: x * fontSize,
+                                baseX: x * fontSize,
+                                y: Math.random() * -canvas.height,
+                                speed: Math.random() * 1.5 + 1
+                            };
+                        }
                     }
+                    initDrops();
             
                     let mouseX = -2000, mouseY = -2000;
                     container.addEventListener('mousemove', (e) => {
@@ -527,10 +537,15 @@ with main_container:
                         mouseY = e.clientY - rect.top;
                     });
             
+                    // Escuchar si cambias el tamaño de la ventana
+                    window.addEventListener('resize', () => {
+                        resize();
+                        initDrops();
+                    });
+            
                     function draw() {
                         ctx.fillStyle = '#0E1117';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
                         ctx.font = fontSize + 'px monospace';
             
                         drops.forEach(drop => {
@@ -538,20 +553,17 @@ with main_container:
                             const dx = drop.currentX - mouseX;
                             const dy = drop.y - mouseY;
                             const distance = Math.sqrt(dx*dx + dy*dy);
-                            const forceArea = 130; 
+                            const forceArea = 140; 
             
                             if (distance < forceArea) {
                                 const force = (forceArea - distance) / forceArea;
                                 const direction = dx > 0 ? 1 : -1;
                                 drop.currentX += direction * force * 20;
-                                
-                                // AZUL FULL PARA EL MODO EVASIÓN
                                 ctx.fillStyle = '#3b82f6'; 
                                 ctx.shadowBlur = 12;
                                 ctx.shadowColor = '#3b82f6';
                             } else {
-                                drop.currentX += (drop.baseX - drop.currentX) * 0.08;
-                                // GRIS OSCURO (casi invisible pero presente)
+                                drop.currentX += (drop.baseX - drop.currentX) * 0.1;
                                 ctx.fillStyle = 'rgba(45, 55, 72, 0.15)'; 
                                 ctx.shadowBlur = 0;
                             }
@@ -576,6 +588,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
