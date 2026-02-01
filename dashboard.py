@@ -569,7 +569,7 @@ with main_container:
                     animate();
                 </script>
                 """, height=470
-            ))
+            )
 
 # ── FOOTER FIJO ────────────────────────
 st.markdown(f"""
@@ -577,6 +577,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
