@@ -388,7 +388,7 @@ with main_container:
                     st.session_state.df_tareas = df_editado
                     st.rerun()
             
-            # ── CONTROLES GANTT ─────────────────────────────────────────────
+            # ── CONTROLES GANTT ─────────────────────────────────────────────────────
             c1, c2 = st.columns([1, 2])
             
             with c1:
@@ -396,13 +396,11 @@ with main_container:
                     "Vista",
                     ["Day", "Week", "Month", "Year"],
                     horizontal=True,
-                    index=2
+                    index=0
                 )
             
             with c2:
-                grupos_disponibles = sorted(
-                    df_editado["GRUPO"].astype(str).unique()
-                )
+                grupos_disponibles = sorted(df_editado["GRUPO"].astype(str).unique())
                 grupos_sel = st.multiselect(
                     "Filtrar por grupo",
                     grupos_disponibles,
@@ -411,25 +409,18 @@ with main_container:
             
             df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
             
-            # ── FRAPPE GANTT (NORMALIZADO REAL) ───────────────────────────
+            # ── FRAPPE TASKS ───────────────────────────────────────────────────────
             tasks = []
             
             for i, r in df_gantt.iterrows():
                 if str(r["TAREA"]).strip() == "":
                     continue
             
-                start = pd.to_datetime(r["FECHA"])
-                end = pd.to_datetime(r["FECHA_FIN"])
-            
-                # 🔧 Frappe NO permite end <= start
-                if end <= start:
-                    end = start + pd.Timedelta(days=1)
-            
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
-                    "start": start.strftime("%Y-%m-%dT00:00:00"),
-                    "end": end.strftime("%Y-%m-%dT23:59:59"),
+                    "start": str(r["FECHA"]),
+                    "end": str(r["FECHA_FIN"]),
                     "progress": int(r["PROGRESO"]),
                     "dependencies": r["DEPENDENCIAS"],
                     "custom_class": r["IMPORTANCIA"].lower()
@@ -439,47 +430,25 @@ with main_container:
             
             tasks_js = json.dumps(tasks)
             
-            # ── HTML FRAPPE GANTT (OSCuro REAL) ───────────────────────────
-            html_gantt = f"""
+            # ── HTML FRAPPE (NO F-STRING) ──────────────────────────────────────────
+            html_gantt = """
             <!DOCTYPE html>
             <html>
             <head>
             <link rel="stylesheet"
              href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
-            
             <script
              src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js">
             </script>
             
             <style>
-            body {{
-                margin: 0;
-                background: #0E1117;
-            }}
+            body {{ background:#0E1117; margin:0; }}
+            #gantt {{ height:480px; }}
             
-            #gantt {{
-                width: 100%;
-                height: 480px;
-                background: #0E1117;
-            }}
-            
-            .gantt-container text {{
-                fill: #E0E6ED !important;
-                font-size: 11px;
-            }}
-            
-            .grid-background {{ fill: #0E1117; }}
-            .grid-row {{ fill: #1A1F2B; }}
-            .grid-row:nth-child(even) {{ fill: #151A23; }}
-            .grid-header {{ fill: #1A1F2B; }}
-            
-            .bar {{ rx: 2; }}
-            .bar-progress {{ fill-opacity: 0.85; }}
-            
-            .bar.urgente {{ fill: #FF3131; }}
-            .bar.alta {{ fill: #FF914D; }}
-            .bar.media {{ fill: #00D2FF; }}
-            .bar.baja {{ fill: #4B5563; }}
+            .bar.urgente {{ fill:#FF3131; }}
+            .bar.alta {{ fill:#FF914D; }}
+            .bar.media {{ fill:#00D2FF; }}
+            .bar.baja {{ fill:#4B5563; }}
             </style>
             </head>
             
@@ -488,32 +457,28 @@ with main_container:
             
             <script>
             document.addEventListener("DOMContentLoaded", function () {{
-                const tasks = {tasks_js};
+                const tasks = __TASKS__;
+                if (!tasks || tasks.length === 0) return;
             
-                if (!tasks || tasks.length === 0) {{
-                    console.warn("No hay tareas para Gantt");
-                    return;
-                }}
-            
-                setTimeout(() => {{
-                    new Gantt("#gantt", tasks, {{
-                        view_mode: "{gantt_view}",
-                        bar_height: 18,
-                        padding: 40,
-                        date_format: "YYYY-MM-DDTHH:mm:ss",
-                    }});
-                }}, 200);
+                new Gantt("#gantt", tasks, {{
+                    view_mode: "__VIEW__",
+                    bar_height: 16,
+                    padding: 40,
+                    date_format: "YYYY-MM-DD"
+                }});
             });
             </script>
             </body>
             </html>
             """
             
-            components.html(
-                html_gantt,
-                height=520,
-                scrolling=False
+            html_gantt = (
+                html_gantt
+                .replace("__TASKS__", tasks_js)
+                .replace("__VIEW__", gantt_view)
             )
+            
+            components.html(html_gantt, height=520, scrolling=False)
 
         
         elif st.session_state.menu_sub == "QUEJAS":
@@ -540,6 +505,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
