@@ -323,135 +323,30 @@ with main_container:
                     return False
             
             # ── SESSION ────────────────────────────────────────────────
-            # ── SESSION ────────────────────────────────────────────────
             if "df_tareas" not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-            df = st.session_state.df_tareas.copy()
+            df_master = st.session_state.df_tareas.copy()
             
-            # ── NORMALIZACIÓN ESTRICTA PARA DATA_EDITOR ─────────────────────
-            df_editor = df.copy()
-            
-            # Fechas 100% date
-            df_editor["FECHA"] = pd.to_datetime(df_editor["FECHA"], errors="coerce").dt.date
-            df_editor["FECHA_FIN"] = pd.to_datetime(df_editor["FECHA_FIN"], errors="coerce").dt.date
-            
-            hoy = obtener_fecha_mexico()
-            df_editor["FECHA"] = df_editor["FECHA"].apply(
-                lambda x: x if isinstance(x, datetime.date) else hoy
-            )
-            df_editor["FECHA_FIN"] = df_editor["FECHA_FIN"].apply(
-                lambda x: x if isinstance(x, datetime.date) else hoy + datetime.timedelta(days=1)
-            )
-            
-            # Progreso SIEMPRE int (fuente de verdad)
-            df_editor["PROGRESO"] = (
-                pd.to_numeric(df_editor["PROGRESO"], errors="coerce")
-                .fillna(0)
-                .astype(int)
-            )
-            
-            # 👇 COLUMNA SOLO VISUAL PARA LA BARRITA
-            df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
-            
-            # Strings limpios (NUNCA NaN)
-            for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
-                df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
-            
-            # Valores por defecto válidos
-            df_editor["IMPORTANCIA"] = df_editor["IMPORTANCIA"].replace("", "Media")
-            df_editor["TIPO"] = df_editor["TIPO"].replace("", "Tarea")
-            df_editor["GRUPO"] = df_editor["GRUPO"].replace("", "General")
-            
-            # ── DATA EDITOR ESTABLE ─────────────────────────────────────────
-            df_editado = st.data_editor(
-                df_editor,
-                hide_index=True,
-                use_container_width=True,
-                num_rows="dynamic",
-                column_config={
-                    "FECHA": st.column_config.DateColumn("Inicio"),
-                    "FECHA_FIN": st.column_config.DateColumn("Fin"),
-            
-                    "IMPORTANCIA": st.column_config.SelectboxColumn(
-                        "Importancia",
-                        options=["Urgente","Alta","Media","Baja"]
-                    ),
-            
-                    # ✏️ editable
-                    "PROGRESO": st.column_config.NumberColumn(
-                        "Progreso %",
-                        min_value=0,
-                        max_value=100,
-                        step=5
-                    ),
-            
-                    # 📊 visual
-                    "PROGRESO_VIEW": st.column_config.ProgressColumn(
-                        "Avance",
-                        min_value=0,
-                        max_value=100
-                    ),
-            
-                    "TAREA": st.column_config.TextColumn("Tarea"),
-                    "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
-                    "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
-                    "TIPO": st.column_config.SelectboxColumn(
-                        "Tipo", options=["Tarea","Hito"]
-                    ),
-                    "GRUPO": st.column_config.TextColumn("Grupo"),
-                }
-            )
-            
-            # 🔄 mantener sincronizada la barrita
-            df_editado["PROGRESO_VIEW"] = df_editado["PROGRESO"]
-            
-            # ── GUARDAR EN GITHUB ─────────────────────────────────────────
-            if st.button("💾 SINCRONIZAR CON GITHUB", use_container_width=True):
-                # no guardar columna visual
-                df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
-            
-                if guardar_en_github(df_guardar):
-                    st.session_state.df_tareas = df_guardar
-                    st.rerun()
-            
-            # ── CONTROLES GANTT ─────────────────────────────────────────────────────
+            # ── CONTROLES GANTT (ESTOS VAN ARRIBA) ───────────────────────────────────
             c1, c2 = st.columns([1, 2])
-            
             with c1:
-                gantt_view = st.radio(
-                    "Vista",
-                    ["Day", "Week", "Month", "Year"],
-                    horizontal=True,
-                    index=0,
-                    key="gantt_view"
-                )
+                gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_view")
             
             with c2:
-                grupos_disponibles = sorted(df_editado["GRUPO"].astype(str).unique())
-                grupos_sel = st.multiselect(
-                    "Filtrar por grupo",
-                    grupos_disponibles,
-                    default=grupos_disponibles,
-                    key="gantt_grupos"
-                )
+                grupos_disponibles = sorted(df_master["GRUPO"].astype(str).unique())
+                grupos_sel = st.multiselect("Filtrar por grupo", grupos_disponibles, default=grupos_disponibles, key="gantt_grupos")
             
-            df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
+            df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)]
             
-            # ── FRAPPE GANTT ───────────────────────────────────────────
-            # 🔒 FORZAR HITOS A DURACIÓN CERO
-            # Esto asegura que si la tarea es un "hito", la fecha de fin sea igual a la de inicio
+            # 🔒 FORZAR HITOS A DURACIÓN CERO PARA EL GANTT
             mask_hito = df_gantt["TIPO"].str.lower() == "hito"
             df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
             
             tasks = []
             for i, r in df_gantt.iterrows():
-                # Saltamos filas con nombres de tarea vacíos
-                if str(r["TAREA"]).strip() == "":
-                    continue
-            
+                if str(r["TAREA"]).strip() == "": continue
                 importancia = str(r["IMPORTANCIA"]).strip().lower()
-            
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
@@ -459,52 +354,33 @@ with main_container:
                     "end": str(r["FECHA_FIN"]),
                     "progress": int(r["PROGRESO"]),
                     "dependencies": r["DEPENDENCIAS"],
-                    "custom_class": f"imp-{importancia}"  # Para tus estilos CSS
+                    "custom_class": f"imp-{importancia}"
                 })
-            # ── JSON ───────────────────────────────────────────────────
             tasks_js = json.dumps(tasks)
             
-            # ── HTML GANTT ─────────────────────────────────────────────
-            
+            # ── HTML GANTT (AHORA PRIMERO) ───────────────────────────────────────────
             components.html(
                 f"""
                 <html>
                 <head>
                 <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
                 <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
-            
                 <style>
                     html, body {{ background:#111827; margin:0; padding:0; }}
                     #gantt {{ background:#0E1117; }}
-            
-                    /* Flechas de dependencia */
-                    .arrow {{
-                        stroke: #9ca3af !important;
-                        stroke-width: 1.6 !important;
-                        opacity: 1 !important;
-                        fill: none !important;
-                    }}
-            
-                    /* Textos */
+                    .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
                     .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
-            
-                    /* Fondo y filas */
                     .grid-background {{ fill:#111827 !important; }}
                     .grid-header {{ fill:#1F2937 !important; }}
                     .grid-row {{ fill:#0b0e14 !important; }}
                     .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-            
-                    /* Colores de prioridad de tareas */
                     .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                     .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                     .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                     .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-            
-                    /* Resaltado del día actual en una sola línea */
                     .today-highlight {{ fill: #0F172A !important; opacity: 0.5 !important; }}
                 </style>
                 </head>
-            
                 <body>
                     <div id='gantt'></div>
                     <script>
@@ -516,43 +392,54 @@ with main_container:
                                 padding: 40,
                                 date_format: 'YYYY-MM-DD'
                             }});
-            
-                            // --- REPARADOR DE LÍNEAS Y RESALTADO ---
                             setTimeout(function() {{
-                                // Líneas del Gantt
                                 var lines = document.querySelectorAll('#gantt svg line');
                                 lines.forEach(function(line) {{
-                                    var x1 = line.getAttribute('x1');
-                                    var x2 = line.getAttribute('x2');
-                                    var y1 = line.getAttribute('y1');
-                                    var y2 = line.getAttribute('y2');
-            
-                                    // Verticales → ocultar
-                                    if(x1 === x2) {{
-                                        line.style.display = 'none';
-                                    }}
-                                    // Horizontales → gris claro
-                                    else if(y1 === y2) {{
-                                        line.setAttribute('stroke', '#4B5563');
-                                        line.setAttribute('stroke-opacity', '0.2');
-                                    }}
+                                    var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
+                                    var y1 = line.getAttribute('y1'), y2 = line.getAttribute('y2');
+                                    if(x1 === x2) {{ line.style.display = 'none'; }}
+                                    else if(y1 === y2) {{ line.setAttribute('stroke', '#4B5563'); line.setAttribute('stroke-opacity', '0.2'); }}
                                 }});
-            
-                                // Resaltado del día actual
-                                var todayRects = document.querySelectorAll('.today, .today-bar');
-                                todayRects.forEach(function(rect) {{
-                                    rect.setAttribute('fill', '#FBBF24');
-                                    rect.setAttribute('fill-opacity', '0.2');
-                                }});
-                            }}, 100); // esperar a que se dibuje el SVG
+                            }}, 100);
                         }}
                     </script>
                 </body>
                 </html>
                 """,
-                height=420,
-                scrolling=False
+                height=420, scrolling=False
             )
+            
+            # ── TABLA / DATA EDITOR (AHORA ABAJO) ─────────────────────────────────────
+            st.markdown("---")
+            df_editor = df_master.copy()
+            df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
+            
+            df_editado = st.data_editor(
+                df_editor,
+                hide_index=True,
+                use_container_width=True,
+                num_rows="dynamic",
+                column_config={
+                    "FECHA": st.column_config.DateColumn("Inicio"),
+                    "FECHA_FIN": st.column_config.DateColumn("Fin"),
+                    "IMPORTANCIA": st.column_config.SelectboxColumn("Importancia", options=["Urgente","Alta","Media","Baja"]),
+                    "PROGRESO": st.column_config.NumberColumn("Progreso %", min_value=0, max_value=100, step=5),
+                    "PROGRESO_VIEW": st.column_config.ProgressColumn("Avance", min_value=0, max_value=100),
+                    "TAREA": st.column_config.TextColumn("Tarea"),
+                    "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
+                    "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
+                    "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
+                    "GRUPO": st.column_config.TextColumn("Grupo"),
+                }
+            )
+            
+            df_editado["PROGRESO_VIEW"] = df_editado["PROGRESO"]
+            
+            if st.button("💾 SINCRONIZAR CON GITHUB", use_container_width=True):
+                df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
+                if guardar_en_github(df_guardar):
+                    st.session_state.df_tareas = df_guardar
+                    st.rerun()
 
         
         elif st.session_state.menu_sub == "QUEJAS":
@@ -579,6 +466,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
