@@ -427,8 +427,7 @@ with main_container:
             # 👇 PRIMERO convertir a JSON
             tasks_js = json.dumps(tasks)
             
-            # 👇 AHORA sí puedes inspeccionarlo
-            st.code(tasks_js, language="json")
+           
             
             # 👇 Y LUEGO renderizar HTML
             components.html(
@@ -474,6 +473,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
