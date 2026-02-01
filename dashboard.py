@@ -590,11 +590,11 @@ with main_container:
                 st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
                         
                     
-                    elif st.session_state.menu_sub == "PAGOS":
-                        st.subheader("FORMATOS > CONTROL DE PAGOS")
-                    else:
-                        # MATRIX ANIMATION
-                        st.subheader("CENTRO DE DOCUMENTACIÓN")
+    elif st.session_state.menu_sub == "PAGOS":
+        st.subheader("FORMATOS > CONTROL DE PAGOS")
+    else:
+        # MATRIX ANIMATION
+        st.subheader("CENTRO DE DOCUMENTACIÓN")
             
 
 
@@ -604,6 +604,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
