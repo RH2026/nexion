@@ -431,22 +431,54 @@ with main_container:
             
             # 👇 Y LUEGO renderizar HTML
             components.html(
-            "<html><head>"
-            "<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>"
-            "<script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>"
-            "</head><body style='background:#111827;'>"
-            "<div id='gantt'></div>"
-            "<script>"
-            "var tasks=" + tasks_js + ";"
-            "setTimeout(function(){"
-            "if(!tasks || tasks.length===0){return;}"
-            "new Gantt('#gantt', tasks, {view_mode:'Day', bar_height:20, padding:40});"
-            "},100);"
-            "</script>"
-            "</body></html>",
-            height=520,
-            scrolling=False
-        )
+                "<html>"
+                "<head>"
+                "<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>"
+                "<script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>"
+            
+                "<style>"
+                "html, body { background:#111827; margin:0; padding:0; }"
+                "#gantt { background:#111827; }"
+            
+                /* SVG fondo */
+                ".gantt-container { background:#111827 !important; }"
+                "svg { background:#111827 !important; }"
+            
+                /* textos */
+                ".gantt text { fill:#E5E7EB !important; font-size:12px; }"
+            
+                /* grid */
+                ".grid-background { fill:#111827 !important; }"
+                ".grid-header { fill:#111827 !important; }"
+                ".grid-row { fill:#111827 !important; }"
+                ".grid-line { stroke:#374151 !important; }"
+            
+                /* barras */
+                ".bar { fill:#3B82F6 !important; }"
+                ".bar-progress { fill:#1D4ED8 !important; }"
+                "</style>"
+                "</head>"
+            
+                "<body>"
+                "<div id='gantt'></div>"
+            
+                "<script>"
+                "var tasks=" + tasks_js + ";"
+                "setTimeout(function(){"
+                "if(!tasks || tasks.length===0){return;}"
+                "new Gantt('#gantt', tasks, {"
+                "view_mode:'Day',"
+                "bar_height:20,"
+                "padding:40"
+                "});"
+                "},100);"
+                "</script>"
+            
+                "</body>"
+                "</html>",
+                height=520,
+                scrolling=False
+            )
 
         
         elif st.session_state.menu_sub == "QUEJAS":
@@ -473,6 +505,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
