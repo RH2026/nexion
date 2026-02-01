@@ -468,35 +468,30 @@ with main_container:
             
             st.components.v1.html(
                 """
-                <div class="core-container">
-                    <div class="core"></div>
-                    <div class="text">NEXION CORE: ESPERANDO SELECCIÓN</div>
+                <div class="music-container">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
                 </div>
                 <style>
-                    .core-container {
-                        display: flex; flex-direction: column; align-items: center;
-                        justify-content: center; height: 350px; background: #0b0e14;
-                        border-radius: 10px; border: 1px solid #1e2530;
+                    .music-container {
+                        display: flex; gap: 10px; align-items: flex-end;
+                        justify-content: center; height: 400px; background: #0b0e14;
                     }
-                    .core {
-                        width: 50px; height: 50px; background: #3b82f6;
-                        border-radius: 50%; box-shadow: 0 0 20px #3b82f6, 0 0 50px #3b82f6;
-                        animation: glow 2s infinite alternate ease-in-out;
+                    .bar {
+                        width: 8px; background: #3b82f6;
+                        animation: flow 1.5s infinite ease-in-out;
                     }
-                    .text {
-                        margin-top: 30px; color: #4b5563; font-size: 12px;
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        text-transform: uppercase; letter-spacing: 4px;
-                    }
-                    @keyframes glow {
-                        from { opacity: 0.3; transform: scale(0.8) translateY(0px); }
-                        to { opacity: 1; transform: scale(1.1) translateY(-10px); }
+                    .bar:nth-child(2) { animation-delay: 0.2s; height: 40px; }
+                    .bar:nth-child(1) { animation-delay: 0s; height: 20px; }
+                    .bar:nth-child(3) { animation-delay: 0.4s; height: 30px; }
+                    @keyframes flow {
+                        0%, 100% { height: 20px; }
+                        50% { height: 60px; }
                     }
                 </style>
                 """, height=400
             )
-            
-            st.info("Seleccione un formato del submenú superior para comenzar el proceso.")
 
 # ── FOOTER FIJO ────────────────────────
 st.markdown(f"""
@@ -504,6 +499,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
