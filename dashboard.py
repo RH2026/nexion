@@ -487,8 +487,7 @@ with main_container:
     # 4. FORMATOS
     elif st.session_state.menu_main == "FORMATOS":
         if st.session_state.menu_sub == "SALIDA DE PT":
-            st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
-            # ── GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
+            # ── SALDA DE PT -- GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
             if 'folio_nexion' not in st.session_state:
                 # Definimos la zona horaria de Guadalajara/CDMX
                 tz_gdl = pytz.timezone('America/Mexico_City') 
@@ -657,6 +656,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
