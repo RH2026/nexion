@@ -468,27 +468,24 @@ with main_container:
             
             st.components.v1.html(
                 """
-                <div class="core-container">
-                    <div class="core"></div>
-                    <div class="text">SISTEMA NEXION EN REPOSO</div>
+                <div class="loader-container">
+                    <div class="radar"></div>
+                    <p>ESPERANDO SELECCIÓN DE GRUPO...</p>
                 </div>
                 <style>
-                    .core-container {
+                    .loader-container {
                         display: flex; flex-direction: column; align-items: center;
                         justify-content: center; height: 400px; background: #0b0e14;
+                        color: #3b82f6; font-family: monospace; letter-spacing: 2px;
                     }
-                    .core {
-                        width: 40px; height: 40px; background: #3b82f6;
-                        border-radius: 50%; box-shadow: 0 0 20px #3b82f6, 0 0 40px #dc2626;
-                        animation: glow 3s infinite alternate;
+                    .radar {
+                        width: 60px; height: 60px; border: 2px solid #3b82f6;
+                        border-radius: 50%; position: relative; margin-bottom: 20px;
+                        animation: pulse 2s infinite;
                     }
-                    .text {
-                        margin-top: 30px; color: #4b5563; font-size: 10px;
-                        font-family: sans-serif; text-transform: uppercase;
-                    }
-                    @keyframes glow {
-                        from { opacity: 0.4; transform: scale(0.8); }
-                        to { opacity: 1; transform: scale(1.1); }
+                    @keyframes pulse {
+                        0% { transform: scale(0.5); opacity: 1; }
+                        100% { transform: scale(1.5); opacity: 0; }
                     }
                 </style>
                 """, height=400
@@ -500,6 +497,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
