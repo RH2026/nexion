@@ -475,7 +475,7 @@ with main_container:
             
                 <style>
                     html, body {{ background:#111827; margin:0; padding:0; }}
-                    #gantt {{ background:#111827; }}
+                    #gantt {{ background:#ffffff; }}
             
                     /* Flechas de dependencia */
                     .arrow {{
@@ -501,7 +501,7 @@ with main_container:
                     .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
             
                     /* Resaltado del día actual en una sola línea */
-                    .today-highlight {{ fill: #0F172A !important; opacity: 0.35 !important; }}
+                    .today-highlight {{ fill: #0F172A !important; opacity: 0.5 !important; }}
                 </style>
                 </head>
             
@@ -579,6 +579,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
