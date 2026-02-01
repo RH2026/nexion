@@ -531,7 +531,7 @@ with main_container:
                                 // Horizontales (misma y) → gris claro
                                 else if(y1 === y2) {{
                                     line.setAttribute('stroke', '#4B5563');
-                                    line.setAttribute('stroke-opacity', '0.5');
+                                    line.setAttribute('stroke-opacity', '0.2');
                                 }}
                             }});
                         }}, 100); // esperamos que el SVG se dibuje
@@ -569,6 +569,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
