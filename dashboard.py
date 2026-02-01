@@ -323,6 +323,7 @@ with main_container:
                     return False
             
             # ── SESSION ────────────────────────────────────────────────
+            # ── SESSION ────────────────────────────────────────────────
             if "df_tareas" not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
@@ -336,17 +337,22 @@ with main_container:
             df_editor["FECHA_FIN"] = pd.to_datetime(df_editor["FECHA_FIN"], errors="coerce").dt.date
             
             hoy = obtener_fecha_mexico()
-            df_editor["FECHA"] = df_editor["FECHA"].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+            df_editor["FECHA"] = df_editor["FECHA"].apply(
+                lambda x: x if isinstance(x, datetime.date) else hoy
+            )
             df_editor["FECHA_FIN"] = df_editor["FECHA_FIN"].apply(
                 lambda x: x if isinstance(x, datetime.date) else hoy + datetime.timedelta(days=1)
             )
             
-            # Progreso SIEMPRE int
+            # Progreso SIEMPRE int (fuente de verdad)
             df_editor["PROGRESO"] = (
                 pd.to_numeric(df_editor["PROGRESO"], errors="coerce")
                 .fillna(0)
                 .astype(int)
             )
+            
+            # 👇 COLUMNA SOLO VISUAL PARA LA BARRITA
+            df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
             
             # Strings limpios (NUNCA NaN)
             for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
@@ -366,16 +372,27 @@ with main_container:
                 column_config={
                     "FECHA": st.column_config.DateColumn("Inicio"),
                     "FECHA_FIN": st.column_config.DateColumn("Fin"),
+            
                     "IMPORTANCIA": st.column_config.SelectboxColumn(
                         "Importancia",
                         options=["Urgente","Alta","Media","Baja"]
                     ),
+            
+                    # ✏️ editable
                     "PROGRESO": st.column_config.NumberColumn(
                         "Progreso %",
                         min_value=0,
                         max_value=100,
                         step=5
                     ),
+            
+                    # 📊 visual
+                    "PROGRESO_VIEW": st.column_config.ProgressColumn(
+                        "Avance",
+                        min_value=0,
+                        max_value=100
+                    ),
+            
                     "TAREA": st.column_config.TextColumn("Tarea"),
                     "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
                     "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
@@ -386,9 +403,16 @@ with main_container:
                 }
             )
             
+            # 🔄 mantener sincronizada la barrita
+            df_editado["PROGRESO_VIEW"] = df_editado["PROGRESO"]
+            
+            # ── GUARDAR EN GITHUB ─────────────────────────────────────────
             if st.button("💾 SINCRONIZAR CON GITHUB", use_container_width=True):
-                if guardar_en_github(df_editado):
-                    st.session_state.df_tareas = df_editado
+                # no guardar columna visual
+                df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
+            
+                if guardar_en_github(df_guardar):
+                    st.session_state.df_tareas = df_guardar
                     st.rerun()
             
             # ── CONTROLES GANTT ─────────────────────────────────────────────────────
@@ -514,6 +538,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
