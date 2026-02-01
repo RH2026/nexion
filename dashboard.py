@@ -439,26 +439,19 @@ with main_container:
             df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
             
             # ── FRAPPE GANTT ───────────────────────────────────────────
-            # 🔒 FORZAR HITOS A DURACIÓN CERO
             mask_hito = df_gantt["TIPO"].str.lower() == "hito"
             df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
             
-            tasks = []
-            for i, r in df_gantt.iterrows():
-                if str(r["TAREA"]).strip() == "":
-                    continue
-            
-                importancia = str(r["IMPORTANCIA"]).strip().lower()
-            
-                tasks.append({
-                    "id": str(i),
-                    "name": f"[{r['GRUPO']}] {r['TAREA']}",
-                    "start": str(r["FECHA"]),
-                    "end": str(r["FECHA_FIN"]),
-                    "progress": int(r["PROGRESO"]),
-                    "dependencies": r["DEPENDENCIAS"],
-                    "custom_class": f"imp-{importancia}"
-                })
+            tasks.append({
+                "id": str(i),
+                "name": f"[{r['GRUPO']}] {r['TAREA']}",
+                "start": str(r["FECHA"]),
+                "end": str(r["FECHA_FIN"]),
+                "progress": int(r["PROGRESO"]),
+                "dependencies": r["DEPENDENCIAS"],
+                "custom_class": f"imp-{importancia}",
+                "milestone": str(r["TIPO"]).lower() == "hito"  # 🔷 CLAVE
+            })
             
             # ── JSON ───────────────────────────────────────────────────
             tasks_js = json.dumps(tasks)
@@ -542,6 +535,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
