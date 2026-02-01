@@ -468,26 +468,27 @@ with main_container:
             
             st.components.v1.html(
                 """
-                <div class="music-container">
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
+                <div class="core-container">
+                    <div class="core"></div>
+                    <div class="text">SISTEMA NEXION EN REPOSO</div>
                 </div>
                 <style>
-                    .music-container {
-                        display: flex; gap: 10px; align-items: flex-end;
+                    .core-container {
+                        display: flex; flex-direction: column; align-items: center;
                         justify-content: center; height: 400px; background: #0b0e14;
                     }
-                    .bar {
-                        width: 8px; background: #3b82f6;
-                        animation: flow 1.5s infinite ease-in-out;
+                    .core {
+                        width: 40px; height: 40px; background: #3b82f6;
+                        border-radius: 50%; box-shadow: 0 0 20px #3b82f6, 0 0 40px #dc2626;
+                        animation: glow 3s infinite alternate;
                     }
-                    .bar:nth-child(2) { animation-delay: 0.2s; height: 40px; }
-                    .bar:nth-child(1) { animation-delay: 0s; height: 20px; }
-                    .bar:nth-child(3) { animation-delay: 0.4s; height: 30px; }
-                    @keyframes flow {
-                        0%, 100% { height: 20px; }
-                        50% { height: 60px; }
+                    .text {
+                        margin-top: 30px; color: #4b5563; font-size: 10px;
+                        font-family: sans-serif; text-transform: uppercase;
+                    }
+                    @keyframes glow {
+                        from { opacity: 0.4; transform: scale(0.8); }
+                        to { opacity: 1; transform: scale(1.1); }
                     }
                 </style>
                 """, height=400
@@ -499,6 +500,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
