@@ -491,7 +491,7 @@ with main_container:
                     /* Fondo y filas */
                     .grid-background {{ fill:#111827 !important; }}
                     .grid-header {{ fill:#1F2937 !important; }}
-                    .grid-row {{ fill:#ffffff !important; }}
+                    .grid-row {{ fill:#0E1117 !important; }}
                     .grid-row:nth-child(even) {{ fill:#0F172A !important; }}
             
                     /* Colores de prioridad de tareas */
@@ -579,6 +579,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
