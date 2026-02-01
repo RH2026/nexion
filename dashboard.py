@@ -377,7 +377,7 @@ with main_container:
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                         .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                         .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        .today-highlight {{ fill: #0F172A !important; opacity: 0.35 !important; }}
+                        .today-highlight {{ fill: #FF0000 !important; opacity: 0.35 !important; }}
                     </style>
                 </head>
                 <body>
@@ -408,7 +408,7 @@ with main_container:
             
             # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
             st.markdown("---")
-            st.subheader("📝 Editor de Tareas")
+            st.subheader("EDITOR DE TAREAS")
             
             # Normalización para el Data Editor (Evitar strings "nan")
             df_editor = df_master.copy()
@@ -439,7 +439,7 @@ with main_container:
             # Sincronizar columna visual
             df_editado["PROGRESO_VIEW"] = df_editado["PROGRESO"]
             
-            if st.button("💾 SINCRONIZAR CON GITHUB", use_container_width=True):
+            if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
                 df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
                 if guardar_en_github(df_guardar):
                     st.session_state.df_tareas = df_guardar
@@ -469,6 +469,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
