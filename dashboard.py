@@ -468,32 +468,66 @@ with main_container:
             
             st.components.v1.html(
                 """
-                <div class="core-container">
+                <div id="ghost-container">
                     <div class="core"></div>
-                    <div class="text">NEXION CORE: ESPERANDO SELECCIÓN</div>
+                    <div id="ghost-message"></div>
+                    <div class="hint">NEXION CORE EN REPOSO...</div>
                 </div>
+            
                 <style>
-                    .core-container {
+                    #ghost-container {
+                        height: 400px; background: #0b0e14; border-radius: 10px;
                         display: flex; flex-direction: column; align-items: center;
-                        justify-content: center; height: 350px; background: #0b0e14;
-                        border-radius: 10px; border: 1px solid #1e2530;
+                        justify-content: center; position: relative; font-family: sans-serif;
+                        border: 1px solid #1e2530; overflow: hidden;
                     }
                     .core {
-                        width: 50px; height: 50px; background: #3b82f6;
-                        border-radius: 50%; box-shadow: 0 0 20px #3b82f6, 0 0 50px #3b82f6;
-                        animation: glow 2s infinite alternate ease-in-out;
+                        width: 40px; height: 40px; background: #3b82f6; border-radius: 50%;
+                        box-shadow: 0 0 30px #3b82f6; animation: breathe 3s infinite alternate;
                     }
-                    .text {
-                        margin-top: 30px; color: #4b5563; font-size: 12px;
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        text-transform: uppercase; letter-spacing: 4px;
+                    #ghost-message {
+                        margin-top: 20px; color: #ff4b4b; font-weight: bold;
+                        font-size: 1.2rem; opacity: 0; transition: opacity 0.5s;
+                        text-align: center; max-width: 80%;
                     }
-                    @keyframes glow {
-                        from { opacity: 0.3; transform: scale(0.8) translateY(0px); }
-                        to { opacity: 1; transform: scale(1.1) translateY(-10px); }
+                    .hint { margin-top: 10px; color: #4b5563; font-size: 0.7rem; letter-spacing: 2px; }
+                    
+                    @keyframes breathe {
+                        from { transform: scale(0.9); opacity: 0.5; }
+                        to { transform: scale(1.1); opacity: 1; }
                     }
                 </style>
-                """, height=400
+            
+                <script>
+                    const messages = [
+                        "¿TE DORMISTE, RIGOBERTO? 😴",
+                        "¡EL CAFÉ SE ESTÁ ENFRIANDO! ☕",
+                        "XENOCODE DETECTÓ INACTIVIDAD... 👀",
+                        "¿ESTÁS BUSCANDO EL EMBARQUE O TE PERDISTE?",
+                        "¡EL SISTEMA SE VA A AUTO-DESTRUIR EN 3... 2...!",
+                        "REPORTANDO FALTA DE MOVIMIENTO A JYPESA... 📝"
+                    ];
+            
+                    let timer;
+                    const msgDiv = document.getElementById('ghost-message');
+            
+                    function showMessage() {
+                        const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+                        msgDiv.innerText = randomMsg;
+                        msgDiv.style.opacity = '1';
+                    }
+            
+                    function resetTimer() {
+                        msgDiv.style.opacity = '0';
+                        clearTimeout(timer);
+                        timer = setTimeout(showMessage, 5000); // 5 segundos de espera
+                    }
+            
+                    window.addEventListener('mousemove', resetTimer);
+                    window.addEventListener('keydown', resetTimer);
+                    resetTimer(); // Iniciar al cargar
+                </script>
+                """, height=420
             )
 
 # ── FOOTER FIJO ────────────────────────
@@ -502,6 +536,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
