@@ -115,6 +115,20 @@ div.stButton > button:hover {{
     border-top: 1px solid {vars_css['border']} !important;
     z-index: 999999 !important;
 }}
+
+/* Esto ahora funcionará correctamente dentro de tu f-string */
+div[data-testid="stPopoverContent"] {{
+    transition: opacity 0.3s ease-in-out !important;
+    border: 1px solid {vars_css['border']} !important;
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* Ajuste opcional para que el expander interno combine con el look NEXION */
+.stExpander {{
+    border: none !important;
+    background-color: transparent !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -307,6 +321,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
