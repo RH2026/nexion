@@ -249,51 +249,48 @@ with main_container:
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
-            CSV_URL = f"https://raw.githubusercontent.com/{{REPO_NAME}}/main/{{FILE_PATH}}"
+            CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
             
-            # ── FECHA MX ────────────────────────────────────────────────
+            # ── FUNCIONES DE FECHA Y CARGA ─────────────────────────────────────────────
             def obtener_fecha_mexico():
                 return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
             
-            # ── CARGA SEGURA ────────────────────────────────────────────
             def cargar_datos_seguro():
                 columnas = [
                     "FECHA","FECHA_FIN","IMPORTANCIA","TAREA","ULTIMO ACCION",
                     "PROGRESO","DEPENDENCIAS","TIPO","GRUPO"
                 ]
                 hoy = obtener_fecha_mexico()
-            
                 try:
-                    r = requests.get(f"{{CSV_URL}}?t={{int(time.time())}}")
+                    # Carga con bust de caché para evitar datos viejos
+                    r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if r.status_code == 200:
                         df = pd.read_csv(StringIO(r.text))
                         df.columns = [c.strip().upper() for c in df.columns]
-            
+                        
+                        # Asegurar que todas las columnas existan
                         for c in columnas:
                             if c not in df.columns:
                                 df[c] = ""
-            
+                        
+                        # Normalización de datos para evitar errores de renderizado
                         df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
                         df["FECHA_FIN"] = pd.to_datetime(df["FECHA_FIN"], errors="coerce").dt.date
-            
                         df["FECHA"] = df["FECHA"].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
                         df["FECHA_FIN"] = df["FECHA_FIN"].apply(
                             lambda x: x if isinstance(x, datetime.date) else hoy + datetime.timedelta(days=1)
                         )
-            
                         df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0).astype(int)
                         df["IMPORTANCIA"] = df["IMPORTANCIA"].fillna("Media")
                         df["TIPO"] = df["TIPO"].fillna("Tarea")
                         df["GRUPO"] = df["GRUPO"].fillna("General")
                         df["DEPENDENCIAS"] = df["DEPENDENCIAS"].fillna("")
-            
+                        
                         return df[columnas]
                 except:
                     pass
-            
                 return pd.DataFrame(columns=columnas)
             
-            # ── GUARDAR EN GITHUB ──────────────────────────────────────
             def guardar_en_github(df):
                 if not TOKEN:
                     st.error("GITHUB_TOKEN no configurado")
@@ -304,76 +301,63 @@ with main_container:
                     df_save = df.copy()
                     df_save["FECHA"] = df_save["FECHA"].astype(str)
                     df_save["FECHA_FIN"] = df_save["FECHA_FIN"].astype(str)
-                    csv = df_save.to_csv(index=False)
+                    csv_content = df_save.to_csv(index=False)
                     contents = repo.get_contents(FILE_PATH, ref="main")
                     repo.update_file(
                         contents.path,
-                        f"Sync NEXION {{obtener_fecha_mexico()}}",
-                        csv,
+                        f"Sync NEXION {obtener_fecha_mexico()}",
+                        csv_content,
                         contents.sha,
                         branch="main"
                     )
                     st.toast("🚀 Sincronizado con GitHub", icon="✅")
                     return True
                 except Exception as e:
-                    st.error(e)
+                    st.error(f"Error: {e}")
                     return False
             
-            # ── INICIALIZACIÓN ─────────────────────────────────────────
+            # ── GESTIÓN DE ESTADO ──────────────────────────────────────────────────────
             if "df_tareas" not in st.session_state:
                 st.session_state.df_tareas = cargar_datos_seguro()
             
-            # Usamos el estado de sesión para mantener los cambios vivos
+            # Copia de trabajo
             df_master = st.session_state.df_tareas.copy()
             
-            # ── 1. FILTROS Y CONTROLES (ARRIBA) ────────────────────────
+            # ── 1. FILTROS Y CONTROLES (PARTE SUPERIOR) ────────────────────────────────
             st.title("NEXION - Gestión de Logística")
             
             c1, c2 = st.columns([1, 2])
             with c1:
-                gantt_view = st.radio(
-                    "Vista del Calendario", 
-                    ["Day", "Week", "Month", "Year"], 
-                    horizontal=True, 
-                    index=0, 
-                    key="gantt_view"
-                )
+                gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_v")
             
             with c2:
                 grupos_disponibles = sorted(df_master["GRUPO"].astype(str).unique())
-                grupos_sel = st.multiselect(
-                    "Filtrar por grupo", 
-                    grupos_disponibles, 
-                    default=grupos_disponibles, 
-                    key="gantt_grupos"
-                )
+                grupos_sel = st.multiselect("Filtrar por grupo", grupos_disponibles, default=grupos_disponibles, key="gantt_g")
             
             # Filtrado de datos para el Gantt
-            df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)]
+            df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)].copy()
             
-            # Lógica de Hitos (Duración 0)
+            # 🔒 FORZAR HITOS A DURACIÓN CERO
             mask_hito = df_gantt["TIPO"].str.lower() == "hito"
             df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
             
-            # Construcción del JSON para Frappe
-            tasks = []
+            # Preparar lista de tareas para el JS
+            tasks_data = []
             for i, r in df_gantt.iterrows():
-                if not str(r["TAREA"]).strip():
-                    continue
-                
+                if not str(r["TAREA"]).strip(): continue
                 importancia = str(r["IMPORTANCIA"]).strip().lower()
-                tasks.append({
+                tasks_data.append({
                     "id": str(i),
-                    "name": f"[{{r['GRUPO']}}] {{r['TAREA']}}",
+                    "name": f"[{r['GRUPO']}] {r['TAREA']}",
                     "start": str(r["FECHA"]),
                     "end": str(r["FECHA_FIN"]),
                     "progress": int(r["PROGRESO"]),
-                    "dependencies": r["DEPENDENCIAS"],
-                    "custom_class": f"imp-{{importancia}}"
+                    "dependencies": str(r["DEPENDENCIAS"]),
+                    "custom_class": f"imp-{importancia}"
                 })
-            tasks_js = json.dumps(tasks)
+            tasks_js_str = json.dumps(tasks_data)
             
-            # ── 2. RENDERIZADO DEL GANTT (PRIMERO) ─────────────────────
+            # ── 2. RENDERIZADO GANTT (ARRIBA) ──────────────────────────────────────────
             components.html(
                 f"""
                 <html>
@@ -384,45 +368,35 @@ with main_container:
                         html, body {{ background:#111827; margin:0; padding:0; }}
                         #gantt {{ background:#0E1117; }}
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
-                        .grid-background {{ fill:#111827 !important; }}
-                        .grid-header {{ fill:#1F2937 !important; }}
+                        .grid-background {{ fill:#0b0e14 !important; }}
+                        .grid-header {{ fill:#151a24 !important; }}
                         .grid-row {{ fill:#0b0e14 !important; }}
                         .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
+                        .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.4 !important; }}
                         .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
-                        
-                        /* Colores Prioridad */
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                         .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                         .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        
-                        .today-highlight {{ fill: #0F172A !important; opacity: 0.5 !important; }}
+                        .today-highlight {{ fill: #0F172A !important; opacity: 0.35 !important; }}
                     </style>
                 </head>
                 <body>
                     <div id='gantt'></div>
                     <script>
-                        var tasks = {{tasks_js}};
-                        if(tasks && tasks.length){{
-                            var gantt_chart = new Gantt('#gantt', tasks, {{
-                                view_mode: '{{gantt_view}}',
+                        var tasks = {tasks_js_str};
+                        if(tasks.length){{
+                            var gantt = new Gantt('#gantt', tasks, {{
+                                view_mode: '{gantt_view}',
                                 bar_height: 20,
                                 padding: 40,
                                 date_format: 'YYYY-MM-DD'
                             }});
-                            
                             setTimeout(function() {{
                                 var lines = document.querySelectorAll('#gantt svg line');
                                 lines.forEach(function(line) {{
                                     var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
-                                    var y1 = line.getAttribute('y1'), y2 = line.getAttribute('y2');
-                                    // Verticales ocultas
                                     if(x1 === x2) {{ line.style.display = 'none'; }}
-                                    // Horizontales tenues
-                                    else if(y1 === y2) {{ 
-                                        line.setAttribute('stroke', '#4B5563'); 
-                                        line.setAttribute('stroke-opacity', '0.2'); 
-                                    }}
                                 }});
                             }}, 100);
                         }}
@@ -433,10 +407,15 @@ with main_container:
                 height=420, scrolling=False
             )
             
-            # ── 3. DATA EDITOR (ABAJO) ────────────────────────────────
-            st.markdown("### 📝 Editor de Tareas")
+            # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
+            st.markdown("---")
+            st.subheader("📝 Editor de Tareas")
             
+            # Normalización para el Data Editor (Evitar strings "nan")
             df_editor = df_master.copy()
+            for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
+                df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+            
             df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
             
             df_editado = st.data_editor(
@@ -447,28 +426,21 @@ with main_container:
                 column_config={
                     "FECHA": st.column_config.DateColumn("Inicio"),
                     "FECHA_FIN": st.column_config.DateColumn("Fin"),
-                    "IMPORTANCIA": st.column_config.SelectboxColumn(
-                        "Prioridad", options=["Urgente","Alta","Media","Baja"]
-                    ),
-                    "PROGRESO": st.column_config.NumberColumn(
-                        "Progreso %", min_value=0, max_value=100, step=5
-                    ),
-                    "PROGRESO_VIEW": st.column_config.ProgressColumn(
-                        "Avance", min_value=0, max_value=100
-                    ),
-                    "TAREA": st.column_config.TextColumn("Descripción Tarea"),
-                    "ULTIMO ACCION": st.column_config.TextColumn("Última Acción"),
-                    "DEPENDENCIAS": st.column_config.TextColumn("Predecesores"),
+                    "IMPORTANCIA": st.column_config.SelectboxColumn("Prioridad", options=["Urgente","Alta","Media","Baja"]),
+                    "PROGRESO": st.column_config.NumberColumn("Progreso %", min_value=0, max_value=100, step=5),
+                    "PROGRESO_VIEW": st.column_config.ProgressColumn("Avance", min_value=0, max_value=100),
+                    "TAREA": st.column_config.TextColumn("Tarea"),
+                    "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
+                    "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
                     "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
-                    "GRUPO": st.column_config.TextColumn("Grupo/Proyecto"),
+                    "GRUPO": st.column_config.TextColumn("Grupo"),
                 }
             )
             
-            # Actualizar la barra visual en tiempo real
+            # Sincronizar columna visual
             df_editado["PROGRESO_VIEW"] = df_editado["PROGRESO"]
             
-            # ── BOTÓN DE GUARDADO ─────────────────────────────────────
-            if st.button("💾 SINCRONIZAR CAMBIOS CON GITHUB", use_container_width=True):
+            if st.button("💾 SINCRONIZAR CON GITHUB", use_container_width=True):
                 df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
                 if guardar_en_github(df_guardar):
                     st.session_state.df_tareas = df_guardar
@@ -498,6 +470,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
