@@ -618,7 +618,7 @@ with main_container:
             
             with col_pdf:
                 # Botón Original de Impresión
-                if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", 
+                if st.button("🖨️ GENERAR FORMATO (PDF)", 
                              type="primary", 
                              use_container_width=True, 
                              key="btn_pdf_nexion"):
@@ -657,6 +657,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
