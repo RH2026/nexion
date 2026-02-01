@@ -483,7 +483,7 @@ with main_container:
                 ".grid-header { fill:#1F2937 !important; }"
                 ".grid-row { fill:#111827 !important; }"
                 ".grid-row:nth-child(even) { fill:#0F172A !important; }"
-                ".grid-line { stroke:#374151 !important; }"
+                ".grid-line { stroke:#252f3f !important; }"
             
                 ".today-highlight { fill:#0F172A !important; opacity:0.5 !important; }"
             
@@ -543,6 +543,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
