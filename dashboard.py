@@ -463,56 +463,133 @@ with main_container:
     elif st.session_state.menu_main == "FORMATOS":
         if st.session_state.menu_sub == "SALIDA DE PT":
             st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
+            # --- 5. LÓGICA DE CARGA (Mantener en la parte superior del script) ---
+            @st.cache_data
+            def load_inventory():
+                # Buscamos el archivo en la ruta actual o superior
+                ruta = "inventario.csv"
+                if not os.path.exists(ruta): ruta = os.path.join("..", "inventario.csv")
+                
+                try:
+                    df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
+                    df.columns = [str(c).strip().upper() for c in df.columns]
+                    return df
+                except:
+                    return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
+            
+            # --- DENTRO DE TU ESTRUCTURA DE NAVEGACIÓN ---
+            if st.session_state.menu_main == "FORMATOS" and st.session_state.menu_sub == "SALIDA DE PT":
+                
+                st.markdown(f"<p class='op-query-text'>G E N E R A D O R &nbsp; D E &nbsp; F O R M A T O S</p>", unsafe_allow_html=True)
+                
+                df_inv = load_inventory()
+            
+                # Inicialización de filas (Solo si no existen)
+                if 'rows' not in st.session_state:
+                    st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"}] * 10)
+            
+                # 1. ENCABEZADO DEL FORMATO (Estilo Dark)
+                with st.container():
+                    c_inv1, c_inv2, c_inv3 = st.columns(3)
+                    with c_inv1:
+                        f_val = st.date_input("FECHA DE OPERACIÓN", value=datetime.now(), key="f_in")
+                    with c_inv2:
+                        t_val = st.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in")
+                    with c_inv3:
+                        fol_val = st.text_input("FOLIO DE CONTROL", value="F-2026-001", key="fol_in")
+            
+                # 2. LÓGICA DE LOOKUP (Sincronizada con el Editor)
+                def lookup_pt():
+                    edits = st.session_state["editor_pt"].get("edited_rows", {})
+                    added = st.session_state["editor_pt"].get("added_rows", [])
+                    
+                    # Procesar filas nuevas
+                    for row in added:
+                        new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"}
+                        new_row.update(row)
+                        st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
+            
+                    # Procesar ediciones
+                    for idx_str, info in edits.items():
+                        idx = int(idx_str)
+                        for col, val in info.items():
+                            st.session_state.rows.at[idx, col] = val
+                        
+                        if "CODIGO" in info:
+                            val_codigo = str(info["CODIGO"]).strip().upper()
+                            if not df_inv.empty:
+                                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val_codigo]
+                                if not match.empty:
+                                    st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
+                                    st.session_state.rows.at[idx, "CODIGO"] = val_codigo
+            
+                # 3. EDITOR DE DATOS (Estilo NEXION)
+                st.markdown("<br>", unsafe_allow_html=True)
+                df_final = st.data_editor(
+                    st.session_state.rows, 
+                    num_rows="dynamic", 
+                    use_container_width=True, 
+                    key="editor_pt", 
+                    on_change=lookup_pt,
+                    column_config={
+                        "CODIGO": st.column_config.TextColumn("CÓDIGO (REF)"),
+                        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN TÉCNICA"),
+                        "CANTIDAD": st.column_config.TextColumn("CANTIDAD", width="small")
+                    }
+                )
+            
+                # 4. PREPARACIÓN DE IMPRESIÓN (HTML)
+                filas_print = df_final[df_final["CODIGO"] != ""]
+                tabla_rows = "".join([
+                    f"<tr><td>{r['CODIGO']}</td><td>{r['DESCRIPCION']}</td><td style='text-align:center;'>{r['CANTIDAD']}</td></tr>" 
+                    for _, r in filas_print.iterrows()
+                ])
+            
+                form_html = f"""
+                <div style="font-family:Arial, sans-serif; padding:30px; color:black; background:white; min-height:100vh;">
+                    <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
+                        <div style="text-align:left;">
+                            <h2 style="margin:0; letter-spacing:2px; color:#1a1f2b;">NEXION CORE</h2>
+                            <p style="margin:0; font-size:10px; color:#666;">LOGISTICS & SUPPLY CHAIN SYSTEM</p>
+                        </div>
+                        <div style="text-align:right; font-size:12px;">
+                            <p style="margin:2px 0;"><b>FOLIO:</b> {fol_val}</p>
+                            <p style="margin:2px 0;"><b>FECHA:</b> {f_val}</p>
+                            <p style="margin:2px 0;"><b>TURNO:</b> {t_val}</p>
+                        </div>
+                    </div>
+                    <h3 style="text-align:center; letter-spacing:5px; margin:40px 0; text-transform:uppercase;">Salida de Producto Terminado</h3>
+                    <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                        <thead>
+                            <tr style="background:#f2f2f2; border:1px solid black;">
+                                <th style="padding:10px; border:1px solid black;">CÓDIGO</th>
+                                <th style="padding:10px; border:1px solid black;">DESCRIPCIÓN</th>
+                                <th style="padding:10px; border:1px solid black;">CANTIDAD</th>
+                            </tr>
+                        </thead>
+                        <tbody>{tabla_rows}</tbody>
+                    </table>
+                    <div style="margin-top:100px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
+                        <div style="width:25%; border-top:1px solid black; padding-top:5px;">ENTREGÓ<br><b>Inventarios</b></div>
+                        <div style="width:25%; border-top:1px solid black; padding-top:5px;">AUTORIZÓ<br><b>Operaciones</b></div>
+                        <div style="width:25%; border-top:1px solid black; padding-top:5px;">RECIBIÓ<br><b>Logística</b></div>
+                    </div>
+                </div>
+                """
+            
+                # 5. BOTÓN DE ACCIÓN
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("EXECUTE SYSTEM PRINT (PDF)", type="primary", use_container_width=True):
+                    components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+                    st.toast("Generando documento oficial...", icon="📄")
+            
+        
         elif st.session_state.menu_sub == "PAGOS":
             st.subheader("FORMATOS > CONTROL DE PAGOS")
         else:
             # MATRIX ANIMATION
             st.subheader("CENTRO DE DOCUMENTACIÓN")
-            st.components.v1.html(
-                """
-                <div id="matrix-container" style="width: 100%;">
-                    <canvas id="matrix-canvas"></canvas>
-                    <div class="overlay-text">NEXION CORE: ESPERANDO SELECCIÓN</div>
-                </div>
-                <style>
-                    #matrix-container { height: 450px; background: #0E1117; border-radius: 10px; position: relative; border: 1px solid #1e2530; overflow: hidden; width: 100%; }
-                    #matrix-canvas { display: block; width: 100%; }
-                    .overlay-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #5d6d7e; font-family: sans-serif; font-weight: bold; letter-spacing: 10px; pointer-events: none; font-size: 0.9rem; text-transform: uppercase; text-align: center; width: 100%; animation: pulse-text 4s infinite ease-in-out; z-index: 10; }
-                    @keyframes pulse-text { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; color: #3b82f6; } }
-                </style>
-                <script>
-                    const canvas = document.getElementById('matrix-canvas');
-                    const ctx = canvas.getContext('2d');
-                    const container = document.getElementById('matrix-container');
-                    function resize() { canvas.width = container.clientWidth; canvas.height = 450; }
-                    resize();
-                    const alphabet = "01XENOCODENEXION0101";
-                    const fontSize = 14;
-                    let columns = Math.floor(canvas.width / fontSize);
-                    const drops = [];
-                    function initDrops() {
-                        columns = Math.floor(canvas.width / fontSize);
-                        for (let x = 0; x < columns; x++) {
-                            drops[x] = { currentX: x * fontSize, baseX: x * fontSize, y: Math.random() * -canvas.height, speed: Math.random() * 1.5 + 1 };
-                        }
-                    }
-                    initDrops();
-                    function draw() {
-                        ctx.fillStyle = '#0E1117'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.font = fontSize + 'px monospace';
-                        drops.forEach(drop => {
-                            const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-                            ctx.fillStyle = 'rgba(45, 55, 72, 0.15)';
-                            ctx.fillText(text, drop.currentX, drop.y);
-                            drop.y += drop.speed;
-                            if (drop.y > canvas.height) drop.y = -20;
-                        });
-                    }
-                    setInterval(draw, 30);
-                    window.addEventListener('resize', () => { resize(); initDrops(); });
-                </script>
-                """, height=470
-            )
+            
 
 
 # ── FOOTER FIJO ────────────────────────
@@ -521,6 +598,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
