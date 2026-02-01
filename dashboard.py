@@ -467,99 +467,104 @@ with main_container:
             st.subheader("CENTRO DE DOCUMENTACIÓN")            
             
             st.components.v1.html(
-            """
-            <div id="matrix-container">
-                <canvas id="matrix-canvas"></canvas>
-                <div class="overlay-text">NEXION CORE: MODO EVASIÓN</div>
-            </div>
-        
-            <style>
-                #matrix-container {
-                    height: 450px; background: #0E1117; border-radius: 10px;
-                    position: relative; border: 1px solid #1e2530; overflow: hidden;
-                }
-                #matrix-canvas { display: block; }
-                .overlay-text {
-                    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                    color: #4b5563; font-family: 'Segoe UI', sans-serif;
-                    font-weight: bold; letter-spacing: 10px; pointer-events: none;
-                    opacity: 0.2; font-size: 0.8rem; text-transform: uppercase;
-                }
-            </style>
-        
-            <script>
-                const canvas = document.getElementById('matrix-canvas');
-                const ctx = canvas.getContext('2d');
-                const container = document.getElementById('matrix-container');
-        
-                canvas.width = container.offsetWidth;
-                canvas.height = 450;
-        
-                const alphabet = "01XENOCODENEXION0101";
-                const fontSize = 14;
-                const columns = Math.floor(canvas.width / fontSize);
-                
-                // Estructura para partículas con posición X e Y dinámicas
-                const drops = [];
-                for (let x = 0; x < columns; x++) {
-                    drops[x] = {
-                        currentX: x * fontSize,
-                        baseX: x * fontSize,
-                        y: Math.random() * -canvas.height,
-                        speed: Math.random() * 2 + 1
-                    };
-                }
-        
-                let mouseX = -1000, mouseY = -1000;
-                container.addEventListener('mousemove', (e) => {
-                    const rect = container.getBoundingClientRect();
-                    mouseX = e.clientX - rect.left;
-                    mouseY = e.clientY - rect.top;
-                });
-        
-                function draw() {
-                    ctx.fillStyle = 'rgba(14, 17, 23, 0.1)';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-                    ctx.font = fontSize + 'px monospace';
-        
-                    drops.forEach(drop => {
-                        const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-                        
-                        // LÓGICA DE EVASIÓN: Calcular distancia al ratón
-                        const dx = drop.currentX - mouseX;
-                        const dy = drop.y - mouseY;
-                        const distance = Math.sqrt(dx*dx + dy*dy);
-                        const forceArea = 100;
-        
-                        if (distance < forceArea) {
-                            // Empujar hacia los lados según la proximidad
-                            const force = (forceArea - distance) / forceArea;
-                            const direction = dx > 0 ? 1 : -1;
-                            drop.currentX += direction * force * 15;
-                            ctx.fillStyle = '#3b82f6'; // Azul cuando huye
-                        } else {
-                            // Regresar suavemente a su carril original
-                            drop.currentX += (drop.baseX - drop.currentX) * 0.05;
-                            ctx.fillStyle = '#1e2530'; // Gris Ónix sutil
-                        }
-        
-                        ctx.fillText(text, drop.currentX, drop.y);
-        
-                        drop.y += drop.speed;
-        
-                        // Reiniciar cuando sale de pantalla
-                        if (drop.y > canvas.height) {
-                            drop.y = -20;
-                            drop.currentX = drop.baseX;
-                        }
+                """
+                <div id="matrix-container">
+                    <canvas id="matrix-canvas"></canvas>
+                    <div class="overlay-text">NEXION CORE: MODO EVASIÓN</div>
+                </div>
+            
+                <style>
+                    #matrix-container {
+                        height: 450px; background: #0E1117; border-radius: 10px;
+                        position: relative; border: 1px solid #1e2530; overflow: hidden;
+                    }
+                    #matrix-canvas { display: block; }
+                    .overlay-text {
+                        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        color: #1e2530; font-family: 'Segoe UI', sans-serif;
+                        font-weight: bold; letter-spacing: 12px; pointer-events: none;
+                        opacity: 0.4; font-size: 0.7rem; text-transform: uppercase;
+                    }
+                </style>
+            
+                <script>
+                    const canvas = document.getElementById('matrix-canvas');
+                    const ctx = canvas.getContext('2d');
+                    const container = document.getElementById('matrix-container');
+            
+                    canvas.width = container.offsetWidth;
+                    canvas.height = 450;
+            
+                    const alphabet = "01XENOCODENEXION0101";
+                    const fontSize = 14;
+                    const columns = Math.floor(canvas.width / fontSize);
+                    
+                    const drops = [];
+                    for (let x = 0; x < columns; x++) {
+                        drops[x] = {
+                            currentX: x * fontSize,
+                            baseX: x * fontSize,
+                            y: Math.random() * -canvas.height,
+                            speed: Math.random() * 1.5 + 1
+                        };
+                    }
+            
+                    let mouseX = -2000, mouseY = -2000;
+                    container.addEventListener('mousemove', (e) => {
+                        const rect = container.getBoundingClientRect();
+                        mouseX = e.clientX - rect.left;
+                        mouseY = e.clientY - rect.top;
                     });
-                }
-        
-                setInterval(draw, 30);
-            </script>
-            """, height=470
-        )
+            
+                    function draw() {
+                        // Fondo sólido Ónix para limpiar el rastro
+                        ctx.fillStyle = '#0E1117';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+                        ctx.font = fontSize + 'px monospace';
+            
+                        drops.forEach(drop => {
+                            const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                            
+                            const dx = drop.currentX - mouseX;
+                            const dy = drop.y - mouseY;
+                            const distance = Math.sqrt(dx*dx + dy*dy);
+                            const forceArea = 120; // Radio de influencia del ratón
+            
+                            if (distance < forceArea) {
+                                const force = (forceArea - distance) / forceArea;
+                                const direction = dx > 0 ? 1 : -1;
+                                
+                                // Movimiento de evasión
+                                drop.currentX += direction * force * 18;
+                                
+                                // AZUL BRILLANTE
+                                ctx.fillStyle = 'rgba(59, 130, 246, 1)'; 
+                                ctx.shadowBlur = 10;
+                                ctx.shadowColor = '#3b82f6';
+                            } else {
+                                // Retorno suave a posición base
+                                drop.currentX += (drop.baseX - drop.currentX) * 0.08;
+                                
+                                // CASI TRANSPARENTE (Gris muy oscuro)
+                                ctx.fillStyle = 'rgba(30, 37, 48, 0.2)'; 
+                                ctx.shadowBlur = 0;
+                            }
+            
+                            ctx.fillText(text, drop.currentX, drop.y);
+                            drop.y += drop.speed;
+            
+                            if (drop.y > canvas.height) {
+                                drop.y = -20;
+                                drop.currentX = drop.baseX;
+                            }
+                        });
+                    }
+            
+                    setInterval(draw, 30);
+                </script>
+                """, height=470
+            )
 
 # ── FOOTER FIJO ────────────────────────
 st.markdown(f"""
@@ -567,6 +572,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
