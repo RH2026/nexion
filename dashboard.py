@@ -468,66 +468,88 @@ with main_container:
             
             st.components.v1.html(
                 """
-                <div id="ghost-container">
-                    <div class="core"></div>
-                    <div id="ghost-message"></div>
-                    <div class="hint">NEXION CORE EN REPOSO...</div>
+                <div id="matrix-container">
+                    <canvas id="matrix-canvas"></canvas>
+                    <div class="overlay-text">NEXION CORE: MODO MATRIX</div>
                 </div>
             
                 <style>
-                    #ghost-container {
-                        height: 400px; background: #0b0e14; border-radius: 10px;
-                        display: flex; flex-direction: column; align-items: center;
-                        justify-content: center; position: relative; font-family: sans-serif;
-                        border: 1px solid #1e2530; overflow: hidden;
+                    #matrix-container {
+                        height: 450px; background: #0b0e14; border-radius: 10px;
+                        position: relative; border: 1px solid #1e2530; overflow: hidden;
                     }
-                    .core {
-                        width: 40px; height: 40px; background: #3b82f6; border-radius: 50%;
-                        box-shadow: 0 0 30px #3b82f6; animation: breathe 3s infinite alternate;
-                    }
-                    #ghost-message {
-                        margin-top: 20px; color: #ff4b4b; font-weight: bold;
-                        font-size: 1.2rem; opacity: 0; transition: opacity 0.5s;
-                        text-align: center; max-width: 80%;
-                    }
-                    .hint { margin-top: 10px; color: #4b5563; font-size: 0.7rem; letter-spacing: 2px; }
-                    
-                    @keyframes breathe {
-                        from { transform: scale(0.9); opacity: 0.5; }
-                        to { transform: scale(1.1); opacity: 1; }
+                    #matrix-canvas { display: block; }
+                    .overlay-text {
+                        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        color: #00FF00; font-family: 'Courier New', Courier, monospace;
+                        font-weight: bold; letter-spacing: 5px; pointer-events: none;
+                        text-shadow: 0 0 10px #00FF00; font-size: 1.2rem;
                     }
                 </style>
             
                 <script>
-                    const messages = [
-                        "¿TE DORMISTE, RIGOBERTO? 😴",
-                        "¡EL CAFÉ SE ESTÁ ENFRIANDO! ☕",
-                        "XENOCODE DETECTÓ INACTIVIDAD... 👀",
-                        "¿ESTÁS BUSCANDO EL EMBARQUE O TE PERDISTE?",
-                        "¡EL SISTEMA SE VA A AUTO-DESTRUIR EN 3... 2...!",
-                        "REPORTANDO FALTA DE MOVIMIENTO A JYPESA... 📝"
-                    ];
+                    const canvas = document.getElementById('matrix-canvas');
+                    const ctx = canvas.getContext('2d');
+                    const container = document.getElementById('matrix-container');
             
-                    let timer;
-                    const msgDiv = document.getElementById('ghost-message');
+                    // Ajustar tamaño al contenedor
+                    canvas.width = container.offsetWidth;
+                    canvas.height = 450;
             
-                    function showMessage() {
-                        const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-                        msgDiv.innerText = randomMsg;
-                        msgDiv.style.opacity = '1';
+                    const katakana = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン";
+                    const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                    const nums = "0123456789";
+                    const alphabet = katakana + latin + nums;
+            
+                    const fontSize = 16;
+                    const columns = canvas.width / fontSize;
+                    const rainDrops = Array.from({ length: columns }).fill(1);
+            
+                    // Posición del ratón
+                    let mouseX = -100, mouseY = -100;
+            
+                    container.addEventListener('mousemove', (e) => {
+                        const rect = container.getBoundingClientRect();
+                        mouseX = e.clientX - rect.left;
+                        mouseY = e.clientY - rect.top;
+                    });
+            
+                    function draw() {
+                        // Fondo semi-transparente para el efecto rastro
+                        ctx.fillStyle = 'rgba(11, 14, 20, 0.05)';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+                        ctx.font = fontSize + 'px monospace';
+            
+                        for (let i = 0; i < rainDrops.length; i++) {
+                            const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                            const x = i * fontSize;
+                            const y = rainDrops[i] * fontSize;
+            
+                            // INTERACCIÓN: Si el ratón está cerca, el texto brilla en blanco o se aleja
+                            const distance = Math.sqrt((x - mouseX) ** 2 + (y - mouseY) ** 2);
+                            
+                            if (distance < 80) {
+                                ctx.fillStyle = '#FFFFFF'; // Brillo al tocar el mouse
+                                ctx.shadowBlur = 10;
+                                ctx.shadowColor = '#FFFFFF';
+                            } else {
+                                ctx.fillStyle = '#00FF00'; // Verde puro que pediste
+                                ctx.shadowBlur = 0;
+                            }
+            
+                            ctx.fillText(text, x, y);
+            
+                            if (y > canvas.height && Math.random() > 0.975) {
+                                rainDrops[i] = 0;
+                            }
+                            rainDrops[i]++;
+                        }
                     }
             
-                    function resetTimer() {
-                        msgDiv.style.opacity = '0';
-                        clearTimeout(timer);
-                        timer = setTimeout(showMessage, 5000); // 5 segundos de espera
-                    }
-            
-                    window.addEventListener('mousemove', resetTimer);
-                    window.addEventListener('keydown', resetTimer);
-                    resetTimer(); // Iniciar al cargar
+                    setInterval(draw, 30);
                 </script>
-                """, height=420
+                """, height=470
             )
 
 # ── FOOTER FIJO ────────────────────────
@@ -536,6 +558,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
