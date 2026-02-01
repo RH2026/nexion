@@ -456,11 +456,47 @@ with main_container:
     elif st.session_state.menu_main == "FORMATOS":
         if st.session_state.menu_sub == "SALIDA DE PT":
             st.subheader("FORMATOS > SALIDA DE PRODUCTO TERMINADO")
+            # Aquí iría el contenido de Salida de PT
+            
         elif st.session_state.menu_sub == "PAGOS":
             st.subheader("FORMATOS > CONTROL DE PAGOS")
+            # Aquí iría el contenido de Pagos
+            
         else:
+            # ── AQUÍ INTEGRAMOS LA ANIMACIÓN DE BIENVENIDA ────────────────
             st.subheader("CENTRO DE DOCUMENTACIÓN")
-            st.write("Seleccione un formato del submenú superior.")
+            
+            st.components.v1.html(
+                """
+                <div class="core-container">
+                    <div class="core"></div>
+                    <div class="text">NEXION CORE: ESPERANDO SELECCIÓN</div>
+                </div>
+                <style>
+                    .core-container {
+                        display: flex; flex-direction: column; align-items: center;
+                        justify-content: center; height: 350px; background: #0b0e14;
+                        border-radius: 10px; border: 1px solid #1e2530;
+                    }
+                    .core {
+                        width: 50px; height: 50px; background: #3b82f6;
+                        border-radius: 50%; box-shadow: 0 0 20px #3b82f6, 0 0 50px #3b82f6;
+                        animation: glow 2s infinite alternate ease-in-out;
+                    }
+                    .text {
+                        margin-top: 30px; color: #4b5563; font-size: 12px;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        text-transform: uppercase; letter-spacing: 4px;
+                    }
+                    @keyframes glow {
+                        from { opacity: 0.3; transform: scale(0.8) translateY(0px); }
+                        to { opacity: 1; transform: scale(1.1) translateY(-10px); }
+                    }
+                </style>
+                """, height=400
+            )
+            
+            st.info("Seleccione un formato del submenú superior para comenzar el proceso.")
 
 # ── FOOTER FIJO ────────────────────────
 st.markdown(f"""
@@ -468,6 +504,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
