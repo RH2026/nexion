@@ -434,42 +434,42 @@ with main_container:
             
             # ── HTML GANTT ─────────────────────────────────────────────
             components.html(
-            "<html>"
-            "<head>"
-            "<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>"
-            "<script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>"
-        
-            "<style>"
-            "html, body { background:#111827; margin:0; padding:0; }"
-            "#gantt { background:#111827; }"
-            ".gantt-container { background:#111827 !important; }"
-            "svg { background:#111827 !important; }"
-        
-            ".gantt text { fill:#E5E7EB !important; font-size:12px; }"
-        
-            ".grid-background { fill:#111827 !important; }"
-            ".grid-header { fill:#1F2937 !important; }"
-            ".grid-row { fill:#111827 !important; }"
-            ".grid-row:nth-child(even) { fill:#0F172A !important; }"
-            ".grid-line { stroke:#374151 !important; }"
-        
+                "<html>"
+                "<head>"
+                "<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>"
+                "<script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>"
             
-            ".today-highlight { fill:#1F2937 !important; opacity:0.9 !important; }"
-        
-            ".bar { rx:3; ry:3; }"
-            ".bar-progress { fill-opacity:0.85; }"
-        
+                "<style>"
+                "html, body { background:#111827; margin:0; padding:0; }"
+                "#gantt { background:#111827; }"
+                ".gantt-container { background:#111827 !important; }"
+                "svg { background:#111827 !important; }"
             
-            ".bar-wrapper.imp-urgente .bar { fill:#DC2626 !important; }"
-            ".bar-wrapper.imp-alta    .bar { fill:#F97316 !important; }"
-            ".bar-wrapper.imp-media   .bar { fill:#3B82F6 !important; }"
-            ".bar-wrapper.imp-baja    .bar { fill:#22C55E !important; }"
-            "</style>"
-            "</head>"
-        
-            "<body>"
-            "<div id='gantt'></div>"
-        )
+                ".gantt text { fill:#E5E7EB !important; font-size:12px; }"
+            
+                ".grid-background { fill:#111827 !important; }"
+                ".grid-header { fill:#1F2937 !important; }"
+                ".grid-row { fill:#111827 !important; }"
+                ".grid-row:nth-child(even) { fill:#0F172A !important; }"
+                ".grid-line { stroke:#374151 !important; }"
+            
+                
+                ".today-highlight { fill:#1F2937 !important; opacity:0.9 !important; }"
+            
+                ".bar { rx:3; ry:3; }"
+                ".bar-progress { fill-opacity:0.85; }"
+            
+                
+                ".bar-wrapper.imp-urgente .bar { fill:#DC2626 !important; }"
+                ".bar-wrapper.imp-alta    .bar { fill:#F97316 !important; }"
+                ".bar-wrapper.imp-media   .bar { fill:#3B82F6 !important; }"
+                ".bar-wrapper.imp-baja    .bar { fill:#22C55E !important; }"
+                "</style>"
+                "</head>"
+            
+                "<body>"
+                "<div id='gantt'></div>"
+            )
             
                 "<script>"
                 "var tasks=" + tasks_js + ";"
@@ -519,6 +519,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
