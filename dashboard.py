@@ -427,58 +427,29 @@ with main_container:
                 })
             
             st.write("Tareas para Gantt:", len(tasks))
+            st.code(tasks_js, language="json")
             
-            tasks_js = json.dumps(tasks)
-            
+                 
             # ── HTML FRAPPE (NO F-STRING) ──────────────────────────────────────────
-            html_gantt = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-            <link rel="stylesheet"
-             href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
-            <script
-             src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js">
-            </script>
-            
-            <style>
-            body {{ background:#0E1117; margin:0; }}
-            #gantt {{ height:480px; }}
-            
-            .bar.urgente {{ fill:#FF3131; }}
-            .bar.alta {{ fill:#FF914D; }}
-            .bar.media {{ fill:#00D2FF; }}
-            .bar.baja {{ fill:#4B5563; }}
-            </style>
-            </head>
-            
-            <body>
-            <div id="gantt"></div>
-            
-            <script>
-            document.addEventListener("DOMContentLoaded", function () {{
-                const tasks = __TASKS__;
-                if (!tasks || tasks.length === 0) return;
-            
-                new Gantt("#gantt", tasks, {{
-                    view_mode: "__VIEW__",
-                    bar_height: 16,
-                    padding: 40,
-                    date_format: "YYYY-MM-DD"
-                }});
-            });
-            </script>
-            </body>
-            </html>
-            """
-            
-            html_gantt = (
-                html_gantt
-                .replace("__TASKS__", tasks_js)
-                .replace("__VIEW__", gantt_view)
+            tasks_js = json.dumps(tasks)
+
+            components.html(
+                "<html><head>"
+                "<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>"
+                "<script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>"
+                "</head><body style='background:#111827;'>"
+                "<div id='gantt'></div>"
+                "<script>"
+                "document.addEventListener('DOMContentLoaded', function(){"
+                "var tasks=" + tasks_js + ";"
+                "if(!tasks || tasks.length===0){console.log('sin tareas'); return;}"
+                "new Gantt('#gantt', tasks, {view_mode:'Day', bar_height:20, padding:40});"
+                "});"
+                "</script>"
+                "</body></html>",
+                height=520,
+                scrolling=False
             )
-            
-            components.html(html_gantt, height=520, scrolling=False)
 
         
         elif st.session_state.menu_sub == "QUEJAS":
@@ -505,6 +476,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
