@@ -470,7 +470,7 @@ with main_container:
                 """
                 <div id="matrix-container" style="width: 100%;">
                     <canvas id="matrix-canvas"></canvas>
-                    <div class="overlay-text">NEXION CORE: MODO EVASIÓN</div>
+                    <div class="overlay-text">NEXION CORE: ESPERANDO SELECCIÓN</div>
                 </div>
             
                 <style>
@@ -485,7 +485,7 @@ with main_container:
                         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
                         color: #5d6d7e; 
                         font-family: 'Segoe UI', Tahoma, sans-serif;
-                        font-weight: bold; letter-spacing: 12px; pointer-events: none;
+                        font-weight: bold; letter-spacing: 10px; pointer-events: none;
                         font-size: 0.9rem; text-transform: uppercase;
                         text-align: center; width: 100%;
                         animation: pulse-text 4s infinite ease-in-out;
@@ -588,6 +588,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
