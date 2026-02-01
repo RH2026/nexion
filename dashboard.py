@@ -434,8 +434,9 @@ with main_container:
             st.write("Tareas para Gantt:", len(tasks))
             tasks_js = json.dumps(tasks)
 
-            components.html(
-            f"""
+            tasks_js = json.dumps(tasks)
+
+            html_gantt = """
             <!DOCTYPE html>
             <html>
             <head>
@@ -459,43 +460,23 @@ with main_container:
                 overflow: hidden;
             }}
             
-            /* Texto */
             .gantt-container text {{
                 fill: #E0E6ED !important;
                 font-size: 11px;
             }}
             
-            /* Grid */
-            .grid-background {{
-                fill: #0E1117;
-            }}
+            .grid-background {{ fill: #0E1117; }}
+            .grid-row {{ fill: #1A1F2B; }}
+            .grid-row:nth-child(even) {{ fill: #151A23; }}
+            .grid-header {{ fill: #1A1F2B; }}
             
-            .grid-row {{
-                fill: #1A1F2B;
-            }}
-            
-            .grid-row:nth-child(even) {{
-                fill: #151A23;
-            }}
-            
-            .grid-header {{
-                fill: #1A1F2B;
-            }}
-            
-            /* Barras */
-            .bar {{
-                rx: 2;
-            }}
-            
-            .bar-progress {{
-                fill-opacity: 0.85;
-            }}
+            .bar {{ rx: 2; }}
+            .bar-progress {{ fill-opacity: 0.85; }}
             
             .bar.urgente {{ fill: #FF3131; }}
             .bar.alta {{ fill: #FF914D; }}
             .bar.media {{ fill: #00D2FF; }}
             .bar.baja {{ fill: #4B5563; }}
-            
             </style>
             </head>
             
@@ -504,14 +485,14 @@ with main_container:
             
             <script>
             document.addEventListener("DOMContentLoaded", function () {{
-                const tasks = {tasks_js};
+                const tasks = __TASKS__;
             
                 if (!tasks || tasks.length === 0) {{
-                    console.log("No hay tareas");
+                    console.log("No hay tareas para renderizar");
                     return;
                 }}
             
-                setTimeout(() => {{
+                setTimeout(function () {{
                     new Gantt("#gantt", tasks, {{
                         view_mode: "Day",
                         bar_height: 16,
@@ -519,15 +500,15 @@ with main_container:
                         date_format: "YYYY-MM-DD",
                         custom_popup_html: function(task) {{
                             return `
-                              <div style="padding:10px;
-                                          background:#1A1F2B;
-                                          color:#E0E6ED;
-                                          border-radius:4px">
+                            <div style="padding:10px;
+                                        background:#1A1F2B;
+                                        color:#E0E6ED;
+                                        border-radius:4px">
                                 <b>${{task.name}}</b><br>
                                 Progreso: ${{task.progress}}%<br>
                                 Inicio: ${{task.start}}<br>
                                 Fin: ${{task.end}}
-                              </div>`;
+                            </div>`;
                         }}
                     });
                 }}, 200);
@@ -535,9 +516,12 @@ with main_container:
             </script>
             </body>
             </html>
-            """,
-            height=520,
-            scrolling=False
+            """
+            
+            components.html(
+                html_gantt.replace("__TASKS__", tasks_js),
+                height=520,
+                scrolling=False
             )
 
         
@@ -565,6 +549,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
