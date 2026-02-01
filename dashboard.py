@@ -468,24 +468,29 @@ with main_container:
             
             st.components.v1.html(
                 """
-                <div class="loader-container">
-                    <div class="radar"></div>
-                    <p>ESPERANDO SELECCIÓN DE GRUPO...</p>
+                <div class="core-container">
+                    <div class="core"></div>
+                    <div class="text">NEXION CORE: ESPERANDO SELECCIÓN</div>
                 </div>
                 <style>
-                    .loader-container {
+                    .core-container {
                         display: flex; flex-direction: column; align-items: center;
-                        justify-content: center; height: 400px; background: #0b0e14;
-                        color: #3b82f6; font-family: monospace; letter-spacing: 2px;
+                        justify-content: center; height: 350px; background: #0b0e14;
+                        border-radius: 10px; border: 1px solid #1e2530;
                     }
-                    .radar {
-                        width: 60px; height: 60px; border: 2px solid #3b82f6;
-                        border-radius: 50%; position: relative; margin-bottom: 20px;
-                        animation: pulse 2s infinite;
+                    .core {
+                        width: 50px; height: 50px; background: #3b82f6;
+                        border-radius: 50%; box-shadow: 0 0 20px #3b82f6, 0 0 50px #3b82f6;
+                        animation: glow 2s infinite alternate ease-in-out;
                     }
-                    @keyframes pulse {
-                        0% { transform: scale(0.5); opacity: 1; }
-                        100% { transform: scale(1.5); opacity: 0; }
+                    .text {
+                        margin-top: 30px; color: #4b5563; font-size: 12px;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        text-transform: uppercase; letter-spacing: 4px;
+                    }
+                    @keyframes glow {
+                        from { opacity: 0.3; transform: scale(0.8) translateY(0px); }
+                        to { opacity: 1; transform: scale(1.1) translateY(-10px); }
                     }
                 </style>
                 """, height=400
@@ -497,6 +502,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
