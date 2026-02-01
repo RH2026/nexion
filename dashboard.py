@@ -137,10 +137,10 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── NUEVO HEADER CON MENÚ POPOVER ──────────────────────────
+# ── NUEVO HEADER CON SUBMENÚS INTEGRADOS ──────────────────────────
 header_zone = st.container()
 with header_zone:
-    c1, c2, c3 = st.columns([1.2, 0.5, 5], vertical_alignment="center")
+    c1, c2, c3 = st.columns([1.2, 0.6, 4.9], vertical_alignment="center")
     
     with c1:
         try:
@@ -150,36 +150,47 @@ with header_zone:
             st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0; color:{vars_css['text']};'>NEXION</h3>", unsafe_allow_html=True)
 
     with c2:
-        # MENÚ HAMBURGUESA INTEGRADO
+        # MENÚ HAMBURGUESA CON SUBMENÚS TIPO ACORDEÓN
         with st.popover("☰", use_container_width=True):
-            st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>SISTEMA</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
             
-            main_menus = ["TRACKING", "SEGUIMIENTO", "REPORTES", "FORMATOS"]
-            for m in main_menus:
-                if st.button(m, use_container_width=True, key=f"pop_{m}"):
-                    st.session_state.menu_main = m
-                    st.session_state.menu_sub = "GENERAL"
-                    st.rerun()
-
-    with c3:
-        # SUBMENÚS DINÁMICOS SEGÚN SELECCIÓN DEL POPOVER
-        sub_map = {
-            "TRACKING": [],
-            "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
-            "REPORTES": ["APQ", "OPS", "OTD"],
-            "FORMATOS": ["SALIDA DE PT", "PAGOS"]
-        }
-        
-        current_subs = sub_map.get(st.session_state.menu_main, [])
-        if current_subs:
-            cols_sub = st.columns(len(current_subs) + 1)
-            for i, s in enumerate(current_subs):
-                with cols_sub[i]:
-                    sub_activo = st.session_state.menu_sub == s
-                    sub_label = f"» {s}" if sub_activo else s
-                    if st.button(sub_label, use_container_width=True, key=f"sub_{s}"):
+            # --- SECCIÓN TRACKING (Sin submenús) ---
+            if st.button("TRACKING", use_container_width=True, key="main_trk"):
+                st.session_state.menu_main = "TRACKING"
+                st.session_state.menu_sub = "GENERAL"
+                st.rerun()
+            
+            # --- SECCIÓN SEGUIMIENTO (Con submenús) ---
+            with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                for s in ["TRK", "GANTT", "QUEJAS"]:
+                    sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                    if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
+                        st.session_state.menu_main = "SEGUIMIENTO"
                         st.session_state.menu_sub = s
                         st.rerun()
+
+            # --- SECCIÓN REPORTES (Con submenús) ---
+            with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                for s in ["APQ", "OPS", "OTD"]:
+                    sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                    if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
+                        st.session_state.menu_main = "REPORTES"
+                        st.session_state.menu_sub = s
+                        st.rerun()
+
+            # --- SECCIÓN FORMATOS (Con submenús) ---
+            with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                for s in ["SALIDA DE PT", "PAGOS"]:
+                    sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                    if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
+                        st.session_state.menu_main = "FORMATOS"
+                        st.session_state.menu_sub = s
+                        st.rerun()
+
+    with c3:
+        # Espacio libre o indicadores de estado (opcional)
+        if st.session_state.menu_sub != "GENERAL":
+            st.markdown(f"<p style='font-size:10px; color:{vars_css['sub']}; margin:0;'>{st.session_state.menu_main} / {st.session_state.menu_sub}</p>", unsafe_allow_html=True)
 
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.3;'>", unsafe_allow_html=True)
 
@@ -277,6 +288,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
