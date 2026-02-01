@@ -453,13 +453,11 @@ with main_container:
                 ".grid-row:nth-child(even) { fill:#0F172A !important; }"
                 ".grid-line { stroke:#374151 !important; }"
             
-                
                 ".today-highlight { fill:#1F2937 !important; opacity:0.9 !important; }"
             
                 ".bar { rx:3; ry:3; }"
                 ".bar-progress { fill-opacity:0.85; }"
             
-                
                 ".bar-wrapper.imp-urgente .bar { fill:#DC2626 !important; }"
                 ".bar-wrapper.imp-alta    .bar { fill:#F97316 !important; }"
                 ".bar-wrapper.imp-media   .bar { fill:#3B82F6 !important; }"
@@ -469,23 +467,17 @@ with main_container:
             
                 "<body>"
                 "<div id='gantt'></div>"
-                )
             
                 "<script>"
                 "var tasks=" + tasks_js + ";"
-            
-                "setTimeout(function(){"
-                " if(!tasks || tasks.length===0){ return; }"
-            
-                " document.getElementById('gantt').innerHTML='';"
-            
-                " new Gantt('#gantt', tasks, {"
-                f"  view_mode:'{gantt_view}',"
-                "  bar_height:20,"
-                "  padding:40,"
-                "  date_format:'YYYY-MM-DD'"
-                " });"
-                "},150);"
+                "if(tasks && tasks.length){"
+                "new Gantt('#gantt', tasks, {"
+                f"view_mode:'{gantt_view}',"
+                "bar_height:20,"
+                "padding:40,"
+                "date_format:'YYYY-MM-DD'"
+                "});"
+                "}"
                 "</script>"
             
                 "</body>"
@@ -519,6 +511,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
