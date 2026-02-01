@@ -516,7 +516,6 @@ with main_container:
                 "bar_height:20,"
                 "padding:40,"
                 "date_format:'YYYY-MM-DD'"
-                "show_milestones:true"
                 "});"
                 "}"
                 "</script>"
@@ -552,6 +551,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
