@@ -439,36 +439,28 @@ with main_container:
             df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
             
             # ── FRAPPE GANTT ───────────────────────────────────────────
-
-            # 🔒 COPIA SEGURA
-            df_gantt = df.copy()
-            
             # 🔒 FORZAR HITOS A DURACIÓN CERO
-            mask_hito = df_gantt["TIPO"].astype(str).str.lower() == "hito"
+            # Esto asegura que si la tarea es un "hito", la fecha de fin sea igual a la de inicio
+            mask_hito = df_gantt["TIPO"].str.lower() == "hito"
             df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
             
-            # 🔒 LISTA SIEMPRE DEFINIDA
             tasks = []
-            
             for i, r in df_gantt.iterrows():
-            
+                # Saltamos filas con nombres de tarea vacíos
                 if str(r["TAREA"]).strip() == "":
                     continue
             
                 importancia = str(r["IMPORTANCIA"]).strip().lower()
-                es_hito = str(r["TIPO"]).strip().lower() == "hito"
             
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
                     "start": str(r["FECHA"]),
                     "end": str(r["FECHA_FIN"]),
-                    "progress": 0 if es_hito else int(r["PROGRESO"]),
+                    "progress": int(r["PROGRESO"]),
                     "dependencies": r["DEPENDENCIAS"],
-                    "custom_class": f"imp-{importancia}",
-                    "milestone": es_hito  # 🔷 CLAVE REAL
+                    "custom_class": f"imp-{importancia}"  # Para tus estilos CSS
                 })
-            
             # ── JSON ───────────────────────────────────────────────────
             tasks_js = json.dumps(tasks)
             
@@ -551,6 +543,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
