@@ -464,7 +464,7 @@ with main_container:
             
         else:
             # ── AQUÍ INTEGRAMOS LA ANIMACIÓN DE BIENVENIDA ────────────────
-            st.subheader("CENTRO DE DOCUMENTACIÓN")
+            st.subheader("CENTRO DE DOCUMENTACIÓN")            
             
             st.components.v1.html(
                 """
@@ -482,8 +482,8 @@ with main_container:
                     .overlay-text {
                         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
                         color: #4b5563; font-family: 'Segoe UI', sans-serif;
-                        font-weight: bold; letter-spacing: 8px; pointer-events: none;
-                        opacity: 0.5; font-size: 1rem;
+                        font-weight: bold; letter-spacing: 10px; pointer-events: none;
+                        opacity: 0.3; font-size: 0.9rem; text-transform: uppercase;
                     }
                 </style>
             
@@ -495,7 +495,8 @@ with main_container:
                     canvas.width = container.offsetWidth;
                     canvas.height = 450;
             
-                    const alphabet = "01010101XENOCODENEXIONLOGISTICA0101";
+                    // Mezcla de código binario y tu marca personal
+                    const alphabet = "01XENOCODENEXION0101";
                     const fontSize = 14;
                     const columns = canvas.width / fontSize;
                     const rainDrops = Array.from({ length: columns }).fill(1);
@@ -508,7 +509,7 @@ with main_container:
                     });
             
                     function draw() {
-                        // Rastro más oscuro para que se pierda con el fondo
+                        // Rastro muy oscuro que coincide con tu fondo Ónix
                         ctx.fillStyle = 'rgba(14, 17, 23, 0.1)';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
             
@@ -521,12 +522,14 @@ with main_container:
             
                             const distance = Math.sqrt((x - mouseX) ** 2 + (y - mouseY) ** 2);
                             
+                            // Efecto al pasar el ratón: Azul sutil en lugar de blanco brillante
                             if (distance < 100) {
-                                ctx.fillStyle = '#3b82f6'; // Azul suave al pasar el mouse
-                                ctx.shadowBlur = 5;
+                                ctx.fillStyle = '#3b82f6';
+                                ctx.shadowBlur = 8;
                                 ctx.shadowColor = '#3b82f6';
                             } else {
-                                ctx.fillStyle = '#1e2530'; // Un gris azulado apenas visible
+                                // Color base: Un gris azulado muy oscuro (apenas visible)
+                                ctx.fillStyle = '#1e2530';
                                 ctx.shadowBlur = 0;
                             }
             
@@ -539,7 +542,7 @@ with main_container:
                         }
                     }
             
-                    setInterval(draw, 40);
+                    setInterval(draw, 35);
                 </script>
                 """, height=470
             )
@@ -550,6 +553,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
