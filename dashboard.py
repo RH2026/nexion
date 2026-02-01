@@ -469,7 +469,7 @@ with main_container:
             
                 "<body>"
                 "<div id='gantt'></div>"
-            )
+                )
             
                 "<script>"
                 "var tasks=" + tasks_js + ";"
@@ -519,6 +519,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
