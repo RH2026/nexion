@@ -409,9 +409,8 @@ with main_container:
             
             df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
             
-            # ── FRAPPE TASKS ───────────────────────────────────────────────────────
+            # ── FRAPPE GANTT ───────────────────────────────────────────
             tasks = []
-            
             for i, r in df_gantt.iterrows():
                 if str(r["TAREA"]).strip() == "":
                     continue
@@ -422,17 +421,16 @@ with main_container:
                     "start": str(r["FECHA"]),
                     "end": str(r["FECHA_FIN"]),
                     "progress": int(r["PROGRESO"]),
-                    "dependencies": r["DEPENDENCIAS"],
-                    "custom_class": r["IMPORTANCIA"].lower()
+                    "dependencies": r["DEPENDENCIAS"]
                 })
             
-            st.write("Tareas para Gantt:", len(tasks))
+            # 👇 PRIMERO convertir a JSON
+            tasks_js = json.dumps(tasks)
+            
+            # 👇 AHORA sí puedes inspeccionarlo
             st.code(tasks_js, language="json")
             
-                 
-            # ── HTML FRAPPE (NO F-STRING) ──────────────────────────────────────────
-            tasks_js = json.dumps(tasks)
-
+            # 👇 Y LUEGO renderizar HTML
             components.html(
                 "<html><head>"
                 "<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>"
@@ -476,6 +474,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
