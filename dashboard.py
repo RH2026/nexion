@@ -475,7 +475,7 @@ with main_container:
             
                 <style>
                     html, body {{ background:#111827; margin:0; padding:0; }}
-                    #gantt {{ background:#ffffff; }}
+                    #gantt {{ background:#0E1117; }}
             
                     /* Flechas de dependencia */
                     .arrow {{
@@ -579,6 +579,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
