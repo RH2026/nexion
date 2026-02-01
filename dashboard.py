@@ -582,11 +582,30 @@ with main_container:
             </div>
             """
             
-            # ── 8. BOTÓN DE ACCIÓN FINAL ───────────────────────────
+            # ── 8. BOTONES DE ACCIÓN FINAL ───────────────────────────
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
-                components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-                st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+            
+            # Creamos dos columnas: una para el PDF (grande) y otra para actualizar (pequeña)
+            col_pdf, col_reset = st.columns([4, 1])
+            
+            with col_pdf:
+                if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
+                    components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+                    st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
+            
+            with col_reset:
+                if st.button("🔄 ACTUALIZAR", use_container_width=True, help="Borrar datos y generar nuevo folio"):
+                    # Borramos el folio para que se genere uno nuevo al recargar
+                    if 'folio_nexion' in st.session_state:
+                        del st.session_state.folio_nexion
+                    
+                    # Limpiamos la tabla de materiales
+                    st.session_state.rows = pd.DataFrame([
+                        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
+                    ] * 10)
+                    
+                    # Forzamos recarga para aplicar cambios
+                    st.rerun()
                         
                     
     elif st.session_state.menu_sub == "PAGOS":
@@ -603,6 +622,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
