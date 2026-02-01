@@ -38,7 +38,16 @@ st.markdown(f"""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 /* 1. Limpieza de Interfaz */
-header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
+header, footer, [data-testid="stHeader"] {{
+    visibility: hidden;
+    height: 0px;
+}}
+
+/* APP BASE */
+html, body {{
+    background-color: {vars_css['bg']} !important;
+    color: {vars_css['text']} !important;
+}}
 
 .stApp {{ 
     background-color: {vars_css['bg']} !important; 
@@ -46,22 +55,24 @@ header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
     font-family: 'Inter', sans-serif !important; 
 }}
 
+/* CONTENEDOR PRINCIPAL */
 .block-container {{ 
     padding-top: 0.8rem !important; 
     padding-bottom: 5rem !important; 
+    background-color: {vars_css['bg']} !important;
 }}
 
-/* 2. ANIMACIÓN DE ENTRADA (Sintaxis blindada) */
+/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
 @keyframes fadeInUp {{ 
     from {{ opacity: 0; transform: translateY(15px); }} 
     to {{ opacity: 1; transform: translateY(0); }} 
 }}
 
-[data-testid="stVerticalBlock"] > div:not(.element-container:has(.footer)) {{ 
-    animation: fadeInUp 0.6s ease-out; 
+[data-testid="stVerticalBlock"] > div {{
+    animation: fadeInUp 0.6s ease-out;
 }}
 
-/* 3. TÍTULOS Y OPERATIONAL QUERY (Centrado Garantizado) */
+/* 3. TÍTULOS Y OPERATIONAL QUERY */
 h3, .op-query-text {{ 
     font-size: 11px !important; 
     letter-spacing: 8px !important; 
@@ -73,7 +84,7 @@ h3, .op-query-text {{
     width: 100% !important; 
 }}
 
-/* 4. BOTONES SLIM CON HOVER OSCURO */
+/* 4. BOTONES SLIM */
 div.stButton > button {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -95,7 +106,7 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* 5. INPUT DE BÚSQUEDA Y TEXTO OPERATIONAL */
+/* 5. INPUTS */
 .stTextInput input {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -106,7 +117,18 @@ div.stButton > button:hover {{
     letter-spacing: 2px; 
 }}
 
-/* 6. FOOTER FIJO (Blindado) */
+/* DATA EDITOR */
+[data-testid="stDataEditor"] {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+}}
+
+[data-testid="stDataEditor"] * {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+}}
+
+/* 6. FOOTER FIJO */
 .footer {{ 
     position: fixed; 
     bottom: 0 !important; 
@@ -124,18 +146,16 @@ div.stButton > button:hover {{
     transform: none !important; 
 }}
 
-/* 7. REPARACIÓN PARA GRÁFICOS (Asegura que las barras se vean) */
-.stPlotlyChart {{ 
-    visibility: visible !important; 
-    opacity: 1 !important; 
-    min-height: 300px !important; 
+/* 7. GRÁFICOS / IFRAME (PLOTLY + FRAPPE) */
+.stPlotlyChart {{
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 300px !important;
 }}
 
-/* Evitar que la animación oculte el gráfico */
-[data-testid="stVerticalBlock"] > div:has(div.stPlotlyChart) {{ 
-    animation: none !important; 
-    transform: none !important; 
-    opacity: 1 !important; 
+iframe {{
+    background-color: {vars_css['bg']} !important;
+    border: 1px solid {vars_css['border']} !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -414,82 +434,105 @@ with main_container:
             st.write("Tareas para Gantt:", len(tasks))
             components.html(
             f"""
-            <link rel="stylesheet"
-             href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
-            
-            <script
-             src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js">
-            </script>
-            
-            <style>
-              body {{
-                background: #0E1117;
-              }}
-            
-              #gantt {{
-                width: 100%;
-                height: 420px;
-                background: #0E1117;
-              }}
-            
-              /* Importancia */
-              .bar.urgente {{ fill: #FF3131; }}
-              .bar.alta {{ fill: #FF914D; }}
-              .bar.media {{ fill: #00D2FF; }}
-              .bar.baja {{ fill: #4B5563; }}
-            
-              /* Hitos */
-              .bar.milestone {{
-                fill: #FFD700;
-              }}
-            
-              /* Texto */
-              .gantt-container {{
-                background: #0E1117;
-                color: #E0E6ED;
-              }}
-            
-              .grid-header, .lower-text {{
-                fill: #8892B0 !important;
-              }}
-            </style>
-            
-            <div id="gantt"></div>
-            
             <script>
-              const tasks = {json.dumps(tasks)};
-              let gantt = null;
-            
-              function renderGantt() {{
-                if (!tasks || tasks.length === 0) return;
-            
-                gantt = new Gantt("#gantt", tasks, {{
-                  view_mode: "{gantt_view}",
-                  bar_height: 18,
-                  padding: 50,
-                  date_format: "YYYY-MM-DD",
-            
-                  on_date_change: function(task, start, end) {{
-                    window.parent.postMessage({{
-                      type: "gantt_update",
-                      id: task.id,
-                      start: start,
-                      end: end
-                    }}, "*");
-                  }}
-                }});
-              }}
-            
-              if (document.readyState === "loading") {{
-                document.addEventListener("DOMContentLoaded", renderGantt);
-              }} else {{
-                renderGantt();
-              }}
+                window.tasks = {tasks_js};
             </script>
+        
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+            <meta charset="UTF-8">
+        
+            <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
+        
+            <style>
+                html, body {{
+                    margin: 0;
+                    padding: 0;
+                    background-color: #0E1117;
+                    color: #E0E6ED;
+                    font-family: Inter, sans-serif;
+                    overflow: hidden;
+                }}
+        
+                #gantt {{
+                    background-color: #0E1117;
+                    border: 1px solid #2D333B;
+                    border-radius: 4px;
+                    padding: 8px;
+                }}
+        
+                .grid-background {{ fill: #0E1117; }}
+                .grid-row {{ fill: #0E1117; }}
+        
+                .grid-header {{
+                    fill: #1A1F2B;
+                    stroke: #2D333B;
+                }}
+        
+                .grid-header text {{
+                    fill: #8892B0;
+                    font-size: 11px;
+                    letter-spacing: 1px;
+                }}
+        
+                .bar {{ fill: #4F8CFF; }}
+                .bar-progress {{ fill: #9FB8FF; }}
+        
+                .bar-label {{
+                    fill: #E0E6ED;
+                    font-size: 11px;
+                    letter-spacing: 0.5px;
+                }}
+        
+                .today-highlight {{
+                    stroke: #FF5C5C;
+                    stroke-width: 1;
+                    stroke-dasharray: 4,4;
+                }}
+        
+                .arrow {{
+                    stroke: #8892B0;
+                    fill: none;
+                    stroke-width: 1;
+                }}
+        
+                .popup-wrapper {{
+                    background-color: #1A1F2B !important;
+                    border: 1px solid #2D333B !important;
+                    color: #E0E6ED !important;
+                }}
+            </style>
+            </head>
+        
+            <body>
+        
+            <div id="gantt"></div>
+        
+            <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
+        
+            <script>
+                const tasks = window.tasks || [];
+        
+                if (tasks.length === 0) {{
+                    document.getElementById("gantt").innerHTML =
+                        "<div style='color:#8892B0;text-align:center;padding:40px;font-size:12px;letter-spacing:2px;'>SIN TAREAS PARA GANTT</div>";
+                }} else {{
+                    new Gantt("#gantt", tasks, {{
+                        view_mode: "Day",
+                        bar_height: 18,
+                        padding: 18,
+                        date_format: "YYYY-MM-DD"
+                    }});
+                }}
+            </script>
+        
+            </body>
+            </html>
             """,
-            height=460,
+            height=520,
             scrolling=True
-            )
+        )
 
 
         
@@ -517,6 +560,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
