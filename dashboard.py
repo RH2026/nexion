@@ -457,7 +457,7 @@ with main_container:
             
                 importancia = str(r["IMPORTANCIA"]).strip().lower()
                 es_hito = str(r["TIPO"]).strip().lower() == "hito"
-            
+
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
@@ -466,7 +466,7 @@ with main_container:
                     "progress": 0 if es_hito else int(r["PROGRESO"]),
                     "dependencies": r["DEPENDENCIAS"],
                     "custom_class": f"imp-{importancia}",
-                    "milestone": es_hito  # 🔷 CLAVE REAL
+                    "type": "milestone" if es_hito else "task"   # 🔷 ESTA ES LA CLAVE
                 })
             
             # ── JSON ───────────────────────────────────────────────────
@@ -516,6 +516,7 @@ with main_container:
                 "bar_height:20,"
                 "padding:40,"
                 "date_format:'YYYY-MM-DD'"
+                "show_milestones:true"
                 "});"
                 "}"
                 "</script>"
@@ -551,6 +552,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
