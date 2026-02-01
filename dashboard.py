@@ -396,7 +396,7 @@ with main_container:
                     "Vista",
                     ["Day", "Week", "Month", "Year"],
                     horizontal=True,
-                    index=0
+                    index=2
                 )
             
             with c2:
@@ -410,33 +410,37 @@ with main_container:
                 )
             
             df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
-                        
-            # ── FRAPPE GANTT ───────────────────────────────────────────
+            
+            # ── FRAPPE GANTT (NORMALIZADO REAL) ───────────────────────────
             tasks = []
+            
             for i, r in df_gantt.iterrows():
                 if str(r["TAREA"]).strip() == "":
                     continue
             
-                is_milestone = r["TIPO"].lower() == "hito"
+                start = pd.to_datetime(r["FECHA"])
+                end = pd.to_datetime(r["FECHA_FIN"])
+            
+                # 🔧 Frappe NO permite end <= start
+                if end <= start:
+                    end = start + pd.Timedelta(days=1)
             
                 tasks.append({
                     "id": str(i),
                     "name": f"[{r['GRUPO']}] {r['TAREA']}",
-                    "start": str(r["FECHA"]),
-                    "end": str(r["FECHA_FIN"]),
+                    "start": start.strftime("%Y-%m-%dT00:00:00"),
+                    "end": end.strftime("%Y-%m-%dT23:59:59"),
                     "progress": int(r["PROGRESO"]),
                     "dependencies": r["DEPENDENCIAS"],
-                    "custom_class": (
-                        "milestone" if is_milestone else r["IMPORTANCIA"].lower()
-                    )
+                    "custom_class": r["IMPORTANCIA"].lower()
                 })
             
             st.write("Tareas para Gantt:", len(tasks))
+            
             tasks_js = json.dumps(tasks)
-
-            tasks_js = json.dumps(tasks)
-
-            html_gantt = """
+            
+            # ── HTML FRAPPE GANTT (OSCuro REAL) ───────────────────────────
+            html_gantt = f"""
             <!DOCTYPE html>
             <html>
             <head>
@@ -457,7 +461,6 @@ with main_container:
                 width: 100%;
                 height: 480px;
                 background: #0E1117;
-                overflow: hidden;
             }}
             
             .gantt-container text {{
@@ -485,32 +488,20 @@ with main_container:
             
             <script>
             document.addEventListener("DOMContentLoaded", function () {{
-                const tasks = __TASKS__;
+                const tasks = {tasks_js};
             
                 if (!tasks || tasks.length === 0) {{
-                    console.log("No hay tareas para renderizar");
+                    console.warn("No hay tareas para Gantt");
                     return;
                 }}
             
-                setTimeout(function () {{
+                setTimeout(() => {{
                     new Gantt("#gantt", tasks, {{
-                        view_mode: "Day",
-                        bar_height: 16,
+                        view_mode: "{gantt_view}",
+                        bar_height: 18,
                         padding: 40,
-                        date_format: "YYYY-MM-DD",
-                        custom_popup_html: function(task) {{
-                            return `
-                            <div style="padding:10px;
-                                        background:#1A1F2B;
-                                        color:#E0E6ED;
-                                        border-radius:4px">
-                                <b>${{task.name}}</b><br>
-                                Progreso: ${{task.progress}}%<br>
-                                Inicio: ${{task.start}}<br>
-                                Fin: ${{task.end}}
-                            </div>`;
-                        }}
-                    });
+                        date_format: "YYYY-MM-DDTHH:mm:ss",
+                    }});
                 }}, 200);
             });
             </script>
@@ -519,7 +510,7 @@ with main_container:
             """
             
             components.html(
-                html_gantt.replace("__TASKS__", tasks_js),
+                html_gantt,
                 height=520,
                 scrolling=False
             )
@@ -549,6 +540,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
