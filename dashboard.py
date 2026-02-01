@@ -72,6 +72,7 @@ h3, .op-query-text {{
     width: 100% !important;
 }}
 
+/* 1. BOTONES BASE */
 div.stButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -89,6 +90,31 @@ div.stButton > button:hover {{
     background-color: #ffffff !important;
     color: #000000 !important;
     border-color: #ffffff !important;
+}}
+
+/* 2. FORZAR UNIFORMIDAD EN BOTONES PRIMARIOS (PDF Y ACTUALIZAR) */
+/* Usamos selectores múltiples para asegurar que atrape a ambos botones */
+div.stButton > button[kind="primary"], 
+div.stButton > button[data-testid="baseButton-primary"] {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 2px !important;
+    height: 45px !important; 
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 12px !important;
+    letter-spacing: 2px !important;
+    transition: all 0.3s ease !important;
+    width: 100% !important;
+}}
+
+div.stButton > button[kind="primary"]:hover,
+div.stButton > button[data-testid="baseButton-primary"]:hover {{
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #ffffff !important;
+    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
 }}
 
 .stTextInput input {{
@@ -116,39 +142,15 @@ div.stButton > button:hover {{
     z-index: 999999 !important;
 }}
 
-/* Esto ahora funcionará correctamente dentro de tu f-string */
 div[data-testid="stPopoverContent"] {{
     transition: opacity 0.3s ease-in-out !important;
     border: 1px solid {vars_css['border']} !important;
     background-color: {vars_css['bg']} !important;
 }}
 
-/* Ajuste opcional para que el expander interno combine con el look NEXION */
 .stExpander {{
     border: none !important;
     background-color: transparent !important;
-}}
-
-/* Forzar uniformidad en botones primarios de NEXION */
-div.stButton > button[kind="primary"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
-    height: 45px !important; /* Aumentamos altura para que luzcan pro */
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    font-size: 12px !important;
-    letter-spacing: 2px !important;
-    transition: all 0.3s ease !important;
-    width: 100% !important;
-}}
-
-div.stButton > button[kind="primary"]:hover {{
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-color: #ffffff !important;
-    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
 }}
 
 </style>
@@ -644,6 +646,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
