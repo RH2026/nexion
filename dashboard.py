@@ -391,25 +391,25 @@ with main_container:
             
             df_gantt = df_editado[df_editado["GRUPO"].isin(grupos_sel)]
                         
-                        # ── FRAPPE GANTT ───────────────────────────────────────────
-                        tasks = []
-                        for i, r in df_gantt.iterrows():
-                            if str(r["TAREA"]).strip() == "":
-                                continue
-                        
-                            is_milestone = r["TIPO"].lower() == "hito"
-                        
-                            tasks.append({
-                                "id": str(i),
-                                "name": f"[{r['GRUPO']}] {r['TAREA']}",
-                                "start": str(r["FECHA"]),
-                                "end": str(r["FECHA_FIN"]),
-                                "progress": int(r["PROGRESO"]),
-                                "dependencies": r["DEPENDENCIAS"],
-                                "custom_class": (
-                                    "milestone" if is_milestone else r["IMPORTANCIA"].lower()
-                                )
-                            })
+            # ── FRAPPE GANTT ───────────────────────────────────────────
+            tasks = []
+            for i, r in df_gantt.iterrows():
+                if str(r["TAREA"]).strip() == "":
+                    continue
+            
+                is_milestone = r["TIPO"].lower() == "hito"
+            
+                tasks.append({
+                    "id": str(i),
+                    "name": f"[{r['GRUPO']}] {r['TAREA']}",
+                    "start": str(r["FECHA"]),
+                    "end": str(r["FECHA_FIN"]),
+                    "progress": int(r["PROGRESO"]),
+                    "dependencies": r["DEPENDENCIAS"],
+                    "custom_class": (
+                        "milestone" if is_milestone else r["IMPORTANCIA"].lower()
+                    )
+                })
             
             st.write("Tareas para Gantt:", len(tasks))
             components.html(
@@ -517,6 +517,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
