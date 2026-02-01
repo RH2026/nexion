@@ -581,30 +581,30 @@ with main_container:
                 </div>
             </div>
             """
-            
-            # ── 8. BOTONES DE ACCIÓN FINAL ───────────────────────────
+         
+            # ── 8. BOTONES DE ACCIÓN FINAL (ESTILO UNIFICADO) ───────────────────────────
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # Creamos dos columnas: una para el PDF (grande) y otra para actualizar (pequeña)
+            # Usamos columnas para que vivan en la misma línea
             col_pdf, col_reset = st.columns([4, 1])
             
             with col_pdf:
+                # Botón PDF con estilo primary
                 if st.button("🖨️ GENERAR FORMATO PROFESIONAL (PDF)", type="primary", use_container_width=True):
                     components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
                     st.toast("Renderizando Automatización de Procesos...", icon="⚙️")
             
             with col_reset:
-                if st.button("🔄 ACTUALIZAR", use_container_width=True, help="Borrar datos y generar nuevo folio"):
-                    # Borramos el folio para que se genere uno nuevo al recargar
+                # Botón ACTUALIZAR ahora también con type="primary" para igualar el estilo
+                if st.button("🔄 ACTUALIZAR", type="primary", use_container_width=True, help="Reiniciar folio y tabla"):
+                    # Lógica de reset
                     if 'folio_nexion' in st.session_state:
                         del st.session_state.folio_nexion
                     
-                    # Limpiamos la tabla de materiales
                     st.session_state.rows = pd.DataFrame([
                         {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
                     ] * 10)
                     
-                    # Forzamos recarga para aplicar cambios
                     st.rerun()
                         
                     
@@ -622,6 +622,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
