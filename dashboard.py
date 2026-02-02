@@ -849,7 +849,7 @@ with main_container:
                                     st.snow()
                                     st.rerun()
                             else:
-                                st.button("✅ REGISTROS ASEGURADOS", use_container_width=True, disabled=True, key="btn_ok_bottom")
+                                st.button(":material/verified_user: REGISTROS ASEGURADOS", use_container_width=True, disabled=True, key="btn_ok_bottom")
                 
                     # --- SISTEMA DE SELLADO (DIVIDIDO EN COLUMNAS) ----
                     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
@@ -919,6 +919,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
