@@ -253,6 +253,17 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.rerun()
 
+                # --- SECCIÓN HUB LOG ---
+                with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                    # Definimos las sub-secciones de tu HUB
+                    for s in ["REGISTROS", "SISTEMA", "ALERTAS"]:
+                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
+                            st.session_state.menu_main = "HUB LOG"
+                            st.session_state.menu_sub = s
+                            st.rerun()
+                
+
 st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
 
 # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
@@ -682,7 +693,19 @@ with main_container:
         # MATRIX ANIMATION
         st.subheader("CENTRO DE DOCUMENTACIÓN")
             
-
+    # 5. HUB LOG
+    elif st.session_state.menu_main == "HUB LOG":
+        st.subheader(f"🌐 HUB LOG > {st.session_state.menu_sub}")
+        
+        if st.session_state.menu_sub == "REGISTROS":
+            st.info("Visualización de logs operativos y movimientos de PT.")
+            # Aquí podrías cargar un histórico de los folios generados
+            
+        elif st.session_state.menu_sub == "SISTEMA":
+            st.write("Estado de servidores y conexión con GitHub/SAP.")
+            
+        elif st.session_state.menu_sub == "ALERTAS":
+            st.warning("No hay alertas críticas en el sistema actual.")
 
 # ── FOOTER FIJO ────────────────────────
 st.markdown(f"""
@@ -690,6 +713,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
