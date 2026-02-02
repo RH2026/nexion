@@ -786,67 +786,82 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ----
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")         
                         
-            # --- 1. ESTADO DE ESPERA: NÚCLEO ACTIVO (FORZADO CON !IMPORTANT) ---
+            # --- 1. ESTADO DE ESPERA: NÚCLEO CALIBRADO (XENOCODE BLUE) ---
             if not file_p:
                 st.markdown(f"""
-                    <div class="nexion-wrapper">
-                        <div class="nexion-dot"></div>
-                        <div class="nexion-wave"></div>
-                        <p class="nexion-text-fixed">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
+                    <div class="nexion-fixed-wrapper">
+                        <div class="nexion-center-node">
+                            <div class="nexion-core-point"></div>
+                            <div class="nexion-halo-ring"></div>
+                        </div>
+                        <p class="nexion-tech-label">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
                     </div>
                     
                     <style>
-                        /* Usamos clases nuevas para evitar conflictos con tu CSS maestro */
-                        .nexion-wrapper {{
+                        .nexion-fixed-wrapper {{
                             height: 380px !important;
                             display: flex !important;
                             flex-direction: column !important;
                             align-items: center !important;
                             justify-content: center !important;
                             background: transparent !important;
+                            position: relative !important;
                         }}
                         
-                        .nexion-dot {{
+                        /* Nodo central que ancla a ambos elementos en el mismo punto */
+                        .nexion-center-node {{
+                            position: relative !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            width: 20px !important;
+                            height: 20px !important;
+                        }}
+                        
+                        .nexion-core-point {{
                             width: 14px !important;
                             height: 14px !important;
                             background-color: #54AFE7 !important; 
                             border-radius: 50% !important;
                             box-shadow: 0 0 20px #54AFE7, 0 0 40px rgba(84,175,231,0.4) !important;
                             animation: nexion-vibrance 2s ease-in-out infinite !important;
+                            z-index: 10 !important;
+                            position: absolute !important;
                         }}
 
-                        .nexion-wave {{
+                        .nexion-halo-ring {{
                             position: absolute !important;
-                            width: 60px !important;
-                            height: 60px !important;
-                            border: 1px solid rgba(84, 175, 231, 0.3) !important;
+                            width: 14px !important; /* Inicia del mismo tamaño que el punto */
+                            height: 14px !important;
+                            border: 1px solid #54AFE7 !important;
                             border-radius: 50% !important;
-                            animation: nexion-spread 4s linear infinite !important;
+                            opacity: 0 !important;
+                            animation: nexion-perfect-spread 4s linear infinite !important;
+                            z-index: 5 !important;
                         }}
                         
-                        .nexion-text-fixed {{
-                            color: #54AFE7 !important; /* El azul de HUB LOG */
+                        .nexion-tech-label {{
+                            color: #54AFE7 !important;
                             font-family: 'Monospace', monospace !important;
                             letter-spacing: 5px !important;
                             font-size: 10px !important;
-                            margin-top: 50px !important;
+                            margin-top: 60px !important;
                             opacity: 0.8 !important;
                             text-align: center !important;
                         }}
                         
                         @keyframes nexion-vibrance {{
                             0%, 100% {{ transform: scale(1); filter: brightness(1); }}
-                            50% {{ transform: scale(1.3); filter: brightness(1.5); }}
+                            50% {{ transform: scale(1.2); filter: brightness(1.4); }}
                         }}
 
-                        @keyframes nexion-spread {{
+                        @keyframes nexion-perfect-spread {{
                             0% {{ transform: scale(1); opacity: 0; }}
-                            50% {{ opacity: 0.2; }}
-                            100% {{ transform: scale(3.5); opacity: 0; }}
+                            20% {{ opacity: 0.4; }}
+                            100% {{ transform: scale(6); opacity: 0; }}
                         }}
                     </style>
                 """, unsafe_allow_html=True)
-
             # --- 2. ESTADO ACTIVO: MOTOR SMART (SI HAY ARCHIVO) ---
             else:
                 if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
@@ -972,6 +987,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
