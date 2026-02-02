@@ -901,21 +901,21 @@ with main_container:
                                             if f_id:
                                                 zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
                                     st.download_button(":material/folder_zip: DESCARGAR FACTURAS SELLADAS (ZIP)", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
-                                else:
-                                    st.error("Error: La tabla de análisis está vacía.")
-                except Exception as e:
-                    st.error(f"Error: {e}")
-        
-                # --- AQUÍ CERRAMOS EL TRY Y EL IF DE ANALISIS ---
-                except Exception as e:
-                    st.error(f"Error en procesamiento: {e}")
-                    
-            # --- SALIMOS AL NIVEL DE MENU_MAIN PARA LOS OTROS SUBMENÚS ---
-            elif st.session_state.menu_sub == "SISTEMA":
-                st.write("Estado de servidores y conexión con GitHub/SAP.")
+                        else:
+                            st.error("Error: La tabla de análisis está vacía.")
                 
-            elif st.session_state.menu_sub == "ALERTAS":
-                st.warning("No hay alertas críticas en el sistema actual.")
+                except Exception as e:
+                    st.error(f"Error en el motor Smart: {e}")
+
+        # --- AQUÍ ESTABA EL DETALLE: EL ELIF DEBE ESTAR ALINEADO CON EL "if st.session_state.menu_sub == 'SMART':" ---
+        elif st.session_state.menu_sub == "SISTEMA":
+            st.markdown("### :material/settings: ESTATUS DEL NÚCLEO")
+            st.write("Estado de servidores y conexión con GitHub/SAP.")
+            st.code(f"USER: XENOCODE\nSTATUS: ONLINE\nSYNC: GITHUB OK", language="bash")
+            
+        elif st.session_state.menu_sub == "ALERTAS":
+            st.markdown("### :material/warning: ALERTAS DE SISTEMA")
+            st.warning("No hay alertas críticas en el sistema actual.")
 
 # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
 st.markdown(f"""
