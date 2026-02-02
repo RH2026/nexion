@@ -818,6 +818,82 @@ with main_container:
                         },
                         key="editor_pro_v11"
                     )
+
+            # --- EFECTO GLITCH (ESTADO DE ESPERA XENOCODE) ---
+            if not file_p:
+                st.markdown(f"""
+                    <div class="glitch-container">
+                        <div class="glitch" data-text="NEXION">NEXION</div>
+                        <p class="glitch-sub">WAITING FOR DATA SOURCE...</p>
+                    </div>
+                    
+                    <style>
+                        .glitch-container {{
+                            height: 300px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            background: rgba(255,255,255,0.01);
+                            border-radius: 20px;
+                            margin-top: 20px;
+                            border: 1px dashed rgba(255,255,255,0.05);
+                        }}
+            
+                        .glitch {{
+                            color: white;
+                            font-size: 80px;
+                            font-weight: 900;
+                            letter-spacing: 15px;
+                            position: relative;
+                            font-family: 'Monospace';
+                        }}
+            
+                        .glitch-sub {{
+                            color: {vars_css['sub']};
+                            letter-spacing: 5px;
+                            font-size: 10px;
+                            margin-top: 10px;
+                            font-family: 'Monospace';
+                            opacity: 0.6;
+                        }}
+            
+                        @keyframes noise-anim {{
+                            0% {{ clip: rect(10px, 9999px, 50px, 0); }}
+                            20% {{ clip: rect(30px, 9999px, 80px, 0); }}
+                            40% {{ clip: rect(10px, 9999px, 30px, 0); }}
+                            60% {{ clip: rect(50px, 9999px, 100px, 0); }}
+                            80% {{ clip: rect(20px, 9999px, 60px, 0); }}
+                            100% {{ clip: rect(40px, 9999px, 90px, 0); }}
+                        }}
+            
+                        .glitch::after {{
+                            content: attr(data-text);
+                            position: absolute;
+                            left: 2px;
+                            text-shadow: -1px 0 #ff00c1;
+                            top: 0;
+                            color: white;
+                            background: transparent;
+                            overflow: hidden;
+                            clip: rect(0, 900px, 0, 0);
+                            animation: noise-anim 2s infinite linear alternate-reverse;
+                        }}
+            
+                        .glitch::before {{
+                            content: attr(data-text);
+                            position: absolute;
+                            left: -2px;
+                            text-shadow: 1px 0 #00fff9;
+                            top: 0;
+                            color: white;
+                            background: transparent;
+                            overflow: hidden;
+                            clip: rect(0, 900px, 0, 0);
+                            animation: noise-anim 3s infinite linear alternate-reverse;
+                        }}
+                    </style>
+                """, unsafe_allow_html=True)
                    
                     # --- REESTRUCTURA DE ACCIONES (JERARQUÍA VISUAL XENOCODE) ---
                     with st.container():
@@ -907,6 +983,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
