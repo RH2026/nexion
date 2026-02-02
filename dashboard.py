@@ -823,40 +823,49 @@ with main_container:
                 except Exception as e:
                     st.error(f"Error en procesamiento: {e}")
 
-            # --- SISTEMA DE SELLADO ---
+            # --- SISTEMA DE SELLADO (DIVIDIDO EN COLUMNAS) ---
             st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
             st.markdown("<h3 style='font-size: 16px; color: white;'>🖨️ SOBREIMPRESIÓN Y SELLADO DIGITAL</h3>", unsafe_allow_html=True)
             
+            # Panel de calibración arriba para que afecte a ambos
             with st.expander("⚙️ PANEL DE CALIBRACIÓN (COORDENADAS PDF)"):
                 col_x, col_y = st.columns(2)
                 ajuste_x = col_x.slider("Eje X", 0, 612, 510)
                 ajuste_y = col_y.slider("Eje Y", 0, 792, 760)
-
-            col_fis, col_dig = st.columns(2)
             
-            with col_fis:
-                st.markdown("**IMPRESIÓN FÍSICA**")
+            # --- LAS COLUMNAS SEPARADAS ---
+            col_izq, col_der = st.columns(2)
+            
+            with col_izq:
+                st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px;'>IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
                 if st.button("📄 GENERAR SELLOS PARA FACTURAS", use_container_width=True):
+                    # Usamos p_editado si existe, de lo contrario el historial acumulado
                     sellos = p_editado['RECOMENDACION'].tolist() if 'p_editado' in locals() else []
                     if sellos:
                         pdf_out = generar_sellos_fisicos(sellos, ajuste_x, ajuste_y)
                         st.download_button("⬇️ DESCARGAR SELLOS", pdf_out, "Sellos_Fisicos.pdf", use_container_width=True)
                     else:
-                        st.warning("No hay datos cargados.")
-
-            with col_dig:
-                st.markdown("**SELLADO DIGITAL**")
-                pdfs = st.file_uploader("Subir PDFs para estampar", type="pdf", accept_multiple_files=True)
-                if pdfs and st.button("🎯 EJECUTAR SELLADO DIGITAL", use_container_width=True):
-                    df_ref = p_editado if 'p_editado' in locals() else st.session_state.db_acumulada
-                    mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
-                    z_buf = io.BytesIO()
-                    with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
-                        for pdf in pdfs:
-                            f_id = next((f for f in mapa.keys() if f in pdf.name.upper()), None)
-                            if f_id:
-                                zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
-                    st.download_button("⬇️ DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
+                        st.warning("No hay datos cargados para generar sellos.")
+            
+            with col_der:
+                st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px;'>SELLADO DIGITAL</p>", unsafe_allow_html=True)
+                pdfs = st.file_uploader("Subir PDFs para estampar", type="pdf", accept_multiple_files=True, key="uploader_digital")
+                
+                if pdfs:
+                    if st.button("🎯 EJECUTAR SELLADO DIGITAL", use_container_width=True):
+                        df_ref = p_editado if 'p_editado' in locals() else st.session_state.db_acumulada
+                        if not df_ref.empty:
+                            # El código de mapeo y generación de ZIP que ya tienes
+                            mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
+                            z_buf = io.BytesIO()
+                            with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+                                for pdf in pdfs:
+                                    f_id = next((f for f in mapa.keys() if f in pdf.name.upper()), None)
+                                    if f_id:
+                                        zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
+                            st.download_button("⬇️ DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
+                        else:
+                            st.error("Faltan datos de referencia para el sellado.")
 
             with st.expander("📜 VER HISTORIAL ACUMULADO"):
                 if not st.session_state.db_acumulada.empty:
@@ -874,6 +883,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
