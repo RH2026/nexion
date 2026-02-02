@@ -380,7 +380,7 @@ with main_container:
                 })
             tasks_js_str = json.dumps(tasks_data)
             
-            # ── 2. RENDERIZADO GANTT (ARRIBA) ──────────────────────────────────────────
+            # ── 2. RENDERIZADO GANTT REPARADO ──────────────────────────────────────────
             components.html(
                 f"""
                 <html>
@@ -388,20 +388,35 @@ with main_container:
                     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
                     <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
                     <style>
-                        html, body {{ background:#111827; margin:0; padding:0; }}
+                        html, body {{ background:#111827; margin:0; padding:0; overflow:hidden; }}
                         #gantt {{ background:#0E1117; }}
+                        
+                        /* Textos en Gris Platino */
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
+                        
+                        /* Fondos de filas */
                         .grid-background {{ fill:#0b0e14 !important; }}
                         .grid-header {{ fill:#151a24 !important; }}
                         .grid-row {{ fill:#0b0e14 !important; }}
                         .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-                        .grid-line {{ stroke: #00FF00 !important; stroke-opacity: 0.1 !important; }}
-                        .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
+                        
+                        /* LÍNEAS HORIZONTALES: Aquí las suavizamos al máximo */
+                        .grid-line {{ 
+                            stroke: #1e2530 !important; 
+                            stroke-opacity: 0.15 !important; /* ← Muy tenue */
+                            stroke-width: 0.5px !important;
+                        }}
+                        
+                        /* Flechas de dependencia */
+                        .arrow {{ stroke: #4B5563 !important; stroke-width: 1.2 !important; opacity: 0.5 !important; fill: none !important; }}
+                        
+                        /* Colores de Barras NEXION */
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                         .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                         .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
+                        
+                        .today-highlight {{ fill: #3b82f6 !important; opacity: 0.1 !important; }}
                     </style>
                 </head>
                 <body>
@@ -411,17 +426,24 @@ with main_container:
                         if(tasks.length){{
                             var gantt = new Gantt('#gantt', tasks, {{
                                 view_mode: '{gantt_view}',
-                                bar_height: 20,
-                                padding: 40,
+                                bar_height: 25,
+                                padding: 45,
                                 date_format: 'YYYY-MM-DD'
                             }});
+            
+                            /* Script para limpiar líneas verticales sobrantes y suavizar horizontales */
                             setTimeout(function() {{
-                                var lines = document.querySelectorAll('#gantt svg line');
+                                var lines = document.querySelectorAll('#gantt svg line.grid-line');
                                 lines.forEach(function(line) {{
                                     var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
-                                    if(x1 === x2) {{ line.style.display = 'none'; }}
+                                    var y1 = line.getAttribute('y1'), y2 = line.getAttribute('y2');
+                                    
+                                    // Si es vertical (x1 == x2), la ocultamos para que el Gantt se vea más limpio
+                                    if(x1 === x2) {{ 
+                                        line.style.stroke = 'transparent'; 
+                                    }}
                                 }});
-                            }}, 100);
+                            }}, 150);
                         }}
                     </script>
                 </body>
@@ -654,6 +676,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
