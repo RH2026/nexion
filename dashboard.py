@@ -386,51 +386,89 @@ with main_container:
                 f"""
                 <html>
                 <head>
-                    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
-                    <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
-                    <style>
-                        html, body {{ background:#111827; margin:0; padding:0; }}
-                        #gantt {{ background:#0E1117; }}
-                        .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
-                        .grid-background {{ fill:#0b0e14 !important; }}
-                        .grid-header {{ fill:#151a24 !important; }}
-                        .grid-row {{ fill:#0b0e14 !important; }}
-                        .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-                        .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.4 !important; }}
-                        .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
-                        .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
-                        .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
-                        .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
-                        .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
-                    </style>
+                <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
+                <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
+            
+                <style>
+                    html, body {{ background:#111827; margin:0; padding:0; }}
+                    #gantt {{ background:#0E1117; }}
+            
+                    /* Flechas de dependencia */
+                    .arrow {{
+                        stroke: #9ca3af !important;
+                        stroke-width: 1.6 !important;
+                        opacity: 1 !important;
+                        fill: none !important;
+                    }}
+            
+                    /* Textos */
+                    .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
+            
+                    /* Fondo y filas */
+                    .grid-background {{ fill:#111827 !important; }}
+                    .grid-header {{ fill:#1F2937 !important; }}
+                    .grid-row {{ fill:#0b0e14 !important; }}
+                    .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
+            
+                    /* Colores de prioridad de tareas */
+                    .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
+                    .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
+                    .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
+                    .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
+            
+                    /* Resaltado del día actual en una sola línea */
+                    .today-highlight {{ fill: #0F172A !important; opacity: 0.5 !important; }}
+                </style>
                 </head>
+            
                 <body>
                     <div id='gantt'></div>
                     <script>
-                        var tasks = {tasks_js_str};
-                        if(tasks.length){{
-                            var gantt = new Gantt('#gantt', tasks, {{
+                        var tasks = {tasks_js};
+                        if(tasks && tasks.length){{
+                            var gantt_chart = new Gantt('#gantt', tasks, {{
                                 view_mode: '{gantt_view}',
                                 bar_height: 20,
                                 padding: 40,
                                 date_format: 'YYYY-MM-DD'
                             }});
+            
+                            // --- REPARADOR DE LÍNEAS Y RESALTADO ---
                             setTimeout(function() {{
+                                // Líneas del Gantt
                                 var lines = document.querySelectorAll('#gantt svg line');
                                 lines.forEach(function(line) {{
-                                    var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
-                                    if(x1 === x2) {{ line.style.display = 'none'; }}
+                                    var x1 = line.getAttribute('x1');
+                                    var x2 = line.getAttribute('x2');
+                                    var y1 = line.getAttribute('y1');
+                                    var y2 = line.getAttribute('y2');
+            
+                                    // Verticales → ocultar
+                                    if(x1 === x2) {{
+                                        line.style.display = 'none';
+                                    }}
+                                    // Horizontales → gris claro
+                                    else if(y1 === y2) {{
+                                        line.setAttribute('stroke', '#4B5563');
+                                        line.setAttribute('stroke-opacity', '0.2');
+                                    }}
                                 }});
-                            }}, 100);
+            
+                                // Resaltado del día actual
+                                var todayRects = document.querySelectorAll('.today, .today-bar');
+                                todayRects.forEach(function(rect) {{
+                                    rect.setAttribute('fill', '#FBBF24');
+                                    rect.setAttribute('fill-opacity', '0.2');
+                                }});
+                            }}, 100); // esperar a que se dibuje el SVG
                         }}
                     </script>
                 </body>
                 </html>
                 """,
-                height=420, scrolling=False
-            )
-                        
+                height=420,
+                scrolling=False
+            )         
             # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
             st.subheader("EDITOR DE TAREAS")
             
@@ -655,6 +693,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
