@@ -349,7 +349,7 @@ with main_container:
         hoy_gdl = datetime.now(tz_gdl).date()
     
         # ── C. NAVEGACIÓN DE SUB-MENÚ ──
-        if st.session_state.menu_sub == "GENERAL":
+        if st.session_state.menu_sub == "TRK":
             # 1. FILTROS DE CABECERA
             with st.container():
                 st.markdown(f"<p class='op-query-text' style='letter-spacing:8px; text-align:center;'>M Ó D U L O &nbsp; D E &nbsp; I N T E L I G E N C I A &nbsp; L O G Í S T I C A</p>", unsafe_allow_html=True)
@@ -1083,6 +1083,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
