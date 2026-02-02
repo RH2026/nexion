@@ -21,16 +21,34 @@ import unicodedata
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
-# --- COLOCAR ESTO AL PRINCIPIO (ZONA DE FUNCIONES GLOBALES) ---
+# --- MOTOR DE INTELIGENCIA LOGÍSTICA (XENOCODE CORE) ---
+def d_local(dir_val):
+    """Detecta si una dirección pertenece a la ZMG basada en CPs."""
+    # Rangos de Zapopan, Guadalajara, Tonalá y Tlaquepaque
+    rangos = [(44100, 44990), (45010, 45245), (45400, 45429), (45500, 45595)]
+    cps = re.findall(r'\b\d{5}\b', str(dir_val))
+    for cp in cps:
+        try:
+            if any(inicio <= int(cp) <= fin for inicio, fin in rangos): 
+                return "LOCAL"
+        except: 
+            continue
+    return "FORÁNEO"
+
 @st.cache_data
 def motor_logistico_central():
+    """Carga la matriz historial para recomendaciones de fleteras."""
     try:
         if os.path.exists("matriz_historial.csv"):
             h = pd.read_csv("matriz_historial.csv", encoding='utf-8-sig')
             h.columns = [str(c).upper().strip() for c in h.columns]
-            # ... resto del código de la función ...
+            c_pre = [c for c in h.columns if 'PRECIO' in c][0]
+            c_flet = [c for c in h.columns if 'FLETERA' in c or 'TRANSPORTE' in c][0]
+            c_dir = [c for c in h.columns if 'DIRECCION' in c][0]
+            h[c_pre] = pd.to_numeric(h[c_pre], errors='coerce').fillna(0)
+            mejores = h.loc[h.groupby(c_dir)[c_pre].idxmin()]
             return mejores.set_index(c_dir)[c_flet].to_dict(), mejores.set_index(c_dir)[c_pre].to_dict()
-    except:
+    except: 
         pass
     return {}, {}
 
@@ -883,6 +901,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
