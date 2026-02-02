@@ -240,20 +240,22 @@ with header_zone:
             st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0; color:{vars_css['text']};'>NEXION</h3>", unsafe_allow_html=True)
 
     with c2:
-        # INDICADOR GENERAL (CENTRADO ABSOLUTO)
+        # INDICADOR GENERAL (CENTRADO ABSOLUTO CON ESPACIADO NEXION)
         if st.session_state.menu_sub != "GENERAL":
-            ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 10px;'>|</span> {st.session_state.menu_sub}"
+            # Agregamos espacios manuales solo al separador "|" para que no se pegue a las letras
+            ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
         else:
             ruta = st.session_state.menu_main
-
+        
         st.markdown(f"""
-            <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
-                <p style='font-size: 12px;  /* ← AQUÍ AJUSTAS EL TAMAÑO */
-                          letter-spacing: 5px; 
+            <div style='display: flex; justify-content: center; align-items: center; width: 100%; margin: 20px 0;'>
+                <p style='font-size: 11px; 
+                          letter-spacing: 8px;  /* ← Aumentado para efecto de doble espacio */
                           color: {vars_css['sub']}; 
                           margin: 0; 
-                          font-weight: 600; 
-                          text-transform: uppercase;'>
+                          font-weight: 700; 
+                          text-transform: uppercase;
+                          text-align: center;'>
                     {ruta}
                 </p>
             </div>
@@ -1140,6 +1142,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
