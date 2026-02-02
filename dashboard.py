@@ -779,31 +779,13 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ---
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
             
-            # --- 1. ESTADO DE ESPERA: GLITCH (SI NO HAY ARCHIVO) ---
-            if not file_p:
-                st.markdown(f"""
-                    <div class="glitch-container">
-                        <div class="glitch" data-text="NEXION">NEXION</div>
-                        <p class="glitch-sub">WAITING FOR DATA SOURCE...</p>
-                    </div>
-                    <style>
-                        .glitch-container {{ height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.01); border-radius: 20px; margin-top: 20px; border: 1px dashed rgba(255,255,255,0.05); }}
-                        .glitch {{ color: white; font-size: 80px; font-weight: 900; letter-spacing: 15px; position: relative; font-family: 'Monospace'; }}
-                        .glitch-sub {{ color: {vars_css['sub']}; letter-spacing: 5px; font-size: 10px; margin-top: 10px; font-family: 'Monospace'; opacity: 0.6; }}
-                        @keyframes noise-anim {{ 0% {{ clip: rect(10px, 9999px, 50px, 0); }} 20% {{ clip: rect(30px, 9999px, 80px, 0); }} 40% {{ clip: rect(10px, 9999px, 30px, 0); }} 60% {{ clip: rect(50px, 9999px, 100px, 0); }} 80% {{ clip: rect(20px, 9999px, 60px, 0); }} 100% {{ clip: rect(40px, 9999px, 90px, 0); }} }}
-                        .glitch::after {{ content: attr(data-text); position: absolute; left: 2px; text-shadow: -1px 0 #ff00c1; top: 0; color: white; background: transparent; overflow: hidden; clip: rect(0, 900px, 0, 0); animation: noise-anim 2s infinite linear alternate-reverse; }}
-                        .glitch::before {{ content: attr(data-text); position: absolute; left: -2px; text-shadow: 1px 0 #00fff9; top: 0; color: white; background: transparent; overflow: hidden; clip: rect(0, 900px, 0, 0); animation: noise-anim 3s infinite linear alternate-reverse; }}
-                    </style>
-                """, unsafe_allow_html=True)
-
-            # --- 2. ESTADO ACTIVO: PROCESAMIENTO (SI HAY ARCHIVO) ---
-            else:
+            if file_p:
                 if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
                     if "df_analisis" in st.session_state: del st.session_state["df_analisis"]
                     st.session_state.archivo_actual = file_p.name
                     st.rerun()
 
-                try: # --- INICIO DE PROTECCIÓN DEL MOTOR ---
+                try:
                     if "df_analisis" not in st.session_state:
                         p = pd.read_csv(file_p, encoding='utf-8-sig')
                         p.columns = [str(c).upper().strip() for c in p.columns]
@@ -811,7 +793,7 @@ with main_container:
                         
                         if 'DIRECCION' in p.columns:
                             def motor_prioridad(row):
-                                es_local = d_local(row['DIRECCION'])
+                                es_local = d_local(row['DIRECCION']) # Función ZMG
                                 if "LOCAL" in es_local: return "LOCAL"
                                 return d_flet.get(row['DIRECCION'], "SIN HISTORIAL")
 
@@ -836,6 +818,82 @@ with main_container:
                         },
                         key="editor_pro_v11"
                     )
+
+            # --- EFECTO GLITCH (ESTADO DE ESPERA XENOCODE) ---
+            if not file_p:
+                st.markdown(f"""
+                    <div class="glitch-container">
+                        <div class="glitch" data-text="NEXION">NEXION</div>
+                        <p class="glitch-sub">WAITING FOR DATA SOURCE...</p>
+                    </div>
+                    
+                    <style>
+                        .glitch-container {{
+                            height: 300px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            background: rgba(255,255,255,0.01);
+                            border-radius: 20px;
+                            margin-top: 20px;
+                            border: 1px dashed rgba(255,255,255,0.05);
+                        }}
+            
+                        .glitch {{
+                            color: white;
+                            font-size: 80px;
+                            font-weight: 900;
+                            letter-spacing: 15px;
+                            position: relative;
+                            font-family: 'Monospace';
+                        }}
+            
+                        .glitch-sub {{
+                            color: {vars_css['sub']};
+                            letter-spacing: 5px;
+                            font-size: 10px;
+                            margin-top: 10px;
+                            font-family: 'Monospace';
+                            opacity: 0.6;
+                        }}
+            
+                        @keyframes noise-anim {{
+                            0% {{ clip: rect(10px, 9999px, 50px, 0); }}
+                            20% {{ clip: rect(30px, 9999px, 80px, 0); }}
+                            40% {{ clip: rect(10px, 9999px, 30px, 0); }}
+                            60% {{ clip: rect(50px, 9999px, 100px, 0); }}
+                            80% {{ clip: rect(20px, 9999px, 60px, 0); }}
+                            100% {{ clip: rect(40px, 9999px, 90px, 0); }}
+                        }}
+            
+                        .glitch::after {{
+                            content: attr(data-text);
+                            position: absolute;
+                            left: 2px;
+                            text-shadow: -1px 0 #ff00c1;
+                            top: 0;
+                            color: white;
+                            background: transparent;
+                            overflow: hidden;
+                            clip: rect(0, 900px, 0, 0);
+                            animation: noise-anim 2s infinite linear alternate-reverse;
+                        }}
+            
+                        .glitch::before {{
+                            content: attr(data-text);
+                            position: absolute;
+                            left: -2px;
+                            text-shadow: 1px 0 #00fff9;
+                            top: 0;
+                            color: white;
+                            background: transparent;
+                            overflow: hidden;
+                            clip: rect(0, 900px, 0, 0);
+                            animation: noise-anim 3s infinite linear alternate-reverse;
+                        }}
+                    </style>
+                """, unsafe_allow_html=True)
                    
                     # --- REESTRUCTURA DE ACCIONES (JERARQUÍA VISUAL XENOCODE) ---
                     with st.container():
@@ -901,21 +959,21 @@ with main_container:
                                             if f_id:
                                                 zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
                                     st.download_button(":material/folder_zip: DESCARGAR FACTURAS SELLADAS (ZIP)", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
-                        else:
-                            st.error("Error: La tabla de análisis está vacía.")
-                
+                                else:
+                                    st.error("Error: La tabla de análisis está vacía.")
                 except Exception as e:
-                    st.error(f"Error en el motor Smart: {e}")
-
-        # --- AQUÍ ESTABA EL DETALLE: EL ELIF DEBE ESTAR ALINEADO CON EL "if st.session_state.menu_sub == 'SMART':" ---
-        elif st.session_state.menu_sub == "SISTEMA":
-            st.markdown("### :material/settings: ESTATUS DEL NÚCLEO")
-            st.write("Estado de servidores y conexión con GitHub/SAP.")
-            st.code(f"USER: XENOCODE\nSTATUS: ONLINE\nSYNC: GITHUB OK", language="bash")
-            
-        elif st.session_state.menu_sub == "ALERTAS":
-            st.markdown("### :material/warning: ALERTAS DE SISTEMA")
-            st.warning("No hay alertas críticas en el sistema actual.")
+                    st.error(f"Error: {e}")
+        
+                # --- AQUÍ CERRAMOS EL TRY Y EL IF DE ANALISIS ---
+                except Exception as e:
+                    st.error(f"Error en procesamiento: {e}")
+                    
+            # --- SALIMOS AL NIVEL DE MENU_MAIN PARA LOS OTROS SUBMENÚS ---
+            elif st.session_state.menu_sub == "SISTEMA":
+                st.write("Estado de servidores y conexión con GitHub/SAP.")
+                
+            elif st.session_state.menu_sub == "ALERTAS":
+                st.warning("No hay alertas críticas en el sistema actual.")
 
 # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
 st.markdown(f"""
@@ -925,7 +983,6 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
-
 
 
 
