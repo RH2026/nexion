@@ -445,7 +445,7 @@ with main_container:
                     </html>
                     """,
                     height=420, scrolling=False
-                    )
+                )
             # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
             st.subheader("EDITOR DE TAREAS")
             
@@ -670,6 +670,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
