@@ -702,7 +702,8 @@ with main_container:
         st.subheader(f"🌐 HUB LOG > {st.session_state.menu_sub}")
         
         if st.session_state.menu_sub == "ANALISIS":
-            st.info("Visualización de logs operativos y movimientos de PT.")
+            st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
+            
             # --- RUTAS Y MOTOR ---
             archivo_log = "log_maestro_acumulado.csv"
             d_flet, d_price = motor_logistico_central() # Usa la función que definimos antes
@@ -860,6 +861,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
