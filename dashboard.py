@@ -789,14 +789,14 @@ with main_container:
             # --- 1. ESTADO DE ESPERA: NÚCLEO ACTIVO (XENOCODE BLUE) ---
             if not file_p:
                 st.markdown(f"""
-                    <div class="nexion-container">
-                        <div class="nexion-core"></div>
-                        <div class="nexion-halo"></div>
-                        <p class="nexion-label">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
+                    <div class="nexion-loader-container">
+                        <div class="nexion-core-active"></div>
+                        <div class="nexion-halo-pulse"></div>
+                        <p class="nexion-branding-text">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
                     </div>
                     
                     <style>
-                        .nexion-container {{
+                        .nexion-loader-container {{
                             height: 380px;
                             display: flex;
                             flex-direction: column;
@@ -807,47 +807,47 @@ with main_container:
                             position: relative;
                         }}
                         
-                        .nexion-core {{
-                            width: 12px;
-                            height: 12px;
-                            /* Usando el azul acero de tu branding */
+                        .nexion-core-active {{
+                            width: 14px;
+                            height: 14px;
+                            /* El azul exacto de tu menú HUB LOG */
                             background: #54AFE7; 
                             border-radius: 50%;
-                            box-shadow: 0 0 15px #54AFE7, 0 0 30px rgba(84,175,231,0.3);
-                            animation: core-pulse 3s ease-in-out infinite;
+                            box-shadow: 0 0 15px #54AFE7, 0 0 30px rgba(84,175,231,0.4);
+                            animation: active-vibration 2s ease-in-out infinite;
                             z-index: 5;
                         }}
 
-                        .nexion-halo {{
+                        .nexion-halo-pulse {{
                             position: absolute;
-                            width: 60px;
-                            height: 60px;
-                            border: 1px solid rgba(84, 175, 231, 0.2);
+                            width: 50px;
+                            height: 50px;
+                            border: 1px solid rgba(84, 175, 231, 0.15);
                             border-radius: 50%;
-                            animation: halo-expand 4s infinite;
+                            animation: halo-slow-expand 4s linear infinite;
                         }}
                         
-                        .nexion-label {{
-                            /* Color exacto de tu texto secundario en NEXION */
+                        .nexion-branding-text {{
+                            /* Aplicando el color azulado de NEXION */
                             color: #54AFE7;
                             font-family: 'Monospace', monospace;
                             letter-spacing: 5px;
                             font-size: 10px;
-                            font-weight: 300;
-                            margin-top: 50px;
-                            opacity: 0.6;
+                            font-weight: 400;
+                            margin-top: 45px;
+                            opacity: 0.7; /* Sincronizado con la intensidad de tu UI */
                             text-transform: uppercase;
                         }}
                         
-                        @keyframes core-pulse {{
-                            0%, 100% {{ transform: scale(1); opacity: 0.7; }}
-                            50% {{ transform: scale(1.4); opacity: 1; }}
+                        @keyframes active-vibration {{
+                            0%, 100% {{ transform: scale(1); filter: brightness(1); }}
+                            50% {{ transform: scale(1.25); filter: brightness(1.3); }}
                         }}
 
-                        @keyframes halo-expand {{
-                            0% {{ transform: scale(0.5); opacity: 0; }}
-                            50% {{ opacity: 0.2; }}
-                            100% {{ transform: scale(2.5); opacity: 0; }}
+                        @keyframes halo-slow-expand {{
+                            0% {{ transform: scale(1); opacity: 0; }}
+                            50% {{ opacity: 0.15; }}
+                            100% {{ transform: scale(3); opacity: 0; }}
                         }}
                     </style>
                 """, unsafe_allow_html=True)
@@ -977,6 +977,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
