@@ -901,7 +901,7 @@ with main_container:
         from datetime import datetime as dt_class
         from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
-        from PyPDF2 import PdfReader, PdfWriter
+        from pypdf import PdfReader, PdfWriter
 
         if st.session_state.menu_sub == "SMART ROUTING":
             st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
@@ -1094,6 +1094,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
