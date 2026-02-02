@@ -484,15 +484,21 @@ with main_container:
 
         
         elif st.session_state.menu_sub == "GANTT":
-            # ── CONFIG GANTT ───────────────────────────────────────────────────────────────
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "tareas.csv"
             CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
             
-            # ── FUNCIONES DE FECHA Y CARGA ─────────────────────────────────────────────
+            # ── FUNCIONES DE FECHA Y CARGA REPARADAS ─────────────────────────────────────────────
             def obtener_fecha_mexico():
-                return (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)).date()
+                """Retorna la fecha actual de Guadalajara sin errores de atributo."""
+                try:
+                    tz_gdl = pytz.timezone('America/Mexico_City')
+                    return datetime.now(tz_gdl).date()
+                except:
+                    # Respaldo si falla pytz (tu lógica original corregida)
+                    import datetime as dt_module
+                    return (dt_module.datetime.now(dt_module.timezone.utc) - dt_module.timedelta(hours=6)).date()
             
             def cargar_datos_seguro():
                 columnas = [
@@ -502,6 +508,10 @@ with main_container:
                 hoy = obtener_fecha_mexico()
                 try:
                     # Carga con bust de caché para evitar datos viejos
+                    import time
+                    import requests
+                    from io import StringIO
+                    
                     r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if r.status_code == 200:
                         df = pd.read_csv(StringIO(r.text))
@@ -512,13 +522,16 @@ with main_container:
                             if c not in df.columns:
                                 df[c] = ""
                         
-                        # Normalización de datos para evitar errores de renderizado
+                        # Normalización de datos con la clase datetime correcta
                         df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
                         df["FECHA_FIN"] = pd.to_datetime(df["FECHA_FIN"], errors="coerce").dt.date
-                        df["FECHA"] = df["FECHA"].apply(lambda x: x if isinstance(x, datetime.date) else hoy)
+                        
+                        # Reemplazar nulos por la fecha de hoy (GDL)
+                        df["FECHA"] = df["FECHA"].apply(lambda x: x if isinstance(x, date) else hoy)
                         df["FECHA_FIN"] = df["FECHA_FIN"].apply(
-                            lambda x: x if isinstance(x, datetime.date) else hoy + datetime.timedelta(days=1)
+                            lambda x: x if isinstance(x, date) else hoy + timedelta(days=1)
                         )
+                        
                         df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0).astype(int)
                         df["IMPORTANCIA"] = df["IMPORTANCIA"].fillna("Media")
                         df["TIPO"] = df["TIPO"].fillna("Tarea")
@@ -526,34 +539,10 @@ with main_container:
                         df["DEPENDENCIAS"] = df["DEPENDENCIAS"].fillna("")
                         
                         return df[columnas]
-                except:
-                    pass
-                return pd.DataFrame(columns=columnas)
-            
-            def guardar_en_github(df):
-                if not TOKEN:
-                    st.error("GITHUB_TOKEN no configurado")
-                    return False
-                try:
-                    g = Github(TOKEN)
-                    repo = g.get_repo(REPO_NAME)
-                    df_save = df.copy()
-                    df_save["FECHA"] = df_save["FECHA"].astype(str)
-                    df_save["FECHA_FIN"] = df_save["FECHA_FIN"].astype(str)
-                    csv_content = df_save.to_csv(index=False)
-                    contents = repo.get_contents(FILE_PATH, ref="main")
-                    repo.update_file(
-                        contents.path,
-                        f"Sync NEXION {obtener_fecha_mexico()}",
-                        csv_content,
-                        contents.sha,
-                        branch="main"
-                    )
-                    st.toast("🚀 Sincronizado con GitHub", icon="✅")
-                    return True
                 except Exception as e:
-                    st.error(f"Error: {e}")
-                    return False
+                    st.error(f"Error al cargar CSV: {e}")
+                    
+                return pd.DataFrame(columns=columnas)
             
             # ── GESTIÓN DE ESTADO ──────────────────────────────────────────────────────
             if "df_tareas" not in st.session_state:
@@ -1142,6 +1131,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
