@@ -294,7 +294,7 @@ with header_zone:
                 # --- SECCIÓN HUB LOG ---
                 with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
                     # Definimos las sub-secciones de tu HUB
-                    for s in ["ANALISIS", "SISTEMA", "ALERTAS"]:
+                    for s in ["SMART ROUTING", "SISTEMA", "ALERTAS"]:
                         sub_label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
                             st.session_state.menu_main = "HUB LOG"
@@ -733,7 +733,7 @@ with main_container:
     elif st.session_state.menu_main == "HUB LOG":
         st.subheader(f"🌐 HUB LOG > {st.session_state.menu_sub}")
         
-        if st.session_state.menu_sub == "ANALISIS":
+        if st.session_state.menu_sub == "SMART ROUTING":
             st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
             
             # --- RUTAS Y MOTOR ---
@@ -908,6 +908,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
