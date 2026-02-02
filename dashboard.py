@@ -333,7 +333,7 @@ with main_container:
             @st.cache_data(ttl=600)  # Se actualiza cada 10 minutos
             def cargar_matriz_github():
                 # URL RAW de tu archivo en GitHub
-                url = "https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/main/Matriz_Excel_Dashboard.csv"
+                url = "https://raw.githubusercontent.com/RH2026/dashboard-logistica/refs/heads/main/Matriz_Excel_Dashboard.csv"
                 try:
                     # utf-8-sig para evitar errores con acentos o eñes de SAP
                     return pd.read_csv(url, encoding='utf-8-sig')
@@ -1124,6 +1124,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
