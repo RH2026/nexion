@@ -393,7 +393,7 @@ with main_container:
                 
                 tasks_data.append({
                     "id": task_id,
-                    "name": f"[{r.GRUP0}] {r.TAREA}",
+                    "name": f"[{r.GRUPO}] {r.TAREA}",
                     "start": str(r.FECHA),
                     "end": str(r.FECHA_FIN),
                     "progress": int(r.PROGRESO),
@@ -690,6 +690,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
