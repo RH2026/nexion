@@ -53,6 +53,13 @@ def motor_logistico_central():
         pass
     return {}, {}
 
+def load_lottieurl(url: str):
+    """Carga la animación Lottie desde una URL"""
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
 # ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
@@ -929,6 +936,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
