@@ -395,7 +395,7 @@ with main_container:
                         .grid-header {{ fill:#151a24 !important; }}
                         .grid-row {{ fill:#0b0e14 !important; }}
                         .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-                        .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.4 !important; }}
+                        .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.1 !important; }}
                         .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
@@ -654,6 +654,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
