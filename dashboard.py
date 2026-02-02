@@ -380,8 +380,9 @@ with main_container:
                 })
             tasks_js_str = json.dumps(tasks_data)
             
-            # ── 2. RENDERIZADO GANTT REPARADO ──────────────────────────────────────────--
-            # ── 2. RENDERIZADO GANTT (ELIMINACIÓN TOTAL DE CUADRÍCULA) ─────────────-----------
+            # ── 2. RENDERIZADO GANTT REPARADO ───────────────────────────────
+            
+            # ── 2. RENDERIZADO GANTT (REPARACIÓN DEFINITIVA NEXION) ─────────
             components.html(
                 f"""
                 <html>
@@ -392,32 +393,39 @@ with main_container:
                         html, body {{ background:#111827; margin:0; padding:0; overflow:hidden; }}
                         #gantt {{ background:#0E1117; }}
                         
+                        /* Textos en Gris Platino */
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
                         
-                        /* Fondos de filas para mantener el orden visual sin líneas */
+                        /* 1. CUADRÍCULA DE FONDO: La hacemos ultra sutil (Azul Onix) */
+                        /* Esto es lo que querías suavizar sin perder las flechas */
+                        .grid-line {{ 
+                            stroke: #1e2530 !important; 
+                            stroke-opacity: 0.15 !important; 
+                            stroke-width: 0.6px !important;
+                        }}
+                        
+                        /* 2. FLECHAS DE DEPENDENCIA: Las mantenemos fuertes y claras */
+                        /* El truco es que las flechas usan la clase .arrow, no .grid-line */
+                        .arrow {{ 
+                            stroke: #9ca3af !important; 
+                            stroke-width: 1.8 !important; 
+                            stroke-opacity: 1 !important; 
+                            fill: none !important; 
+                        }}
+                        
+                        /* Fondos de filas */
                         .grid-background {{ fill:#0b0e14 !important; }}
                         .grid-row {{ fill:#0b0e14 !important; }}
                         .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-            
-                        /* OCULTAMOS TODO LO QUE TENGA LA CLASE GRID-LINE POR DEFECTO */
-                        .grid-line {{ 
-                            display: none !important; 
-                        }}
                         
-                        /* RESCATAMOS LAS FLECHAS DE CONEXIÓN */
-                        .arrow {{ 
-                            stroke: #9ca3af !important; 
-                            stroke-width: 1.5 !important; 
-                            stroke-opacity: 1 !important; 
-                            fill: none !important;
-                            visibility: visible !important;
-                            display: block !important;
-                        }}
-                        
+                        /* Colores de Barras NEXION */
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                         .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                         .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
+                        
+                        /* El resaltado de hoy */
+                        .today-highlight {{ fill: #3b82f6 !important; opacity: 0.1 !important; }}
                     </style>
                 </head>
                 <body>
@@ -431,20 +439,6 @@ with main_container:
                                 padding: 45,
                                 date_format: 'YYYY-MM-DD'
                             }});
-            
-                            /* LIMPIEZA RADICAL */
-                            setTimeout(function() {{
-                                // Borramos físicamente las líneas de la cuadrícula del DOM
-                                var gridLines = document.querySelectorAll('.grid-line');
-                                gridLines.forEach(function(l) {{ l.remove(); }});
-                                
-                                // Aseguramos que las flechas (path) se mantengan
-                                var arrows = document.querySelectorAll('.arrow');
-                                arrows.forEach(function(a) {{ 
-                                    a.style.strokeOpacity = '1';
-                                    a.style.display = 'block';
-                                }});
-                            }}, 100);
                         }}
                     </script>
                 </body>
@@ -452,7 +446,7 @@ with main_container:
                 """,
                 height=420, scrolling=False
             )
-            
+                        
             # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
             st.subheader("EDITOR DE TAREAS")
             
@@ -677,6 +671,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
