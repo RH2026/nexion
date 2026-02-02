@@ -731,8 +731,7 @@ with main_container:
             
     # 5. HUB LOG
     elif st.session_state.menu_main == "HUB LOG":
-        st.subheader(f"🌐 HUB LOG > {st.session_state.menu_sub}")
-        
+                
         if st.session_state.menu_sub == "SMART ROUTING":
             st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
             
@@ -908,6 +907,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
