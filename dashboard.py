@@ -418,14 +418,14 @@ with main_container:
             m1.markdown(f"""
                 <div class='main-card-kpi' style='border-left-color:#94a3b8;'>
                     <div class='kpi-label'>Carga Total</div>
-                    <div class='kpi-value' style='font-size:42px; font-weight:800;'>{total_p}</div>
+                    <div class='kpi-value' style='font-size:32px; font-weight:800;'>{total_p}</div>
                 </div>
             """, unsafe_allow_html=True)
 
             m2.markdown(f"""
                 <div class='main-card-kpi' style='border-left-color:#38bdf8;'>
                     <div class='kpi-label'>En Tránsito</div>
-                    <div class='kpi-value' style='color:#38bdf8; font-size:42px; font-weight:800;'>{pend_p}</div>
+                    <div class='kpi-value' style='color:#38bdf8; font-size:32px; font-weight:800;'>{pend_p}</div>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -433,7 +433,7 @@ with main_container:
             m3.markdown(f"""
                 <div class='main-card-kpi' style='border-left-color:{color_ef};'>
                     <div class='kpi-label'>Eficiencia</div>
-                    <div class='kpi-value' style='color:{color_ef}; font-size:42px; font-weight:800;'>{eficiencia:.1f}%</div>
+                    <div class='kpi-value' style='color:{color_ef}; font-size:32px; font-weight:800;'>{eficiencia:.1f}%</div>
                 </div>
             """, unsafe_allow_html=True)
             # 4. SEMÁFORO DE ALERTAS OPERATIVAS (RESTABLECIDO)
@@ -1143,6 +1143,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
