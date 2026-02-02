@@ -349,8 +349,8 @@ with main_container:
                 
                 with f_col2:
                 # Lógica para predeterminar el rango según el mes elegido
-                mes_num = meses.index(mes_sel) + 1
-                inicio_m = date(hoy_gdl.year, mes_num, 1)
+                    mes_num = meses.index(mes_sel) + 1
+                    inicio_m = date(hoy_gdl.year, mes_num, 1)
                 
                 # Cálculo de fin de mes corregido
                 if mes_num == 12:
@@ -1108,6 +1108,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
