@@ -844,7 +844,7 @@ with main_container:
                         with c_der:
                             id_guardado = f"guardado_{st.session_state.archivo_actual}"
                             if not st.session_state.get(id_guardado, False):
-                                if st.button("🚀 GUARDAR REGISTROS", use_container_width=True, key="btn_save_bottom"):
+                                if st.button(":material/save: GUARDAR REGISTROS", use_container_width=True, key="btn_save_bottom"):
                                     st.session_state[id_guardado] = True
                                     st.snow()
                                     st.rerun()
@@ -919,6 +919,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
