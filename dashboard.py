@@ -825,7 +825,6 @@ with main_container:
                         c1, c2, c3 = st.columns(3)
                         
                         with c1:
-                            # Botón para descargar el CSV analizado
                             st.download_button(
                                 label="💾 DESCARGAR CSV",
                                 data=p_editado.to_csv(index=False).encode('utf-8-sig'),
@@ -834,23 +833,20 @@ with main_container:
                             )
                             
                         with c2:
-                            # Botón para fijar los cambios hechos en el editor
                             if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
                                 st.session_state.df_analisis = p_editado
                                 st.toast("Cambios aplicados localmente", icon="📌")
                                 
                         with c3:
-                            # Lógica de guardado simplificada (Solo estado visual)
                             id_guardado = f"guardado_{st.session_state.archivo_actual}"
                             if not st.session_state.get(id_guardado, False):
                                 if st.button("🚀 GUARDAR REGISTROS", use_container_width=True):
-                                    # Nota: Solo marcamos como guardado para el flujo actual
                                     st.session_state[id_guardado] = True
                                     st.snow()
                                     st.rerun()
                             else:
                                 st.button("✅ REGISTROS ASEGURADOS", use_container_width=True, disabled=True)
-        
+                
                     # --- SISTEMA DE SELLADO (DIVIDIDO EN COLUMNAS) ---
                     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
                     st.markdown("<h3 style='font-size: 16px; color: white;'>🖨️ SOBREIMPRESIÓN Y SELLADO DIGITAL</h3>", unsafe_allow_html=True)
@@ -878,7 +874,6 @@ with main_container:
                         
                         if pdfs:
                             if st.button("🎯 EJECUTAR SELLADO DIGITAL", use_container_width=True):
-                                # Usamos df_analisis directamente de la sesión
                                 df_ref = st.session_state.get('df_analisis', pd.DataFrame())
                                 if not df_ref.empty:
                                     mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
@@ -891,15 +886,26 @@ with main_container:
                                     st.download_button("⬇️ DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
                                 else:
                                     st.error("Faltan datos de referencia para el sellado.")
-                
+        
+                # --- AQUÍ CERRAMOS EL TRY Y EL IF DE ANALISIS ---
                 except Exception as e:
                     st.error(f"Error en procesamiento: {e}")
-            
-    elif st.session_state.menu_sub == "SISTEMA":
-        st.write("Estado de servidores y conexión con GitHub/SAP.")
-        
-    elif st.session_state.menu_sub == "ALERTAS":
-        st.warning("No hay alertas críticas en el sistema actual.")
+                    
+            # --- SALIMOS AL NIVEL DE MENU_MAIN PARA LOS OTROS SUBMENÚS ---
+            elif st.session_state.menu_sub == "SISTEMA":
+                st.write("Estado de servidores y conexión con GitHub/SAP.")
+                
+            elif st.session_state.menu_sub == "ALERTAS":
+                st.warning("No hay alertas críticas en el sistema actual.")
+
+# ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+st.markdown(f"""
+<div class="footer">
+    NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
+    <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
+    <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
+</div>
+""", unsafe_allow_html=True)
 
 # ── FOOTER FIJO ────────────────────────
 st.markdown(f"""
@@ -907,6 +913,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
