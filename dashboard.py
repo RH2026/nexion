@@ -818,7 +818,39 @@ with main_container:
                         },
                         key="editor_pro_v11"
                     )            
-                   
+            # --- ANIMACIÓN DE ESPERA (ESTILO XENOCODE) ---
+            if not file_p:
+                # Definimos el color azul de tus botones (#54AFE7) y el blanco puro
+                st.markdown(f"""
+                    <style>
+                        .lottie-nexion {{
+                            filter: drop-shadow(0 0 10px rgba(84, 175, 231, 0.2)); /* Brillo sutil azul */
+                            display: flex;
+                            justify-content: center;
+                            margin: 30px 0;
+                        }}
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # Cargamos el camión minimalista
+                lottie_url = "https://lottie.host/869e877e-128e-4a60-968b-577777777777/example.json" 
+                lottie_json = load_lottieurl(lottie_url) # Asegúrate de tener esta función definida arriba
+                
+                if lottie_json:
+                    with st.container():
+                        st.markdown('<div class="lottie-nexion">', unsafe_allow_html=True)
+                        st_lottie(
+                            lottie_json, 
+                            height=280, 
+                            key="nexion_smart_truck",
+                            # Esto fuerza a que la animación use tus colores Onix
+                            speed=1,
+                            loop=True,
+                            quality="high"
+                        )
+                        st.markdown('</div>', unsafe_allow_html=True)
+                        
+                    st.markdown(f"<p style='text-align:center; color:#54AFE7; font-family:monospace; letter-spacing:5px; font-size:12px; opacity:0.6;'>READY TO ANALYZE</p>", unsafe_allow_html=True)       
                     # --- REESTRUCTURA DE ACCIONES (JERARQUÍA VISUAL XENOCODE) ---
                     with st.container():
                         st.download_button(
@@ -907,6 +939,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
