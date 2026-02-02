@@ -837,7 +837,7 @@ with main_container:
                         c_izq, c_der = st.columns(2)
                         
                         with c_izq:
-                            if st.button("📌 FIJAR CAMBIOS", use_container_width=True, key="btn_fijar_bottom"):
+                            if st.button(":material/push_pin: FIJAR CAMBIOS", use_container_width=True, key="btn_fijar_bottom"):
                                 st.session_state.df_analisis = p_editado
                                 st.toast("Cambios aplicados", icon="📌")
                                 
@@ -919,6 +919,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
