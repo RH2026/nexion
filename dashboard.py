@@ -381,7 +381,7 @@ with main_container:
             tasks_js_str = json.dumps(tasks_data)
             
             # ── 2. RENDERIZADO GANTT REPARADO ──────────────────────────────────────────
-            # ── 2. RENDERIZADO GANTT REPARADO (LÍNEAS DE CUADRICULA VS DEPENDENCIAS) ──
+            # ── 2. RENDERIZADO GANTT REPARADO (LIMPIEZA DE CUADRÍCULA) ──────────────────
             components.html(
                 f"""
                 <html>
@@ -400,20 +400,20 @@ with main_container:
                         .grid-row {{ fill:#0b0e14 !important; }}
                         .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
                         
-                        /* LÍNEAS DE LA CUADRICULA (Solo Horizontales) */
-                        /* stroke-opacity: 0.1 las hace casi invisibles pero presentes */
+                        /* 1. LÍNEAS DE LA CUADRÍCULA (Fondo) */
+                        /* Las hacemos extremadamente tenues para que no distraigan */
                         .grid-line {{ 
                             stroke: #1e2530 !important; 
                             stroke-opacity: 0.1 !important; 
-                            stroke-width: 0.8px !important;
+                            stroke-width: 0.5px !important;
                         }}
                         
-                        /* FLECHAS DE DEPENDENCIA (Las que no queremos ocultar) */
-                        /* Las forzamos a ser visibles y con color sólido */
+                        /* 2. LÍNEAS DE CONEXIÓN / DEPENDENCIAS (Flechas) */
+                        /* Forzamos que estas sí se vean claras */
                         .arrow {{ 
                             stroke: #9ca3af !important; 
-                            stroke-width: 1.6 !important; 
-                            opacity: 1 !important; 
+                            stroke-width: 1.4 !important; 
+                            stroke-opacity: 1 !important; 
                             fill: none !important; 
                         }}
                         
@@ -438,13 +438,12 @@ with main_container:
                                 date_format: 'YYYY-MM-DD'
                             }});
             
-                            /* LIMPIEZA QUIRÚRGICA: Solo ocultamos líneas verticales de la red */
+                            /* LIMPIEZA TÉCNICA: Solo ocultamos las líneas verticales del grid */
                             setTimeout(function() {{
-                                // Seleccionamos solo las líneas que pertenecen a la red de fondo
                                 var gridLines = document.querySelectorAll('#gantt svg .grid-line');
                                 gridLines.forEach(function(line) {{
                                     var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
-                                    // Si es una línea vertical (x1 igual a x2), la quitamos
+                                    // Si es vertical (mismo X), la borramos para que solo queden las horizontales suaves
                                     if(x1 === x2) {{ 
                                         line.style.display = 'none'; 
                                     }}
@@ -682,6 +681,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
