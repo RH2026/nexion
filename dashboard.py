@@ -388,52 +388,55 @@ with main_container:
                     opciones_f = sorted(df["FLETERA"].unique()) if "FLETERA" in df.columns else []
                     filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f)
             
-            # ── 3. LÓGICA DE PROCESAMIENTO DE DATOS (REPARACIÓN DE VALUEERROR) ──────────────
+            # ── 3. LÓGICA DE PROCESAMIENTO DE DATOS (BLINDADA) ──────────────────────────
             df_kpi = df.copy()
             df_kpi.columns = [c.upper() for c in df_kpi.columns]
             
-            # Forzamos la conversión de fechas. 
-            # dayfirst=True es vital para nuestro formato en Guadalajara.
-            # errors='coerce' convertirá los datos basura en "NaT" (Not a Time) en lugar de dar error.
+            # Conversión de fechas segura
             df_kpi["FECHA DE ENVÍO"] = pd.to_datetime(df_kpi["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
             df_kpi["PROMESA DE ENTREGA"] = pd.to_datetime(df_kpi["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+            df_kpi["FECHA DE ENTREGA REAL"] = pd.to_datetime(df_kpi["FECHA DE ENTREGA REAL"], dayfirst=True, errors='coerce')
             
-            # Limpiamos filas que se hayan quedado sin fecha válida tras la conversión
+            # Limpieza de registros sin fecha de envío
             df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
             
-            # Aplicar Filtros Dinámicos
+            # Filtro por Rango de Fechas
             if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
                 start_d, end_d = rango_fechas
-                # Filtro de rango comparando objetos date
                 df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= start_d) & (df_kpi["FECHA DE ENVÍO"].dt.date <= end_d)]
             
+            # Filtro Global de Fletera
             if filtro_global_fletera:
                 df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
             
-            # Cálculos Operativos (Aseguramos que sean números)
+            # Cálculos Numéricos
             df_kpi["COSTO DE LA GUÍA"] = pd.to_numeric(df_kpi["COSTO DE LA GUÍA"], errors='coerce').fillna(0)
             df_kpi["CANTIDAD DE CAJAS"] = pd.to_numeric(df_kpi["CANTIDAD DE CAJAS"], errors='coerce').fillna(1).replace(0, 1)
             
-            # Gestión de Atrasos (Basado en la fecha actual de Guadalajara)
-            # Filtramos solo los que NO tienen fecha de entrega real (Aún en tránsito)
-            df_sin_entregar = df_kpi[df_kpi["FECHA DE ENTREGA REAL"].isna()].copy()
+            # Reparación de Estatus (Evita KeyError)
+            # Si no existe la columna, la calculamos: si hay fecha de entrega real, está ENTREGADO.
+            df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(
+                lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO'
+            )
+            
+            # Gestión de Atrasos
+            df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
             
             if not df_sin_entregar.empty:
-                # Aseguramos que la columna promesa también sea datetime para la resta
-                df_sin_entregar["PROMESA DE ENTREGA"] = pd.to_datetime(df_sin_entregar["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-                
-                # Resta de fechas usando pd.Timestamp de hoy_gdl
                 df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
                 df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if x > 0 else 0)
                 df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
+            else:
+                # Si no hay pendientes, creamos un DF vacío con las columnas necesarias para que no falle la tabla
+                df_sin_entregar = pd.DataFrame(columns=df_kpi.columns.tolist() + ["DIAS_ATRASO", "DIAS_TRANS"])
             
-            # Métricas Finales para tarjetas
+            # Métricas Finales
             total_p = len(df_kpi)
             pend_p = len(df_sin_entregar)
-            entregados = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
-            eficiencia = (entregados / total_p * 100) if total_p > 0 else 0
+            entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
+            eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
             
-            # ── 4. VISUALIZACIÓN DE TARJETAS (ESTILO NEXION) ────────────────────
+            # ── 4. VISUALIZACIÓN DE TARJETAS (ESTILO NEXION) ──────────────────────────
             st.markdown("<br>", unsafe_allow_html=True)
             m1, m2, m3 = st.columns(3)
             
@@ -445,21 +448,22 @@ with main_container:
                 color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
                 st.markdown(f"<div class='main-card-kpi' style='border-left-color: {color_ef};'><div class='kpi-label'>Cumplimiento</div><div class='kpi-value' style='color:{color_ef};'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
             
-            # ── 5. MONITOREO DE CRITICIDAD ──────────────────────────────────────
-            st.markdown(f"<p style='color:{vars_css['sub']}; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>⚠️ SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
+            # ── 5. MONITOREO DE CRITICIDAD ──────────────────────────────────────────
+            st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>⚠️ SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
             
-            a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
-            a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
-            a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5])
+            # Calculamos los valores del semáforo solo si hay datos pendientes
+            a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1]) if not df_sin_entregar.empty else 0
+            a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)]) if not df_sin_entregar.empty else 0
+            a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5]) if not df_sin_entregar.empty else 0
             
             c_a1, c_a2, c_a3 = st.columns(3)
             c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>RETRASO LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
             c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>RETRASO MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
             c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
             
-            # ── 6. GESTIÓN DE PEDIDOS CRÍTICOS ──────────────────────────────────
+            # ── 6. GESTIÓN DE PEDIDOS CRÍTICOS ──────────────────────────────────────────
             st.divider()
-            df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy()
+            df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
             
             if not df_criticos.empty:
                 with st.expander("🔍 DESGLOSE DE ALERTAS ACTIVAS", expanded=True):
@@ -1136,6 +1140,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
