@@ -331,7 +331,6 @@ with main_container:
     # 2. SEGUIMIENTO
     elif st.session_state.menu_main == "SEGUIMIENTO":
         if st.session_state.menu_sub == "TRK":
-            st.subheader("SEGUIMIENTO > TRK")
             @st.cache_data(ttl=600)  # Se actualiza cada 10 minutos
             def cargar_matriz_github():
                 # URL RAW de tu archivo en GitHub
@@ -1183,6 +1182,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
