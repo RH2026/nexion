@@ -380,8 +380,8 @@ with main_container:
                 })
             tasks_js_str = json.dumps(tasks_data)
             
-            # ── 2. RENDERIZADO GANTT REPARADO ──────────────────────────────────────────
-            # ── 2. RENDERIZADO GANTT REPARADO (LIMPIEZA DE CUADRÍCULA) ──────────────────
+            # ── 2. RENDERIZADO GANTT REPARADO ──────────────────────────────────────────--
+            # ── 2. RENDERIZADO GANTT (ELIMINACIÓN TOTAL DE CUADRÍCULA) ─────────────-----------
             components.html(
                 f"""
                 <html>
@@ -394,36 +394,30 @@ with main_container:
                         
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
                         
-                        /* Fondos de filas */
+                        /* Fondos de filas para mantener el orden visual sin líneas */
                         .grid-background {{ fill:#0b0e14 !important; }}
-                        .grid-header {{ fill:#151a24 !important; }}
                         .grid-row {{ fill:#0b0e14 !important; }}
                         .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-                        
-                        /* 1. LÍNEAS DE LA CUADRÍCULA (Fondo) */
-                        /* Las hacemos extremadamente tenues para que no distraigan */
+            
+                        /* OCULTAMOS TODO LO QUE TENGA LA CLASE GRID-LINE POR DEFECTO */
                         .grid-line {{ 
-                            stroke: #1e2530 !important; 
-                            stroke-opacity: 0.1 !important; 
-                            stroke-width: 0.5px !important;
+                            display: none !important; 
                         }}
                         
-                        /* 2. LÍNEAS DE CONEXIÓN / DEPENDENCIAS (Flechas) */
-                        /* Forzamos que estas sí se vean claras */
+                        /* RESCATAMOS LAS FLECHAS DE CONEXIÓN */
                         .arrow {{ 
                             stroke: #9ca3af !important; 
-                            stroke-width: 1.4 !important; 
+                            stroke-width: 1.5 !important; 
                             stroke-opacity: 1 !important; 
-                            fill: none !important; 
+                            fill: none !important;
+                            visibility: visible !important;
+                            display: block !important;
                         }}
                         
-                        /* Colores de Barras NEXION */
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                         .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                         .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        
-                        .today-highlight {{ fill: #3b82f6 !important; opacity: 0.15 !important; }}
                     </style>
                 </head>
                 <body>
@@ -438,17 +432,19 @@ with main_container:
                                 date_format: 'YYYY-MM-DD'
                             }});
             
-                            /* LIMPIEZA TÉCNICA: Solo ocultamos las líneas verticales del grid */
+                            /* LIMPIEZA RADICAL */
                             setTimeout(function() {{
-                                var gridLines = document.querySelectorAll('#gantt svg .grid-line');
-                                gridLines.forEach(function(line) {{
-                                    var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
-                                    // Si es vertical (mismo X), la borramos para que solo queden las horizontales suaves
-                                    if(x1 === x2) {{ 
-                                        line.style.display = 'none'; 
-                                    }}
+                                // Borramos físicamente las líneas de la cuadrícula del DOM
+                                var gridLines = document.querySelectorAll('.grid-line');
+                                gridLines.forEach(function(l) {{ l.remove(); }});
+                                
+                                // Aseguramos que las flechas (path) se mantengan
+                                var arrows = document.querySelectorAll('.arrow');
+                                arrows.forEach(function(a) {{ 
+                                    a.style.strokeOpacity = '1';
+                                    a.style.display = 'block';
                                 }});
-                            }}, 150);
+                            }}, 100);
                         }}
                     </script>
                 </body>
@@ -681,6 +677,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
