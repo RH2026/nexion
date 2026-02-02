@@ -410,13 +410,32 @@ with main_container:
             entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
             eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
 
+            # 3. RENDERIZADO TARJETAS (NÚMEROS GRANDES)
             st.markdown("<br>", unsafe_allow_html=True)
             m1, m2, m3 = st.columns(3)
-            m1.markdown(f"<div class='main-card-kpi' style='border-left-color:#94a3b8;'><div class='kpi-label'>Carga Total</div><div class='kpi-value'>{total_p}</div></div>", unsafe_allow_html=True)
-            m2.markdown(f"<div class='main-card-kpi' style='border-left-color:#38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8;'>{pend_p}</div></div>", unsafe_allow_html=True)
-            color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
-            m3.markdown(f"<div class='main-card-kpi' style='border-left-color:{color_ef};'><div class='kpi-label'>Eficiencia</div><div class='kpi-value' style='color:{color_ef};'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
 
+            # Estilo unificado para los valores: font-size:42px y font-weight:800
+            m1.markdown(f"""
+                <div class='main-card-kpi' style='border-left-color:#94a3b8;'>
+                    <div class='kpi-label'>Carga Total</div>
+                    <div class='kpi-value' style='font-size:42px; font-weight:800;'>{total_p}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            m2.markdown(f"""
+                <div class='main-card-kpi' style='border-left-color:#38bdf8;'>
+                    <div class='kpi-label'>En Tránsito</div>
+                    <div class='kpi-value' style='color:#38bdf8; font-size:42px; font-weight:800;'>{pend_p}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
+            m3.markdown(f"""
+                <div class='main-card-kpi' style='border-left-color:{color_ef};'>
+                    <div class='kpi-label'>Eficiencia</div>
+                    <div class='kpi-value' style='color:{color_ef}; font-size:42px; font-weight:800;'>{eficiencia:.1f}%</div>
+                </div>
+            """, unsafe_allow_html=True)
             # 4. SEMÁFORO DE ALERTAS OPERATIVAS (RESTABLECIDO)
             st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>⚠️ SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
             
@@ -1124,6 +1143,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
