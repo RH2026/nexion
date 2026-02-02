@@ -786,10 +786,7 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ---
             # --- CARGA Y PROCESAMIENTO ERP ---
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
-                        
-            # --- CARGA Y PROCESAMIENTO ERP ---
-            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
-            
+                              
             # --- 1. ESTADO DE ESPERA: CÍRCULO VIBRANTE (ESTILO ONIX-XENOCODE) ---
             if not file_p:
                 st.markdown(f"""
@@ -979,6 +976,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
