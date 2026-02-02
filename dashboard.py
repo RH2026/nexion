@@ -11,6 +11,12 @@ import time
 from github import Github
 import json
 import pytz
+import zipfile
+from pypdf import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import re
+import unicodedata
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
@@ -697,7 +703,150 @@ with main_container:
         
         if st.session_state.menu_sub == "ANALISIS":
             st.info("Visualización de logs operativos y movimientos de PT.")
-            # Aquí podrías cargar un histórico de los folios generados
+            # --- RUTAS Y MOTOR ---
+            archivo_log = "log_maestro_acumulado.csv"
+            d_flet, d_price = motor_logistico_central() # Usa la función que definimos antes
+            
+            if 'db_acumulada' not in st.session_state:
+                st.session_state.db_acumulada = pd.read_csv(archivo_log) if os.path.exists(archivo_log) else pd.DataFrame()
+
+            # --- FUNCIONES DE SELLADO INTERNAS ---
+            def generar_sellos_fisicos(lista_textos, x, y):
+                output = PdfWriter()
+                for texto in lista_textos:
+                    packet = io.BytesIO()
+                    can = canvas.Canvas(packet, pagesize=letter)
+                    can.setFont("Helvetica-Bold", 11)
+                    can.drawString(x, y, f"{str(texto).upper()}")
+                    can.save()
+                    packet.seek(0)
+                    output.add_page(PdfReader(packet).pages[0])
+                out_io = io.BytesIO()
+                output.write(out_io)
+                return out_io.getvalue()
+
+            def marcar_pdf_digital(pdf_file, texto_sello, x, y):
+                packet = io.BytesIO()
+                can = canvas.Canvas(packet, pagesize=letter)
+                can.setFont("Helvetica-Bold", 11)
+                can.drawString(x, y, f"{str(texto_sello).upper()}")
+                can.save()
+                packet.seek(0)
+                new_pdf = PdfReader(packet)
+                existing_pdf = PdfReader(pdf_file)
+                output = PdfWriter()
+                page = existing_pdf.pages[0]
+                page.merge_page(new_pdf.pages[0])
+                output.add_page(page)
+                for i in range(1, len(existing_pdf.pages)):
+                    output.add_page(existing_pdf.pages[i])
+                out_io = io.BytesIO()
+                output.write(out_io)
+                return out_io.getvalue()
+
+            # --- CARGA Y PROCESAMIENTO ERP ---
+            file_p = st.file_uploader("📂 SUBIR ARCHIVO ERP (CSV)", type="csv")
+            
+            if file_p:
+                if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
+                    if "df_analisis" in st.session_state: del st.session_state["df_analisis"]
+                    st.session_state.archivo_actual = file_p.name
+                    st.rerun()
+
+                try:
+                    if "df_analisis" not in st.session_state:
+                        p = pd.read_csv(file_p, encoding='utf-8-sig')
+                        p.columns = [str(c).upper().strip() for c in p.columns]
+                        col_id = 'FACTURA' if 'FACTURA' in p.columns else ('DOCNUM' if 'DOCNUM' in p.columns else p.columns[0])
+                        
+                        if 'DIRECCION' in p.columns:
+                            def motor_prioridad(row):
+                                es_local = d_local(row['DIRECCION']) # Función ZMG
+                                if "LOCAL" in es_local: return "LOCAL"
+                                return d_flet.get(row['DIRECCION'], "SIN HISTORIAL")
+
+                            p['RECOMENDACION'] = p.apply(motor_prioridad, axis=1)
+                            p['COSTO'] = p.apply(lambda r: 0.0 if r['RECOMENDACION'] == "LOCAL" else d_price.get(r['DIRECCION'], 0.0), axis=1)
+                            p['FECHA_HORA'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                            
+                            cols_sistema = [col_id, 'RECOMENDACION', 'COSTO', 'FECHA_HORA']
+                            otras = [c for c in p.columns if c not in cols_sistema]
+                            st.session_state.df_analisis = p[cols_sistema + otras]
+
+                    st.markdown("### 📋 RECOMENDACIONES GENERADAS")
+                    modo_edicion = st.toggle("🔓 EDITAR VALORES")
+                    
+                    p_editado = st.data_editor(
+                        st.session_state.df_analisis,
+                        use_container_width=True,
+                        num_rows="fixed",
+                        column_config={
+                            "RECOMENDACION": st.column_config.TextColumn("🚚 FLETERA", disabled=not modo_edicion),
+                            "COSTO": st.column_config.NumberColumn("💰 TARIFA", format="$%.2f", disabled=not modo_edicion),
+                        },
+                        key="editor_pro_v11"
+                    )
+
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.download_button("💾 DESCARGAR CSV", p_editado.to_csv(index=False).encode('utf-8-sig'), "Analisis_Nexion.csv", use_container_width=True)
+                    with c2:
+                        if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
+                            st.session_state.df_analisis = p_editado
+                            st.toast("Cambios aplicados", icon="📌")
+                    with c3:
+                        id_guardado = f"guardado_{st.session_state.archivo_actual}"
+                        if not st.session_state.get(id_guardado, False):
+                            if st.button("🚀 GUARDAR EN LOG", use_container_width=True):
+                                ant = pd.read_csv(archivo_log) if os.path.exists(archivo_log) else pd.DataFrame()
+                                pd.concat([ant, p_editado], ignore_index=True).to_csv(archivo_log, index=False, encoding='utf-8-sig')
+                                st.session_state[id_guardado] = True
+                                st.snow()
+                                st.rerun()
+                        else:
+                            st.button("✅ REGISTROS ASEGURADOS", use_container_width=True, disabled=True)
+
+                except Exception as e:
+                    st.error(f"Error en procesamiento: {e}")
+
+            # --- SISTEMA DE SELLADO ---
+            st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
+            st.markdown("<h3 style='font-size: 16px; color: white;'>🖨️ SOBREIMPRESIÓN Y SELLADO DIGITAL</h3>", unsafe_allow_html=True)
+            
+            with st.expander("⚙️ PANEL DE CALIBRACIÓN (COORDENADAS PDF)"):
+                col_x, col_y = st.columns(2)
+                ajuste_x = col_x.slider("Eje X", 0, 612, 510)
+                ajuste_y = col_y.slider("Eje Y", 0, 792, 760)
+
+            col_fis, col_dig = st.columns(2)
+            
+            with col_fis:
+                st.markdown("**IMPRESIÓN FÍSICA**")
+                if st.button("📄 GENERAR SELLOS PARA FACTURAS", use_container_width=True):
+                    sellos = p_editado['RECOMENDACION'].tolist() if 'p_editado' in locals() else []
+                    if sellos:
+                        pdf_out = generar_sellos_fisicos(sellos, ajuste_x, ajuste_y)
+                        st.download_button("⬇️ DESCARGAR SELLOS", pdf_out, "Sellos_Fisicos.pdf", use_container_width=True)
+                    else:
+                        st.warning("No hay datos cargados.")
+
+            with col_dig:
+                st.markdown("**SELLADO DIGITAL**")
+                pdfs = st.file_uploader("Subir PDFs para estampar", type="pdf", accept_multiple_files=True)
+                if pdfs and st.button("🎯 EJECUTAR SELLADO DIGITAL", use_container_width=True):
+                    df_ref = p_editado if 'p_editado' in locals() else st.session_state.db_acumulada
+                    mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
+                    z_buf = io.BytesIO()
+                    with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+                        for pdf in pdfs:
+                            f_id = next((f for f in mapa.keys() if f in pdf.name.upper()), None)
+                            if f_id:
+                                zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
+                    st.download_button("⬇️ DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
+
+            with st.expander("📜 VER HISTORIAL ACUMULADO"):
+                if not st.session_state.db_acumulada.empty:
+                    st.dataframe(st.session_state.db_acumulada, use_container_width=True)
             
         elif st.session_state.menu_sub == "SISTEMA":
             st.write("Estado de servidores y conexión con GitHub/SAP.")
@@ -711,6 +860,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
