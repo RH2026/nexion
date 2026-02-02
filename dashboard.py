@@ -371,18 +371,36 @@ with main_container:
             
             # Preparar lista de tareas para el JS
             tasks_data = []
-            for i, r in df_gantt.iterrows():
-                if not str(r["TAREA"]).strip(): continue
-                importancia = str(r["IMPORTANCIA"]).strip().lower()
+            for i, r in enumerate(df_gantt.itertuples(), start=1):
+                if not str(r.TAREA).strip(): 
+                    continue
+            
+                importancia = str(r.IMPORTANCIA).strip().lower()
+                task_id = f"T{i}"  # id único T1, T2, T3...
+                
+                # Dependencias deben estar en formato T1,T2,... si vienen como índices
+                dependencias = str(r.DEPENDENCIAS).strip()
+                if dependencias:
+                    # Convertimos índices a ids T#
+                    dependencias_ids = []
+                    for d in dependencias.split(','):
+                        d = d.strip()
+                        if d.isdigit():
+                            dependencias_ids.append(f"T{int(d)+1}")  # sumamos 1 porque enumerate empieza en 1
+                        else:
+                            dependencias_ids.append(d)
+                    dependencias = ','.join(dependencias_ids)
+                
                 tasks_data.append({
-                    "id": str(i),
-                    "name": f"[{r['GRUPO']}] {r['TAREA']}",
-                    "start": str(r["FECHA"]),
-                    "end": str(r["FECHA_FIN"]),
-                    "progress": int(r["PROGRESO"]),
-                    "dependencies": str(r["DEPENDENCIAS"]),
+                    "id": task_id,
+                    "name": f"[{r.GRUP0}] {r.TAREA}",
+                    "start": str(r.FECHA),
+                    "end": str(r.FECHA_FIN),
+                    "progress": int(r.PROGRESO),
+                    "dependencies": dependencias,
                     "custom_class": f"imp-{importancia}"
                 })
+            
             tasks_js_str = json.dumps(tasks_data)
             
             # ── 2. RENDERIZADO GANTT REPARADO ───────────────────────────────
@@ -672,6 +690,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
