@@ -892,11 +892,11 @@ with main_container:
                                 else:
                                     st.error("Faltan datos de referencia para el sellado.")
             
-        elif st.session_state.menu_sub == "SISTEMA":
-            st.write("Estado de servidores y conexión con GitHub/SAP.")
-            
-        elif st.session_state.menu_sub == "ALERTAS":
-            st.warning("No hay alertas críticas en el sistema actual.")
+    elif st.session_state.menu_sub == "SISTEMA":
+        st.write("Estado de servidores y conexión con GitHub/SAP.")
+        
+    elif st.session_state.menu_sub == "ALERTAS":
+        st.warning("No hay alertas críticas en el sistema actual.")
 
 # ── FOOTER FIJO ────────────────────────
 st.markdown(f"""
@@ -904,6 +904,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
