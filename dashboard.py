@@ -330,6 +330,13 @@ with main_container:
     elif st.session_state.menu_main == "SEGUIMIENTO":
         if st.session_state.menu_sub == "TRK":
             st.subheader("SEGUIMIENTO > TRK")
+            # ── 0. VALIDACIÓN DE DATOS ──────────────────
+            # Si tu DataFrame cargado tiene otro nombre, igualalo aquí:
+            # Ejemplo: df = st.session_state.mi_data_cargada
+            if 'df' not in locals() and 'df' not in globals():
+                st.error("⚠️ ERROR: No se detectó la base de datos 'df'. Asegúrate de cargar el archivo antes de ver los KPIs.")
+                st.stop() # Detiene la ejecución para que no salga el error rojo feo
+            
             # ── 1. RELOJ MAESTRO Y CONFIGURACIÓN (GUADALAJARA) ──────────────────
             tz_gdl = pytz.timezone('America/Mexico_City')
             ahora_gdl = datetime.now(tz_gdl)
@@ -339,7 +346,6 @@ with main_container:
             with st.container():
                 st.markdown(f"<p class='op-query-text'>M Ó D U L O &nbsp; D E &nbsp; I N T E L I G E N C I A &nbsp; L O G Í S T I C A</p>", unsafe_allow_html=True)
                 
-                # Fila de mando superior
                 f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
                 
                 with f_col1:
@@ -348,28 +354,27 @@ with main_container:
                     mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
                 
                 with f_col2:
-                # Lógica para predeterminar el rango según el mes elegido
                     mes_num = meses.index(mes_sel) + 1
                     inicio_m = date(hoy_gdl.year, mes_num, 1)
-                
-                # Cálculo de fin de mes corregido
-                if mes_num == 12:
-                    fin_m = date(hoy_gdl.year + 1, 1, 1) - pd.Timedelta(days=1)
-                else:
-                    fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
-                
-                # CONVERSIÓN EXPLÍCITA A DATE (Para evitar el AttributeError)
-                fin_m = fin_m.date() if hasattr(fin_m, 'date') else fin_m
-        
-                rango_fechas = st.date_input(
-                    "RANGO DE ANÁLISIS",
-                    value=(inicio_m, min(hoy_gdl, fin_m) if mes_num == hoy_gdl.month else fin_m),
-                    format="DD/MM/YYYY"
-                )
+                    
+                    # Cálculo de fin de mes
+                    if mes_num == 12:
+                        fin_m = date(hoy_gdl.year + 1, 1, 1) - pd.Timedelta(days=1)
+                    else:
+                        fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
+                        
+                    # Parche de seguridad para objetos datetime/date
+                    fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
+                        
+                    rango_fechas = st.date_input(
+                        "RANGO DE ANÁLISIS",
+                        value=(inicio_m, min(hoy_gdl, fin_m_final) if mes_num == hoy_gdl.month else fin_m_final),
+                        format="DD/MM/YYYY"
+                    )
             
                 with f_col3:
-                    # Filtro rápido por fletera para todo el dashboard
-                    opciones_fletera = sorted(df["FLETERA"].unique()) if 'df' in locals() else []
+                    # Aquí validamos si la columna existe para evitar otro NameError
+                    opciones_fletera = sorted(df["FLETERA"].unique()) if "FLETERA" in df.columns else []
                     filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_fletera)
             
             # ── 3. LÓGICA DE PROCESAMIENTO DE DATOS ──────────────────────────────
@@ -1108,6 +1113,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
