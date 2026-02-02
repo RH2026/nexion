@@ -857,7 +857,7 @@ with main_container:
                         ajuste_x = col_x.slider("Eje X (Horizontal)", 0, 612, 510)
                         ajuste_y = col_y.slider("Eje Y (Vertical)", 0, 792, 760)
         
-                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>:material/description: IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
                     if st.button(":material/article: GENERAR SELLOS PARA FACTURAS (PAPEL FÍSICO)", use_container_width=True, key="btn_fisico_full"):
                         sellos = st.session_state.df_analisis['RECOMENDACION'].tolist() if 'df_analisis' in st.session_state else []
                         if sellos:
@@ -868,12 +868,12 @@ with main_container:
         
                     st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
         
-                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>:material/picture_as_pdf: SELLADO DIGITAL</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>SELLADO DIGITAL</p>", unsafe_allow_html=True)
                     with st.container(border=True):
                         pdfs = st.file_uploader(":material/upload: Subir Facturas PDF para estampar", type="pdf", accept_multiple_files=True, key="u_digital_full")
                         
                         if pdfs:
-                            if st.button(":material/qr_code_scanner: EJECUTAR ESTAMPADO DIGITAL EN PDFs", use_container_width=True):
+                            if st.button("EJECUTAR ESTAMPADO DIGITAL EN PDFs", use_container_width=True):
                                 df_ref = st.session_state.get('df_analisis', pd.DataFrame())
                                 if not df_ref.empty:
                                     mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
@@ -915,6 +915,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
