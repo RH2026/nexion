@@ -463,39 +463,37 @@ with main_container:
             c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>RETRASO MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
             c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
             
-            # ── 6. GESTIÓN DE PEDIDOS CRÍTICOS REPARADA (ANTI-KEYERROR) ──────────────────
+            # ── 6. GESTIÓN DE PEDIDOS CRÍTICOS (LIMPIEZA VISUAL NEXION) ──────────────────
             st.divider()
             
             if not df_sin_entregar.empty:
                 df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy()
                 
                 if not df_criticos.empty:
-                    st.markdown(f"<p style='color:{vars_css['sub']}; font-size:12px; font-weight:bold; letter-spacing:2px;'>🔍 PANEL DE CONTROL DE EXCEPCIONES</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css['sub']}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES OPERATIVAS</p>", unsafe_allow_html=True)
                     
-                    # --- FILTROS ---
+                    # --- FILTROS DE MANDO ---
                     f_col1, f_col2 = st.columns(2)
                     with f_col1:
                         fleteras_criticas = sorted(df_criticos["FLETERA"].unique())
-                        sel_fletera = st.multiselect("Filtrar por Transportista:", fleteras_criticas)
+                        sel_fletera = st.multiselect("TRANSPORTISTA:", fleteras_criticas, placeholder="TODOS")
                     
                     with f_col2:
-                        sel_gravedad = st.selectbox("Gravedad del Retraso:", 
-                                                    ["Todos", "Crítico (+5 días)", "Moderado (2-4 días)", "Leve (1 día)"])
+                        sel_gravedad = st.selectbox("GRAVEDAD:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
             
-                    # Aplicación de filtros
+                    # Lógica de filtrado
                     df_viz = df_criticos.copy()
                     if sel_fletera:
                         df_viz = df_viz[df_viz["FLETERA"].isin(sel_fletera)]
                     
-                    if sel_gravedad == "Crítico (+5 días)":
+                    if sel_gravedad == "CRÍTICO (+5 DÍAS)":
                         df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
-                    elif sel_gravedad == "Moderado (2-4 días)":
+                    elif sel_gravedad == "MODERADO (2-4 DÍAS)":
                         df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
-                    elif sel_gravedad == "Leve (1 día)":
+                    elif sel_gravedad == "LEVE (1 DÍA)":
                         df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
             
-                    # --- REPARACIÓN QUIRÚRGICA DE COLUMNAS ---
-                    # Definimos qué columnas queremos mostrar y buscamos su nombre real en el DF
+                    # Mapeo flexible de columnas para evitar KeyError
                     columnas_deseadas = {
                         "NÚMERO DE PEDIDO": ["NÚMERO DE PEDIDO", "PEDIDO", "Nº PEDIDO"],
                         "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
@@ -504,18 +502,17 @@ with main_container:
                         "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA", "FECHA PROMESA"],
                         "FLETERA": ["FLETERA", "PAQUETERIA", "TRANSPORTISTA"],
                         "GUIA": ["GUIA", "GUÍA", "NÚMERO DE GUÍA", "NUMERO DE GUIA"],
-                        "DIAS_TRANS": ["DIAS_TRANS"],
-                        "DIAS_ATRASO": ["DIAS_ATRASO"]
+                        "DIAS_TRANS": ["DIAS_TRANS", "DIAS EN VIAJE"],
+                        "DIAS_ATRASO": ["DIAS_ATRASO", "RETRASO"]
                     }
             
                     cols_finales = []
                     for alias, posibles in columnas_deseadas.items():
-                        # Buscamos si alguna de las opciones existe en el DataFrame actual
                         encontrada = next((c for c in posibles if c in df_viz.columns), None)
                         if encontrada:
                             cols_finales.append(encontrada)
             
-                    with st.expander("VER DETALLE DE ENVÍOS CON RETRASO", expanded=True):
+                    with st.expander("DETALLE TÉCNICO DE RETRASOS", expanded=True):
                         st.dataframe(
                             df_viz[cols_finales].sort_values(cols_finales[-1], ascending=False),
                             use_container_width=True,
@@ -523,13 +520,19 @@ with main_container:
                             column_config={
                                 "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
                                 "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
-                                "DIAS_TRANS": st.column_config.NumberColumn("DÍAS VIAJE", format="%d 🚚"),
-                                "DIAS_ATRASO": st.column_config.ProgressColumn("RETRASO", format="%d DÍAS", min_value=0, max_value=15, color="red")
+                                "DIAS_TRANS": st.column_config.NumberColumn("DÍAS VIAJE", format="%d"), # ← El camión ha sido removido
+                                "DIAS_ATRASO": st.column_config.ProgressColumn(
+                                    "RETRASO", 
+                                    format="%d DÍAS", 
+                                    min_value=0, 
+                                    max_value=15, 
+                                    color="red"
+                                ),
+                                "GUIA": st.column_config.TextColumn("Nº GUÍA")
                             }
                         )
                 else:
-                    st.success("SISTEMA NEXION: OPERACIÓN LIMPIA - SIN RETRASOS DETECTADOS")
-
+                    st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
 
         
         elif st.session_state.menu_sub == "GANTT":
@@ -1180,6 +1183,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
