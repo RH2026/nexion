@@ -909,12 +909,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── FOOTER FIJO ────────────────────────
-st.markdown(f"""
-<div class="footer">
-    NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
-</div>
-""", unsafe_allow_html=True)
 
 
 
