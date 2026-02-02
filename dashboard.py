@@ -381,6 +381,7 @@ with main_container:
             tasks_js_str = json.dumps(tasks_data)
             
             # ── 2. RENDERIZADO GANTT REPARADO ──────────────────────────────────────────
+            # ── 2. RENDERIZADO GANTT REPARADO (LÍNEAS DE CUADRICULA VS DEPENDENCIAS) ──
             components.html(
                 f"""
                 <html>
@@ -391,7 +392,6 @@ with main_container:
                         html, body {{ background:#111827; margin:0; padding:0; overflow:hidden; }}
                         #gantt {{ background:#0E1117; }}
                         
-                        /* Textos en Gris Platino */
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
                         
                         /* Fondos de filas */
@@ -400,15 +400,22 @@ with main_container:
                         .grid-row {{ fill:#0b0e14 !important; }}
                         .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
                         
-                        /* LÍNEAS HORIZONTALES: Aquí las suavizamos al máximo */
+                        /* LÍNEAS DE LA CUADRICULA (Solo Horizontales) */
+                        /* stroke-opacity: 0.1 las hace casi invisibles pero presentes */
                         .grid-line {{ 
                             stroke: #1e2530 !important; 
-                            stroke-opacity: 0.15 !important; /* ← Muy tenue */
-                            stroke-width: 0.5px !important;
+                            stroke-opacity: 0.1 !important; 
+                            stroke-width: 0.8px !important;
                         }}
                         
-                        /* Flechas de dependencia */
-                        .arrow {{ stroke: #4B5563 !important; stroke-width: 1.2 !important; opacity: 0.5 !important; fill: none !important; }}
+                        /* FLECHAS DE DEPENDENCIA (Las que no queremos ocultar) */
+                        /* Las forzamos a ser visibles y con color sólido */
+                        .arrow {{ 
+                            stroke: #9ca3af !important; 
+                            stroke-width: 1.6 !important; 
+                            opacity: 1 !important; 
+                            fill: none !important; 
+                        }}
                         
                         /* Colores de Barras NEXION */
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
@@ -416,7 +423,7 @@ with main_container:
                         .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                         .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
                         
-                        .today-highlight {{ fill: #3b82f6 !important; opacity: 0.1 !important; }}
+                        .today-highlight {{ fill: #3b82f6 !important; opacity: 0.15 !important; }}
                     </style>
                 </head>
                 <body>
@@ -431,16 +438,15 @@ with main_container:
                                 date_format: 'YYYY-MM-DD'
                             }});
             
-                            /* Script para limpiar líneas verticales sobrantes y suavizar horizontales */
+                            /* LIMPIEZA QUIRÚRGICA: Solo ocultamos líneas verticales de la red */
                             setTimeout(function() {{
-                                var lines = document.querySelectorAll('#gantt svg line.grid-line');
-                                lines.forEach(function(line) {{
+                                // Seleccionamos solo las líneas que pertenecen a la red de fondo
+                                var gridLines = document.querySelectorAll('#gantt svg .grid-line');
+                                gridLines.forEach(function(line) {{
                                     var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
-                                    var y1 = line.getAttribute('y1'), y2 = line.getAttribute('y2');
-                                    
-                                    // Si es vertical (x1 == x2), la ocultamos para que el Gantt se vea más limpio
+                                    // Si es una línea vertical (x1 igual a x2), la quitamos
                                     if(x1 === x2) {{ 
-                                        line.style.stroke = 'transparent'; 
+                                        line.style.display = 'none'; 
                                     }}
                                 }});
                             }}, 150);
@@ -676,6 +682,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
