@@ -806,7 +806,7 @@ with main_container:
                             otras = [c for c in p.columns if c not in cols_sistema]
                             st.session_state.df_analisis = p[cols_sistema + otras]
 
-                    st.markdown("### 📋 RECOMENDACIONES GENERADAS")
+                    st.markdown("### RECOMENDACIONES GENERADAS")
                     modo_edicion = st.toggle("🔓 EDITAR VALORES")
                     
                     p_editado = st.data_editor(
@@ -820,27 +820,38 @@ with main_container:
                         key="editor_pro_v11"
                     )
 
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        st.download_button("💾 DESCARGAR CSV", p_editado.to_csv(index=False).encode('utf-8-sig'), "Analisis_Nexion.csv", use_container_width=True)
-                    with c2:
-                        if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
-                            st.session_state.df_analisis = p_editado
-                            st.toast("Cambios aplicados", icon="📌")
-                    with c3:
-                        id_guardado = f"guardado_{st.session_state.archivo_actual}"
-                        if not st.session_state.get(id_guardado, False):
-                            if st.button("🚀 GUARDAR EN LOG", use_container_width=True):
-                                ant = pd.read_csv(archivo_log) if os.path.exists(archivo_log) else pd.DataFrame()
-                                pd.concat([ant, p_editado], ignore_index=True).to_csv(archivo_log, index=False, encoding='utf-8-sig')
-                                st.session_state[id_guardado] = True
-                                st.snow()
-                                st.rerun()
-                        else:
-                            st.button("✅ REGISTROS ASEGURADOS", use_container_width=True, disabled=True)
-
-                except Exception as e:
-                    st.error(f"Error en procesamiento: {e}")
+                    # --- BLOQUE DE ACCIONES FINALES (3 COLUMNAS SIMÉTRICAS) ---
+                    with st.container():
+                        c1, c2, c3 = st.columns(3)
+                        
+                        with c1:
+                            # Botón para descargar el CSV analizado
+                            st.download_button(
+                                label="💾 DESCARGAR CSV",
+                                data=p_editado.to_csv(index=False).encode('utf-8-sig'),
+                                file_name="Analisis_Nexion.csv",
+                                use_container_width=True
+                            )
+                            
+                        with c2:
+                            # Botón para fijar los cambios hechos en el editor
+                            if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
+                                st.session_state.df_analisis = p_editado
+                                st.toast("Cambios aplicados localmente", icon="📌")
+                                
+                        with c3:
+                            # Lógica de guardado en Log Maestro
+                            id_guardado = f"guardado_{st.session_state.archivo_actual}"
+                            if not st.session_state.get(id_guardado, False):
+                                if st.button("🚀 GUARDAR REGISTROS", use_container_width=True):
+                                    ant = pd.read_csv(archivo_log) if os.path.exists(archivo_log) else pd.DataFrame()
+                                    pd.concat([ant, p_editado], ignore_index=True).to_csv(archivo_log, index=False, encoding='utf-8-sig')
+                                    st.session_state[id_guardado] = True
+                                    st.snow()
+                                    st.rerun()
+                            else:
+                                # Botón de estado deshabilitado (Aparición exacta a tu imagen)
+                                st.button("✅ REGISTROS ASEGURADOS", use_container_width=True, disabled=True)
 
             # --- SISTEMA DE SELLADO (DIVIDIDO EN COLUMNAS) ---
             st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
@@ -902,6 +913,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
