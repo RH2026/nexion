@@ -786,68 +786,63 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ----
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")         
                         
-            # --- 1. ESTADO DE ESPERA: NÚCLEO ACTIVO (XENOCODE BLUE) ---
+            # --- 1. ESTADO DE ESPERA: NÚCLEO ACTIVO (FORZADO CON !IMPORTANT) ---
             if not file_p:
                 st.markdown(f"""
-                    <div class="nexion-loader-container">
-                        <div class="nexion-core-active"></div>
-                        <div class="nexion-halo-pulse"></div>
-                        <p class="nexion-branding-text">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
+                    <div class="nexion-wrapper">
+                        <div class="nexion-dot"></div>
+                        <div class="nexion-wave"></div>
+                        <p class="nexion-text-fixed">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
                     </div>
                     
                     <style>
-                        .nexion-loader-container {{
-                            height: 380px;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            background: transparent;
-                            margin: 20px 0;
-                            position: relative;
+                        /* Usamos clases nuevas para evitar conflictos con tu CSS maestro */
+                        .nexion-wrapper {{
+                            height: 380px !important;
+                            display: flex !important;
+                            flex-direction: column !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            background: transparent !important;
                         }}
                         
-                        .nexion-core-active {{
-                            width: 14px;
-                            height: 14px;
-                            /* El azul exacto de tu menú HUB LOG */
-                            background: #54AFE7; 
-                            border-radius: 50%;
-                            box-shadow: 0 0 15px #54AFE7, 0 0 30px rgba(84,175,231,0.4);
-                            animation: active-vibration 2s ease-in-out infinite;
-                            z-index: 5;
+                        .nexion-dot {{
+                            width: 14px !important;
+                            height: 14px !important;
+                            background-color: #54AFE7 !important; 
+                            border-radius: 50% !important;
+                            box-shadow: 0 0 20px #54AFE7, 0 0 40px rgba(84,175,231,0.4) !important;
+                            animation: nexion-vibrance 2s ease-in-out infinite !important;
                         }}
 
-                        .nexion-halo-pulse {{
-                            position: absolute;
-                            width: 50px;
-                            height: 50px;
-                            border: 1px solid rgba(84, 175, 231, 0.15);
-                            border-radius: 50%;
-                            animation: halo-slow-expand 4s linear infinite;
+                        .nexion-wave {{
+                            position: absolute !important;
+                            width: 60px !important;
+                            height: 60px !important;
+                            border: 1px solid rgba(84, 175, 231, 0.3) !important;
+                            border-radius: 50% !important;
+                            animation: nexion-spread 4s linear infinite !important;
                         }}
                         
-                        .nexion-branding-text {{
-                            /* Aplicando el color azulado de NEXION */
-                            color: #54AFE7;
-                            font-family: 'Monospace', monospace;
-                            letter-spacing: 5px;
-                            font-size: 10px;
-                            font-weight: 400;
-                            margin-top: 45px;
-                            opacity: 0.7; /* Sincronizado con la intensidad de tu UI */
-                            text-transform: uppercase;
+                        .nexion-text-fixed {{
+                            color: #54AFE7 !important; /* El azul de HUB LOG */
+                            font-family: 'Monospace', monospace !important;
+                            letter-spacing: 5px !important;
+                            font-size: 10px !important;
+                            margin-top: 50px !important;
+                            opacity: 0.8 !important;
+                            text-align: center !important;
                         }}
                         
-                        @keyframes active-vibration {{
+                        @keyframes nexion-vibrance {{
                             0%, 100% {{ transform: scale(1); filter: brightness(1); }}
-                            50% {{ transform: scale(1.25); filter: brightness(1.3); }}
+                            50% {{ transform: scale(1.3); filter: brightness(1.5); }}
                         }}
 
-                        @keyframes halo-slow-expand {{
+                        @keyframes nexion-spread {{
                             0% {{ transform: scale(1); opacity: 0; }}
-                            50% {{ opacity: 0.15; }}
-                            100% {{ transform: scale(3); opacity: 0; }}
+                            50% {{ opacity: 0.2; }}
+                            100% {{ transform: scale(3.5); opacity: 0; }}
                         }}
                     </style>
                 """, unsafe_allow_html=True)
@@ -977,6 +972,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
