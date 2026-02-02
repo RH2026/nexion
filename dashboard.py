@@ -787,68 +787,64 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ---
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
             
-            # --- 1. ESTADO DE ESPERA: ANIMACIÓN REFORZADA ---
+            # --- 1. ESTADO DE ESPERA: PULSO DE RADAR (ESTILO XENOCODE) ---
             if not file_p:
                 st.markdown(f"""
-                    <div class="loader-container">
-                        <div class="truck-icon">🚚</div>
-                        <div class="scanner-line"></div>
-                        <p class="status-text">XENOCODE ENGINE READY</p>
+                    <div class="radar-container">
+                        <div class="radar-pulse"></div>
+                        <div class="radar-core"></div>
+                        <p class="radar-text">WAITING FOR DATA SOURCE</p>
                     </div>
                     
                     <style>
-                        .loader-container {{
-                            height: 300px;
+                        .radar-container {{
+                            height: 350px;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
                             justify-content: center;
-                            background: rgba(84, 175, 231, 0.03);
-                            border-radius: 20px;
-                            border: 1px solid rgba(84, 175, 231, 0.1);
                             position: relative;
-                            overflow: hidden;
-                            margin: 20px 0;
                         }}
                         
-                        .truck-icon {{
-                            font-size: 80px;
-                            filter: drop-shadow(0 0 15px rgba(84, 175, 231, 0.5));
-                            animation: move 3s ease-in-out infinite;
-                        }}
-                        
-                        .scanner-line {{
+                        .radar-pulse {{
+                            width: 100px;
+                            height: 100px;
+                            background: transparent;
+                            border: 2px solid #54AFE7;
+                            border-radius: 50%;
                             position: absolute;
-                            top: 0;
-                            width: 100%;
-                            height: 2px;
-                            background: linear-gradient(90deg, transparent, #54AFE7, transparent);
-                            animation: scan 2.5s linear infinite;
-                            opacity: 0.5;
+                            animation: pulse-out 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+                        }}
+
+                        .radar-core {{
+                            width: 15px;
+                            height: 15px;
+                            background: #54AFE7;
+                            border-radius: 50%;
+                            box-shadow: 0 0 20px #54AFE7;
+                            margin-bottom: 40px;
                         }}
                         
-                        .status-text {{
+                        .radar-text {{
                             color: #54AFE7;
-                            font-family: 'Monospace';
-                            letter-spacing: 5px;
-                            font-size: 12px;
+                            font-family: monospace; /* Usando la fuente de NEXION */
+                            letter-spacing: 6px;
+                            font-size: 11px;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                            opacity: 0.8;
                             margin-top: 20px;
-                            animation: blink 1.5s infinite;
                         }}
                         
-                        @keyframes move {{
-                            0%, 100% {{ transform: translateY(0) rotate(-2deg); }}
-                            50% {{ transform: translateY(-10px) rotate(2deg); }}
-                        }}
-                        
-                        @keyframes scan {{
-                            0% {{ top: 0; }}
-                            100% {{ top: 100%; }}
-                        }}
-                        
-                        @keyframes blink {{
-                            0%, 100% {{ opacity: 0.3; }}
-                            50% {{ opacity: 0.8; }}
+                        @keyframes pulse-out {{
+                            0% {{
+                                transform: scale(0.5);
+                                opacity: 0.8;
+                            }}
+                            100% {{
+                                transform: scale(2.5);
+                                opacity: 0;
+                            }}
                         }}
                     </style>
                 """, unsafe_allow_html=True)
@@ -978,6 +974,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
