@@ -784,9 +784,12 @@ with main_container:
                 return out_io.getvalue()
 
             # --- CARGA Y PROCESAMIENTO ERP ----
-            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")         
-                        
-            # --- 1. ESTADO DE ESPERA: NÚCLEO CALIBRADO (XENOCODE BLUE) ---
+            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")                    
+            
+            # --- CARGA Y PROCESAMIENTO ERP ---
+            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
+            
+            # --- 1. ESTADO DE ESPERA: CALIBRACIÓN DE ESPACIOS (XENOCODE CORE) ---
             if not file_p:
                 st.markdown(f"""
                     <div class="nexion-fixed-wrapper">
@@ -799,7 +802,8 @@ with main_container:
                     
                     <style>
                         .nexion-fixed-wrapper {{
-                            height: 380px !important;
+                            /* Reducimos la altura total para quitar aire arriba y abajo */
+                            height: 250px !important; 
                             display: flex !important;
                             flex-direction: column !important;
                             align-items: center !important;
@@ -808,7 +812,6 @@ with main_container:
                             position: relative !important;
                         }}
                         
-                        /* Nodo central que ancla a ambos elementos en el mismo punto */
                         .nexion-center-node {{
                             position: relative !important;
                             display: flex !important;
@@ -831,7 +834,7 @@ with main_container:
 
                         .nexion-halo-ring {{
                             position: absolute !important;
-                            width: 14px !important; /* Inicia del mismo tamaño que el punto */
+                            width: 14px !important;
                             height: 14px !important;
                             border: 1px solid #54AFE7 !important;
                             border-radius: 50% !important;
@@ -845,7 +848,8 @@ with main_container:
                             font-family: 'Monospace', monospace !important;
                             letter-spacing: 5px !important;
                             font-size: 10px !important;
-                            margin-top: 60px !important;
+                            /* REDUCIMOS EL MARGEN AQUÍ PARA PEGARLO AL CÍRCULO */
+                            margin-top: 35px !important; 
                             opacity: 0.8 !important;
                             text-align: center !important;
                         }}
@@ -987,6 +991,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
