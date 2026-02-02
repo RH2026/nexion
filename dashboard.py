@@ -777,9 +777,35 @@ with main_container:
                 return out_io.getvalue()
 
             # --- CARGA Y PROCESAMIENTO ERP ---
+            # --- CARGA Y PROCESAMIENTO ERP ---
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
             
-            if file_p:
+            # --- 1. ESTADO DE ESPERA: ANIMACIÓN (SI NO HAY ARCHIVO) ---
+            if not file_p:
+                st.markdown(f"""
+                    <style>
+                        .lottie-nexion {{
+                            filter: drop-shadow(0 0 10px rgba(84, 175, 231, 0.2));
+                            display: flex;
+                            justify-content: center;
+                            margin: 30px 0;
+                        }}
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                lottie_url = "https://lottie.host/869e877e-128e-4a60-968b-577777777777/example.json" 
+                lottie_json = load_lottieurl(lottie_url)
+                
+                if lottie_json:
+                    with st.container():
+                        st.markdown('<div class="lottie-nexion">', unsafe_allow_html=True)
+                        st_lottie(lottie_json, height=280, key="nexion_smart_truck", speed=1, loop=True, quality="high")
+                        st.markdown('</div>', unsafe_allow_html=True)
+                        
+                st.markdown(f"<p style='text-align:center; color:#54AFE7; font-family:monospace; letter-spacing:5px; font-size:12px; opacity:0.6;'>READY TO ANALYZE</p>", unsafe_allow_html=True)
+
+            # --- 2. ESTADO ACTIVO: MOTOR SMART (SI HAY ARCHIVO) ---
+            else:
                 if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
                     if "df_analisis" in st.session_state: del st.session_state["df_analisis"]
                     st.session_state.archivo_actual = file_p.name
@@ -793,7 +819,7 @@ with main_container:
                         
                         if 'DIRECCION' in p.columns:
                             def motor_prioridad(row):
-                                es_local = d_local(row['DIRECCION']) # Función ZMG
+                                es_local = d_local(row['DIRECCION'])
                                 if "LOCAL" in es_local: return "LOCAL"
                                 return d_flet.get(row['DIRECCION'], "SIN HISTORIAL")
 
@@ -817,41 +843,9 @@ with main_container:
                             "COSTO": st.column_config.NumberColumn(":material/payments: TARIFA", format="$%.2f", disabled=not modo_edicion),
                         },
                         key="editor_pro_v11"
-                    )            
-            # --- ANIMACIÓN DE ESPERA (ESTILO XENOCODE) ---
-            if not file_p:
-                # Definimos el color azul de tus botones (#54AFE7) y el blanco puro
-                st.markdown(f"""
-                    <style>
-                        .lottie-nexion {{
-                            filter: drop-shadow(0 0 10px rgba(84, 175, 231, 0.2)); /* Brillo sutil azul */
-                            display: flex;
-                            justify-content: center;
-                            margin: 30px 0;
-                        }}
-                    </style>
-                """, unsafe_allow_html=True)
-                
-                # Cargamos el camión minimalista
-                lottie_url = "https://lottie.host/869e877e-128e-4a60-968b-577777777777/example.json" 
-                lottie_json = load_lottieurl(lottie_url) # Asegúrate de tener esta función definida arriba
-                
-                if lottie_json:
-                    with st.container():
-                        st.markdown('<div class="lottie-nexion">', unsafe_allow_html=True)
-                        st_lottie(
-                            lottie_json, 
-                            height=280, 
-                            key="nexion_smart_truck",
-                            # Esto fuerza a que la animación use tus colores Onix
-                            speed=1,
-                            loop=True,
-                            quality="high"
-                        )
-                        st.markdown('</div>', unsafe_allow_html=True)
-                        
-                    st.markdown(f"<p style='text-align:center; color:#54AFE7; font-family:monospace; letter-spacing:5px; font-size:12px; opacity:0.6;'>READY TO ANALYZE</p>", unsafe_allow_html=True)       
-                    # --- REESTRUCTURA DE ACCIONES (JERARQUÍA VISUAL XENOCODE) ---
+                    )
+
+                    # --- REESTRUCTURA DE ACCIONES ---
                     with st.container():
                         st.download_button(
                             label=":material/download: DESCARGAR RESULTADOS (CSV ANALIZADO)",
@@ -898,11 +892,10 @@ with main_container:
                             st.warning("No hay datos en la tabla para generar sellos.")
         
                     st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
-        
                     st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>SELLADO DIGITAL</p>", unsafe_allow_html=True)
+                    
                     with st.container(border=True):
                         pdfs = st.file_uploader(":material/upload: Subir Facturas PDF para estampar", type="pdf", accept_multiple_files=True, key="u_digital_full")
-                        
                         if pdfs:
                             if st.button("EJECUTAR ESTAMPADO DIGITAL EN PDFs", use_container_width=True):
                                 df_ref = st.session_state.get('df_analisis', pd.DataFrame())
@@ -917,15 +910,12 @@ with main_container:
                                     st.download_button(":material/folder_zip: DESCARGAR FACTURAS SELLADAS (ZIP)", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
                                 else:
                                     st.error("Error: La tabla de análisis está vacía.")
+                
                 except Exception as e:
-                    st.error(f"Error: {e}")
-        
-                # --- AQUÍ CERRAMOS EL TRY Y EL IF DE ANALISIS ---
-                except Exception as e:
-                    st.error(f"Error en procesamiento: {e}")
-                    
-            # --- SALIMOS AL NIVEL DE MENU_MAIN PARA LOS OTROS SUBMENÚS ---
-            elif st.session_state.menu_sub == "SISTEMA":
+                    st.error(f"Error en procesamiento Smart: {e}")
+
+            # --- CIERRE DE LOS OTROS SUBMENÚS (ALINEADOS CON EL MOTOR SMART) ---
+            if st.session_state.menu_sub == "SISTEMA":
                 st.write("Estado de servidores y conexión con GitHub/SAP.")
                 
             elif st.session_state.menu_sub == "ALERTAS":
@@ -939,6 +929,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
