@@ -851,7 +851,7 @@ with main_container:
                     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
                     st.markdown("<h3 style='font-size: 16px; color: white;'>🖨️ SOBREIMPRESIÓN Y SELLADO DIGITAL</h3>", unsafe_allow_html=True)
                     
-                    with st.expander("⚙️ PANEL DE CALIBRACIÓN (COORDENADAS PDF)"):
+                    with st.expander("⚙️ PANEL DE CALIBRACIÓN (COORDENADAS PDF)", expanded=True):
                         col_x, col_y = st.columns(2)
                         ajuste_x = col_x.slider("Eje X", 0, 612, 510)
                         ajuste_y = col_y.slider("Eje Y", 0, 792, 760)
@@ -913,6 +913,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
