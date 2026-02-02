@@ -787,50 +787,71 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ---
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
             
-            # --- 1. ESTADO DE ESPERA: ANIMACIÓN (SI NO HAY ARCHIVO) ---
+            # --- 1. ESTADO DE ESPERA: ANIMACIÓN REFORZADA ---
             if not file_p:
                 st.markdown(f"""
+                    <div class="loader-container">
+                        <div class="truck-icon">🚚</div>
+                        <div class="scanner-line"></div>
+                        <p class="status-text">XENOCODE ENGINE READY</p>
+                    </div>
+                    
                     <style>
-                        .lottie-nexion {{
-                            filter: drop-shadow(0 0 10px rgba(84, 175, 231, 0.2));
+                        .loader-container {{
+                            height: 300px;
                             display: flex;
+                            flex-direction: column;
+                            align-items: center;
                             justify-content: center;
-                            margin: 30px 0;
-                            min-height: 280px; /* Asegura el espacio aunque no cargue */
+                            background: rgba(84, 175, 231, 0.03);
+                            border-radius: 20px;
+                            border: 1px solid rgba(84, 175, 231, 0.1);
+                            position: relative;
+                            overflow: hidden;
+                            margin: 20px 0;
+                        }}
+                        
+                        .truck-icon {{
+                            font-size: 80px;
+                            filter: drop-shadow(0 0 15px rgba(84, 175, 231, 0.5));
+                            animation: move 3s ease-in-out infinite;
+                        }}
+                        
+                        .scanner-line {{
+                            position: absolute;
+                            top: 0;
+                            width: 100%;
+                            height: 2px;
+                            background: linear-gradient(90deg, transparent, #54AFE7, transparent);
+                            animation: scan 2.5s linear infinite;
+                            opacity: 0.5;
+                        }}
+                        
+                        .status-text {{
+                            color: #54AFE7;
+                            font-family: 'Monospace';
+                            letter-spacing: 5px;
+                            font-size: 12px;
+                            margin-top: 20px;
+                            animation: blink 1.5s infinite;
+                        }}
+                        
+                        @keyframes move {{
+                            0%, 100% {{ transform: translateY(0) rotate(-2deg); }}
+                            50% {{ transform: translateY(-10px) rotate(2deg); }}
+                        }}
+                        
+                        @keyframes scan {{
+                            0% {{ top: 0; }}
+                            100% {{ top: 100%; }}
+                        }}
+                        
+                        @keyframes blink {{
+                            0%, 100% {{ opacity: 0.3; }}
+                            50% {{ opacity: 0.8; }}
                         }}
                     </style>
                 """, unsafe_allow_html=True)
-                
-                # Intentamos con una URL de respaldo si la principal falla
-                lottie_url = "https://lottie.host/869e877e-128e-4a60-968b-577777777777/example.json" 
-                
-                try:
-                    lottie_json = load_lottieurl(lottie_url)
-                    
-                    if lottie_json:
-                        with st.container():
-                            st.markdown('<div class="lottie-nexion">', unsafe_allow_html=True)
-                            st_lottie(
-                                lottie_json, 
-                                height=280, 
-                                key="nexion_smart_truck",
-                                speed=1, 
-                                loop=True, 
-                                quality="high"
-                            )
-                            st.markdown('</div>', unsafe_allow_html=True)
-                    else:
-                        # Si no carga el JSON, ponemos un spinner elegante de Streamlit
-                        with st.container():
-                            st.markdown('<div class="lottie-nexion">', unsafe_allow_html=True)
-                            st.spinner("Cargando interfaz visual...")
-                            st.markdown('</div>', unsafe_allow_html=True)
-                            
-                except Exception as e:
-                    # Si truena st_lottie, mostramos un icono estático pro
-                    st.markdown("<h1 style='text-align:center; opacity:0.1; font-size:100px;'>🚚</h1>", unsafe_allow_html=True)
-
-                st.markdown(f"<p style='text-align:center; color:#54AFE7; font-family:monospace; letter-spacing:5px; font-size:12px; opacity:0.6;'>READY TO ANALYZE</p>", unsafe_allow_html=True)
 
             # --- 2. ESTADO ACTIVO: MOTOR SMART (SI HAY ARCHIVO) ---
             else:
@@ -957,6 +978,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
