@@ -463,23 +463,72 @@ with main_container:
             c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>RETRASO MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
             c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
             
-            # ── 6. GESTIÓN DE PEDIDOS CRÍTICOS ──────────────────────────────────────────
+            # ── 6. GESTIÓN DE PEDIDOS CRÍTICOS (TABLA EXPANDIDA) ──────────────────────────────────
             st.divider()
+            
+            # Filtramos solo los que tienen al menos 1 día de atraso
             df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
             
             if not df_criticos.empty:
-                with st.expander("🔍 DESGLOSE DE ALERTAS ACTIVAS", expanded=True):
+                st.markdown(f"<p style='color:{vars_css['sub']}; font-size:12px; font-weight:bold; letter-spacing:2px;'>🔍 PANEL DE CONTROL DE EXCEPCIONES</p>", unsafe_allow_html=True)
+                
+                # --- FILTROS ESPECÍFICOS PARA LA TABLA ---
+                f_col1, f_col2 = st.columns(2)
+                with f_col1:
+                    # Filtro por Fletera (dentro de los críticos)
+                    fleteras_criticas = sorted(df_criticos["FLETERA"].unique())
+                    sel_fletera = st.multiselect("Filtrar por Transportista:", fleteras_criticas, placeholder="Todas las fleteras")
+                
+                with f_col2:
+                    # Filtro por Gravedad del Atraso
+                    sel_gravedad = st.selectbox("Gravedad del Retraso:", 
+                                                ["Todos", "Crítico (+5 días)", "Moderado (2-4 días)", "Leve (1 día)"])
+            
+                # Aplicación de filtros a la visualización
+                df_viz = df_criticos.copy()
+                
+                if sel_fletera:
+                    df_viz = df_viz[df_viz["FLETERA"].isin(sel_fletera)]
+                
+                if sel_gravedad == "Crítico (+5 días)":
+                    df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
+                elif sel_gravedad == "Moderado (2-4 días)":
+                    df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
+                elif sel_gravedad == "Leve (1 día)":
+                    df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
+            
+                # Renderizado de la Tabla con las nuevas columnas solicitadas
+                with st.expander("VER DETALLE DE ENVÍOS CON RETRASO", expanded=True):
                     st.dataframe(
-                        df_criticos[["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "FLETERA", "DIAS_TRANS", "DIAS_ATRASO"]].sort_values("DIAS_ATRASO", ascending=False),
+                        df_viz[[
+                            "NÚMERO DE PEDIDO", 
+                            "NOMBRE DEL CLIENTE", 
+                            "DESTINO", 
+                            "FECHA DE ENVÍO", 
+                            "PROMESA DE ENTREGA", 
+                            "FLETERA", 
+                            "GUIA",
+                            "DIAS_TRANS", 
+                            "DIAS_ATRASO"
+                        ]].sort_values("DIAS_ATRASO", ascending=False),
                         use_container_width=True,
                         hide_index=True,
                         column_config={
-                            "DIAS_TRANS": st.column_config.ProgressColumn("DÍAS EN VIAJE", format="%d", min_value=0, max_value=15, color="orange"),
-                            "DIAS_ATRASO": st.column_config.ProgressColumn("DÍAS DE RETRASO", format="%d", min_value=0, max_value=15, color="red")
+                            "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
+                            "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
+                            "DIAS_TRANS": st.column_config.NumberColumn("DÍAS VIAJE", format="%d 🚚"),
+                            "DIAS_ATRASO": st.column_config.ProgressColumn(
+                                "RETRASO", 
+                                format="%d DÍAS", 
+                                min_value=0, 
+                                max_value=15, 
+                                color="red"
+                            ),
+                            "GUIA": st.column_config.TextColumn("Nº GUÍA")
                         }
                     )
             else:
-                st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS EN EL PERIODO")
+                st.success("SISTEMA NEXION: OPERACIÓN LIMPIA - SIN RETRASOS DETECTADOS")
 
 
         
@@ -1131,6 +1180,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
