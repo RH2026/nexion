@@ -21,6 +21,19 @@ import unicodedata
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
+# --- COLOCAR ESTO AL PRINCIPIO (ZONA DE FUNCIONES GLOBALES) ---
+@st.cache_data
+def motor_logistico_central():
+    try:
+        if os.path.exists("matriz_historial.csv"):
+            h = pd.read_csv("matriz_historial.csv", encoding='utf-8-sig')
+            h.columns = [str(c).upper().strip() for c in h.columns]
+            # ... resto del código de la función ...
+            return mejores.set_index(c_dir)[c_flet].to_dict(), mejores.set_index(c_dir)[c_pre].to_dict()
+    except:
+        pass
+    return {}, {}
+
 # ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
@@ -861,6 +874,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
