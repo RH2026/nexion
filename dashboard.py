@@ -329,8 +329,7 @@ with main_container:
                 st.toast(f"Buscando: {busqueda}")
 
     # 2. SEGUIMIENTO
-    elif st.session_state.menu_main == "SEGUIMIENTO":
-        
+    elif st.session_state.menu_main == "SEGUIMIENTO":        
             @st.cache_data(ttl=600)  # Se actualiza cada 10 minutos
             def cargar_matriz_github():
                 # URL RAW de tu archivo en GitHub
@@ -1182,6 +1181,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
