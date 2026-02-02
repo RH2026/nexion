@@ -786,67 +786,68 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ----
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")         
                         
-            # --- 1. ESTADO DE ESPERA: NÚCLEO INTEGRADO (ONIX NEBULA) ---
+            # --- 1. ESTADO DE ESPERA: NÚCLEO ACTIVO (XENOCODE BLUE) ---
             if not file_p:
                 st.markdown(f"""
-                    <div class="nexion-loader-box">
-                        <div class="nebula-core"></div>
-                        <div class="nebula-pulse"></div>
-                        <p class="nebula-text">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
+                    <div class="nexion-container">
+                        <div class="nexion-core"></div>
+                        <div class="nexion-halo"></div>
+                        <p class="nexion-label">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
                     </div>
                     
                     <style>
-                        .nexion-loader-box {{
-                            height: 350px;
+                        .nexion-container {{
+                            height: 380px;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
                             justify-content: center;
-                            /* El fondo ahora es transparente para que use el de tu app */
                             background: transparent;
-                            border: 1px dashed rgba(255,255,255,0.05);
-                            border-radius: 15px;
                             margin: 20px 0;
+                            position: relative;
                         }}
                         
-                        .nebula-core {{
-                            width: 20px;
-                            height: 20px;
-                            background: rgba(255, 255, 255, 0.15);
+                        .nexion-core {{
+                            width: 12px;
+                            height: 12px;
+                            /* Usando el azul acero de tu branding */
+                            background: #54AFE7; 
                             border-radius: 50%;
-                            filter: blur(2px);
-                            box-shadow: 0 0 20px rgba(255,255,255,0.1), 0 0 40px rgba(255,255,255,0.05);
-                            animation: nebula-breathe 4s ease-in-out infinite;
+                            box-shadow: 0 0 15px #54AFE7, 0 0 30px rgba(84,175,231,0.3);
+                            animation: core-pulse 3s ease-in-out infinite;
+                            z-index: 5;
                         }}
 
-                        .nebula-pulse {{
+                        .nexion-halo {{
                             position: absolute;
-                            width: 100px;
-                            height: 100px;
-                            border: 1px solid rgba(255,255,255,0.03);
+                            width: 60px;
+                            height: 60px;
+                            border: 1px solid rgba(84, 175, 231, 0.2);
                             border-radius: 50%;
-                            animation: nebula-expand 5s linear infinite;
+                            animation: halo-expand 4s infinite;
                         }}
                         
-                        .nebula-text {{
-                            color: #FFFFFF;
+                        .nexion-label {{
+                            /* Color exacto de tu texto secundario en NEXION */
+                            color: #54AFE7;
                             font-family: 'Monospace', monospace;
-                            letter-spacing: 4px;
-                            font-size: 9px;
-                            font-weight: 200;
-                            margin-top: 40px;
-                            opacity: 0.3; /* Para que se vea como el texto de "HUB LOG" */
+                            letter-spacing: 5px;
+                            font-size: 10px;
+                            font-weight: 300;
+                            margin-top: 50px;
+                            opacity: 0.6;
+                            text-transform: uppercase;
                         }}
                         
-                        @keyframes nebula-breathe {{
-                            0%, 100% {{ transform: scale(1); opacity: 0.3; }}
-                            50% {{ transform: scale(1.5); opacity: 0.6; }}
+                        @keyframes core-pulse {{
+                            0%, 100% {{ transform: scale(1); opacity: 0.7; }}
+                            50% {{ transform: scale(1.4); opacity: 1; }}
                         }}
 
-                        @keyframes nebula-expand {{
-                            0% {{ transform: scale(0.8); opacity: 0; }}
-                            50% {{ opacity: 0.05; }}
-                            100% {{ transform: scale(2.2); opacity: 0; }}
+                        @keyframes halo-expand {{
+                            0% {{ transform: scale(0.5); opacity: 0; }}
+                            50% {{ opacity: 0.2; }}
+                            100% {{ transform: scale(2.5); opacity: 0; }}
                         }}
                     </style>
                 """, unsafe_allow_html=True)
@@ -976,6 +977,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
