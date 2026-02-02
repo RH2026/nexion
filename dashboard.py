@@ -329,7 +329,6 @@ with main_container:
                 st.toast(f"Buscando: {busqueda}")
 
     elif st.session_state.menu_main == "SEGUIMIENTO":
-        st.session_state.menu_main = "SEGUIMIENTO"
         # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
         @st.cache_data(ttl=600)
         def cargar_matriz_github():
@@ -1084,6 +1083,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
