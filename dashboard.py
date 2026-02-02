@@ -893,14 +893,29 @@ with main_container:
             
     # 5. HUB LOG
     elif st.session_state.menu_main == "HUB LOG":
-                
+        # Librerías necesarias para el funcionamiento del HUB
+        import os
+        import io
+        import zipfile
+        import pandas as pd
+        from datetime import datetime as dt_class
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        from PyPDF2 import PdfReader, PdfWriter
+
         if st.session_state.menu_sub == "SMART ROUTING":
             st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
             
             # --- RUTAS Y MOTOR ---
             archivo_log = "log_maestro_acumulado.csv"
-            d_flet, d_price = motor_logistico_central() # Usa la función que definimos antes
             
+            # Intentar obtener el motor logístico (asegura que la función esté definida)
+            try:
+                d_flet, d_price = motor_logistico_central()
+            except:
+                d_flet, d_price = {}, {}
+                st.warning("Motor logístico central no detectado. Cargando en modo manual.")
+
             if 'db_acumulada' not in st.session_state:
                 st.session_state.db_acumulada = pd.read_csv(archivo_log) if os.path.exists(archivo_log) else pd.DataFrame()
 
@@ -939,9 +954,9 @@ with main_container:
                 return out_io.getvalue()
 
             # --- CARGA Y PROCESAMIENTO ERP ----
-            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")                    
-                        
-            # --- 1. ESTADO DE ESPERA: CALIBRACIÓN DE ESPACIOS (XENOCODE CORE) ---
+            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv") 
+            
+            # --- 1. ESTADO DE ESPERA: CALIBRACIÓN DE ESPACIOS ---
             if not file_p:
                 st.markdown(f"""
                     <div class="nexion-fixed-wrapper">
@@ -951,74 +966,18 @@ with main_container:
                         </div>
                         <p class="nexion-tech-label">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
                     </div>
-                    
                     <style>
-                        .nexion-fixed-wrapper {{
-                            /* Reducimos la altura total para quitar aire arriba y abajo */
-                            height: 250px !important; 
-                            display: flex !important;
-                            flex-direction: column !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            background: transparent !important;
-                            position: relative !important;
-                        }}
-                        
-                        .nexion-center-node {{
-                            position: relative !important;
-                            display: flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            width: 20px !important;
-                            height: 20px !important;
-                        }}
-                        
-                        .nexion-core-point {{
-                            width: 14px !important;
-                            height: 14px !important;
-                            background-color: #54AFE7 !important; 
-                            border-radius: 50% !important;
-                            box-shadow: 0 0 20px #54AFE7, 0 0 40px rgba(84,175,231,0.4) !important;
-                            animation: nexion-vibrance 2s ease-in-out infinite !important;
-                            z-index: 10 !important;
-                            position: absolute !important;
-                        }}
-
-                        .nexion-halo-ring {{
-                            position: absolute !important;
-                            width: 14px !important;
-                            height: 14px !important;
-                            border: 1px solid #54AFE7 !important;
-                            border-radius: 50% !important;
-                            opacity: 0 !important;
-                            animation: nexion-perfect-spread 4s linear infinite !important;
-                            z-index: 5 !important;
-                        }}
-                        
-                        .nexion-tech-label {{
-                            color: #54AFE7 !important;
-                            font-family: 'Monospace', monospace !important;
-                            letter-spacing: 5px !important;
-                            font-size: 10px !important;
-                            /* REDUCIMOS EL MARGEN AQUÍ PARA PEGARLO AL CÍRCULO */
-                            margin-top: 35px !important; 
-                            opacity: 0.8 !important;
-                            text-align: center !important;
-                        }}
-                        
-                        @keyframes nexion-vibrance {{
-                            0%, 100% {{ transform: scale(1); filter: brightness(1); }}
-                            50% {{ transform: scale(1.2); filter: brightness(1.4); }}
-                        }}
-
-                        @keyframes nexion-perfect-spread {{
-                            0% {{ transform: scale(1); opacity: 0; }}
-                            20% {{ opacity: 0.4; }}
-                            100% {{ transform: scale(6); opacity: 0; }}
-                        }}
+                        .nexion-fixed-wrapper {{ height: 250px !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: transparent !important; position: relative !important; }}
+                        .nexion-center-node {{ position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 20px !important; height: 20px !important; }}
+                        .nexion-core-point {{ width: 14px !important; height: 14px !important; background-color: #54AFE7 !important; border-radius: 50% !important; box-shadow: 0 0 20px #54AFE7, 0 0 40px rgba(84,175,231,0.4) !important; animation: nexion-vibrance 2s ease-in-out infinite !important; z-index: 10 !important; position: absolute !important; }}
+                        .nexion-halo-ring {{ position: absolute !important; width: 14px !important; height: 14px !important; border: 1px solid #54AFE7 !important; border-radius: 50% !important; opacity: 0 !important; animation: nexion-perfect-spread 4s linear infinite !important; z-index: 5 !important; }}
+                        .nexion-tech-label {{ color: #54AFE7 !important; font-family: 'Monospace', monospace !important; letter-spacing: 5px !important; font-size: 10px !important; margin-top: 35px !important; opacity: 0.8 !important; text-align: center !important; }}
+                        @keyframes nexion-vibrance {{ 0%, 100% {{ transform: scale(1); filter: brightness(1); }} 50% {{ transform: scale(1.2); filter: brightness(1.4); }} }}
+                        @keyframes nexion-perfect-spread {{ 0% {{ transform: scale(1); opacity: 0; }} 20% {{ opacity: 0.4; }} 100% {{ transform: scale(6); opacity: 0; }} }}
                     </style>
                 """, unsafe_allow_html=True)
-            # --- 2. ESTADO ACTIVO: MOTOR SMART (SI HAY ARCHIVO) ---
+            
+            # --- 2. ESTADO ACTIVO: MOTOR SMART ---
             else:
                 if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
                     if "df_analisis" in st.session_state: del st.session_state["df_analisis"]
@@ -1033,13 +992,15 @@ with main_container:
                         
                         if 'DIRECCION' in p.columns:
                             def motor_prioridad(row):
-                                es_local = d_local(row['DIRECCION'])
-                                if "LOCAL" in es_local: return "LOCAL"
+                                addr = str(row['DIRECCION']).upper()
+                                # Lógica local GDL
+                                if any(loc in addr for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA"]):
+                                    return "LOCAL"
                                 return d_flet.get(row['DIRECCION'], "SIN HISTORIAL")
 
                             p['RECOMENDACION'] = p.apply(motor_prioridad, axis=1)
                             p['COSTO'] = p.apply(lambda r: 0.0 if r['RECOMENDACION'] == "LOCAL" else d_price.get(r['DIRECCION'], 0.0), axis=1)
-                            p['FECHA_HORA'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                            p['FECHA_HORA'] = dt_class.now().strftime("%Y-%m-%d %H:%M")
                             
                             cols_sistema = [col_id, 'RECOMENDACION', 'COSTO', 'FECHA_HORA']
                             otras = [c for c in p.columns if c not in cols_sistema]
@@ -1059,7 +1020,6 @@ with main_container:
                         key="editor_pro_v11"
                     )
 
-                    # --- REESTRUCTURA DE ACCIONES ---
                     with st.container():
                         st.download_button(
                             label=":material/download: DESCARGAR RESULTADOS (CSV ANALIZADO)",
@@ -1068,50 +1028,44 @@ with main_container:
                             use_container_width=True,
                             key="btn_descarga_top"
                         )
-        
                         st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
-        
                         c_izq, c_der = st.columns(2)
                         with c_izq:
-                            if st.button(":material/push_pin: FIJAR CAMBIOS", use_container_width=True, key="btn_fijar_bottom"):
+                            if st.button(":material/push_pin: FIJAR CAMBIOS", use_container_width=True):
                                 st.session_state.df_analisis = p_editado
                                 st.toast("Cambios aplicados", icon="📌")
-                                
                         with c_der:
                             id_guardado = f"guardado_{st.session_state.archivo_actual}"
                             if not st.session_state.get(id_guardado, False):
-                                if st.button(":material/save: GUARDAR REGISTROS", use_container_width=True, key="btn_save_bottom"):
+                                if st.button(":material/save: GUARDAR REGISTROS", use_container_width=True):
                                     st.session_state[id_guardado] = True
                                     st.snow()
                                     st.rerun()
                             else:
-                                st.button(":material/verified_user: REGISTROS ASEGURADOS", use_container_width=True, disabled=True, key="btn_ok_bottom")
-                
+                                st.button(":material/verified_user: REGISTROS ASEGURADOS", use_container_width=True, disabled=True)
+                    
                     # --- SISTEMA DE SELLADO ---
                     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
                     st.markdown("<h3 style='font-size: 16px; color: white;'>:material/print: SISTEMA DE SELLADO Y SOBREIMPRESIÓN</h3>", unsafe_allow_html=True)
                     
-                    with st.expander(":material/settings: PANEL DE CALIBRACIÓN (COORDENADAS PDF)", expanded=True):
+                    with st.expander(":material/settings: PANEL DE CALIBRACIÓN", expanded=False):
                         col_x, col_y = st.columns(2)
                         ajuste_x = col_x.slider("Eje X (Horizontal)", 0, 612, 510)
                         ajuste_y = col_y.slider("Eje Y (Vertical)", 0, 792, 760)
-        
+
                     st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
-                    if st.button(":material/article: GENERAR SELLOS PARA FACTURAS (PAPEL FÍSICO)", use_container_width=True, key="btn_fisico_full"):
-                        sellos = st.session_state.df_analisis['RECOMENDACION'].tolist() if 'df_analisis' in st.session_state else []
+                    if st.button(":material/article: GENERAR SELLOS PARA FACTURAS (PAPEL)", use_container_width=True):
+                        sellos = st.session_state.df_analisis['RECOMENDACION'].tolist()
                         if sellos:
                             pdf_out = generar_sellos_fisicos(sellos, ajuste_x, ajuste_y)
                             st.download_button(":material/download: DESCARGAR PDF DE SELLOS", pdf_out, "Sellos_Fisicos.pdf", use_container_width=True)
-                        else:
-                            st.warning("No hay datos en la tabla para generar sellos.")
-        
-                    st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
-                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>SELLADO DIGITAL</p>", unsafe_allow_html=True)
                     
+                    st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>SELLADO DIGITAL (SOBRE PDF)</p>", unsafe_allow_html=True)
                     with st.container(border=True):
-                        pdfs = st.file_uploader(":material/upload: Subir Facturas PDF para estampar", type="pdf", accept_multiple_files=True, key="u_digital_full")
+                        pdfs = st.file_uploader("Subir Facturas PDF", type="pdf", accept_multiple_files=True)
                         if pdfs:
-                            if st.button("EJECUTAR ESTAMPADO DIGITAL EN PDFs", use_container_width=True):
+                            if st.button("EJECUTAR ESTAMPADO DIGITAL"):
                                 df_ref = st.session_state.get('df_analisis', pd.DataFrame())
                                 if not df_ref.empty:
                                     mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
@@ -1121,19 +1075,16 @@ with main_container:
                                             f_id = next((f for f in mapa.keys() if f in pdf.name.upper()), None)
                                             if f_id:
                                                 zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
-                                    st.download_button(":material/folder_zip: DESCARGAR FACTURAS SELLADAS (ZIP)", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
-                                else:
-                                    st.error("Error: La tabla de análisis está vacía.")
-                
+                                    st.download_button(":material/folder_zip: DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
+
                 except Exception as e:
                     st.error(f"Error en procesamiento Smart: {e}")
 
-            # --- CIERRE DE LOS OTROS SUBMENÚS (ALINEADOS CON EL MOTOR SMART) ---
-            if st.session_state.menu_sub == "SISTEMA":
-                st.write("Estado de servidores y conexión con GitHub/SAP.")
-                
-            elif st.session_state.menu_sub == "ALERTAS":
-                st.warning("No hay alertas críticas en el sistema actual.")
+        elif st.session_state.menu_sub == "SISTEMA":
+            st.info("ESTADO DE SERVIDORES: ONLINE | XENOCODE CORE: ACTIVE")
+            
+        elif st.session_state.menu_sub == "ALERTAS":
+            st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
 
 # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
 st.markdown(f"""
@@ -1143,6 +1094,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
