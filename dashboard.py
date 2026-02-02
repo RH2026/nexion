@@ -381,7 +381,6 @@ with main_container:
             tasks_js_str = json.dumps(tasks_data)
             
             # ── 2. RENDERIZADO GANTT REPARADO ───────────────────────────────
-            
             # ── 2. RENDERIZADO GANTT (REPARACIÓN DEFINITIVA NEXION) ─────────
             components.html(
                 f"""
@@ -390,42 +389,20 @@ with main_container:
                     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
                     <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
                     <style>
-                        html, body {{ background:#111827; margin:0; padding:0; overflow:hidden; }}
+                        html, body {{ background:#111827; margin:0; padding:0; }}
                         #gantt {{ background:#0E1117; }}
-                        
-                        /* Textos en Gris Platino */
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
-                        
-                        /* 1. CUADRÍCULA DE FONDO: La hacemos ultra sutil (Azul Onix) */
-                        /* Esto es lo que querías suavizar sin perder las flechas */
-                        .grid-line {{ 
-                            stroke: #1e2530 !important; 
-                            stroke-opacity: 0.15 !important; 
-                            stroke-width: 0.6px !important;
-                        }}
-                        
-                        /* 2. FLECHAS DE DEPENDENCIA: Las mantenemos fuertes y claras */
-                        /* El truco es que las flechas usan la clase .arrow, no .grid-line */
-                        .arrow {{ 
-                            stroke: #9ca3af !important; 
-                            stroke-width: 1.8 !important; 
-                            stroke-opacity: 1 !important; 
-                            fill: none !important; 
-                        }}
-                        
-                        /* Fondos de filas */
                         .grid-background {{ fill:#0b0e14 !important; }}
+                        .grid-header {{ fill:#151a24 !important; }}
                         .grid-row {{ fill:#0b0e14 !important; }}
                         .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-                        
-                        /* Colores de Barras NEXION */
+                        .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.4 !important; }}
+                        .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
                         .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
                         .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        
-                        /* El resaltado de hoy */
-                        .today-highlight {{ fill: #3b82f6 !important; opacity: 0.1 !important; }}
+                        .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
                     </style>
                 </head>
                 <body>
@@ -435,10 +412,17 @@ with main_container:
                         if(tasks.length){{
                             var gantt = new Gantt('#gantt', tasks, {{
                                 view_mode: '{gantt_view}',
-                                bar_height: 25,
-                                padding: 45,
+                                bar_height: 20,
+                                padding: 40,
                                 date_format: 'YYYY-MM-DD'
                             }});
+                            setTimeout(function() {{
+                                var lines = document.querySelectorAll('#gantt svg line');
+                                lines.forEach(function(line) {{
+                                    var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
+                                    if(x1 === x2) {{ line.style.display = 'none'; }}
+                                }});
+                            }}, 100);
                         }}
                     </script>
                 </body>
@@ -671,6 +655,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
