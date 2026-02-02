@@ -787,66 +787,78 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ---
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
                               
-            # --- 1. ESTADO DE ESPERA: CÍRCULO VIBRANTE (ESTILO ONIX-XENOCODE) ---
+            Entendido, Xenocode. Vamos a llevar el diseño al nivel Onix puro: eliminamos el azul brillante y usamos una paleta de grises profundos, metalizados y blancos sutiles.
+
+He ajustado la animación para que sea un latido lento y elegante (frecuencia baja), simulando un sistema que "respira" en lugar de uno nervioso.
+
+Aquí tienes el código con los colores exactos de NEXION:
+
+Python
+            # --- CARGA Y PROCESAMIENTO ERP ---
+            # Asegúrate de que esta sea la ÚNICA vez que aparece esta línea para evitar el DuplicateElementId
+            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
+            
+            # --- 1. ESTADO DE ESPERA: NÚCLEO ONIX (LENTITUD Y ELEGANCIA) ---
             if not file_p:
                 st.markdown(f"""
-                    <div class="onix-loader-container">
-                        <div class="vibrant-circle"></div>
-                        <div class="glow-ring"></div>
-                        <p class="waiting-text">WAITING FOR DATA SOURCE</p>
+                    <div class="onix-container">
+                        <div class="onix-core"></div>
+                        <div class="onix-ring"></div>
+                        <p class="onix-text">SYSTEM IDLE // READY TO ANALYZE</p>
                     </div>
                     
                     <style>
-                        .onix-loader-container {{
+                        .onix-container {{
                             height: 400px;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
                             justify-content: center;
-                            background: radial-gradient(circle, rgba(84,175,231,0.05) 0%, rgba(10,11,13,0) 70%);
+                            background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, rgba(10,11,13,1) 80%);
                             border-radius: 20px;
                             margin: 20px 0;
                         }}
                         
-                        .vibrant-circle {{
-                            width: 60px;
-                            height: 60px;
-                            background: #54AFE7;
+                        .onix-core {{
+                            width: 50px;
+                            height: 50px;
+                            background: #2D2F36; /* Gris Onix Metálico */
+                            border: 1px solid rgba(255,255,255,0.1);
                             border-radius: 50%;
-                            box-shadow: 0 0 30px #54AFE7, 0 0 60px rgba(84,175,231,0.4);
-                            animation: vibrate 0.15s infinite alternate-reverse;
+                            box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.05);
+                            animation: breathe 4s ease-in-out infinite;
                             z-index: 2;
                         }}
 
-                        .glow-ring {{
+                        .onix-ring {{
                             position: absolute;
-                            width: 100px;
-                            height: 100px;
-                            border: 1px solid rgba(84,175,231,0.3);
+                            width: 80px;
+                            height: 80px;
+                            border: 1px solid rgba(255,255,255,0.05);
                             border-radius: 50%;
-                            animation: pulse-ring 2s infinite ease-out;
+                            animation: expand-slow 6s linear infinite;
                         }}
                         
-                        .waiting-text {{
-                            color: #54AFE7;
+                        .onix-text {{
+                            color: #FFFFFF;
                             font-family: 'Monospace', monospace;
-                            letter-spacing: 8px;
+                            letter-spacing: 5px;
                             font-size: 10px;
-                            font-weight: 800;
+                            font-weight: 300;
                             margin-top: 50px;
-                            text-shadow: 0 0 10px rgba(84,175,231,0.5);
-                            opacity: 0.8;
+                            opacity: 0.4;
+                            text-transform: uppercase;
                         }}
                         
-                        @keyframes vibrate {{
-                            0% {{ transform: scale(1); opacity: 0.9; }}
-                            100% {{ transform: scale(1.05); opacity: 1; }}
+                        @keyframes breathe {{
+                            0%, 100% {{ transform: scale(1); opacity: 0.6; box-shadow: 0 0 20px rgba(255,255,255,0.02); }}
+                            50% {{ transform: scale(1.1); opacity: 1; box-shadow: 0 0 40px rgba(255,255,255,0.1); }}
                         }}
 
-                        @keyframes pulse-ring {{
-                            0% {{ transform: scale(0.8); opacity: 0; }}
-                            50% {{ opacity: 0.2; }}
-                            100% {{ transform: scale(2); opacity: 0; }}
+                        @keyframes expand-slow {{
+                            0% {{ transform: scale(1); opacity: 0; }}
+                            50% {{ opacity: 0.1; }}
+                            100% {{ transform: scale(2.5); opacity: 0; }}
                         }}
                     </style>
                 """, unsafe_allow_html=True)
@@ -976,6 +988,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
