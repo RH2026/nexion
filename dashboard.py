@@ -820,38 +820,36 @@ with main_container:
                         key="editor_pro_v11"
                     )
                    
-                    # --- BLOQUE DE ACCIONES FINALES (CLONACIÓN VISUAL SIMÉTRICA) ---
+                    # --- REESTRUCTURA DE ACCIONES (JERARQUÍA VISUAL XENOCODE) ---
                     with st.container():
-                        # Forzamos 3 columnas de igual proporción [1, 1, 1]
-                        c1, c2, c3 = st.columns([1, 1, 1])
+                        # 1. BOTÓN SUPERIOR: ACCIÓN PRINCIPAL
+                        st.download_button(
+                            label="💾 DESCARGAR RESULTADOS (CSV ANALIZADO)",
+                            data=p_editado.to_csv(index=False).encode('utf-8-sig'),
+                            file_name="Analisis_Nexion.csv",
+                            use_container_width=True,
+                            key="btn_descarga_top"
+                        )
+        
+                        st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
+        
+                        # 2. BOTONES INFERIORES: CONTROL Y REGISTRO
+                        c_izq, c_der = st.columns(2)
                         
-                        with c1:
-                            # Botón 1: Descarga
-                            st.download_button(
-                                label="💾 DESCARGAR CSV",
-                                data=p_editado.to_csv(index=False).encode('utf-8-sig'),
-                                file_name="Analisis_Nexion.csv",
-                                use_container_width=True, # <--- ESTO ES LA CLAVE
-                                key="btn_csv_clon"
-                            )
-                            
-                        with c2:
-                            # Botón 2: Fijar cambios
-                            if st.button("📌 FIJAR CAMBIOS", use_container_width=True, key="btn_fijar_clon"):
+                        with c_izq:
+                            if st.button("📌 FIJAR CAMBIOS", use_container_width=True, key="btn_fijar_bottom"):
                                 st.session_state.df_analisis = p_editado
                                 st.toast("Cambios aplicados", icon="📌")
                                 
-                        with c3:
-                            # Botón 3: Estado de Guardado
+                        with c_der:
                             id_guardado = f"guardado_{st.session_state.archivo_actual}"
                             if not st.session_state.get(id_guardado, False):
-                                if st.button("🚀 GUARDAR REGISTROS", use_container_width=True, key="btn_save_clon"):
+                                if st.button("🚀 GUARDAR REGISTROS", use_container_width=True, key="btn_save_bottom"):
                                     st.session_state[id_guardado] = True
                                     st.snow()
                                     st.rerun()
                             else:
-                                # Clon deshabilitado con el mismo ancho
-                                st.button("✅ REGISTROS ASEGURADOS", use_container_width=True, disabled=True, key="btn_ok_clon")
+                                st.button("✅ REGISTROS ASEGURADOS", use_container_width=True, disabled=True, key="btn_ok_bottom")
                 
                     # --- SISTEMA DE SELLADO (DIVIDIDO EN COLUMNAS) ---
                     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
@@ -919,6 +917,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
