@@ -785,19 +785,8 @@ with main_container:
 
             # --- CARGA Y PROCESAMIENTO ERP ---
             # --- CARGA Y PROCESAMIENTO ERP ---
-            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
-                              
-            Entendido, Xenocode. Vamos a llevar el diseño al nivel Onix puro: eliminamos el azul brillante y usamos una paleta de grises profundos, metalizados y blancos sutiles.
-
-He ajustado la animación para que sea un latido lento y elegante (frecuencia baja), simulando un sistema que "respira" en lugar de uno nervioso.
-
-Aquí tienes el código con los colores exactos de NEXION:
-
-Python
-            # --- CARGA Y PROCESAMIENTO ERP ---
-            # Asegúrate de que esta sea la ÚNICA vez que aparece esta línea para evitar el DuplicateElementId
-            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
-            
+            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")         
+                        
             # --- 1. ESTADO DE ESPERA: NÚCLEO ONIX (LENTITUD Y ELEGANCIA) ---
             if not file_p:
                 st.markdown(f"""
@@ -988,6 +977,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
