@@ -786,65 +786,70 @@ with main_container:
             # --- CARGA Y PROCESAMIENTO ERP ---
             # --- CARGA Y PROCESAMIENTO ERP ---
             file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
+                        
+            # --- CARGA Y PROCESAMIENTO ERP ---
+            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
             
-            # --- 1. ESTADO DE ESPERA: PULSO DE RADAR (ESTILO XENOCODE) ---
+            # --- 1. ESTADO DE ESPERA: CÍRCULO VIBRANTE (ESTILO ONIX-XENOCODE) ---
             if not file_p:
                 st.markdown(f"""
-                    <div class="radar-container">
-                        <div class="radar-pulse"></div>
-                        <div class="radar-core"></div>
-                        <p class="radar-text">WAITING FOR DATA SOURCE</p>
+                    <div class="onix-loader-container">
+                        <div class="vibrant-circle"></div>
+                        <div class="glow-ring"></div>
+                        <p class="waiting-text">WAITING FOR DATA SOURCE</p>
                     </div>
                     
                     <style>
-                        .radar-container {{
-                            height: 350px;
+                        .onix-loader-container {{
+                            height: 400px;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
                             justify-content: center;
-                            position: relative;
+                            background: radial-gradient(circle, rgba(84,175,231,0.05) 0%, rgba(10,11,13,0) 70%);
+                            border-radius: 20px;
+                            margin: 20px 0;
                         }}
                         
-                        .radar-pulse {{
-                            width: 100px;
-                            height: 100px;
-                            background: transparent;
-                            border: 2px solid #54AFE7;
-                            border-radius: 50%;
-                            position: absolute;
-                            animation: pulse-out 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
-                        }}
-
-                        .radar-core {{
-                            width: 15px;
-                            height: 15px;
+                        .vibrant-circle {{
+                            width: 60px;
+                            height: 60px;
                             background: #54AFE7;
                             border-radius: 50%;
-                            box-shadow: 0 0 20px #54AFE7;
-                            margin-bottom: 40px;
+                            box-shadow: 0 0 30px #54AFE7, 0 0 60px rgba(84,175,231,0.4);
+                            animation: vibrate 0.15s infinite alternate-reverse;
+                            z-index: 2;
+                        }}
+
+                        .glow-ring {{
+                            position: absolute;
+                            width: 100px;
+                            height: 100px;
+                            border: 1px solid rgba(84,175,231,0.3);
+                            border-radius: 50%;
+                            animation: pulse-ring 2s infinite ease-out;
                         }}
                         
-                        .radar-text {{
+                        .waiting-text {{
                             color: #54AFE7;
-                            font-family: monospace; /* Usando la fuente de NEXION */
-                            letter-spacing: 6px;
-                            font-size: 11px;
-                            font-weight: 700;
-                            text-transform: uppercase;
+                            font-family: 'Monospace', monospace;
+                            letter-spacing: 8px;
+                            font-size: 10px;
+                            font-weight: 800;
+                            margin-top: 50px;
+                            text-shadow: 0 0 10px rgba(84,175,231,0.5);
                             opacity: 0.8;
-                            margin-top: 20px;
                         }}
                         
-                        @keyframes pulse-out {{
-                            0% {{
-                                transform: scale(0.5);
-                                opacity: 0.8;
-                            }}
-                            100% {{
-                                transform: scale(2.5);
-                                opacity: 0;
-                            }}
+                        @keyframes vibrate {{
+                            0% {{ transform: scale(1); opacity: 0.9; }}
+                            100% {{ transform: scale(1.05); opacity: 1; }}
+                        }}
+
+                        @keyframes pulse-ring {{
+                            0% {{ transform: scale(0.8); opacity: 0; }}
+                            50% {{ opacity: 0.2; }}
+                            100% {{ transform: scale(2); opacity: 0; }}
                         }}
                     </style>
                 """, unsafe_allow_html=True)
@@ -974,6 +979,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
