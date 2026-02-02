@@ -330,12 +330,23 @@ with main_container:
     elif st.session_state.menu_main == "SEGUIMIENTO":
         if st.session_state.menu_sub == "TRK":
             st.subheader("SEGUIMIENTO > TRK")
-            # ── 0. VALIDACIÓN DE DATOS ──────────────────
-            # Si tu DataFrame cargado tiene otro nombre, igualalo aquí:
-            # Ejemplo: df = st.session_state.mi_data_cargada
-            if 'df' not in locals() and 'df' not in globals():
-                st.error("⚠️ ERROR: No se detectó la base de datos 'df'. Asegúrate de cargar el archivo antes de ver los KPIs.")
-                st.stop() # Detiene la ejecución para que no salga el error rojo feo
+            @st.cache_data(ttl=600)  # Se actualiza cada 10 minutos
+            def cargar_matriz_github():
+                # URL RAW de tu archivo en GitHub
+                url = "https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/main/Matriz_Excel_Dashboard.csv"
+                try:
+                    # utf-8-sig para evitar errores con acentos o eñes de SAP
+                    return pd.read_csv(url, encoding='utf-8-sig')
+                except:
+                    return None
+            
+            # Intentamos obtener la base de datos
+            df = cargar_matriz_github()
+            
+            if df is None:
+                st.error("⚠️ ERROR: No se pudo conectar con 'Matriz_Excel_Dashboard.csv' en GitHub.")
+                st.info("Verifica que la URL sea la versión 'Raw' y que el repositorio sea público.")
+                st.stop()
             
             # ── 1. RELOJ MAESTRO Y CONFIGURACIÓN (GUADALAJARA) ──────────────────
             tz_gdl = pytz.timezone('America/Mexico_City')
@@ -362,8 +373,8 @@ with main_container:
                         fin_m = date(hoy_gdl.year + 1, 1, 1) - pd.Timedelta(days=1)
                     else:
                         fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
-                        
-                    # Parche de seguridad para objetos datetime/date
+                    
+                    # Parche de seguridad: Aseguramos que fin_m sea objeto date puro
                     fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
                         
                     rango_fechas = st.date_input(
@@ -373,12 +384,11 @@ with main_container:
                     )
             
                 with f_col3:
-                    # Aquí validamos si la columna existe para evitar otro NameError
-                    opciones_fletera = sorted(df["FLETERA"].unique()) if "FLETERA" in df.columns else []
-                    filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_fletera)
+                    # Filtro por paquetería (Fletera)
+                    opciones_f = sorted(df["FLETERA"].unique()) if "FLETERA" in df.columns else []
+                    filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f)
             
             # ── 3. LÓGICA DE PROCESAMIENTO DE DATOS ──────────────────────────────
-            # (Asumiendo que 'df' es tu DataFrame maestro cargado de SAP/Excel)
             df_kpi = df.copy()
             df_kpi.columns = [c.upper() for c in df_kpi.columns]
             df_kpi["FECHA DE ENVÍO"] = pd.to_datetime(df_kpi["FECHA DE ENVÍO"])
@@ -397,14 +407,15 @@ with main_container:
             df_kpi["COSTO DE LA GUÍA"] = pd.to_numeric(df_kpi["COSTO DE LA GUÍA"], errors='coerce').fillna(0)
             df_kpi["CANTIDAD DE CAJAS"] = pd.to_numeric(df_kpi["CANTIDAD DE CAJAS"], errors='coerce').fillna(1).replace(0, 1)
             
-            # Identificación de Atrasos (Basado en Hoy en GDL)
+            # Identificación de Atrasos (Basado en la fecha actual de Guadalajara)
             df_sin_entregar = df_kpi[df_kpi["FECHA DE ENTREGA REAL"].isna()].copy()
             if not df_sin_entregar.empty:
+                # Usamos pd.Timestamp(hoy_gdl) para que la resta sea compatible con columnas datetime
                 df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
                 df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if x > 0 else 0)
                 df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
             
-            # Métricas Finales
+            # Métricas Finales para tarjetas
             total_p = len(df_kpi)
             pend_p = len(df_sin_entregar)
             entregados = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
@@ -1113,6 +1124,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
