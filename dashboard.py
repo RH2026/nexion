@@ -348,19 +348,24 @@ with main_container:
                     mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
                 
                 with f_col2:
-                    # Lógica para predeterminar el rango según el mes elegido
-                    mes_num = meses.index(mes_sel) + 1
-                    inicio_m = date(hoy_gdl.year, mes_num, 1)
-                    if mes_num == 12:
-                        fin_m = date(hoy_gdl.year + 1, 1, 1) - pd.Timedelta(days=1)
-                    else:
-                        fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
-                        
-                    rango_fechas = st.date_input(
-                        "RANGO DE ANÁLISIS",
-                        value=(inicio_m, min(hoy_gdl, fin_m.date()) if mes_num == hoy_gdl.month else fin_m.date()),
-                        format="DD/MM/YYYY"
-                    )
+                # Lógica para predeterminar el rango según el mes elegido
+                mes_num = meses.index(mes_sel) + 1
+                inicio_m = date(hoy_gdl.year, mes_num, 1)
+                
+                # Cálculo de fin de mes corregido
+                if mes_num == 12:
+                    fin_m = date(hoy_gdl.year + 1, 1, 1) - pd.Timedelta(days=1)
+                else:
+                    fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
+                
+                # CONVERSIÓN EXPLÍCITA A DATE (Para evitar el AttributeError)
+                fin_m = fin_m.date() if hasattr(fin_m, 'date') else fin_m
+        
+                rango_fechas = st.date_input(
+                    "RANGO DE ANÁLISIS",
+                    value=(inicio_m, min(hoy_gdl, fin_m) if mes_num == hoy_gdl.month else fin_m),
+                    format="DD/MM/YYYY"
+                )
             
                 with f_col3:
                     # Filtro rápido por fletera para todo el dashboard
@@ -1103,6 +1108,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
