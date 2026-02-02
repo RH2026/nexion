@@ -18,6 +18,8 @@ from reportlab.lib.pagesizes import letter
 import re
 import unicodedata
 import io
+import altair as alt
+from datetime import datetime, date
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
@@ -328,7 +330,120 @@ with main_container:
     elif st.session_state.menu_main == "SEGUIMIENTO":
         if st.session_state.menu_sub == "TRK":
             st.subheader("SEGUIMIENTO > TRK")
-            st.info("Espacio para contenido de Tracking Operativo")
+            # ── 1. RELOJ MAESTRO Y CONFIGURACIÓN (GUADALAJARA) ──────────────────
+            tz_gdl = pytz.timezone('America/Mexico_City')
+            ahora_gdl = datetime.now(tz_gdl)
+            hoy_gdl = ahora_gdl.date()
+            
+            # ── 2. CONTENEDOR DE FILTROS PRINCIPALES (SIN SIDEBAR) ──────────────
+            with st.container():
+                st.markdown(f"<p class='op-query-text'>M Ó D U L O &nbsp; D E &nbsp; I N T E L I G E N C I A &nbsp; L O G Í S T I C A</p>", unsafe_allow_html=True)
+                
+                # Fila de mando superior
+                f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
+                
+                with f_col1:
+                    meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
+                             "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+                    mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
+                
+                with f_col2:
+                    # Lógica para predeterminar el rango según el mes elegido
+                    mes_num = meses.index(mes_sel) + 1
+                    inicio_m = date(hoy_gdl.year, mes_num, 1)
+                    if mes_num == 12:
+                        fin_m = date(hoy_gdl.year + 1, 1, 1) - pd.Timedelta(days=1)
+                    else:
+                        fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
+                        
+                    rango_fechas = st.date_input(
+                        "RANGO DE ANÁLISIS",
+                        value=(inicio_m, min(hoy_gdl, fin_m.date()) if mes_num == hoy_gdl.month else fin_m.date()),
+                        format="DD/MM/YYYY"
+                    )
+            
+                with f_col3:
+                    # Filtro rápido por fletera para todo el dashboard
+                    opciones_fletera = sorted(df["FLETERA"].unique()) if 'df' in locals() else []
+                    filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_fletera)
+            
+            # ── 3. LÓGICA DE PROCESAMIENTO DE DATOS ──────────────────────────────
+            # (Asumiendo que 'df' es tu DataFrame maestro cargado de SAP/Excel)
+            df_kpi = df.copy()
+            df_kpi.columns = [c.upper() for c in df_kpi.columns]
+            df_kpi["FECHA DE ENVÍO"] = pd.to_datetime(df_kpi["FECHA DE ENVÍO"])
+            df_kpi["PROMESA DE ENTREGA"] = pd.to_datetime(df_kpi["PROMESA DE ENTREGA"])
+            
+            # A) Filtro por Rango de Fechas
+            if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
+                start_d, end_d = rango_fechas
+                df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= start_d) & (df_kpi["FECHA DE ENVÍO"].dt.date <= end_d)]
+            
+            # B) Filtro por Fletera
+            if filtro_global_fletera:
+                df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
+            
+            # C) Cálculos de Negocio
+            df_kpi["COSTO DE LA GUÍA"] = pd.to_numeric(df_kpi["COSTO DE LA GUÍA"], errors='coerce').fillna(0)
+            df_kpi["CANTIDAD DE CAJAS"] = pd.to_numeric(df_kpi["CANTIDAD DE CAJAS"], errors='coerce').fillna(1).replace(0, 1)
+            
+            # Identificación de Atrasos (Basado en Hoy en GDL)
+            df_sin_entregar = df_kpi[df_kpi["FECHA DE ENTREGA REAL"].isna()].copy()
+            if not df_sin_entregar.empty:
+                df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
+                df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if x > 0 else 0)
+                df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
+            
+            # Métricas Finales
+            total_p = len(df_kpi)
+            pend_p = len(df_sin_entregar)
+            entregados = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
+            eficiencia = (entregados / total_p * 100) if total_p > 0 else 0
+            
+            # ── 4. VISUALIZACIÓN DE TARJETAS (ESTILO NEXION) ────────────────────
+            st.markdown("<br>", unsafe_allow_html=True)
+            m1, m2, m3 = st.columns(3)
+            
+            with m1:
+                st.markdown(f"<div class='main-card-kpi' style='border-left-color: #94a3b8;'><div class='kpi-label'>Carga Total</div><div class='kpi-value'>{total_p}</div></div>", unsafe_allow_html=True)
+            with m2:
+                st.markdown(f"<div class='main-card-kpi' style='border-left-color: #38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8;'>{pend_p}</div></div>", unsafe_allow_html=True)
+            with m3:
+                color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
+                st.markdown(f"<div class='main-card-kpi' style='border-left-color: {color_ef};'><div class='kpi-label'>Cumplimiento</div><div class='kpi-value' style='color:{color_ef};'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
+            
+            # ── 5. MONITOREO DE CRITICIDAD ──────────────────────────────────────
+            st.markdown(f"<p style='color:{vars_css['sub']}; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>⚠️ SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
+            
+            a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
+            a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
+            a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5])
+            
+            c_a1, c_a2, c_a3 = st.columns(3)
+            c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>RETRASO LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
+            c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>RETRASO MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
+            c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
+            
+            # ── 6. GESTIÓN DE PEDIDOS CRÍTICOS ──────────────────────────────────
+            st.divider()
+            df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy()
+            
+            if not df_criticos.empty:
+                with st.expander("🔍 DESGLOSE DE ALERTAS ACTIVAS", expanded=True):
+                    st.dataframe(
+                        df_criticos[["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "FLETERA", "DIAS_TRANS", "DIAS_ATRASO"]].sort_values("DIAS_ATRASO", ascending=False),
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "DIAS_TRANS": st.column_config.ProgressColumn("DÍAS EN VIAJE", format="%d", min_value=0, max_value=15, color="orange"),
+                            "DIAS_ATRASO": st.column_config.ProgressColumn("DÍAS DE RETRASO", format="%d", min_value=0, max_value=15, color="red")
+                        }
+                    )
+            else:
+                st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS EN EL PERIODO")
+
+
+        
         elif st.session_state.menu_sub == "GANTT":
             # ── CONFIG GANTT ───────────────────────────────────────────────────────────────
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
@@ -988,6 +1103,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
