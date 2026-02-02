@@ -413,39 +413,41 @@ with main_container:
                     <div id='gantt'></div>
                     <script>
                         var tasks = {tasks_js_str};
-                        if(tasks.length){
-                            var gantt = new Gantt('#gantt', tasks, {
+                        if(tasks.length){{
+                            var gantt = new Gantt('#gantt', tasks, {{
                                 view_mode: '{gantt_view}',
                                 bar_height: 20,
                                 padding: 40,
                                 date_format: 'YYYY-MM-DD'
-                            });
-                    
-                            // Timeout para asegurarnos que todo SVG esté dibujado
-                            setTimeout(function() {
-                                document.querySelectorAll('#gantt svg line').forEach(function(line) {
+                            }});
+            
+                            // Forzar suavizado de líneas horizontales y ocultar verticales
+                            setTimeout(function() {{
+                                document.querySelectorAll('#gantt svg line').forEach(function(line) {{
                                     var x1 = parseFloat(line.getAttribute('x1'));
                                     var x2 = parseFloat(line.getAttribute('x2'));
                                     var y1 = parseFloat(line.getAttribute('y1'));
                                     var y2 = parseFloat(line.getAttribute('y2'));
-                    
-                                    // ocultar líneas verticales
-                                    if(x1 === x2) { line.style.display = 'none'; }
-                    
-                                    // suavizar todas las líneas horizontales
-                                    if(y1 === y2) {
+            
+                                    if(x1 === x2) {{
+                                        // ocultar verticales
+                                        line.style.display = 'none';
+                                    }}
+                                    if(y1 === y2) {{
+                                        // suavizar horizontales
                                         line.style.strokeOpacity = '0.1';
                                         line.style.stroke = '#1e2530';
-                                    }
-                                });
-                            }, 200);
-                        }
+                                    }}
+                                }});
+                            }}, 200);
+                        }}
                     </script>
-                    </body>
-                    </html>
-                    """,
-                    height=420, scrolling=False
-                )
+                </body>
+                </html>
+                """,
+                height=420,
+                scrolling=False
+            )
             # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
             st.subheader("EDITOR DE TAREAS")
             
@@ -670,6 +672,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
