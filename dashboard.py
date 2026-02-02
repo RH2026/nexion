@@ -689,9 +689,7 @@ with main_container:
                     
     elif st.session_state.menu_sub == "PAGOS":
         st.subheader("FORMATOS > CONTROL DE PAGOS")
-    else:
-        # MATRIX ANIMATION
-        st.subheader("CENTRO DE DOCUMENTACIÓN")
+    
             
     # 5. HUB LOG
     elif st.session_state.menu_main == "HUB LOG":
@@ -713,6 +711,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
