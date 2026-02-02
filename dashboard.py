@@ -328,209 +328,112 @@ with main_container:
             if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
                 st.toast(f"Buscando: {busqueda}")
 
-    # 2. SEGUIMIENTO
-    elif st.session_state.menu_main == "SEGUIMIENTO":        
-            @st.cache_data(ttl=600)  # Se actualiza cada 10 minutos
-            def cargar_matriz_github():
-                # URL RAW de tu archivo en GitHub
-                url = "https://raw.githubusercontent.com/RH2026/dashboard-logistica/refs/heads/main/Matriz_Excel_Dashboard.csv"
-                try:
-                    # utf-8-sig para evitar errores con acentos o eñes de SAP
-                    return pd.read_csv(url, encoding='utf-8-sig')
-                except:
-                    return None
+    elif st.session_state.menu_main == "SEGUIMIENTO":
+    
+    # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
+    @st.cache_data(ttl=600)
+    def cargar_matriz_github():
+        url = "https://raw.githubusercontent.com/RH2026/dashboard-logistica/refs/heads/main/Matriz_Excel_Dashboard.csv"
+        try:
+            return pd.read_csv(url, encoding='utf-8-sig')
+        except:
+            return None
+
+    df_seguimiento = cargar_matriz_github()
+
+    if df_seguimiento is None:
+        st.error("⚠️ ERROR: No se detectó la base de datos en GitHub.")
+        st.stop()
+
+    # ── B. RELOJ MAESTRO (GUADALAJARA) ──
+    tz_gdl = pytz.timezone('America/Mexico_City')
+    hoy_gdl = datetime.now(tz_gdl).date()
+
+    # ── C. NAVEGACIÓN DE SUB-MENÚ ──
+    if st.session_state.menu_sub == "GENERAL":
+        # 1. FILTROS DE CABECERA
+        with st.container():
+            st.markdown(f"<p class='op-query-text' style='letter-spacing:8px; text-align:center;'>M Ó D U L O &nbsp; D E &nbsp; I N T E L I G E N C I A &nbsp; L O G Í S T I C A</p>", unsafe_allow_html=True)
+            f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
             
-            # Intentamos obtener la base de datos
-            df = cargar_matriz_github()
+            with f_col1:
+                meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+                mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
             
-            if df is None:
-                st.error("⚠️ ERROR: No se pudo conectar con 'Matriz_Excel_Dashboard.csv' en GitHub.")
-                st.info("Verifica que la URL sea la versión 'Raw' y que el repositorio sea público.")
-                st.stop()
-            
-            # ── 1. RELOJ MAESTRO Y CONFIGURACIÓN (GUADALAJARA) ──────────────────
-            tz_gdl = pytz.timezone('America/Mexico_City')
-            ahora_gdl = datetime.now(tz_gdl)
-            hoy_gdl = ahora_gdl.date()
-            
-            # ── 2. CONTENEDOR DE FILTROS PRINCIPALES (SIN SIDEBAR) ──────────────
-            with st.container():
-                st.markdown(f"<p class='op-query-text'>M Ó D U L O &nbsp; D E &nbsp; I N T E L I G E N C I A &nbsp; L O G Í S T I C A</p>", unsafe_allow_html=True)
+            with f_col2:
+                mes_num = meses.index(mes_sel) + 1
+                inicio_m = date(hoy_gdl.year, mes_num, 1)
+                fin_m = (date(hoy_gdl.year, mes_num % 12 + 1, 1) - timedelta(days=1)) if mes_num < 12 else date(hoy_gdl.year, 12, 31)
                 
-                f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
-                
-                with f_col1:
-                    meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
-                             "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
-                    mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
-                
-                with f_col2:
-                    mes_num = meses.index(mes_sel) + 1
-                    inicio_m = date(hoy_gdl.year, mes_num, 1)
-                    
-                    # Cálculo de fin de mes
-                    if mes_num == 12:
-                        fin_m = date(hoy_gdl.year + 1, 1, 1) - pd.Timedelta(days=1)
-                    else:
-                        fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
-                    
-                    # Parche de seguridad: Aseguramos que fin_m sea objeto date puro
-                    fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
-                        
-                    rango_fechas = st.date_input(
-                        "RANGO DE ANÁLISIS",
-                        value=(inicio_m, min(hoy_gdl, fin_m_final) if mes_num == hoy_gdl.month else fin_m_final),
-                        format="DD/MM/YYYY"
-                    )
+                rango_fechas = st.date_input(
+                    "RANGO DE ANÁLISIS",
+                    value=(inicio_m, min(hoy_gdl, fin_m) if mes_num == hoy_gdl.month else fin_m),
+                    format="DD/MM/YYYY"
+                )
+
+            with f_col3:
+                opciones_f = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
+                filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f)
+
+        # 2. PROCESAMIENTO DE DATOS KPI
+        df_kpi = df_seguimiento.copy()
+        df_kpi.columns = [c.upper() for c in df_kpi.columns]
+        for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+            df_kpi[col] = pd.to_datetime(df_kpi[col], dayfirst=True, errors='coerce')
+        
+        df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
+
+        if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
+            df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])]
+
+        if filtro_global_fletera:
+            df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
+
+        df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
+        df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
+
+        if not df_sin_entregar.empty:
+            df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
+            df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if x > 0 else 0)
+            df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
+        else:
+            df_sin_entregar = pd.DataFrame(columns=list(df_kpi.columns) + ["DIAS_ATRASO", "DIAS_TRANS"])
+
+        # 3. RENDERIZADO TARJETAS
+        total_p = len(df_kpi)
+        pend_p = len(df_sin_entregar)
+        eficiencia = (len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO']) / total_p * 100) if total_p > 0 else 0
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        m1, m2, m3 = st.columns(3)
+        m1.markdown(f"<div class='main-card-kpi' style='border-left-color:#94a3b8;'><div class='kpi-label'>Carga Total</div><div class='kpi-value'>{total_p}</div></div>", unsafe_allow_html=True)
+        m2.markdown(f"<div class='main-card-kpi' style='border-left-color:#38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8;'>{pend_p}</div></div>", unsafe_allow_html=True)
+        m3.markdown(f"<div class='main-card-kpi' style='border-left-color:#00FFAA;'><div class='kpi-label'>Eficiencia</div><div class='kpi-value' style='color:#00FFAA;'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
+
+        # 4. TABLA DE EXCEPCIONES (SIN CARRITO, LIMPIA)
+        st.divider()
+        df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
+        
+        if not df_criticos.empty:
+            st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css['sub']}; text-transform:uppercase; text-align:center;'>PANEL DE EXCEPCIONES</p>", unsafe_allow_html=True)
+            c1, c2 = st.columns(2)
+            with c1: sel_f = st.multiselect("FLETERA:", sorted(df_criticos["FLETERA"].unique()))
+            with c2: sel_g = st.selectbox("GRAVEDAD:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
             
-                with f_col3:
-                    # Filtro por paquetería (Fletera)
-                    opciones_f = sorted(df["FLETERA"].unique()) if "FLETERA" in df.columns else []
-                    filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f)
-            
-            # ── 3. LÓGICA DE PROCESAMIENTO DE DATOS (BLINDADA) ──────────────────────────
-            df_kpi = df.copy()
-            df_kpi.columns = [c.upper() for c in df_kpi.columns]
-            
-            # Conversión de fechas segura
-            df_kpi["FECHA DE ENVÍO"] = pd.to_datetime(df_kpi["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
-            df_kpi["PROMESA DE ENTREGA"] = pd.to_datetime(df_kpi["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-            df_kpi["FECHA DE ENTREGA REAL"] = pd.to_datetime(df_kpi["FECHA DE ENTREGA REAL"], dayfirst=True, errors='coerce')
-            
-            # Limpieza de registros sin fecha de envío
-            df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
-            
-            # Filtro por Rango de Fechas
-            if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
-                start_d, end_d = rango_fechas
-                df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= start_d) & (df_kpi["FECHA DE ENVÍO"].dt.date <= end_d)]
-            
-            # Filtro Global de Fletera
-            if filtro_global_fletera:
-                df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
-            
-            # Cálculos Numéricos
-            df_kpi["COSTO DE LA GUÍA"] = pd.to_numeric(df_kpi["COSTO DE LA GUÍA"], errors='coerce').fillna(0)
-            df_kpi["CANTIDAD DE CAJAS"] = pd.to_numeric(df_kpi["CANTIDAD DE CAJAS"], errors='coerce').fillna(1).replace(0, 1)
-            
-            # Reparación de Estatus (Evita KeyError)
-            # Si no existe la columna, la calculamos: si hay fecha de entrega real, está ENTREGADO.
-            df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(
-                lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO'
-            )
-            
-            # Gestión de Atrasos
-            df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
-            
-            if not df_sin_entregar.empty:
-                df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
-                df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if x > 0 else 0)
-                df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
-            else:
-                # Si no hay pendientes, creamos un DF vacío con las columnas necesarias para que no falle la tabla
-                df_sin_entregar = pd.DataFrame(columns=df_kpi.columns.tolist() + ["DIAS_ATRASO", "DIAS_TRANS"])
-            
-            # Métricas Finales
-            total_p = len(df_kpi)
-            pend_p = len(df_sin_entregar)
-            entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
-            eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
-            
-            # ── 4. VISUALIZACIÓN DE TARJETAS (ESTILO NEXION) ──────────────────────────
-            st.markdown("<br>", unsafe_allow_html=True)
-            m1, m2, m3 = st.columns(3)
-            
-            with m1:
-                st.markdown(f"<div class='main-card-kpi' style='border-left-color: #94a3b8;'><div class='kpi-label'>Carga Total</div><div class='kpi-value'>{total_p}</div></div>", unsafe_allow_html=True)
-            with m2:
-                st.markdown(f"<div class='main-card-kpi' style='border-left-color: #38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8;'>{pend_p}</div></div>", unsafe_allow_html=True)
-            with m3:
-                color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
-                st.markdown(f"<div class='main-card-kpi' style='border-left-color: {color_ef};'><div class='kpi-label'>Cumplimiento</div><div class='kpi-value' style='color:{color_ef};'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
-            
-            # ── 5. MONITOREO DE CRITICIDAD ──────────────────────────────────────────
-            st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>⚠️ SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
-            
-            # Calculamos los valores del semáforo solo si hay datos pendientes
-            a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1]) if not df_sin_entregar.empty else 0
-            a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)]) if not df_sin_entregar.empty else 0
-            a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5]) if not df_sin_entregar.empty else 0
-            
-            c_a1, c_a2, c_a3 = st.columns(3)
-            c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>RETRASO LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
-            c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>RETRASO MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
-            c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
-            
-            # ── 6. GESTIÓN DE PEDIDOS CRÍTICOS (LIMPIEZA VISUAL NEXION) ──────────────────
-            st.divider()
-            
-            if not df_sin_entregar.empty:
-                df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy()
-                
-                if not df_criticos.empty:
-                    st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css['sub']}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES OPERATIVAS</p>", unsafe_allow_html=True)
-                    
-                    # --- FILTROS DE MANDO ---
-                    f_col1, f_col2 = st.columns(2)
-                    with f_col1:
-                        fleteras_criticas = sorted(df_criticos["FLETERA"].unique())
-                        sel_fletera = st.multiselect("TRANSPORTISTA:", fleteras_criticas, placeholder="TODOS")
-                    
-                    with f_col2:
-                        sel_gravedad = st.selectbox("GRAVEDAD:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
-            
-                    # Lógica de filtrado
-                    df_viz = df_criticos.copy()
-                    if sel_fletera:
-                        df_viz = df_viz[df_viz["FLETERA"].isin(sel_fletera)]
-                    
-                    if sel_gravedad == "CRÍTICO (+5 DÍAS)":
-                        df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
-                    elif sel_gravedad == "MODERADO (2-4 DÍAS)":
-                        df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
-                    elif sel_gravedad == "LEVE (1 DÍA)":
-                        df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
-            
-                    # Mapeo flexible de columnas para evitar KeyError
-                    columnas_deseadas = {
-                        "NÚMERO DE PEDIDO": ["NÚMERO DE PEDIDO", "PEDIDO", "Nº PEDIDO"],
-                        "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
-                        "DESTINO": ["DESTINO", "CIUDAD", "ESTADO"],
-                        "FECHA DE ENVÍO": ["FECHA DE ENVÍO", "FECHA ENVIO"],
-                        "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA", "FECHA PROMESA"],
-                        "FLETERA": ["FLETERA", "PAQUETERIA", "TRANSPORTISTA"],
-                        "GUIA": ["GUIA", "GUÍA", "NÚMERO DE GUÍA", "NUMERO DE GUIA"],
-                        "DIAS_TRANS": ["DIAS_TRANS", "DIAS EN VIAJE"],
-                        "DIAS_ATRASO": ["DIAS_ATRASO", "RETRASO"]
-                    }
-            
-                    cols_finales = []
-                    for alias, posibles in columnas_deseadas.items():
-                        encontrada = next((c for c in posibles if c in df_viz.columns), None)
-                        if encontrada:
-                            cols_finales.append(encontrada)
-            
-                    with st.expander("DETALLE TÉCNICO DE RETRASOS", expanded=True):
-                        st.dataframe(
-                            df_viz[cols_finales].sort_values(cols_finales[-1], ascending=False),
-                            use_container_width=True,
-                            hide_index=True,
-                            column_config={
-                                "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
-                                "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
-                                "DIAS_TRANS": st.column_config.NumberColumn("DÍAS VIAJE", format="%d"), # ← El camión ha sido removido
-                                "DIAS_ATRASO": st.column_config.ProgressColumn(
-                                    "RETRASO", 
-                                    format="%d DÍAS", 
-                                    min_value=0, 
-                                    max_value=15, 
-                                    color="red"
-                                ),
-                                "GUIA": st.column_config.TextColumn("Nº GUÍA")
-                            }
-                        )
-                else:
-                    st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
+            df_viz = df_criticos.copy()
+            if sel_f: df_viz = df_viz[df_viz["FLETERA"].isin(sel_f)]
+            if sel_g == "CRÍTICO (+5 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
+            elif sel_g == "MODERADO (2-4 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
+            elif sel_g == "LEVE (1 DÍA)": df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
+
+            # Mapeo de columnas
+            cols_show = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO", "FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FLETERA", "GUIA", "DIAS_TRANS", "DIAS_ATRASO"]
+            cols_existentes = [c for c in cols_show if c in df_viz.columns]
+
+            st.dataframe(df_viz[cols_existentes].sort_values("DIAS_ATRASO", ascending=False), use_container_width=True, hide_index=True,
+                column_config={"DIAS_ATRASO": st.column_config.ProgressColumn("RETRASO", format="%d DÍAS", min_value=0, max_value=15, color="red")})
+        else:
+            st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
 
         
         elif st.session_state.menu_sub == "GANTT":
@@ -1181,6 +1084,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
