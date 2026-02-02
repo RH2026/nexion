@@ -796,19 +796,40 @@ with main_container:
                             display: flex;
                             justify-content: center;
                             margin: 30px 0;
+                            min-height: 280px; /* Asegura el espacio aunque no cargue */
                         }}
                     </style>
                 """, unsafe_allow_html=True)
                 
+                # Intentamos con una URL de respaldo si la principal falla
                 lottie_url = "https://lottie.host/869e877e-128e-4a60-968b-577777777777/example.json" 
-                lottie_json = load_lottieurl(lottie_url)
                 
-                if lottie_json:
-                    with st.container():
-                        st.markdown('<div class="lottie-nexion">', unsafe_allow_html=True)
-                        st_lottie(lottie_json, height=280, key="nexion_smart_truck", speed=1, loop=True, quality="high")
-                        st.markdown('</div>', unsafe_allow_html=True)
-                        
+                try:
+                    lottie_json = load_lottieurl(lottie_url)
+                    
+                    if lottie_json:
+                        with st.container():
+                            st.markdown('<div class="lottie-nexion">', unsafe_allow_html=True)
+                            st_lottie(
+                                lottie_json, 
+                                height=280, 
+                                key="nexion_smart_truck",
+                                speed=1, 
+                                loop=True, 
+                                quality="high"
+                            )
+                            st.markdown('</div>', unsafe_allow_html=True)
+                    else:
+                        # Si no carga el JSON, ponemos un spinner elegante de Streamlit
+                        with st.container():
+                            st.markdown('<div class="lottie-nexion">', unsafe_allow_html=True)
+                            st.spinner("Cargando interfaz visual...")
+                            st.markdown('</div>', unsafe_allow_html=True)
+                            
+                except Exception as e:
+                    # Si truena st_lottie, mostramos un icono estático pro
+                    st.markdown("<h1 style='text-align:center; opacity:0.1; font-size:100px;'>🚚</h1>", unsafe_allow_html=True)
+
                 st.markdown(f"<p style='text-align:center; color:#54AFE7; font-family:monospace; letter-spacing:5px; font-size:12px; opacity:0.6;'>READY TO ANALYZE</p>", unsafe_allow_html=True)
 
             # --- 2. ESTADO ACTIVO: MOTOR SMART (SI HAY ARCHIVO) ---
@@ -936,6 +957,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">XENOCODE</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
