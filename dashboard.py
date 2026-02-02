@@ -19,7 +19,7 @@ import re
 import unicodedata
 import io
 import altair as alt
-from datetime import datetime, date
+from datetime import date, datetime, timedelta
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
@@ -360,15 +360,24 @@ with main_container:
                     mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
                 
                 with f_col2:
-                    mes_num = meses.index(mes_sel) + 1
-                    inicio_m = date(hoy_gdl.year, mes_num, 1)
-                    fin_m = (date(hoy_gdl.year, mes_num % 12 + 1, 1) - timedelta(days=1)) if mes_num < 12 else date(hoy_gdl.year, 12, 31)
-                    
-                    rango_fechas = st.date_input(
-                        "RANGO DE ANÁLISIS",
-                        value=(inicio_m, min(hoy_gdl, fin_m) if mes_num == hoy_gdl.month else fin_m),
-                        format="DD/MM/YYYY"
-                    )
+                mes_num = meses.index(mes_sel) + 1
+                inicio_m = date(hoy_gdl.year, mes_num, 1)
+                
+                # Cálculo de fin de mes sin errores de NameError
+                if mes_num == 12:
+                    fin_m = date(hoy_gdl.year, 12, 31)
+                else:
+                    # El día 1 del siguiente mes menos 1 día
+                    fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
+                
+                # Convertimos a objeto date puro para el widget
+                fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
+                
+                rango_fechas = st.date_input(
+                    "RANGO DE ANÁLISIS",
+                    value=(inicio_m, min(hoy_gdl, fin_m_final) if mes_num == hoy_gdl.month else fin_m_final),
+                    format="DD/MM/YYYY"
+                )
     
                 with f_col3:
                     opciones_f = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
@@ -1083,6 +1092,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
