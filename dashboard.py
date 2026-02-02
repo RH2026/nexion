@@ -731,25 +731,32 @@ with main_container:
 
     # 4. FORMATOS
     elif st.session_state.menu_main == "FORMATOS":
+        import streamlit.components.v1 as components
+        import os
+
         if st.session_state.menu_sub == "SALIDA DE PT":
-            # ── SALDA DE PT -- GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
+            # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
             if 'folio_nexion' not in st.session_state:
                 # Definimos la zona horaria de Guadalajara/CDMX
                 tz_gdl = pytz.timezone('America/Mexico_City') 
-                now_gdl = datetime.datetime.now(tz_gdl)
+                # REPARACIÓN: Usamos datetime.now(tz) directamente
+                now_gdl = datetime.now(tz_gdl)
                 
                 # Formato: F - AÑO MES DÍA - HORA MINUTO (Hora local de GDL)
                 st.session_state.folio_nexion = f"F-{now_gdl.strftime('%Y%m%d-%H%M')}"                
-            # ── 5. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
+            
+            # ── B. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
             @st.cache_data
             def load_inventory():
                 ruta = os.path.join(os.getcwd(), "inventario.csv")
-                if not os.path.exists(ruta): ruta = os.path.join(os.getcwd(), "..", "inventario.csv")
+                if not os.path.exists(ruta): 
+                    ruta = os.path.join(os.getcwd(), "..", "inventario.csv")
                 try:
                     df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
-                    df.columns = [str(c).strip().upper() for c in df.columns] # CODIGO, DESCRIPCION
+                    df.columns = [str(c).strip().upper() for c in df.columns]
                     return df
-                except: return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
+                except: 
+                    return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
             
             df_inv = load_inventory()
             
@@ -759,34 +766,31 @@ with main_container:
                     {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
                 ] * 10)
                                     
-            # ── 6. CUERPO DE ENTRADA (REPARADO) ────────────────────────
+            # ── C. CUERPO DE ENTRADA (ESTRUCTURA CON ICONOS MATERIAL) ────────────────
             with st.container(border=True):
                 h1, h2, h3 = st.columns(3)
                 
                 # Fecha automática
-                f_val = h1.date_input("FECHA", value=datetime.datetime.now(), key="f_in")
+                f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in")
                 
                 # Selección de turno
-                t_val = h2.selectbox("TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in")
+                t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in")
                 
-                # Folio Automático (Se puede editar si es necesario, pero ya viene cargado)
-                fol_val = h3.text_input("FOLIO", value=st.session_state.folio_nexion, key="fol_in")
+                # Folio Automático
+                fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in")
             
+            # ── D. MOTOR DE BÚSQUEDA INTERNO (LOOKUP) ──────────────────────────
             def lookup():
-                # 1. Obtener los cambios del editor
                 edits = st.session_state["editor_pt"].get("edited_rows", {})
                 added = st.session_state["editor_pt"].get("added_rows", [])
                 
-                # 2. Sincronizar filas añadidas
                 for row in added:
                     new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
                     new_row.update(row)
                     st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
             
-                # 3. Procesar ediciones en filas existentes
                 for idx_str, info in edits.items():
                     idx = int(idx_str)
-                    
                     for col, val in info.items():
                         st.session_state.rows.at[idx, col] = val
                     
@@ -798,6 +802,8 @@ with main_container:
                                 st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
                                 st.session_state.rows.at[idx, "CODIGO"] = val_codigo
             
+            # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
+            st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px;'>:material/list_alt: DETALLE DE MATERIALES</p>", unsafe_allow_html=True)
             df_final = st.data_editor(
                 st.session_state.rows, 
                 num_rows="dynamic", 
@@ -805,26 +811,24 @@ with main_container:
                 key="editor_pt", 
                 on_change=lookup,
                 column_config={
-                    "CODIGO": st.column_config.TextColumn("CÓDIGO"),
-                    "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
-                    "CANTIDAD": st.column_config.TextColumn(
-                        "CANTIDAD", 
-                        width="small"
-                    )
+                    "CODIGO": st.column_config.TextColumn(":material/qr_code: CÓDIGO"),
+                    "DESCRIPCION": st.column_config.TextColumn(":material/description: DESCRIPCIÓN"),
+                    "CANTIDAD": st.column_config.TextColumn(":material/pin: CANTIDAD", width="small")
                 }
             )
             
-            # ── 7. RENDERIZADO PRO (HTML PARA IMPRESIÓN) ───────────
+            # ── F. RENDERIZADO PRO (HTML PARA IMPRESIÓN) ───────────────────────────
             filas_print = df_final[df_final["CODIGO"] != ""]
-            tabla_html = "".join([f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td><td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td><td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" for _, r in filas_print.iterrows()])
+            tabla_html = "".join([
+                f"<tr>"
+                f"<td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
+                f"<td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td>"
+                f"<td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td>"
+                f"</tr>" 
+                for _, r in filas_print.iterrows()
+            ])
             
             form_html = f"""
-            <style>
-                @media print {{
-                    @page {{ margin: 0.5cm; }}
-                    header, footer, .no-print {{ display: none !important; }}
-                }}
-            </style>
             <div style="font-family:sans-serif; padding:20px; color:black; background:white;">
                 <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
                     <div>
@@ -853,37 +857,27 @@ with main_container:
                 </div>
             </div>
             """
-         
-            # ── 8. BOTONES DE ACCIÓN FINAL (CLONADOS) ───────────────────────────
+          
+            # ── G. BOTONES DE ACCIÓN FINAL (MATERIAL DESIGN) ─────────────────────────
             st.markdown("<br>", unsafe_allow_html=True)
-            
-            # Columnas 50/50 para asegurar simetría total
             col_pdf, col_reset = st.columns(2) 
             
             with col_pdf:
-                # Botón Original de Impresión
-                if st.button("🖨️ GENERAR FORMATO (PDF)", 
+                if st.button(":material/picture_as_pdf: GENERAR FORMATO PDF", 
                              type="primary", 
                              use_container_width=True, 
                              key="btn_pdf_nexion"):
                     components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-                    st.toast("Renderizando...", icon="⚙️")
+                    st.toast("Generando vista previa...", icon="⚙️")
             
             with col_reset:
-                # CLON DEL BOTÓN: Misma estructura, diferente función
-                if st.button("🔄 ACTUALIZAR SISTEMA NEXION", 
+                if st.button(":material/refresh: ACTUALIZAR SISTEMA", 
                              type="primary", 
                              use_container_width=True, 
                              key="btn_reset_nexion"):
-                    # Función de limpieza
                     if 'folio_nexion' in st.session_state:
                         del st.session_state.folio_nexion
-                    
-                    # Reset de la tabla a su estado inicial
-                    st.session_state.rows = pd.DataFrame([
-                        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
-                    ] * 10)
-                    
+                    st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"}] * 10)
                     st.rerun()
                         
                     
@@ -1094,6 +1088,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
