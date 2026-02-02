@@ -778,7 +778,7 @@ with main_container:
                 return out_io.getvalue()
 
             # --- CARGA Y PROCESAMIENTO ERP ---
-            file_p = st.file_uploader("📂 SUBIR ARCHIVO ERP (CSV)", type="csv")
+            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv")
             
             if file_p:
                 if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
@@ -806,25 +806,24 @@ with main_container:
                             otras = [c for c in p.columns if c not in cols_sistema]
                             st.session_state.df_analisis = p[cols_sistema + otras]
 
-                    st.markdown("### RECOMENDACIONES GENERADAS")
-                    modo_edicion = st.toggle("🔓 EDITAR VALORES")
+                    st.markdown("### :material/analytics: RECOMENDACIONES GENERADAS")
+                    modo_edicion = st.toggle(":material/edit_note: EDITAR VALORES")
                     
                     p_editado = st.data_editor(
                         st.session_state.df_analisis,
                         use_container_width=True,
                         num_rows="fixed",
                         column_config={
-                            "RECOMENDACION": st.column_config.TextColumn("🚚 FLETERA", disabled=not modo_edicion),
-                            "COSTO": st.column_config.NumberColumn("💰 TARIFA", format="$%.2f", disabled=not modo_edicion),
+                            "RECOMENDACION": st.column_config.TextColumn(":material/local_shipping: FLETERA", disabled=not modo_edicion),
+                            "COSTO": st.column_config.NumberColumn(":material/payments: TARIFA", format="$%.2f", disabled=not modo_edicion),
                         },
                         key="editor_pro_v11"
                     )
                    
                     # --- REESTRUCTURA DE ACCIONES (JERARQUÍA VISUAL XENOCODE) ---
                     with st.container():
-                        # 1. BOTÓN SUPERIOR: ACCIÓN PRINCIPAL
                         st.download_button(
-                            label="💾 DESCARGAR RESULTADOS (CSV ANALIZADO)",
+                            label=":material/download: DESCARGAR RESULTADOS (CSV ANALIZADO)",
                             data=p_editado.to_csv(index=False).encode('utf-8-sig'),
                             file_name="Analisis_Nexion.csv",
                             use_container_width=True,
@@ -833,9 +832,7 @@ with main_container:
         
                         st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
         
-                        # 2. BOTONES INFERIORES: CONTROL Y REGISTRO
                         c_izq, c_der = st.columns(2)
-                        
                         with c_izq:
                             if st.button(":material/push_pin: FIJAR CAMBIOS", use_container_width=True, key="btn_fijar_bottom"):
                                 st.session_state.df_analisis = p_editado
@@ -851,35 +848,32 @@ with main_container:
                             else:
                                 st.button(":material/verified_user: REGISTROS ASEGURADOS", use_container_width=True, disabled=True, key="btn_ok_bottom")
                 
-                    # --- SISTEMA DE SELLADO (DIVIDIDO EN COLUMNAS) ----
+                    # --- SISTEMA DE SELLADO ---
                     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
-                    st.markdown("<h3 style='font-size: 16px; color: white;'>🖨️ SISTEMA DE SELLADO Y SOBREIMPRESIÓN</h3>", unsafe_allow_html=True)
+                    st.markdown("<h3 style='font-size: 16px; color: white;'>:material/print: SISTEMA DE SELLADO Y SOBREIMPRESIÓN</h3>", unsafe_allow_html=True)
                     
-                    # 1. PANEL DE CALIBRACIÓN (Siempre visible y expandido)
-                    with st.expander("⚙️ PANEL DE CALIBRACIÓN (COORDENADAS PDF)", expanded=True):
+                    with st.expander(":material/settings: PANEL DE CALIBRACIÓN (COORDENADAS PDF)", expanded=True):
                         col_x, col_y = st.columns(2)
                         ajuste_x = col_x.slider("Eje X (Horizontal)", 0, 612, 510)
                         ajuste_y = col_y.slider("Eje Y (Vertical)", 0, 792, 760)
         
-                    # 2. BLOQUE SUPERIOR: IMPRESIÓN FÍSICA (BOTÓN GRANDE)
-                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
-                    if st.button("📄 GENERAR SELLOS PARA FACTURAS (PAPEL FÍSICO)", use_container_width=True, key="btn_fisico_full"):
+                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>:material/description: IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
+                    if st.button(":material/article: GENERAR SELLOS PARA FACTURAS (PAPEL FÍSICO)", use_container_width=True, key="btn_fisico_full"):
                         sellos = st.session_state.df_analisis['RECOMENDACION'].tolist() if 'df_analisis' in st.session_state else []
                         if sellos:
                             pdf_out = generar_sellos_fisicos(sellos, ajuste_x, ajuste_y)
-                            st.download_button("⬇️ DESCARGAR PDF DE SELLOS", pdf_out, "Sellos_Fisicos.pdf", use_container_width=True)
+                            st.download_button(":material/download: DESCARGAR PDF DE SELLOS", pdf_out, "Sellos_Fisicos.pdf", use_container_width=True)
                         else:
                             st.warning("No hay datos en la tabla para generar sellos.")
         
                     st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
         
-                    # 3. BLOQUE INFERIOR: SELLADO DIGITAL
-                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>SELLADO DIGITAL</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>:material/picture_as_pdf: SELLADO DIGITAL</p>", unsafe_allow_html=True)
                     with st.container(border=True):
-                        pdfs = st.file_uploader("Subir Facturas PDF para estampar digitalmente", type="pdf", accept_multiple_files=True, key="u_digital_full")
+                        pdfs = st.file_uploader(":material/upload: Subir Facturas PDF para estampar", type="pdf", accept_multiple_files=True, key="u_digital_full")
                         
                         if pdfs:
-                            if st.button("🎯 EJECUTAR ESTAMPADO DIGITAL EN PDFs", use_container_width=True):
+                            if st.button(":material/qr_code_scanner: EJECUTAR ESTAMPADO DIGITAL EN PDFs", use_container_width=True):
                                 df_ref = st.session_state.get('df_analisis', pd.DataFrame())
                                 if not df_ref.empty:
                                     mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
@@ -889,9 +883,11 @@ with main_container:
                                             f_id = next((f for f in mapa.keys() if f in pdf.name.upper()), None)
                                             if f_id:
                                                 zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
-                                    st.download_button("⬇️ DESCARGAR FACTURAS SELLADAS (ZIP)", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
+                                    st.download_button(":material/folder_zip: DESCARGAR FACTURAS SELLADAS (ZIP)", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
                                 else:
                                     st.error("Error: La tabla de análisis está vacía.")
+                except Exception as e:
+                    st.error(f"Error: {e}")
         
                 # --- AQUÍ CERRAMOS EL TRY Y EL IF DE ANALISIS ---
                 except Exception as e:
@@ -919,6 +915,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
