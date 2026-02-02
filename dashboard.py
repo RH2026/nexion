@@ -803,7 +803,7 @@ with main_container:
                                 st.session_state.rows.at[idx, "CODIGO"] = val_codigo
             
             # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
-            st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px;'>:material/list_alt: DETALLE DE MATERIALES</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px;'>DETALLE DE MATERIALES</p>", unsafe_allow_html=True)
             df_final = st.data_editor(
                 st.session_state.rows, 
                 num_rows="dynamic", 
@@ -1088,6 +1088,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
