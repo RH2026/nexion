@@ -262,7 +262,7 @@ with header_zone:
                 # --- SECCIÓN HUB LOG ---
                 with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
                     # Definimos las sub-secciones de tu HUB
-                    for s in ["ANALSIS", "SISTEMA", "ALERTAS"]:
+                    for s in ["ANALISIS", "SISTEMA", "ALERTAS"]:
                         sub_label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
                             st.session_state.menu_main = "HUB LOG"
@@ -861,6 +861,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
