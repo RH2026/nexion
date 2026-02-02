@@ -891,6 +891,9 @@ with main_container:
                                     st.download_button("⬇️ DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
                                 else:
                                     st.error("Faltan datos de referencia para el sellado.")
+                
+                except Exception as e:
+                    st.error(f"Error en procesamiento: {e}")
             
     elif st.session_state.menu_sub == "SISTEMA":
         st.write("Estado de servidores y conexión con GitHub/SAP.")
@@ -904,6 +907,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
