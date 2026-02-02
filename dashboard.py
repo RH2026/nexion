@@ -388,29 +388,41 @@ with main_container:
                     opciones_f = sorted(df["FLETERA"].unique()) if "FLETERA" in df.columns else []
                     filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f)
             
-            # ── 3. LÓGICA DE PROCESAMIENTO DE DATOS ──────────────────────────────
+            # ── 3. LÓGICA DE PROCESAMIENTO DE DATOS (REPARACIÓN DE VALUEERROR) ──────────────
             df_kpi = df.copy()
             df_kpi.columns = [c.upper() for c in df_kpi.columns]
-            df_kpi["FECHA DE ENVÍO"] = pd.to_datetime(df_kpi["FECHA DE ENVÍO"])
-            df_kpi["PROMESA DE ENTREGA"] = pd.to_datetime(df_kpi["PROMESA DE ENTREGA"])
             
-            # A) Filtro por Rango de Fechas
+            # Forzamos la conversión de fechas. 
+            # dayfirst=True es vital para nuestro formato en Guadalajara.
+            # errors='coerce' convertirá los datos basura en "NaT" (Not a Time) en lugar de dar error.
+            df_kpi["FECHA DE ENVÍO"] = pd.to_datetime(df_kpi["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
+            df_kpi["PROMESA DE ENTREGA"] = pd.to_datetime(df_kpi["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+            
+            # Limpiamos filas que se hayan quedado sin fecha válida tras la conversión
+            df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
+            
+            # Aplicar Filtros Dinámicos
             if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
                 start_d, end_d = rango_fechas
+                # Filtro de rango comparando objetos date
                 df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= start_d) & (df_kpi["FECHA DE ENVÍO"].dt.date <= end_d)]
             
-            # B) Filtro por Fletera
             if filtro_global_fletera:
                 df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
             
-            # C) Cálculos de Negocio
+            # Cálculos Operativos (Aseguramos que sean números)
             df_kpi["COSTO DE LA GUÍA"] = pd.to_numeric(df_kpi["COSTO DE LA GUÍA"], errors='coerce').fillna(0)
             df_kpi["CANTIDAD DE CAJAS"] = pd.to_numeric(df_kpi["CANTIDAD DE CAJAS"], errors='coerce').fillna(1).replace(0, 1)
             
-            # Identificación de Atrasos (Basado en la fecha actual de Guadalajara)
+            # Gestión de Atrasos (Basado en la fecha actual de Guadalajara)
+            # Filtramos solo los que NO tienen fecha de entrega real (Aún en tránsito)
             df_sin_entregar = df_kpi[df_kpi["FECHA DE ENTREGA REAL"].isna()].copy()
+            
             if not df_sin_entregar.empty:
-                # Usamos pd.Timestamp(hoy_gdl) para que la resta sea compatible con columnas datetime
+                # Aseguramos que la columna promesa también sea datetime para la resta
+                df_sin_entregar["PROMESA DE ENTREGA"] = pd.to_datetime(df_sin_entregar["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+                
+                # Resta de fechas usando pd.Timestamp de hoy_gdl
                 df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
                 df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if x > 0 else 0)
                 df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
@@ -1124,6 +1136,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
