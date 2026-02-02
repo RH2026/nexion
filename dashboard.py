@@ -32,126 +32,131 @@ vars_css = {
     "logo": "n1.png"      # Logo
 }
 
-# ── CSS MAESTRO INTEGRAL ──
+# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+/* 1. Limpieza de Interfaz */
 header, footer, [data-testid="stHeader"] {{
     visibility: hidden;
     height: 0px;
 }}
 
-html, body, .stApp {{
+/* APP BASE */
+html, body {{
     background-color: {vars_css['bg']} !important;
     color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
 }}
 
-.block-container {{
-    padding-top: 0.8rem !important;
-    padding-bottom: 5rem !important;
+.stApp {{ 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['text']} !important; 
+    font-family: 'Inter', sans-serif !important; 
 }}
 
-@keyframes fadeInUp {{
-    from {{ opacity: 0; transform: translateY(15px); }}
-    to {{ opacity: 1; transform: translateY(0); }}
+/* CONTENEDOR PRINCIPAL */
+.block-container {{ 
+    padding-top: 0.8rem !important; 
+    padding-bottom: 5rem !important; 
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
+@keyframes fadeInUp {{ 
+    from {{ opacity: 0; transform: translateY(15px); }} 
+    to {{ opacity: 1; transform: translateY(0); }} 
 }}
 
 [data-testid="stVerticalBlock"] > div {{
     animation: fadeInUp 0.6s ease-out;
 }}
 
-h3, .op-query-text {{
-    font-size: 11px !important;
-    letter-spacing: 8px !important;
-    text-align: center !important;
-    margin-top: 8px !important;
-    margin-bottom: 18px !important;
-    color: {vars_css['sub']} !important;
-    display: block !important;
-    width: 100% !important;
+/* 3. TÍTULOS Y OPERATIONAL QUERY */
+h3, .op-query-text {{ 
+    font-size: 11px !important; 
+    letter-spacing: 8px !important; 
+    text-align: center !important; 
+    margin-top: 8px !important; 
+    margin-bottom: 18px !important; 
+    color: {vars_css['sub']} !important; 
+    display: block !important; 
+    width: 100% !important; 
 }}
 
-div.stButton > button {{
+/* 4. BOTONES SLIM */
+div.stButton > button {{ 
+    background-color: {vars_css['card']} !important; 
+    color: {vars_css['text']} !important; 
+    border: 1px solid {vars_css['border']} !important; 
+    border-radius: 2px !important; 
+    font-weight: 700 !important; 
+    text-transform: uppercase; 
+    font-size: 10px !important; 
+    height: 28px !important; 
+    min-height: 28px !important; 
+    line-height: 28px !important; 
+    transition: all 0.2s ease !important; 
+    width: 100% !important; 
+}}
+
+div.stButton > button:hover {{ 
+    background-color: #ffffff !important; 
+    color: #000000 !important; 
+    border-color: #ffffff !important; 
+}}
+
+/* 5. INPUTS */
+.stTextInput input {{ 
+    background-color: {vars_css['card']} !important; 
+    color: {vars_css['text']} !important; 
+    border: 1px solid {vars_css['border']} !important; 
+    border-radius: 2px !important; 
+    height: 45px !important; 
+    text-align: center !important; 
+    letter-spacing: 2px; 
+}}
+
+/* DATA EDITOR */
+[data-testid="stDataEditor"] {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+}}
+
+[data-testid="stDataEditor"] * {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    font-size: 10px !important;
-    height: 28px !important;
-    transition: all 0.2s ease !important;
-    width: 100% !important;
 }}
 
-div.stButton > button:hover {{
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-color: #ffffff !important;
+/* 6. FOOTER FIJO */
+.footer {{ 
+    position: fixed; 
+    bottom: 0 !important; 
+    left: 0 !important; 
+    width: 100% !important; 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['sub']} !important; 
+    text-align: center; 
+    padding: 12px 0px !important; 
+    font-size: 9px; 
+    letter-spacing: 2px; 
+    border-top: 1px solid {vars_css['border']} !important; 
+    z-index: 999999 !important; 
+    animation: none !important; 
+    transform: none !important; 
 }}
 
-.stTextInput input {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
-    height: 45px !important;
-    text-align: center !important;
-    letter-spacing: 2px;
+/* 7. GRÁFICOS / IFRAME (PLOTLY + FRAPPE) */
+.stPlotlyChart {{
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 300px !important;
 }}
 
-.footer {{
-    position: fixed;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
+iframe {{
     background-color: {vars_css['bg']} !important;
-    color: {vars_css['sub']} !important;
-    text-align: center;
-    padding: 12px 0px !important;
-    font-size: 9px;
-    letter-spacing: 2px;
-    border-top: 1px solid {vars_css['border']} !important;
-    z-index: 999999 !important;
-}}
-
-/* Esto ahora funcionará correctamente dentro de tu f-string */
-div[data-testid="stPopoverContent"] {{
-    transition: opacity 0.3s ease-in-out !important;
     border: 1px solid {vars_css['border']} !important;
-    background-color: {vars_css['bg']} !important;
 }}
-
-/* Ajuste opcional para que el expander interno combine con el look NEXION */
-.stExpander {{
-    border: none !important;
-    background-color: transparent !important;
-}}
-
-/* Forzar uniformidad en botones primarios de NEXION */
-div.stButton > button[kind="primary"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
-    height: 45px !important; /* Aumentamos altura para que luzcan pro */
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    font-size: 12px !important;
-    letter-spacing: 2px !important;
-    transition: all 0.3s ease !important;
-    width: 100% !important;
-}}
-
-div.stButton > button[kind="primary"]:hover {{
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-color: #ffffff !important;
-    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
-}}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -381,94 +386,54 @@ with main_container:
             tasks_js_str = json.dumps(tasks_data)
             
             # ── 2. RENDERIZADO GANTT REPARADO ───────────────────────────────
-            # ── 2. RENDERIZADO GANTT (REPARACIÓN DEFINITIVA NEXION) ─────────
             components.html(
                 f"""
                 <html>
                 <head>
-                <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
-                <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
-            
-                <style>
-                    html, body {{ background:#111827; margin:0; padding:0; }}
-                    #gantt {{ background:#0E1117; }}
-            
-                    /* Flechas de dependencia */
-                    .arrow {{
-                        stroke: #9ca3af !important;
-                        stroke-width: 1.6 !important;
-                        opacity: 1 !important;
-                        fill: none !important;
-                    }}
-            
-                    /* Textos */
-                    .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
-            
-                    /* Fondo y filas */
-                    .grid-background {{ fill:#111827 !important; }}
-                    .grid-header {{ fill:#1F2937 !important; }}
-                    .grid-row {{ fill:#0b0e14 !important; }}
-                    .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-            
-                    /* Colores de prioridad de tareas */
-                    .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
-                    .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
-                    .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
-                    .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-            
-                    /* Resaltado del día actual en una sola línea */
-                    .today-highlight {{ fill: #0F172A !important; opacity: 0.5 !important; }}
-                </style>
+                    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
+                    <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
+                    <style>
+                        html, body {{ background:#111827; margin:0; padding:0; }}
+                        #gantt {{ background:#0E1117; }}
+                        .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
+                        .grid-background {{ fill:#0b0e14 !important; }}
+                        .grid-header {{ fill:#151a24 !important; }}
+                        .grid-row {{ fill:#0b0e14 !important; }}
+                        .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
+                        .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.4 !important; }}
+                        .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
+                        .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
+                        .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
+                        .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
+                        .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
+                        .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
+                    </style>
                 </head>
-            
                 <body>
                     <div id='gantt'></div>
                     <script>
-                        var tasks = {tasks_js};
-                        if(tasks && tasks.length){{
-                            var gantt_chart = new Gantt('#gantt', tasks, {{
+                        var tasks = {tasks_js_str};
+                        if(tasks.length){{
+                            var gantt = new Gantt('#gantt', tasks, {{
                                 view_mode: '{gantt_view}',
                                 bar_height: 20,
                                 padding: 40,
                                 date_format: 'YYYY-MM-DD'
                             }});
-            
-                            // --- REPARADOR DE LÍNEAS Y RESALTADO ---
                             setTimeout(function() {{
-                                // Líneas del Gantt
                                 var lines = document.querySelectorAll('#gantt svg line');
                                 lines.forEach(function(line) {{
-                                    var x1 = line.getAttribute('x1');
-                                    var x2 = line.getAttribute('x2');
-                                    var y1 = line.getAttribute('y1');
-                                    var y2 = line.getAttribute('y2');
-            
-                                    // Verticales → ocultar
-                                    if(x1 === x2) {{
-                                        line.style.display = 'none';
-                                    }}
-                                    // Horizontales → gris claro
-                                    else if(y1 === y2) {{
-                                        line.setAttribute('stroke', '#4B5563');
-                                        line.setAttribute('stroke-opacity', '0.2');
-                                    }}
+                                    var x1 = line.getAttribute('x1'), x2 = line.getAttribute('x2');
+                                    if(x1 === x2) {{ line.style.display = 'none'; }}
                                 }});
-            
-                                // Resaltado del día actual
-                                var todayRects = document.querySelectorAll('.today, .today-bar');
-                                todayRects.forEach(function(rect) {{
-                                    rect.setAttribute('fill', '#FBBF24');
-                                    rect.setAttribute('fill-opacity', '0.2');
-                                }});
-                            }}, 100); // esperar a que se dibuje el SVG
+                            }}, 100);
                         }}
                     </script>
                 </body>
                 </html>
                 """,
-                height=420,
-                scrolling=False
-            )         
+                height=420, scrolling=False
+            )      
             # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
             st.subheader("EDITOR DE TAREAS")
             
@@ -693,6 +658,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
