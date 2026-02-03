@@ -1007,11 +1007,14 @@ with main_container:
         # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
         elif st.session_state.menu_sub == "CONTRARRECIBOS":
             
-            # Configuración de zona horaria Guadalajara
             tz_gdl = pytz.timezone('America/Mexico_City')
             now_gdl = datetime.now(tz_gdl)
             
             # ── A. INICIALIZACIÓN DE ESTADO ──
+            # Usamos una sub-llave para rastrear versiones y forzar el refresco del widget
+            if 'reset_counter' not in st.session_state:
+                st.session_state.reset_counter = 0
+
             if 'rows_contrarecibo' not in st.session_state:
                 st.session_state.rows_contrarecibo = pd.DataFrame([
                     {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
@@ -1021,15 +1024,15 @@ with main_container:
             with st.container(border=True):
                 col_h1, col_h2 = st.columns([2, 1])
                 with col_h2:
-                    # Hora manual para el reporte
                     hora_reporte = st.text_input("HORA", value=now_gdl.strftime('%I:%M %p').lower(), key="h_contra_val")
             
             # ── C. EDITOR DE DATOS ──
+            # Al añadir el counter a la key, Streamlit destruye y recrea el widget al limpiar
             df_edit_c = st.data_editor(
                 st.session_state.rows_contrarecibo, 
                 num_rows="dynamic", 
                 use_container_width=True,
-                key="editor_contrarecibo",
+                key=f"editor_contrarecibo_{st.session_state.reset_counter}",
                 column_config={
                     "FECHA": st.column_config.TextColumn("FECHA"),
                     "CODIGO": st.column_config.TextColumn("CÓDIGO"),
@@ -1038,7 +1041,7 @@ with main_container:
                 }
             )
             
-            # ── D. RENDERIZADO PARA IMPRESIÓN (ESTILO JYPESA) ──
+            # ── D. RENDERIZADO PARA IMPRESIÓN ──
             filas_c = df_edit_c[df_edit_c["CODIGO"] != ""]
             tabla_c_html = "".join([
                 f"<tr>"
@@ -1050,7 +1053,6 @@ with main_container:
                 for _, r in filas_c.iterrows()
             ])
             
-            # Espacios en blanco para mantener la estructura visual si hay pocos datos
             espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
             
             form_c_html = f"""
@@ -1065,9 +1067,7 @@ with main_container:
                         <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
                     </div>
                 </div>
-                
                 <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
-                
                 <table style="width:100%; border-collapse:collapse; margin-top:20px;">
                     <thead>
                         <tr style="text-align:left; font-size:12px; border-bottom:1px solid black;">
@@ -1082,38 +1082,30 @@ with main_container:
                         {espacios}
                     </tbody>
                 </table>
-                
                 <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
-                    <div style="width:40%;">
-                        <div style="border-top:1px solid black; padding-top:5px;">
-                            <b>ELABORÓ</b><br>
-                            Rigoberto Hernandez - Cord de Logística
-                        </div>
-                    </div>
-                    <div style="width:40%;">
-                        <div style="border-top:1px solid black; padding-top:5px;">
-                            <b>RECIBIÓ</b><br>
-                            Nombre y Firma
-                        </div>
-                    </div>
+                    <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
+                    <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
                 </div>
             </div>
             """
 
-            # ── E. ACCIONES CON ICONOS COMPATIBLES ──
+            # ── E. ACCIONES ──
             st.write("---")
             c_b1, c_b2 = st.columns(2)
             
             with c_b1:
                 if st.button(":material/print: IMPRIMIR CONTRARECIBO", type="primary", use_container_width=True, key="btn_p_c"):
                     components.html(f"<html><body>{form_c_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-                    st.toast("Generando vista de impresión", icon="🖨️")
             
             with c_b2:
                 if st.button(":material/refresh: LIMPIAR CONTRARECIBO", use_container_width=True, key="btn_r_c"):
+                    # 1. Limpiamos el DataFrame en el estado
                     st.session_state.rows_contrarecibo = pd.DataFrame([
                         {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""}
                     ] * 10)
+                    # 2. Aumentamos el contador para forzar el cambio de KEY del editor
+                    st.session_state.reset_counter += 1
+                    # 3. Recargamos la app
                     st.rerun()
             
     # 5. HUB LOG
@@ -1319,6 +1311,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
