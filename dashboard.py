@@ -1054,6 +1054,14 @@ with main_container:
             espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
             
             form_c_html = f"""
+            <style>
+                @page {{
+                    size: landscape; /* Esto fuerza la orientación horizontal */
+                    margin: 10mm;
+                }}
+            </style>
+            <div style="font-family:Arial; padding:40px; background:white; color:black;">
+            
             <div style="font-family:Arial; padding:40px; background:white; color:black;">
                 <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:10px;">
                     <div>
@@ -1319,6 +1327,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
