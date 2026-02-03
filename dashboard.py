@@ -1318,60 +1318,100 @@ with main_container:
 
         elif st.session_state.menu_sub == "SISTEMA":
             st.info("ESTADO DE SERVIDORES: ONLINE | NEXION CORE: ACTIVE")
+            # ── ESTILO VISUAL PRO (CSS) ──
+            st.markdown("""
+                <style>
+                .main-header {
+                    background: rgba(84, 175, 231, 0.1);
+                    border-left: 5px solid #54AFE7;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin-bottom: 20px;
+                }
+                .status-card {
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 10px;
+                    padding: 15px;
+                    text-align: center;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+
+            # ── ENCABEZADO JYPESA ──
+            st.markdown("""
+                <div class="main-header">
+                    <h2 style='margin:0; color:#54AFE7;'>SISTEMA NEXION v2.0</h2>
+                    <p style='margin:0; font-size:12px; opacity:0.8;'>JYPESA | Automatización de Procesos de Logística</p>
+                </div>
+            """, unsafe_allow_html=True)
+
             # ── CONFIGURACIÓN DE SEGURIDAD ──
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             NOMBRE_EXCLUSIVO = "Matriz_Excel_Dashboard.csv"
 
+            # ── DASHBOARD DE ESTADO RÁPIDO ──
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">REPOSITORIO</p><p style="margin:0; color:#54AFE7; font-weight:bold;">{REPO_NAME.split("/")[1].upper()}</p></div>', unsafe_allow_html=True)
+            with c2:
+                st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">ARCHIVO MAESTRO</p><p style="margin:0; font-weight:bold;">CSV</p></div>', unsafe_allow_html=True)
+            with c3:
+                color_token = "#2ECC71" if TOKEN else "#E74C3C"
+                st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">TOKEN STATUS</p><p style="margin:0; color:{color_token}; font-weight:bold;">{"ACTIVO" if TOKEN else "ERROR"}</p></div>', unsafe_allow_html=True)
+
+            st.write("---")
+
+            # ── ÁREA DE CARGA EXCLUSIVA ──
             with st.container(border=True):
-                st.markdown(f"<p style='font-size:12px; font-weight:bold; color:#54AFE7;'>:material/security: CARGA EXCLUSIVA: {NOMBRE_EXCLUSIVO}</p>", unsafe_allow_html=True)
+                st.markdown(f"#### :material/security: Zona de Carga Crítica")
+                st.caption(f"Solo se permite la actualización de: `{NOMBRE_EXCLUSIVO}`")
                 
-                # 1. Selector de archivos con restricción de extensión
-                uploaded_file = st.file_uploader("Arrastra aquí el archivo maestro", type=["csv"])
+                uploaded_file = st.file_uploader("", type=["csv"], help="Arrastra el archivo maestro aquí")
 
                 if uploaded_file is not None:
-                    # Validamos el nombre exacto
                     if uploaded_file.name != NOMBRE_EXCLUSIVO:
-                        st.error(f"⚠️ ARCHIVO NO PERMITIDO. El nombre debe ser exactamente: **{NOMBRE_EXCLUSIVO}**")
-                        st.info(f"Detectado: {uploaded_file.name}")
+                        st.error(f":material/error: Nombre inválido: **{uploaded_file.name}**")
+                        st.warning(f"El archivo debe renombrarse a: `{NOMBRE_EXCLUSIVO}` antes de subirlo.")
                     else:
-                        st.success(f"✅ Archivo validado correctamente: {uploaded_file.name}")
+                        st.success(f":material/check_circle: Archivo validado: {uploaded_file.name}")
                         
-                        commit_msg = st.text_input("Nota de actualización", value=f"Actualización Matriz Maestra - {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+                        # Preview de datos (Toque Pro para confirmar antes de subir)
+                        with st.expander(":material/visibility: Previsualizar datos locales"):
+                            try:
+                                df_preview = pd.read_csv(uploaded_file)
+                                st.dataframe(df_preview.head(5), use_container_width=True)
+                                # Volvemos el puntero al inicio para que el upload no falle
+                                uploaded_file.seek(0)
+                            except:
+                                st.error("No se pudo generar la vista previa del CSV.")
 
-                        if st.button(":material/cloud_sync: SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
-                            if not TOKEN:
-                                st.error("Falta GITHUB_TOKEN en los Secrets.")
-                            else:
+                        commit_msg = st.text_input("Mensaje de Sincronización", 
+                                                 value=f"Update Master {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+
+                        if st.button(":material/cloud_sync: SINCRONIZAR AHORA", type="primary", use_container_width=True):
+                            with st.status("Iniciando conexión con GitHub...", expanded=True) as status:
                                 try:
                                     from github import Github
                                     g = Github(TOKEN)
                                     repo = g.get_repo(REPO_NAME)
                                     file_content = uploaded_file.getvalue()
 
-                                    # Lógica de actualización en el repositorio RH2026/nexion
+                                    st.write("Buscando archivo en el repositorio...")
                                     try:
                                         contents = repo.get_contents(NOMBRE_EXCLUSIVO)
                                         repo.update_file(contents.path, commit_msg, file_content, contents.sha)
-                                        st.success("¡Matriz actualizada con éxito en el servidor!")
+                                        status.update(label="¡Matriz actualizada con éxito!", state="complete", expanded=False)
                                     except:
                                         repo.create_file(NOMBRE_EXCLUSIVO, commit_msg, file_content)
-                                        st.success("¡Matriz creada por primera vez en el servidor!")
+                                        status.update(label="¡Archivo creado exitosamente!", state="complete", expanded=False)
                                     
-                                    st.toast("Base de datos actualizada", icon="✅")
-                                    time.sleep(2)
+                                    st.toast("GitHub actualizado correctamente", icon="✅")
+                                    time.sleep(1)
                                     st.rerun()
-
                                 except Exception as e:
-                                    st.error(f"Error en la carga: {e}")
-                else:
-                    st.info("Esperando archivo... Solo se admite Matriz_Excel_Dashboard.csv")
-
-            # ── SECCIÓN DE STATUS (OPCIONAL) ──
-            with st.expander(":material/info: INFORMACIÓN DEL REPOSITORIO"):
-                st.write(f"**Usuario:** {REPO_NAME.split('/')[0]}")
-                st.write(f"**Repositorio Activo:** {REPO_NAME.split('/')[1]}")
-                st.write(f"**Rama:** main")
+                                    status.update(label=f"Fallo en la carga: {e}", state="error")
             
         elif st.session_state.menu_sub == "ALERTAS":
             st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
@@ -1384,6 +1424,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
