@@ -925,7 +925,7 @@ with main_container:
                     st.rerun()
                         
                     
-    elif st.session_state.menu_sub == "FORMATOS":
+    elif st.session_state.menu_sub == "CONTRARRECIBOS":
         st.subheader("FORMATOS > CONTRARRECIBOS")
         # Configuración de zona horaria Guadalajara
         tz_gdl = pytz.timezone('America/Mexico_City')
@@ -1235,6 +1235,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
