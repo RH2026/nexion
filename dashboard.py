@@ -483,7 +483,7 @@ with main_container:
                     "FECHA DE ENVÍO": ["FECHA DE ENVÍO"],
                     "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA"],
                     "FLETERA": ["FLETERA"],
-                    "NÚMERO DE GUÍA": ["GUIA", "GUÍA"],
+                    "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
                     "DIAS_TRANS": ["DIAS_TRANS"],
                     "DIAS_ATRASO": ["DIAS_ATRASO"]
                 }
@@ -1448,6 +1448,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
