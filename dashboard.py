@@ -1050,9 +1050,9 @@ with main_container:
                 for _, r in filas_c.iterrows()
             ])
             
-            # Espacios en blanco para mantener la estructura visual si hay pocos datos
             espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
-                      
+            
+            # 6. HTML MAESTRO (Con doble llave {{ }} para CSS y simple { } para variables)
             form_c_html = f"""
             <html>
             <head>
@@ -1068,19 +1068,9 @@ with main_container:
                         margin: 0;
                         padding: 0;
                     }}
-                    .print-container {{
-                        padding: 20px;
-                    }}
-                    table {{
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 20px;
-                    }}
-                    th, td {{
-                        border-bottom: 1px solid black;
-                        padding: 8px;
-                        text-align: left;
-                    }}
+                    .print-container {{ padding: 20px; }}
+                    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+                    th, td {{ border-bottom: 1px solid black; padding: 8px; text-align: left; }}
                 </style>
             </head>
             <body>
@@ -1095,16 +1085,11 @@ with main_container:
                             <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
                         </div>
                     </div>
-                    
                     <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
-                    
                     <table>
                         <thead>
                             <tr style="font-size:12px; border-bottom: 2px solid black;">
-                                <th>FECHA</th>
-                                <th>CÓDIGO</th>
-                                <th>PAQUETERÍA</th>
-                                <th style="text-align:center;">CANTIDAD</th>
+                                <th>FECHA</th><th>CÓDIGO</th><th>PAQUETERÍA</th><th style="text-align:center;">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody style="font-size:13px;">
@@ -1112,16 +1097,9 @@ with main_container:
                             {espacios}
                         </tbody>
                     </table>
-                    
                     <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
-                        <div style="width:40%; border-top:1px solid black; padding-top:5px;">
-                            <b>ELABORÓ</b><br>
-                            Rigoberto Hernandez - Cord de Logística
-                        </div>
-                        <div style="width:40%; border-top:1px solid black; padding-top:5px;">
-                            <b>RECIBIÓ</b><br>
-                            Nombre y Firma
-                        </div>
+                        <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
+                        <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
                     </div>
                 </div>
             </body>
@@ -1347,6 +1325,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
