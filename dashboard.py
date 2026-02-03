@@ -883,7 +883,7 @@ with main_container:
 
         # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
         elif st.session_state.menu_sub == "CONTRARRECIBOS":
-            st.markdown("<h3>Entrega de Facturas de Contrarecibo</h3>", unsafe_allow_html=True)
+            
             tz_gdl = pytz.timezone('America/Mexico_City')
             now_gdl = datetime.now(tz_gdl)
             
@@ -1144,6 +1144,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
