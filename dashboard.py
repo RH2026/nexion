@@ -764,99 +764,117 @@ with main_container:
         
         elif st.session_state.menu_sub == "QUEJAS":
             st.subheader("SEGUIMIENTO > QUEJAS")
-            st.info("Gestión de incidencias")
             # ── CONFIGURACIÓN GITHUB (GASTOS) ──
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
-            FILE_PATH = "gastos.csv"  # <--- Actualizado a tu nuevo archivo
+            FILE_PATH = "gastos.csv"
             CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
 
             # ── FUNCIONES DE SOPORTE ──
             def cargar_datos_gastos():
                 try:
-                    # Usamos un timestamp para evitar que el navegador guarde una versión vieja (caché)
                     r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if r.status_code == 200:
                         df = pd.read_csv(io.StringIO(r.text))
                         df.columns = [c.strip().upper() for c in df.columns]
-                        
-                        # Intentamos convertir la columna FECHA si existe
                         if "FECHA" in df.columns:
                             df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
                         return df
-                    else:
-                        st.warning("El archivo gastos.csv no existe en el repositorio. Se creará uno nuevo al guardar.")
-                except Exception as e:
-                    st.error(f"Error al conectar con GitHub: {e}")
-                
-                # Estructura base si el archivo no existe o falla
+                except: pass
                 return pd.DataFrame(columns=["FECHA", "CONCEPTO", "MONTO", "CATEGORIA", "NOTAS"])
 
             def guardar_en_github(df_to_save):
-                if not TOKEN:
-                    st.error("⚠️ Error: No se detectó el GITHUB_TOKEN en los secrets."); return False
+                if not TOKEN: return False
                 try:
                     from github import Github
-                    g = Github(TOKEN)
-                    repo = g.get_repo(REPO_NAME)
-                    
-                    # Convertir a CSV para subir
+                    g = Github(TOKEN); repo = g.get_repo(REPO_NAME)
                     csv_data = df_to_save.to_csv(index=False)
-                    
                     try:
                         contents = repo.get_contents(FILE_PATH)
-                        repo.update_file(contents.path, f"Actualización gastos {datetime.now()}", csv_data, contents.sha)
+                        repo.update_file(contents.path, f"Update gastos {datetime.now()}", csv_data, contents.sha)
                     except:
-                        # Si el archivo no existe en el repo, lo crea
-                        repo.create_file(FILE_PATH, f"Creación inicial gastos", csv_data)
+                        repo.create_file(FILE_PATH, f"Initial gastos", csv_data)
                     return True
-                except Exception as e:
-                    st.error(f"Error crítico al guardar: {e}"); return False
+                except: return False
 
-            # ── INTERFAZ DE CONTROL ──
+            # ── INTERFAZ ──
             st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>", unsafe_allow_html=True)
             
-            # Carga inicial en el estado de la sesión
             if "df_gastos" not in st.session_state:
                 st.session_state.df_gastos = cargar_datos_gastos()
 
-            # Fila de Botones Superiores (Acciones rápidas)
-            c_btn1, c_btn2, c_btn3 = st.columns([1, 1, 1])
-            with c_btn1:
-                if st.button("🔄 REFRESCAR TABLA", use_container_width=True):
-                    st.session_state.df_gastos = cargar_datos_gastos()
-                    st.rerun()
-            
-            with c_btn2:
-                # El borrado se hace seleccionando la fila y presionando 'Delete' en el editor
-                st.info("Para borrar: selecciona la fila y presiona 'Supr' o 'Delete'.")
-
-            # ── EDITOR DE DATOS DINÁMICO ──
-            # Esta tabla permite editar, añadir (+) y borrar filas directamente
+            # ── EDITOR DE DATOS ──
             df_editado = st.data_editor(
                 st.session_state.df_gastos,
-                hide_index=False,
                 use_container_width=True,
-                num_rows="dynamic", # Habilita añadir y quitar filas
-                key="editor_gastos_log",
+                num_rows="dynamic",
+                key="editor_gastos_v1",
                 column_config={
                     "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
                     "MONTO": st.column_config.NumberColumn("MONTO", format="$%.2f"),
-                    "CONCEPTO": st.column_config.TextColumn("CONCEPTO", width="large"),
+                    "CONCEPTO": st.column_config.TextColumn("CONCEPTO"),
                     "CATEGORIA": st.column_config.SelectboxColumn("CATEGORÍA", options=["Fletes", "Combustible", "Mantenimiento", "Viáticos", "Otros"])
                 }
             )
 
-            st.divider()
+            # ── RENDERIZADO HTML PARA IMPRESIÓN ──
+            filas_validas = df_editado[df_editado["CONCEPTO"].notna()]
+            tabla_html = "".join([
+                f"<tr><td style='border:1px solid #ddd;padding:8px;'>{r['FECHA']}</td>"
+                f"<td style='border:1px solid #ddd;padding:8px;'>{r['CONCEPTO']}</td>"
+                f"<td style='border:1px solid #ddd;padding:8px;'>{r['CATEGORIA']}</td>"
+                f"<td style='border:1px solid #ddd;padding:8px;text-align:right;'>${float(r['MONTO']):,.2f}</td></tr>"
+                for _, r in filas_validas.iterrows()
+            ])
+            
+            total_gastos = filas_validas["MONTO"].astype(float).sum() if not filas_validas.empty else 0
 
-            # ── BOTÓN DE GUARDADO ──
-            if st.button("💾 GUARDAR CAMBIOS EN EL SERVIDOR", type="primary", use_container_width=True):
-                with st.spinner("Sincronizando con GitHub..."):
+            form_print = f"""
+            <div style="font-family:sans-serif; padding:30px; color:black; background:white;">
+                <div style="border-bottom:2px solid black; padding-bottom:10px; margin-bottom:20px;">
+                    <h2 style="margin:0; letter-spacing:3px;">JYPESA</h2>
+                    <p style="margin:0; font-size:10px; letter-spacing:1px; color:#555;">AUTOMATIZACIÓN DE PROCESOS</p>
+                </div>
+                <h3 style="text-align:center; text-transform:uppercase; letter-spacing:2px;">Reporte de Gastos Logística</h3>
+                <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                    <thead><tr style="background:#f2f2f2;">
+                        <th style="border:1px solid #ddd;padding:10px;">FECHA</th>
+                        <th style="border:1px solid #ddd;padding:10px;">CONCEPTO</th>
+                        <th style="border:1px solid #ddd;padding:10px;">CATEGORÍA</th>
+                        <th style="border:1px solid #ddd;padding:10px;">MONTO</th>
+                    </tr></thead>
+                    <tbody>{tabla_html}</tbody>
+                    <tfoot><tr>
+                        <td colspan="3" style="text-align:right; padding:10px; font-weight:bold;">TOTAL:</td>
+                        <td style="text-align:right; padding:10px; font-weight:bold;">${total_gastos:,.2f}</td>
+                    </tr></tfoot>
+                </table>
+                <div style="margin-top:50px; text-align:right; font-size:10px;">
+                    Generado por: Rigoberto Hernandez / Cord. Logística<br>Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+                </div>
+            </div>
+            """
+
+            # ── BOTONES JUNTOS (3 CONTENEDORES IGUALITOS) ──
+            st.markdown("<br>", unsafe_allow_html=True)
+            c1, c2, c3 = st.columns(3)
+            
+            with c1:
+                if st.button("🔄 ACTUALIZAR", use_container_width=True):
+                    st.session_state.df_gastos = cargar_datos_gastos()
+                    st.rerun()
+            
+            with c2:
+                if st.button("💾 GUARDAR", type="primary", use_container_width=True):
                     if guardar_en_github(df_editado):
                         st.session_state.df_gastos = df_editado
-                        st.toast("Cambios guardados con éxito", icon="✅")
-                        time.sleep(1)
-                        st.rerun()
+                        st.toast("Datos guardados en GitHub", icon="✅")
+                        time.sleep(1); st.rerun()
+            
+            with c3:
+                if st.button("📄 IMPRIMIR", use_container_width=True):
+                    components.html(f"<html><body>{form_print}<script>window.print();</script></body></html>", height=0)
+                    st.toast("Preparando vista de impresión...", icon="⚙️")
             
         else:
             st.subheader("MÓDULO DE SEGUIMIENTO")
@@ -1237,6 +1255,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
