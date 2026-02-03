@@ -443,7 +443,7 @@ with main_container:
             m4.markdown(f"<div class='main-card-kpi' style='border-left-color:{color_ef};'><div class='kpi-label'>Eficiencia</div><div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
 
             # ── 4. SEMÁFORO DE ALERTAS (YA NO DARÁ ERROR) ──
-            st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; color:{vars_css['sub']}; text-align:center; margin-top:30px;'>S E M Á F O R O DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; color:{vars_css['sub']}; text-align:center; margin-top:30px;'>S E M Á F O R O DE ALERTAS</p>", unsafe_allow_html=True)
             
             a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
             a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
@@ -459,7 +459,7 @@ with main_container:
             df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
             
             if not df_criticos.empty:
-                st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css['sub']}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES OPERATIVAS</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css['sub']}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES</p>", unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
                 with c1: sel_f = st.multiselect("TRANSPORTISTA:", sorted(df_criticos["FLETERA"].unique()), placeholder="TODOS")
                 with c2: sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
@@ -1132,6 +1132,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
