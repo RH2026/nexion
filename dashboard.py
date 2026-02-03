@@ -776,11 +776,13 @@ with main_container:
                     r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if r.status_code == 200:
                         df = pd.read_csv(io.StringIO(r.text))
-                        df.columns = [c.strip().upper() for c in df.columns]
+                        # Normalizamos: Todo a MAYÚSCULAS y sin espacios extra
+                        df.columns = [str(c).strip().upper() for c in df.columns]
                         if "FECHA" in df.columns:
                             df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
                         return df
                 except: pass
+                # Si falla o no hay columnas, creamos el molde correcto
                 return pd.DataFrame(columns=["FECHA", "CONCEPTO", "MONTO", "CATEGORIA", "NOTAS"])
 
             def guardar_en_github(df_to_save):
@@ -817,17 +819,33 @@ with main_container:
                 }
             )
 
-            # ── RENDERIZADO HTML PARA IMPRESIÓN ──
-            filas_validas = df_editado[df_editado["CONCEPTO"].notna()]
-            tabla_html = "".join([
-                f"<tr><td style='border:1px solid #ddd;padding:8px;'>{r['FECHA']}</td>"
-                f"<td style='border:1px solid #ddd;padding:8px;'>{r['CONCEPTO']}</td>"
-                f"<td style='border:1px solid #ddd;padding:8px;'>{r['CATEGORIA']}</td>"
-                f"<td style='border:1px solid #ddd;padding:8px;text-align:right;'>${float(r['MONTO']):,.2f}</td></tr>"
-                for _, r in filas_validas.iterrows()
-            ])
+            # ── REPARACIÓN DEL KEYERROR ──
+            # Forzamos a que df_editado también tenga columnas en mayúsculas antes de procesar
+            df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
+
+            # Ahora sí filtramos con seguridad
+            if "CONCEPTO" in df_editado.columns:
+                filas_validas = df_editado[df_editado["CONCEPTO"].notna() & (df_editado["CONCEPTO"] != "")]
+            else:
+                filas_validas = pd.DataFrame(columns=df_editado.columns)
             
-            total_gastos = filas_validas["MONTO"].astype(float).sum() if not filas_validas.empty else 0
+            # ── CÁLCULO DE TOTAL Y HTML ──
+            total_gastos = 0
+            tabla_html = ""
+            
+            if not filas_validas.empty:
+                # Aseguramos que MONTO sea numérico para el total
+                filas_validas["MONTO"] = pd.to_numeric(filas_validas["MONTO"], errors='coerce').fillna(0)
+                total_gastos = filas_validas["MONTO"].sum()
+                
+                for _, r in filas_validas.iterrows():
+                    tabla_html += f"""
+                    <tr>
+                        <td style='border:1px solid #ddd;padding:8px;'>{r.get('FECHA', '')}</td>
+                        <td style='border:1px solid #ddd;padding:8px;'>{r.get('CONCEPTO', '')}</td>
+                        <td style='border:1px solid #ddd;padding:8px;'>{r.get('CATEGORIA', '')}</td>
+                        <td style='border:1px solid #ddd;padding:8px;text-align:right;'>${float(r.get('MONTO', 0)):,.2f}</td>
+                    </tr>"""
 
             form_print = f"""
             <div style="font-family:sans-serif; padding:30px; color:black; background:white;">
@@ -855,7 +873,7 @@ with main_container:
             </div>
             """
 
-            # ── BOTONES JUNTOS (3 CONTENEDORES IGUALITOS) ──
+            # ── BOTONES JUNTOS ──
             st.markdown("<br>", unsafe_allow_html=True)
             c1, c2, c3 = st.columns(3)
             
@@ -874,7 +892,6 @@ with main_container:
             with c3:
                 if st.button("📄 IMPRIMIR", use_container_width=True):
                     components.html(f"<html><body>{form_print}<script>window.print();</script></body></html>", height=0)
-                    st.toast("Preparando vista de impresión...", icon="⚙️")
             
         else:
             st.subheader("MÓDULO DE SEGUIMIENTO")
@@ -1255,6 +1272,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
