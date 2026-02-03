@@ -1317,50 +1317,55 @@ with main_container:
                     st.error(f"Error en procesamiento Smart: {e}")
 
         elif st.session_state.menu_sub == "SISTEMA":
-            st.info("ESTADO DE SERVIDORES: ONLINE | XENOCODE CORE: ACTIVE")
-            # ── CONFIGURACIÓN DE ACCESO ──
+            st.info("ESTADO DE SERVIDORES: ONLINE | NEXION CORE: ACTIVE")
+            # ── CONFIGURACIÓN DE SEGURIDAD ──
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
+            NOMBRE_EXCLUSIVO = "Matriz_Excel_Dashboard.csv"
 
             with st.container(border=True):
-                st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7;'>:material/cloud_upload: CARGA DE ARCHIVOS A GITHUB</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-size:12px; font-weight:bold; color:#54AFE7;'>:material/security: CARGA EXCLUSIVA: {NOMBRE_EXCLUSIVO}</p>", unsafe_allow_html=True)
                 
-                # 1. Selector de archivos
-                uploaded_file = st.file_uploader("Selecciona el archivo para actualizar en el repositorio", 
-                                               type=["csv", "xlsx", "png", "jpg"],
-                                               help="El archivo se subirá a la raíz de tu repositorio")
+                # 1. Selector de archivos con restricción de extensión
+                uploaded_file = st.file_uploader("Arrastra aquí el archivo maestro", type=["csv"])
 
                 if uploaded_file is not None:
-                    # 2. Entrada para el nombre del archivo (por defecto el original)
-                    file_name = st.text_input("Confirmar nombre del archivo en GitHub", value=uploaded_file.name)
-                    
-                    commit_message = st.text_input("Mensaje del cambio (Commit)", value=f"Update {file_name} desde NEXION App")
+                    # Validamos el nombre exacto
+                    if uploaded_file.name != NOMBRE_EXCLUSIVO:
+                        st.error(f"⚠️ ARCHIVO NO PERMITIDO. El nombre debe ser exactamente: **{NOMBRE_EXCLUSIVO}**")
+                        st.info(f"Detectado: {uploaded_file.name}")
+                    else:
+                        st.success(f"✅ Archivo validado correctamente: {uploaded_file.name}")
+                        
+                        commit_msg = st.text_input("Nota de actualización", value=f"Actualización Matriz Maestra - {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
-                    if st.button(":material/send: EJECUTAR CARGA", type="primary", use_container_width=True):
-                        if not TOKEN:
-                            st.error("Error: No se encontró el GITHUB_TOKEN en los secrets.")
-                        else:
-                            try:
-                                from github import Github
-                                g = Github(TOKEN)
-                                repo = g.get_repo(REPO_NAME)
-                                file_content = uploaded_file.getvalue()
-
-                                # Intentar actualizar si existe, si no, crear
+                        if st.button(":material/cloud_sync: SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
+                            if not TOKEN:
+                                st.error("Falta GITHUB_TOKEN en los Secrets.")
+                            else:
                                 try:
-                                    contents = repo.get_contents(file_name)
-                                    repo.update_file(contents.path, commit_message, file_content, contents.sha)
-                                    st.success(f"¡Archivo '{file_name}' actualizado con éxito en GitHub!")
-                                except:
-                                    repo.create_file(file_name, commit_message, file_content)
-                                    st.success(f"¡Archivo '{file_name}' creado con éxito en el repositorio!")
-                                
-                                st.toast("Sincronización completa", icon="✅")
-                                time.sleep(2)
-                                st.rerun()
+                                    from github import Github
+                                    g = Github(TOKEN)
+                                    repo = g.get_repo(REPO_NAME)
+                                    file_content = uploaded_file.getvalue()
 
-                            except Exception as e:
-                                st.error(f"Error crítico en la conexión: {e}")
+                                    # Lógica de actualización en el repositorio RH2026/nexion
+                                    try:
+                                        contents = repo.get_contents(NOMBRE_EXCLUSIVO)
+                                        repo.update_file(contents.path, commit_msg, file_content, contents.sha)
+                                        st.success("¡Matriz actualizada con éxito en el servidor!")
+                                    except:
+                                        repo.create_file(NOMBRE_EXCLUSIVO, commit_msg, file_content)
+                                        st.success("¡Matriz creada por primera vez en el servidor!")
+                                    
+                                    st.toast("Base de datos actualizada", icon="✅")
+                                    time.sleep(2)
+                                    st.rerun()
+
+                                except Exception as e:
+                                    st.error(f"Error en la carga: {e}")
+                else:
+                    st.info("Esperando archivo... Solo se admite Matriz_Excel_Dashboard.csv")
 
             # ── SECCIÓN DE STATUS (OPCIONAL) ──
             with st.expander(":material/info: INFORMACIÓN DEL REPOSITORIO"):
@@ -1379,6 +1384,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
