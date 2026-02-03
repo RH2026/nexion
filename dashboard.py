@@ -443,7 +443,7 @@ with main_container:
             m4.markdown(f"<div class='main-card-kpi' style='border-left-color:{color_ef};'><div class='kpi-label'>Eficiencia</div><div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
 
             # ── 4. SEMÁFORO DE ALERTAS (YA NO DARÁ ERROR) ──
-            st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>:material/traffic: SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
             
             a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
             a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
@@ -518,7 +518,7 @@ with main_container:
                 ].copy()
 
                 if not df_futuro.empty:
-                    st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:5px; color:#a855f7; text-transform:uppercase; text-align:center;'>📋 PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:5px; color:#a855f7; text-transform:uppercase; text-align:center;'>PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}</p>", unsafe_allow_html=True)
                     
                     with st.expander(f"VER LISTADO DE {len(df_futuro)} PEDIDOS PARA {nombre_prox_mes}", expanded=False):
                         # Seleccionamos columnas relevantes para no saturar la vista
@@ -1132,6 +1132,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
