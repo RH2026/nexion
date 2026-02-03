@@ -1317,7 +1317,7 @@ with main_container:
                     st.error(f"Error en procesamiento Smart: {e}")
 
         elif st.session_state.menu_sub == "SISTEMA":
-            st.info("ESTADO DE SERVIDORES: ONLINE | NEXION CORE: ACTIVE")
+            st.info("Estado de Servidores : Online | Nexion Core: Active")
             # ── ESTILO VISUAL PRO (CSS) ──
             st.markdown("""
                 <style>
@@ -1417,6 +1417,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
