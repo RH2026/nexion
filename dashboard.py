@@ -295,7 +295,7 @@ with header_zone:
 
                 # --- SECCIÓN FORMATOS ---
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    for s in ["SALIDA DE PT", "CONTRARECIBOS"]:
+                    for s in ["SALIDA DE PT", "CONTRARRECIBOS"]:
                         sub_label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
                             st.session_state.menu_main = "FORMATOS"
@@ -925,8 +925,8 @@ with main_container:
                     st.rerun()
                         
                     
-    elif st.session_state.menu_sub == "CONTRARECIBOS":
-        st.subheader("FORMATOS > CONTRARECIBOS")
+    elif st.session_state.menu_sub == "FORMATOS":
+        st.subheader("FORMATOS > CONTRARRECIBOS")
         # Configuración de zona horaria Guadalajara
         tz_gdl = pytz.timezone('America/Mexico_City')
         now_gdl = datetime.now(tz_gdl)
@@ -1235,6 +1235,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
