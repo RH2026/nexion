@@ -1338,14 +1338,7 @@ with main_container:
                 </style>
             """, unsafe_allow_html=True)
 
-            # ── ENCABEZADO JYPESA ──
-            st.markdown("""
-                <div class="main-header">
-                    <h2 style='margin:0; color:#54AFE7;'>SISTEMA NEXION v2.0</h2>
-                    <p style='margin:0; font-size:12px; opacity:0.8;'>JYPESA | Automatización de Procesos de Logística</p>
-                </div>
-            """, unsafe_allow_html=True)
-
+            
             # ── CONFIGURACIÓN DE SEGURIDAD ──
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
@@ -1424,6 +1417,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
