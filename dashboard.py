@@ -330,14 +330,19 @@ with main_container:
 
     elif st.session_state.menu_main == "SEGUIMIENTO":
         # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
-        @st.cache_data(ttl=600)
+        # ── A. CARGA DE DATOS (LECTURA DIRECTA Y DINÁMICA) ──
         def cargar_matriz_github():
-            url = "https://raw.githubusercontent.com/RH2026/dashboard-logistica/refs/heads/main/Matriz_Excel_Dashboard.csv"
+            # El parámetro ?v= engaña a GitHub para que no use su propia memoria caché
+            t = int(time.time())
+            url = f"https://raw.githubusercontent.com/RH2026/dashboard-logistica/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+            
             try:
+                # Leemos directo, sin @st.cache_data para que siempre sea información fresca
                 return pd.read_csv(url, encoding='utf-8-sig')
             except:
                 return None
-
+        
+        # Cargamos la matriz
         df_seguimiento = cargar_matriz_github()
 
         if df_seguimiento is None:
@@ -1443,6 +1448,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
