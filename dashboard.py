@@ -1007,19 +1007,24 @@ with main_container:
         # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
         elif st.session_state.menu_sub == "CONTRARRECIBOS":
             
+            # Configuración de zona horaria Guadalajara
             tz_gdl = pytz.timezone('America/Mexico_City')
             now_gdl = datetime.now(tz_gdl)
             
+            # ── A. INICIALIZACIÓN DE ESTADO ──
             if 'rows_contrarecibo' not in st.session_state:
                 st.session_state.rows_contrarecibo = pd.DataFrame([
                     {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
                 ] * 10)
             
+            # ── B. ENCABEZADO Y CONTROLES ──
             with st.container(border=True):
                 col_h1, col_h2 = st.columns([2, 1])
                 with col_h2:
+                    # Hora manual para el reporte
                     hora_reporte = st.text_input("HORA", value=now_gdl.strftime('%I:%M %p').lower(), key="h_contra_val")
             
+            # ── C. EDITOR DE DATOS ──
             df_edit_c = st.data_editor(
                 st.session_state.rows_contrarecibo, 
                 num_rows="dynamic", 
@@ -1033,35 +1038,82 @@ with main_container:
                 }
             )
             
+            # ── D. RENDERIZADO PARA IMPRESIÓN (ESTILO JYPESA) ──
             filas_c = df_edit_c[df_edit_c["CODIGO"] != ""]
             tabla_c_html = "".join([
-                f"<tr><td style='border-bottom:1px solid black;padding:8px;'>{r['FECHA']}</td>"
+                f"<tr>"
+                f"<td style='border-bottom:1px solid black;padding:8px;'>{r['FECHA']}</td>"
                 f"<td style='border-bottom:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
                 f"<td style='border-bottom:1px solid black;padding:8px;'>{r['PAQUETERIA']}</td>"
-                f"<td style='border-bottom:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>"
+                f"<td style='border-bottom:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td>"
+                f"</tr>"
                 for _, r in filas_c.iterrows()
             ])
             
+            # Espacios en blanco para mantener la estructura visual si hay pocos datos
             espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
             
-            form_c_html = f"""<div style="font-family:Arial;padding:40px;background:white;color:black;">
-                <div style="text-align:right;"><b>{hora_reporte}</b></div>
-                <h4 style="text-align:center;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
-                <table style="width:100%;border-collapse:collapse;">
-                <thead><tr style="border-bottom:2px solid black;"><th>FECHA</th><th>CODIGO</th><th>PAQUETERIA</th><th>CANTIDAD</th></tr></thead>
-                <tbody>{tabla_c_html}{espacios}</tbody></table>
-                <div style="margin-top:100px;display:flex;justify-content:space-between;text-align:center;">
-                <div style="width:40%;border-top:1px solid black;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord Logística</div>
-                <div style="width:40%;border-top:1px solid black;"><b>RECIBIÓ</b><br>Firma</div></div></div>"""
+            form_c_html = f"""
+            <div style="font-family:Arial; padding:40px; background:white; color:black;">
+                <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:10px;">
+                    <div>
+                        <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
+                        <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{hora_reporte}</span>
+                        <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
+                    </div>
+                </div>
+                
+                <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
+                
+                <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                    <thead>
+                        <tr style="text-align:left; font-size:12px; border-bottom:1px solid black;">
+                            <th style="padding:8px;">FECHA</th>
+                            <th style="padding:8px;">CÓDIGO</th>
+                            <th style="padding:8px;">PAQUETERÍA</th>
+                            <th style="padding:8px; text-align:center;">CANTIDAD</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size:13px;">
+                        {tabla_c_html}
+                        {espacios}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
+                    <div style="width:40%;">
+                        <div style="border-top:1px solid black; padding-top:5px;">
+                            <b>ELABORÓ</b><br>
+                            Rigoberto Hernandez - Cord de Logística
+                        </div>
+                    </div>
+                    <div style="width:40%;">
+                        <div style="border-top:1px solid black; padding-top:5px;">
+                            <b>RECIBIÓ</b><br>
+                            Nombre y Firma
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """
 
+            # ── E. ACCIONES CON ICONOS COMPATIBLES ──
             st.write("---")
             c_b1, c_b2 = st.columns(2)
+            
             with c_b1:
-                if st.button("📄 IMPRIMIR CONTRARECIBO", type="primary", use_container_width=True, key="btn_p_c"):
-                    components.html(f"<html><body>{form_c_html}<script>window.print();</script></body></html>", height=0)
+                if st.button(":material/print: IMPRIMIR CONTRARECIBO", type="primary", use_container_width=True, key="btn_p_c"):
+                    components.html(f"<html><body>{form_c_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+                    st.toast("Generando vista de impresión", icon="🖨️")
+            
             with c_b2:
-                if st.button("🔄 LIMPIAR CONTRARECIBO", use_container_width=True, key="btn_r_c"):
-                    st.session_state.rows_contrarecibo = pd.DataFrame([{"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""}] * 10)
+                if st.button(":material/refresh: LIMPIAR CONTRARECIBO", use_container_width=True, key="btn_r_c"):
+                    st.session_state.rows_contrarecibo = pd.DataFrame([
+                        {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""}
+                    ] * 10)
                     st.rerun()
             
     # 5. HUB LOG
@@ -1267,6 +1319,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
