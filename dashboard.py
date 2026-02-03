@@ -295,7 +295,7 @@ with header_zone:
 
                 # --- SECCIÓN FORMATOS ---
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    for s in ["SALIDA DE PT", "PAGOS"]:
+                    for s in ["SALIDA DE PT", "CONTRARECIBOS"]:
                         sub_label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
                             st.session_state.menu_main = "FORMATOS"
@@ -926,8 +926,111 @@ with main_container:
                         
                     
     elif st.session_state.menu_sub == "PAGOS":
-        st.subheader("FORMATOS > CONTROL DE PAGOS")
-    
+        st.subheader("FORMATOS > CONTRARECIBOS")
+        # Configuración de zona horaria Guadalajara
+        tz_gdl = pytz.timezone('America/Mexico_City')
+        now_gdl = datetime.now(tz_gdl)
+        
+        # ── A. INICIALIZACIÓN DE ESTADO ──
+        if 'rows_contrarecibo' not in st.session_state:
+            # Creamos un formato vacío con las columnas de tu imagen
+            st.session_state.rows_contrarecibo = pd.DataFrame([
+                {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
+            ] * 10)
+        
+        # ── B. ENCABEZADO Y CONTROLES ──
+        st.markdown("### REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO")
+        
+        with st.container(border=True):
+            col_h1, col_h2 = st.columns([2, 1])
+            with col_h2:
+                # Hora que aparece en la esquina superior derecha de tu imagen
+                hora_reporte = st.text_input("HORA", value=now_gdl.strftime('%I:%M %p').lower())
+        
+        # ── C. EDITOR DE DATOS (MANUAL) ──
+        # Adaptado a: FECHA | CODIGO | PAQUETERIA | CANTIDAD
+        df_editado = st.data_editor(
+            st.session_state.rows_contrarecibo,
+            num_rows="dynamic",
+            use_container_width=True,
+            key="editor_contrarecibo",
+            column_config={
+                "FECHA": st.column_config.TextColumn("FECHA"),
+                "CODIGO": st.column_config.TextColumn("CODIGO"),
+                "PAQUETERIA": st.column_config.TextColumn("PAQUETERIA"),
+                "CANTIDAD": st.column_config.TextColumn("CANTIDAD")
+            }
+        )
+        
+        # ── D. RENDERIZADO PARA IMPRESIÓN (HTML) ──
+        filas_validas = df_editado[df_editado["CODIGO"] != ""]
+        tabla_html = "".join([
+            f"<tr>"
+            f"<td style='border-bottom:1px solid black; padding:8px;'>{r['FECHA']}</td>"
+            f"<td style='border-bottom:1px solid black; padding:8px;'>{r['CODIGO']}</td>"
+            f"<td style='border-bottom:1px solid black; padding:8px;'>{r['PAQUETERIA']}</td>"
+            f"<td style='border-bottom:1px solid black; padding:8px; text-align:center;'>{r['CANTIDAD']}</td>"
+            f"</tr>"
+            for _, r in filas_validas.iterrows()
+        ])
+        
+        # Espacios en blanco para mantener el formato de la imagen si hay pocos datos
+        espacios_blancos = "".join(["<tr><td style='border-bottom:1px solid black; height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_validas)))
+        
+        form_html = f"""
+        <div style="font-family: Arial, sans-serif; color: black; background: white; padding: 40px;">
+            <div style="text-align: right; border-bottom: 2px solid black; margin-bottom: 10px;">
+                <span style="font-weight: bold; border: 1px solid black; padding: 2px 10px;">{hora_reporte}</span>
+            </div>
+            
+            <h4 style="text-align: center; margin-bottom: 30px; letter-spacing: 1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; font-size: 12px; border-bottom: 1px solid black;">
+                        <th style="padding: 8px; width: 20%;">FECHA</th>
+                        <th style="padding: 8px; width: 20%;">CODIGO</th>
+                        <th style="padding: 8px; width: 40%;">PAQUETERIA</th>
+                        <th style="padding: 8px; width: 20%; text-align: center;">CANTIDAD</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 13px;">
+                    {tabla_html}
+                    {espacios_blancos}
+                </tbody>
+            </table>
+        
+            <div style="margin-top: 100px; display: flex; justify-content: space-between; text-align: center; font-size: 12px;">
+                <div style="width: 40%;">
+                    <div style="border-top: 1px solid black; padding-top: 5px;">
+                        <b>ELABORÓ</b><br>
+                        Rigoberto - Cord de Logística
+                    </div>
+                </div>
+                <div style="width: 40%;">
+                    <div style="border-top: 1px solid black; padding-top: 5px;">
+                        <b>RECIBIÓ</b><br>
+                        Nombre y Firma
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        
+        # ── E. ACCIONES ──
+        st.write("---")
+        col_btn1, col_btn2 = st.columns(2)
+        
+        with col_btn1:
+            if st.button("📄 GENERAR PDF / IMPRIMIR", type="primary", use_container_width=True):
+                components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+        
+        with col_btn2:
+            if st.button("🔄 LIMPIAR FORMATO", use_container_width=True):
+                st.session_state.rows_contrarecibo = pd.DataFrame([
+                    {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
+                ] * 10)
+                st.rerun()
             
     # 5. HUB LOG
     elif st.session_state.menu_main == "HUB LOG":
@@ -1132,6 +1235,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
