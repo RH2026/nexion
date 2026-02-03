@@ -404,38 +404,62 @@ with main_container:
             else:
                 df_sin_entregar = pd.DataFrame(columns=list(df_kpi.columns) + ["DIAS_ATRASO", "DIAS_TRANS"])
 
-            # 3. RENDERIZADO TARJETAS
-            total_p = len(df_kpi)
-            pend_p = len(df_sin_entregar)
-            entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
-            eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
+            # ── NUEVA LÓGICA: CÁLCULO DEL PRÓXIMO MES ──
+            # Determinamos cuál es el mes siguiente al seleccionado
+            proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
+            anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
+            
+            # Filtramos los pedidos cuya "PROMESA DE ENTREGA" cae en ese mes y año
+            entregas_proximo_mes = df_seguimiento.copy()
+            entregas_proximo_mes.columns = [c.upper() for c in entregas_proximo_mes.columns]
+            if "PROMESA DE ENTREGA" in entregas_proximo_mes.columns:
+                entregas_proximo_mes["PROMESA DE ENTREGA"] = pd.to_datetime(entregas_proximo_mes["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+                
+                # Conteo de pedidos para el mes siguiente
+                conteo_proximo = len(entregas_proximo_mes[
+                    (entregas_proximo_mes["PROMESA DE ENTREGA"].dt.month == proximo_mes_num) & 
+                    (entregas_proximo_mes["PROMESA DE ENTREGA"].dt.year == anio_proximo)
+                ])
+            else:
+                conteo_proximo = 0
 
-            # 3. RENDERIZADO TARJETAS (NÚMEROS GRANDES)
+            # ── 3. RENDERIZADO TARJETAS (NÚMEROS GRANDES ACTUALIZADO) ──
             st.markdown("<br>", unsafe_allow_html=True)
-            m1, m2, m3 = st.columns(3)
+            # Cambiamos a 4 columnas para dar espacio a la nueva métrica
+            m1, m2, m3, m4 = st.columns(4)
 
-            # Estilo unificado para los valores: font-size:42px y font-weight:800
             m1.markdown(f"""
                 <div class='main-card-kpi' style='border-left-color:#94a3b8;'>
-                    <div class='kpi-label'>Carga Total</div>
-                    <div class='kpi-value' style='font-size:32px; font-weight:800;'>{total_p}</div>
+                    <div class='kpi-label'>Carga Total {mes_sel}</div>
+                    <div class='kpi-value' style='font-size:28px; font-weight:800;'>{total_p}</div>
                 </div>
             """, unsafe_allow_html=True)
 
             m2.markdown(f"""
                 <div class='main-card-kpi' style='border-left-color:#38bdf8;'>
                     <div class='kpi-label'>En Tránsito</div>
-                    <div class='kpi-value' style='color:#38bdf8; font-size:32px; font-weight:800;'>{pend_p}</div>
+                    <div class='kpi-value' style='color:#38bdf8; font-size:28px; font-weight:800;'>{pend_p}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            # --- NUEVA TARJETA: PRÓXIMO MES ---
+            nombre_prox_mes = meses[proximo_mes_num - 1]
+            m3.markdown(f"""
+                <div class='main-card-kpi' style='border-left-color:#a855f7;'>
+                    <div class='kpi-label'>Entregas en {nombre_prox_mes}</div>
+                    <div class='kpi-value' style='color:#a855f7; font-size:28px; font-weight:800;'>{conteo_proximo}</div>
                 </div>
             """, unsafe_allow_html=True)
 
             color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
-            m3.markdown(f"""
+            m4.markdown(f"""
                 <div class='main-card-kpi' style='border-left-color:{color_ef};'>
                     <div class='kpi-label'>Eficiencia</div>
-                    <div class='kpi-value' style='color:{color_ef}; font-size:32px; font-weight:800;'>{eficiencia:.1f}%</div>
+                    <div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div>
                 </div>
             """, unsafe_allow_html=True)
+            
+            
             # 4. SEMÁFORO DE ALERTAS OPERATIVAS (RESTABLECIDO)
             st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>⚠️ SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
             
@@ -1088,6 +1112,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
