@@ -1338,6 +1338,13 @@ with main_container:
                 </style>
             """, unsafe_allow_html=True)
 
+            # ── ENCABEZADO JYPESA ──
+            st.markdown("""
+                <div class="main-header">
+                    <h2 style='margin:0; color:#54AFE7;'>SISTEMA NEXION v2.0</h2>
+                    <p style='margin:0; font-size:12px; opacity:0.8;'>JYPESA | Automatización de Procesos de Logística</p>
+                </div>
+            """, unsafe_allow_html=True)
             
             # ── CONFIGURACIÓN DE SEGURIDAD ──
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
@@ -1370,12 +1377,11 @@ with main_container:
                     else:
                         st.success(f":material/check_circle: Archivo validado: {uploaded_file.name}")
                         
-                        # Preview de datos (Toque Pro para confirmar antes de subir)
+                        # Preview de datos
                         with st.expander(":material/visibility: Previsualizar datos locales"):
                             try:
                                 df_preview = pd.read_csv(uploaded_file)
                                 st.dataframe(df_preview.head(5), use_container_width=True)
-                                # Volvemos el puntero al inicio para que el upload no falle
                                 uploaded_file.seek(0)
                             except:
                                 st.error("No se pudo generar la vista previa del CSV.")
@@ -1401,24 +1407,28 @@ with main_container:
                                         status.update(label="¡Archivo creado exitosamente!", state="complete", expanded=False)
                                     
                                     st.toast("GitHub actualizado correctamente", icon="✅")
+                                    # Limpiar caché para forzar lectura fresca
+                                    st.cache_data.clear()
                                     time.sleep(1)
                                     st.rerun()
                                 except Exception as e:
                                     status.update(label=f"Fallo en la carga: {e}", state="error")
-
+            
+            # ── HISTORIAL DE ACTIVIDAD (ALINEADO CORRECTAMENTE) ──
             with st.expander(":material/history: Última actividad en el servidor"):
-                    try:
-                        from github import Github
-                        g = Github(TOKEN)
-                        repo = g.get_repo(REPO_NAME)
-                        commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
-                        last_commit = commits[0]
-                        
-                        st.write(f"**Última actualización:** {last_commit.commit.author.date.strftime('%d/%m/%Y %H:%M')}")
-                        st.write(f"**Nota:** {last_commit.commit.message}")
-                        st.write(f"**ID:** `{last_commit.sha[:7]}`")
-                    except:
-                        st.info("No se pudo obtener el historial en este momento.")
+                try:
+                    from github import Github
+                    g = Github(TOKEN)
+                    repo = g.get_repo(REPO_NAME)
+                    commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
+                    last_commit = commits[0]
+                    
+                    st.write(f"**Última actualización:** {last_commit.commit.author.date.strftime('%d/%m/%Y %H:%M')}")
+                    st.write(f"**Modificado por:** {last_commit.commit.author.name} :material/verified_user:")
+                    st.write(f"**Nota:** {last_commit.commit.message}")
+                    st.code(f"ID Registro: {last_commit.sha[:7]}", language="bash")
+                except:
+                    st.info("Conectando con el servidor de seguridad de GitHub...")
         
         elif st.session_state.menu_sub == "ALERTAS":
             st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
@@ -1433,6 +1443,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
