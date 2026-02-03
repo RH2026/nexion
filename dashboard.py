@@ -775,10 +775,11 @@ with main_container:
 
     # 4. FORMATOS
     elif st.session_state.menu_main == "FORMATOS":
-        import streamlit.components.v1 as components
-        import os
-
+        
+        # --- SUBSECCIÓN A: SALIDA DE PT ---
         if st.session_state.menu_sub == "SALIDA DE PT":
+
+        
             # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
             if 'folio_nexion' not in st.session_state:
                 # Definimos la zona horaria de Guadalajara/CDMX
@@ -925,8 +926,9 @@ with main_container:
                     st.rerun()
                         
                     
-    # --- SUBSECCIÓN B: CONTRARRECIBOS (CORREGIDO) ---
-    elif st.session_state.menu_sub == "CONTRARRECIBOS": # <--- CAMBIO CLAVE
+    # --- SUBSECCIÓN B: CONTRARRECIBOS (REPARADO) ---
+    elif st.session_state.menu_sub == "CONTRARRECIBOS":
+        st.markdown("<h3>Entrega de Facturas de Contrarecibo</h3>", unsafe_allow_html=True)
         # Configuración de zona horaria Guadalajara
         tz_gdl = pytz.timezone('America/Mexico_City')
         now_gdl = datetime.now(tz_gdl)
@@ -1235,6 +1237,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
