@@ -765,6 +765,7 @@ with main_container:
         elif st.session_state.menu_sub == "QUEJAS":
             st.subheader("SEGUIMIENTO > QUEJAS")
             # ── CONFIGURACIÓN GITHUB (GASTOS) ──
+            # ── CONFIGURACIÓN GITHUB ──
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "gastos.csv"
@@ -772,14 +773,19 @@ with main_container:
 
             # ── FUNCIONES DE SOPORTE ──
             def cargar_datos_gastos():
+                columnas_base = ["FECHA", "PAQUETERIA", "CLIENTE", "SOLICITO", "DESTINO", "CANTIDAD", "UM", "COSTO"]
                 try:
                     r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if r.status_code == 200:
                         df = pd.read_csv(io.StringIO(r.text))
+                        # NORMALIZACIÓN CRÍTICA: Forzamos mayúsculas y quitamos espacios
                         df.columns = [str(c).strip().upper() for c in df.columns]
-                        return df
+                        # Aseguramos que existan todas las columnas necesarias
+                        for col in columnas_base:
+                            if col not in df.columns: df[col] = ""
+                        return df[columnas_base]
                 except: pass
-                return pd.DataFrame(columns=["FECHA", "PAQUETERIA", "CLIENTE", "SOLICITO", "DESTINO", "CANTIDAD", "UM", "COSTO"])
+                return pd.DataFrame(columns=columnas_base)
 
             def guardar_en_github(df_to_save):
                 if not TOKEN: return False
@@ -801,26 +807,29 @@ with main_container:
             if "df_gastos" not in st.session_state:
                 st.session_state.df_gastos = cargar_datos_gastos()
 
-            # ── EDITOR DE DATOS DINÁMICO ──
+            # ── EDITOR DE DATOS DINÁMICO (BLINDADO) ──
+            # Aseguramos que el DF de entrada tenga las columnas en el formato correcto
+            df_input = st.session_state.df_gastos.copy()
+            df_input.columns = [str(c).strip().upper() for c in df_input.columns]
+
             df_editado = st.data_editor(
-                st.session_state.df_gastos,
+                df_input,
                 use_container_width=True,
                 num_rows="dynamic",
-                key="editor_gastos_v2",
+                key="editor_gastos_v_final",
                 column_config={
-                    "FECHA": st.column_config.TextColumn(":material/calendar_today: FECHA"),
-                    "PAQUETERIA": st.column_config.TextColumn(":material/local_shipping: PAQUETERÍA"),
-                    "CLIENTE": st.column_config.TextColumn(":material/person: CLIENTE"),
-                    "SOLICITO": st.column_config.TextColumn(":material/person_search: SOLICITÓ"),
-                    "DESTINO": st.column_config.TextColumn(":material/distance: DESTINO"),
-                    "CANTIDAD": st.column_config.NumberColumn(":material/format_list_numbered: CANT"),
-                    "UM": st.column_config.TextColumn(":material/straighten: UM"),
-                    "COSTO": st.column_config.NumberColumn(":material/attach_money: COSTO", format="$%.2f")
+                    "FECHA": st.column_config.TextColumn("FECHA", help="Fecha del gasto", icon="calendar_today"),
+                    "PAQUETERIA": st.column_config.TextColumn("PAQUETERÍA", icon="local_shipping"),
+                    "CLIENTE": st.column_config.TextColumn("CLIENTE", icon="person"),
+                    "SOLICITO": st.column_config.TextColumn("SOLICITÓ", icon="person_search"),
+                    "DESTINO": st.column_config.TextColumn("DESTINO", icon="distance"),
+                    "CANTIDAD": st.column_config.NumberColumn("CANT", icon="format_list_numbered"),
+                    "UM": st.column_config.TextColumn("UM", icon="straighten"),
+                    "COSTO": st.column_config.NumberColumn("COSTO", format="$%.2f", icon="attach_money")
                 }
             )
 
             # ── PREPARACIÓN DE IMPRESIÓN ──
-            df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
             filas_v = df_editado[df_editado["PAQUETERIA"].notna() & (df_editado["PAQUETERIA"] != "")]
             
             tabla_html = ""
@@ -854,14 +863,10 @@ with main_container:
                 <h4 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">Reporte Detallado de Gastos Logística</h4>
                 <table style="width:100%; border-collapse:collapse;">
                     <thead><tr style="background:#eee; font-size:10px;">
-                        <th style="border:1px solid #000;padding:5px;">FECHA</th>
-                        <th style="border:1px solid #000;padding:5px;">PAQUETERÍA</th>
-                        <th style="border:1px solid #000;padding:5px;">CLIENTE</th>
-                        <th style="border:1px solid #000;padding:5px;">SOLICITÓ</th>
-                        <th style="border:1px solid #000;padding:5px;">DESTINO</th>
-                        <th style="border:1px solid #000;padding:5px;">CANT</th>
-                        <th style="border:1px solid #000;padding:5px;">UM</th>
-                        <th style="border:1px solid #000;padding:5px;">COSTO</th>
+                        <th style="border:1px solid #000;padding:5px;">FECHA</th><th style="border:1px solid #000;padding:5px;">PAQUETERÍA</th>
+                        <th style="border:1px solid #000;padding:5px;">CLIENTE</th><th style="border:1px solid #000;padding:5px;">SOLICITÓ</th>
+                        <th style="border:1px solid #000;padding:5px;">DESTINO</th><th style="border:1px solid #000;padding:5px;">CANT</th>
+                        <th style="border:1px solid #000;padding:5px;">UM</th><th style="border:1px solid #000;padding:5px;">COSTO</th>
                     </tr></thead>
                     <tbody>{tabla_html}</tbody>
                     <tfoot><tr style="font-weight:bold; background:#eee; font-size:11px;">
@@ -875,7 +880,7 @@ with main_container:
                 </div>
             </div>"""
 
-            # ── BOTONES JUNTOS CON ICONOS MATERIAL ──
+            # ── BOTONES JUNTOS ──
             st.markdown("<br>", unsafe_allow_html=True)
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -886,7 +891,7 @@ with main_container:
                 if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
                     if guardar_en_github(df_editado):
                         st.session_state.df_gastos = df_editado
-                        st.toast("Datos sincronizados", icon="✅")
+                        st.toast("Datos sincronizados", icon="verified")
                         time.sleep(1); st.rerun()
             with c3:
                 if st.button(":material/print: IMPRIMIR", use_container_width=True):
@@ -1271,6 +1276,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
