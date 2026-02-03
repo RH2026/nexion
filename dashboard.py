@@ -383,95 +383,76 @@ with main_container:
             df_kpi = df_seguimiento.copy()
             df_kpi.columns = [c.upper() for c in df_kpi.columns]
             
-            # Convertir fechas
             for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
                 if col in df_kpi.columns:
                     df_kpi[col] = pd.to_datetime(df_kpi[col], dayfirst=True, errors='coerce')
             
-            # Filtrar por rango de fechas (Mes seleccionado)
+            # A. Filtrado por rango de fechas
+            df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
             if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
-                mask = (df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & \
-                       (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])
-                df_kpi = df_kpi[mask]
-            
-            # Filtrar por fletera si aplica
+                df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & 
+                                (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])]
+
+            # B. Filtrado por fletera
             if filtro_global_fletera:
                 df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
-            
-            # Cálculos base para las tarjetas
+
+            # C. Identificación de "En Tránsito" y Cálculo de Atrasos
             df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
             df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
-            
-            # --- AQUÍ DEFINIMOS LAS VARIABLES QUE PIDEN LAS TARJETAS ---
+
+            # --- AQUÍ CALCULAMOS LA COLUMNA QUE DABA ERROR ---
+            if not df_sin_entregar.empty:
+                df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
+                df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if (pd.notna(x) and x > 0) else 0)
+                df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
+            else:
+                # Si está vacío, creamos las columnas manualmente para evitar el KeyError
+                df_sin_entregar["DIAS_ATRASO"] = 0
+                df_sin_entregar["DIAS_TRANS"] = 0
+
+            # D. Lógica para el PRÓXIMO MES
+            proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
+            anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
+            nombre_prox_mes = meses[proximo_mes_num - 1]
+
+            # Buscamos en toda la base original los que se entregan el próximo mes
+            df_full = df_seguimiento.copy()
+            df_full.columns = [c.upper() for c in df_full.columns]
+            if "PROMESA DE ENTREGA" in df_full.columns:
+                fechas_promesa = pd.to_datetime(df_full["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+                conteo_proximo = len(df_full[(fechas_promesa.dt.month == proximo_mes_num) & (fechas_promesa.dt.year == anio_proximo)])
+            else:
+                conteo_proximo = 0
+
+            # E. Métricas Finales
             total_p = len(df_kpi)
             pend_p = len(df_sin_entregar)
             entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
             eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
-            
-            # --- LÓGICA DEL PRÓXIMO MES ---
-            proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
-            anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
-            nombre_prox_mes = meses[proximo_mes_num - 1]
-            
-            # Usamos df_seguimiento original para buscar entregas futuras sin los filtros del mes actual
-            if "PROMESA DE ENTREGA" in df_seguimiento.columns:
-                # Asegurar que sea datetime para comparar
-                entregas_f = pd.to_datetime(df_seguimiento["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-                conteo_proximo = len(df_seguimiento[
-                    (entregas_f.dt.month == proximo_mes_num) & 
-                    (entregas_f.dt.year == anio_proximo)
-                ])
-            else:
-                conteo_proximo = 0
-            
-            # ── 3. RENDERIZADO TARJETAS ──
+
+            # ── 3. RENDERIZADO TARJETAS (4 COLUMNAS) ──
             st.markdown("<br>", unsafe_allow_html=True)
             m1, m2, m3, m4 = st.columns(4)
+
+            m1.markdown(f"<div class='main-card-kpi' style='border-left-color:#94a3b8;'><div class='kpi-label'>Carga Total {mes_sel}</div><div class='kpi-value' style='font-size:28px; font-weight:800;'>{total_p}</div></div>", unsafe_allow_html=True)
+            m2.markdown(f"<div class='main-card-kpi' style='border-left-color:#38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8; font-size:28px; font-weight:800;'>{pend_p}</div></div>", unsafe_allow_html=True)
+            m3.markdown(f"<div class='main-card-kpi' style='border-left-color:#a855f7;'><div class='kpi-label'>Entregas {nombre_prox_mes}</div><div class='kpi-value' style='color:#a855f7; font-size:28px; font-weight:800;'>{conteo_proximo}</div></div>", unsafe_allow_html=True)
             
-            m1.markdown(f"""
-                <div class='main-card-kpi' style='border-left-color:#94a3b8;'>
-                    <div class='kpi-label'>Carga Total {mes_sel}</div>
-                    <div class='kpi-value' style='font-size:32px; font-weight:800;'>{total_p}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-            m2.markdown(f"""
-                <div class='main-card-kpi' style='border-left-color:#38bdf8;'>
-                    <div class='kpi-label'>En Tránsito</div>
-                    <div class='kpi-value' style='color:#38bdf8; font-size:28px; font-weight:800;'>{pend_p}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-            # --- NUEVA TARJETA: PRÓXIMO MES ---
-            nombre_prox_mes = meses[proximo_mes_num - 1]
-            m3.markdown(f"""
-                <div class='main-card-kpi' style='border-left-color:#a855f7;'>
-                    <div class='kpi-label'>Entregas en {nombre_prox_mes}</div>
-                    <div class='kpi-value' style='color:#a855f7; font-size:28px; font-weight:800;'>{conteo_proximo}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
             color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
-            m4.markdown(f"""
-                <div class='main-card-kpi' style='border-left-color:{color_ef};'>
-                    <div class='kpi-label'>Eficiencia</div>
-                    <div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            
-            # 4. SEMÁFORO DE ALERTAS OPERATIVAS (RESTABLECIDO)
+            m4.markdown(f"<div class='main-card-kpi' style='border-left-color:{color_ef};'><div class='kpi-label'>Eficiencia</div><div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
+
+            # ── 4. SEMÁFORO DE ALERTAS (YA NO DARÁ ERROR) ──
             st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; text-align:center; margin-top:30px;'>⚠️ SEMÁFORO DE ALERTAS OPERATIVAS</p>", unsafe_allow_html=True)
             
-            a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1]) if not df_sin_entregar.empty else 0
-            a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)]) if not df_sin_entregar.empty else 0
-            a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5]) if not df_sin_entregar.empty else 0
+            a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
+            a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
+            a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5])
             
             c_a1, c_a2, c_a3 = st.columns(3)
             c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
             c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
             c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
-
             # 5. PANEL DE EXCEPCIONES (CON DISEÑO DE BARRAS DOBLES)
             st.divider()
             df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
