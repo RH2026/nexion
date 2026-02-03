@@ -1052,10 +1052,7 @@ with main_container:
             
             # Espacios en blanco para mantener la estructura visual si hay pocos datos
             espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
-            
-           # --- CONFIGURACIÓN DE ORIENTACIÓN ---
-            orientacion = "landscape" # Usa "portrait" para vertical
-
+                      
             form_c_html = f"""
             <html>
             <head>
@@ -1350,6 +1347,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
