@@ -1050,60 +1050,54 @@ with main_container:
                 for _, r in filas_c.iterrows()
             ])
             
+            # Espacios en blanco para mantener la estructura visual si hay pocos datos
             espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
             
-            # 6. HTML MAESTRO (Con doble llave {{ }} para CSS y simple { } para variables)
             form_c_html = f"""
-            <html>
-            <head>
-                <style>
-                    @page {{
-                        size: {orientacion};
-                        margin: 10mm;
-                    }}
-                    body {{
-                        font-family: Arial, sans-serif;
-                        background-color: white;
-                        color: black;
-                        margin: 0;
-                        padding: 0;
-                    }}
-                    .print-container {{ padding: 20px; }}
-                    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-                    th, td {{ border-bottom: 1px solid black; padding: 8px; text-align: left; }}
-                </style>
-            </head>
-            <body>
-                <div class="print-container">
-                    <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
-                        <div>
-                            <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
-                            <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
-                        </div>
-                        <div style="text-align:right;">
-                            <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{hora_reporte}</span>
-                            <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
-                        </div>
+            <div style="font-family:Arial; padding:40px; background:white; color:black;">
+                <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:10px;">
+                    <div>
+                        <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
+                        <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
                     </div>
-                    <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
-                    <table>
-                        <thead>
-                            <tr style="font-size:12px; border-bottom: 2px solid black;">
-                                <th>FECHA</th><th>CÓDIGO</th><th>PAQUETERÍA</th><th style="text-align:center;">CANTIDAD</th>
-                            </tr>
-                        </thead>
-                        <tbody style="font-size:13px;">
-                            {tabla_c_html}
-                            {espacios}
-                        </tbody>
-                    </table>
-                    <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
-                        <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
-                        <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
+                    <div style="text-align:right;">
+                        <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{hora_reporte}</span>
+                        <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
                     </div>
                 </div>
-            </body>
-            </html>
+                
+                <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
+                
+                <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                    <thead>
+                        <tr style="text-align:left; font-size:12px; border-bottom:1px solid black;">
+                            <th style="padding:8px;">FECHA</th>
+                            <th style="padding:8px;">CÓDIGO</th>
+                            <th style="padding:8px;">PAQUETERÍA</th>
+                            <th style="padding:8px; text-align:center;">CANTIDAD</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size:13px;">
+                        {tabla_c_html}
+                        {espacios}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
+                    <div style="width:40%;">
+                        <div style="border-top:1px solid black; padding-top:5px;">
+                            <b>ELABORÓ</b><br>
+                            Rigoberto Hernandez - Cord de Logística
+                        </div>
+                    </div>
+                    <div style="width:40%;">
+                        <div style="border-top:1px solid black; padding-top:5px;">
+                            <b>RECIBIÓ</b><br>
+                            Nombre y Firma
+                        </div>
+                    </div>
+                </div>
+            </div>
             """
 
             # ── E. ACCIONES CON ICONOS COMPATIBLES ──
@@ -1325,6 +1319,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
