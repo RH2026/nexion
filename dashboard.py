@@ -1405,23 +1405,25 @@ with main_container:
                                     st.rerun()
                                 except Exception as e:
                                     status.update(label=f"Fallo en la carga: {e}", state="error")
-            
+
+            with st.expander(":material/history: Última actividad en el servidor"):
+                    try:
+                        from github import Github
+                        g = Github(TOKEN)
+                        repo = g.get_repo(REPO_NAME)
+                        commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
+                        last_commit = commits[0]
+                        
+                        st.write(f"**Última actualización:** {last_commit.commit.author.date.strftime('%d/%m/%Y %H:%M')}")
+                        st.write(f"**Nota:** {last_commit.commit.message}")
+                        st.write(f"**ID:** `{last_commit.sha[:7]}`")
+                    except:
+                        st.info("No se pudo obtener el historial en este momento.")
+        
         elif st.session_state.menu_sub == "ALERTAS":
             st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
             
-            with st.expander(":material/history: Última actividad en el servidor"):
-                try:
-                    from github import Github
-                    g = Github(TOKEN)
-                    repo = g.get_repo(REPO_NAME)
-                    commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
-                    last_commit = commits[0]
-                    
-                    st.write(f"**Última actualización:** {last_commit.commit.author.date.strftime('%d/%m/%Y %H:%M')}")
-                    st.write(f"**Nota:** {last_commit.commit.message}")
-                    st.write(f"**ID:** `{last_commit.sha[:7]}`")
-                except:
-                    st.info("No se pudo obtener el historial en este momento.")
+            
 
 # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
 st.markdown(f"""
@@ -1431,6 +1433,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
