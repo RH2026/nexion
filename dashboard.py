@@ -1318,6 +1318,55 @@ with main_container:
 
         elif st.session_state.menu_sub == "SISTEMA":
             st.info("ESTADO DE SERVIDORES: ONLINE | XENOCODE CORE: ACTIVE")
+            # ── CONFIGURACIÓN DE ACCESO ──
+            TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+            REPO_NAME = "RH2026/nexion"
+
+            with st.container(border=True):
+                st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7;'>:material/cloud_upload: CARGA DE ARCHIVOS A GITHUB</p>", unsafe_allow_html=True)
+                
+                # 1. Selector de archivos
+                uploaded_file = st.file_uploader("Selecciona el archivo para actualizar en el repositorio", 
+                                               type=["csv", "xlsx", "png", "jpg"],
+                                               help="El archivo se subirá a la raíz de tu repositorio")
+
+                if uploaded_file is not None:
+                    # 2. Entrada para el nombre del archivo (por defecto el original)
+                    file_name = st.text_input("Confirmar nombre del archivo en GitHub", value=uploaded_file.name)
+                    
+                    commit_message = st.text_input("Mensaje del cambio (Commit)", value=f"Update {file_name} desde NEXION App")
+
+                    if st.button(":material/send: EJECUTAR CARGA", type="primary", use_container_width=True):
+                        if not TOKEN:
+                            st.error("Error: No se encontró el GITHUB_TOKEN en los secrets.")
+                        else:
+                            try:
+                                from github import Github
+                                g = Github(TOKEN)
+                                repo = g.get_repo(REPO_NAME)
+                                file_content = uploaded_file.getvalue()
+
+                                # Intentar actualizar si existe, si no, crear
+                                try:
+                                    contents = repo.get_contents(file_name)
+                                    repo.update_file(contents.path, commit_message, file_content, contents.sha)
+                                    st.success(f"¡Archivo '{file_name}' actualizado con éxito en GitHub!")
+                                except:
+                                    repo.create_file(file_name, commit_message, file_content)
+                                    st.success(f"¡Archivo '{file_name}' creado con éxito en el repositorio!")
+                                
+                                st.toast("Sincronización completa", icon="✅")
+                                time.sleep(2)
+                                st.rerun()
+
+                            except Exception as e:
+                                st.error(f"Error crítico en la conexión: {e}")
+
+            # ── SECCIÓN DE STATUS (OPCIONAL) ──
+            with st.expander(":material/info: INFORMACIÓN DEL REPOSITORIO"):
+                st.write(f"**Usuario:** {REPO_NAME.split('/')[0]}")
+                st.write(f"**Repositorio Activo:** {REPO_NAME.split('/')[1]}")
+                st.write(f"**Rama:** main")
             
         elif st.session_state.menu_sub == "ALERTAS":
             st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
@@ -1330,6 +1379,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
