@@ -765,15 +765,6 @@ with main_container:
         elif st.session_state.menu_sub == "QUEJAS":
             st.subheader("SEGUIMIENTO > QUEJAS")
             # ── CONFIGURACIÓN GITHUB (GASTOS) ──
-            Entiendo perfectamente tu frustración, Rigoberto. El error ahora está saltando específicamente en los st.toast. Resulta que, a diferencia de los botones, los mensajes de aviso (toast) de Streamlit son mucho más estrictos y no aceptan los iconos de Google Material (como "verified"); solo aceptan emojis estándar o iconos muy específicos de su librería interna.
-
-He limpiado quirúrgicamente todos los iconos problemáticos de los avisos y las cabeceras de tabla, dejando los iconos de Material solo donde sí funcionan (en los botones) para que la app no vuelva a tronar.
-
-Aquí tienes el bloque de GASTOS 100% compatible y corregido:
-
-Python
-        elif st.session_state.menu_sub == "GANTT": # Sección Gastos
-            # ── CONFIGURACIÓN GITHUB ──
             TOKEN = st.secrets.get("GITHUB_TOKEN", None)
             REPO_NAME = "RH2026/nexion"
             FILE_PATH = "gastos.csv"
@@ -1276,6 +1267,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
