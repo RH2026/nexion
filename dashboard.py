@@ -778,9 +778,7 @@ with main_container:
                     r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if r.status_code == 200:
                         df = pd.read_csv(io.StringIO(r.text))
-                        # NORMALIZACIÓN CRÍTICA: Forzamos mayúsculas y quitamos espacios
                         df.columns = [str(c).strip().upper() for c in df.columns]
-                        # Aseguramos que existan todas las columnas necesarias
                         for col in columnas_base:
                             if col not in df.columns: df[col] = ""
                         return df[columnas_base]
@@ -808,28 +806,25 @@ with main_container:
                 st.session_state.df_gastos = cargar_datos_gastos()
 
             # ── EDITOR DE DATOS DINÁMICO (BLINDADO) ──
-            # Aseguramos que el DF de entrada tenga las columnas en el formato correcto
-            df_input = st.session_state.df_gastos.copy()
-            df_input.columns = [str(c).strip().upper() for c in df_input.columns]
-
             df_editado = st.data_editor(
-                df_input,
+                st.session_state.df_gastos,
                 use_container_width=True,
                 num_rows="dynamic",
                 key="editor_gastos_v_final",
                 column_config={
-                    "FECHA": st.column_config.TextColumn("FECHA", help="Fecha del gasto", icon="calendar_today"),
-                    "PAQUETERIA": st.column_config.TextColumn("PAQUETERÍA", icon="local_shipping"),
-                    "CLIENTE": st.column_config.TextColumn("CLIENTE", icon="person"),
-                    "SOLICITO": st.column_config.TextColumn("SOLICITÓ", icon="person_search"),
-                    "DESTINO": st.column_config.TextColumn("DESTINO", icon="distance"),
-                    "CANTIDAD": st.column_config.NumberColumn("CANT", icon="format_list_numbered"),
-                    "UM": st.column_config.TextColumn("UM", icon="straighten"),
-                    "COSTO": st.column_config.NumberColumn("COSTO", format="$%.2f", icon="attach_money")
+                    "FECHA": st.column_config.TextColumn("📅 FECHA"),
+                    "PAQUETERIA": st.column_config.TextColumn("🚛 PAQUETERÍA"),
+                    "CLIENTE": st.column_config.TextColumn("👤 CLIENTE"),
+                    "SOLICITO": st.column_config.TextColumn("📋 SOLICITÓ"),
+                    "DESTINO": st.column_config.TextColumn("📍 DESTINO"),
+                    "CANTIDAD": st.column_config.NumberColumn("🔢 CANT"),
+                    "UM": st.column_config.TextColumn("📏 UM"),
+                    "COSTO": st.column_config.NumberColumn("💰 COSTO", format="$%.2f")
                 }
             )
 
-            # ── PREPARACIÓN DE IMPRESIÓN ──
+            # ── PREPARACIÓN DE IMPRESIÓN (BRANDING JYPESA) ──
+            df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
             filas_v = df_editado[df_editado["PAQUETERIA"].notna() & (df_editado["PAQUETERIA"] != "")]
             
             tabla_html = ""
@@ -880,7 +875,7 @@ with main_container:
                 </div>
             </div>"""
 
-            # ── BOTONES JUNTOS ──
+            # ── BOTONES JUNTOS (ACTUALIZAR, GUARDAR, IMPRIMIR) ──
             st.markdown("<br>", unsafe_allow_html=True)
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -891,7 +886,7 @@ with main_container:
                 if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
                     if guardar_en_github(df_editado):
                         st.session_state.df_gastos = df_editado
-                        st.toast("Datos sincronizados", icon="verified")
+                        st.toast("Datos sincronizados en GitHub", icon="verified")
                         time.sleep(1); st.rerun()
             with c3:
                 if st.button(":material/print: IMPRIMIR", use_container_width=True):
@@ -1276,6 +1271,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
