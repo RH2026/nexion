@@ -1042,7 +1042,7 @@ with main_container:
                     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
                     st.markdown("<h3 style='font-size: 16px; color: white;'>:material/print: SISTEMA DE SELLADO Y SOBREIMPRESIÓN</h3>", unsafe_allow_html=True)
                     
-                    with st.expander(":material/settings: PANEL DE CALIBRACIÓN", expanded=False):
+                    with st.expander(":material/settings: PANEL DE CALIBRACIÓN", expanded=True):
                         col_x, col_y = st.columns(2)
                         ajuste_x = col_x.slider("Eje X (Horizontal)", 0, 612, 510)
                         ajuste_y = col_y.slider("Eje Y (Vertical)", 0, 792, 760)
@@ -1088,6 +1088,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
