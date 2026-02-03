@@ -776,14 +776,10 @@ with main_container:
                     r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                     if r.status_code == 200:
                         df = pd.read_csv(io.StringIO(r.text))
-                        # Normalizamos: Todo a MAYÚSCULAS y sin espacios extra
                         df.columns = [str(c).strip().upper() for c in df.columns]
-                        if "FECHA" in df.columns:
-                            df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
                         return df
                 except: pass
-                # Si falla o no hay columnas, creamos el molde correcto
-                return pd.DataFrame(columns=["FECHA", "CONCEPTO", "MONTO", "CATEGORIA", "NOTAS"])
+                return pd.DataFrame(columns=["FECHA", "PAQUETERIA", "CLIENTE", "SOLICITO", "DESTINO", "CANTIDAD", "UM", "COSTO"])
 
             def guardar_en_github(df_to_save):
                 if not TOKEN: return False
@@ -805,92 +801,95 @@ with main_container:
             if "df_gastos" not in st.session_state:
                 st.session_state.df_gastos = cargar_datos_gastos()
 
-            # ── EDITOR DE DATOS ──
+            # ── EDITOR DE DATOS DINÁMICO ──
             df_editado = st.data_editor(
                 st.session_state.df_gastos,
                 use_container_width=True,
                 num_rows="dynamic",
-                key="editor_gastos_v1",
+                key="editor_gastos_v2",
                 column_config={
-                    "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
-                    "MONTO": st.column_config.NumberColumn("MONTO", format="$%.2f"),
-                    "CONCEPTO": st.column_config.TextColumn("CONCEPTO"),
-                    "CATEGORIA": st.column_config.SelectboxColumn("CATEGORÍA", options=["Fletes", "Combustible", "Mantenimiento", "Viáticos", "Otros"])
+                    "FECHA": st.column_config.TextColumn(":material/calendar_today: FECHA"),
+                    "PAQUETERIA": st.column_config.TextColumn(":material/local_shipping: PAQUETERÍA"),
+                    "CLIENTE": st.column_config.TextColumn(":material/person: CLIENTE"),
+                    "SOLICITO": st.column_config.TextColumn(":material/person_search: SOLICITÓ"),
+                    "DESTINO": st.column_config.TextColumn(":material/distance: DESTINO"),
+                    "CANTIDAD": st.column_config.NumberColumn(":material/format_list_numbered: CANT"),
+                    "UM": st.column_config.TextColumn(":material/straighten: UM"),
+                    "COSTO": st.column_config.NumberColumn(":material/attach_money: COSTO", format="$%.2f")
                 }
             )
 
-            # ── REPARACIÓN DEL KEYERROR ──
-            # Forzamos a que df_editado también tenga columnas en mayúsculas antes de procesar
+            # ── PREPARACIÓN DE IMPRESIÓN ──
             df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
-
-            # Ahora sí filtramos con seguridad
-            if "CONCEPTO" in df_editado.columns:
-                filas_validas = df_editado[df_editado["CONCEPTO"].notna() & (df_editado["CONCEPTO"] != "")]
-            else:
-                filas_validas = pd.DataFrame(columns=df_editado.columns)
+            filas_v = df_editado[df_editado["PAQUETERIA"].notna() & (df_editado["PAQUETERIA"] != "")]
             
-            # ── CÁLCULO DE TOTAL Y HTML ──
-            total_gastos = 0
             tabla_html = ""
-            
-            if not filas_validas.empty:
-                # Aseguramos que MONTO sea numérico para el total
-                filas_validas["MONTO"] = pd.to_numeric(filas_validas["MONTO"], errors='coerce').fillna(0)
-                total_gastos = filas_validas["MONTO"].sum()
-                
-                for _, r in filas_validas.iterrows():
-                    tabla_html += f"""
-                    <tr>
-                        <td style='border:1px solid #ddd;padding:8px;'>{r.get('FECHA', '')}</td>
-                        <td style='border:1px solid #ddd;padding:8px;'>{r.get('CONCEPTO', '')}</td>
-                        <td style='border:1px solid #ddd;padding:8px;'>{r.get('CATEGORIA', '')}</td>
-                        <td style='border:1px solid #ddd;padding:8px;text-align:right;'>${float(r.get('MONTO', 0)):,.2f}</td>
-                    </tr>"""
+            for _, r in filas_v.iterrows():
+                tabla_html += f"""
+                <tr>
+                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
+                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('PAQUETERIA', '')}</td>
+                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('CLIENTE', '')}</td>
+                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('SOLICITO', '')}</td>
+                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('DESTINO', '')}</td>
+                    <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:center;'>{r.get('CANTIDAD', '')}</td>
+                    <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:center;'>{r.get('UM', '')}</td>
+                    <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:right;'>${pd.to_numeric(r.get('COSTO', 0), errors='coerce'):,.2f}</td>
+                </tr>"""
+
+            total_costo = pd.to_numeric(filas_v["COSTO"], errors='coerce').sum() if not filas_v.empty else 0
 
             form_print = f"""
-            <div style="font-family:sans-serif; padding:30px; color:black; background:white;">
-                <div style="border-bottom:2px solid black; padding-bottom:10px; margin-bottom:20px;">
-                    <h2 style="margin:0; letter-spacing:3px;">JYPESA</h2>
-                    <p style="margin:0; font-size:10px; letter-spacing:1px; color:#555;">AUTOMATIZACIÓN DE PROCESOS</p>
+            <div style="font-family:Arial; padding:20px; color:black; background:white;">
+                <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:15px;">
+                    <div>
+                        <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
+                        <p style="margin:0; font-size:9px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                    </div>
+                    <div style="text-align:right; font-size:10px;">
+                        <b>FECHA REPORTE:</b> {datetime.now().strftime('%d/%m/%Y')}<br>
+                        <b>HORA:</b> {datetime.now().strftime('%I:%M %p').lower()}
+                    </div>
                 </div>
-                <h3 style="text-align:center; text-transform:uppercase; letter-spacing:2px;">Reporte de Gastos Logística</h3>
-                <table style="width:100%; border-collapse:collapse; margin-top:20px;">
-                    <thead><tr style="background:#f2f2f2;">
-                        <th style="border:1px solid #ddd;padding:10px;">FECHA</th>
-                        <th style="border:1px solid #ddd;padding:10px;">CONCEPTO</th>
-                        <th style="border:1px solid #ddd;padding:10px;">CATEGORÍA</th>
-                        <th style="border:1px solid #ddd;padding:10px;">MONTO</th>
+                <h4 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">Reporte Detallado de Gastos Logística</h4>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead><tr style="background:#eee; font-size:10px;">
+                        <th style="border:1px solid #000;padding:5px;">FECHA</th>
+                        <th style="border:1px solid #000;padding:5px;">PAQUETERÍA</th>
+                        <th style="border:1px solid #000;padding:5px;">CLIENTE</th>
+                        <th style="border:1px solid #000;padding:5px;">SOLICITÓ</th>
+                        <th style="border:1px solid #000;padding:5px;">DESTINO</th>
+                        <th style="border:1px solid #000;padding:5px;">CANT</th>
+                        <th style="border:1px solid #000;padding:5px;">UM</th>
+                        <th style="border:1px solid #000;padding:5px;">COSTO</th>
                     </tr></thead>
                     <tbody>{tabla_html}</tbody>
-                    <tfoot><tr>
-                        <td colspan="3" style="text-align:right; padding:10px; font-weight:bold;">TOTAL:</td>
-                        <td style="text-align:right; padding:10px; font-weight:bold;">${total_gastos:,.2f}</td>
+                    <tfoot><tr style="font-weight:bold; background:#eee; font-size:11px;">
+                        <td colspan="7" style="border:1px solid #000; text-align:right; padding:5px;">TOTAL GENERAL:</td>
+                        <td style="border:1px solid #000; text-align:right; padding:5px;">${total_costo:,.2f}</td>
                     </tr></tfoot>
                 </table>
-                <div style="margin-top:50px; text-align:right; font-size:10px;">
-                    Generado por: Rigoberto Hernandez / Cord. Logística<br>Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+                <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
+                    <div style="width:40%; border-top:1px solid black;">ELABORÓ<br>Rigoberto Hernandez / Cord. Logística</div>
+                    <div style="width:40%; border-top:1px solid black;">AUTORIZÓ<br>Dirección de Operaciones</div>
                 </div>
-            </div>
-            """
+            </div>"""
 
-            # ── BOTONES JUNTOS ──
+            # ── BOTONES JUNTOS CON ICONOS MATERIAL ──
             st.markdown("<br>", unsafe_allow_html=True)
             c1, c2, c3 = st.columns(3)
-            
             with c1:
-                if st.button("🔄 ACTUALIZAR", use_container_width=True):
+                if st.button(":material/refresh: ACTUALIZAR", use_container_width=True):
                     st.session_state.df_gastos = cargar_datos_gastos()
                     st.rerun()
-            
             with c2:
-                if st.button("💾 GUARDAR", type="primary", use_container_width=True):
+                if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
                     if guardar_en_github(df_editado):
                         st.session_state.df_gastos = df_editado
-                        st.toast("Datos guardados en GitHub", icon="✅")
+                        st.toast("Datos sincronizados", icon="✅")
                         time.sleep(1); st.rerun()
-            
             with c3:
-                if st.button("📄 IMPRIMIR", use_container_width=True):
+                if st.button(":material/print: IMPRIMIR", use_container_width=True):
                     components.html(f"<html><body>{form_print}<script>window.print();</script></body></html>", height=0)
             
         else:
@@ -1272,6 +1271,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
