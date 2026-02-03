@@ -379,59 +379,59 @@ with main_container:
                     opciones_f = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
                     filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f, placeholder="TODOS")
 
-            # 2. PROCESAMIENTO DE DATOS KPI
+            # ── 2. PROCESAMIENTO DE DATOS KPI ──
             df_kpi = df_seguimiento.copy()
             df_kpi.columns = [c.upper() for c in df_kpi.columns]
+            
+            # Convertir fechas
             for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
                 if col in df_kpi.columns:
                     df_kpi[col] = pd.to_datetime(df_kpi[col], dayfirst=True, errors='coerce')
             
-            df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
-
+            # Filtrar por rango de fechas (Mes seleccionado)
             if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
-                df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])]
-
+                mask = (df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & \
+                       (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])
+                df_kpi = df_kpi[mask]
+            
+            # Filtrar por fletera si aplica
             if filtro_global_fletera:
                 df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
-
+            
+            # Cálculos base para las tarjetas
             df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
             df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
-
-            if not df_sin_entregar.empty:
-                df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
-                df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if x > 0 else 0)
-                df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
-            else:
-                df_sin_entregar = pd.DataFrame(columns=list(df_kpi.columns) + ["DIAS_ATRASO", "DIAS_TRANS"])
-
-            # ── NUEVA LÓGICA: CÁLCULO DEL PRÓXIMO MES ──
-            # Determinamos cuál es el mes siguiente al seleccionado
+            
+            # --- AQUÍ DEFINIMOS LAS VARIABLES QUE PIDEN LAS TARJETAS ---
+            total_p = len(df_kpi)
+            pend_p = len(df_sin_entregar)
+            entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
+            eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
+            
+            # --- LÓGICA DEL PRÓXIMO MES ---
             proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
             anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
+            nombre_prox_mes = meses[proximo_mes_num - 1]
             
-            # Filtramos los pedidos cuya "PROMESA DE ENTREGA" cae en ese mes y año
-            entregas_proximo_mes = df_seguimiento.copy()
-            entregas_proximo_mes.columns = [c.upper() for c in entregas_proximo_mes.columns]
-            if "PROMESA DE ENTREGA" in entregas_proximo_mes.columns:
-                entregas_proximo_mes["PROMESA DE ENTREGA"] = pd.to_datetime(entregas_proximo_mes["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-                
-                # Conteo de pedidos para el mes siguiente
-                conteo_proximo = len(entregas_proximo_mes[
-                    (entregas_proximo_mes["PROMESA DE ENTREGA"].dt.month == proximo_mes_num) & 
-                    (entregas_proximo_mes["PROMESA DE ENTREGA"].dt.year == anio_proximo)
+            # Usamos df_seguimiento original para buscar entregas futuras sin los filtros del mes actual
+            if "PROMESA DE ENTREGA" in df_seguimiento.columns:
+                # Asegurar que sea datetime para comparar
+                entregas_f = pd.to_datetime(df_seguimiento["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+                conteo_proximo = len(df_seguimiento[
+                    (entregas_f.dt.month == proximo_mes_num) & 
+                    (entregas_f.dt.year == anio_proximo)
                 ])
             else:
                 conteo_proximo = 0
-
-            # ── 3. RENDERIZADO TARJETAS (NÚMEROS GRANDES ACTUALIZADO) ──
+            
+            # ── 3. RENDERIZADO TARJETAS ──
             st.markdown("<br>", unsafe_allow_html=True)
-            # Cambiamos a 4 columnas para dar espacio a la nueva métrica
             m1, m2, m3, m4 = st.columns(4)
-
+            
             m1.markdown(f"""
                 <div class='main-card-kpi' style='border-left-color:#94a3b8;'>
                     <div class='kpi-label'>Carga Total {mes_sel}</div>
-                    <div class='kpi-value' style='font-size:28px; font-weight:800;'>{total_p}</div>
+                    <div class='kpi-value' style='font-size:32px; font-weight:800;'>{total_p}</div>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -1112,6 +1112,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNAN PHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
