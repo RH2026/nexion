@@ -773,22 +773,20 @@ with main_container:
     elif st.session_state.menu_main == "REPORTES":
         st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
 
-    # 4. FORMATOS
+    # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
     elif st.session_state.menu_main == "FORMATOS":
-        
+        import streamlit.components.v1 as components
+        import os
+
         # --- SUBSECCIÓN A: SALIDA DE PT ---
         if st.session_state.menu_sub == "SALIDA DE PT":
-
-        
+            st.markdown("<h3>Formato Salida de Producto Terminado</h3>", unsafe_allow_html=True)
+            
             # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
             if 'folio_nexion' not in st.session_state:
-                # Definimos la zona horaria de Guadalajara/CDMX
                 tz_gdl = pytz.timezone('America/Mexico_City') 
-                # REPARACIÓN: Usamos datetime.now(tz) directamente
                 now_gdl = datetime.now(tz_gdl)
-                
-                # Formato: F - AÑO MES DÍA - HORA MINUTO (Hora local de GDL)
-                st.session_state.folio_nexion = f"F-{now_gdl.strftime('%Y%m%d-%H%M')}"                
+                st.session_state.folio_nexion = f"F-{now_gdl.strftime('%Y%m%d-%H%M')}"
             
             # ── B. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
             @st.cache_data
@@ -814,18 +812,12 @@ with main_container:
             # ── C. CUERPO DE ENTRADA (ESTRUCTURA CON ICONOS MATERIAL) ────────────────
             with st.container(border=True):
                 h1, h2, h3 = st.columns(3)
-                
-                # Fecha automática
-                f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in")
-                
-                # Selección de turno
-                t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in")
-                
-                # Folio Automático
-                fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in")
+                f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in_pt")
+                t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in_pt")
+                fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
             
             # ── D. MOTOR DE BÚSQUEDA INTERNO (LOOKUP) ──────────────────────────
-            def lookup():
+            def lookup_pt():
                 edits = st.session_state["editor_pt"].get("edited_rows", {})
                 added = st.session_state["editor_pt"].get("added_rows", [])
                 
@@ -833,7 +825,7 @@ with main_container:
                     new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
                     new_row.update(row)
                     st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
-            
+                
                 for idx_str, info in edits.items():
                     idx = int(idx_str)
                     for col, val in info.items():
@@ -849,12 +841,12 @@ with main_container:
             
             # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
             st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px;'>DETALLE DE MATERIALES</p>", unsafe_allow_html=True)
-            df_final = st.data_editor(
+            df_final_pt = st.data_editor(
                 st.session_state.rows, 
                 num_rows="dynamic", 
                 use_container_width=True, 
                 key="editor_pt", 
-                on_change=lookup,
+                on_change=lookup_pt,
                 column_config={
                     "CODIGO": st.column_config.TextColumn(":material/qr_code: CÓDIGO"),
                     "DESCRIPCION": st.column_config.TextColumn(":material/description: DESCRIPCIÓN"),
@@ -862,176 +854,91 @@ with main_container:
                 }
             )
             
-            # ── F. RENDERIZADO PRO (HTML PARA IMPRESIÓN) ───────────────────────────
-            filas_print = df_final[df_final["CODIGO"] != ""]
+            # HTML para impresión PT
+            filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
             tabla_html = "".join([
-                f"<tr>"
-                f"<td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
+                f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
                 f"<td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td>"
-                f"<td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td>"
-                f"</tr>" 
+                f"<td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" 
                 for _, r in filas_print.iterrows()
             ])
             
-            form_html = f"""
-            <div style="font-family:sans-serif; padding:20px; color:black; background:white;">
-                <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
-                    <div>
-                        <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
-                        <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
-                    </div>
-                    <div style="text-align:right; font-size:12px;">
-                        <p style="margin:0;"><b>FOLIO:</b> {fol_val}</p>
-                        <p style="margin:0;"><b>FECHA:</b> {f_val}</p>
-                        <p style="margin:0;"><b>TURNO:</b> {t_val}</p>
-                    </div>
-                </div>
-                <h3 style="text-align:center; letter-spacing:5px; margin-top:30px; text-decoration:underline;">ENTREGA DE MATERIALES PT</h3>
-                <table style="width:100%; border-collapse:collapse; margin-top:20px;">
-                    <thead><tr style="background:#f2f2f2;">
-                        <th style="border:1px solid black;padding:10px;">CÓDIGO</th>
-                        <th style="border:1px solid black;padding:10px;">DESCRIPCIÓN</th>
-                        <th style="border:1px solid black;padding:10px;text-align:center;">CANTIDAD</th>
-                    </tr></thead>
-                    <tbody>{tabla_html}</tbody>
-                </table>
-                <div style="margin-top:80px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
-                    <div style="width:30%; border-top:1px solid black;">ENTREGÓ<br><b>Analista de Inventario</b></div>
-                    <div style="width:30%; border-top:1px solid black;">AUTORIZACIÓN<br><b>Carlos Fialko / Dir. Operaciones</b></div>
-                    <div style="width:30%; border-top:1px solid black;">RECIBIÓ<br><b>Rigoberto Hernandez / Cord.Logística</b></div>
-                </div>
-            </div>
-            """
-          
-            # ── G. BOTONES DE ACCIÓN FINAL (MATERIAL DESIGN) ─────────────────────────
+            form_pt_html = f"""<div style="font-family:sans-serif;padding:20px;color:black;background:white;">
+                <h3 style="text-align:center;">ENTREGA DE MATERIALES PT</h3>
+                <p><b>FOLIO:</b> {fol_val} | <b>FECHA:</b> {f_val} | <b>TURNO:</b> {t_val}</p>
+                <table style="width:100%;border-collapse:collapse;">
+                <tr style="background:#eee;"><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
+                {tabla_html}</table></div>"""
+
             st.markdown("<br>", unsafe_allow_html=True)
-            col_pdf, col_reset = st.columns(2) 
-            
-            with col_pdf:
-                if st.button(":material/picture_as_pdf: GENERAR FORMATO PDF", 
-                             type="primary", 
-                             use_container_width=True, 
-                             key="btn_pdf_nexion"):
-                    components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-                    st.toast("Generando vista previa...", icon="⚙️")
-            
-            with col_reset:
-                if st.button(":material/refresh: ACTUALIZAR SISTEMA", 
-                             type="primary", 
-                             use_container_width=True, 
-                             key="btn_reset_nexion"):
-                    if 'folio_nexion' in st.session_state:
-                        del st.session_state.folio_nexion
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button(":material/picture_as_pdf: IMPRIMIR SALIDA PT", type="primary", use_container_width=True):
+                    components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
+            with c2:
+                if st.button(":material/refresh: REINICIAR PT", use_container_width=True):
+                    if 'folio_nexion' in st.session_state: del st.session_state.folio_nexion
                     st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"}] * 10)
                     st.rerun()
-                        
-                    
-        # --- SUBSECCIÓN B: CONTRARRECIBOS (REPARADO) ---
+
+        # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
         elif st.session_state.menu_sub == "CONTRARRECIBOS":
             st.markdown("<h3>Entrega de Facturas de Contrarecibo</h3>", unsafe_allow_html=True)
-            # Configuración de zona horaria Guadalajara
             tz_gdl = pytz.timezone('America/Mexico_City')
             now_gdl = datetime.now(tz_gdl)
             
-            # ── A. INICIALIZACIÓN DE ESTADO ──
             if 'rows_contrarecibo' not in st.session_state:
-                # Creamos un formato vacío con las columnas de tu imagen
                 st.session_state.rows_contrarecibo = pd.DataFrame([
                     {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
                 ] * 10)
             
-            # ── B. ENCABEZADO Y CONTROLES ──
-            st.markdown("### REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO")
-            
             with st.container(border=True):
                 col_h1, col_h2 = st.columns([2, 1])
                 with col_h2:
-                    # Hora que aparece en la esquina superior derecha de tu imagen
-                    hora_reporte = st.text_input("HORA", value=now_gdl.strftime('%I:%M %p').lower())
+                    hora_reporte = st.text_input("HORA", value=now_gdl.strftime('%I:%M %p').lower(), key="h_contra_val")
             
-            # ── C. EDITOR DE DATOS (MANUAL) ──
-            # Adaptado a: FECHA | CODIGO | PAQUETERIA | CANTIDAD
-            df_editado = st.data_editor(
-                st.session_state.rows_contrarecibo,
-                num_rows="dynamic",
+            df_edit_c = st.data_editor(
+                st.session_state.rows_contrarecibo, 
+                num_rows="dynamic", 
                 use_container_width=True,
                 key="editor_contrarecibo",
                 column_config={
                     "FECHA": st.column_config.TextColumn("FECHA"),
-                    "CODIGO": st.column_config.TextColumn("CODIGO"),
-                    "PAQUETERIA": st.column_config.TextColumn("PAQUETERIA"),
+                    "CODIGO": st.column_config.TextColumn("CÓDIGO"),
+                    "PAQUETERIA": st.column_config.TextColumn("PAQUETERÍA"),
                     "CANTIDAD": st.column_config.TextColumn("CANTIDAD")
                 }
             )
             
-            # ── D. RENDERIZADO PARA IMPRESIÓN (HTML) ──
-            filas_validas = df_editado[df_editado["CODIGO"] != ""]
-            tabla_html = "".join([
-                f"<tr>"
-                f"<td style='border-bottom:1px solid black; padding:8px;'>{r['FECHA']}</td>"
-                f"<td style='border-bottom:1px solid black; padding:8px;'>{r['CODIGO']}</td>"
-                f"<td style='border-bottom:1px solid black; padding:8px;'>{r['PAQUETERIA']}</td>"
-                f"<td style='border-bottom:1px solid black; padding:8px; text-align:center;'>{r['CANTIDAD']}</td>"
-                f"</tr>"
-                for _, r in filas_validas.iterrows()
+            filas_c = df_edit_c[df_edit_c["CODIGO"] != ""]
+            tabla_c_html = "".join([
+                f"<tr><td style='border-bottom:1px solid black;padding:8px;'>{r['FECHA']}</td>"
+                f"<td style='border-bottom:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
+                f"<td style='border-bottom:1px solid black;padding:8px;'>{r['PAQUETERIA']}</td>"
+                f"<td style='border-bottom:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>"
+                for _, r in filas_c.iterrows()
             ])
             
-            # Espacios en blanco para mantener el formato de la imagen si hay pocos datos
-            espacios_blancos = "".join(["<tr><td style='border-bottom:1px solid black; height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_validas)))
+            espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
             
-            form_html = f"""
-            <div style="font-family: Arial, sans-serif; color: black; background: white; padding: 40px;">
-                <div style="text-align: right; border-bottom: 2px solid black; margin-bottom: 10px;">
-                    <span style="font-weight: bold; border: 1px solid black; padding: 2px 10px;">{hora_reporte}</span>
-                </div>
-                
-                <h4 style="text-align: center; margin-bottom: 30px; letter-spacing: 1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
-                
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="text-align: left; font-size: 12px; border-bottom: 1px solid black;">
-                            <th style="padding: 8px; width: 20%;">FECHA</th>
-                            <th style="padding: 8px; width: 20%;">CODIGO</th>
-                            <th style="padding: 8px; width: 40%;">PAQUETERIA</th>
-                            <th style="padding: 8px; width: 20%; text-align: center;">CANTIDAD</th>
-                        </tr>
-                    </thead>
-                    <tbody style="font-size: 13px;">
-                        {tabla_html}
-                        {espacios_blancos}
-                    </tbody>
-                </table>
-            
-                <div style="margin-top: 100px; display: flex; justify-content: space-between; text-align: center; font-size: 12px;">
-                    <div style="width: 40%;">
-                        <div style="border-top: 1px solid black; padding-top: 5px;">
-                            <b>ELABORÓ</b><br>
-                            Rigoberto - Cord de Logística
-                        </div>
-                    </div>
-                    <div style="width: 40%;">
-                        <div style="border-top: 1px solid black; padding-top: 5px;">
-                            <b>RECIBIÓ</b><br>
-                            Nombre y Firma
-                        </div>
-                    </div>
-                </div>
-            </div>
-            """
-            
-            # ── E. ACCIONES ──
+            form_c_html = f"""<div style="font-family:Arial;padding:40px;background:white;color:black;">
+                <div style="text-align:right;"><b>{hora_reporte}</b></div>
+                <h4 style="text-align:center;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
+                <table style="width:100%;border-collapse:collapse;">
+                <thead><tr style="border-bottom:2px solid black;"><th>FECHA</th><th>CODIGO</th><th>PAQUETERIA</th><th>CANTIDAD</th></tr></thead>
+                <tbody>{tabla_c_html}{espacios}</tbody></table>
+                <div style="margin-top:100px;display:flex;justify-content:space-between;text-align:center;">
+                <div style="width:40%;border-top:1px solid black;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord Logística</div>
+                <div style="width:40%;border-top:1px solid black;"><b>RECIBIÓ</b><br>Firma</div></div></div>"""
+
             st.write("---")
-            col_btn1, col_btn2 = st.columns(2)
-            
-            with col_btn1:
-                if st.button("📄 GENERAR PDF / IMPRIMIR", type="primary", use_container_width=True):
-                    components.html(f"<html><body>{form_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-            
-            with col_btn2:
-                if st.button("🔄 LIMPIAR FORMATO", use_container_width=True):
-                    st.session_state.rows_contrarecibo = pd.DataFrame([
-                        {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
-                    ] * 10)
+            c_b1, c_b2 = st.columns(2)
+            with c_b1:
+                if st.button("📄 IMPRIMIR CONTRARECIBO", type="primary", use_container_width=True, key="btn_p_c"):
+                    components.html(f"<html><body>{form_c_html}<script>window.print();</script></body></html>", height=0)
+            with c_b2:
+                if st.button("🔄 LIMPIAR CONTRARECIBO", use_container_width=True, key="btn_r_c"):
+                    st.session_state.rows_contrarecibo = pd.DataFrame([{"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""}] * 10)
                     st.rerun()
             
     # 5. HUB LOG
@@ -1237,6 +1144,7 @@ st.markdown(f"""
     <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
