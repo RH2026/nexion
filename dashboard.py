@@ -218,7 +218,7 @@ iframe {{
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
 def login_screen():
     # Ajustamos las proporciones a [3, 2, 3] para que la columna central sea más angosta
-    _, col, _ = st.columns([3, 2, 3]) 
+    _, col, _ = st.columns([2, 2, 2]) 
     
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
@@ -1489,6 +1489,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
