@@ -315,7 +315,7 @@ else:
                     usuario = st.session_state.get("usuario_activo", "")
 
                     # --- SECCIONES RESTRINGIDAS (J Moreno NO las ve) ---
-                    if usuario != "J Moreno":
+                    if usuario != "JMoreno":
                         # DASHBOARD
                         if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                             st.session_state.menu_main = "TRACKING"
@@ -343,7 +343,7 @@ else:
                     # --- SECCIÓN FORMATOS (Visible para todos, pero con opciones filtradas) ---
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
                         # Definimos qué formatos ve cada uno
-                        if usuario == "J Moreno":
+                        if usuario == "JMoreno":
                             formatos_visibles = ["SALIDA DE PT"]
                         else:
                             formatos_visibles = ["SALIDA DE PT", "CONTRARRECIBOS"]
@@ -356,7 +356,7 @@ else:
                                 st.rerun()
 
                     # --- SECCIÓN HUB LOG (J Moreno NO la ve) ---
-                    if usuario != "J Moreno":
+                    if usuario != "JMoreno":
                         with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
                             for s in ["SMART ROUTING", "SISTEMA", "ALERTAS"]:
                                 sub_label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -1501,6 +1501,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
