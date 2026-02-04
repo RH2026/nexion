@@ -6,11 +6,10 @@ import io
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="NEXION | Smart Logistics", page_icon="📦", layout="wide")
 
-# CSS Avanzado para forzar visibilidad y mejorar el diseño
+# CSS para forzar visibilidad: Texto Negro sobre Fondo Blanco
 st.markdown("""
     <style>
     .main { background-color: #f0f2f6; }
-    /* Estilo para las tarjetas de las tarimas */
     .tarima-card {
         background-color: #ffffff !important;
         padding: 20px;
@@ -18,34 +17,26 @@ st.markdown("""
         border-top: 10px solid #1F3B4D;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         margin-bottom: 25px;
-        color: #1F2933 !important; /* Texto oscuro forzado */
+        color: #1F2933 !important;
     }
-    .tarima-card h3, .tarima-card h4 {
-        color: #1F3B4D !important;
-        margin-bottom: 15px;
-        font-weight: bold;
-    }
-    /* Estilo para las filas de productos */
+    .tarima-card h3 { color: #1F3B4D !important; margin-top: 0; }
     .sku-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 8px 0;
+        padding: 10px 0;
         border-bottom: 1px solid #edf2f7;
         color: #2d3748 !important;
     }
-    /* Etiquetas de Cima y Base */
     .badge {
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 6px;
         font-size: 11px;
         font-weight: bold;
-        margin-left: 10px;
         text-transform: uppercase;
     }
     .badge-base { background-color: #1F3B4D; color: white; }
     .badge-cima { background-color: #CBD5E0; color: #1F3B4D; }
-    
     .metric-container {
         background-color: #1F3B4D;
         color: white;
@@ -57,7 +48,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CLASE PDF (Se mantiene igual porque ya funcionaba bien) ---
+# --- CLASE PDF ---
 class NEXION_PDF(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 12)
@@ -80,9 +71,11 @@ def generar_pdf_bytes(pallets, info):
         pdf.set_text_color(0); pdf.set_font("Arial", 'B', 8)
         pdf.cell(30, 7, "ItemCode", 1); pdf.cell(110, 7, "Descripcion", 1); pdf.cell(20, 7, "Cant.", 1); pdf.cell(30, 7, "Peso", 1, 1)
         pdf.set_font("Arial", '', 7)
-        res = pd.DataFrame(p['cajas']).groupby('ItemCode').agg({'Descripción':'first', 'ItemCode':'count', 'Peso':'sum', 'Densidad':'first'}).sort_values('Densidad', ascending=False)
-        for code, row in res.iterrows():
-            pdf.cell(30, 6, str(code), 1); pdf.cell(110, 6, str(row['Descripción'])[:60], 1); pdf.cell(20, 6, str(row['ItemCode']), 1); pdf.cell(30, 6, f"{row['Peso']:.1f}", 1, 1)
+        # Agrupación corregida para el PDF
+        df_p = pd.DataFrame(p['cajas'])
+        resumen = df_p.groupby('ItemCode').agg({'Descripción':'first', 'Peso':'sum', 'Volumen':'sum', 'Densidad':'first'}).sort_values('Densidad', ascending=False)
+        for code, row in resumen.iterrows():
+            pdf.cell(30, 6, str(code), 1); pdf.cell(110, 6, str(row['Descripción'])[:60], 1); pdf.cell(20, 6, str(len(df_p[df_p['ItemCode']==code])), 1, 0, 'C'); pdf.cell(30, 6, f"{row['Peso']:.1f}", 1, 1)
         pdf.ln(5)
     return pdf.output()
 
@@ -90,15 +83,15 @@ def generar_pdf_bytes(pallets, info):
 if 'pallets' not in st.session_state:
     st.session_state.pallets = None
 
-# --- INTERFAZ ---
+# --- UI PRINCIPAL ---
 st.title("📦 NEXION: Smart Pallet Optimizer")
 
 with st.sidebar:
-    st.header("Configuración de Carga")
+    st.header("Ajustes de Carga")
     largo = st.number_input("Largo (m)", 1.2, step=0.1)
     ancho = st.number_input("Ancho (m)", 1.0, step=0.1)
     alto_max = st.number_input("Alto Máx (m)", 1.7, step=0.1)
-    eficiencia = st.slider("Eficiencia de Estiba", 0.5, 1.0, 0.85)
+    eficiencia = st.slider("Eficiencia", 0.5, 1.0, 0.85)
     vol_util = (largo * ancho * (alto_max - 0.15)) * eficiencia
 
 t_ref = st.text_input("Referencia Transferencia", "TS-100")
@@ -106,10 +99,10 @@ destino_ref = st.text_input("Destino", "Jalisco")
 archivo = st.file_uploader("Cargar MATRIZ.csv", type="csv")
 
 if archivo:
-    df = pd.read_csv(archivo)
-    if st.button("🚀 PROCESAR Y OPTIMIZAR"):
+    df_csv = pd.read_csv(archivo)
+    if st.button("🚀 PROCESAR OPTIMIZACIÓN"):
         unidades = []
-        for _, r in df.iterrows():
+        for _, r in df_csv.iterrows():
             for _ in range(int(r['Cantidad a enviar'])):
                 unidades.append({'ItemCode': r['ItemCode'], 'Descripción': r['Descripción'], 'Peso': r['Peso/caja (kg)'], 'Volumen': r['Volumen/caja (m3)'], 'Densidad': r['kg/dm3']})
         
@@ -122,49 +115,54 @@ if archivo:
             if c_vol + box['Volumen'] <= vol_util:
                 c_boxes.append(box); c_vol += box['Volumen']; c_peso += box['Peso']; l += 1
                 if l <= r:
-                    box_heavy = unidades[r]
-                    if c_vol + box_heavy['Volumen'] <= vol_util:
-                        c_boxes.append(box_heavy); c_vol += box_heavy['Volumen']; c_peso += box_heavy['Peso']; r -= 1
+                    box_p = unidades[r]
+                    if c_vol + box_p['Volumen'] <= vol_util:
+                        c_boxes.append(box_p); c_vol += box_p['Volumen']; c_peso += box_p['Peso']; r -= 1
             else:
                 pallets_list.append({'cajas': c_boxes, 'vol': c_vol, 'peso': c_peso})
                 c_boxes, c_vol, c_peso = [], 0, 0
         if c_boxes: pallets_list.append({'cajas': c_boxes, 'vol': c_vol, 'peso': c_peso})
         st.session_state.pallets = pallets_list
 
-# --- RENDERIZADO VISUAL ---
+# --- RENDERIZADO DE RESULTADOS ---
 if st.session_state.pallets:
     st.write("---")
     m1, m2 = st.columns(2)
-    m1.markdown(f'<div class="metric-container"><h2>{len(st.session_state.pallets)}</h2>Tarimas Optimizadas</div>', unsafe_allow_html=True)
+    m1.markdown(f'<div class="metric-container"><h2>{len(st.session_state.pallets)}</h2>Tarimas</div>', unsafe_allow_html=True)
     m2.markdown(f'<div class="metric-container"><h2>{sum(len(p["cajas"]) for p in st.session_state.pallets)}</h2>Cajas Totales</div>', unsafe_allow_html=True)
 
-    st.write("### Detalle de Estiba (Base a Cima)")
+    st.write("### Vista de Estiba (Base a Cima)")
     t_cols = st.columns(2)
     for i, p in enumerate(st.session_state.pallets):
         with t_cols[i % 2]:
             st.markdown(f"""
             <div class="tarima-card">
                 <h3>TARIMA {i+1}</h3>
-                <p><b>Peso:</b> {p['peso']:.1f} kg | <b>Volumen:</b> {p['vol']:.3f} m³</p>
-                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+                <p><b>Peso:</b> {p['peso']:.1f} kg | <b>Vol:</b> {p['vol']:.3f} m³</p>
+                <hr style="border: 0; border-top: 1px solid #eee;">
             """, unsafe_allow_html=True)
             
-            # Agrupar y ordenar para mostrar Base y Cima
+            # AGRUPACIÓN CORREGIDA (Sin error de reset_index)
             df_p = pd.DataFrame(p['cajas'])
-            resumen = df_p.groupby('ItemCode').agg({'Descripción':'first', 'ItemCode':'count', 'Densidad':'first'}).sort_values('Densidad', ascending=False).reset_index()
+            resumen = df_p.groupby('ItemCode').agg({
+                'Descripción': 'first',
+                'Densidad': 'first'
+            }).sort_values('Densidad', ascending=False)
             
-            for idx_row, row in resumen.iterrows():
-                # Lógica de etiquetas
+            # Contar cajas por ItemCode por separado
+            counts = df_p['ItemCode'].value_counts()
+            
+            for idx_num, (item_code, row) in enumerate(resumen.iterrows()):
                 badge = ""
-                if idx_row == 0: 
+                if idx_num == 0: 
                     badge = '<span class="badge badge-base">BASE</span>'
-                elif idx_row == len(resumen) - 1:
+                elif idx_num == len(resumen) - 1:
                     badge = '<span class="badge badge-cima">CIMA</span>'
                 
                 st.markdown(f"""
                 <div class="sku-row">
-                    <span><b>{row['ItemCode']}</b> - {row['Descripción'][:40]}...</span>
-                    <span><b>{row['ItemCode_y']} pz</b> {badge}</span>
+                    <span><b>{item_code}</b> - {row['Descripción'][:35]}...</span>
+                    <span><b>{counts[item_code]} cjas</b> {badge}</span>
                 </div>
                 """, unsafe_allow_html=True)
             
