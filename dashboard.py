@@ -237,6 +237,7 @@ def login_screen():
                 
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
+                    st.session_state.usuario_activo = user_input
                     st.success(f"BIENVENIDO!, {user_input.upper()}")
                     time.sleep(1) 
                     st.rerun()
@@ -1489,6 +1490,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
