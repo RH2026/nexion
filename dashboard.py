@@ -804,7 +804,7 @@ else:
                     </html>
                     """,
                     height=420,
-                    scrolling=False
+                    scrolling=True
                 )
                 
                 # ── 3. DATA EDITOR ─────────────────────────────────────────────────
@@ -1585,6 +1585,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
