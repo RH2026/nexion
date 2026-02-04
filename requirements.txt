@@ -8,6 +8,8 @@ PyGithub
 pypdf
 reportlab
 pytz
+fpdf2
+
 
 
 
