@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from fpdf import FPDF
 import base64
+from fpdf import FPDF
 
 # --- CONFIGURACIÓN Y ESTILOS ---
 st.set_page_config(page_title="NEXION | Logística Avanzada", layout="wide")
