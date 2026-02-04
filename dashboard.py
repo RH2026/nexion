@@ -217,29 +217,31 @@ iframe {{
 
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
 def login_screen():
-    # Centramos el panel de acceso
-    _, col, _ = st.columns([1, 2, 1])
+    # Ajustamos las proporciones a [3, 2, 3] para que la columna central sea más angosta
+    _, col, _ = st.columns([3, 2, 3]) 
+    
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("### SYSTEM ACCESS REQUIRED")
+        # Usamos una clase personalizada para asegurar que el texto se vea bien en el centro
+        st.markdown("<h3 style='text-align: center; margin-bottom: 30px;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
         
-        # Inputs para el usuario
-        user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
-        pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
-        
-        if st.button("VERIFY IDENTITY"):
-            # 1. Accedemos a la sección [usuarios] de tus secretos
-            # Usamos .get por seguridad en caso de que la sección no exista
-            lista_usuarios = st.secrets.get("usuarios", {})
+        with st.container():
+            user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
+            pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
             
-            # 2. Verificamos si el usuario existe y si la contraseña es correcta
-            if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
-                st.session_state.autenticado = True
-                st.success(f"WELCOME BACK, {user_input.upper()}")
-                time.sleep(1) 
-                st.rerun()
-            else:
-                st.error("INVALID CREDENTIALS - ACCESS DENIED")
+            # Espacio extra antes del botón
+            st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+            
+            if st.button("VERIFY IDENTITY"):
+                lista_usuarios = st.secrets.get("usuarios", {})
+                
+                if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
+                    st.session_state.autenticado = True
+                    st.success(f"WELCOME BACK, {user_input.upper()}")
+                    time.sleep(1) 
+                    st.rerun()
+                else:
+                    st.error("INVALID CREDENTIALS")
 
 # ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
 
@@ -1487,6 +1489,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
