@@ -819,7 +819,7 @@ else:
                     </body>
                     </html>
                     """,
-                    height=420,
+                    height=620,
                     scrolling=True
                 )
                 
@@ -1601,6 +1601,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
