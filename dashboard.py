@@ -616,9 +616,48 @@ else:
                         tz_gdl = pytz.timezone('America/Mexico_City')
                         return datetime.now(tz_gdl).date()
                     except:
-                        # Respaldo si falla pytz (tu lógica original corregida)
                         import datetime as dt_module
                         return (dt_module.datetime.now(dt_module.timezone.utc) - dt_module.timedelta(hours=6)).date()
+                
+                def guardar_en_github(df):
+                    """Sincroniza el DataFrame con el repositorio de GitHub."""
+                    import base64
+                    import requests
+                    
+                    if not TOKEN:
+                        st.error("No se encontró el GITHUB_TOKEN en los secrets.")
+                        return False
+                        
+                    csv_content = df.to_csv(index=False)
+                    api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+                    headers = {
+                        "Authorization": f"token {TOKEN}",
+                        "Accept": "application/vnd.github.v3+json"
+                    }
+                    
+                    try:
+                        r = requests.get(api_url, headers=headers)
+                        sha = r.json().get("sha") if r.status_code == 200 else None
+                        
+                        payload = {
+                            "message": f"Actualización de tareas {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                            "content": base64.b64encode(csv_content.encode()).decode(),
+                            "branch": "main"
+                        }
+                        if sha:
+                            payload["sha"] = sha
+                            
+                        response = requests.put(api_url, headers=headers, json=payload)
+                        
+                        if response.status_code in [200, 201]:
+                            st.success("✅ ¡Sincronizado con éxito!")
+                            return True
+                        else:
+                            st.error(f"Error de GitHub: {response.json().get('message')}")
+                            return False
+                    except Exception as e:
+                        st.error(f"Error de conexión: {e}")
+                        return False
                 
                 def cargar_datos_seguro():
                     columnas = [
@@ -627,7 +666,6 @@ else:
                     ]
                     hoy = obtener_fecha_mexico()
                     try:
-                        # Carga con bust de caché para evitar datos viejos
                         import time
                         import requests
                         from io import StringIO
@@ -637,16 +675,13 @@ else:
                             df = pd.read_csv(StringIO(r.text))
                             df.columns = [c.strip().upper() for c in df.columns]
                             
-                            # Asegurar que todas las columnas existan
                             for c in columnas:
                                 if c not in df.columns:
                                     df[c] = ""
                             
-                            # Normalización de datos con la clase datetime correcta
                             df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
                             df["FECHA_FIN"] = pd.to_datetime(df["FECHA_FIN"], errors="coerce").dt.date
                             
-                            # Reemplazar nulos por la fecha de hoy (GDL)
                             df["FECHA"] = df["FECHA"].apply(lambda x: x if isinstance(x, date) else hoy)
                             df["FECHA_FIN"] = df["FECHA_FIN"].apply(
                                 lambda x: x if isinstance(x, date) else hoy + timedelta(days=1)
@@ -668,11 +703,9 @@ else:
                 if "df_tareas" not in st.session_state:
                     st.session_state.df_tareas = cargar_datos_seguro()
                 
-                # Copia de trabajo
                 df_master = st.session_state.df_tareas.copy()
                 
-                # ── 1. FILTROS Y CONTROLES (PARTE SUPERIOR) ────────────────────────────────
-                          
+                # ── 1. FILTROS Y CONTROLES ────────────────────────────────
                 c1, c2 = st.columns([1, 2])
                 with c1:
                     gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_v")
@@ -681,31 +714,26 @@ else:
                     grupos_disponibles = sorted(df_master["GRUPO"].astype(str).unique())
                     grupos_sel = st.multiselect("Filtrar por grupo", grupos_disponibles, default=grupos_disponibles, key="gantt_g")
                 
-                # Filtrado de datos para el Gantt
                 df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)].copy()
                 
-                # 🔒 FORZAR HITOS A DURACIÓN CERO
                 mask_hito = df_gantt["TIPO"].str.lower() == "hito"
                 df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
                 
-                # Preparar lista de tareas para el JS
                 tasks_data = []
                 for i, r in enumerate(df_gantt.itertuples(), start=1):
                     if not str(r.TAREA).strip(): 
                         continue
                 
                     importancia = str(r.IMPORTANCIA).strip().lower()
-                    task_id = f"T{i}"  # id único T1, T2, T3...
+                    task_id = f"T{i}"
                     
-                    # Dependencias deben estar en formato T1,T2,... si vienen como índices
                     dependencias = str(r.DEPENDENCIAS).strip()
                     if dependencias:
-                        # Convertimos índices a ids T#
                         dependencias_ids = []
                         for d in dependencias.split(','):
                             d = d.strip()
                             if d.isdigit():
-                                dependencias_ids.append(f"T{int(d)+1}")  # sumamos 1 porque enumerate empieza en 1
+                                dependencias_ids.append(f"T{int(d)+1}")
                             else:
                                 dependencias_ids.append(d)
                         dependencias = ','.join(dependencias_ids)
@@ -722,7 +750,7 @@ else:
                 
                 tasks_js_str = json.dumps(tasks_data)
                 
-                # ── 2. RENDERIZADO GANTT REPARADO ───────────────────────────────
+                # ── 2. RENDERIZADO GANTT ───────────────────────────────
                 components.html(
                     f"""
                     <html>
@@ -757,21 +785,14 @@ else:
                                     padding: 40,
                                     date_format: 'YYYY-MM-DD'
                                 }});
-                
-                                // Forzar suavizado de líneas horizontales y ocultar verticales
                                 setTimeout(function() {{
                                     document.querySelectorAll('#gantt svg line').forEach(function(line) {{
                                         var x1 = parseFloat(line.getAttribute('x1'));
                                         var x2 = parseFloat(line.getAttribute('x2'));
                                         var y1 = parseFloat(line.getAttribute('y1'));
                                         var y2 = parseFloat(line.getAttribute('y2'));
-                
-                                        if(x1 === x2) {{
-                                            // ocultar verticales
-                                            line.style.display = 'none';
-                                        }}
+                                        if(x1 === x2) line.style.display = 'none';
                                         if(y1 === y2) {{
-                                            // suavizar horizontales
                                             line.style.strokeOpacity = '0.1';
                                             line.style.stroke = '#1e2530';
                                         }}
@@ -785,10 +806,9 @@ else:
                     height=420,
                     scrolling=False
                 )
-                # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
-                st.subheader("EDITOR DE TAREAS")
                 
-                # Normalización para el Data Editor (Evitar strings "nan")
+                # ── 3. DATA EDITOR ─────────────────────────────────────────────────
+                st.subheader("EDITOR DE TAREAS")
                 df_editor = df_master.copy()
                 for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
                     df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
@@ -813,9 +833,6 @@ else:
                         "GRUPO": st.column_config.TextColumn("Grupo"),
                     }
                 )
-                
-                # Sincronizar columna visual
-                df_editado["PROGRESO_VIEW"] = df_editado["PROGRESO"]
                 
                 if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
                     df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
@@ -1576,6 +1593,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
