@@ -223,16 +223,19 @@ def login_screen():
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         st.markdown("### SYSTEM ACCESS REQUIRED")
         
-        # El contenedor de los inputs heredará tu CSS
+        # Inputs para el usuario
         user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
         pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
         
         if st.button("VERIFY IDENTITY"):
-            # Validación contra st.secrets
-            if user_input == st.secrets["credentials"]["user"] and \
-               pass_input == st.secrets["credentials"]["pass"]:
+            # 1. Accedemos a la sección [usuarios] de tus secretos
+            # Usamos .get por seguridad en caso de que la sección no exista
+            lista_usuarios = st.secrets.get("usuarios", {})
+            
+            # 2. Verificamos si el usuario existe y si la contraseña es correcta
+            if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                 st.session_state.autenticado = True
-                st.success("ACCESS GRANTED")
+                st.success(f"WELCOME BACK, {user_input.upper()}")
                 time.sleep(1) 
                 st.rerun()
             else:
@@ -1484,6 +1487,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
