@@ -65,6 +65,8 @@ def load_lottieurl(url: str):
 # ── LOGIN ──────────────────────────
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
+if "splash_completado" not in st.session_state:
+    st.session_state.splash_completado = False
 
 # ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
 if "tema" not in st.session_state:
@@ -211,10 +213,34 @@ iframe {{
 </style>
 """, unsafe_allow_html=True)
 
-# ── SPLASH SCREEN ──────────────────────────────────────
-if "splash_completado" not in st.session_state:
-    st.session_state.splash_completado = False
 
+
+# ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
+def login_screen():
+    # Centramos el panel de acceso
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("### SYSTEM ACCESS REQUIRED")
+        
+        # El contenedor de los inputs heredará tu CSS
+        user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
+        pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
+        
+        if st.button("VERIFY IDENTITY"):
+            # Validación contra st.secrets
+            if user_input == st.secrets["credentials"]["user"] and \
+               pass_input == st.secrets["credentials"]["pass"]:
+                st.session_state.autenticado = True
+                st.success("ACCESS GRANTED")
+                time.sleep(1) 
+                st.rerun()
+            else:
+                st.error("INVALID CREDENTIALS - ACCESS DENIED")
+
+# ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
+
+# 1. ¿Falta mostrar el Splash?
 if not st.session_state.splash_completado:
     p = st.empty()
     with p.container():
@@ -230,32 +256,12 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-#---CREDENCIALES---- (Aparece justo después del RERUN del splash)
-def login_screen():
-    # Centramos el panel de acceso
-    _, col, _ = st.columns([1, 2, 1])
-    with col:
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("### SYSTEM ACCESS REQUIRED")
-        
-        # El contenedor de los inputs heredará tu CSS de st.markdown
-        user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
-        pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
-        
-        if st.button("VERIFY IDENTITY"):
-            # Validación contra st.secrets
-            if user_input == st.secrets["credentials"]["user"] and \
-               pass_input == st.secrets["credentials"]["pass"]:
-                st.session_state.autenticado = True
-                st.success("ACCESS GRANTED")
-                time.sleep(1) # Delay para feedback visual
-                st.rerun()
-            else:
-                st.error("INVALID CREDENTIALS - ACCESS DENIED")
+# 2. ¿Splash listo pero no se ha loggeado?
+elif not st.session_state.autenticado:
+    login_screen()
 
-#---CONTENIDO PRINCIPAL SI ESTA LOGGEADO------ 
+# 3. ¿Todo listo? Mostrar NEXION CORE
 else:
-
     # ── HEADER REESTRUCTURADO (CENTRADITO Y BALANCEADO) ──────────────────────────
     header_zone = st.container()
     with header_zone:
@@ -1478,6 +1484,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
