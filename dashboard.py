@@ -1040,8 +1040,7 @@ else:
                         "CANTIDAD": st.column_config.TextColumn(":material/pin: CANTIDAD", width="small")
                     }
                 )
-                
-                # --- HTML PARA IMPRESIÓN PT (FORMATO JYPESA CON FIRMAS TRIPLES) ---
+                # --- HTML PARA IMPRESIÓN PT (BLINDAJE TOTAL DE MÁRGENES) ---
                 filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
                 tabla_html = "".join([
                     f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
@@ -1054,15 +1053,19 @@ else:
                 <html>
                 <head>
                     <style>
+                        /* El truco maestro: margen @page en 0 elimina los textos del navegador */
+                        @page {{ 
+                            size: auto;
+                            margin: 0mm; 
+                        }}
                         @media print {{
-                            @page {{ 
-                                margin: 10mm; 
-                                size: auto; 
+                            body {{ 
+                                margin: 0; 
+                                padding: 15mm; /* Esto crea el margen real de la hoja sin activar basura del navegador */
                             }}
-                            header, footer {{ display: none !important; }}
+                            .no-print {{ display: none !important; }}
                         }}
                         body {{ font-family: sans-serif; color: black; background: white; }}
-                        .print-container {{ padding: 20px; }}
                         table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
                         th {{ background: #eee; border: 1px solid black; padding: 8px; text-align: left; }}
                         .signature-section {{
@@ -1129,7 +1132,7 @@ else:
                     if st.button(":material/picture_as_pdf: IMPRIMIR SALIDA PT", type="primary", use_container_width=True):
                         components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
                 with c2:
-                    if st.button(":material/refresh: REINICIAR PT", use_container_width=True):
+                    if st.button(":material/refresh: BORRAR", use_container_width=True):
                         if 'folio_nexion' in st.session_state: del st.session_state.folio_nexion
                         st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"}] * 10)
                         st.rerun()
@@ -1247,7 +1250,7 @@ else:
                         components.html(f"<html><body>{form_c_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
                 
                 with c_b2:
-                    if st.button(":material/refresh: LIMPIAR CONTRARECIBO", use_container_width=True, key="btn_r_c"):
+                    if st.button(":material/refresh: BORRAR", use_container_width=True, key="btn_r_c"):
                         # 1. Limpiamos el DataFrame en el estado
                         st.session_state.rows_contrarecibo = pd.DataFrame([
                             {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""}
@@ -1573,6 +1576,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
