@@ -758,21 +758,37 @@ else:
                         <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
                         <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
                         <style>
-                            html, body {{ background:#111827; margin:0; padding:0; }}
-                            #gantt {{ background:#0E1117; }}
-                            .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
-                            .grid-background {{ fill:#0b0e14 !important; }}
-                            .grid-header {{ fill:#151a24 !important; }}
-                            .grid-row {{ fill:#0b0e14 !important; }}
-                            .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-                            .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.1 !important; }}
-                            .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
-                            .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
-                            .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
-                            .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
-                            .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                            .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
-                        </style>
+                        html, body {{ background:#111827; margin:0; padding:0; }}
+                        #gantt {{ background:#0E1117; }}
+                        .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
+                        .grid-background {{ fill:#0b0e14 !important; }}
+                        .grid-header {{ fill:#151a24 !important; }}
+                        .grid-row {{ fill:#0b0e14 !important; }}
+                        .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
+                        .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.1 !important; }}
+                        .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
+                        .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
+                        .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
+                        .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
+                        .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
+                        .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
+                    
+                        /* --- ESTILO PARA EL SCROLL DARK --- */
+                        ::-webkit-scrollbar {{
+                            width: 10px;
+                            height: 10px;
+                        }}
+                        ::-webkit-scrollbar-track {{
+                            background: #111827; /* Fondo del scroll igual al body */
+                        }}
+                        ::-webkit-scrollbar-thumb {{
+                            background: #374151; /* Color de la barrita */
+                            border-radius: 5px;
+                        }}
+                        ::-webkit-scrollbar-thumb:hover {{
+                            background: #4b5563; /* Color cuando pasas el mouse */
+                        }}
+                    </style>
                     </head>
                     <body>
                         <div id='gantt'></div>
@@ -1585,6 +1601,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
