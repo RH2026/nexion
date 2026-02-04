@@ -1041,7 +1041,7 @@ else:
                     }
                 )
                 
-                # HTML para impresión PT
+                # --- HTML PARA IMPRESIÓN PT (FORMATO JYPESA CON FIRMAS TRIPLES) ---
                 filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
                 tabla_html = "".join([
                     f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
@@ -1050,12 +1050,78 @@ else:
                     for _, r in filas_print.iterrows()
                 ])
                 
-                form_pt_html = f"""<div style="font-family:sans-serif;padding:20px;color:black;background:white;">
-                    <h3 style="text-align:center;">ENTREGA DE MATERIALES PT</h3>
-                    <p><b>FOLIO:</b> {fol_val} | <b>FECHA:</b> {f_val} | <b>TURNO:</b> {t_val}</p>
-                    <table style="width:100%;border-collapse:collapse;">
-                    <tr style="background:#eee;"><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
-                    {tabla_html}</table></div>"""
+                form_pt_html = f"""
+                <html>
+                <head>
+                    <style>
+                        @media print {{
+                            @page {{ 
+                                margin: 10mm; 
+                                size: auto; 
+                            }}
+                            header, footer {{ display: none !important; }}
+                        }}
+                        body {{ font-family: sans-serif; color: black; background: white; }}
+                        .print-container {{ padding: 20px; }}
+                        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+                        th {{ background: #eee; border: 1px solid black; padding: 8px; text-align: left; }}
+                        .signature-section {{
+                            margin-top: 80px;
+                            display: flex;
+                            justify-content: space-between;
+                            text-align: center;
+                            font-size: 11px;
+                        }}
+                        .sig-box {{
+                            width: 30%;
+                            border-top: 1px solid black;
+                            padding-top: 5px;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="print-container">
+                        <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:20px;">
+                            <div>
+                                <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
+                                <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                            </div>
+                            <div style="text-align:right; font-size:12px;">
+                                <b>FOLIO:</b> {fol_val}<br>
+                                <b>FECHA:</b> {f_val}
+                            </div>
+                        </div>
+                
+                        <h3 style="text-align:center; letter-spacing:1px;">ENTREGA DE MATERIALES PT</h3>
+                        <p style="font-size:12px;"><b>TURNO:</b> {t_val}</p>
+                        
+                        <table>
+                            <thead>
+                                <tr><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
+                            </thead>
+                            <tbody>
+                                {tabla_html}
+                            </tbody>
+                        </table>
+                
+                        <div class="signature-section">
+                            <div class="sig-box">
+                                <b>ENTREGÓ</b><br>
+                                Analista de Inventario
+                            </div>
+                            <div class="sig-box">
+                                <b>AUTORIZACIÓN</b><br>
+                                Carlos Fialko / Dir. Operaciones
+                            </div>
+                            <div class="sig-box">
+                                <b>RECIBIÓ</b><br>
+                                Rigoberto Hernandez / Cord. Logística
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
     
                 st.markdown("<br>", unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
@@ -1507,6 +1573,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
