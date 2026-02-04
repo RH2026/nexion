@@ -62,6 +62,10 @@ def load_lottieurl(url: str):
         return None
     return r.json()
 
+# ── LOGIN ──────────────────────────
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+
 # ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
 if "tema" not in st.session_state:
     st.session_state.tema = "oscuro"
@@ -226,1228 +230,1255 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# ── HEADER REESTRUCTURADO (CENTRADITO Y BALANCEADO) ──────────────────────────
-header_zone = st.container()
-with header_zone:
-    # Usamos proporciones que den espacio suficiente a los lados para que el centro sea real
-    c1, c2, c3 = st.columns([1.5, 4, 1.5], vertical_alignment="center")
-    
-    with c1:
-        try:
-            st.image(vars_css["logo"], width=110)
-            st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px; margin-left:2px;'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
-        except:
-            st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0; color:{vars_css['text']};'>NEXION</h3>", unsafe_allow_html=True)
-
-    with c2:
-        # INDICADOR GENERAL (CENTRADO ABSOLUTO CON ESPACIADO NEXION)
-        if st.session_state.menu_sub != "GENERAL":
-            # Agregamos espacios manuales solo al separador "|" para que no se pegue a las letras
-            ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
-        else:
-            ruta = st.session_state.menu_main
+#---CREDENCIALES---- (Aparece justo después del RERUN del splash)
+def login_screen():
+    # Centramos el panel de acceso
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("### SYSTEM ACCESS REQUIRED")
         
-        st.markdown(f"""
-            <div style='display: flex; justify-content: center; align-items: center; width: 100%; margin: 20px 0;'>
-                <p style='font-size: 11px; 
-                          letter-spacing: 8px;  /* ← Aumentado para efecto de doble espacio */
-                          color: {vars_css['sub']}; 
-                          margin: 0; 
-                          font-weight: 700; 
-                          text-transform: uppercase;
-                          text-align: center;'>
-                    {ruta}
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+        # El contenedor de los inputs heredará tu CSS de st.markdown
+        user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
+        pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
+        
+        if st.button("VERIFY IDENTITY"):
+            # Validación contra st.secrets
+            if user_input == st.secrets["credentials"]["user"] and \
+               pass_input == st.secrets["credentials"]["pass"]:
+                st.session_state.autenticado = True
+                st.success("ACCESS GRANTED")
+                time.sleep(1) # Delay para feedback visual
+                st.rerun()
+            else:
+                st.error("INVALID CREDENTIALS - ACCESS DENIED")
 
-    with c3:
-        # BOTÓN HAMBURGUESA - Alineado a la derecha del contenedor
-        # Usamos una columna anidada o un div para empujar el popover a la derecha
-        _, btn_col = st.columns([1, 2]) 
-        with btn_col:
-            with st.popover("☰", use_container_width=True):
-                st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
-                
-                # --- SECCIÓN DASHBOARD ---
-                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                    st.session_state.menu_main = "TRACKING"
-                    st.session_state.menu_sub = "GENERAL"
-                    st.rerun()
-                
-                # --- SECCIÓN SEGUIMIENTO ---
-                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                    for s in ["TRK", "GANTT", "QUEJAS"]:
-                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
-                            st.session_state.menu_main = "SEGUIMIENTO"
-                            st.session_state.menu_sub = s
-                            st.rerun()
+#---CONTENIDO PRINCIPAL SI ESTA LOGGEADO------ 
+else:
 
-                # --- SECCIÓN REPORTES ---
-                with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                    for s in ["APQ", "OPS", "OTD"]:
-                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
-                            st.session_state.menu_main = "REPORTES"
-                            st.session_state.menu_sub = s
-                            st.rerun()
-
-                # --- SECCIÓN FORMATOS ---
-                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    for s in ["SALIDA DE PT", "CONTRARRECIBOS"]:
-                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
-                            st.session_state.menu_main = "FORMATOS"
-                            st.session_state.menu_sub = s
-                            st.rerun()
-
-                # --- SECCIÓN HUB LOG ---
-                with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                    # Definimos las sub-secciones de tu HUB
-                    for s in ["SMART ROUTING", "SISTEMA", "ALERTAS"]:
-                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
-                            st.session_state.menu_main = "HUB LOG"
-                            st.session_state.menu_sub = s
-                            st.rerun()
-                
-
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
-
-# ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
-main_container = st.container()
-with main_container:
-    # 1. TRACKING
-    if st.session_state.menu_main == "TRACKING":
-        st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
-        _, col_search, _ = st.columns([1, 1.6, 1])
-        with col_search:
-            st.markdown(f"<p class='op-query-text'>O P E R A T I O N A L &nbsp; Q U E R Y</p>", unsafe_allow_html=True)
-            busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
-            if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-                st.toast(f"Buscando: {busqueda}")
-
-    elif st.session_state.menu_main == "SEGUIMIENTO":
-        # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
-        # ── A. CARGA DE DATOS (LECTURA DIRECTA Y DINÁMICA) ──
-        def cargar_matriz_github():
-            # El parámetro ?v= engaña a GitHub para que no use su propia memoria caché
-            t = int(time.time())
-            url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
-            
+    # ── HEADER REESTRUCTURADO (CENTRADITO Y BALANCEADO) ──────────────────────────
+    header_zone = st.container()
+    with header_zone:
+        # Usamos proporciones que den espacio suficiente a los lados para que el centro sea real
+        c1, c2, c3 = st.columns([1.5, 4, 1.5], vertical_alignment="center")
+        
+        with c1:
             try:
-                # Leemos directo, sin @st.cache_data para que siempre sea información fresca
-                return pd.read_csv(url, encoding='utf-8-sig')
+                st.image(vars_css["logo"], width=110)
+                st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px; margin-left:2px;'>CORE INTELLIGENCE</p>", unsafe_allow_html=True)
             except:
-                return None
-        
-        # Cargamos la matriz
-        df_seguimiento = cargar_matriz_github()
-
-        if df_seguimiento is None:
-            st.error("⚠️ ERROR: No se detectó la base de datos en GitHub.")
-            st.stop()
-
-        # ── B. RELOJ MAESTRO (GUADALAJARA) ──
-        tz_gdl = pytz.timezone('America/Mexico_City')
-        hoy_gdl = datetime.now(tz_gdl).date()
-
-        # ── C. NAVEGACIÓN DE SUB-MENÚ TRK ──
-        if st.session_state.menu_sub == "TRK":
-            # 1. FILTROS DE CABECERA
-            with st.container():
-                st.markdown(f"<p class='op-query-text' style='letter-spacing:8px; text-align:center;'>M Ó D U L O &nbsp; D E &nbsp; I N T E L I G E N C I A &nbsp; L O G Í S T I C A</p>", unsafe_allow_html=True)
-                f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
-                
-                with f_col1:
-                    meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
-                    mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
-                
-                with f_col2:
-                    mes_num = meses.index(mes_sel) + 1
-                    inicio_m = date(hoy_gdl.year, mes_num, 1)
-                    if mes_num == 12:
-                        fin_m = date(hoy_gdl.year, 12, 31)
-                    else:
-                        fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
-                    
-                    fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
-                    
-                    rango_fechas = st.date_input(
-                        "RANGO DE ANÁLISIS",
-                        value=(inicio_m, min(hoy_gdl, fin_m_final) if mes_num == hoy_gdl.month else fin_m_final),
-                        format="DD/MM/YYYY"
-                    )
-
-                with f_col3:
-                    opciones_f = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
-                    filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f, placeholder="TODOS")
-
-            # ── 2. PROCESAMIENTO DE DATOS KPI ──
-            df_kpi = df_seguimiento.copy()
-            df_kpi.columns = [c.upper() for c in df_kpi.columns]
-            
-            for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                if col in df_kpi.columns:
-                    df_kpi[col] = pd.to_datetime(df_kpi[col], dayfirst=True, errors='coerce')
-            
-            # A. Filtrado por rango de fechas
-            df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
-            if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
-                df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & 
-                                (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])]
-
-            # B. Filtrado por fletera
-            if filtro_global_fletera:
-                df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
-
-            # C. Identificación de "En Tránsito" y Cálculo de Atrasos
-            df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
-            df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
-
-            # --- AQUÍ CALCULAMOS LA COLUMNA QUE DABA ERROR ---
-            if not df_sin_entregar.empty:
-                df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
-                df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if (pd.notna(x) and x > 0) else 0)
-                df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
+                st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0; color:{vars_css['text']};'>NEXION</h3>", unsafe_allow_html=True)
+    
+        with c2:
+            # INDICADOR GENERAL (CENTRADO ABSOLUTO CON ESPACIADO NEXION)
+            if st.session_state.menu_sub != "GENERAL":
+                # Agregamos espacios manuales solo al separador "|" para que no se pegue a las letras
+                ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
             else:
-                # Si está vacío, creamos las columnas manualmente para evitar el KeyError
-                df_sin_entregar["DIAS_ATRASO"] = 0
-                df_sin_entregar["DIAS_TRANS"] = 0
-
-            # D. Lógica para el PRÓXIMO MES
-            proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
-            anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
-            nombre_prox_mes = meses[proximo_mes_num - 1]
-
-            # Buscamos en toda la base original los que se entregan el próximo mes
-            df_full = df_seguimiento.copy()
-            df_full.columns = [c.upper() for c in df_full.columns]
-            if "PROMESA DE ENTREGA" in df_full.columns:
-                fechas_promesa = pd.to_datetime(df_full["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-                conteo_proximo = len(df_full[(fechas_promesa.dt.month == proximo_mes_num) & (fechas_promesa.dt.year == anio_proximo)])
-            else:
-                conteo_proximo = 0
-
-            # E. Métricas Finales
-            total_p = len(df_kpi)
-            pend_p = len(df_sin_entregar)
-            entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
-            eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
-
-            # ── 3. RENDERIZADO TARJETAS (4 COLUMNAS) ──
-            st.markdown("<br>", unsafe_allow_html=True)
-            m1, m2, m3, m4 = st.columns(4)
-
-            m1.markdown(f"<div class='main-card-kpi' style='border-left-color:#94a3b8;'><div class='kpi-label'>Carga Total {mes_sel}</div><div class='kpi-value' style='font-size:28px; font-weight:800;'>{total_p}</div></div>", unsafe_allow_html=True)
-            m2.markdown(f"<div class='main-card-kpi' style='border-left-color:#38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8; font-size:28px; font-weight:800;'>{pend_p}</div></div>", unsafe_allow_html=True)
-            m3.markdown(f"<div class='main-card-kpi' style='border-left-color:#a855f7;'><div class='kpi-label'>Entregas {nombre_prox_mes}</div><div class='kpi-value' style='color:#a855f7; font-size:28px; font-weight:800;'>{conteo_proximo}</div></div>", unsafe_allow_html=True)
+                ruta = st.session_state.menu_main
             
-            color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
-            m4.markdown(f"<div class='main-card-kpi' style='border-left-color:{color_ef};'><div class='kpi-label'>Eficiencia</div><div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
-
-            # ── 4. SEMÁFORO DE ALERTAS (YA NO DARÁ ERROR) ──
-            st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; color:{vars_css['sub']}; text-align:center; margin-top:30px;'>S E M Á F O R O DE ALERTAS</p>", unsafe_allow_html=True)
-            
-            a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
-            a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
-            a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5])
-            
-            c_a1, c_a2, c_a3 = st.columns(3)
-            c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
-            c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
-            c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
-                                 
-            # 5. PANEL DE EXCEPCIONES (CON DISEÑO DE BARRAS DOBLES)
-            st.divider()
-            df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
-            
-            if not df_criticos.empty:
-                st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css['sub']}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES</p>", unsafe_allow_html=True)
-                c1, c2 = st.columns(2)
-                with c1: sel_f = st.multiselect("TRANSPORTISTA:", sorted(df_criticos["FLETERA"].unique()), placeholder="TODOS")
-                with c2: sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
-                
-                df_viz = df_criticos.copy()
-                if sel_f: df_viz = df_viz[df_viz["FLETERA"].isin(sel_f)]
-                if sel_g == "CRÍTICO (+5 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
-                elif sel_g == "MODERADO (2-4 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
-                elif sel_g == "LEVE (1 DÍA)": df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
-
-                # Mapeo de columnas para evitar KeyError
-                columnas_deseadas = {
-                    "NÚMERO DE PEDIDO": ["NÚMERO DE PEDIDO", "PEDIDO"],
-                    "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
-                    "DESTINO": ["DESTINO", "CIUDAD"],
-                    "FECHA DE ENVÍO": ["FECHA DE ENVÍO"],
-                    "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA"],
-                    "FLETERA": ["FLETERA"],
-                    "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
-                    "DIAS_TRANS": ["DIAS_TRANS"],
-                    "DIAS_ATRASO": ["DIAS_ATRASO"]
-                }
-                cols_finales = [next((c for c in p if c in df_viz.columns), None) for p in columnas_deseadas.values()]
-                cols_finales = [c for c in cols_finales if c is not None]
-
-                with st.expander("DETALLE TÉCNICO DE RETRASOS", expanded=True):
-                    st.dataframe(
-                        df_viz[cols_finales].sort_values("DIAS_ATRASO", ascending=False),
-                        use_container_width=True,
-                        hide_index=True,
-                        column_config={
-                            "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
-                            "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
-                            "DIAS_TRANS": st.column_config.ProgressColumn("DÍAS VIAJE", format="%d", min_value=0, max_value=15, color="orange"),
-                            "DIAS_ATRASO": st.column_config.ProgressColumn("RETRASO", format="%d DÍAS", min_value=0, max_value=15, color="red")
-                        }
-                    )
-            else:
-                st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
-
-            # 6. DETALLE DE ENTREGAS DEL PRÓXIMO MES
-            st.divider()
-            
-            # Filtramos el DataFrame original para obtener el detalle de esos pedidos
-            # Usamos la lógica de proximo_mes_num y anio_proximo que ya definimos arriba
-            df_detalle_prox = df_seguimiento.copy()
-            df_detalle_prox.columns = [c.upper() for c in df_detalle_prox.columns]
-            
-            if "PROMESA DE ENTREGA" in df_detalle_prox.columns:
-                df_detalle_prox["PROMESA DE ENTREGA"] = pd.to_datetime(df_detalle_prox["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-                
-                # Filtro exacto para el detalle
-                df_futuro = df_detalle_prox[
-                    (df_detalle_prox["PROMESA DE ENTREGA"].dt.month == proximo_mes_num) & 
-                    (df_detalle_prox["PROMESA DE ENTREGA"].dt.year == anio_proximo)
-                ].copy()
-
-                if not df_futuro.empty:
-                    st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:5px; color:#a855f7; text-transform:uppercase; text-align:center;'>PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}</p>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <div style='display: flex; justify-content: center; align-items: center; width: 100%; margin: 20px 0;'>
+                    <p style='font-size: 11px; 
+                              letter-spacing: 8px;  /* ← Aumentado para efecto de doble espacio */
+                              color: {vars_css['sub']}; 
+                              margin: 0; 
+                              font-weight: 700; 
+                              text-transform: uppercase;
+                              text-align: center;'>
+                        {ruta}
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+    
+        with c3:
+            # BOTÓN HAMBURGUESA - Alineado a la derecha del contenedor
+            # Usamos una columna anidada o un div para empujar el popover a la derecha
+            _, btn_col = st.columns([1, 2]) 
+            with btn_col:
+                with st.popover("☰", use_container_width=True):
+                    st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
                     
-                    with st.expander(f"VER LISTADO DE {len(df_futuro)} PEDIDOS PARA {nombre_prox_mes}", expanded=False):
-                        # Seleccionamos columnas relevantes para no saturar la vista
-                        cols_prox = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO", "PROMESA DE ENTREGA", "FLETERA", "ESTATUS"]
-                        # Filtramos solo las que existan en el DF
-                        cols_prox_existentes = [c for c in cols_prox if c in df_futuro.columns]
+                    # --- SECCIÓN DASHBOARD ---
+                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                        st.session_state.menu_main = "TRACKING"
+                        st.session_state.menu_sub = "GENERAL"
+                        st.rerun()
+                    
+                    # --- SECCIÓN SEGUIMIENTO ---
+                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                        for s in ["TRK", "GANTT", "QUEJAS"]:
+                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
+                                st.session_state.menu_main = "SEGUIMIENTO"
+                                st.session_state.menu_sub = s
+                                st.rerun()
+    
+                    # --- SECCIÓN REPORTES ---
+                    with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                        for s in ["APQ", "OPS", "OTD"]:
+                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
+                                st.session_state.menu_main = "REPORTES"
+                                st.session_state.menu_sub = s
+                                st.rerun()
+    
+                    # --- SECCIÓN FORMATOS ---
+                    with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                        for s in ["SALIDA DE PT", "CONTRARRECIBOS"]:
+                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
+                                st.session_state.menu_main = "FORMATOS"
+                                st.session_state.menu_sub = s
+                                st.rerun()
+    
+                    # --- SECCIÓN HUB LOG ---
+                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                        # Definimos las sub-secciones de tu HUB
+                        for s in ["SMART ROUTING", "SISTEMA", "ALERTAS"]:
+                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
+                                st.session_state.menu_main = "HUB LOG"
+                                st.session_state.menu_sub = s
+                                st.rerun()
+                    
+    
+    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
+    
+    # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
+    main_container = st.container()
+    with main_container:
+        # 1. TRACKING
+        if st.session_state.menu_main == "TRACKING":
+            st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
+            _, col_search, _ = st.columns([1, 1.6, 1])
+            with col_search:
+                st.markdown(f"<p class='op-query-text'>O P E R A T I O N A L &nbsp; Q U E R Y</p>", unsafe_allow_html=True)
+                busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
+                if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
+                    st.toast(f"Buscando: {busqueda}")
+    
+        elif st.session_state.menu_main == "SEGUIMIENTO":
+            # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
+            # ── A. CARGA DE DATOS (LECTURA DIRECTA Y DINÁMICA) ──
+            def cargar_matriz_github():
+                # El parámetro ?v= engaña a GitHub para que no use su propia memoria caché
+                t = int(time.time())
+                url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+                
+                try:
+                    # Leemos directo, sin @st.cache_data para que siempre sea información fresca
+                    return pd.read_csv(url, encoding='utf-8-sig')
+                except:
+                    return None
+            
+            # Cargamos la matriz
+            df_seguimiento = cargar_matriz_github()
+    
+            if df_seguimiento is None:
+                st.error("⚠️ ERROR: No se detectó la base de datos en GitHub.")
+                st.stop()
+    
+            # ── B. RELOJ MAESTRO (GUADALAJARA) ──
+            tz_gdl = pytz.timezone('America/Mexico_City')
+            hoy_gdl = datetime.now(tz_gdl).date()
+    
+            # ── C. NAVEGACIÓN DE SUB-MENÚ TRK ──
+            if st.session_state.menu_sub == "TRK":
+                # 1. FILTROS DE CABECERA
+                with st.container():
+                    st.markdown(f"<p class='op-query-text' style='letter-spacing:8px; text-align:center;'>M Ó D U L O &nbsp; D E &nbsp; I N T E L I G E N C I A &nbsp; L O G Í S T I C A</p>", unsafe_allow_html=True)
+                    f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
+                    
+                    with f_col1:
+                        meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+                        mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
+                    
+                    with f_col2:
+                        mes_num = meses.index(mes_sel) + 1
+                        inicio_m = date(hoy_gdl.year, mes_num, 1)
+                        if mes_num == 12:
+                            fin_m = date(hoy_gdl.year, 12, 31)
+                        else:
+                            fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
                         
+                        fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
+                        
+                        rango_fechas = st.date_input(
+                            "RANGO DE ANÁLISIS",
+                            value=(inicio_m, min(hoy_gdl, fin_m_final) if mes_num == hoy_gdl.month else fin_m_final),
+                            format="DD/MM/YYYY"
+                        )
+    
+                    with f_col3:
+                        opciones_f = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
+                        filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f, placeholder="TODOS")
+    
+                # ── 2. PROCESAMIENTO DE DATOS KPI ──
+                df_kpi = df_seguimiento.copy()
+                df_kpi.columns = [c.upper() for c in df_kpi.columns]
+                
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                    if col in df_kpi.columns:
+                        df_kpi[col] = pd.to_datetime(df_kpi[col], dayfirst=True, errors='coerce')
+                
+                # A. Filtrado por rango de fechas
+                df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
+                if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
+                    df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & 
+                                    (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])]
+    
+                # B. Filtrado por fletera
+                if filtro_global_fletera:
+                    df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
+    
+                # C. Identificación de "En Tránsito" y Cálculo de Atrasos
+                df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
+                df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
+    
+                # --- AQUÍ CALCULAMOS LA COLUMNA QUE DABA ERROR ---
+                if not df_sin_entregar.empty:
+                    df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
+                    df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if (pd.notna(x) and x > 0) else 0)
+                    df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
+                else:
+                    # Si está vacío, creamos las columnas manualmente para evitar el KeyError
+                    df_sin_entregar["DIAS_ATRASO"] = 0
+                    df_sin_entregar["DIAS_TRANS"] = 0
+    
+                # D. Lógica para el PRÓXIMO MES
+                proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
+                anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
+                nombre_prox_mes = meses[proximo_mes_num - 1]
+    
+                # Buscamos en toda la base original los que se entregan el próximo mes
+                df_full = df_seguimiento.copy()
+                df_full.columns = [c.upper() for c in df_full.columns]
+                if "PROMESA DE ENTREGA" in df_full.columns:
+                    fechas_promesa = pd.to_datetime(df_full["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+                    conteo_proximo = len(df_full[(fechas_promesa.dt.month == proximo_mes_num) & (fechas_promesa.dt.year == anio_proximo)])
+                else:
+                    conteo_proximo = 0
+    
+                # E. Métricas Finales
+                total_p = len(df_kpi)
+                pend_p = len(df_sin_entregar)
+                entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
+                eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
+    
+                # ── 3. RENDERIZADO TARJETAS (4 COLUMNAS) ──
+                st.markdown("<br>", unsafe_allow_html=True)
+                m1, m2, m3, m4 = st.columns(4)
+    
+                m1.markdown(f"<div class='main-card-kpi' style='border-left-color:#94a3b8;'><div class='kpi-label'>Carga Total {mes_sel}</div><div class='kpi-value' style='font-size:28px; font-weight:800;'>{total_p}</div></div>", unsafe_allow_html=True)
+                m2.markdown(f"<div class='main-card-kpi' style='border-left-color:#38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8; font-size:28px; font-weight:800;'>{pend_p}</div></div>", unsafe_allow_html=True)
+                m3.markdown(f"<div class='main-card-kpi' style='border-left-color:#a855f7;'><div class='kpi-label'>Entregas {nombre_prox_mes}</div><div class='kpi-value' style='color:#a855f7; font-size:28px; font-weight:800;'>{conteo_proximo}</div></div>", unsafe_allow_html=True)
+                
+                color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
+                m4.markdown(f"<div class='main-card-kpi' style='border-left-color:{color_ef};'><div class='kpi-label'>Eficiencia</div><div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
+    
+                # ── 4. SEMÁFORO DE ALERTAS (YA NO DARÁ ERROR) ──
+                st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; color:{vars_css['sub']}; text-align:center; margin-top:30px;'>S E M Á F O R O DE ALERTAS</p>", unsafe_allow_html=True)
+                
+                a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
+                a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
+                a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5])
+                
+                c_a1, c_a2, c_a3 = st.columns(3)
+                c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
+                c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
+                c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
+                                     
+                # 5. PANEL DE EXCEPCIONES (CON DISEÑO DE BARRAS DOBLES)
+                st.divider()
+                df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
+                
+                if not df_criticos.empty:
+                    st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css['sub']}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES</p>", unsafe_allow_html=True)
+                    c1, c2 = st.columns(2)
+                    with c1: sel_f = st.multiselect("TRANSPORTISTA:", sorted(df_criticos["FLETERA"].unique()), placeholder="TODOS")
+                    with c2: sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
+                    
+                    df_viz = df_criticos.copy()
+                    if sel_f: df_viz = df_viz[df_viz["FLETERA"].isin(sel_f)]
+                    if sel_g == "CRÍTICO (+5 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
+                    elif sel_g == "MODERADO (2-4 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
+                    elif sel_g == "LEVE (1 DÍA)": df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
+    
+                    # Mapeo de columnas para evitar KeyError
+                    columnas_deseadas = {
+                        "NÚMERO DE PEDIDO": ["NÚMERO DE PEDIDO", "PEDIDO"],
+                        "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
+                        "DESTINO": ["DESTINO", "CIUDAD"],
+                        "FECHA DE ENVÍO": ["FECHA DE ENVÍO"],
+                        "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA"],
+                        "FLETERA": ["FLETERA"],
+                        "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
+                        "DIAS_TRANS": ["DIAS_TRANS"],
+                        "DIAS_ATRASO": ["DIAS_ATRASO"]
+                    }
+                    cols_finales = [next((c for c in p if c in df_viz.columns), None) for p in columnas_deseadas.values()]
+                    cols_finales = [c for c in cols_finales if c is not None]
+    
+                    with st.expander("DETALLE TÉCNICO DE RETRASOS", expanded=True):
                         st.dataframe(
-                            df_futuro[cols_prox_existentes].sort_values("PROMESA DE ENTREGA"),
+                            df_viz[cols_finales].sort_values("DIAS_ATRASO", ascending=False),
                             use_container_width=True,
                             hide_index=True,
                             column_config={
-                                "PROMESA DE ENTREGA": st.column_config.DateColumn("FECHA PACTADA", format="DD/MM/YYYY"),
-                                "NÚMERO DE PEDIDO": st.column_config.TextColumn("PEDIDO"),
+                                "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
+                                "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
+                                "DIAS_TRANS": st.column_config.ProgressColumn("DÍAS VIAJE", format="%d", min_value=0, max_value=15, color="orange"),
+                                "DIAS_ATRASO": st.column_config.ProgressColumn("RETRASO", format="%d DÍAS", min_value=0, max_value=15, color="red")
                             }
                         )
                 else:
-                    st.info(f"No hay entregas programadas aún para {nombre_prox_mes}")
-
-        
-        elif st.session_state.menu_sub == "GANTT":
-            TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-            REPO_NAME = "RH2026/nexion"
-            FILE_PATH = "tareas.csv"
-            CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
-            
-            # ── FUNCIONES DE FECHA Y CARGA REPARADAS ─────────────────────────────────────────────
-            def obtener_fecha_mexico():
-                """Retorna la fecha actual de Guadalajara sin errores de atributo."""
-                try:
-                    tz_gdl = pytz.timezone('America/Mexico_City')
-                    return datetime.now(tz_gdl).date()
-                except:
-                    # Respaldo si falla pytz (tu lógica original corregida)
-                    import datetime as dt_module
-                    return (dt_module.datetime.now(dt_module.timezone.utc) - dt_module.timedelta(hours=6)).date()
-            
-            def cargar_datos_seguro():
-                columnas = [
-                    "FECHA","FECHA_FIN","IMPORTANCIA","TAREA","ULTIMO ACCION",
-                    "PROGRESO","DEPENDENCIAS","TIPO","GRUPO"
-                ]
-                hoy = obtener_fecha_mexico()
-                try:
-                    # Carga con bust de caché para evitar datos viejos
-                    import time
-                    import requests
-                    from io import StringIO
-                    
-                    r = requests.get(f"{CSV_URL}?t={int(time.time())}")
-                    if r.status_code == 200:
-                        df = pd.read_csv(StringIO(r.text))
-                        df.columns = [c.strip().upper() for c in df.columns]
-                        
-                        # Asegurar que todas las columnas existan
-                        for c in columnas:
-                            if c not in df.columns:
-                                df[c] = ""
-                        
-                        # Normalización de datos con la clase datetime correcta
-                        df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
-                        df["FECHA_FIN"] = pd.to_datetime(df["FECHA_FIN"], errors="coerce").dt.date
-                        
-                        # Reemplazar nulos por la fecha de hoy (GDL)
-                        df["FECHA"] = df["FECHA"].apply(lambda x: x if isinstance(x, date) else hoy)
-                        df["FECHA_FIN"] = df["FECHA_FIN"].apply(
-                            lambda x: x if isinstance(x, date) else hoy + timedelta(days=1)
-                        )
-                        
-                        df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0).astype(int)
-                        df["IMPORTANCIA"] = df["IMPORTANCIA"].fillna("Media")
-                        df["TIPO"] = df["TIPO"].fillna("Tarea")
-                        df["GRUPO"] = df["GRUPO"].fillna("General")
-                        df["DEPENDENCIAS"] = df["DEPENDENCIAS"].fillna("")
-                        
-                        return df[columnas]
-                except Exception as e:
-                    st.error(f"Error al cargar CSV: {e}")
-                    
-                return pd.DataFrame(columns=columnas)
-            
-            # ── GESTIÓN DE ESTADO ──────────────────────────────────────────────────────
-            if "df_tareas" not in st.session_state:
-                st.session_state.df_tareas = cargar_datos_seguro()
-            
-            # Copia de trabajo
-            df_master = st.session_state.df_tareas.copy()
-            
-            # ── 1. FILTROS Y CONTROLES (PARTE SUPERIOR) ────────────────────────────────
-                      
-            c1, c2 = st.columns([1, 2])
-            with c1:
-                gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_v")
-            
-            with c2:
-                grupos_disponibles = sorted(df_master["GRUPO"].astype(str).unique())
-                grupos_sel = st.multiselect("Filtrar por grupo", grupos_disponibles, default=grupos_disponibles, key="gantt_g")
-            
-            # Filtrado de datos para el Gantt
-            df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)].copy()
-            
-            # 🔒 FORZAR HITOS A DURACIÓN CERO
-            mask_hito = df_gantt["TIPO"].str.lower() == "hito"
-            df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
-            
-            # Preparar lista de tareas para el JS
-            tasks_data = []
-            for i, r in enumerate(df_gantt.itertuples(), start=1):
-                if not str(r.TAREA).strip(): 
-                    continue
-            
-                importancia = str(r.IMPORTANCIA).strip().lower()
-                task_id = f"T{i}"  # id único T1, T2, T3...
+                    st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
+    
+                # 6. DETALLE DE ENTREGAS DEL PRÓXIMO MES
+                st.divider()
                 
-                # Dependencias deben estar en formato T1,T2,... si vienen como índices
-                dependencias = str(r.DEPENDENCIAS).strip()
-                if dependencias:
-                    # Convertimos índices a ids T#
-                    dependencias_ids = []
-                    for d in dependencias.split(','):
-                        d = d.strip()
-                        if d.isdigit():
-                            dependencias_ids.append(f"T{int(d)+1}")  # sumamos 1 porque enumerate empieza en 1
-                        else:
-                            dependencias_ids.append(d)
-                    dependencias = ','.join(dependencias_ids)
+                # Filtramos el DataFrame original para obtener el detalle de esos pedidos
+                # Usamos la lógica de proximo_mes_num y anio_proximo que ya definimos arriba
+                df_detalle_prox = df_seguimiento.copy()
+                df_detalle_prox.columns = [c.upper() for c in df_detalle_prox.columns]
                 
-                tasks_data.append({
-                    "id": task_id,
-                    "name": f"[{r.GRUPO}] {r.TAREA}",
-                    "start": str(r.FECHA),
-                    "end": str(r.FECHA_FIN),
-                    "progress": int(r.PROGRESO),
-                    "dependencies": dependencias,
-                    "custom_class": f"imp-{importancia}"
-                })
+                if "PROMESA DE ENTREGA" in df_detalle_prox.columns:
+                    df_detalle_prox["PROMESA DE ENTREGA"] = pd.to_datetime(df_detalle_prox["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+                    
+                    # Filtro exacto para el detalle
+                    df_futuro = df_detalle_prox[
+                        (df_detalle_prox["PROMESA DE ENTREGA"].dt.month == proximo_mes_num) & 
+                        (df_detalle_prox["PROMESA DE ENTREGA"].dt.year == anio_proximo)
+                    ].copy()
+    
+                    if not df_futuro.empty:
+                        st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:5px; color:#a855f7; text-transform:uppercase; text-align:center;'>PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}</p>", unsafe_allow_html=True)
+                        
+                        with st.expander(f"VER LISTADO DE {len(df_futuro)} PEDIDOS PARA {nombre_prox_mes}", expanded=False):
+                            # Seleccionamos columnas relevantes para no saturar la vista
+                            cols_prox = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO", "PROMESA DE ENTREGA", "FLETERA", "ESTATUS"]
+                            # Filtramos solo las que existan en el DF
+                            cols_prox_existentes = [c for c in cols_prox if c in df_futuro.columns]
+                            
+                            st.dataframe(
+                                df_futuro[cols_prox_existentes].sort_values("PROMESA DE ENTREGA"),
+                                use_container_width=True,
+                                hide_index=True,
+                                column_config={
+                                    "PROMESA DE ENTREGA": st.column_config.DateColumn("FECHA PACTADA", format="DD/MM/YYYY"),
+                                    "NÚMERO DE PEDIDO": st.column_config.TextColumn("PEDIDO"),
+                                }
+                            )
+                    else:
+                        st.info(f"No hay entregas programadas aún para {nombre_prox_mes}")
+    
             
-            tasks_js_str = json.dumps(tasks_data)
+            elif st.session_state.menu_sub == "GANTT":
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                FILE_PATH = "tareas.csv"
+                CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+                
+                # ── FUNCIONES DE FECHA Y CARGA REPARADAS ─────────────────────────────────────────────
+                def obtener_fecha_mexico():
+                    """Retorna la fecha actual de Guadalajara sin errores de atributo."""
+                    try:
+                        tz_gdl = pytz.timezone('America/Mexico_City')
+                        return datetime.now(tz_gdl).date()
+                    except:
+                        # Respaldo si falla pytz (tu lógica original corregida)
+                        import datetime as dt_module
+                        return (dt_module.datetime.now(dt_module.timezone.utc) - dt_module.timedelta(hours=6)).date()
+                
+                def cargar_datos_seguro():
+                    columnas = [
+                        "FECHA","FECHA_FIN","IMPORTANCIA","TAREA","ULTIMO ACCION",
+                        "PROGRESO","DEPENDENCIAS","TIPO","GRUPO"
+                    ]
+                    hoy = obtener_fecha_mexico()
+                    try:
+                        # Carga con bust de caché para evitar datos viejos
+                        import time
+                        import requests
+                        from io import StringIO
+                        
+                        r = requests.get(f"{CSV_URL}?t={int(time.time())}")
+                        if r.status_code == 200:
+                            df = pd.read_csv(StringIO(r.text))
+                            df.columns = [c.strip().upper() for c in df.columns]
+                            
+                            # Asegurar que todas las columnas existan
+                            for c in columnas:
+                                if c not in df.columns:
+                                    df[c] = ""
+                            
+                            # Normalización de datos con la clase datetime correcta
+                            df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
+                            df["FECHA_FIN"] = pd.to_datetime(df["FECHA_FIN"], errors="coerce").dt.date
+                            
+                            # Reemplazar nulos por la fecha de hoy (GDL)
+                            df["FECHA"] = df["FECHA"].apply(lambda x: x if isinstance(x, date) else hoy)
+                            df["FECHA_FIN"] = df["FECHA_FIN"].apply(
+                                lambda x: x if isinstance(x, date) else hoy + timedelta(days=1)
+                            )
+                            
+                            df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0).astype(int)
+                            df["IMPORTANCIA"] = df["IMPORTANCIA"].fillna("Media")
+                            df["TIPO"] = df["TIPO"].fillna("Tarea")
+                            df["GRUPO"] = df["GRUPO"].fillna("General")
+                            df["DEPENDENCIAS"] = df["DEPENDENCIAS"].fillna("")
+                            
+                            return df[columnas]
+                    except Exception as e:
+                        st.error(f"Error al cargar CSV: {e}")
+                        
+                    return pd.DataFrame(columns=columnas)
+                
+                # ── GESTIÓN DE ESTADO ──────────────────────────────────────────────────────
+                if "df_tareas" not in st.session_state:
+                    st.session_state.df_tareas = cargar_datos_seguro()
+                
+                # Copia de trabajo
+                df_master = st.session_state.df_tareas.copy()
+                
+                # ── 1. FILTROS Y CONTROLES (PARTE SUPERIOR) ────────────────────────────────
+                          
+                c1, c2 = st.columns([1, 2])
+                with c1:
+                    gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_v")
+                
+                with c2:
+                    grupos_disponibles = sorted(df_master["GRUPO"].astype(str).unique())
+                    grupos_sel = st.multiselect("Filtrar por grupo", grupos_disponibles, default=grupos_disponibles, key="gantt_g")
+                
+                # Filtrado de datos para el Gantt
+                df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)].copy()
+                
+                # 🔒 FORZAR HITOS A DURACIÓN CERO
+                mask_hito = df_gantt["TIPO"].str.lower() == "hito"
+                df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
+                
+                # Preparar lista de tareas para el JS
+                tasks_data = []
+                for i, r in enumerate(df_gantt.itertuples(), start=1):
+                    if not str(r.TAREA).strip(): 
+                        continue
+                
+                    importancia = str(r.IMPORTANCIA).strip().lower()
+                    task_id = f"T{i}"  # id único T1, T2, T3...
+                    
+                    # Dependencias deben estar en formato T1,T2,... si vienen como índices
+                    dependencias = str(r.DEPENDENCIAS).strip()
+                    if dependencias:
+                        # Convertimos índices a ids T#
+                        dependencias_ids = []
+                        for d in dependencias.split(','):
+                            d = d.strip()
+                            if d.isdigit():
+                                dependencias_ids.append(f"T{int(d)+1}")  # sumamos 1 porque enumerate empieza en 1
+                            else:
+                                dependencias_ids.append(d)
+                        dependencias = ','.join(dependencias_ids)
+                    
+                    tasks_data.append({
+                        "id": task_id,
+                        "name": f"[{r.GRUPO}] {r.TAREA}",
+                        "start": str(r.FECHA),
+                        "end": str(r.FECHA_FIN),
+                        "progress": int(r.PROGRESO),
+                        "dependencies": dependencias,
+                        "custom_class": f"imp-{importancia}"
+                    })
+                
+                tasks_js_str = json.dumps(tasks_data)
+                
+                # ── 2. RENDERIZADO GANTT REPARADO ───────────────────────────────
+                components.html(
+                    f"""
+                    <html>
+                    <head>
+                        <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
+                        <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
+                        <style>
+                            html, body {{ background:#111827; margin:0; padding:0; }}
+                            #gantt {{ background:#0E1117; }}
+                            .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
+                            .grid-background {{ fill:#0b0e14 !important; }}
+                            .grid-header {{ fill:#151a24 !important; }}
+                            .grid-row {{ fill:#0b0e14 !important; }}
+                            .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
+                            .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.1 !important; }}
+                            .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
+                            .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
+                            .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
+                            .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
+                            .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
+                            .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div id='gantt'></div>
+                        <script>
+                            var tasks = {tasks_js_str};
+                            if(tasks.length){{
+                                var gantt = new Gantt('#gantt', tasks, {{
+                                    view_mode: '{gantt_view}',
+                                    bar_height: 20,
+                                    padding: 40,
+                                    date_format: 'YYYY-MM-DD'
+                                }});
+                
+                                // Forzar suavizado de líneas horizontales y ocultar verticales
+                                setTimeout(function() {{
+                                    document.querySelectorAll('#gantt svg line').forEach(function(line) {{
+                                        var x1 = parseFloat(line.getAttribute('x1'));
+                                        var x2 = parseFloat(line.getAttribute('x2'));
+                                        var y1 = parseFloat(line.getAttribute('y1'));
+                                        var y2 = parseFloat(line.getAttribute('y2'));
+                
+                                        if(x1 === x2) {{
+                                            // ocultar verticales
+                                            line.style.display = 'none';
+                                        }}
+                                        if(y1 === y2) {{
+                                            // suavizar horizontales
+                                            line.style.strokeOpacity = '0.1';
+                                            line.style.stroke = '#1e2530';
+                                        }}
+                                    }});
+                                }}, 200);
+                            }}
+                        </script>
+                    </body>
+                    </html>
+                    """,
+                    height=420,
+                    scrolling=False
+                )
+                # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
+                st.subheader("EDITOR DE TAREAS")
+                
+                # Normalización para el Data Editor (Evitar strings "nan")
+                df_editor = df_master.copy()
+                for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
+                    df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+                
+                df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
+                
+                df_editado = st.data_editor(
+                    df_editor,
+                    hide_index=True,
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    column_config={
+                        "FECHA": st.column_config.DateColumn("Inicio"),
+                        "FECHA_FIN": st.column_config.DateColumn("Fin"),
+                        "IMPORTANCIA": st.column_config.SelectboxColumn("Prioridad", options=["Urgente","Alta","Media","Baja"]),
+                        "PROGRESO": st.column_config.NumberColumn("Progreso %", min_value=0, max_value=100, step=5),
+                        "PROGRESO_VIEW": st.column_config.ProgressColumn("Avance", min_value=0, max_value=100),
+                        "TAREA": st.column_config.TextColumn("Tarea"),
+                        "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
+                        "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
+                        "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
+                        "GRUPO": st.column_config.TextColumn("Grupo"),
+                    }
+                )
+                
+                # Sincronizar columna visual
+                df_editado["PROGRESO_VIEW"] = df_editado["PROGRESO"]
+                
+                if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
+                    df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
+                    if guardar_en_github(df_guardar):
+                        st.session_state.df_tareas = df_guardar
+                        st.rerun()
+    
+    
+    
             
-            # ── 2. RENDERIZADO GANTT REPARADO ───────────────────────────────
-            components.html(
-                f"""
+            elif st.session_state.menu_sub == "QUEJAS":
+                st.subheader("SEGUIMIENTO > QUEJAS")
+                # ── CONFIGURACIÓN GITHUB (GASTOS) ──
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                FILE_PATH = "gastos.csv"
+                CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+    
+                # ── FUNCIONES DE SOPORTE ──
+                def cargar_datos_gastos():
+                    columnas_base = ["FECHA", "PAQUETERIA", "CLIENTE", "SOLICITO", "DESTINO", "CANTIDAD", "UM", "COSTO"]
+                    try:
+                        r = requests.get(f"{CSV_URL}?t={int(time.time())}")
+                        if r.status_code == 200:
+                            df = pd.read_csv(io.StringIO(r.text))
+                            df.columns = [str(c).strip().upper() for c in df.columns]
+                            for col in columnas_base:
+                                if col not in df.columns: df[col] = ""
+                            return df[columnas_base]
+                    except: pass
+                    return pd.DataFrame(columns=columnas_base)
+    
+                def guardar_en_github(df_to_save):
+                    if not TOKEN: return False
+                    try:
+                        from github import Github
+                        g = Github(TOKEN); repo = g.get_repo(REPO_NAME)
+                        csv_data = df_to_save.to_csv(index=False)
+                        try:
+                            contents = repo.get_contents(FILE_PATH)
+                            repo.update_file(contents.path, f"Update gastos {datetime.now()}", csv_data, contents.sha)
+                        except:
+                            repo.create_file(FILE_PATH, f"Initial gastos", csv_data)
+                        return True
+                    except: return False
+    
+                # ── INTERFAZ ──
+                st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>", unsafe_allow_html=True)
+                
+                if "df_gastos" not in st.session_state:
+                    st.session_state.df_gastos = cargar_datos_gastos()
+    
+                # ── EDITOR DE DATOS (REPARADO: SIN ICONOS EN CABECERAS PARA EVITAR ERRORES) ──
+                df_editado = st.data_editor(
+                    st.session_state.df_gastos,
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    key="editor_gastos_v_final_secure",
+                    column_config={
+                        "FECHA": st.column_config.TextColumn("FECHA"),
+                        "PAQUETERIA": st.column_config.TextColumn("PAQUETERÍA"),
+                        "CLIENTE": st.column_config.TextColumn("CLIENTE"),
+                        "SOLICITO": st.column_config.TextColumn("SOLICITÓ"),
+                        "DESTINO": st.column_config.TextColumn("DESTINO"),
+                        "CANTIDAD": st.column_config.NumberColumn("CANT"),
+                        "UM": st.column_config.TextColumn("UM"),
+                        "COSTO": st.column_config.NumberColumn("COSTO", format="$%.2f")
+                    }
+                )
+    
+                # ── PREPARACIÓN DE IMPRESIÓN (SIN $NAN) ──
+                df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
+                filas_v = df_editado[df_editado["PAQUETERIA"].notna() & (df_editado["PAQUETERIA"] != "")].copy()
+                
+                if not filas_v.empty:
+                    filas_v["COSTO"] = pd.to_numeric(filas_v["COSTO"], errors='coerce').fillna(0)
+                    filas_v["CANTIDAD"] = pd.to_numeric(filas_v["CANTIDAD"], errors='coerce').fillna(0)
+    
+                tabla_html = ""
+                for _, r in filas_v.iterrows():
+                    costo_fmt = f"${float(r['COSTO']):,.2f}"
+                    tabla_html += f"""
+                    <tr>
+                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
+                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('PAQUETERIA', '')}</td>
+                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('CLIENTE', '')}</td>
+                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('SOLICITO', '')}</td>
+                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('DESTINO', '')}</td>
+                        <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:center;'>{r.get('CANTIDAD', '')}</td>
+                        <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:center;'>{r.get('UM', '')}</td>
+                        <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:right;'>{costo_fmt}</td>
+                    </tr>"""
+    
+                total_c = filas_v["COSTO"].sum() if not filas_v.empty else 0
+    
+                form_print = f"""
+                <div style="font-family:Arial; padding:20px; color:black; background:white;">
+                    <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:15px;">
+                        <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:9px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
+                        <div style="text-align:right; font-size:10px;"><b>FECHA REPORTE:</b> {datetime.now().strftime('%d/%m/%Y')}<br><b>HORA:</b> {datetime.now().strftime('%I:%M %p').lower()}</div>
+                    </div>
+                    <h4 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">Reporte Detallado de Gastos Logística</h4>
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead><tr style="background:#eee; font-size:10px;">
+                            <th>FECHA</th><th>PAQUETERÍA</th><th>CLIENTE</th><th>SOLICITÓ</th><th>DESTINO</th><th>CANT</th><th>UM</th><th>COSTO</th>
+                        </tr></thead>
+                        <tbody>{tabla_html}</tbody>
+                        <tfoot><tr style="font-weight:bold; background:#eee; font-size:11px;">
+                            <td colspan="7" style="border:1px solid #000; text-align:right; padding:5px;">TOTAL GENERAL:</td>
+                            <td style="border:1px solid #000; text-align:right; padding:5px;">${total_c:,.2f}</td>
+                        </tr></tfoot>
+                    </table>
+                    <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
+                        <div style="width:40%; border-top:1px solid black;">ELABORÓ<br>Rigoberto Hernandez / Cord. Logística</div>
+                        <div style="width:40%; border-top:1px solid black;">AUTORIZÓ<br>Dirección de Operaciones</div>
+                    </div>
+                </div>"""
+    
+                # ── BOTONES (ICONOS MATERIAL SOLO AQUÍ, DONDE SON SEGUROS) ──
+                st.markdown("<br>", unsafe_allow_html=True)
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    if st.button(":material/refresh: ACTUALIZAR", use_container_width=True):
+                        st.session_state.df_gastos = cargar_datos_gastos()
+                        st.rerun()
+                with c2:
+                    if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
+                        if guardar_en_github(df_editado):
+                            st.session_state.df_gastos = df_editado
+                            st.toast("Sincronización exitosa", icon="✅") # Icono corregido a emoji estándar
+                            time.sleep(1); st.rerun()
+                with c3:
+                    if st.button(":material/print: IMPRIMIR", use_container_width=True):
+                        components.html(f"<html><body>{form_print}<script>window.print();</script></body></html>", height=0)
+                        st.toast("Generando vista previa", icon="🖨️") # Icono corregido a emoji estándar
+                
+            else:
+                st.subheader("MÓDULO DE SEGUIMIENTO")
+                st.write("Seleccione una sub-categoría en la barra superior.")
+    
+        # 3. REPORTES
+        elif st.session_state.menu_main == "REPORTES":
+            st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
+    
+        # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
+        elif st.session_state.menu_main == "FORMATOS":
+            import streamlit.components.v1 as components
+            import os
+    
+            # --- SUBSECCIÓN A: SALIDA DE PT ---
+            if st.session_state.menu_sub == "SALIDA DE PT":
+                st.markdown("<h3>Formato Salida de Producto Terminado</h3>", unsafe_allow_html=True)
+                
+                # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
+                if 'folio_nexion' not in st.session_state:
+                    tz_gdl = pytz.timezone('America/Mexico_City') 
+                    now_gdl = datetime.now(tz_gdl)
+                    st.session_state.folio_nexion = f"F-{now_gdl.strftime('%Y%m%d-%H%M')}"
+                
+                # ── B. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
+                @st.cache_data
+                def load_inventory():
+                    ruta = os.path.join(os.getcwd(), "inventario.csv")
+                    if not os.path.exists(ruta): 
+                        ruta = os.path.join(os.getcwd(), "..", "inventario.csv")
+                    try:
+                        df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
+                        df.columns = [str(c).strip().upper() for c in df.columns]
+                        return df
+                    except: 
+                        return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
+                
+                df_inv = load_inventory()
+                
+                # Inicialización única de las filas en el session_state
+                if 'rows' not in st.session_state:
+                    st.session_state.rows = pd.DataFrame([
+                        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
+                    ] * 10)
+                                        
+                # ── C. CUERPO DE ENTRADA (ESTRUCTURA CON ICONOS MATERIAL) ────────────────
+                with st.container(border=True):
+                    h1, h2, h3 = st.columns(3)
+                    f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in_pt")
+                    t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in_pt")
+                    fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
+                
+                # ── D. MOTOR DE BÚSQUEDA INTERNO (LOOKUP) ──────────────────────────
+                def lookup_pt():
+                    edits = st.session_state["editor_pt"].get("edited_rows", {})
+                    added = st.session_state["editor_pt"].get("added_rows", [])
+                    
+                    for row in added:
+                        new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
+                        new_row.update(row)
+                        st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
+                    
+                    for idx_str, info in edits.items():
+                        idx = int(idx_str)
+                        for col, val in info.items():
+                            st.session_state.rows.at[idx, col] = val
+                        
+                        if "CODIGO" in info:
+                            val_codigo = str(info["CODIGO"]).strip().upper()
+                            if not df_inv.empty:
+                                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val_codigo]
+                                if not match.empty:
+                                    st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
+                                    st.session_state.rows.at[idx, "CODIGO"] = val_codigo
+                
+                # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
+                st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px;'>DETALLE DE MATERIALES</p>", unsafe_allow_html=True)
+                df_final_pt = st.data_editor(
+                    st.session_state.rows, 
+                    num_rows="dynamic", 
+                    use_container_width=True, 
+                    key="editor_pt", 
+                    on_change=lookup_pt,
+                    column_config={
+                        "CODIGO": st.column_config.TextColumn(":material/qr_code: CÓDIGO"),
+                        "DESCRIPCION": st.column_config.TextColumn(":material/description: DESCRIPCIÓN"),
+                        "CANTIDAD": st.column_config.TextColumn(":material/pin: CANTIDAD", width="small")
+                    }
+                )
+                
+                # HTML para impresión PT
+                filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
+                tabla_html = "".join([
+                    f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
+                    f"<td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td>"
+                    f"<td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" 
+                    for _, r in filas_print.iterrows()
+                ])
+                
+                form_pt_html = f"""<div style="font-family:sans-serif;padding:20px;color:black;background:white;">
+                    <h3 style="text-align:center;">ENTREGA DE MATERIALES PT</h3>
+                    <p><b>FOLIO:</b> {fol_val} | <b>FECHA:</b> {f_val} | <b>TURNO:</b> {t_val}</p>
+                    <table style="width:100%;border-collapse:collapse;">
+                    <tr style="background:#eee;"><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
+                    {tabla_html}</table></div>"""
+    
+                st.markdown("<br>", unsafe_allow_html=True)
+                c1, c2 = st.columns(2)
+                with c1:
+                    if st.button(":material/picture_as_pdf: IMPRIMIR SALIDA PT", type="primary", use_container_width=True):
+                        components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
+                with c2:
+                    if st.button(":material/refresh: REINICIAR PT", use_container_width=True):
+                        if 'folio_nexion' in st.session_state: del st.session_state.folio_nexion
+                        st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"}] * 10)
+                        st.rerun()
+    
+            # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
+            elif st.session_state.menu_sub == "CONTRARRECIBOS":
+                
+                tz_gdl = pytz.timezone('America/Mexico_City')
+                now_gdl = datetime.now(tz_gdl)
+                
+                # ── A. INICIALIZACIÓN DE ESTADO ──
+                # Usamos una sub-llave para rastrear versiones y forzar el refresco del widget
+                if 'reset_counter' not in st.session_state:
+                    st.session_state.reset_counter = 0
+    
+                if 'rows_contrarecibo' not in st.session_state:
+                    st.session_state.rows_contrarecibo = pd.DataFrame([
+                        {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
+                    ] * 10)
+                
+                # ── B. ENCABEZADO Y CONTROLES ──
+                with st.container(border=True):
+                    col_h1, col_h2 = st.columns([2, 1])
+                    with col_h2:
+                        hora_reporte = st.text_input("HORA", value=now_gdl.strftime('%I:%M %p').lower(), key="h_contra_val")
+                
+                # ── C. EDITOR DE DATOS ──
+                # Al añadir el counter a la key, Streamlit destruye y recrea el widget al limpiar
+                df_edit_c = st.data_editor(
+                    st.session_state.rows_contrarecibo, 
+                    num_rows="dynamic", 
+                    use_container_width=True,
+                    key=f"editor_contrarecibo_{st.session_state.reset_counter}",
+                    column_config={
+                        "FECHA": st.column_config.TextColumn("FECHA"),
+                        "CODIGO": st.column_config.TextColumn("CÓDIGO"),
+                        "PAQUETERIA": st.column_config.TextColumn("PAQUETERÍA"),
+                        "CANTIDAD": st.column_config.TextColumn("CANTIDAD")
+                    }
+                )
+                
+                # ── D. RENDERIZADO PARA IMPRESIÓN ──
+                filas_c = df_edit_c[df_edit_c["CODIGO"] != ""]
+                tabla_c_html = "".join([
+                    f"<tr>"
+                    f"<td style='border-bottom:1px solid black;padding:8px;'>{r['FECHA']}</td>"
+                    f"<td style='border-bottom:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
+                    f"<td style='border-bottom:1px solid black;padding:8px;'>{r['PAQUETERIA']}</td>"
+                    f"<td style='border-bottom:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td>"
+                    f"</tr>"
+                    for _, r in filas_c.iterrows()
+                ])
+                
+                espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
+                
+                # ── ESTRUCTURA HTML CON CSS PARA QUITAR HEADERS/FOOTERS DEL NAVEGADOR ──
+                form_c_html = f"""
                 <html>
                 <head>
-                    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
-                    <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
                     <style>
-                        html, body {{ background:#111827; margin:0; padding:0; }}
-                        #gantt {{ background:#0E1117; }}
-                        .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
-                        .grid-background {{ fill:#0b0e14 !important; }}
-                        .grid-header {{ fill:#151a24 !important; }}
-                        .grid-row {{ fill:#0b0e14 !important; }}
-                        .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
-                        .grid-line {{ stroke: #1e2530 !important; stroke-opacity: 0.1 !important; }}
-                        .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
-                        .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
-                        .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
-                        .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
-                        .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
+                        /* Ocultar encabezados y pies de página del navegador */
+                        @media print {{
+                            @page {{ 
+                                margin: 10mm; 
+                                size: auto;   /* O usa landscape si prefieres horizontal */
+                            }}
+                            body {{ margin: 0; }}
+                            header, footer {{ display: none !important; }}
+                        }}
+                        body {{ font-family: Arial, sans-serif; background: white; color: black; }}
+                        .print-box {{ padding: 20px; }}
+                        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+                        th, td {{ border-bottom: 1px solid black; padding: 8px; text-align: left; }}
                     </style>
                 </head>
                 <body>
-                    <div id='gantt'></div>
-                    <script>
-                        var tasks = {tasks_js_str};
-                        if(tasks.length){{
-                            var gantt = new Gantt('#gantt', tasks, {{
-                                view_mode: '{gantt_view}',
-                                bar_height: 20,
-                                padding: 40,
-                                date_format: 'YYYY-MM-DD'
-                            }});
-            
-                            // Forzar suavizado de líneas horizontales y ocultar verticales
-                            setTimeout(function() {{
-                                document.querySelectorAll('#gantt svg line').forEach(function(line) {{
-                                    var x1 = parseFloat(line.getAttribute('x1'));
-                                    var x2 = parseFloat(line.getAttribute('x2'));
-                                    var y1 = parseFloat(line.getAttribute('y1'));
-                                    var y2 = parseFloat(line.getAttribute('y2'));
-            
-                                    if(x1 === x2) {{
-                                        // ocultar verticales
-                                        line.style.display = 'none';
-                                    }}
-                                    if(y1 === y2) {{
-                                        // suavizar horizontales
-                                        line.style.strokeOpacity = '0.1';
-                                        line.style.stroke = '#1e2530';
-                                    }}
-                                }});
-                            }}, 200);
-                        }}
-                    </script>
+                    <div class="print-box">
+                        <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
+                            <div>
+                                <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
+                                <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                            </div>
+                            <div style="text-align:right;">
+                                <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{hora_reporte}</span>
+                                <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
+                            </div>
+                        </div>
+                        <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
+                        <table>
+                            <thead>
+                                <tr style="font-size:12px; border-bottom: 2px solid black;">
+                                    <th>FECHA</th><th>CÓDIGO</th><th>PAQUETERÍA</th><th style="text-align:center;">CANTIDAD</th>
+                                </tr>
+                            </thead>
+                            <tbody style="font-size:13px;">
+                                {tabla_c_html}
+                                {espacios}
+                            </tbody>
+                        </table>
+                        <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
+                            <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
+                            <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
+                        </div>
+                    </div>
                 </body>
                 </html>
-                """,
-                height=420,
-                scrolling=False
-            )
-            # ── 3. DATA EDITOR (ABAJO) ─────────────────────────────────────────────────
-            st.subheader("EDITOR DE TAREAS")
-            
-            # Normalización para el Data Editor (Evitar strings "nan")
-            df_editor = df_master.copy()
-            for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
-                df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
-            
-            df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
-            
-            df_editado = st.data_editor(
-                df_editor,
-                hide_index=True,
-                use_container_width=True,
-                num_rows="dynamic",
-                column_config={
-                    "FECHA": st.column_config.DateColumn("Inicio"),
-                    "FECHA_FIN": st.column_config.DateColumn("Fin"),
-                    "IMPORTANCIA": st.column_config.SelectboxColumn("Prioridad", options=["Urgente","Alta","Media","Baja"]),
-                    "PROGRESO": st.column_config.NumberColumn("Progreso %", min_value=0, max_value=100, step=5),
-                    "PROGRESO_VIEW": st.column_config.ProgressColumn("Avance", min_value=0, max_value=100),
-                    "TAREA": st.column_config.TextColumn("Tarea"),
-                    "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
-                    "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
-                    "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
-                    "GRUPO": st.column_config.TextColumn("Grupo"),
-                }
-            )
-            
-            # Sincronizar columna visual
-            df_editado["PROGRESO_VIEW"] = df_editado["PROGRESO"]
-            
-            if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
-                df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
-                if guardar_en_github(df_guardar):
-                    st.session_state.df_tareas = df_guardar
-                    st.rerun()
-
-
-
-        
-        elif st.session_state.menu_sub == "QUEJAS":
-            st.subheader("SEGUIMIENTO > QUEJAS")
-            # ── CONFIGURACIÓN GITHUB (GASTOS) ──
-            TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-            REPO_NAME = "RH2026/nexion"
-            FILE_PATH = "gastos.csv"
-            CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
-
-            # ── FUNCIONES DE SOPORTE ──
-            def cargar_datos_gastos():
-                columnas_base = ["FECHA", "PAQUETERIA", "CLIENTE", "SOLICITO", "DESTINO", "CANTIDAD", "UM", "COSTO"]
-                try:
-                    r = requests.get(f"{CSV_URL}?t={int(time.time())}")
-                    if r.status_code == 200:
-                        df = pd.read_csv(io.StringIO(r.text))
-                        df.columns = [str(c).strip().upper() for c in df.columns]
-                        for col in columnas_base:
-                            if col not in df.columns: df[col] = ""
-                        return df[columnas_base]
-                except: pass
-                return pd.DataFrame(columns=columnas_base)
-
-            def guardar_en_github(df_to_save):
-                if not TOKEN: return False
-                try:
-                    from github import Github
-                    g = Github(TOKEN); repo = g.get_repo(REPO_NAME)
-                    csv_data = df_to_save.to_csv(index=False)
-                    try:
-                        contents = repo.get_contents(FILE_PATH)
-                        repo.update_file(contents.path, f"Update gastos {datetime.now()}", csv_data, contents.sha)
-                    except:
-                        repo.create_file(FILE_PATH, f"Initial gastos", csv_data)
-                    return True
-                except: return False
-
-            # ── INTERFAZ ──
-            st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>", unsafe_allow_html=True)
-            
-            if "df_gastos" not in st.session_state:
-                st.session_state.df_gastos = cargar_datos_gastos()
-
-            # ── EDITOR DE DATOS (REPARADO: SIN ICONOS EN CABECERAS PARA EVITAR ERRORES) ──
-            df_editado = st.data_editor(
-                st.session_state.df_gastos,
-                use_container_width=True,
-                num_rows="dynamic",
-                key="editor_gastos_v_final_secure",
-                column_config={
-                    "FECHA": st.column_config.TextColumn("FECHA"),
-                    "PAQUETERIA": st.column_config.TextColumn("PAQUETERÍA"),
-                    "CLIENTE": st.column_config.TextColumn("CLIENTE"),
-                    "SOLICITO": st.column_config.TextColumn("SOLICITÓ"),
-                    "DESTINO": st.column_config.TextColumn("DESTINO"),
-                    "CANTIDAD": st.column_config.NumberColumn("CANT"),
-                    "UM": st.column_config.TextColumn("UM"),
-                    "COSTO": st.column_config.NumberColumn("COSTO", format="$%.2f")
-                }
-            )
-
-            # ── PREPARACIÓN DE IMPRESIÓN (SIN $NAN) ──
-            df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
-            filas_v = df_editado[df_editado["PAQUETERIA"].notna() & (df_editado["PAQUETERIA"] != "")].copy()
-            
-            if not filas_v.empty:
-                filas_v["COSTO"] = pd.to_numeric(filas_v["COSTO"], errors='coerce').fillna(0)
-                filas_v["CANTIDAD"] = pd.to_numeric(filas_v["CANTIDAD"], errors='coerce').fillna(0)
-
-            tabla_html = ""
-            for _, r in filas_v.iterrows():
-                costo_fmt = f"${float(r['COSTO']):,.2f}"
-                tabla_html += f"""
-                <tr>
-                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
-                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('PAQUETERIA', '')}</td>
-                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('CLIENTE', '')}</td>
-                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('SOLICITO', '')}</td>
-                    <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('DESTINO', '')}</td>
-                    <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:center;'>{r.get('CANTIDAD', '')}</td>
-                    <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:center;'>{r.get('UM', '')}</td>
-                    <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:right;'>{costo_fmt}</td>
-                </tr>"""
-
-            total_c = filas_v["COSTO"].sum() if not filas_v.empty else 0
-
-            form_print = f"""
-            <div style="font-family:Arial; padding:20px; color:black; background:white;">
-                <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:15px;">
-                    <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:9px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
-                    <div style="text-align:right; font-size:10px;"><b>FECHA REPORTE:</b> {datetime.now().strftime('%d/%m/%Y')}<br><b>HORA:</b> {datetime.now().strftime('%I:%M %p').lower()}</div>
-                </div>
-                <h4 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">Reporte Detallado de Gastos Logística</h4>
-                <table style="width:100%; border-collapse:collapse;">
-                    <thead><tr style="background:#eee; font-size:10px;">
-                        <th>FECHA</th><th>PAQUETERÍA</th><th>CLIENTE</th><th>SOLICITÓ</th><th>DESTINO</th><th>CANT</th><th>UM</th><th>COSTO</th>
-                    </tr></thead>
-                    <tbody>{tabla_html}</tbody>
-                    <tfoot><tr style="font-weight:bold; background:#eee; font-size:11px;">
-                        <td colspan="7" style="border:1px solid #000; text-align:right; padding:5px;">TOTAL GENERAL:</td>
-                        <td style="border:1px solid #000; text-align:right; padding:5px;">${total_c:,.2f}</td>
-                    </tr></tfoot>
-                </table>
-                <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
-                    <div style="width:40%; border-top:1px solid black;">ELABORÓ<br>Rigoberto Hernandez / Cord. Logística</div>
-                    <div style="width:40%; border-top:1px solid black;">AUTORIZÓ<br>Dirección de Operaciones</div>
-                </div>
-            </div>"""
-
-            # ── BOTONES (ICONOS MATERIAL SOLO AQUÍ, DONDE SON SEGUROS) ──
-            st.markdown("<br>", unsafe_allow_html=True)
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                if st.button(":material/refresh: ACTUALIZAR", use_container_width=True):
-                    st.session_state.df_gastos = cargar_datos_gastos()
-                    st.rerun()
-            with c2:
-                if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
-                    if guardar_en_github(df_editado):
-                        st.session_state.df_gastos = df_editado
-                        st.toast("Sincronización exitosa", icon="✅") # Icono corregido a emoji estándar
-                        time.sleep(1); st.rerun()
-            with c3:
-                if st.button(":material/print: IMPRIMIR", use_container_width=True):
-                    components.html(f"<html><body>{form_print}<script>window.print();</script></body></html>", height=0)
-                    st.toast("Generando vista previa", icon="🖨️") # Icono corregido a emoji estándar
-            
-        else:
-            st.subheader("MÓDULO DE SEGUIMIENTO")
-            st.write("Seleccione una sub-categoría en la barra superior.")
-
-    # 3. REPORTES
-    elif st.session_state.menu_main == "REPORTES":
-        st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
-
-    # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
-    elif st.session_state.menu_main == "FORMATOS":
-        import streamlit.components.v1 as components
-        import os
-
-        # --- SUBSECCIÓN A: SALIDA DE PT ---
-        if st.session_state.menu_sub == "SALIDA DE PT":
-            st.markdown("<h3>Formato Salida de Producto Terminado</h3>", unsafe_allow_html=True)
-            
-            # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
-            if 'folio_nexion' not in st.session_state:
-                tz_gdl = pytz.timezone('America/Mexico_City') 
-                now_gdl = datetime.now(tz_gdl)
-                st.session_state.folio_nexion = f"F-{now_gdl.strftime('%Y%m%d-%H%M')}"
-            
-            # ── B. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
-            @st.cache_data
-            def load_inventory():
-                ruta = os.path.join(os.getcwd(), "inventario.csv")
-                if not os.path.exists(ruta): 
-                    ruta = os.path.join(os.getcwd(), "..", "inventario.csv")
-                try:
-                    df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
-                    df.columns = [str(c).strip().upper() for c in df.columns]
-                    return df
-                except: 
-                    return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
-            
-            df_inv = load_inventory()
-            
-            # Inicialización única de las filas en el session_state
-            if 'rows' not in st.session_state:
-                st.session_state.rows = pd.DataFrame([
-                    {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
-                ] * 10)
-                                    
-            # ── C. CUERPO DE ENTRADA (ESTRUCTURA CON ICONOS MATERIAL) ────────────────
-            with st.container(border=True):
-                h1, h2, h3 = st.columns(3)
-                f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in_pt")
-                t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in_pt")
-                fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
-            
-            # ── D. MOTOR DE BÚSQUEDA INTERNO (LOOKUP) ──────────────────────────
-            def lookup_pt():
-                edits = st.session_state["editor_pt"].get("edited_rows", {})
-                added = st.session_state["editor_pt"].get("added_rows", [])
+                """
+    
+                # ── E. ACCIONES ──
+                st.write("---")
+                c_b1, c_b2 = st.columns(2)
                 
-                for row in added:
-                    new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
-                    new_row.update(row)
-                    st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
+                with c_b1:
+                    if st.button(":material/print: IMPRIMIR CONTRARECIBO", type="primary", use_container_width=True, key="btn_p_c"):
+                        components.html(f"<html><body>{form_c_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
                 
-                for idx_str, info in edits.items():
-                    idx = int(idx_str)
-                    for col, val in info.items():
-                        st.session_state.rows.at[idx, col] = val
-                    
-                    if "CODIGO" in info:
-                        val_codigo = str(info["CODIGO"]).strip().upper()
-                        if not df_inv.empty:
-                            match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val_codigo]
-                            if not match.empty:
-                                st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
-                                st.session_state.rows.at[idx, "CODIGO"] = val_codigo
-            
-            # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
-            st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px;'>DETALLE DE MATERIALES</p>", unsafe_allow_html=True)
-            df_final_pt = st.data_editor(
-                st.session_state.rows, 
-                num_rows="dynamic", 
-                use_container_width=True, 
-                key="editor_pt", 
-                on_change=lookup_pt,
-                column_config={
-                    "CODIGO": st.column_config.TextColumn(":material/qr_code: CÓDIGO"),
-                    "DESCRIPCION": st.column_config.TextColumn(":material/description: DESCRIPCIÓN"),
-                    "CANTIDAD": st.column_config.TextColumn(":material/pin: CANTIDAD", width="small")
-                }
-            )
-            
-            # HTML para impresión PT
-            filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
-            tabla_html = "".join([
-                f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
-                f"<td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td>"
-                f"<td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" 
-                for _, r in filas_print.iterrows()
-            ])
-            
-            form_pt_html = f"""<div style="font-family:sans-serif;padding:20px;color:black;background:white;">
-                <h3 style="text-align:center;">ENTREGA DE MATERIALES PT</h3>
-                <p><b>FOLIO:</b> {fol_val} | <b>FECHA:</b> {f_val} | <b>TURNO:</b> {t_val}</p>
-                <table style="width:100%;border-collapse:collapse;">
-                <tr style="background:#eee;"><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
-                {tabla_html}</table></div>"""
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            c1, c2 = st.columns(2)
-            with c1:
-                if st.button(":material/picture_as_pdf: IMPRIMIR SALIDA PT", type="primary", use_container_width=True):
-                    components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
-            with c2:
-                if st.button(":material/refresh: REINICIAR PT", use_container_width=True):
-                    if 'folio_nexion' in st.session_state: del st.session_state.folio_nexion
-                    st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"}] * 10)
-                    st.rerun()
-
-        # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
-        elif st.session_state.menu_sub == "CONTRARRECIBOS":
-            
-            tz_gdl = pytz.timezone('America/Mexico_City')
-            now_gdl = datetime.now(tz_gdl)
-            
-            # ── A. INICIALIZACIÓN DE ESTADO ──
-            # Usamos una sub-llave para rastrear versiones y forzar el refresco del widget
-            if 'reset_counter' not in st.session_state:
-                st.session_state.reset_counter = 0
-
-            if 'rows_contrarecibo' not in st.session_state:
-                st.session_state.rows_contrarecibo = pd.DataFrame([
-                    {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
-                ] * 10)
-            
-            # ── B. ENCABEZADO Y CONTROLES ──
-            with st.container(border=True):
-                col_h1, col_h2 = st.columns([2, 1])
-                with col_h2:
-                    hora_reporte = st.text_input("HORA", value=now_gdl.strftime('%I:%M %p').lower(), key="h_contra_val")
-            
-            # ── C. EDITOR DE DATOS ──
-            # Al añadir el counter a la key, Streamlit destruye y recrea el widget al limpiar
-            df_edit_c = st.data_editor(
-                st.session_state.rows_contrarecibo, 
-                num_rows="dynamic", 
-                use_container_width=True,
-                key=f"editor_contrarecibo_{st.session_state.reset_counter}",
-                column_config={
-                    "FECHA": st.column_config.TextColumn("FECHA"),
-                    "CODIGO": st.column_config.TextColumn("CÓDIGO"),
-                    "PAQUETERIA": st.column_config.TextColumn("PAQUETERÍA"),
-                    "CANTIDAD": st.column_config.TextColumn("CANTIDAD")
-                }
-            )
-            
-            # ── D. RENDERIZADO PARA IMPRESIÓN ──
-            filas_c = df_edit_c[df_edit_c["CODIGO"] != ""]
-            tabla_c_html = "".join([
-                f"<tr>"
-                f"<td style='border-bottom:1px solid black;padding:8px;'>{r['FECHA']}</td>"
-                f"<td style='border-bottom:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
-                f"<td style='border-bottom:1px solid black;padding:8px;'>{r['PAQUETERIA']}</td>"
-                f"<td style='border-bottom:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td>"
-                f"</tr>"
-                for _, r in filas_c.iterrows()
-            ])
-            
-            espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
-            
-            # ── ESTRUCTURA HTML CON CSS PARA QUITAR HEADERS/FOOTERS DEL NAVEGADOR ──
-            form_c_html = f"""
-            <html>
-            <head>
-                <style>
-                    /* Ocultar encabezados y pies de página del navegador */
-                    @media print {{
-                        @page {{ 
-                            margin: 10mm; 
-                            size: auto;   /* O usa landscape si prefieres horizontal */
-                        }}
-                        body {{ margin: 0; }}
-                        header, footer {{ display: none !important; }}
-                    }}
-                    body {{ font-family: Arial, sans-serif; background: white; color: black; }}
-                    .print-box {{ padding: 20px; }}
-                    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-                    th, td {{ border-bottom: 1px solid black; padding: 8px; text-align: left; }}
-                </style>
-            </head>
-            <body>
-                <div class="print-box">
-                    <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
-                        <div>
-                            <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
-                            <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
-                        </div>
-                        <div style="text-align:right;">
-                            <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{hora_reporte}</span>
-                            <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
-                        </div>
-                    </div>
-                    <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
-                    <table>
-                        <thead>
-                            <tr style="font-size:12px; border-bottom: 2px solid black;">
-                                <th>FECHA</th><th>CÓDIGO</th><th>PAQUETERÍA</th><th style="text-align:center;">CANTIDAD</th>
-                            </tr>
-                        </thead>
-                        <tbody style="font-size:13px;">
-                            {tabla_c_html}
-                            {espacios}
-                        </tbody>
-                    </table>
-                    <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
-                        <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
-                        <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-
-            # ── E. ACCIONES ──
-            st.write("---")
-            c_b1, c_b2 = st.columns(2)
-            
-            with c_b1:
-                if st.button(":material/print: IMPRIMIR CONTRARECIBO", type="primary", use_container_width=True, key="btn_p_c"):
-                    components.html(f"<html><body>{form_c_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-            
-            with c_b2:
-                if st.button(":material/refresh: LIMPIAR CONTRARECIBO", use_container_width=True, key="btn_r_c"):
-                    # 1. Limpiamos el DataFrame en el estado
-                    st.session_state.rows_contrarecibo = pd.DataFrame([
-                        {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""}
-                    ] * 10)
-                    # 2. Aumentamos el contador para forzar el cambio de KEY del editor
-                    st.session_state.reset_counter += 1
-                    # 3. Recargamos la app
-                    st.rerun()
-            
-    # 5. HUB LOG
-    elif st.session_state.menu_main == "HUB LOG":
-        # Librerías necesarias para el funcionamiento del HUB
-        import os
-        import io
-        import zipfile
-        import pandas as pd
-        from datetime import datetime as dt_class
-        from reportlab.pdfgen import canvas
-        from reportlab.lib.pagesizes import letter
-        from pypdf import PdfReader, PdfWriter
-
-        if st.session_state.menu_sub == "SMART ROUTING":
-            st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
-            
-            # --- RUTAS Y MOTOR ---
-            archivo_log = "log_maestro_acumulado.csv"
-            
-            # Intentar obtener el motor logístico (asegura que la función esté definida)
-            try:
-                d_flet, d_price = motor_logistico_central()
-            except:
-                d_flet, d_price = {}, {}
-                st.warning("Motor logístico central no detectado. Cargando en modo manual.")
-
-            if 'db_acumulada' not in st.session_state:
-                st.session_state.db_acumulada = pd.read_csv(archivo_log) if os.path.exists(archivo_log) else pd.DataFrame()
-
-            # --- FUNCIONES DE SELLADO INTERNAS ---
-            def generar_sellos_fisicos(lista_textos, x, y):
-                output = PdfWriter()
-                for texto in lista_textos:
+                with c_b2:
+                    if st.button(":material/refresh: LIMPIAR CONTRARECIBO", use_container_width=True, key="btn_r_c"):
+                        # 1. Limpiamos el DataFrame en el estado
+                        st.session_state.rows_contrarecibo = pd.DataFrame([
+                            {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""}
+                        ] * 10)
+                        # 2. Aumentamos el contador para forzar el cambio de KEY del editor
+                        st.session_state.reset_counter += 1
+                        # 3. Recargamos la app
+                        st.rerun()
+                
+        # 5. HUB LOG
+        elif st.session_state.menu_main == "HUB LOG":
+            # Librerías necesarias para el funcionamiento del HUB
+            import os
+            import io
+            import zipfile
+            import pandas as pd
+            from datetime import datetime as dt_class
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.pagesizes import letter
+            from pypdf import PdfReader, PdfWriter
+    
+            if st.session_state.menu_sub == "SMART ROUTING":
+                st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
+                
+                # --- RUTAS Y MOTOR ---
+                archivo_log = "log_maestro_acumulado.csv"
+                
+                # Intentar obtener el motor logístico (asegura que la función esté definida)
+                try:
+                    d_flet, d_price = motor_logistico_central()
+                except:
+                    d_flet, d_price = {}, {}
+                    st.warning("Motor logístico central no detectado. Cargando en modo manual.")
+    
+                if 'db_acumulada' not in st.session_state:
+                    st.session_state.db_acumulada = pd.read_csv(archivo_log) if os.path.exists(archivo_log) else pd.DataFrame()
+    
+                # --- FUNCIONES DE SELLADO INTERNAS ---
+                def generar_sellos_fisicos(lista_textos, x, y):
+                    output = PdfWriter()
+                    for texto in lista_textos:
+                        packet = io.BytesIO()
+                        can = canvas.Canvas(packet, pagesize=letter)
+                        can.setFont("Helvetica-Bold", 11)
+                        can.drawString(x, y, f"{str(texto).upper()}")
+                        can.save()
+                        packet.seek(0)
+                        output.add_page(PdfReader(packet).pages[0])
+                    out_io = io.BytesIO()
+                    output.write(out_io)
+                    return out_io.getvalue()
+    
+                def marcar_pdf_digital(pdf_file, texto_sello, x, y):
                     packet = io.BytesIO()
                     can = canvas.Canvas(packet, pagesize=letter)
                     can.setFont("Helvetica-Bold", 11)
-                    can.drawString(x, y, f"{str(texto).upper()}")
+                    can.drawString(x, y, f"{str(texto_sello).upper()}")
                     can.save()
                     packet.seek(0)
-                    output.add_page(PdfReader(packet).pages[0])
-                out_io = io.BytesIO()
-                output.write(out_io)
-                return out_io.getvalue()
-
-            def marcar_pdf_digital(pdf_file, texto_sello, x, y):
-                packet = io.BytesIO()
-                can = canvas.Canvas(packet, pagesize=letter)
-                can.setFont("Helvetica-Bold", 11)
-                can.drawString(x, y, f"{str(texto_sello).upper()}")
-                can.save()
-                packet.seek(0)
-                new_pdf = PdfReader(packet)
-                existing_pdf = PdfReader(pdf_file)
-                output = PdfWriter()
-                page = existing_pdf.pages[0]
-                page.merge_page(new_pdf.pages[0])
-                output.add_page(page)
-                for i in range(1, len(existing_pdf.pages)):
-                    output.add_page(existing_pdf.pages[i])
-                out_io = io.BytesIO()
-                output.write(out_io)
-                return out_io.getvalue()
-
-            # --- CARGA Y PROCESAMIENTO ERP ----
-            file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv") 
-            
-            # --- 1. ESTADO DE ESPERA: CALIBRACIÓN DE ESPACIOS ---
-            if not file_p:
-                st.markdown(f"""
-                    <div class="nexion-fixed-wrapper">
-                        <div class="nexion-center-node">
-                            <div class="nexion-core-point"></div>
-                            <div class="nexion-halo-ring"></div>
+                    new_pdf = PdfReader(packet)
+                    existing_pdf = PdfReader(pdf_file)
+                    output = PdfWriter()
+                    page = existing_pdf.pages[0]
+                    page.merge_page(new_pdf.pages[0])
+                    output.add_page(page)
+                    for i in range(1, len(existing_pdf.pages)):
+                        output.add_page(existing_pdf.pages[i])
+                    out_io = io.BytesIO()
+                    output.write(out_io)
+                    return out_io.getvalue()
+    
+                # --- CARGA Y PROCESAMIENTO ERP ----
+                file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv") 
+                
+                # --- 1. ESTADO DE ESPERA: CALIBRACIÓN DE ESPACIOS ---
+                if not file_p:
+                    st.markdown(f"""
+                        <div class="nexion-fixed-wrapper">
+                            <div class="nexion-center-node">
+                                <div class="nexion-core-point"></div>
+                                <div class="nexion-halo-ring"></div>
+                            </div>
+                            <p class="nexion-tech-label">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
                         </div>
-                        <p class="nexion-tech-label">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
-                    </div>
+                        <style>
+                            .nexion-fixed-wrapper {{ height: 250px !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: transparent !important; position: relative !important; }}
+                            .nexion-center-node {{ position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 20px !important; height: 20px !important; }}
+                            .nexion-core-point {{ width: 14px !important; height: 14px !important; background-color: #54AFE7 !important; border-radius: 50% !important; box-shadow: 0 0 20px #54AFE7, 0 0 40px rgba(84,175,231,0.4) !important; animation: nexion-vibrance 2s ease-in-out infinite !important; z-index: 10 !important; position: absolute !important; }}
+                            .nexion-halo-ring {{ position: absolute !important; width: 14px !important; height: 14px !important; border: 1px solid #54AFE7 !important; border-radius: 50% !important; opacity: 0 !important; animation: nexion-perfect-spread 4s linear infinite !important; z-index: 5 !important; }}
+                            .nexion-tech-label {{ color: #54AFE7 !important; font-family: 'Monospace', monospace !important; letter-spacing: 5px !important; font-size: 10px !important; margin-top: 35px !important; opacity: 0.8 !important; text-align: center !important; }}
+                            @keyframes nexion-vibrance {{ 0%, 100% {{ transform: scale(1); filter: brightness(1); }} 50% {{ transform: scale(1.2); filter: brightness(1.4); }} }}
+                            @keyframes nexion-perfect-spread {{ 0% {{ transform: scale(1); opacity: 0; }} 20% {{ opacity: 0.4; }} 100% {{ transform: scale(6); opacity: 0; }} }}
+                        </style>
+                    """, unsafe_allow_html=True)
+                
+                # --- 2. ESTADO ACTIVO: MOTOR SMART ---
+                else:
+                    if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
+                        if "df_analisis" in st.session_state: del st.session_state["df_analisis"]
+                        st.session_state.archivo_actual = file_p.name
+                        st.rerun()
+    
+                    try:
+                        if "df_analisis" not in st.session_state:
+                            p = pd.read_csv(file_p, encoding='utf-8-sig')
+                            p.columns = [str(c).upper().strip() for c in p.columns]
+                            col_id = 'FACTURA' if 'FACTURA' in p.columns else ('DOCNUM' if 'DOCNUM' in p.columns else p.columns[0])
+                            
+                            if 'DIRECCION' in p.columns:
+                                def motor_prioridad(row):
+                                    addr = str(row['DIRECCION']).upper()
+                                    # Lógica local GDL
+                                    if any(loc in addr for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA"]):
+                                        return "LOCAL"
+                                    return d_flet.get(row['DIRECCION'], "SIN HISTORIAL")
+    
+                                p['RECOMENDACION'] = p.apply(motor_prioridad, axis=1)
+                                p['COSTO'] = p.apply(lambda r: 0.0 if r['RECOMENDACION'] == "LOCAL" else d_price.get(r['DIRECCION'], 0.0), axis=1)
+                                p['FECHA_HORA'] = dt_class.now().strftime("%Y-%m-%d %H:%M")
+                                
+                                cols_sistema = [col_id, 'RECOMENDACION', 'COSTO', 'FECHA_HORA']
+                                otras = [c for c in p.columns if c not in cols_sistema]
+                                st.session_state.df_analisis = p[cols_sistema + otras]
+    
+                        st.markdown("### :material/analytics: RECOMENDACIONES GENERADAS")
+                        modo_edicion = st.toggle(":material/edit_note: EDITAR VALORES")
+                        
+                        p_editado = st.data_editor(
+                            st.session_state.df_analisis,
+                            use_container_width=True,
+                            num_rows="fixed",
+                            column_config={
+                                "RECOMENDACION": st.column_config.TextColumn(":material/local_shipping: FLETERA", disabled=not modo_edicion),
+                                "COSTO": st.column_config.NumberColumn(":material/payments: TARIFA", format="$%.2f", disabled=not modo_edicion),
+                            },
+                            key="editor_pro_v11"
+                        )
+    
+                        with st.container():
+                            st.download_button(
+                                label=":material/download: DESCARGAR RESULTADOS (CSV ANALIZADO)",
+                                data=p_editado.to_csv(index=False).encode('utf-8-sig'),
+                                file_name="Analisis_Nexion.csv",
+                                use_container_width=True,
+                                key="btn_descarga_top"
+                            )
+                            st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
+                            c_izq, c_der = st.columns(2)
+                            with c_izq:
+                                if st.button(":material/push_pin: FIJAR CAMBIOS", use_container_width=True):
+                                    st.session_state.df_analisis = p_editado
+                                    st.toast("Cambios aplicados", icon="📌")
+                            with c_der:
+                                id_guardado = f"guardado_{st.session_state.archivo_actual}"
+                                if not st.session_state.get(id_guardado, False):
+                                    if st.button(":material/save: GUARDAR REGISTROS", use_container_width=True):
+                                        st.session_state[id_guardado] = True
+                                        st.snow()
+                                        st.rerun()
+                                else:
+                                    st.button(":material/verified_user: REGISTROS ASEGURADOS", use_container_width=True, disabled=True)
+                        
+                        # --- SISTEMA DE SELLADO ---
+                        st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
+                        st.markdown("<h3 style='font-size: 16px; color: white;'>:material/print: SISTEMA DE SELLADO Y SOBREIMPRESIÓN</h3>", unsafe_allow_html=True)
+                        
+                        with st.expander(":material/settings: PANEL DE CALIBRACIÓN", expanded=True):
+                            col_x, col_y = st.columns(2)
+                            ajuste_x = col_x.slider("Eje X (Horizontal)", 0, 612, 510)
+                            ajuste_y = col_y.slider("Eje Y (Vertical)", 0, 792, 760)
+    
+                        st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
+                        if st.button(":material/article: GENERAR SELLOS PARA FACTURAS (PAPEL)", use_container_width=True):
+                            sellos = st.session_state.df_analisis['RECOMENDACION'].tolist()
+                            if sellos:
+                                pdf_out = generar_sellos_fisicos(sellos, ajuste_x, ajuste_y)
+                                st.download_button(":material/download: DESCARGAR PDF DE SELLOS", pdf_out, "Sellos_Fisicos.pdf", use_container_width=True)
+                        
+                        st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
+                        st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>SELLADO DIGITAL (SOBRE PDF)</p>", unsafe_allow_html=True)
+                        with st.container(border=True):
+                            pdfs = st.file_uploader("Subir Facturas PDF", type="pdf", accept_multiple_files=True)
+                            if pdfs:
+                                if st.button("EJECUTAR ESTAMPADO DIGITAL"):
+                                    df_ref = st.session_state.get('df_analisis', pd.DataFrame())
+                                    if not df_ref.empty:
+                                        mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
+                                        z_buf = io.BytesIO()
+                                        with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+                                            for pdf in pdfs:
+                                                f_id = next((f for f in mapa.keys() if f in pdf.name.upper()), None)
+                                                if f_id:
+                                                    zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
+                                        st.download_button(":material/folder_zip: DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
+    
+                    except Exception as e:
+                        st.error(f"Error en procesamiento Smart: {e}")
+    
+            elif st.session_state.menu_sub == "SISTEMA":
+                st.info("Estado de Servidores : Online | Nexion Core: Active")
+                # ── ESTILO VISUAL PRO (CSS) ──
+                st.markdown("""
                     <style>
-                        .nexion-fixed-wrapper {{ height: 250px !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: transparent !important; position: relative !important; }}
-                        .nexion-center-node {{ position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 20px !important; height: 20px !important; }}
-                        .nexion-core-point {{ width: 14px !important; height: 14px !important; background-color: #54AFE7 !important; border-radius: 50% !important; box-shadow: 0 0 20px #54AFE7, 0 0 40px rgba(84,175,231,0.4) !important; animation: nexion-vibrance 2s ease-in-out infinite !important; z-index: 10 !important; position: absolute !important; }}
-                        .nexion-halo-ring {{ position: absolute !important; width: 14px !important; height: 14px !important; border: 1px solid #54AFE7 !important; border-radius: 50% !important; opacity: 0 !important; animation: nexion-perfect-spread 4s linear infinite !important; z-index: 5 !important; }}
-                        .nexion-tech-label {{ color: #54AFE7 !important; font-family: 'Monospace', monospace !important; letter-spacing: 5px !important; font-size: 10px !important; margin-top: 35px !important; opacity: 0.8 !important; text-align: center !important; }}
-                        @keyframes nexion-vibrance {{ 0%, 100% {{ transform: scale(1); filter: brightness(1); }} 50% {{ transform: scale(1.2); filter: brightness(1.4); }} }}
-                        @keyframes nexion-perfect-spread {{ 0% {{ transform: scale(1); opacity: 0; }} 20% {{ opacity: 0.4; }} 100% {{ transform: scale(6); opacity: 0; }} }}
+                    .main-header {
+                        background: rgba(84, 175, 231, 0.1);
+                        border-left: 5px solid #54AFE7;
+                        padding: 15px;
+                        border-radius: 5px;
+                        margin-bottom: 20px;
+                    }
+                    .status-card {
+                        background: rgba(255, 255, 255, 0.05);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 10px;
+                        padding: 15px;
+                        text-align: center;
+                    }
                     </style>
                 """, unsafe_allow_html=True)
-            
-            # --- 2. ESTADO ACTIVO: MOTOR SMART ---
-            else:
-                if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
-                    if "df_analisis" in st.session_state: del st.session_state["df_analisis"]
-                    st.session_state.archivo_actual = file_p.name
-                    st.rerun()
-
-                try:
-                    if "df_analisis" not in st.session_state:
-                        p = pd.read_csv(file_p, encoding='utf-8-sig')
-                        p.columns = [str(c).upper().strip() for c in p.columns]
-                        col_id = 'FACTURA' if 'FACTURA' in p.columns else ('DOCNUM' if 'DOCNUM' in p.columns else p.columns[0])
-                        
-                        if 'DIRECCION' in p.columns:
-                            def motor_prioridad(row):
-                                addr = str(row['DIRECCION']).upper()
-                                # Lógica local GDL
-                                if any(loc in addr for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA"]):
-                                    return "LOCAL"
-                                return d_flet.get(row['DIRECCION'], "SIN HISTORIAL")
-
-                            p['RECOMENDACION'] = p.apply(motor_prioridad, axis=1)
-                            p['COSTO'] = p.apply(lambda r: 0.0 if r['RECOMENDACION'] == "LOCAL" else d_price.get(r['DIRECCION'], 0.0), axis=1)
-                            p['FECHA_HORA'] = dt_class.now().strftime("%Y-%m-%d %H:%M")
-                            
-                            cols_sistema = [col_id, 'RECOMENDACION', 'COSTO', 'FECHA_HORA']
-                            otras = [c for c in p.columns if c not in cols_sistema]
-                            st.session_state.df_analisis = p[cols_sistema + otras]
-
-                    st.markdown("### :material/analytics: RECOMENDACIONES GENERADAS")
-                    modo_edicion = st.toggle(":material/edit_note: EDITAR VALORES")
-                    
-                    p_editado = st.data_editor(
-                        st.session_state.df_analisis,
-                        use_container_width=True,
-                        num_rows="fixed",
-                        column_config={
-                            "RECOMENDACION": st.column_config.TextColumn(":material/local_shipping: FLETERA", disabled=not modo_edicion),
-                            "COSTO": st.column_config.NumberColumn(":material/payments: TARIFA", format="$%.2f", disabled=not modo_edicion),
-                        },
-                        key="editor_pro_v11"
-                    )
-
-                    with st.container():
-                        st.download_button(
-                            label=":material/download: DESCARGAR RESULTADOS (CSV ANALIZADO)",
-                            data=p_editado.to_csv(index=False).encode('utf-8-sig'),
-                            file_name="Analisis_Nexion.csv",
-                            use_container_width=True,
-                            key="btn_descarga_top"
-                        )
-                        st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
-                        c_izq, c_der = st.columns(2)
-                        with c_izq:
-                            if st.button(":material/push_pin: FIJAR CAMBIOS", use_container_width=True):
-                                st.session_state.df_analisis = p_editado
-                                st.toast("Cambios aplicados", icon="📌")
-                        with c_der:
-                            id_guardado = f"guardado_{st.session_state.archivo_actual}"
-                            if not st.session_state.get(id_guardado, False):
-                                if st.button(":material/save: GUARDAR REGISTROS", use_container_width=True):
-                                    st.session_state[id_guardado] = True
-                                    st.snow()
-                                    st.rerun()
-                            else:
-                                st.button(":material/verified_user: REGISTROS ASEGURADOS", use_container_width=True, disabled=True)
-                    
-                    # --- SISTEMA DE SELLADO ---
-                    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
-                    st.markdown("<h3 style='font-size: 16px; color: white;'>:material/print: SISTEMA DE SELLADO Y SOBREIMPRESIÓN</h3>", unsafe_allow_html=True)
-                    
-                    with st.expander(":material/settings: PANEL DE CALIBRACIÓN", expanded=True):
-                        col_x, col_y = st.columns(2)
-                        ajuste_x = col_x.slider("Eje X (Horizontal)", 0, 612, 510)
-                        ajuste_y = col_y.slider("Eje Y (Vertical)", 0, 792, 760)
-
-                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
-                    if st.button(":material/article: GENERAR SELLOS PARA FACTURAS (PAPEL)", use_container_width=True):
-                        sellos = st.session_state.df_analisis['RECOMENDACION'].tolist()
-                        if sellos:
-                            pdf_out = generar_sellos_fisicos(sellos, ajuste_x, ajuste_y)
-                            st.download_button(":material/download: DESCARGAR PDF DE SELLOS", pdf_out, "Sellos_Fisicos.pdf", use_container_width=True)
-                    
-                    st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
-                    st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>SELLADO DIGITAL (SOBRE PDF)</p>", unsafe_allow_html=True)
-                    with st.container(border=True):
-                        pdfs = st.file_uploader("Subir Facturas PDF", type="pdf", accept_multiple_files=True)
-                        if pdfs:
-                            if st.button("EJECUTAR ESTAMPADO DIGITAL"):
-                                df_ref = st.session_state.get('df_analisis', pd.DataFrame())
-                                if not df_ref.empty:
-                                    mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
-                                    z_buf = io.BytesIO()
-                                    with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
-                                        for pdf in pdfs:
-                                            f_id = next((f for f in mapa.keys() if f in pdf.name.upper()), None)
-                                            if f_id:
-                                                zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
-                                    st.download_button(":material/folder_zip: DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
-
-                except Exception as e:
-                    st.error(f"Error en procesamiento Smart: {e}")
-
-        elif st.session_state.menu_sub == "SISTEMA":
-            st.info("Estado de Servidores : Online | Nexion Core: Active")
-            # ── ESTILO VISUAL PRO (CSS) ──
-            st.markdown("""
-                <style>
-                .main-header {
-                    background: rgba(84, 175, 231, 0.1);
-                    border-left: 5px solid #54AFE7;
-                    padding: 15px;
-                    border-radius: 5px;
-                    margin-bottom: 20px;
-                }
-                .status-card {
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 10px;
-                    padding: 15px;
-                    text-align: center;
-                }
-                </style>
-            """, unsafe_allow_html=True)
-
-            # ── ENCABEZADO JYPESA ──
-            st.markdown("""
-                <div class="main-header">
-                    <h2 style='margin:0; color:#54AFE7;'>SISTEMA NEXION v2.0</h2>
-                    <p style='margin:0; font-size:12px; opacity:0.8;'>JYPESA | Automatización de Procesos de Logística</p>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # ── CONFIGURACIÓN DE SEGURIDAD ──
-            TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-            REPO_NAME = "RH2026/nexion"
-            NOMBRE_EXCLUSIVO = "Matriz_Excel_Dashboard.csv"
-
-            # ── DASHBOARD DE ESTADO RÁPIDO ──
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">REPOSITORIO</p><p style="margin:0; color:#54AFE7; font-weight:bold;">{REPO_NAME.split("/")[1].upper()}</p></div>', unsafe_allow_html=True)
-            with c2:
-                st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">ARCHIVO MAESTRO</p><p style="margin:0; font-weight:bold;">CSV</p></div>', unsafe_allow_html=True)
-            with c3:
-                color_token = "#2ECC71" if TOKEN else "#E74C3C"
-                st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">TOKEN STATUS</p><p style="margin:0; color:{color_token}; font-weight:bold;">{"ACTIVO" if TOKEN else "ERROR"}</p></div>', unsafe_allow_html=True)
-
-            st.write("---")
-
-            # ── ÁREA DE CARGA EXCLUSIVA ──
-            with st.container(border=True):
-                st.markdown(f"#### :material/security: Zona de Carga Crítica")
-                st.caption(f"Solo se permite la actualización de: `{NOMBRE_EXCLUSIVO}`")
+    
+                # ── ENCABEZADO JYPESA ──
+                st.markdown("""
+                    <div class="main-header">
+                        <h2 style='margin:0; color:#54AFE7;'>SISTEMA NEXION v2.0</h2>
+                        <p style='margin:0; font-size:12px; opacity:0.8;'>JYPESA | Automatización de Procesos de Logística</p>
+                    </div>
+                """, unsafe_allow_html=True)
                 
-                uploaded_file = st.file_uploader("", type=["csv"], help="Arrastra el archivo maestro aquí")
-
-                if uploaded_file is not None:
-                    if uploaded_file.name != NOMBRE_EXCLUSIVO:
-                        st.error(f":material/error: Nombre inválido: **{uploaded_file.name}**")
-                        st.warning(f"El archivo debe renombrarse a: `{NOMBRE_EXCLUSIVO}` antes de subirlo.")
-                    else:
-                        st.success(f":material/check_circle: Archivo validado: {uploaded_file.name}")
-                        
-                        # Preview de datos
-                        with st.expander(":material/visibility: Previsualizar datos locales"):
-                            try:
-                                df_preview = pd.read_csv(uploaded_file)
-                                st.dataframe(df_preview.head(5), use_container_width=True)
-                                uploaded_file.seek(0)
-                            except:
-                                st.error("No se pudo generar la vista previa del CSV.")
-
-                        commit_msg = st.text_input("Mensaje de Sincronización", 
-                                                 value=f"Update Master {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-
-                        if st.button(":material/cloud_sync: SINCRONIZAR AHORA", type="primary", use_container_width=True):
-                            with st.status("Iniciando conexión con GitHub...", expanded=True) as status:
-                                try:
-                                    from github import Github
-                                    g = Github(TOKEN)
-                                    repo = g.get_repo(REPO_NAME)
-                                    file_content = uploaded_file.getvalue()
-
-                                    st.write("Buscando archivo en el repositorio...")
-                                    try:
-                                        contents = repo.get_contents(NOMBRE_EXCLUSIVO)
-                                        repo.update_file(contents.path, commit_msg, file_content, contents.sha)
-                                        status.update(label="¡Matriz actualizada con éxito!", state="complete", expanded=False)
-                                    except:
-                                        repo.create_file(NOMBRE_EXCLUSIVO, commit_msg, file_content)
-                                        status.update(label="¡Archivo creado exitosamente!", state="complete", expanded=False)
-                                    
-                                    st.toast("GitHub actualizado correctamente", icon="✅")
-                                    # Limpiar caché para forzar lectura fresca
-                                    st.cache_data.clear()
-                                    time.sleep(1)
-                                    st.rerun()
-                                except Exception as e:
-                                    status.update(label=f"Fallo en la carga: {e}", state="error")
-            
-            # ── HISTORIAL DE ACTIVIDAD (ALINEADO CORRECTAMENTE) ──
-            with st.expander(":material/history: Última actividad en el servidor"):
-                try:
-                    from github import Github
-                    g = Github(TOKEN)
-                    repo = g.get_repo(REPO_NAME)
-                    commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
-                    last_commit = commits[0]
+                # ── CONFIGURACIÓN DE SEGURIDAD ──
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                NOMBRE_EXCLUSIVO = "Matriz_Excel_Dashboard.csv"
+    
+                # ── DASHBOARD DE ESTADO RÁPIDO ──
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">REPOSITORIO</p><p style="margin:0; color:#54AFE7; font-weight:bold;">{REPO_NAME.split("/")[1].upper()}</p></div>', unsafe_allow_html=True)
+                with c2:
+                    st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">ARCHIVO MAESTRO</p><p style="margin:0; font-weight:bold;">CSV</p></div>', unsafe_allow_html=True)
+                with c3:
+                    color_token = "#2ECC71" if TOKEN else "#E74C3C"
+                    st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">TOKEN STATUS</p><p style="margin:0; color:{color_token}; font-weight:bold;">{"ACTIVO" if TOKEN else "ERROR"}</p></div>', unsafe_allow_html=True)
+    
+                st.write("---")
+    
+                # ── ÁREA DE CARGA EXCLUSIVA ──
+                with st.container(border=True):
+                    st.markdown(f"#### :material/security: Zona de Carga Crítica")
+                    st.caption(f"Solo se permite la actualización de: `{NOMBRE_EXCLUSIVO}`")
                     
-                    st.write(f"**Última actualización:** {last_commit.commit.author.date.strftime('%d/%m/%Y %H:%M')}")
-                    st.write(f"**Modificado por:** {last_commit.commit.author.name} :material/verified_user:")
-                    st.write(f"**Nota:** {last_commit.commit.message}")
-                    st.code(f"ID Registro: {last_commit.sha[:7]}", language="bash")
-                except:
-                    st.info("Conectando con el servidor de seguridad de GitHub...")
-        
-        elif st.session_state.menu_sub == "ALERTAS":
-            st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
+                    uploaded_file = st.file_uploader("", type=["csv"], help="Arrastra el archivo maestro aquí")
+    
+                    if uploaded_file is not None:
+                        if uploaded_file.name != NOMBRE_EXCLUSIVO:
+                            st.error(f":material/error: Nombre inválido: **{uploaded_file.name}**")
+                            st.warning(f"El archivo debe renombrarse a: `{NOMBRE_EXCLUSIVO}` antes de subirlo.")
+                        else:
+                            st.success(f":material/check_circle: Archivo validado: {uploaded_file.name}")
+                            
+                            # Preview de datos
+                            with st.expander(":material/visibility: Previsualizar datos locales"):
+                                try:
+                                    df_preview = pd.read_csv(uploaded_file)
+                                    st.dataframe(df_preview.head(5), use_container_width=True)
+                                    uploaded_file.seek(0)
+                                except:
+                                    st.error("No se pudo generar la vista previa del CSV.")
+    
+                            commit_msg = st.text_input("Mensaje de Sincronización", 
+                                                     value=f"Update Master {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    
+                            if st.button(":material/cloud_sync: SINCRONIZAR AHORA", type="primary", use_container_width=True):
+                                with st.status("Iniciando conexión con GitHub...", expanded=True) as status:
+                                    try:
+                                        from github import Github
+                                        g = Github(TOKEN)
+                                        repo = g.get_repo(REPO_NAME)
+                                        file_content = uploaded_file.getvalue()
+    
+                                        st.write("Buscando archivo en el repositorio...")
+                                        try:
+                                            contents = repo.get_contents(NOMBRE_EXCLUSIVO)
+                                            repo.update_file(contents.path, commit_msg, file_content, contents.sha)
+                                            status.update(label="¡Matriz actualizada con éxito!", state="complete", expanded=False)
+                                        except:
+                                            repo.create_file(NOMBRE_EXCLUSIVO, commit_msg, file_content)
+                                            status.update(label="¡Archivo creado exitosamente!", state="complete", expanded=False)
+                                        
+                                        st.toast("GitHub actualizado correctamente", icon="✅")
+                                        # Limpiar caché para forzar lectura fresca
+                                        st.cache_data.clear()
+                                        time.sleep(1)
+                                        st.rerun()
+                                    except Exception as e:
+                                        status.update(label=f"Fallo en la carga: {e}", state="error")
+                
+                # ── HISTORIAL DE ACTIVIDAD (ALINEADO CORRECTAMENTE) ──
+                with st.expander(":material/history: Última actividad en el servidor"):
+                    try:
+                        from github import Github
+                        g = Github(TOKEN)
+                        repo = g.get_repo(REPO_NAME)
+                        commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
+                        last_commit = commits[0]
+                        
+                        st.write(f"**Última actualización:** {last_commit.commit.author.date.strftime('%d/%m/%Y %H:%M')}")
+                        st.write(f"**Modificado por:** {last_commit.commit.author.name} :material/verified_user:")
+                        st.write(f"**Nota:** {last_commit.commit.message}")
+                        st.code(f"ID Registro: {last_commit.sha[:7]}", language="bash")
+                    except:
+                        st.info("Conectando con el servidor de seguridad de GitHub...")
             
-            
+            elif st.session_state.menu_sub == "ALERTAS":
+                st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
+                
+                
+    
+    # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+    st.markdown(f"""
+    <div class="footer">
+        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
+        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
+        <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
-st.markdown(f"""
-<div class="footer">
-    NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
-    <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
-    <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
-</div>
-""", unsafe_allow_html=True)
 
 
 
