@@ -311,48 +311,59 @@ else:
                 with st.popover("☰", use_container_width=True):
                     st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
                     
-                    # --- SECCIÓN DASHBOARD ---
-                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                        st.session_state.menu_main = "TRACKING"
-                        st.session_state.menu_sub = "GENERAL"
-                        st.rerun()
-                    
-                    # --- SECCIÓN SEGUIMIENTO ---
-                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                        for s in ["TRK", "GANTT", "QUEJAS"]:
-                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
-                                st.session_state.menu_main = "SEGUIMIENTO"
-                                st.session_state.menu_sub = s
-                                st.rerun()
-    
-                    # --- SECCIÓN REPORTES ---
-                    with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                        for s in ["APQ", "OPS", "OTD"]:
-                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
-                                st.session_state.menu_main = "REPORTES"
-                                st.session_state.menu_sub = s
-                                st.rerun()
-    
-                    # --- SECCIÓN FORMATOS ---
+                    # Identificamos quién está operando
+                    usuario = st.session_state.get("usuario_activo", "")
+
+                    # --- SECCIONES RESTRINGIDAS (J Moreno NO las ve) ---
+                    if usuario != "J Moreno":
+                        # DASHBOARD
+                        if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                            st.session_state.menu_main = "TRACKING"
+                            st.session_state.menu_sub = "GENERAL"
+                            st.rerun()
+                        
+                        # SEGUIMIENTO
+                        with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                            for s in ["TRK", "GANTT", "QUEJAS"]:
+                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                                if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
+                                    st.session_state.menu_main = "SEGUIMIENTO"
+                                    st.session_state.menu_sub = s
+                                    st.rerun()
+
+                        # REPORTES
+                        with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                            for s in ["APQ", "OPS", "OTD"]:
+                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                                if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
+                                    st.session_state.menu_main = "REPORTES"
+                                    st.session_state.menu_sub = s
+                                    st.rerun()
+
+                    # --- SECCIÓN FORMATOS (Visible para todos, pero con opciones filtradas) ---
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        for s in ["SALIDA DE PT", "CONTRARRECIBOS"]:
+                        # Definimos qué formatos ve cada uno
+                        if usuario == "J Moreno":
+                            formatos_visibles = ["SALIDA DE PT"]
+                        else:
+                            formatos_visibles = ["SALIDA DE PT", "CONTRARRECIBOS"]
+
+                        for s in formatos_visibles:
                             sub_label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
                                 st.session_state.menu_main = "FORMATOS"
                                 st.session_state.menu_sub = s
                                 st.rerun()
-    
-                    # --- SECCIÓN HUB LOG ---
-                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                        # Definimos las sub-secciones de tu HUB
-                        for s in ["SMART ROUTING", "SISTEMA", "ALERTAS"]:
-                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
-                                st.session_state.menu_main = "HUB LOG"
-                                st.session_state.menu_sub = s
-                                st.rerun()
+
+                    # --- SECCIÓN HUB LOG (J Moreno NO la ve) ---
+                    if usuario != "J Moreno":
+                        with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                            for s in ["SMART ROUTING", "SISTEMA", "ALERTAS"]:
+                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                                if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
+                                    st.session_state.menu_main = "HUB LOG"
+                                    st.session_state.menu_sub = s
+                                    st.rerun()
                     
     
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
@@ -1490,6 +1501,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
