@@ -967,7 +967,7 @@ else:
     
             # --- SUBSECCIÓN A: SALIDA DE PT ---
             if st.session_state.menu_sub == "SALIDA DE PT":
-                st.markdown("<h3>Formato Salida de Producto Terminado</h3>", unsafe_allow_html=True)
+                st.markdown("<h3>FORMATO SALIDA DE PRODUCTO TERMINADO</h3>", unsafe_allow_html=True)
                 
                 # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
                 if 'folio_nexion' not in st.session_state:
@@ -1576,6 +1576,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
