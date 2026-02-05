@@ -1612,11 +1612,12 @@ else:
                     # Cargar datos
                     df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                     
-                    # Identificación automática de columnas
-                    col_folio = next((c for c in df.columns if 'folio' in c.lower() or 'factura' in c.lower()), df.columns[0])
-                    col_transporte = next((c for c in df.columns if 'transp' in c.lower() or 'flete' in c.lower()), None)
+                    # --- SELECCIÓN ESPECÍFICA DE COLUMNAS ---
+                    # Buscamos 'Factura' y 'Transporte' (ignorando mayúsculas/minúsculas)
+                    col_folio = next((c for c in df.columns if 'factura' in c.lower()), df.columns[0])
+                    col_transporte = next((c for c in df.columns if 'transporte' in c.lower()), None)
                     
-                    st.toast(f"ARCHIVO DETECTADO: {col_folio}", icon="✅")
+                    st.toast(f"COLUMNA PRINCIPAL: {col_folio}", icon="✅")
                 
                     # --- PANEL DE CONTROL ---
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -1625,7 +1626,7 @@ else:
                     with col_left:
                         st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>FILTROS DE RANGO</p>", unsafe_allow_html=True)
                         
-                        # Limpieza de datos para evitar el NameError/TypeError
+                        # Limpieza y conversión para evitar NameError/TypeError
                         serie_folios = pd.to_numeric(df[col_folio], errors='coerce').dropna()
                         
                         if not serie_folios.empty:
@@ -1637,35 +1638,36 @@ else:
                         inicio = st.number_input("Folio Inicial", value=f_min_val)
                         final = st.number_input("Folio Final", value=f_max_val)
                         
-                        # Filtrar asegurando comparación numérica
+                        # Asegurar que el DataFrame sea numérico en la columna de Factura para filtrar
                         df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
                         df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)]
                 
                     with col_right:
                         st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>SELECCIÓN DE FOLIOS</p>", unsafe_allow_html=True)
                         
-                        # Preparar datos para el selector (una fila por folio)
+                        # Preparar datos para el selector basado en Factura y Transporte
                         if col_transporte:
+                            # Agrupamos por Factura y tomamos el valor de Transporte
                             info_folios = df_rango.drop_duplicates(subset=[col_folio])[[col_folio, col_transporte]]
                         else:
                             info_folios = pd.DataFrame({col_folio: sorted(df_rango[col_folio].unique() if not df_rango.empty else [])})
-                            info_folios['Info'] = "N/A"
+                            info_folios['Transporte'] = "NO DETECTADO"
                 
                         selector_df = info_folios.copy()
                         selector_df.insert(0, "Incluir", True)
                 
-                        # Editor de tabla (Hereda estilo de tu CSS principal)
+                        # Editor de tabla con tu estética
                         edited_df = st.data_editor(
                             selector_df,
                             column_config={
                                 "Incluir": st.column_config.CheckboxColumn("SEL", default=True),
-                                col_folio: st.column_config.TextColumn("FOLIO", disabled=True),
-                                col_transporte if col_transporte else 'Info': st.column_config.TextColumn("REF", disabled=True)
+                                col_folio: st.column_config.TextColumn("FACTURA", disabled=True),
+                                col_transporte if col_transporte else 'Transporte': st.column_config.TextColumn("TRANSPORTE", disabled=True)
                             },
                             hide_index=True,
                             height=300,
                             use_container_width=True,
-                            key="editor_folio_master"
+                            key="editor_folio_master_v2"
                         )
                 
                     # --- ACCIONES ---
@@ -1681,10 +1683,10 @@ else:
                         df_final = df_rango[df_rango[col_folio].isin(folios_finales)]
                         
                         if not df_final.empty:
-                            st.markdown(f"<p style='font-size:10px; color:{vars_css['sub']}; letter-spacing:2px; text-align:center;'>VISTA PREVIA</p>", unsafe_allow_html=True)
+                            st.markdown(f"<p style='font-size:10px; color:{vars_css['sub']}; letter-spacing:2px; text-align:center;'>VISTA PREVIA DE FACTURAS</p>", unsafe_allow_html=True)
                             st.dataframe(df_final, use_container_width=True)
                             
-                            # Preparar descarga (BytesIO debe estar importado al inicio de tu dashboard.py)
+                            # Buffer para descarga (Requiere: from io import BytesIO)
                             output = BytesIO()
                             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                                 df_final.to_excel(writer, index=False)
@@ -1693,15 +1695,14 @@ else:
                                 st.download_button(
                                     label="DESCARGAR EXCEL (.XLSX)",
                                     data=output.getvalue(),
-                                    file_name=f"folios_filtrados_{datetime.now().strftime('%d%m%Y')}.xlsx",
+                                    file_name=f"S&T_PREP_{datetime.now().strftime('%d%m%Y')}.xlsx",
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                     use_container_width=True
                                 )
                         else:
-                            st.error("No hay folios seleccionados para procesar.")
+                            st.error("No hay facturas seleccionadas.")
                 else:
-                    st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR DATA...</div>", unsafe_allow_html=True)
-                
+                    st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR ERP DATA...</div>", unsafe_allow_html=True)
                 
     
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
@@ -1712,6 +1713,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
