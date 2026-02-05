@@ -1590,13 +1590,13 @@ else:
                         st.info("Conectando con el servidor de seguridad de GitHub...")
             
             elif st.session_state.menu_sub == "ORDER STAGING":
-                st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
-                st.markdown("<h3>Folio Master Pro // Data Refiner</h3>", unsafe_allow_html=True)
+                
+                st.markdown("<h3>PREPARAR ARCHIVO PARA S&t</h3>", unsafe_allow_html=True)
 
                 # Sección de instrucciones con estética de tu Bio
                 with st.expander("OPERATIONAL GUIDE", expanded=True):
                     st.markdown(f"""
-                    <div style='font-size: 11px; color: {vars_css['sub']}; letter-spacing: 1px;'>
+                    <div style='font-size: 14px; color: {vars_css['sub']}; letter-spacing: 1px;'>
                     1. <b>Cargar Archivo:</b> Sube tu archivo Excel (.xlsx) o CSV.<br>
                     2. <b>Definir Rango:</b> Ingresa el número de folio inicial y final.<br>
                     3. <b>Depurar Lista:</b> Desmarca la casilla de los folios que no necesites.<br>
@@ -1701,6 +1701,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
