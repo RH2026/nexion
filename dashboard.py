@@ -20,6 +20,7 @@ import unicodedata
 import io
 import altair as alt
 from datetime import date, datetime, timedelta
+from io import BytesIO
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
@@ -1700,6 +1701,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
