@@ -1593,7 +1593,7 @@ else:
                 
                 st.markdown("<h3>PREPARAR ARCHIVO PARA S&t</h3>", unsafe_allow_html=True)
 
-                # Sección de instrucciones con tu estética
+                # Sección de instrucciones
                 with st.expander("OPERATIONAL GUIDE", expanded=True):
                     st.markdown(f"""
                     <div style='font-size: 14px; color: {vars_css['sub']}; letter-spacing: 1px;'>
@@ -1606,113 +1606,119 @@ else:
                     """, unsafe_allow_html=True)
                 
                 # 1. ÁREA DE CARGA
-                uploaded_file = st.file_uploader("Subir archivo Excel o CSV", type=["xlsx", "csv"], label_visibility="collapsed")
+                uploaded_file = st.file_uploader("Subir archivo", type=["xlsx", "csv"], label_visibility="collapsed")
                 
                 if uploaded_file is not None:
-                    # Carga robusta: Detecta automáticamente si es coma, punto y coma o tabulación
-                    if uploaded_file.name.endswith('.csv'):
-                        df = pd.read_csv(uploaded_file, sep=None, engine='python', encoding='utf-8-sig')
-                    else:
-                        df = pd.read_excel(uploaded_file)
-                    
-                    # --- NORMALIZACIÓN DE COLUMNAS (Limpieza de espacios y estandarización) ---
-                    # Esto elimina espacios locos al inicio o final de los nombres
-                    df.columns = [str(c).strip() for c in df.columns]
-                    
-                    # Identificación forzada por nombres exactos o parecidos
-                    col_folio = next((c for c in df.columns if 'factura' in c.lower()), df.columns[0])
-                    col_transporte = next((c for c in df.columns if 'transporte' in c.lower()), None)
-                    
-                    st.toast(f"COLUMNAS: {col_folio} | {col_transporte if col_transporte else 'Transporte no detectado'}", icon="🔍")
-                
-                    # --- PANEL DE CONTROL ---
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    col_left, col_right = st.columns([1, 2], gap="large")
-                
-                    with col_left:
-                        st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>FILTROS DE RANGO</p>", unsafe_allow_html=True)
-                        
-                        # Limpieza y conversión numérica
-                        serie_folios = pd.to_numeric(df[col_folio], errors='coerce').dropna()
-                        
-                        if not serie_folios.empty:
-                            f_min_val = int(serie_folios.min())
-                            f_max_val = int(serie_folios.max())
+                    # Carga con detección automática de delimitador (coma, punto y coma o tab)
+                    try:
+                        if uploaded_file.name.endswith('.csv'):
+                            df = pd.read_csv(uploaded_file, sep=None, engine='python', encoding='utf-8-sig')
                         else:
-                            f_min_val, f_max_val = 0, 0
+                            df = pd.read_excel(uploaded_file)
+                        
+                        # --- LIMPIEZA AGRESIVA DE COLUMNAS ---
+                        # Eliminamos espacios en blanco, saltos de línea y tabulaciones de los nombres de columnas
+                        df.columns = [str(c).strip().replace('\n', '').replace('\t', '') for c in df.columns]
+                        
+                        # Buscamos coincidencias exactas ignorando mayúsculas
+                        col_folio = next((c for c in df.columns if c.lower() == 'factura'), None)
+                        col_transporte = next((c for c in df.columns if c.lower() == 'transporte'), None)
             
-                        inicio = st.number_input("Folio Inicial", value=f_min_val)
-                        final = st.number_input("Folio Final", value=f_max_val)
+                        # Si no hay coincidencia exacta, buscamos la que contenga la palabra
+                        if not col_folio:
+                            col_folio = next((c for c in df.columns if 'factura' in c.lower()), df.columns[0])
+                        if not col_transporte:
+                            col_transporte = next((c for c in df.columns if 'transporte' in c.lower()), None)
                         
-                        # Asegurar filtrado numérico
-                        df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
-                        df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
-                
-                    with col_right:
-                        st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>SELECCIÓN DE FOLIOS</p>", unsafe_allow_html=True)
-                        
-                        if not df_rango.empty:
-                            # Agrupamos por Factura y Transporte para el selector
-                            if col_transporte:
-                                info_folios = df_rango.drop_duplicates(subset=[col_folio])[[col_folio, col_transporte]]
-                            else:
-                                info_folios = pd.DataFrame({col_folio: sorted(df_rango[col_folio].unique())})
-                                info_folios['Transporte'] = "N/A"
-                
-                            selector_df = info_folios.copy()
-                            selector_df.insert(0, "Incluir", True)
-                
-                            edited_df = st.data_editor(
-                                selector_df,
-                                column_config={
-                                    "Incluir": st.column_config.CheckboxColumn("SEL", default=True),
-                                    col_folio: st.column_config.TextColumn("FACTURA", disabled=True),
-                                    col_transporte if col_transporte else 'Transporte': st.column_config.TextColumn("TRANSPORTE", disabled=True)
-                                },
-                                hide_index=True,
-                                height=300,
-                                use_container_width=True,
-                                key="editor_folio_master_final"
-                            )
-                        else:
-                            st.warning("No hay datos en este rango.")
-                            edited_df = pd.DataFrame()
-                
-                    # --- ACCIONES ---
-                    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; opacity:0.2;'>", unsafe_allow_html=True)
+                        st.toast(f"DETECTADO -> Factura: {col_folio} | Transporte: {col_transporte}", icon="🔍")
                     
-                    if not edited_df.empty:
-                        folios_finales = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
-                        c1, c2 = st.columns(2)
-                        
-                        with c1:
-                            render_btn = st.button("RENDERIZAR TABLA")
-                        
-                        if render_btn:
-                            df_final = df_rango[df_rango[col_folio].isin(folios_finales)]
+                        # --- PANEL DE CONTROL ---
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        col_left, col_right = st.columns([1, 2], gap="large")
+                    
+                        with col_left:
+                            st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>FILTROS DE RANGO</p>", unsafe_allow_html=True)
                             
-                            if not df_final.empty:
-                                st.markdown(f"<p style='font-size:10px; color:{vars_css['sub']}; letter-spacing:2px; text-align:center;'>VISTA PREVIA</p>", unsafe_allow_html=True)
-                                st.dataframe(df_final, use_container_width=True)
-                                
-                                output = BytesIO()
-                                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                                    df_final.to_excel(writer, index=False)
-                                
-                                with c2:
-                                    st.download_button(
-                                        label="DESCARGAR EXCEL (.XLSX)",
-                                        data=output.getvalue(),
-                                        file_name=f"S&T_PREP_{datetime.now().strftime('%d%m%Y')}.xlsx",
-                                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                        use_container_width=True
-                                    )
+                            # Conversión numérica segura
+                            serie_folios = pd.to_numeric(df[col_folio], errors='coerce').dropna()
+                            
+                            if not serie_folios.empty:
+                                f_min_val = int(serie_folios.min())
+                                f_max_val = int(serie_folios.max())
                             else:
-                                st.error("No hay facturas seleccionadas.")
+                                f_min_val, f_max_val = 0, 0
+            
+                            inicio = st.number_input("Folio Inicial", value=f_min_val)
+                            final = st.number_input("Folio Final", value=f_max_val)
+                            
+                            # Filtrar asegurando comparación numérica
+                            df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
+                            df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
+                    
+                        with col_right:
+                            st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>SELECCIÓN DE FOLIOS</p>", unsafe_allow_html=True)
+                            
+                            if not df_rango.empty:
+                                # Agrupamos para mostrar en el editor
+                                cols_to_show = [col_folio]
+                                if col_transporte: cols_to_show.append(col_transporte)
+                                
+                                info_folios = df_rango.drop_duplicates(subset=[col_folio])[cols_to_show]
+                                
+                                selector_df = info_folios.copy()
+                                selector_df.insert(0, "Incluir", True)
+                    
+                                edited_df = st.data_editor(
+                                    selector_df,
+                                    column_config={
+                                        "Incluir": st.column_config.CheckboxColumn("SEL", default=True),
+                                        col_folio: st.column_config.TextColumn("FACTURA", disabled=True),
+                                        col_transporte: st.column_config.TextColumn("TRANSPORTE", disabled=True) if col_transporte else "N/A"
+                                    },
+                                    hide_index=True,
+                                    height=300,
+                                    use_container_width=True,
+                                    key="editor_folio_master_v3"
+                                )
+                            else:
+                                st.warning("Sin datos en el rango seleccionado.")
+                                edited_df = pd.DataFrame()
+                    
+                        # --- ACCIONES ---
+                        st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; opacity:0.2;'>", unsafe_allow_html=True)
+                        
+                        if not edited_df.empty:
+                            folios_finales = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
+                            c1, c2 = st.columns(2)
+                            
+                            with c1:
+                                render_btn = st.button("RENDERIZAR TABLA")
+                            
+                            if render_btn:
+                                df_final = df_rango[df_rango[col_folio].isin(folios_finales)]
+                                
+                                if not df_final.empty:
+                                    st.markdown(f"<p style='font-size:10px; color:{vars_css['sub']}; letter-spacing:2px; text-align:center;'>VISTA PREVIA</p>", unsafe_allow_html=True)
+                                    st.dataframe(df_final, use_container_width=True)
+                                    
+                                    output = BytesIO()
+                                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                                        df_final.to_excel(writer, index=False)
+                                    
+                                    with c2:
+                                        st.download_button(
+                                            label="DESCARGAR EXCEL (.XLSX)",
+                                            data=output.getvalue(),
+                                            file_name=f"S&T_PREP_{datetime.now().strftime('%d%m%Y')}.xlsx",
+                                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                            use_container_width=True
+                                        )
+                    except Exception as e:
+                        st.error(f"Error al procesar el archivo: {e}")
+                        
                 else:
                     st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR ERP DATA...</div>", unsafe_allow_html=True)
                 
-    
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
     <div class="footer">
@@ -1721,6 +1727,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
