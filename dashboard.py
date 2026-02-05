@@ -364,7 +364,7 @@ else:
                     # --- SECCIÓN HUB LOG (J Moreno NO la ve) ---
                     if usuario != "JMoreno":
                         with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                            for s in ["SMART ROUTING", "SISTEMA", "ALERTAS"]:
+                            for s in ["SMART ROUTING", "DATA MANAGEMENT", "ALERTAS"]:
                                 sub_label = f"» {s}" if st.session_state.menu_sub == s else s
                                 if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
                                     st.session_state.menu_main = "HUB LOG"
@@ -1482,7 +1482,7 @@ else:
                     except Exception as e:
                         st.error(f"Error en procesamiento Smart: {e}")
     
-            elif st.session_state.menu_sub == "SISTEMA":
+            elif st.session_state.menu_sub == "DATA MANAGEMENT":
                 st.info("Estado de Servidores : Online | Nexion Core: Active")
                 # ── ESTILO VISUAL PRO (CSS) ──
                 st.markdown("""
@@ -1601,6 +1601,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
