@@ -2,88 +2,126 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-st.set_page_config(page_title="Depurador Pro", layout="wide")
+# Configuración de página con estilo
+st.set_page_config(page_title="Folio Master Pro", layout="wide", page_icon="📊")
 
-st.title("📂 Procesador de Folios Estilo Excel")
+# CSS personalizado para mejorar el diseño
+st.markdown("""
+    <style>
+    .main {
+        background-color: #0e1117;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 5px;
+        height: 3em;
+        background-color: #262730;
+        color: white;
+        border: 1px solid #4x4x4x;
+    }
+    .stButton>button:hover {
+        border-color: #ff4b4b;
+        color: #ff4b4b;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# 1. CARGA DE ARCHIVO
-uploaded_file = st.file_uploader("Subir archivo Excel o CSV", type=["xlsx", "csv"])
+st.title("🚀 Folio Master Pro")
+st.subheader("Gestión y Depuración Inteligente de Partidas")
+
+# 1. ÁREA DE CARGA
+with st.container():
+    uploaded_file = st.file_uploader("📂 Arrastra tu archivo Excel o CSV aquí", type=["xlsx", "csv"])
 
 if uploaded_file is not None:
     # Cargar datos
     df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
     
-    # Intentamos detectar la columna de folio
-    col_folio = df.columns[0]
-    st.info(f"Columna de folio detectada: **{col_folio}**")
-
-    # --- SECCIÓN DE FILTRO DE RANGO ---
-    st.subheader("1. Definir Rango de Folios")
-    c1, c2 = st.columns(2)
-    with c1:
-        inicio = st.number_input("Folio inicio", value=int(df[col_folio].min()))
-    with c2:
-        final = st.number_input("Folio final", value=int(df[col_folio].max()))
-
-    # Filtrar por rango numérico primero
-    df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)]
+    # Identificación de columnas (ajusta los nombres si son diferentes en tu archivo)
+    # Buscamos columnas que se parezcan a 'Folio' y 'Transporte'
+    col_folio = next((c for c in df.columns if 'folio' in c.lower() or 'factura' in c.lower()), df.columns[0])
+    col_transporte = next((c for c in df.columns if 'transp' in c.lower() or 'flete' in c.lower()), None)
     
+    st.success(f"✅ Archivo cargado. Folios detectados en columna: **{col_folio}**")
+
+    # --- PANEL DE CONTROL ---
     st.divider()
+    col_left, col_right = st.columns([1, 2])
 
-    # --- SECCIÓN DE DEPURACIÓN ESTILO EXCEL ---
-    st.subheader("2. Seleccionar folios específicos (Estilo Filtro Excel)")
-    
-    # Creamos un dataframe de folios únicos para el selector
-    folios_unicos = sorted(df_rango[col_folio].unique())
-    selector_df = pd.DataFrame({
-        "Incluir": [True] * len(folios_unicos),
-        "Folio": folios_unicos
-    })
-
-    st.write("Desmarca los folios que NO quieres incluir en el reporte final:")
-    
-    # El data_editor crea la lista con scroll y checkboxes
-    # Altura de 300px es ideal para ver unos 10 folios a la vez con scroll
-    edited_df = st.data_editor(
-        selector_df,
-        column_config={
-            "Incluir": st.column_config.CheckboxColumn(help="Selecciona para mantener"),
-            "Folio": st.column_config.TextColumn(disabled=True)
-        },
-        disabled=["Folio"],
-        hide_index=True,
-        height=300 
-    )
-
-    # Obtener la lista de folios que quedaron marcados como True
-    folios_finales = edited_df[edited_df["Incluir"] == True]["Folio"].tolist()
-
-    st.divider()
-
-    # --- RENDERIZAR Y DESCARGAR ---
-    if st.button("APLICAR CAMBIOS Y RENDERIZAR TABLA"):
-        df_resultado = df_rango[df_rango[col_folio].isin(folios_finales)]
+    with col_left:
+        st.markdown("### 🛠️ Filtros de Rango")
+        inicio = st.number_input("Folio Inicial", value=int(df[col_folio].min()))
+        final = st.number_input("Folio Final", value=int(df[col_folio].max()))
         
-        if not df_resultado.empty:
-            st.success(f"Se han filtrado {len(df_resultado)} partidas.")
-            st.dataframe(df_resultado, use_container_width=True)
+        # Filtrar por rango inicial
+        df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)]
 
-            # Preparar descarga
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                df_resultado.to_excel(writer, index=False)
-            
-            st.download_button(
-                label="📥 DESCARGAR RESULTADO (.XLSX)",
-                data=output.getvalue(),
-                file_name="folios_filtrados.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+    with col_right:
+        st.markdown("### 🔍 Depuración Específica")
+        st.caption("Selecciona/Deselecciona los folios que se incluirán en el reporte final.")
+        
+        # Crear lista para el selector estilo Excel
+        folios_unicos = sorted(df_rango[col_folio].unique())
+        
+        # Buscamos el transporte para mostrarlo en la tabla de selección como referencia
+        if col_transporte:
+            info_folios = df_rango.drop_duplicates(subset=[col_folio])[[col_folio, col_transporte]]
         else:
-            st.error("No hay datos para mostrar con los filtros seleccionados.")
+            info_folios = pd.DataFrame({col_folio: folios_unicos})
+            info_folios['Info'] = "Sin columna transporte"
+
+        selector_df = info_folios.copy()
+        selector_df.insert(0, "Incluir", True)
+
+        # Editor de tabla Pro con Scroll
+        edited_df = st.data_editor(
+            selector_df,
+            column_config={
+                "Incluir": st.column_config.CheckboxColumn("Selección", default=True),
+                col_folio: st.column_config.TextColumn("Folio", disabled=True),
+                col_transporte: st.column_config.TextColumn("Transporte/Referencia", disabled=True)
+            },
+            hide_index=True,
+            height=350,
+            use_container_width=True
+        )
+
+    # --- ACCIONES ---
+    st.divider()
+    folios_finales = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
+    
+    c1, c2, c3 = st.columns([1,1,1])
+    
+    with c1:
+        render_btn = st.button("👁️ RENDERIZAR TABLA")
+    
+    if render_btn:
+        df_final = df_rango[df_rango[col_folio].isin(folios_finales)]
+        
+        if not df_final.empty:
+            st.markdown("### 📋 Vista Previa del Documento")
+            st.dataframe(df_final, use_container_width=True, height=400)
+            
+            # Preparar descarga en la columna central
+            with c2:
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df_final.to_excel(writer, index=False)
+                
+                st.download_button(
+                    label="💾 DESCARGAR EXCEL (.XLSX)",
+                    data=output.getvalue(),
+                    file_name=f"Reporte_Folios_{inicio}_{final}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        else:
+            st.error("No hay folios seleccionados para mostrar.")
 
 else:
-    st.info("Esperando archivo... Por favor sube tu Excel o CSV para comenzar.")
+    # Estado inicial amigable
+    st.info("👋 ¡Bienvenido! Sube un archivo de Excel para empezar a trabajar.")
+    st.image("https://img.icons8.com/clouds/200/000000/google-sheets.png", width=150)
+
 
 
 
