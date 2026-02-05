@@ -1590,6 +1590,105 @@ else:
             
             elif st.session_state.menu_sub == "ORDER STAGING":
                 st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
+                st.markdown("<h3>Folio Master Pro // Data Refiner</h3>", unsafe_allow_html=True)
+
+                # Sección de instrucciones con estética de tu Bio
+                with st.expander("OPERATIONAL GUIDE", expanded=True):
+                    st.markdown(f"""
+                    <div style='font-size: 11px; color: {vars_css['sub']}; letter-spacing: 1px;'>
+                    1. <b>Cargar Archivo:</b> Sube tu archivo Excel (.xlsx) o CSV.<br>
+                    2. <b>Definir Rango:</b> Ingresa el número de folio inicial y final.<br>
+                    3. <b>Depurar Lista:</b> Desmarca la casilla de los folios que no necesites.<br>
+                    4. <b>Procesar:</b> Haz clic en 'RENDERIZAR TABLA'.<br>
+                    5. <b>Descargar:</b> Obtén tu nuevo archivo de Excel filtrado.
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # 1. ÁREA DE CARGA
+                uploaded_file = st.file_uploader("Subir archivo Excel o CSV", type=["xlsx", "csv"], label_visibility="collapsed")
+                
+                if uploaded_file is not None:
+                    # Cargar datos
+                    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+                    
+                    # Identificación automática de columnas
+                    col_folio = next((c for c in df.columns if 'folio' in c.lower() or 'factura' in c.lower()), df.columns[0])
+                    col_transporte = next((c for c in df.columns if 'transp' in c.lower() or 'flete' in c.lower()), None)
+                    
+                    st.toast(f"ARCHIVO DETECTADO: {col_folio}", icon="✅")
+                
+                    # --- PANEL DE CONTROL ---
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    col_left, col_right = st.columns([1, 2], gap="large")
+                
+                    with col_left:
+                        st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>FILTROS DE RANGO</p>", unsafe_allow_html=True)
+                        inicio = st.number_input("Folio Inicial", value=int(df[col_folio].min()))
+                        final = st.number_input("Folio Final", value=int(df[col_folio].max()))
+                        
+                        # Filtrar por rango numérico
+                        df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)]
+                
+                    with col_right:
+                        st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>SELECCIÓN DE FOLIOS</p>", unsafe_allow_html=True)
+                        
+                        # Preparar datos para el selector (una fila por folio)
+                        if col_transporte:
+                            info_folios = df_rango.drop_duplicates(subset=[col_folio])[[col_folio, col_transporte]]
+                        else:
+                            info_folios = pd.DataFrame({col_folio: sorted(df_rango[col_folio].unique())})
+                            info_folios['Info'] = "N/A"
+                
+                        selector_df = info_folios.copy()
+                        selector_df.insert(0, "Incluir", True)
+                
+                        # Editor de tabla (Hereda estilo de tu CSS principal)
+                        edited_df = st.data_editor(
+                            selector_df,
+                            column_config={
+                                "Incluir": st.column_config.CheckboxColumn("SEL", default=True),
+                                col_folio: st.column_config.TextColumn("FOLIO", disabled=True),
+                                col_transporte if col_transporte else 'Info': st.column_config.TextColumn("REF", disabled=True)
+                            },
+                            hide_index=True,
+                            height=300,
+                            use_container_width=True,
+                            key="editor_folio_master"
+                        )
+                
+                    # --- ACCIONES ---
+                    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; opacity:0.2;'>", unsafe_allow_html=True)
+                    folios_finales = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
+                    
+                    c1, c2 = st.columns(2)
+                    
+                    with c1:
+                        render_btn = st.button("RENDERIZAR TABLA")
+                    
+                    if render_btn:
+                        df_final = df_rango[df_rango[col_folio].isin(folios_finales)]
+                        
+                        if not df_final.empty:
+                            st.markdown(f"<p style='font-size:10px; color:{vars_css['sub']}; letter-spacing:2px; text-align:center;'>VISTA PREVIA</p>", unsafe_allow_html=True)
+                            st.dataframe(df_final, use_container_width=True)
+                            
+                            # Preparar descarga
+                            output = BytesIO()
+                            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                                df_final.to_excel(writer, index=False)
+                            
+                            with c2:
+                                st.download_button(
+                                    label="DESCARGAR EXCEL (.XLSX)",
+                                    data=output.getvalue(),
+                                    file_name=f"folios_filtrados_{datetime.now().strftime('%d%m%Y')}.xlsx",
+                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    use_container_width=True
+                                )
+                        else:
+                            st.error("No hay folios seleccionados para procesar.")
+                else:
+                    st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR DATA...</div>", unsafe_allow_html=True)
                 
                 
     
@@ -1601,6 +1700,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
