@@ -1624,10 +1624,21 @@ else:
                 
                     with col_left:
                         st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>FILTROS DE RANGO</p>", unsafe_allow_html=True)
-                        inicio = st.number_input("Folio Inicial", value=int(df[col_folio].min()))
-                        final = st.number_input("Folio Final", value=int(df[col_folio].max()))
                         
-                        # Filtrar por rango numérico
+                        # Limpieza de datos para evitar el NameError/TypeError
+                        serie_folios = pd.to_numeric(df[col_folio], errors='coerce').dropna()
+                        
+                        if not serie_folios.empty:
+                            f_min_val = int(serie_folios.min())
+                            f_max_val = int(serie_folios.max())
+                        else:
+                            f_min_val, f_max_val = 0, 0
+            
+                        inicio = st.number_input("Folio Inicial", value=f_min_val)
+                        final = st.number_input("Folio Final", value=f_max_val)
+                        
+                        # Filtrar asegurando comparación numérica
+                        df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
                         df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)]
                 
                     with col_right:
@@ -1637,7 +1648,7 @@ else:
                         if col_transporte:
                             info_folios = df_rango.drop_duplicates(subset=[col_folio])[[col_folio, col_transporte]]
                         else:
-                            info_folios = pd.DataFrame({col_folio: sorted(df_rango[col_folio].unique())})
+                            info_folios = pd.DataFrame({col_folio: sorted(df_rango[col_folio].unique() if not df_rango.empty else [])})
                             info_folios['Info'] = "N/A"
                 
                         selector_df = info_folios.copy()
@@ -1673,7 +1684,7 @@ else:
                             st.markdown(f"<p style='font-size:10px; color:{vars_css['sub']}; letter-spacing:2px; text-align:center;'>VISTA PREVIA</p>", unsafe_allow_html=True)
                             st.dataframe(df_final, use_container_width=True)
                             
-                            # Preparar descarga
+                            # Preparar descarga (BytesIO debe estar importado al inicio de tu dashboard.py)
                             output = BytesIO()
                             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                                 df_final.to_excel(writer, index=False)
@@ -1701,6 +1712,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
