@@ -364,7 +364,7 @@ else:
                     # --- SECCIÓN HUB LOG (J Moreno NO la ve) ---
                     if usuario != "JMoreno":
                         with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                            for s in ["SMART ROUTING", "DATA MANAGEMENT", "ALERTAS"]:
+                            for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
                                 sub_label = f"» {s}" if st.session_state.menu_sub == s else s
                                 if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
                                     st.session_state.menu_main = "HUB LOG"
@@ -1588,7 +1588,7 @@ else:
                     except:
                         st.info("Conectando con el servidor de seguridad de GitHub...")
             
-            elif st.session_state.menu_sub == "ALERTAS":
+            elif st.session_state.menu_sub == "ORDER STAGING":
                 st.warning("NO HAY ALERTAS CRÍTICAS EN EL HUB LOG.")
                 
                 
@@ -1601,6 +1601,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
