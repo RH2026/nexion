@@ -1,103 +1,82 @@
 import streamlit as st
+import pandas as pd
+from io import BytesIO
 
-# Función para inyectar el código de impresión
-def imprimir_formato(datos):
-    # Definimos el estilo "Elite" con CSS
-    html_layout = f"""
-    <html>
-    <head>
-        <style>
-            @media print {{
-                .no-print {{ display: none; }}
-                body {{ font-family: 'Arial', sans-serif; padding: 20px; }}
-            }}
-            .header {{ border-bottom: 3px solid #FFDD00; padding-bottom: 10px; margin-bottom: 20px; }}
-            .footer {{ margin-top: 50px; border-top: 1px solid #ccc; text-align: center; font-size: 12px; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-            th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
-            th {{ background-color: #f2f2f2; }}
-            .total {{ background-color: #FFDD00; font-weight: bold; }}
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h1 style="margin:0;">JYPESA</h1>
-            <p style="margin:0; color: #666;">REPORTE DE COSTOS DE MUESTRAS</p>
-        </div>
+st.set_page_config(page_title="Depurador de Folios", layout="wide")
+
+st.title("📂 Procesador de Folios Automático")
+st.markdown("""
+Esta herramienta filtra y limpia tus archivos de Excel/CSV de forma sencilla. 
+1. Sube el archivo. 2. Selecciona el rango de folios. 3. Descarga el resultado.
+""")
+
+# 1. BOTÓN PARA SUBIR ARCHIVO
+uploaded_file = st.file_uploader("Subir archivo Excel o CSV", type=["xlsx", "csv"])
+
+if uploaded_file is not None:
+    # Leer el archivo según su extensión
+    if uploaded_file.name.endswith('.csv'):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file)
+
+    # Identificar la columna de folio (asumimos que se llama 'FOLIO' o es la primera)
+    col_folio = df.columns[0] 
+    st.info(f"Columna detectada como folio: **{col_folio}**")
+
+    st.divider()
+
+    # 2. SELECCIÓN DE RANGO (FOLIO INICIO Y FINAL)
+    st.subheader("2. Selecciona el rango de folios a trabajar")
+    
+    # Obtenemos los folios únicos y ordenados para el filtro
+    folios_unicos = sorted(df[col_folio].unique())
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        folio_inicio = st.number_input("Folio inicio", value=int(min(folios_unicos)))
+    with col2:
+        folio_final = st.number_input("Folio final", value=int(max(folios_unicos)))
+
+    # Filtrar el dataframe por el rango seleccionado
+    df_filtrado = df[(df[col_folio] >= folio_inicio) & (df[col_folio] <= folio_final)]
+
+    # 3. RENDERIZAR FOLIOS Y OPCIÓN DE ELIMINAR
+    st.subheader("3. Revisión de folios seleccionados")
+    
+    # Creamos la lista depurada (una fila por folio) para que el usuario vea qué hay
+    folios_en_rango = sorted(df_filtrado[col_folio].unique())
+    
+    # Multiselect para que el usuario pueda "borrar" o quitar folios específicos del rango
+    folios_a_mantener = st.multiselect(
+        "Folios detectados en este rango (quita los que no quieras trabajar):",
+        options=folios_en_rango,
+        default=folios_en_rango
+    )
+
+    # Aplicar el filtro final basado en la selección manual
+    df_final = df_filtrado[df_filtrado[col_folio].isin(folios_a_mantener)]
+
+    if st.button("APLICAR CAMBIOS Y RENDERIZAR TABLA"):
+        st.write(f"### Tabla Resultante ({len(df_final)} partidas)")
+        st.dataframe(df_final, use_container_width=True)
+
+        # 4. BOTÓN DE DESCARGA
+        # Convertir dataframe a Excel en memoria
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_final.to_excel(writer, index=False, sheet_name='Folios_Filtrados')
         
-        <p><strong>Destinatario:</strong> {datos['destinatario']}</p>
-        <p><strong>Fecha:</strong> {datos['fecha']}</p>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Costo Unitario</th>
-                    <th>Cantidad</th>
-                    <th>Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                {''.join([f"<tr><td>{p}</td><td>${c:,.2f}</td><td>{q}</td><td>${(c*q):,.2f}</td></tr>" for p, c, q in datos['items']])}
-                <tr>
-                    <td colspan="3" style="text-align:right">Flete Manual:</td>
-                    <td>${datos['flete']:,.2f}</td>
-                </tr>
-                <tr class="total">
-                    <td colspan="3" style="text-align:right">TOTAL GENERAL:</td>
-                    <td>${datos['total']:,.2f}</td>
-                </tr>
-            </tbody>
-        </table>
+        processed_data = output.getvalue()
 
-        <div class="footer">
-            <p><strong>JYPESA</strong></p>
-            <p>Automatización de Procesos</p>
-        </div>
-
-        <script>
-            window.print();
-        </script>
-    </body>
-    </html>
-    """
-    return html_layout
-
-# --- Lógica de la App ---
-st.title("📦 Sistema de Muestras NEXION")
-
-# (Aquí irían tus inputs que ya tienes...)
-# Supongamos que ya tienes estas variables listas:
-datos_reporte = {
-    "destinatario": "Tania Vega",
-    "fecha": "04/02/2026",
-    "flete": 150.00,
-    "items": [("Elements", 29.34, 1), ("Biogena", 48.95, 2)],
-    "total": 277.24
-}
-
-if st.button("🖨️ Abrir Formato de Impresión"):
-    reporte_html = imprimir_formato(datos_reporte)
-    # Abrimos una ventana nueva con el contenido
-    st.components.v1.html(reporte_html, height=800, scrolling=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        st.download_button(
+            label="📥 DESCARGAR EN .XLSX",
+            data=processed_data,
+            file_name="folios_procesados.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+else:
+    st.warning("Por favor, sube un archivo para comenzar.")
 
 
 
