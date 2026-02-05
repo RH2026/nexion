@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 from io import BytesIO
 
 # Configuración de página
@@ -28,7 +27,16 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("Folio Master Pro")
-st.subheader("Gestión y Depuración de Partidas")
+
+# --- SECCIÓN DE INSTRUCCIONES ---
+with st.expander("Instrucciones de uso", expanded=True):
+    st.markdown("""
+    1. **Cargar Archivo:** Sube tu archivo Excel (.xlsx) o CSV en el recuadro de abajo.
+    2. **Definir Rango:** Ingresa el número de folio inicial y final que deseas trabajar.
+    3. **Depurar Lista:** En la tabla de la derecha, desmarca la casilla de los folios que no necesites.
+    4. **Procesar:** Haz clic en 'RENDERIZAR TABLA' para ver el resultado final.
+    5. **Descargar:** Presiona el botón de descarga para obtener tu nuevo archivo de Excel filtrado.
+    """)
 
 # 1. ÁREA DE CARGA
 uploaded_file = st.file_uploader("Subir archivo Excel o CSV", type=["xlsx", "csv"])
@@ -41,17 +49,7 @@ if uploaded_file is not None:
     col_folio = next((c for c in df.columns if 'folio' in c.lower() or 'factura' in c.lower()), df.columns[0])
     col_transporte = next((c for c in df.columns if 'transp' in c.lower() or 'flete' in c.lower()), None)
     
-    st.success(f"Archivo cargado. Columna de folio: {col_folio}")
-
-    # --- ANÁLISIS VISUAL (GRÁFICO) ---
-    if col_transporte:
-        st.markdown("---")
-        conteo_transp = df[col_transporte].value_counts().reset_index()
-        conteo_transp.columns = ['Transporte', 'Partidas']
-        fig = px.bar(conteo_transp, x='Transporte', y='Partidas', 
-                     title="Partidas por Transporte",
-                     template="plotly_dark")
-        st.plotly_chart(fig, use_container_width=True)
+    st.success(f"Archivo cargado correctamente. Columna detectada: {col_folio}")
 
     # --- PANEL DE CONTROL ---
     st.divider()
@@ -66,10 +64,10 @@ if uploaded_file is not None:
         df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)]
 
     with col_right:
-        st.markdown("### Depuración Específica")
-        st.caption("Desmarca los folios que no deseas incluir.")
+        st.markdown("### Selección de Folios")
+        st.caption("Usa la casilla de verificación para incluir o excluir folios específicos.")
         
-        # Preparar datos para el selector
+        # Preparar datos para el selector (una fila por folio)
         if col_transporte:
             info_folios = df_rango.drop_duplicates(subset=[col_folio])[[col_folio, col_transporte]]
         else:
@@ -79,16 +77,16 @@ if uploaded_file is not None:
         selector_df = info_folios.copy()
         selector_df.insert(0, "Incluir", True)
 
-        # Editor de tabla con Scroll (Estilo Excel)
+        # Editor de tabla con Scroll
         edited_df = st.data_editor(
             selector_df,
             column_config={
                 "Incluir": st.column_config.CheckboxColumn("Selección", default=True),
-                col_folio: st.column_config.TextColumn("Folio", disabled=True),
+                col_folio: st.column_config.TextColumn("Número de Folio", disabled=True),
                 col_transporte if col_transporte else 'Info': st.column_config.TextColumn("Referencia", disabled=True)
             },
             hide_index=True,
-            height=350,
+            height=300,
             use_container_width=True
         )
 
@@ -117,13 +115,14 @@ if uploaded_file is not None:
                 st.download_button(
                     label="DESCARGAR EXCEL (.XLSX)",
                     data=output.getvalue(),
-                    file_name="reporte_folios.xlsx",
+                    file_name="reporte_folios_filtrados.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
         else:
-            st.error("No hay folios seleccionados.")
+            st.error("No hay folios seleccionados para procesar.")
 else:
-    st.info("Sube un archivo de Excel o CSV para comenzar.")
+    st.info("Esperando archivo para procesar...")
+
 
 
 
