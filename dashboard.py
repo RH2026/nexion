@@ -325,7 +325,7 @@ else:
                     if usuario != "JMoreno":
                         # DASHBOARD
                         if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                            st.session_state.menu_main = "TRACKING"
+                            st.session_state.menu_main = "DASHBOARD"
                             st.session_state.menu_sub = "GENERAL"
                             st.rerun()
                         
@@ -1857,6 +1857,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
