@@ -173,11 +173,24 @@ div.stButton > button:hover {{
 
 /* Bajar tamaño de los nombres de los filtros (Labels) */
 [data-testid="stWidgetLabel"] p {{
-    font-size: 10px !important;
+    font-size: 12px !important;
     text-transform: uppercase !important;
     letter-spacing: 2px !important;
     color: {vars_css['sub']} !important;
     font-weight: 600 !important;
+}}
+
+/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
+div[data-baseweb="select"] div {{
+    font-size: 12px !important; /* Ajusta este tamaño a tu gusto */
+    color: {vars_css['text']} !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+
+/* Cambiar el texto de ADENTRO del input de fecha */
+input[data-testid="stDateInputView"] {{
+    font-size: 12px !important;
+    color: {vars_css['text']} !important;
 }}
 
 /* DATA EDITOR */
@@ -1872,6 +1885,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
