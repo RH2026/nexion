@@ -507,11 +507,18 @@ else:
                 # --- 5. RENDER ---
                 c1, c2, c3, c4, c5 = st.columns(5)
             
-                with c1: render_kpi(total_p, total_p, "Pedidos", "#ffffff")
-                with c2: render_kpi(entregados, total_p, "Entregados", "#00FFAA")
-                with c3: render_kpi(total_t, total_p, "Tránsito", "#38bdf8")
-                with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#a855f7")
-                with c5: render_kpi(retrasados, total_p, "Retraso", "#ff4b4b")
+                # --- 4. DESPLIEGUE FINAL (CORREGIDO) ---
+                dashboard_html = f"""
+                <div class="dashboard-nexion">
+                    {render_kpi(total_p, total_p, "Pedidos", "inventory_2", "#FFFFFF")}
+                    {render_kpi(entregados, total_p, "Entregados", "task_alt", "#00FFAA")}
+                    {render_kpi(total_t, total_p, "Tránsito", "local_shipping", "#38bdf8")}
+                    {render_kpi(en_tiempo, total_p, "En Tiempo", "schedule", "#a855f7")}
+                    {render_kpi(retrasados, total_p, "Retraso", "warning", "#ff4b4b")}
+                </div>
+                """
+                
+                st.markdown(dashboard_html, unsafe_allow_html=True)
             
                 st.markdown("<br><br>", unsafe_allow_html=True)
                 with st.expander("🔍 DETALLE OPERATIVO"):
@@ -1857,6 +1864,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
