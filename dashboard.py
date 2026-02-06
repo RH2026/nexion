@@ -437,7 +437,7 @@ else:
                 }
             
                 .stat-percent {
-                    font-size: 13px;
+                    font-size: 16px;
                     margin-top: 5px;
                     font-weight: 700;
                 }
@@ -1863,6 +1863,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
