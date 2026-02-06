@@ -422,7 +422,7 @@ else:
                 
                 .stat-progress {
                     transition: stroke-dashoffset 0.8s ease-in-out;
-                    stroke-linecap: round;
+                    stroke-linecap: butt;
                 }
             
                 .stat-value {
@@ -1864,6 +1864,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
