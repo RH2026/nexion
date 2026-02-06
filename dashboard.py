@@ -407,13 +407,13 @@ else:
                 /* SVG Progress Circle - MÁS GRANDE Y GRUESA */
                 .stat-circle {
                     transform: rotate(-90deg);
-                    width: 100px;
-                    height: 100px;
+                    width: 200px;
+                    height: 200px;
                 }
             
                 .stat-circle circle {
                     fill: none;
-                    stroke-width: 6; /* Grosor aumentado */
+                    stroke-width: 10; /* Grosor aumentado */
                 }
             
                 .stat-bg { stroke: #1E262C; }
@@ -507,11 +507,11 @@ else:
                 # --- 5. RENDER ---
                 c1, c2, c3, c4, c5 = st.columns(5)
             
-                with c1: render_kpi(total_p, total_p, "Pedidos", "📦", "#ffffff")
-                with c2: render_kpi(entregados, total_p, "Entregados", "✅", "#00FFAA")
-                with c3: render_kpi(total_t, total_p, "Tránsito", "🚚", "#38bdf8")
-                with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "⏱️", "#a855f7")
-                with c5: render_kpi(retrasados, total_p, "Retraso", "⚠️", "#ff4b4b")
+                with c1: render_kpi(total_p, total_p, "Pedidos", "#ffffff")
+                with c2: render_kpi(entregados, total_p, "Entregados", "#00FFAA")
+                with c3: render_kpi(total_t, total_p, "Tránsito", "#38bdf8")
+                with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#a855f7")
+                with c5: render_kpi(retrasados, total_p, "Retraso", "#ff4b4b")
             
                 st.markdown("<br><br>", unsafe_allow_html=True)
                 with st.expander("🔍 DETALLE OPERATIVO"):
@@ -1857,6 +1857,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
