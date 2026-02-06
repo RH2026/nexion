@@ -392,61 +392,57 @@ else:
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    padding: 10px;
+                    padding: 0px; /* Reducimos padding para ganar espacio */
                     width: 100%;
                 }
             
                 .metric-title {
                     color: #94a3b8;
-                    font-size: 11px;
+                    font-size: 10px;
                     text-transform: uppercase;
-                    letter-spacing: 1.5px;
-                    margin-bottom: 12px;
-                    font-weight: 500;
+                    letter-spacing: 2px;
+                    margin-bottom: 10px;
+                    font-weight: 600;
                 }
             
-                /* SVG Progress Circle - AJUSTADO */
+                /* SVG - DONA GRANDE Y SIN CORTES */
                 .stat-circle {
                     transform: rotate(-90deg);
-                    width: 120px;
-                    height: 120px;
+                    width: 160px; /* Tamaño visual grande */
+                    height: 160px;
+                    overflow: visible; 
                 }
             
                 .stat-circle circle {
                     fill: none;
-                    stroke-width: 12; /* Grosor ideal para este tamaño */
+                    stroke-width: 18; /* ¡MÁS GRUESA! */
                 }
             
                 .stat-bg { stroke: #1E262C; }
                 
                 .stat-progress {
-                    stroke-dasharray: 283;
                     transition: stroke-dashoffset 0.8s ease-in-out;
                     stroke-linecap: round;
                 }
             
-                /* Número central con posicionamiento absoluto corregido */
                 .stat-value {
                     position: absolute;
                     color: white;
-                    font-size: 22px; 
-                    font-weight: 700;
+                    font-size: 28px; /* Número más imponente */
+                    font-weight: 800;
                     font-family: 'Inter', sans-serif;
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
-                    margin: 0;
                 }
             
                 .stat-percent {
-                    font-size: 11px;
-                    margin-top: 10px;
-                    font-weight: 600;
-                    letter-spacing: 0.5px;
+                    font-size: 13px;
+                    margin-top: 5px;
+                    font-weight: 700;
                 }
             </style>
             """, unsafe_allow_html=True)
-            
             # --- 1. CARGA DE DATOS ---
             def cargar_datos():
                 t = int(time.time())
@@ -492,23 +488,28 @@ else:
                 # --- 4. FUNCIÓN KPI (SVG REFORZADO) ---
                 def render_kpi(valor, total, titulo, color):
                     porc = (valor / total * 100) if total > 0 else 0
-                    offset = 283 - (porc / 100 * 283)
+                    # Nueva circunferencia basada en radio 38: 2 * 3.1416 * 38 ≈ 238.7
+                    circunferencia = 238.76
+                    offset = circunferencia - (porc / 100 * circunferencia)
                     
                     st.markdown(f"""
                         <div class="metric-container">
                             <div class="metric-title">{titulo}</div>
-                            <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;">
+                            <div style="position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;">
                                 <svg class="stat-circle" viewBox="0 0 100 100">
-                                    <circle class="stat-bg" cx="50" cy="50" r="45"></circle>
-                                    <circle class="stat-progress" cx="50" cy="50" r="45" 
-                                            style="stroke: {color}; stroke-dashoffset: {offset};"></circle>
+                                    <circle class="stat-bg" cx="50" cy="50" r="38"></circle>
+                                    <circle class="stat-progress" cx="50" cy="50" r="38" 
+                                            style="stroke: {color}; 
+                                                   stroke-dasharray: {circunferencia}; 
+                                                   stroke-dashoffset: {offset};">
+                                    </circle>
                                 </svg>
                                 <div class="stat-value">{valor}</div>
                             </div>
                             <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
                         </div>
                     """, unsafe_allow_html=True)
-            
+                            
                 # --- 5. RENDER ---
                 c1, c2, c3, c4, c5 = st.columns(5)
             
@@ -1863,6 +1864,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
