@@ -415,7 +415,7 @@ else:
             
                 .stat-circle circle {
                     fill: none;
-                    stroke-width: 20; /* ¡MÁS GRUESA! */
+                    stroke-width: 17; /* ¡MÁS GRUESA! */
                 }
             
                 .stat-bg { stroke: #1E262C; }
@@ -1863,6 +1863,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
