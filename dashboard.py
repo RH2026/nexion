@@ -407,13 +407,13 @@ else:
                 /* SVG Progress Circle - MÁS GRANDE Y GRUESA */
                 .stat-circle {
                     transform: rotate(-90deg);
-                    width: 200px;
-                    height: 200px;
+                    width: 300px;
+                    height: 300px;
                 }
             
                 .stat-circle circle {
                     fill: none;
-                    stroke-width: 10; /* Grosor aumentado */
+                    stroke-width: 15; /* Grosor aumentado */
                 }
             
                 .stat-bg { stroke: #1E262C; }
@@ -1858,6 +1858,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
