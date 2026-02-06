@@ -445,33 +445,35 @@ else:
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
             
-                # --- 4. FUNCIÓN DONA MINI CON ICONOS (OPTIMIZADA Y COMPACTA) ---
+                # --- 4. FUNCIÓN DONA MINI REAL (ESCALADA CORRECTAMENTE) ---
                 def crear_dona_mini(valor, total, titulo, icono, color):
                     porc = (valor / total * 100) if total > 0 else 0
                 
                     fig = go.Figure(
                         data=[go.Pie(
                             values=[valor, max(total - valor, 0)],
-                            hole=0.82,                         # Hueco más elegante
+                            hole=0.78,
                             marker_colors=[color, "#1E262C"],
                             textinfo="none",
                             hoverinfo="none",
-                            sort=False
+                            sort=False,
+                            direction="clockwise",
+                            domain=dict(x=[0.15, 0.85], y=[0.15, 0.85])  # 🔑 AQUÍ SE DOMA LA DONA
                         )]
                     )
                 
                     fig.update_layout(
                         showlegend=False,
-                        height=115,                          # 🔽 Tamaño real reducido
-                        width=115,                           # 🔒 Evita que se estire
-                        margin=dict(t=5, b=5, l=5, r=5),
+                        height=95,            # contenedor pequeño
+                        width=95,
+                        margin=dict(t=0, b=0, l=0, r=0),
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
                         annotations=[dict(
                             text=f"<b>{valor}</b>",
                             x=0.5,
                             y=0.5,
-                            font=dict(size=15, color="white"),
+                            font=dict(size=13, color="white"),
                             showarrow=False
                         )]
                     )
@@ -487,16 +489,16 @@ else:
                         unsafe_allow_html=True
                     )
                 
-                    # Render del gráfico
+                    # Render limpio
                     st.plotly_chart(
                         fig,
-                        use_container_width=False,            # 🔑 clave para que no se corte
+                        use_container_width=False,
                         config={"displayModeBar": False}
                     )
                 
-                    # Porcentaje inferior
+                    # Porcentaje
                     st.markdown(
-                        f"<p style='text-align:center; color:{color}; font-size:9px; margin-top:-18px;'>{porc:.1f}%</p>",
+                        f"<p style='text-align:center; color:{color}; font-size:9px; margin-top:-12px;'>{porc:.1f}%</p>",
                         unsafe_allow_html=True
                     )
             
@@ -1854,6 +1856,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
