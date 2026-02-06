@@ -381,24 +381,30 @@ else:
         # 1. DASHBOARD
         if st.session_state.menu_main == "DASHBOARD":
             # --- DONAS ---           
-            # --- CONFIGURACIÓN DE PÁGINA Y FUENTES (MATERIAL SYMBOLS) ---
+            # --- CONFIGURACIÓN Y FUENTES ---
             st.markdown("""
-                <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" />
                 <style>
                 .stApp { background-color: #0B1114; }
                 .material-symbols-outlined {
-                    font-size: 20px !important;
+                    font-size: 18px !important;
                     vertical-align: middle;
-                    margin-right: 5px;
+                    margin-right: 4px;
                 }
                 .metric-title-wrapper {
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     color: #94a3b8;
-                    font-size: 11px;
+                    font-size: 10px;
                     text-transform: uppercase;
                     letter-spacing: 1px;
+                    margin-bottom: -10px; /* Acerca el título al gráfico */
+                }
+                /* Contenedor para forzar el tamaño pequeño */
+                .chart-container {
+                    width: 130px; 
+                    margin: 0 auto;
                 }
                 </style>
             """, unsafe_allow_html=True)
@@ -411,9 +417,7 @@ else:
                     df = pd.read_csv(url, encoding='utf-8-sig')
                     df.columns = df.columns.str.strip()
                     return df
-                except Exception as e:
-                    st.error(f"Error: {e}")
-                    return None
+                except: return None
             
             df_raw = cargar_datos()
             
@@ -423,9 +427,11 @@ else:
                 hoy_gdl = datetime.now(tz_gdl).date()
                 hoy_dt = pd.Timestamp(hoy_gdl)
             
-                meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]             
+                meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
                 
-                col_f1, _ = st.columns([1, 3])
+                st.markdown("<p style='letter-spacing:5px; text-align:center; color:#00FFAA; font-size:12px; margin-bottom:20px;'>DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
+                
+                col_f1, _ = st.columns([1, 4])
                 with col_f1:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
             
@@ -443,32 +449,37 @@ else:
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
             
-                # --- 4. FUNCIÓN DONA REDUCIDA (3/4) CON ICONOS ---
+                # --- 4. FUNCIÓN DONA MINI (REPARADA) ---
                 def crear_dona_mini(valor, total, titulo, icono, color):
                     porc = (valor / total * 100) if total > 0 else 0
+                    
                     fig = go.Figure(data=[go.Pie(
-                        values=[valor, total - valor if total > valor else 0],
-                        hole=.80, # Hueco más grande para look más fino
+                        values=[valor, total - valor if total > valor else 0.00001],
+                        hole=.82,
                         marker_colors=[color, "#1E262C"],
                         textinfo='none', hoverinfo='none'
                     )])
+                    
                     fig.update_layout(
-                        showlegend=False, height=150, # Altura reducida a 3/4
-                        margin=dict(t=10, b=10, l=10, r=10),
-                        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                        annotations=[dict(text=f"<b>{valor}</b>", x=0.5, y=0.5, font_size=18, font_color="white", showarrow=False)]
+                        showlegend=False,
+                        # Forzamos tamaño cuadrado pequeño para evitar que se coma los bordes
+                        width=130, 
+                        height=130,
+                        margin=dict(t=5, b=5, l=5, r=5), # Margen mínimo
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        annotations=[dict(
+                            text=f"<b>{valor}</b>", 
+                            x=0.5, y=0.5, font_size=16, font_color="white", showarrow=False
+                        )]
                     )
                     
-                    # HTML para el título con icono
-                    st.markdown(f"""
-                        <div class="metric-title-wrapper">
-                            <span class="material-symbols-outlined">{icono}</span> {titulo}
-                        </div>
-                    """, unsafe_allow_html=True)
-                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                    st.markdown(f"<p style='text-align:center; color:{color}; font-size:10px; margin-top:-25px;'>{porc:.1f}%</p>", unsafe_allow_html=True)
+                    # Renderizado en Streamlit con contenedor CSS
+                    st.markdown(f'<div class="metric-title-wrapper"><span class="material-symbols-outlined">{icono}</span>{titulo}</div>', unsafe_allow_html=True)
+                    st.plotly_chart(fig, use_container_width=False, config={'displayModeBar': False})
+                    st.markdown(f"<p style='text-align:center; color:{color}; font-size:10px; margin-top:-40px; font-weight:bold;'>{porc:.1f}%</p>", unsafe_allow_html=True)
             
-                # --- 5. RENDER ---
+                # --- 5. RENDER EN FILA ---
                 st.markdown("<br>", unsafe_allow_html=True)
                 c1, c2, c3, c4, c5 = st.columns(5)
                 
@@ -479,7 +490,7 @@ else:
                 with c5: crear_dona_mini(retrasados, total_p, "Retraso", "warning", "#ff4b4b")
             
                 st.divider()
-                with st.expander("DETALLE OPERATIVO"):
+                with st.expander("🔍 DETALLE OPERATIVO"):
                     st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
         
         
@@ -1822,6 +1833,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
