@@ -491,7 +491,7 @@ else:
                     
                     st.markdown(f"""
                         <div class="metric-container">
-                            <div class="metric-title">{icono} {titulo}</div>
+                            <div class="metric-title">{titulo}</div>
                             <div style="display: flex; align-items: center; justify-content: center; position: relative; width: 100px; height: 100px;">
                                 <svg class="stat-circle" viewBox="0 0 100 100">
                                     <circle class="stat-bg" cx="50" cy="50" r="45"></circle>
@@ -1858,6 +1858,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
