@@ -383,25 +383,38 @@ else:
             # =========================================================
             # --- CONFIGURACIÓN DE PÁGINA Y FUENTES (MATERIAL SYMBOLS) ---
             st.markdown("""
-                <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-                <style>
-                .stApp { background-color: #0B1114; }
-                .material-symbols-outlined {
-                    font-size: 20px !important;
-                    vertical-align: middle;
-                    margin-right: 5px;
-                }
-                .metric-title-wrapper {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #94a3b8;
-                    font-size: 11px;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                }
-                </style>
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+            <style>
+            .stApp { background-color: #0B1114; }
+            
+            .material-symbols-outlined {
+                font-size: 20px !important;
+                vertical-align: middle;
+                margin-right: 5px;
+            }
+            
+            .metric-title-wrapper {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #94a3b8;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 4px;
+            }
+            
+            /* 🔑 EVITA SCROLL EN PLOTLY */
+            .stPlotlyChart {
+                overflow: hidden !important;
+            }
+            
+            .stPlotlyChart iframe {
+                overflow: hidden !important;
+            }
+            </style>
             """, unsafe_allow_html=True)
+            
             
             # --- 1. CARGA DE DATOS ---
             def cargar_datos():
@@ -415,18 +428,27 @@ else:
                     st.error(f"Error: {e}")
                     return None
             
+            
             df_raw = cargar_datos()
             
             if df_raw is not None:
+            
                 # --- 2. PROCESAMIENTO ---
                 tz_gdl = pytz.timezone('America/Mexico_City')
                 hoy_gdl = datetime.now(tz_gdl).date()
                 hoy_dt = pd.Timestamp(hoy_gdl)
             
-                meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
-                
-                st.markdown("<p style='letter-spacing:5px; text-align:center; color:#00FFAA; font-size:12px;'>DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
-                
+                meses = [
+                    "ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO",
+                    "JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"
+                ]
+            
+                st.markdown(
+                    "<p style='letter-spacing:5px; text-align:center; color:#00FFAA; font-size:12px;'>"
+                    "DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>",
+                    unsafe_allow_html=True
+                )
+            
                 col_f1, _ = st.columns([1, 3])
                 with col_f1:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
@@ -437,6 +459,7 @@ else:
             
                 df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
             
+            
                 # --- 3. CÁLCULO KPI ---
                 total_p = len(df_mes)
                 entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
@@ -445,67 +468,61 @@ else:
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
             
-                # --- 4. FUNCIÓN DONA MINI REAL (ESCALADA CORRECTAMENTE) ---
+            
+                # --- 4. FUNCIÓN DONA MINI (ESCALADA + SIN SCROLL) ---
                 def crear_dona_mini(valor, total, titulo, icono, color):
                     porc = (valor / total * 100) if total > 0 else 0
-                
-                    fig = go.Figure(
-                        data=[go.Pie(
-                            values=[valor, max(total - valor, 0)],
-                            hole=0.78,
-                            marker_colors=[color, "#1E262C"],
-                            textinfo="none",
-                            hoverinfo="none",
-                            sort=False,
-                            direction="clockwise",
-                            domain=dict(x=[0.15, 0.85], y=[0.15, 0.85])  # 🔑 AQUÍ SE DOMA LA DONA
-                        )]
-                    )
-                
+            
+                    fig = go.Figure(data=[go.Pie(
+                        values=[valor, max(total - valor, 0)],
+                        hole=0.78,
+                        marker_colors=[color, "#1E262C"],
+                        textinfo="none",
+                        hoverinfo="none",
+                        sort=False,
+                        domain=dict(x=[0.2, 0.8], y=[0.2, 0.8])  # 🔑 tamaño real
+                    )])
+            
                     fig.update_layout(
                         showlegend=False,
-                        height=95,            # contenedor pequeño
-                        width=95,
+                        height=90,
+                        width=90,
                         margin=dict(t=0, b=0, l=0, r=0),
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
                         annotations=[dict(
                             text=f"<b>{valor}</b>",
-                            x=0.5,
-                            y=0.5,
+                            x=0.5, y=0.5,
                             font=dict(size=13, color="white"),
                             showarrow=False
                         )]
                     )
-                
-                    # Título con icono
+            
                     st.markdown(
                         f"""
                         <div class="metric-title-wrapper">
-                            <span class="material-symbols-outlined">{icono}</span>
-                            {titulo}
+                            <span class="material-symbols-outlined">{icono}</span>{titulo}
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
-                
-                    # Render limpio
+            
                     st.plotly_chart(
                         fig,
                         use_container_width=False,
                         config={"displayModeBar": False}
                     )
-                
-                    # Porcentaje
+            
                     st.markdown(
-                        f"<p style='text-align:center; color:{color}; font-size:9px; margin-top:-12px;'>{porc:.1f}%</p>",
+                        f"<p style='text-align:center; color:{color}; font-size:9px; margin-top:-14px;'>{porc:.1f}%</p>",
                         unsafe_allow_html=True
                     )
+            
             
                 # --- 5. RENDER ---
                 st.markdown("<br>", unsafe_allow_html=True)
                 c1, c2, c3, c4, c5 = st.columns(5)
-                
+            
                 with c1: crear_dona_mini(total_p, total_p, "Pedidos", "inventory_2", "#ffffff")
                 with c2: crear_dona_mini(entregados, total_p, "Entregados", "task_alt", "#00FFAA")
                 with c3: crear_dona_mini(total_t, total_p, "Tránsito", "local_shipping", "#38bdf8")
@@ -513,8 +530,13 @@ else:
                 with c5: crear_dona_mini(retrasados, total_p, "Retraso", "warning", "#ff4b4b")
             
                 st.divider()
+            
                 with st.expander("🔍 DETALLE OPERATIVO"):
-                    st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
+                    st.dataframe(
+                        df_mes.sort_values("FECHA DE ENVÍO", ascending=False),
+                        use_container_width=True,
+                        hide_index=True
+                    )
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -1856,6 +1878,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
