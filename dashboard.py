@@ -415,7 +415,7 @@ else:
             
                 .stat-circle circle {
                     fill: none;
-                    stroke-width: 18; /* ¡MÁS GRUESA! */
+                    stroke-width: 10; /* ¡MÁS GRUESA! */
                 }
             
                 .stat-bg { stroke: #1E262C; }
@@ -428,7 +428,7 @@ else:
                 .stat-value {
                     position: absolute;
                     color: white;
-                    font-size: 28px; /* Número más imponente */
+                    font-size: 22px; /* Número más imponente */
                     font-weight: 800;
                     font-family: 'Inter', sans-serif;
                     top: 50%;
@@ -465,8 +465,7 @@ else:
             
                 meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
             
-                st.markdown("<p style='letter-spacing:5px; text-align:center; color:#00FFAA; font-size:12px; font-weight:bold; margin-bottom:30px;'>DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
-            
+                          
                 col_f1, _ = st.columns([1, 4])
                 with col_f1:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
@@ -521,7 +520,7 @@ else:
                 with c5: render_kpi(retrasados, total_p, "Retraso", "#ff4b4b")
             
                 st.markdown("<br><br>", unsafe_allow_html=True)
-                with st.expander("🔍 DETALLE OPERATIVO"):
+                with st.expander("DETALLE OPERATIVO"):
                     st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
         
         
@@ -1864,6 +1863,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
