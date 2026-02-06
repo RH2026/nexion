@@ -389,142 +389,142 @@ else:
                     st.toast(f"Buscando: {busqueda}")
 
         # --- DONAS ---
-       
-        # --- ESTILOS CSS PERSONALIZADOS (ESTÉTICA NEXION) ---
-        st.markdown("""
-            <style>
-            .stApp { background-color: #0B1114; }
-            .metric-card {
-                background-color: #11181D;
-                border: 1px solid #1E262C;
-                border-radius: 15px;
-                padding: 20px;
-                text-align: center;
-            }
-            .metric-label { color: #94a3b8; font-size: 14px; font-weight: bold; letter-spacing: 1px; }
-            .metric-value { color: #ffffff; font-size: 32px; font-weight: 800; }
-            </style>
-        """, unsafe_allow_html=True)
-        
-        # --- 1. CARGA DE DATOS ---
-        def cargar_datos():
-            t = int(time.time())
-            url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
-            try:
-                df = pd.read_csv(url, encoding='utf-8-sig')
-                # Limpiar nombres de columnas (quitar espacios extra si existen)
-                df.columns = df.columns.str.strip()
-                return df
-            except Exception as e:
-                st.error(f"Error al cargar la base de datos: {e}")
-                return None
-        
-        df_raw = cargar_datos()
-        
-        if df_raw is not None:
-            # --- 2. PROCESAMIENTO Y FILTROS ---
-            tz_gdl = pytz.timezone('America/Mexico_City')
-            hoy_gdl = datetime.now(tz_gdl).date()
-        
-            # Selector de Mes
-            st.markdown("<p style='letter-spacing:5px; text-align:center; color:#00FFAA;'>DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
+           
+            # --- ESTILOS CSS PERSONALIZADOS (ESTÉTICA NEXION) ---
+            st.markdown("""
+                <style>
+                .stApp { background-color: #0B1114; }
+                .metric-card {
+                    background-color: #11181D;
+                    border: 1px solid #1E262C;
+                    border-radius: 15px;
+                    padding: 20px;
+                    text-align: center;
+                }
+                .metric-label { color: #94a3b8; font-size: 14px; font-weight: bold; letter-spacing: 1px; }
+                .metric-value { color: #ffffff; font-size: 32px; font-weight: 800; }
+                </style>
+            """, unsafe_allow_html=True)
             
-            meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
-            col_f1, col_f2 = st.columns([1, 3])
-            with col_f1:
-                mes_sel = st.selectbox("MES DE ANÁLISIS", meses, index=hoy_gdl.month - 1)
+            # --- 1. CARGA DE DATOS ---
+            def cargar_datos():
+                t = int(time.time())
+                url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+                try:
+                    df = pd.read_csv(url, encoding='utf-8-sig')
+                    # Limpiar nombres de columnas (quitar espacios extra si existen)
+                    df.columns = df.columns.str.strip()
+                    return df
+                except Exception as e:
+                    st.error(f"Error al cargar la base de datos: {e}")
+                    return None
             
-            # Conversión de fechas
-            df = df_raw.copy()
-            cols_fecha = ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]
-            for col in cols_fecha:
-                df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
-        
-            # Filtrar por Mes seleccionado (basado en FECHA DE ENVÍO)
-            mes_num = meses.index(mes_sel) + 1
-            df_mes = df[df["FECHA DE ENVÍO"].dt.month == mes_num].copy()
-        
-            # --- 3. LÓGICA DE KPI ---
-            # Total Pedidos
-            total_pedidos = len(df_mes)
+            df_raw = cargar_datos()
             
-            # Entregados (Tienen fecha real)
-            df_entregados = df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()]
-            total_entregados = len(df_entregados)
+            if df_raw is not None:
+                # --- 2. PROCESAMIENTO Y FILTROS ---
+                tz_gdl = pytz.timezone('America/Mexico_City')
+                hoy_gdl = datetime.now(tz_gdl).date()
             
-            # En Tránsito (No tienen fecha real)
-            df_transito = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
-            total_transito = len(df_transito)
-            
-            # En Tránsito EN TIEMPO (Sin entrega real y hoy <= Promesa)
-            # Convertimos hoy_gdl a datetime para comparar
-            hoy_dt = pd.Timestamp(hoy_gdl)
-            en_tiempo = len(df_transito[df_transito["PROMESA DE ENTREGA"] >= hoy_dt])
-            
-            # En Tránsito CON RETRASO (Sin entrega real y hoy > Promesa)
-            con_retraso = len(df_transito[df_transito["PROMESA DE ENTREGA"] < hoy_dt])
-        
-            # --- 4. FUNCIÓN PARA GRÁFICO DE DONA PRO ---
-            def crear_dona_pro(valor, total, titulo, color_hex):
-                porcentaje = (valor / total * 100) if total > 0 else 0
-                restante = total - valor
+                # Selector de Mes
+                st.markdown("<p style='letter-spacing:5px; text-align:center; color:#00FFAA;'>DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
                 
-                fig = go.Figure(data=[go.Pie(
-                    values=[valor, restante],
-                    hole=.75,
-                    marker_colors=[color_hex, "#1E262C"],
-                    textinfo='none',
-                    hoverinfo='none'
-                )])
+                meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+                col_f1, col_f2 = st.columns([1, 3])
+                with col_f1:
+                    mes_sel = st.selectbox("MES DE ANÁLISIS", meses, index=hoy_gdl.month - 1)
                 
-                fig.update_layout(
-                    showlegend=False,
-                    margin=dict(t=0, b=0, l=0, r=0),
-                    height=200,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    annotations=[
-                        dict(text=f"<b>{valor}</b><br><span style='font-size:12px;'>{porcentaje:.1f}%</span>", 
-                             x=0.5, y=0.5, font_size=20, font_color="white", showarrow=False),
-                        dict(text=titulo, x=0.5, y=-0.1, font_size=12, font_color="#94a3b8", showarrow=False)
-                    ]
-                )
-                return fig
-        
-            # --- 5. RENDERIZADO DEL DASHBOARD ---
-            st.markdown("<br>", unsafe_allow_html=True)
+                # Conversión de fechas
+                df = df_raw.copy()
+                cols_fecha = ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]
+                for col in cols_fecha:
+                    df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
             
-            # Fila de Métricas Principales
-            c1, c2, c3, c4, c5 = st.columns(5)
+                # Filtrar por Mes seleccionado (basado en FECHA DE ENVÍO)
+                mes_num = meses.index(mes_sel) + 1
+                df_mes = df[df["FECHA DE ENVÍO"].dt.month == mes_num].copy()
             
-            with c1:
-                st.plotly_chart(crear_dona_pro(total_pedidos, total_pedidos, "TOTAL PEDIDOS", "#ffffff"), use_container_width=True)
-            with c2:
-                st.plotly_chart(crear_dona_pro(total_entregados, total_pedidos, "ENTREGADOS", "#00FFAA"), use_container_width=True)
-            with c3:
-                st.plotly_chart(crear_dona_pro(total_transito, total_pedidos, "EN TRÁNSITO", "#38bdf8"), use_container_width=True)
-            with c4:
-                st.plotly_chart(crear_dona_pro(en_tiempo, total_pedidos, "EN TIEMPO", "#a855f7"), use_container_width=True)
-            with c5:
-                st.plotly_chart(crear_dona_pro(con_retraso, total_pedidos, "CON RETRASO", "#ff4b4b"), use_container_width=True)
-        
-            st.divider()
-        
-            # --- 6. TABLA DETALLADA ---
-            with st.expander("🔍 VER DETALLE DE PEDIDOS DEL MES", expanded=False):
-                # Aplicamos un estilo de color al estatus para la tabla
-                def color_estatus(val):
-                    if pd.notna(val): return 'background-color: #064e3b; color: #34d399'
-                    return ''
-        
-                st.dataframe(
-                    df_mes.sort_values("FECHA DE ENVÍO", ascending=False),
-                    use_container_width=True,
-                    hide_index=True
-                )
-        
-        else:
-            st.warning("No se pudo cargar la matriz. Verifica la conexión con GitHub.")
+                # --- 3. LÓGICA DE KPI ---
+                # Total Pedidos
+                total_pedidos = len(df_mes)
+                
+                # Entregados (Tienen fecha real)
+                df_entregados = df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()]
+                total_entregados = len(df_entregados)
+                
+                # En Tránsito (No tienen fecha real)
+                df_transito = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
+                total_transito = len(df_transito)
+                
+                # En Tránsito EN TIEMPO (Sin entrega real y hoy <= Promesa)
+                # Convertimos hoy_gdl a datetime para comparar
+                hoy_dt = pd.Timestamp(hoy_gdl)
+                en_tiempo = len(df_transito[df_transito["PROMESA DE ENTREGA"] >= hoy_dt])
+                
+                # En Tránsito CON RETRASO (Sin entrega real y hoy > Promesa)
+                con_retraso = len(df_transito[df_transito["PROMESA DE ENTREGA"] < hoy_dt])
+            
+                # --- 4. FUNCIÓN PARA GRÁFICO DE DONA PRO ---
+                def crear_dona_pro(valor, total, titulo, color_hex):
+                    porcentaje = (valor / total * 100) if total > 0 else 0
+                    restante = total - valor
+                    
+                    fig = go.Figure(data=[go.Pie(
+                        values=[valor, restante],
+                        hole=.75,
+                        marker_colors=[color_hex, "#1E262C"],
+                        textinfo='none',
+                        hoverinfo='none'
+                    )])
+                    
+                    fig.update_layout(
+                        showlegend=False,
+                        margin=dict(t=0, b=0, l=0, r=0),
+                        height=200,
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        annotations=[
+                            dict(text=f"<b>{valor}</b><br><span style='font-size:12px;'>{porcentaje:.1f}%</span>", 
+                                 x=0.5, y=0.5, font_size=20, font_color="white", showarrow=False),
+                            dict(text=titulo, x=0.5, y=-0.1, font_size=12, font_color="#94a3b8", showarrow=False)
+                        ]
+                    )
+                    return fig
+            
+                # --- 5. RENDERIZADO DEL DASHBOARD ---
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # Fila de Métricas Principales
+                c1, c2, c3, c4, c5 = st.columns(5)
+                
+                with c1:
+                    st.plotly_chart(crear_dona_pro(total_pedidos, total_pedidos, "TOTAL PEDIDOS", "#ffffff"), use_container_width=True)
+                with c2:
+                    st.plotly_chart(crear_dona_pro(total_entregados, total_pedidos, "ENTREGADOS", "#00FFAA"), use_container_width=True)
+                with c3:
+                    st.plotly_chart(crear_dona_pro(total_transito, total_pedidos, "EN TRÁNSITO", "#38bdf8"), use_container_width=True)
+                with c4:
+                    st.plotly_chart(crear_dona_pro(en_tiempo, total_pedidos, "EN TIEMPO", "#a855f7"), use_container_width=True)
+                with c5:
+                    st.plotly_chart(crear_dona_pro(con_retraso, total_pedidos, "CON RETRASO", "#ff4b4b"), use_container_width=True)
+            
+                st.divider()
+            
+                # --- 6. TABLA DETALLADA ---
+                with st.expander("🔍 VER DETALLE DE PEDIDOS DEL MES", expanded=False):
+                    # Aplicamos un estilo de color al estatus para la tabla
+                    def color_estatus(val):
+                        if pd.notna(val): return 'background-color: #064e3b; color: #34d399'
+                        return ''
+            
+                    st.dataframe(
+                        df_mes.sort_values("FECHA DE ENVÍO", ascending=False),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+            
+            else:
+                st.warning("No se pudo cargar la matriz. Verifica la conexión con GitHub.")
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -1866,6 +1866,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
