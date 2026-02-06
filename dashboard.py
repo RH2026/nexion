@@ -235,24 +235,24 @@ def login_screen():
             st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
             
             if st.button("VERIFY IDENTITY"):
-            lista_usuarios = st.secrets.get("usuarios", {})
-            
-            if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
-                st.session_state.autenticado = True
-                st.session_state.usuario_activo = user_input
+                lista_usuarios = st.secrets.get("usuarios", {})
                 
-                # REDIRECCIÓN ESPECÍFICA
-                if user_input == "JMoreno":
-                    st.session_state.menu_main = "FORMATOS"
-                    st.session_state.menu_sub = "SALIDA DE PT"
-                else:
-                    # Forzamos que cualquier otro usuario entre a DASHBOARD
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.session_state.menu_sub = "GENERAL"
-                
-                st.success(f"BIENVENIDO!, {user_input.upper()}")
-                time.sleep(1) 
-                st.rerun()
+                if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
+                    st.session_state.autenticado = True
+                    st.session_state.usuario_activo = user_input
+                    
+                    # REDIRECCIÓN ESPECÍFICA
+                    if user_input == "JMoreno":
+                        st.session_state.menu_main = "FORMATOS"
+                        st.session_state.menu_sub = "SALIDA DE PT"
+                    else:
+                        # Forzamos que cualquier otro usuario entre a DASHBOARD
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
+                    
+                    st.success(f"BIENVENIDO!, {user_input.upper()}")
+                    time.sleep(1) 
+                    st.rerun()
 # ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
 
 # 1. ¿Falta mostrar el Splash?
@@ -1857,6 +1857,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
