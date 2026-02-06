@@ -381,36 +381,31 @@ else:
     with main_container:
         # 1. DASHBOARD
         if st.session_state.menu_main == "DASHBOARD":          
-            # --- CONFIGURACIÓN DE PÁGINA Y FUENTES (MATERIAL SYMBOLS) ---
+            # --- CONFIGURACIÓN DE PÁGINA (SIN GOOGLE ICONS) ---
             st.markdown("""
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
             <style>
             .stApp { background-color: #0B1114; }
             
-            .material-symbols-outlined {
-                font-size: 20px !important;
-                vertical-align: middle;
-                margin-right: 5px;
-            }
-            
+            /* Títulos KPI */
             .metric-title-wrapper {
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                text-align: center;
                 color: #94a3b8;
                 font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                margin-bottom: 4px;
+                margin-bottom: 6px;
+                line-height: 1.2;
             }
             
-            /* 🔑 EVITA SCROLL EN PLOTLY */
+            /* 🔑 Quita scroll de Plotly en Streamlit */
             .stPlotlyChart {
                 overflow: hidden !important;
+                height: auto !important;
             }
             
             .stPlotlyChart iframe {
                 overflow: hidden !important;
+                height: auto !important;
             }
             </style>
             """, unsafe_allow_html=True)
@@ -421,7 +416,7 @@ else:
                 t = int(time.time())
                 url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
                 try:
-                    df = pd.read_csv(url, encoding='utf-8-sig')
+                    df = pd.read_csv(url, encoding="utf-8-sig")
                     df.columns = df.columns.str.strip()
                     return df
                 except Exception as e:
@@ -434,7 +429,7 @@ else:
             if df_raw is not None:
             
                 # --- 2. PROCESAMIENTO ---
-                tz_gdl = pytz.timezone('America/Mexico_City')
+                tz_gdl = pytz.timezone("America/Mexico_City")
                 hoy_gdl = datetime.now(tz_gdl).date()
                 hoy_dt = pd.Timestamp(hoy_gdl)
             
@@ -455,7 +450,7 @@ else:
             
                 df = df_raw.copy()
                 for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                    df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+                    df[col] = pd.to_datetime(df[col], dayfirst=True, errors="coerce")
             
                 df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
             
@@ -469,8 +464,8 @@ else:
                 total_t = len(df_trans)
             
             
-                # --- 4. FUNCIÓN DONA MINI (ESCALADA + SIN SCROLL) ---
-                def crear_dona_mini(valor, total, titulo, icono, color):
+                # --- 4. FUNCIÓN DONA MINI (SIN ICONOS, SIN SCROLL) ---
+                def crear_dona_mini(valor, total, titulo, color):
                     porc = (valor / total * 100) if total > 0 else 0
             
                     fig = go.Figure(data=[go.Pie(
@@ -480,7 +475,7 @@ else:
                         textinfo="none",
                         hoverinfo="none",
                         sort=False,
-                        domain=dict(x=[0.2, 0.8], y=[0.2, 0.8])  # 🔑 tamaño real
+                        domain=dict(x=[0.22, 0.78], y=[0.22, 0.78])
                     )])
             
                     fig.update_layout(
@@ -499,11 +494,7 @@ else:
                     )
             
                     st.markdown(
-                        f"""
-                        <div class="metric-title-wrapper">
-                            <span class="material-symbols-outlined">{icono}</span>{titulo}
-                        </div>
-                        """,
+                        f"<div class='metric-title-wrapper'>{titulo}</div>",
                         unsafe_allow_html=True
                     )
             
@@ -523,11 +514,11 @@ else:
                 st.markdown("<br>", unsafe_allow_html=True)
                 c1, c2, c3, c4, c5 = st.columns(5)
             
-                with c1: crear_dona_mini(total_p, total_p, "Pedidos", "inventory_2", "#ffffff")
-                with c2: crear_dona_mini(entregados, total_p, "Entregados", "task_alt", "#00FFAA")
-                with c3: crear_dona_mini(total_t, total_p, "Tránsito", "local_shipping", "#38bdf8")
-                with c4: crear_dona_mini(en_tiempo, total_p, "En Tiempo", "schedule", "#a855f7")
-                with c5: crear_dona_mini(retrasados, total_p, "Retraso", "warning", "#ff4b4b")
+                with c1: crear_dona_mini(total_p, total_p, "PEDIDOS", "#ffffff")
+                with c2: crear_dona_mini(entregados, total_p, "ENTREGADOS", "#00FFAA")
+                with c3: crear_dona_mini(total_t, total_p, "TRÁNSITO", "#38bdf8")
+                with c4: crear_dona_mini(en_tiempo, total_p, "EN TIEMPO", "#a855f7")
+                with c5: crear_dona_mini(retrasados, total_p, "RETRASO", "#ff4b4b")
             
                 st.divider()
             
@@ -1878,6 +1869,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
