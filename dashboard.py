@@ -380,7 +380,7 @@ else:
     with main_container:
         # 1. DASHBOARD
         if st.session_state.menu_main == "DASHBOARD":          
-            # =========================================================
+            # =========================================================         
             # --- CONFIGURACIÓN DE PÁGINA Y FUENTES (MATERIAL SYMBOLS) ---
             st.markdown("""
             <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -388,7 +388,7 @@ else:
             .stApp { background-color: #0B1114; }
             
             .material-symbols-outlined {
-                font-size: 20px !important;
+                font-size: 18px !important;
                 vertical-align: middle;
                 margin-right: 5px;
             }
@@ -398,19 +398,50 @@ else:
                 align-items: center;
                 justify-content: center;
                 color: #94a3b8;
-                font-size: 11px;
+                font-size: 10px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                margin-bottom: 4px;
+                margin-bottom: 8px;
             }
             
-            /* 🔑 EVITA SCROLL EN PLOTLY */
-            .stPlotlyChart {
-                overflow: hidden !important;
+            /* Contenedor del círculo para evitar scrolls */
+            .donut-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
             }
             
-            .stPlotlyChart iframe {
-                overflow: hidden !important;
+            .donut-ring {
+                position: relative;
+                width: 70px;
+                height: 70px;
+            }
+            
+            .donut-ring svg {
+                width: 70px;
+                height: 70px;
+                transform: rotate(-90deg);
+            }
+            
+            .donut-ring circle {
+                fill: none;
+                stroke-width: 6;
+                stroke-linecap: round;
+            }
+            
+            .donut-ring .bg { stroke: #1E262C; }
+            .donut-ring .bar { transition: stroke-dashoffset 0.8s ease-in-out; }
+            
+            .donut-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: white;
+                font-size: 14px;
+                font-weight: 800;
             }
             </style>
             """, unsafe_allow_html=True)
@@ -428,11 +459,9 @@ else:
                     st.error(f"Error: {e}")
                     return None
             
-            
             df_raw = cargar_datos()
             
             if df_raw is not None:
-            
                 # --- 2. PROCESAMIENTO ---
                 tz_gdl = pytz.timezone('America/Mexico_City')
                 hoy_gdl = datetime.now(tz_gdl).date()
@@ -459,7 +488,6 @@ else:
             
                 df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
             
-            
                 # --- 3. CÁLCULO KPI ---
                 total_p = len(df_mes)
                 entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
@@ -468,56 +496,30 @@ else:
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
             
-            
-                # --- 4. FUNCIÓN DONA MINI (ESCALADA + SIN SCROLL) ---
+                # --- 4. FUNCIÓN DONA MINI (HTML/SVG PURO SIN PLOTLY) ---
                 def crear_dona_mini(valor, total, titulo, icono, color):
                     porc = (valor / total * 100) if total > 0 else 0
-            
-                    fig = go.Figure(data=[go.Pie(
-                        values=[valor, max(total - valor, 0)],
-                        hole=0.78,
-                        marker_colors=[color, "#1E262C"],
-                        textinfo="none",
-                        hoverinfo="none",
-                        sort=False,
-                        domain=dict(x=[0.2, 0.8], y=[0.2, 0.8])  # 🔑 tamaño real
-                    )])
-            
-                    fig.update_layout(
-                        showlegend=False,
-                        height=90,
-                        width=90,
-                        margin=dict(t=0, b=0, l=0, r=0),
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        annotations=[dict(
-                            text=f"<b>{valor}</b>",
-                            x=0.5, y=0.5,
-                            font=dict(size=13, color="white"),
-                            showarrow=False
-                        )]
-                    )
-            
-                    st.markdown(
-                        f"""
-                        <div class="metric-title-wrapper">
-                            <span class="material-symbols-outlined">{icono}</span>{titulo}
+                    # C = 2 * pi * r (r=28, C ≈ 176)
+                    dash_array = 176
+                    dash_offset = dash_array - (dash_array * porc / 100)
+                    
+                    st.markdown(f"""
+                        <div class="donut-container">
+                            <div class="metric-title-wrapper">
+                                <span class="material-symbols-outlined">{icono}</span>{titulo}
+                            </div>
+                            <div class="donut-ring">
+                                <svg>
+                                    <circle class="bg" cx="35" cy="35" r="28"></circle>
+                                    <circle class="bar" cx="35" cy="35" r="28" 
+                                            style="stroke: {color}; stroke-dasharray: {dash_array}; stroke-dashoffset: {dash_offset};">
+                                    </circle>
+                                </svg>
+                                <div class="donut-text">{valor}</div>
+                            </div>
+                            <p style='text-align:center; color:{color}; font-size:10px; margin-top: 5px;'>{porc:.1f}%</p>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-            
-                    st.plotly_chart(
-                        fig,
-                        use_container_width=False,
-                        config={"displayModeBar": False}
-                    )
-            
-                    st.markdown(
-                        f"<p style='text-align:center; color:{color}; font-size:9px; margin-top:-14px;'>{porc:.1f}%</p>",
-                        unsafe_allow_html=True
-                    )
-            
+                        """, unsafe_allow_html=True)
             
                 # --- 5. RENDER ---
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -1878,6 +1880,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
