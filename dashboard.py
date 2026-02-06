@@ -445,30 +445,60 @@ else:
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
             
-                # --- 4. FUNCIÓN DONA REDUCIDA (3/4) CON ICONOS ---
+                # --- 4. FUNCIÓN DONA MINI CON ICONOS (OPTIMIZADA Y COMPACTA) ---
                 def crear_dona_mini(valor, total, titulo, icono, color):
                     porc = (valor / total * 100) if total > 0 else 0
-                    fig = go.Figure(data=[go.Pie(
-                        values=[valor, total - valor if total > valor else 0],
-                        hole=.80, # Hueco más grande para look más fino
-                        marker_colors=[color, "#1E262C"],
-                        textinfo='none', hoverinfo='none'
-                    )])
-                    fig.update_layout(
-                        showlegend=False, height=150, # Altura reducida a 3/4
-                        margin=dict(t=10, b=10, l=10, r=10),
-                        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                        annotations=[dict(text=f"<b>{valor}</b>", x=0.5, y=0.5, font_size=18, font_color="white", showarrow=False)]
+                
+                    fig = go.Figure(
+                        data=[go.Pie(
+                            values=[valor, max(total - valor, 0)],
+                            hole=0.82,                         # Hueco más elegante
+                            marker_colors=[color, "#1E262C"],
+                            textinfo="none",
+                            hoverinfo="none",
+                            sort=False
+                        )]
                     )
-                    
-                    # HTML para el título con icono
-                    st.markdown(f"""
+                
+                    fig.update_layout(
+                        showlegend=False,
+                        height=115,                          # 🔽 Tamaño real reducido
+                        width=115,                           # 🔒 Evita que se estire
+                        margin=dict(t=5, b=5, l=5, r=5),
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        annotations=[dict(
+                            text=f"<b>{valor}</b>",
+                            x=0.5,
+                            y=0.5,
+                            font=dict(size=15, color="white"),
+                            showarrow=False
+                        )]
+                    )
+                
+                    # Título con icono
+                    st.markdown(
+                        f"""
                         <div class="metric-title-wrapper">
-                            <span class="material-symbols-outlined">{icono}</span> {titulo}
+                            <span class="material-symbols-outlined">{icono}</span>
+                            {titulo}
                         </div>
-                    """, unsafe_allow_html=True)
-                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                    st.markdown(f"<p style='text-align:center; color:{color}; font-size:10px; margin-top:-25px;'>{porc:.1f}%</p>", unsafe_allow_html=True)
+                        """,
+                        unsafe_allow_html=True
+                    )
+                
+                    # Render del gráfico
+                    st.plotly_chart(
+                        fig,
+                        use_container_width=False,            # 🔑 clave para que no se corte
+                        config={"displayModeBar": False}
+                    )
+                
+                    # Porcentaje inferior
+                    st.markdown(
+                        f"<p style='text-align:center; color:{color}; font-size:9px; margin-top:-18px;'>{porc:.1f}%</p>",
+                        unsafe_allow_html=True
+                    )
             
                 # --- 5. RENDER ---
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -1824,6 +1854,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
