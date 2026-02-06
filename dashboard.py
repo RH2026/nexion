@@ -553,7 +553,7 @@ else:
             if st.session_state.menu_sub == "TRK":
                 # 1. FILTROS DE CABECERA
                 with st.container():
-                    st.markdown(f"<p class='op-query-text' style='letter-spacing:8px; text-align:center;'>M Ó D U L O &nbsp; D E &nbsp; I N T E L I G E N C I A &nbsp; L O G Í S T I C A</p>", unsafe_allow_html=True)
+                    st.write("")
                     f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
                     
                     with f_col1:
@@ -1863,6 +1863,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
