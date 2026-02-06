@@ -378,22 +378,28 @@ else:
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
     with main_container:
-        # 1. TRACKING
+        # 1. DASHBOARD
         if st.session_state.menu_main == "DASHBOARD":
             # --- DONAS ---           
-            # --- ESTILOS CSS PERSONALIZADOS (ESTÉTICA NEXION) ---
+            # --- CONFIGURACIÓN DE PÁGINA Y FUENTES (MATERIAL SYMBOLS) ---
             st.markdown("""
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
                 <style>
                 .stApp { background-color: #0B1114; }
-                .metric-card {
-                    background-color: #11181D;
-                    border: 1px solid #1E262C;
-                    border-radius: 15px;
-                    padding: 20px;
-                    text-align: center;
+                .material-symbols-outlined {
+                    font-size: 20px !important;
+                    vertical-align: middle;
+                    margin-right: 5px;
                 }
-                .metric-label { color: #94a3b8; font-size: 14px; font-weight: bold; letter-spacing: 1px; }
-                .metric-value { color: #ffffff; font-size: 32px; font-weight: 800; }
+                .metric-title-wrapper {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #94a3b8;
+                    font-size: 11px;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
                 </style>
             """, unsafe_allow_html=True)
             
@@ -403,119 +409,78 @@ else:
                 url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
                 try:
                     df = pd.read_csv(url, encoding='utf-8-sig')
-                    # Limpiar nombres de columnas (quitar espacios extra si existen)
                     df.columns = df.columns.str.strip()
                     return df
                 except Exception as e:
-                    st.error(f"Error al cargar la base de datos: {e}")
+                    st.error(f"Error: {e}")
                     return None
             
             df_raw = cargar_datos()
             
             if df_raw is not None:
-                # --- 2. PROCESAMIENTO Y FILTROS ---
+                # --- 2. PROCESAMIENTO ---
                 tz_gdl = pytz.timezone('America/Mexico_City')
                 hoy_gdl = datetime.now(tz_gdl).date()
+                hoy_dt = pd.Timestamp(hoy_gdl)
             
-                # Selector de Mes
-                st.markdown("<p style='letter-spacing:5px; text-align:center; color:#00FFAA;'>DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
+                meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]             
                 
-                meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
-                col_f1, col_f2 = st.columns([1, 3])
+                col_f1, _ = st.columns([1, 3])
                 with col_f1:
-                    mes_sel = st.selectbox("MES DE ANÁLISIS", meses, index=hoy_gdl.month - 1)
-                
-                # Conversión de fechas
+                    mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
+            
                 df = df_raw.copy()
-                cols_fecha = ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]
-                for col in cols_fecha:
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
                     df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
             
-                # Filtrar por Mes seleccionado (basado en FECHA DE ENVÍO)
-                mes_num = meses.index(mes_sel) + 1
-                df_mes = df[df["FECHA DE ENVÍO"].dt.month == mes_num].copy()
+                df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
             
-                # --- 3. LÓGICA DE KPI ---
-                # Total Pedidos
-                total_pedidos = len(df_mes)
-                
-                # Entregados (Tienen fecha real)
-                df_entregados = df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()]
-                total_entregados = len(df_entregados)
-                
-                # En Tránsito (No tienen fecha real)
-                df_transito = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
-                total_transito = len(df_transito)
-                
-                # En Tránsito EN TIEMPO (Sin entrega real y hoy <= Promesa)
-                # Convertimos hoy_gdl a datetime para comparar
-                hoy_dt = pd.Timestamp(hoy_gdl)
-                en_tiempo = len(df_transito[df_transito["PROMESA DE ENTREGA"] >= hoy_dt])
-                
-                # En Tránsito CON RETRASO (Sin entrega real y hoy > Promesa)
-                con_retraso = len(df_transito[df_transito["PROMESA DE ENTREGA"] < hoy_dt])
+                # --- 3. CÁLCULO KPI ---
+                total_p = len(df_mes)
+                entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
+                df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
+                en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
+                retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
+                total_t = len(df_trans)
             
-                # --- 4. FUNCIÓN PARA GRÁFICO DE DONA PRO ---
-                def crear_dona_pro(valor, total, titulo, color_hex):
-                    porcentaje = (valor / total * 100) if total > 0 else 0
-                    restante = total - valor
-                    
+                # --- 4. FUNCIÓN DONA REDUCIDA (3/4) CON ICONOS ---
+                def crear_dona_mini(valor, total, titulo, icono, color):
+                    porc = (valor / total * 100) if total > 0 else 0
                     fig = go.Figure(data=[go.Pie(
-                        values=[valor, restante],
-                        hole=.75,
-                        marker_colors=[color_hex, "#1E262C"],
-                        textinfo='none',
-                        hoverinfo='none'
+                        values=[valor, total - valor if total > valor else 0],
+                        hole=.80, # Hueco más grande para look más fino
+                        marker_colors=[color, "#1E262C"],
+                        textinfo='none', hoverinfo='none'
                     )])
-                    
                     fig.update_layout(
-                        showlegend=False,
-                        margin=dict(t=0, b=0, l=0, r=0),
-                        height=200,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        annotations=[
-                            dict(text=f"<b>{valor}</b><br><span style='font-size:12px;'>{porcentaje:.1f}%</span>", 
-                                 x=0.5, y=0.5, font_size=20, font_color="white", showarrow=False),
-                            dict(text=titulo, x=0.5, y=-0.1, font_size=12, font_color="#94a3b8", showarrow=False)
-                        ]
+                        showlegend=False, height=150, # Altura reducida a 3/4
+                        margin=dict(t=10, b=10, l=10, r=10),
+                        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        annotations=[dict(text=f"<b>{valor}</b>", x=0.5, y=0.5, font_size=18, font_color="white", showarrow=False)]
                     )
-                    return fig
+                    
+                    # HTML para el título con icono
+                    st.markdown(f"""
+                        <div class="metric-title-wrapper">
+                            <span class="material-symbols-outlined">{icono}</span> {titulo}
+                        </div>
+                    """, unsafe_allow_html=True)
+                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                    st.markdown(f"<p style='text-align:center; color:{color}; font-size:10px; margin-top:-25px;'>{porc:.1f}%</p>", unsafe_allow_html=True)
             
-                # --- 5. RENDERIZADO DEL DASHBOARD ---
+                # --- 5. RENDER ---
                 st.markdown("<br>", unsafe_allow_html=True)
-                
-                # Fila de Métricas Principales
                 c1, c2, c3, c4, c5 = st.columns(5)
                 
-                with c1:
-                    st.plotly_chart(crear_dona_pro(total_pedidos, total_pedidos, "TOTAL PEDIDOS", "#ffffff"), use_container_width=True)
-                with c2:
-                    st.plotly_chart(crear_dona_pro(total_entregados, total_pedidos, "ENTREGADOS", "#00FFAA"), use_container_width=True)
-                with c3:
-                    st.plotly_chart(crear_dona_pro(total_transito, total_pedidos, "EN TRÁNSITO", "#38bdf8"), use_container_width=True)
-                with c4:
-                    st.plotly_chart(crear_dona_pro(en_tiempo, total_pedidos, "EN TIEMPO", "#a855f7"), use_container_width=True)
-                with c5:
-                    st.plotly_chart(crear_dona_pro(con_retraso, total_pedidos, "CON RETRASO", "#ff4b4b"), use_container_width=True)
+                with c1: crear_dona_mini(total_p, total_p, "Pedidos", "inventory_2", "#ffffff")
+                with c2: crear_dona_mini(entregados, total_p, "Entregados", "task_alt", "#00FFAA")
+                with c3: crear_dona_mini(total_t, total_p, "Tránsito", "local_shipping", "#38bdf8")
+                with c4: crear_dona_mini(en_tiempo, total_p, "En Tiempo", "schedule", "#a855f7")
+                with c5: crear_dona_mini(retrasados, total_p, "Retraso", "warning", "#ff4b4b")
             
                 st.divider()
-            
-                # --- 6. TABLA DETALLADA ---
-                with st.expander("🔍 VER DETALLE DE PEDIDOS DEL MES", expanded=False):
-                    # Aplicamos un estilo de color al estatus para la tabla
-                    def color_estatus(val):
-                        if pd.notna(val): return 'background-color: #064e3b; color: #34d399'
-                        return ''
-            
-                    st.dataframe(
-                        df_mes.sort_values("FECHA DE ENVÍO", ascending=False),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-            
-            else:
-                st.warning("No se pudo cargar la matriz. Verifica la conexión con GitHub.")
+                with st.expander("DETALLE OPERATIVO"):
+                    st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -1857,6 +1822,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
