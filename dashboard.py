@@ -379,132 +379,135 @@ else:
     main_container = st.container()
     with main_container:
         # 1. DASHBOARD
-        if st.session_state.menu_main == "DASHBOARD":
-            # --- DONAS ---              
-        
-            # --- 1. ESTILOS CSS REFORZADOS (SIN SCROLL) ---
+        if st.session_state.menu_main == "DASHBOARD":          
+            # =========================================================
+            # 1. CONFIGURACIÓN, FUENTES Y ESTILOS CSS (CONTROL TOTAL)
+            # =========================================================
+            st.set_page_config(page_title="NEXION | Intelligence", layout="wide")
+            
             st.markdown("""
                 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
                 <style>
+                /* Fondo general */
                 .stApp { background-color: #0B1114; }
                 
-                /* ELIMINA SCROLL DE CONTENEDORES DE MARKDOWN */
-                [data-testid="stMarkdownContainer"] > div {
-                    overflow: hidden !important;
+                /* Eliminar cualquier scroll residual de Streamlit */
+                [data-testid="stMarkdownContainer"] > div { overflow: hidden !important; }
+            
+                /* Contenedor Maestro de KPIs en una sola línea */
+                .nexion-dashboard-row {
+                    display: flex;
+                    justify-content: space-around;
+                    align-items: center;
+                    background: #11181D;
+                    border: 1px solid #1E262C;
+                    border-radius: 15px;
+                    padding: 25px 10px;
+                    width: 100%;
+                    margin: 10px 0;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
                 }
             
-                .kpi-container {
+                /* Unidad individual de KPI */
+                .kpi-unit {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    justify-content: center;
-                    padding: 5px;
-                    overflow: hidden !important; /* Bloqueo de scroll interno */
+                    flex: 1;
+                    min-width: 100px;
                 }
             
+                /* El anillo de progreso */
                 .progress-ring {
                     position: relative;
-                    width: 90px;
-                    height: 90px;
-                    margin-bottom: 5px;
+                    width: 80px;
+                    height: 80px;
                 }
             
                 .progress-ring svg {
-                    width: 90px;
-                    height: 90px;
+                    width: 80px;
+                    height: 80px;
                     transform: rotate(-90deg);
                 }
             
                 .progress-ring circle {
                     fill: none;
-                    stroke-width: 7;
+                    stroke-width: 6;
                     stroke-linecap: round;
                 }
             
                 .progress-ring .background { stroke: #1E262C; }
-                .progress-ring .bar { transition: stroke-dashoffset 0.8s ease-in-out; }
+                .progress-ring .bar { transition: stroke-dashoffset 1s ease-in-out; }
             
+                /* Texto central */
                 .progress-text {
                     position: absolute;
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
                     text-align: center;
-                    line-height: 1;
+                    line-height: 1.1;
                 }
             
                 .value { font-size: 18px; font-weight: 800; color: white; display: block; }
                 .percentage { font-size: 10px; color: #94a3b8; }
                 
+                /* Etiquetas e iconos */
                 .label-wrapper {
                     display: flex;
                     align-items: center;
                     color: #94a3b8;
                     font-size: 10px;
                     text-transform: uppercase;
-                    letter-spacing: 1px;
-                    white-space: nowrap;
+                    margin-top: 12px;
+                    letter-spacing: 1.5px;
+                    font-weight: 600;
                 }
                 
-                .material-symbols-outlined { font-size: 14px !important; margin-right: 4px; }
+                .material-symbols-outlined { 
+                    font-size: 16px !important; 
+                    margin-right: 5px; 
+                }
                 </style>
             """, unsafe_allow_html=True)
             
-            # --- 2. FUNCIÓN DE RENDERIZADO AJUSTADA ---
-            def render_dona_nexion(valor, total, titulo, icono, color):
-                porcentaje = (valor / total * 100) if total > 0 else 0
-                # C = 2 * pi * r (r=36, C ≈ 226)
-                dash_array = 226
-                dash_offset = dash_array - (dash_array * porcentaje / 100)
-                
-                st.markdown(f"""
-                    <div class="kpi-container">
-                        <div class="progress-ring">
-                            <svg>
-                                <circle class="background" cx="45" cy="45" r="36"></circle>
-                                <circle class="bar" cx="45" cy="45" r="36" 
-                                        style="stroke: {color}; stroke-dasharray: {dash_array}; stroke-dashoffset: {dash_offset};">
-                                </circle>
-                            </svg>
-                            <div class="progress-text">
-                                <span class="value">{valor}</span>
-                                <span class="percentage">{porcentaje:.0f}%</span>
-                            </div>
-                        </div>
-                        <div class="label-wrapper">
-                            <span class="material-symbols-outlined">{icono}</span> {titulo}
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            # --- 3. LÓGICA DE DATOS ---
+            # =========================================================
+            # 2. LÓGICA DE CARGA Y PROCESAMIENTO
+            # =========================================================
             def cargar_datos():
                 t = int(time.time())
                 url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
                 try:
                     df = pd.read_csv(url, encoding='utf-8-sig')
-                    df.columns = df.columns.str.strip()
+                    df.columns = df.columns.str.strip().upper() # Forzamos mayúsculas para evitar errores
                     return df
-                except: return None
+                except:
+                    return None
             
             df_raw = cargar_datos()
             
             if df_raw is not None:
+                # Reloj Maestro GDL
                 tz_gdl = pytz.timezone('America/Mexico_City')
                 hoy_gdl = datetime.now(tz_gdl).date()
                 hoy_dt = pd.Timestamp(hoy_gdl)
             
-                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                    df_raw[col] = pd.to_datetime(df_raw[col], dayfirst=True, errors='coerce')
+                # Convertir Fechas
+                cols_fecha = ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]
+                for col in cols_fecha:
+                    if col in df_raw.columns:
+                        df_raw[col] = pd.to_datetime(df_raw[col], dayfirst=True, errors='coerce')
             
+                # Selector de Mes
                 meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
                 
-                st.markdown("<p style='letter-spacing:4px; text-align:center; color:#00FFAA; font-size:11px;'>NEXION LOGISTICS INTELLIGENCE</p>", unsafe_allow_html=True)
+                st.markdown("<p style='letter-spacing:6px; text-align:center; color:#00FFAA; font-size:12px; margin-top:10px;'>SISTEMA DE INTELIGENCIA LOGÍSTICA NEXION</p>", unsafe_allow_html=True)
                 
-                c_f, _ = st.columns([1, 4])
-                with c_f:
-                    mes_sel = st.selectbox("MES", meses, index=hoy_gdl.month - 1)
+                col_mes, _ = st.columns([1, 4])
+                with col_mes:
+                    mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
             
+                # Filtrar datos del mes
                 df_mes = df_raw[df_raw["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
             
                 # Cálculos KPI
@@ -515,19 +518,60 @@ else:
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
             
-                # --- 4. RENDER FINAL EN COLUMNAS ---
-                st.markdown("<br>", unsafe_allow_html=True)
-                c1, c2, c3, c4, c5 = st.columns(5)
-                
-                with c1: render_dona_nexion(total_p, total_p, "Total", "inventory_2", "#FFFFFF")
-                with c2: render_dona_nexion(entregados, total_p, "Entregados", "task_alt", "#00FFAA")
-                with c3: render_dona_nexion(total_t, total_p, "Tránsito", "local_shipping", "#38bdf8")
-                with c4: render_dona_nexion(en_tiempo, total_p, "En Tiempo", "schedule", "#a855f7")
-                with c5: render_dona_nexion(retrasados, total_p, "Retraso", "warning", "#ff4b4b")
+                # =========================================================
+                # 3. CONSTRUCCIÓN DE LA UI (KPI ROW)
+                # =========================================================
+                def get_kpi_card(valor, total, titulo, icono, color):
+                    porcentaje = (valor / total * 100) if total > 0 else 0
+                    dash_array = 201 # Perímetro para r=32
+                    dash_offset = dash_array - (dash_array * porcentaje / 100)
+                    
+                    return f"""
+                    <div class="kpi-unit">
+                        <div class="progress-ring">
+                            <svg>
+                                <circle class="background" cx="40" cy="40" r="32"></circle>
+                                <circle class="bar" cx="40" cy="40" r="32" 
+                                        style="stroke: {color}; stroke-dasharray: {dash_array}; stroke-dashoffset: {dash_offset};">
+                                </circle>
+                            </svg>
+                            <div class="progress-text">
+                                <span class="value">{valor}</span>
+                                <span class="percentage">{porcentaje:.0f}%</span>
+                            </div>
+                        </div>
+                        <div class="label-wrapper">
+                            <span class="material-symbols-outlined">{icono}</span>{titulo}
+                        </div>
+                    </div>
+                    """
             
-                st.divider()
-                with st.expander("DETALLE DE OPERACIÓN"):
-                    st.dataframe(df_mes, use_container_width=True, hide_index=True)
+                # Ensamble de la fila completa en HTML
+                dashboard_html = f"""
+                <div class="nexion-dashboard-row">
+                    {get_kpi_card(total_p, total_p, "PEDIDOS", "inventory_2", "#FFFFFF")}
+                    {get_kpi_card(entregados, total_p, "ENTREGADOS", "task_alt", "#00FFAA")}
+                    {get_kpi_card(total_t, total_p, "TRÁNSITO", "local_shipping", "#38bdf8")}
+                    {get_kpi_card(en_tiempo, total_p, "EN TIEMPO", "schedule", "#a855f7")}
+                    {get_kpi_card(retrasados, total_p, "RETRASO", "warning", "#ff4b4b")}
+                </div>
+                """
+            
+                # Renderizado único
+                st.markdown(dashboard_html, unsafe_allow_html=True)
+            
+                # =========================================================
+                # 4. TABLA DE DETALLE
+                # =========================================================
+                st.markdown("<br>", unsafe_allow_html=True)
+                with st.expander(f"📋 DETALLE DE OPERACIÓN - {mes_sel}", expanded=False):
+                    st.dataframe(
+                        df_mes.sort_values("FECHA DE ENVÍO", ascending=False),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+            else:
+                st.error("⚠️ No se pudo conectar con la base de datos en GitHub.")
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -1869,6 +1913,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
