@@ -171,6 +171,15 @@ div.stButton > button:hover {{
     letter-spacing: 2px; 
 }}
 
+/* Bajar tamaño de los nombres de los filtros (Labels) */
+[data-testid="stWidgetLabel"] p {{
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    color: {vars_css['sub']} !important;
+    font-weight: 600 !important;
+}}
+
 /* DATA EDITOR */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['card']} !important;
@@ -1863,6 +1872,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
