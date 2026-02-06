@@ -491,23 +491,23 @@ else:
             
                 # --- 4. FUNCIÓN KPI (SVG REFORZADO) ---
                 def render_kpi(valor, total, titulo, color):
-                porc = (valor / total * 100) if total > 0 else 0
-                offset = 283 - (porc / 100 * 283)
-                
-                st.markdown(f"""
-                    <div class="metric-container">
-                        <div class="metric-title">{titulo}</div>
-                        <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;">
-                            <svg class="stat-circle" viewBox="0 0 100 100">
-                                <circle class="stat-bg" cx="50" cy="50" r="45"></circle>
-                                <circle class="stat-progress" cx="50" cy="50" r="45" 
-                                        style="stroke: {color}; stroke-dashoffset: {offset};"></circle>
-                            </svg>
-                            <div class="stat-value">{valor}</div>
+                    porc = (valor / total * 100) if total > 0 else 0
+                    offset = 283 - (porc / 100 * 283)
+                    
+                    st.markdown(f"""
+                        <div class="metric-container">
+                            <div class="metric-title">{titulo}</div>
+                            <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;">
+                                <svg class="stat-circle" viewBox="0 0 100 100">
+                                    <circle class="stat-bg" cx="50" cy="50" r="45"></circle>
+                                    <circle class="stat-progress" cx="50" cy="50" r="45" 
+                                            style="stroke: {color}; stroke-dashoffset: {offset};"></circle>
+                                </svg>
+                                <div class="stat-value">{valor}</div>
+                            </div>
+                            <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
                         </div>
-                        <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
             
                 # --- 5. RENDER ---
                 c1, c2, c3, c4, c5 = st.columns(5)
@@ -1863,6 +1863,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
