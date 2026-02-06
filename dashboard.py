@@ -379,17 +379,8 @@ else:
     main_container = st.container()
     with main_container:
         # 1. TRACKING
-        if st.session_state.menu_main == "TRACKING":
-            st.markdown("<div style='margin-top: 5vh;'></div>", unsafe_allow_html=True)
-            _, col_search, _ = st.columns([1, 1.6, 1])
-            with col_search:
-                st.markdown(f"<p class='op-query-text'>O P E R A T I O N A L &nbsp; Q U E R Y</p>", unsafe_allow_html=True)
-                busqueda = st.text_input("REF", placeholder="INGRESE GUÍA O REFERENCIA...", label_visibility="collapsed")
-                if st.button("EXECUTE SYSTEM SEARCH", type="primary", use_container_width=True):
-                    st.toast(f"Buscando: {busqueda}")
-
-        # --- DONAS ---
-           
+        if st.session_state.menu_main == "DASHBOARD":
+            # --- DONAS ---           
             # --- ESTILOS CSS PERSONALIZADOS (ESTÉTICA NEXION) ---
             st.markdown("""
                 <style>
@@ -1866,6 +1857,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
