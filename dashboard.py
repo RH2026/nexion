@@ -382,61 +382,60 @@ else:
         # 1. DASHBOARD
         if st.session_state.menu_main == "DASHBOARD":        
             # --- CONFIGURACIÓN DE PÁGINA ---
-            st.set_page_config(page_title="NEXION LOGISTICS", layout="wide")
-            
             st.markdown("""
             <style>
                 .stApp { background-color: #0B1114; }
                 
-                /* Contenedor de la métrica */
                 .metric-container {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    padding: 10px;
+                    padding: 15px 5px;
                 }
             
                 .metric-title {
                     color: #94a3b8;
-                    font-size: 10px;
+                    font-size: 11px;
                     text-transform: uppercase;
                     letter-spacing: 1.5px;
-                    margin-bottom: 8px;
+                    margin-bottom: 12px;
+                    font-weight: 500;
                 }
             
-                /* SVG Progress Circle */
+                /* SVG Progress Circle - MÁS GRANDE Y GRUESA */
                 .stat-circle {
                     transform: rotate(-90deg);
-                    width: 80px;
-                    height: 80px;
+                    width: 100px;
+                    height: 100px;
                 }
             
                 .stat-circle circle {
                     fill: none;
-                    stroke-width: 3;
+                    stroke-width: 6; /* Grosor aumentado */
                 }
             
                 .stat-bg { stroke: #1E262C; }
                 
                 .stat-progress {
-                    stroke-dasharray: 220; /* Circunferencia aprox */
-                    transition: stroke-dashoffset 1s ease-out;
+                    stroke-dasharray: 283; /* Circunferencia para radio 45 (2 * PI * 45) */
+                    transition: stroke-dashoffset 0.8s ease-in-out;
                     stroke-linecap: round;
                 }
             
                 .stat-value {
                     position: absolute;
                     color: white;
-                    font-size: 16px;
-                    font-weight: bold;
+                    font-size: 20px; /* Números un poco más grandes */
+                    font-weight: 700;
                     font-family: 'Inter', sans-serif;
                 }
             
                 .stat-percent {
-                    font-size: 10px;
-                    margin-top: 5px;
-                    font-weight: bold;
+                    font-size: 11px;
+                    margin-top: 8px;
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
                 }
             </style>
             """, unsafe_allow_html=True)
@@ -463,7 +462,7 @@ else:
             
                 meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
             
-                st.markdown("<p style='letter-spacing:5px; text-align:center; color:#00FFAA; font-size:12px; font-weight:bold; margin-bottom:20px;'>DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
+                st.markdown("<p style='letter-spacing:5px; text-align:center; color:#00FFAA; font-size:12px; font-weight:bold; margin-bottom:30px;'>DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
             
                 col_f1, _ = st.columns([1, 4])
                 with col_f1:
@@ -483,19 +482,19 @@ else:
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
             
-                # --- 4. FUNCIÓN KPI (HTML + SVG) ---
+                # --- 4. FUNCIÓN KPI (SVG REFORZADO) ---
                 def render_kpi(valor, total, titulo, icono, color):
                     porc = (valor / total * 100) if total > 0 else 0
-                    # Calcular el offset del círculo (220 es el stroke-dasharray)
-                    offset = 220 - (porc / 100 * 220)
+                    # 283 es la nueva circunferencia para el círculo más grande
+                    offset = 283 - (porc / 100 * 283)
                     
                     st.markdown(f"""
                         <div class="metric-container">
                             <div class="metric-title">{icono} {titulo}</div>
-                            <div style="display: flex; align-items: center; justify-content: center; position: relative; width: 80px; height: 80px;">
-                                <svg class="stat-circle">
-                                    <circle class="stat-bg" cx="40" cy="40" r="35"></circle>
-                                    <circle class="stat-progress" cx="40" cy="40" r="35" 
+                            <div style="display: flex; align-items: center; justify-content: center; position: relative; width: 100px; height: 100px;">
+                                <svg class="stat-circle" viewBox="0 0 100 100">
+                                    <circle class="stat-bg" cx="50" cy="50" r="45"></circle>
+                                    <circle class="stat-progress" cx="50" cy="50" r="45" 
                                             style="stroke: {color}; stroke-dashoffset: {offset};"></circle>
                                 </svg>
                                 <div class="stat-value">{valor}</div>
@@ -513,7 +512,7 @@ else:
                 with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "⏱️", "#a855f7")
                 with c5: render_kpi(retrasados, total_p, "Retraso", "⚠️", "#ff4b4b")
             
-                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("<br><br>", unsafe_allow_html=True)
                 with st.expander("🔍 DETALLE OPERATIVO"):
                     st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
         
@@ -1857,6 +1856,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
