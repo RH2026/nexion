@@ -382,114 +382,86 @@ else:
         # 1. DASHBOARD
         if st.session_state.menu_main == "DASHBOARD":          
             # =========================================================         
-            # --- CONFIGURACIÓN DE PÁGINA Y FUENTES (MATERIAL SYMBOLS) ---
-            st.markdown("""
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-            <style>
-            .stApp { background-color: #0B1114; }
-            
-            .material-symbols-outlined {
-                font-size: 18px !important;
-                vertical-align: middle;
-                margin-right: 5px;
+           
+            # ── 1. CONFIGURACIÓN Y CSS MAESTRO (INTEGRADO Y CORREGIDO) ──
+            vars_css = {
+                "bg": "#0E1117",      # Fondo Onix Azulado
+                "card": "#1A1F2B",    # Fondos de tarjetas e inputs
+                "text": "#E0E6ED",    # Texto principal (Corregido ##)
+                "sub": "#D9D9D9",     # Texto secundario
+                "border": "#2D333B",  # Bordes y líneas
             }
             
-            .metric-title-wrapper {
+            st.markdown(f"""
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+            <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+            
+            /* Limpieza de Interfaz */
+            header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
+            
+            .stApp {{ 
+                background-color: {vars_css['bg']} !important; 
+                color: {vars_css['text']} !important; 
+                font-family: 'Inter', sans-serif !important; 
+            }}
+            
+            /* 🔑 BLOQUEO DE SCROLL EN PLOTLY */
+            .stPlotlyChart {{
+                overflow: hidden !important;
+                border: none !important;
+            }}
+            
+            .metric-title-wrapper {{
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                color: #94a3b8;
+                color: {vars_css['sub']};
                 font-size: 10px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                margin-bottom: 8px;
-            }
-            
-            /* Contenedor del círculo para evitar scrolls */
-            .donut-container {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-            }
-            
-            .donut-ring {
+                margin-bottom: -15px; /* Acerca el título al gráfico */
                 position: relative;
-                width: 70px;
-                height: 70px;
-            }
+                z-index: 10;
+            }}
             
-            .donut-ring svg {
-                width: 70px;
-                height: 70px;
-                transform: rotate(-90deg);
-            }
-            
-            .donut-ring circle {
-                fill: none;
-                stroke-width: 6;
-                stroke-linecap: round;
-            }
-            
-            .donut-ring .bg { stroke: #1E262C; }
-            .donut-ring .bar { transition: stroke-dashoffset 0.8s ease-in-out; }
-            
-            .donut-text {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                color: white;
-                font-size: 14px;
-                font-weight: 800;
-            }
+            .material-symbols-outlined {{ font-size: 16px !important; margin-right: 4px; }}
             </style>
             """, unsafe_allow_html=True)
             
-            
-            # --- 1. CARGA DE DATOS ---
+            # ── 2. CARGA DE DATOS ──
             def cargar_datos():
                 t = int(time.time())
                 url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
                 try:
                     df = pd.read_csv(url, encoding='utf-8-sig')
-                    df.columns = df.columns.str.strip()
+                    df.columns = df.columns.str.strip().upper()
                     return df
-                except Exception as e:
-                    st.error(f"Error: {e}")
-                    return None
+                except: return None
             
             df_raw = cargar_datos()
             
             if df_raw is not None:
-                # --- 2. PROCESAMIENTO ---
+                # Procesamiento de fechas (GDL)
                 tz_gdl = pytz.timezone('America/Mexico_City')
                 hoy_gdl = datetime.now(tz_gdl).date()
                 hoy_dt = pd.Timestamp(hoy_gdl)
             
-                meses = [
-                    "ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO",
-                    "JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"
-                ]
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                    if col in df_raw.columns:
+                        df_raw[col] = pd.to_datetime(df_raw[col], dayfirst=True, errors='coerce')
             
-                st.markdown(
-                    "<p style='letter-spacing:5px; text-align:center; color:#00FFAA; font-size:12px;'>"
-                    "DASHBOARD DE INTELIGENCIA LOGÍSTICA</p>",
-                    unsafe_allow_html=True
-                )
-            
-                col_f1, _ = st.columns([1, 3])
-                with col_f1:
+                meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
+                
+                st.markdown("<p class='op-query-text'>INTELIGENCIA LOGÍSTICA</p>", unsafe_allow_html=True)
+                
+                c_mes, _ = st.columns([1, 4])
+                with c_mes:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
             
-                df = df_raw.copy()
-                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                    df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+                df_mes = df_raw[df_raw["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
             
-                df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
-            
-                # --- 3. CÁLCULO KPI ---
+                # Lógica de KPIs
                 total_p = len(df_mes)
                 entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
                 df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
@@ -497,49 +469,51 @@ else:
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
             
-                # --- 4. FUNCIÓN DONA MINI (HTML/SVG PURO SIN PLOTLY) ---
-                def crear_dona_mini(valor, total, titulo, icono, color):
+                # ── 3. FUNCIÓN DONA PLOTLY (DOMESTICADA) ──
+                def crear_dona_plotly(valor, total, titulo, icono, color):
                     porc = (valor / total * 100) if total > 0 else 0
-                    # C = 2 * pi * r (r=28, C ≈ 176)
-                    dash_array = 176
-                    dash_offset = dash_array - (dash_array * porc / 100)
                     
-                    st.markdown(f"""
-                        <div class="donut-container">
-                            <div class="metric-title-wrapper">
-                                <span class="material-symbols-outlined">{icono}</span>{titulo}
-                            </div>
-                            <div class="donut-ring">
-                                <svg>
-                                    <circle class="bg" cx="35" cy="35" r="28"></circle>
-                                    <circle class="bar" cx="35" cy="35" r="28" 
-                                            style="stroke: {color}; stroke-dasharray: {dash_array}; stroke-dashoffset: {dash_offset};">
-                                    </circle>
-                                </svg>
-                                <div class="donut-text">{valor}</div>
-                            </div>
-                            <p style='text-align:center; color:{color}; font-size:10px; margin-top: 5px;'>{porc:.1f}%</p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    # El gráfico muestra la parte proporcional del total
+                    fig = go.Figure(data=[go.Pie(
+                        values=[valor, max(total - valor, 0)],
+                        hole=0.8,
+                        marker_colors=[color, "#1E262C"],
+                        textinfo='none',
+                        hoverinfo='none',
+                        sort=False
+                    )])
+                    
+                    fig.update_layout(
+                        showlegend=False,
+                        height=110, # Tamaño 3/4
+                        margin=dict(t=0, b=0, l=0, r=0),
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        annotations=[dict(
+                            text=f"<b style='color:white; font-size:16px;'>{valor}</b>", 
+                            x=0.5, y=0.5, showarrow=False
+                        )]
+                    )
             
-                # --- 5. RENDER ---
+                    # Renderizado
+                    st.markdown(f'<div class="metric-title-wrapper"><span class="material-symbols-outlined">{icono}</span>{titulo}</div>', unsafe_allow_html=True)
+                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                    st.markdown(f"<p style='text-align:center; color:{color}; font-size:10px; margin-top:-25px; font-weight:bold;'>{porc:.1f}%</p>", unsafe_allow_html=True)
+            
+                # ── 4. RENDER FINAL ──
                 st.markdown("<br>", unsafe_allow_html=True)
                 c1, c2, c3, c4, c5 = st.columns(5)
-            
-                with c1: crear_dona_mini(total_p, total_p, "Pedidos", "inventory_2", "#ffffff")
-                with c2: crear_dona_mini(entregados, total_p, "Entregados", "task_alt", "#00FFAA")
-                with c3: crear_dona_mini(total_t, total_p, "Tránsito", "local_shipping", "#38bdf8")
-                with c4: crear_dona_mini(en_tiempo, total_p, "En Tiempo", "schedule", "#a855f7")
-                with c5: crear_dona_mini(retrasados, total_p, "Retraso", "warning", "#ff4b4b")
+                
+                with c1: crear_dona_plotly(total_p, total_p, "Pedidos", "inventory_2", "#FFFFFF")
+                with c2: crear_dona_plotly(entregados, total_p, "Entregados", "task_alt", "#00FFAA")
+                with c3: crear_dona_plotly(total_t, total_p, "Tránsito", "local_shipping", "#38bdf8")
+                with c4: crear_dona_plotly(en_tiempo, total_p, "En Tiempo", "schedule", "#a855f7")
+                with c5: crear_dona_plotly(retrasados, total_p, "Retraso", "warning", "#ff4b4b")
             
                 st.divider()
-            
-                with st.expander("🔍 DETALLE OPERATIVO"):
-                    st.dataframe(
-                        df_mes.sort_values("FECHA DE ENVÍO", ascending=False),
-                        use_container_width=True,
-                        hide_index=True
-                    )
+                st.dataframe(df_mes, use_container_width=True, hide_index=True)
+            else:
+                st.error("No se pudo cargar la matriz.")
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -1881,6 +1855,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
