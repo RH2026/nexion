@@ -196,7 +196,6 @@ input[data-testid="stDateInputView"] {{
 
 /* --- DATA EDITOR: BLINDAJE AZUL PROFUNDO (NEXION CORE) --- */
 
-/* Contenedor */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -205,26 +204,13 @@ input[data-testid="stDateInputView"] {{
     position: relative;
 }}
 
-/* Canvas base */
-[data-testid="data-grid-canvas"] {{
-    background-color: {vars_css['bg']} !important;
-    position: relative;
-    z-index: 1;
-}}
-
-/* ===== OVERLAY DE LÍNEAS (SOLO CUERPO) ===== */
-[data-testid="data-grid-canvas"]::before {{
+/* ===== CAPA DE LÍNEAS (DETRÁS DE TODO) ===== */
+[data-testid="stDataEditor"]::before {{
     content: "";
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-
-    /* ALTURA DEL HEADER ≈ 38px */
-    top: 38px;
-
+    inset: 0;
     pointer-events: none;
-    z-index: 2;
+    z-index: 0;
 
     background-image:
         repeating-linear-gradient(
@@ -243,35 +229,41 @@ input[data-testid="stDateInputView"] {{
         );
 }}
 
-/* Encabezados – LIMPIOS */
+/* ================= CANVAS ================= */
+[data-testid="data-grid-canvas"] {{
+    background-color: transparent !important;
+    position: relative;
+    z-index: 1;
+}}
+
+/* ================= ENCABEZADOS ================= */
 [data-testid="stTableColumnHeader"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
     font-weight: 700;
     text-transform: uppercase;
     border-bottom: 1px solid {vars_css['border']} !important;
-    position: relative;
-    z-index: 5;
+    z-index: 2;
 }}
 
-/* Texto */
+/* TEXTO REAL DEL HEADER (CRÍTICO) */
+[data-testid="stTableColumnHeader"] * {{
+    color: {vars_css['text']} !important;
+    -webkit-text-fill-color: {vars_css['text']} !important;
+    opacity: 1 !important;
+}}
+
+/* ================= TEXTO GENERAL ================= */
 [data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
 }}
 
-/* Hover más marcado */
+/* ================= HOVER ================= */
 [data-testid="stDataEditor"] .gdg-row:hover {{
     background-color: rgba(148,163,184,0.22) !important;
     box-shadow:
         inset 0 0 0 1.5px rgba(148,163,184,0.55),
         inset 0 0 18px rgba(148,163,184,0.18);
-}}
-
-/* FIX REAL: texto de encabezados */
-[data-testid="stTableColumnHeader"] * {{
-    color: {vars_css['text']} !important;
-    -webkit-text-fill-color: {vars_css['text']} !important;
-    opacity: 1 !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -1979,6 +1971,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
