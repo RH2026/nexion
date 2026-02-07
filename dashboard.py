@@ -720,78 +720,112 @@ else:
                 c_a1, c_a2, c_a3 = st.columns(3)
                 c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
                 c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
-                c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)
-                                     
-                # 5. PANEL DE EXCEPCIONES (CON DISEÑO DE BARRAS DOBLES)
+                c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)                     
+               
+                # =========================================================
+                # 5. PANEL DE EXCEPCIONES (FILTROS INTEGRADOS)
+                # =========================================================
                 st.divider()
+                
+                # Preparación de datos críticos
                 df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
                 
                 if not df_criticos.empty:
-                    st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css['sub']}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES</p>", unsafe_allow_html=True)
-                    c1, c2 = st.columns(2)
-                    with c1: sel_f = st.multiselect("TRANSPORTISTA:", sorted(df_criticos["FLETERA"].unique()), placeholder="TODOS")
-                    with c2: sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
+                    st.markdown(f"""
+                        <p style='font-size:11px; font-weight:700; letter-spacing:8px; 
+                        color:{vars_css.get('sub', '#666')}; text-transform:uppercase; 
+                        text-align:center; margin-bottom:20px;'>
+                            PANEL DE EXCEPCIONES
+                        </p>
+                    """, unsafe_allow_html=True)
                     
-                    df_viz = df_criticos.copy()
-                    if sel_f: df_viz = df_viz[df_viz["FLETERA"].isin(sel_f)]
-                    if sel_g == "CRÍTICO (+5 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
-                    elif sel_g == "MODERADO (2-4 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
-                    elif sel_g == "LEVE (1 DÍA)": df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
-    
-                    # Mapeo de columnas para evitar KeyError
-                    columnas_deseadas = {
-                        "NÚMERO DE PEDIDO": ["NÚMERO DE PEDIDO", "PEDIDO"],
-                        "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
-                        "DESTINO": ["DESTINO", "CIUDAD"],
-                        "FECHA DE ENVÍO": ["FECHA DE ENVÍO"],
-                        "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA"],
-                        "FLETERA": ["FLETERA"],
-                        "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
-                        "DIAS_TRANS": ["DIAS_TRANS"],
-                        "DIAS_ATRASO": ["DIAS_ATRASO"]
-                    }
-                    cols_finales = [next((c for c in p if c in df_viz.columns), None) for p in columnas_deseadas.values()]
-                    cols_finales = [c for c in cols_finales if c is not None]
-    
-                    with st.expander("DETALLE TÉCNICO DE RETRASOS", expanded=False):
-                        st.dataframe(
-                            df_viz[cols_finales].sort_values("DIAS_ATRASO", ascending=False),
-                            use_container_width=True,
-                            hide_index=True,
-                            column_config={
-                                "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
-                                "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
-                                "DIAS_TRANS": st.column_config.ProgressColumn("DÍAS VIAJE", format="%d", min_value=0, max_value=15, color="orange"),
-                                "DIAS_ATRASO": st.column_config.ProgressColumn("RETRASO", format="%d DÍAS", min_value=0, max_value=15, color="red")
-                            }
-                        )
+                    # Todo el control y la tabla se encapsulan aquí
+                    with st.expander("🔍 FILTRAR Y ANALIZAR DETALLE DE RETRASOS", expanded=False):
+                        # 5.1 Filtros internos
+                        c1, c2 = st.columns(2)
+                        with c1: 
+                            sel_f = st.multiselect("TRANSPORTISTA:", sorted(df_criticos["FLETERA"].unique()), placeholder="TODOS")
+                        with c2: 
+                            sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
+                        
+                        st.markdown("---") # Separador visual interno
+                
+                        # 5.2 Lógica de filtrado dinámico
+                        df_viz = df_criticos.copy()
+                        
+                        if sel_f: 
+                            df_viz = df_viz[df_viz["FLETERA"].isin(sel_f)]
+                        
+                        if sel_g == "CRÍTICO (+5 DÍAS)": 
+                            df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
+                        elif sel_g == "MODERADO (2-4 DÍAS)": 
+                            df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
+                        elif sel_g == "LEVE (1 DÍA)": 
+                            df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
+                
+                        # 5.3 Mapeo de columnas dinámico
+                        columnas_deseadas = {
+                            "NÚMERO DE PEDIDO": ["NÚMERO DE PEDIDO", "PEDIDO"],
+                            "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
+                            "DESTINO": ["DESTINO", "CIUDAD"],
+                            "FECHA DE ENVÍO": ["FECHA DE ENVÍO"],
+                            "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA"],
+                            "FLETERA": ["FLETERA"],
+                            "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
+                            "DIAS_TRANS": ["DIAS_TRANS"],
+                            "DIAS_ATRASO": ["DIAS_ATRASO"]
+                        }
+                        
+                        cols_finales = [next((c for c in p if c in df_viz.columns), None) for p in columnas_deseadas.values()]
+                        cols_finales = [c for c in cols_finales if c is not None]
+                
+                        # 5.4 Visualización de tabla
+                        if not df_viz.empty:
+                            st.dataframe(
+                                df_viz[cols_finales].sort_values("DIAS_ATRASO", ascending=False),
+                                use_container_width=True,
+                                hide_index=True,
+                                column_config={
+                                    "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
+                                    "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
+                                    "DIAS_TRANS": st.column_config.ProgressColumn("DÍAS VIAJE", format="%d", min_value=0, max_value=15, color="orange"),
+                                    "DIAS_ATRASO": st.column_config.ProgressColumn("RETRASO", format="%d DÍAS", min_value=0, max_value=15, color="red")
+                                }
+                            )
+                        else:
+                            st.info("No hay pedidos que coincidan con los filtros seleccionados.")
                 else:
                     st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
-    
+                
+                
+                # =========================================================
                 # 6. DETALLE DE ENTREGAS DEL PRÓXIMO MES
+                # =========================================================
                 st.divider()
                 
-                # Filtramos el DataFrame original para obtener el detalle de esos pedidos
-                # Usamos la lógica de proximo_mes_num y anio_proximo que ya definimos arriba
                 df_detalle_prox = df_seguimiento.copy()
                 df_detalle_prox.columns = [c.upper() for c in df_detalle_prox.columns]
                 
                 if "PROMESA DE ENTREGA" in df_detalle_prox.columns:
+                    # Aseguramos formato fecha
                     df_detalle_prox["PROMESA DE ENTREGA"] = pd.to_datetime(df_detalle_prox["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
                     
-                    # Filtro exacto para el detalle
+                    # Filtro basado en variables externas (proximo_mes_num y anio_proximo)
                     df_futuro = df_detalle_prox[
                         (df_detalle_prox["PROMESA DE ENTREGA"].dt.month == proximo_mes_num) & 
                         (df_detalle_prox["PROMESA DE ENTREGA"].dt.year == anio_proximo)
                     ].copy()
-    
+                
                     if not df_futuro.empty:
-                        st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:5px; color:#a855f7; text-transform:uppercase; text-align:center;'>PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}</p>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                            <p style='font-size:11px; font-weight:700; letter-spacing:5px; 
+                            color:#a855f7; text-transform:uppercase; text-align:center;'>
+                                PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}
+                            </p>
+                        """, unsafe_allow_html=True)
                         
                         with st.expander(f"VER LISTADO DE {len(df_futuro)} PEDIDOS PARA {nombre_prox_mes}", expanded=False):
-                            # Seleccionamos columnas relevantes para no saturar la vista
                             cols_prox = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO", "PROMESA DE ENTREGA", "FLETERA", "ESTATUS"]
-                            # Filtramos solo las que existan en el DF
                             cols_prox_existentes = [c for c in cols_prox if c in df_futuro.columns]
                             
                             st.dataframe(
@@ -1954,6 +1988,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
