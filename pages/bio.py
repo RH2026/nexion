@@ -1,40 +1,22 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 1. CONFIGURACIÓN DE PÁGINA (Pestaña del navegador)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
     page_title="HERNANPHY | BIO", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
 
-# 2. LIMPIEZA TOTAL DE INTERFAZ (CSS)
+# 2. LIMPIEZA TOTAL DE INTERFAZ
 st.markdown("""
     <style>
-        /* Ocultar barra lateral */
         [data-testid="stSidebar"] { display: none; }
-        
-        /* Ocultar encabezado (GitHub, Deploy, Menú) */
         header { visibility: hidden; height: 0; }
-        
-        /* Ocultar footer de Streamlit */
         footer { visibility: hidden; }
-
-        /* Eliminar márgenes y scroll de Streamlit */
-        .block-container {
-            padding: 0rem;
-        }
-        
-        [data-testid="stAppViewContainer"] {
-            background-color: #0b1114;
-            overflow: hidden;
-        }
-
-        /* Deshabilitar cursor en el contenedor padre */
-        html, body {
-            overflow: hidden;
-            cursor: none;
-        }
+        .block-container { padding: 0rem; }
+        [data-testid="stAppViewContainer"] { background-color: #0b1114; overflow: hidden; }
+        html, body { overflow: hidden; cursor: none; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -362,9 +344,18 @@ document.addEventListener("click",()=>{
 
 </body>
 </html>
-html_de_tu_bio = """
+html_de_tu_bio = r"""
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>HERNANPHY</title>
+    </head>
+<body>
+    </body>
+</html>
 """
 
 # 4. RENDERIZADO
-# El height=1000 asegura que cubra la pantalla; Streamlit lo ajustará.
-components.html(html_de_tu_bio, height=1000, scrolling=False)
+# Usamos un height alto para asegurar que cubra todo el viewport
+components.html(html_de_tu_bio, height=1200, scrolling=False)
