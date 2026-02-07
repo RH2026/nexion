@@ -196,45 +196,43 @@ input[data-testid="stDateInputView"] {{
 
 /* --- DATA EDITOR: BLINDAJE TOTAL (XENOCODE CORE) --- */
 
-/* Forzar variables nativas de Streamlit para el componente de tabla */
+/* 1. Inyectamos tus colores en las variables internas de Streamlit */
 :root {{
     --st-color-background: {vars_css['bg']};
     --st-color-secondary-background: {vars_css['card']};
     --st-color-text: {vars_css['text']};
 }}
 
-/* Contenedor principal del editor */
+/* 2. Contenedor principal de la tabla */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
 }}
 
-/* Fuerza bruta al Canvas (donde se dibujan las celdas) */
-/* Usamos filtros para subir el brillo del fondo que Streamlit pinta por defecto */
+/* 3. Forzar el brillo del Canvas (donde se dibujan las celdas) */
+/* El valor 1.1 lo saca del negro sin hacerlo gris claro */
 [data-testid="data-grid-canvas"] {{
     filter: brightness(1.1) contrast(1) !important;
 }}
 
-/* Encabezados: Quitamos el gris genérico y ponemos el color de ingeniería */
+/* 4. Encabezados: Usamos el color de borde para que se vea técnico */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
-    background-color: {vars_css['table_header']} !important;
+    background-color: {vars_css['border']} !important;
     color: {vars_css['text']} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
-    letter-spacing: 1px !important;
 }}
 
-/* Estilo para todas las celdas internas */
+/* 5. Texto y celdas internas */
 [data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
     border-color: {vars_css['border']} !important;
 }}
 
-/* Quitar el color azul de selección por defecto para que no choque */
-[data-testid="stDataEditor"] :focus {{
-    outline: 1px solid {vars_css['sub']} !important;
+/* 6. Quitar fondos blancos accidentales en celdas activas */
+[data-baseweb="table-builder"] {{
+    background-color: {vars_css['bg']} !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -1918,6 +1916,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
