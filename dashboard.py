@@ -78,11 +78,11 @@ if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#262626",      # Gris antracita (Capa base de cemento oscuro)
-    "card": "#333333",    # Gris concreto (Elevación sutil para inputs)
-    "text": "#F2F2F2",    # Blanco puro pero suave (Legibilidad total)
-    "sub": "#A6A6A6",     # Gris piedra para etiquetas y secundarios
-    "border": "#4D4D4D",  # Gris acero para las líneas divisorias
+    "bg": "#121417",      # Casi negro, pero con un aire más ligero
+    "card": "#212529",    # Un gris carbón muy elegante
+    "text": "#F8F9FA",    # Blanco humo (muy brillante)
+    "sub": "#6C757D",     # Gris neutro para lo que no debe resaltar
+    "border": "#343A40",  # Bordes sutiles pero definidos
     "logo": "n1.png"
 }
 
@@ -1885,6 +1885,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
