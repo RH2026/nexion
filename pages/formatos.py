@@ -1,11 +1,3 @@
-El problema de la pérdida de registros suele ocurrir cuando pandas intenta guardar el archivo y existe una discrepancia en cómo se manejan los índices o cuando se intenta concatenar datos que Streamlit tiene guardados en una memoria temporal (caché) obsoleta.
-
-Para solucionar esto, he ajustado la función de guardado para que vuelva a leer el archivo de GitHub justo antes de aplicar los cambios, asegurando que no sobreescribamos datos viejos sobre los nuevos.
-
-Aquí tienes el código corregido y blindado:
-
-Código de Ingeniería JYPESA (Corrección de Persistencia)
-Python
 import streamlit as st
 import pandas as pd
 from github import Github
@@ -188,6 +180,7 @@ with tab2:
                     
                     save_to_github(df_final_save, f"Update Logistica Folio {folio_sel}")
                     st.rerun()
+
 
 
 
