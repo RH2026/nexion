@@ -196,52 +196,43 @@ input[data-testid="stDateInputView"] {{
 
 /* --- DATA EDITOR: BLINDAJE AZUL PROFUNDO (NEXION CORE) --- */
 
+/* Contenedor */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 8px;
-    overflow: hidden;
-    position: relative;
+    border-radius: 8px !important;
+    overflow: hidden !important;
 }}
 
-/* Canvas base intacto */
+/* CANVAS – MALLA QUE NO DESAPARECE */
 [data-testid="data-grid-canvas"] {{
     background-color: {vars_css['bg']} !important;
-    position: relative;
-    z-index: 1;
-}}
-
-/* ===== OVERLAY DE LÍNEAS (ESTABLE) ===== */
-[data-testid="data-grid-canvas"]::before {{
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 2;
 
     background-image:
         repeating-linear-gradient(
             to right,
-            rgba(75,85,99,0.85) 0px,
-            rgba(75,85,99,0.85) 1px,
-            transparent 1px,
-            transparent 96px
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 72px
         ),
         repeating-linear-gradient(
             to bottom,
-            rgba(75,85,99,0.85) 0px,
-            rgba(75,85,99,0.85) 1px,
-            transparent 1px,
-            transparent 34px
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 36px
         );
+
+    filter: brightness(0.96) contrast(1.12) !important;
 }}
 
 /* Encabezados */
 [data-testid="stTableColumnHeader"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
-    font-weight: 700;
-    text-transform: uppercase;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
     border-bottom: 1px solid {vars_css['border']} !important;
 }}
 
@@ -250,10 +241,11 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* Hover */
+/* Hover de fila */
 [data-testid="stDataEditor"] .gdg-row:hover {{
-    background-color: rgba(255,255,255,0.03) !important;
+    background-color: rgba(255,255,255,0.035) !important;
 }}
+</style>
 
 /* 6. FOOTER FIJO */
 .footer {{ 
@@ -1960,6 +1952,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
