@@ -1980,53 +1980,53 @@ else:
                 
     
     # ── FOOTER CON BIO INTERACTIVA (VERSIÓN DEFINITIVA) ────────────────────────
-    footer_html = f"""
-    <div style="text-align:center; font-family: 'Courier New', monospace; background: transparent; padding-top: 10px;">
-        <div style="color: #555; font-size: 10px; letter-spacing: 2px;">
-            NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
-        </div>
-        <div style="margin-top: 5px;">
-            <span style="opacity:0.5; font-size:8px; color: gray; letter-spacing:4px;">ENGINEERED BY </span>
-            <a id="bioTrigger" style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px; cursor:pointer; text-decoration:none;">HERNANPHY</a>
-        </div>
+    # Usamos doble { para que Python no se confunda con el CSS/JS
+    st.markdown(f"""
+    <style>
+        .footer-nexion {{
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: transparent;
+            color: {vars_css['text']};
+            text-align: center;
+            padding: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            z-index: 999;
+        }}
+        .bio-btn {{
+            color: {vars_css['text']};
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }}
+        .bio-btn:hover {{
+            text-shadow: 0 0 8px {vars_css['text']};
+        }}
+    </style>
+    
+    <div class="footer-nexion">
+        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
+        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
+        <span class="bio-btn" onclick="openBio()">HERNANPHY</span>
     </div>
     
     <script>
-        const btn = document.getElementById("bioTrigger");
-        btn.onclick = function() {{
-            const bioWindow = window.open("", "HERNANPHY", "width=800,height=600,scrollbars=no");
-            if (bioWindow) {{
-                bioWindow.document.write(`
-                    <html>
-                    <head>
-                        <title>HERNANPHY | BIO</title>
-                        <style>
-                            body {{ background: #0b1114; color: #e5e7eb; font-family: "Courier New", monospace; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }}
-                            .box {{ text-align: center; border: 1px solid #333; padding: 40px; border-radius: 2px; }}
-                            h1 {{ letter-spacing: 10px; font-weight: 400; font-size: 20px; }}
-                            p {{ color: #7a7f87; font-size: 10px; letter-spacing: 3px; margin: 15px 0; }}
-                            .close-btn {{ color: #444; font-size: 9px; text-decoration: none; border: 1px solid #333; padding: 5px 10px; transition: 0.3s; }}
-                            .close-btn:hover {{ color: #fff; border-color: #fff; }}
-                        </style>
-                    </head>
-                    <body>
-                        <div class="box">
-                            <h1>HERNAN<span style="color:#9aa0a6">PHY</span></h1>
-                            <p>TERMINAL DE IDENTIDAD // ACCESO NIVEL 0</p>
-                            <a href="#" onclick="window.close()" class="close-btn">[ SALIR ]</a>
-                        </div>
-                    </body>
-                    </html>
-                `);
-            }} else {{
-                alert("Bloqueador de ventanas detectado. Por favor, permite los popups para ver la bio.");
-            }}
-        }};
+    function openBio() {{
+        const win = window.open("", "Bio", "width=800,height=600");
+        if (win) {{
+            win.document.write(`{tu_codigo_html_aqui}`);
+        }} else {{
+            alert("Por favor habilita los popups.");
+        }}
+    }}
     </script>
-    """
-    
-    # Renderizamos el componente (ajusta el height si el texto se corta)
-    components.html(footer_html, height=100)
+    """, unsafe_allow_html=True)
+
 
 
 
