@@ -205,18 +205,24 @@ input[data-testid="stDateInputView"] {{
     position: relative;
 }}
 
-/* Canvas base intacto */
+/* Canvas base */
 [data-testid="data-grid-canvas"] {{
     background-color: {vars_css['bg']} !important;
     position: relative;
     z-index: 1;
 }}
 
-/* ===== OVERLAY DE LÍNEAS (ESTABLE) ===== */
+/* ===== OVERLAY DE LÍNEAS (SOLO CUERPO) ===== */
 [data-testid="data-grid-canvas"]::before {{
     content: "";
     position: absolute;
-    inset: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    /* ALTURA DEL HEADER ≈ 38px */
+    top: 38px;
+
     pointer-events: none;
     z-index: 2;
 
@@ -237,13 +243,15 @@ input[data-testid="stDateInputView"] {{
         );
 }}
 
-/* Encabezados */
+/* Encabezados – LIMPIOS */
 [data-testid="stTableColumnHeader"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
     font-weight: 700;
     text-transform: uppercase;
     border-bottom: 1px solid {vars_css['border']} !important;
+    position: relative;
+    z-index: 5;
 }}
 
 /* Texto */
@@ -251,13 +259,7 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* FIX HEADERS SOBRE OVERLAY */
-[data-testid="stTableColumnHeader"] {{
-    position: relative;
-    z-index: 5;
-}}
-
-/* Hover */
+/* Hover más marcado */
 [data-testid="stDataEditor"] .gdg-row:hover {{
     background-color: rgba(148,163,184,0.22) !important;
     box-shadow:
@@ -1970,6 +1972,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
