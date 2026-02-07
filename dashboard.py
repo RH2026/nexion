@@ -251,6 +251,12 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
+/* FIX HEADERS SOBRE OVERLAY */
+[data-testid="stTableColumnHeader"] {{
+    position: relative;
+    z-index: 5;
+}}
+
 /* Hover */
 [data-testid="stDataEditor"] .gdg-row:hover {{
     background-color: rgba(148,163,184,0.22) !important;
@@ -1964,6 +1970,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
