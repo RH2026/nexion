@@ -78,7 +78,7 @@ if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#121B1F",      # Fondo profundo
+    "bg": "#0E1117",      # Fondo profundo
     "card": "#1F2937",    # Color para las celdas (Azul grisáceo)
     "text": "#F8FAFC",    
     "sub": "#94A3B8",     
@@ -1940,6 +1940,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
