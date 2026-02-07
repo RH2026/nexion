@@ -1416,48 +1416,143 @@ else:
                 <html>
                 <head>
                     <style>
-                        /* Ocultar encabezados y pies de página del navegador */
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&display=swap');
+                        
                         @media print {{
-                            @page {{ 
-                                margin: 10mm; 
-                                size: auto;   /* O usa landscape si prefieres horizontal */
-                            }}
-                            body {{ margin: 0; }}
-                            header, footer {{ display: none !important; }}
+                            @page {{ margin: 10mm; size: portrait; }}
+                            body {{ margin: 0; -webkit-print-color-adjust: exact; }}
+                            .no-print {{ display: none; }}
                         }}
-                        body {{ font-family: Arial, sans-serif; background: white; color: black; }}
-                        .print-box {{ padding: 20px; }}
-                        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-                        th, td {{ border-bottom: 1px solid black; padding: 8px; text-align: left; }}
+                
+                        body {{ 
+                            font-family: 'Inter', sans-serif; 
+                            background: white; 
+                            color: #1a1a1a; 
+                            margin: 0; padding: 20px; 
+                        }}
+                
+                        .header-container {{
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: flex-end;
+                            border-bottom: 3px solid #000;
+                            padding-bottom: 15px;
+                            margin-bottom: 20px;
+                        }}
+                
+                        .brand h1 {{ margin: 0; font-size: 28px; letter-spacing: -1px; font-weight: 800; }}
+                        .brand p {{ margin: 0; font-size: 11px; text-transform: uppercase; color: #444; letter-spacing: 3px; }}
+                
+                        .meta-info {{ text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; }}
+                        .folio-box {{ 
+                            background: #000; color: white; 
+                            padding: 5px 15px; font-weight: bold; 
+                            display: inline-block; margin-bottom: 5px; 
+                        }}
+                
+                        .title-block {{
+                            text-align: center;
+                            margin: 30px 0;
+                            padding: 10px;
+                            border: 1px solid #ddd;
+                            background: #f9f9f9;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            font-weight: 700;
+                        }}
+                
+                        table {{ 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 10px; 
+                            font-size: 12px;
+                        }}
+                
+                        th {{ 
+                            background: #f2f2f2; 
+                            text-transform: uppercase; 
+                            padding: 12px 8px; 
+                            border: 1px solid #000;
+                            font-weight: 800;
+                        }}
+                
+                        td {{ 
+                            padding: 10px 8px; 
+                            border: 1px solid #eee; 
+                            font-family: 'JetBrains Mono', monospace;
+                        }}
+                
+                        tr:nth-child(even) {{ background: #fafafa; }}
+                
+                        .footer-signatures {{
+                            margin-top: 80px;
+                            display: flex;
+                            justify-content: space-around;
+                        }}
+                
+                        .sig-box {{
+                            width: 250px;
+                            text-align: center;
+                            border-top: 2px solid #000;
+                            padding-top: 10px;
+                            font-size: 11px;
+                        }}
+                
+                        .stamp-area {{
+                            margin-top: 50px;
+                            text-align: right;
+                            font-size: 9px;
+                            color: #aaa;
+                            text-transform: uppercase;
+                        }}
                     </style>
                 </head>
                 <body>
                     <div class="print-box">
-                        <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
-                            <div>
-                                <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
-                                <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                        <div class="header-container">
+                            <div class="brand">
+                                <h1>JYPESA</h1>
+                                <p>Automatización de Procesos Logísticos</p>
                             </div>
-                            <div style="text-align:right;">
-                                <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{hora_reporte}</span>
-                                <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
+                            <div class="meta-info">
+                                <div class="folio-box">ID: {hora_reporte}</div>
+                                <div>GENERADO: {now_gdl.strftime('%d/%m/%Y | %H:%M:%S')}</div>
                             </div>
                         </div>
-                        <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
+                
+                        <div class="title-block">
+                            REPORTE TÉCNICO: ENTREGA DE FACTURAS DE CONTRARECIBO
+                        </div>
+                
                         <table>
                             <thead>
-                                <tr style="font-size:12px; border-bottom: 2px solid black;">
-                                    <th>FECHA</th><th>CÓDIGO</th><th>PAQUETERÍA</th><th style="text-align:center;">CANTIDAD</th>
+                                <tr>
+                                    <th style="width: 20%;">FECHA ENVÍO</th>
+                                    <th style="width: 25%;">CÓDIGO / SKU</th>
+                                    <th style="width: 35%;">PAQUETERÍA / SERVICIO</th>
+                                    <th style="text-align: center; width: 20%;">CANTIDAD UNIT.</th>
                                 </tr>
                             </thead>
-                            <tbody style="font-size:13px;">
+                            <tbody>
                                 {tabla_c_html}
                                 {espacios}
                             </tbody>
                         </table>
-                        <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
-                            <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
-                            <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
+                
+                        <div class="footer-signatures">
+                            <div class="sig-box">
+                                <strong>RESPONSABLE DE EMISIÓN</strong><br>
+                                Rigoberto Hernandez<br>
+                                Coord. de Logística Nacional
+                            </div>
+                            <div class="sig-box">
+                                <strong>REPRESENTANTE DE RECEPCIÓN</strong><br>
+                                Nombre, Firma y Sello
+                            </div>
+                        </div>
+                
+                        <div class="stamp-area">
+                            Documento generado digitalmente por NEXION Core System v2.0 - JYPESA Logística
                         </div>
                     </div>
                 </body>
@@ -1916,6 +2011,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
