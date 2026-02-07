@@ -1013,32 +1013,33 @@ else:
                     scrolling=True
                 )
                 
-                # ── 3. DATA EDITOR ─────────────────────────────────────────────────
-                st.subheader("EDITOR DE TAREAS")
-                df_editor = df_master.copy()
-                for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
-                    df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
-                
-                df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
-                
-                df_editado = st.data_editor(
-                    df_editor,
-                    hide_index=True,
-                    use_container_width=True,
-                    num_rows="dynamic",
-                    column_config={
-                        "FECHA": st.column_config.DateColumn("Inicio"),
-                        "FECHA_FIN": st.column_config.DateColumn("Fin"),
-                        "IMPORTANCIA": st.column_config.SelectboxColumn("Prioridad", options=["Urgente","Alta","Media","Baja"]),
-                        "PROGRESO": st.column_config.NumberColumn("Progreso %", min_value=0, max_value=100, step=5),
-                        "PROGRESO_VIEW": st.column_config.ProgressColumn("Avance", min_value=0, max_value=100),
-                        "TAREA": st.column_config.TextColumn("Tarea"),
-                        "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
-                        "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
-                        "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
-                        "GRUPO": st.column_config.TextColumn("Grupo"),
-                    }
-                )
+                # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
+                with st.expander(":material/edit_note: ABRIR EDITOR DE TAREAS", expanded=False):
+                    st.subheader("EDITOR DE TAREAS")
+                    df_editor = df_master.copy()
+                    for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
+                        df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+                    
+                    df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
+                    
+                    df_editado = st.data_editor(
+                        df_editor,
+                        hide_index=True,
+                        use_container_width=True,
+                        num_rows="dynamic",
+                        column_config={
+                            "FECHA": st.column_config.DateColumn("Inicio"),
+                            "FECHA_FIN": st.column_config.DateColumn("Fin"),
+                            "IMPORTANCIA": st.column_config.SelectboxColumn("Prioridad", options=["Urgente","Alta","Media","Baja"]),
+                            "PROGRESO": st.column_config.NumberColumn("Progreso %", min_value=0, max_value=100, step=5),
+                            "PROGRESO_VIEW": st.column_config.ProgressColumn("Avance", min_value=0, max_value=100),
+                            "TAREA": st.column_config.TextColumn("Tarea"),
+                            "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
+                            "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
+                            "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
+                            "GRUPO": st.column_config.TextColumn("Grupo"),
+                        }
+                    )
                 
                 if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
                     df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
@@ -1939,6 +1940,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
