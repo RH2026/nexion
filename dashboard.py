@@ -78,11 +78,12 @@ if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#111827",      # Un azul pizarra profundo (sustituye al Onix #0E1117)
-    "card": "#334155",    # Un tono más claro para elevar las tarjetas del fondo
-    "text": "#F8FAFC",    # Blanco roto casi puro para máxima legibilidad
-    "sub": "#94A3B8",     # Gris azulado suave para textos secundarios
-    "border": "#475569",  # Bordes visibles pero sutiles
+    "bg": "#111827",
+    "card": "#1F2937",    # Un gris azulado oscuro pero no negro
+    "text": "#F8FAFC",
+    "sub": "#94A3B8",
+    "border": "#374151",
+    "table_header": "#2D3748", # Color sólido para cabeceras
     "logo": "n1.png"
 }
 
@@ -193,33 +194,47 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- DATA EDITOR: FUERZA BRUTA CON TUS VARS --- */
+/* --- DATA EDITOR: BLINDAJE TOTAL (XENOCODE CORE) --- */
+
+/* Forzar variables nativas de Streamlit para el componente de tabla */
+:root {{
+    --st-color-background: {vars_css['bg']};
+    --st-color-secondary-background: {vars_css['card']};
+    --st-color-text: {vars_css['text']};
+}}
+
+/* Contenedor principal del editor */
 [data-testid="stDataEditor"] {{
-    background-color: {vars_css['card']} !important;
+    background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
 }}
 
-/* Forzar el brillo del Canvas para que las celdas no sean negras */
+/* Fuerza bruta al Canvas (donde se dibujan las celdas) */
+/* Usamos filtros para subir el brillo del fondo que Streamlit pinta por defecto */
 [data-testid="data-grid-canvas"] {{
-    filter: brightness(1.2) contrast(0.9) !important;
+    filter: brightness(1.1) contrast(1) !important;
 }}
 
-/* Encabezados: usamos el color de borde para que se vean como una barra técnica */
+/* Encabezados: Quitamos el gris genérico y ponemos el color de ingeniería */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
-    background-color: {vars_css['border']} !important;
+    background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
 }}
 
-/* Texto de las celdas: usamos tu variable de texto principal */
+/* Estilo para todas las celdas internas */
 [data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
-    font-size: 12px !important;
+    border-color: {vars_css['border']} !important;
 }}
 
-/* Línea de división entre filas */
-[data-testid="stDataEditor"] div {{
-    border-color: {vars_css['border']} !important;
+/* Quitar el color azul de selección por defecto para que no choque */
+[data-testid="stDataEditor"] :focus {{
+    outline: 1px solid {vars_css['sub']} !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -1903,6 +1918,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
