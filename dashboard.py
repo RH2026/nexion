@@ -1978,14 +1978,79 @@ else:
                 else:
                     st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR ERP DATA...</div>", unsafe_allow_html=True)
                 
-    # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+    # ── FOOTER CON BIO INTERACTIVA ────────────────────────
+    # Guardamos tu HTML en una variable para que sea más limpio
+    bio_html_code = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+    :root{ --bg:#0b0d10; --fg:#e5e7eb; --muted:#7a7f87; --carbon:#9aa0a6; }
+    body{ background:var(--bg); color:var(--fg); font-family:monospace; margin:0; overflow:hidden; cursor:default; }
+    #cursor{ position:fixed; width:14px; height:14px; border-radius:50%; border:1px solid var(--muted); pointer-events:none; transform:translate(-50%,-50%); opacity:.6; }
+    #core{ position:absolute; inset:0; }
+    .fragment{ position:absolute; font-size:13px; letter-spacing:2px; color:var(--muted); opacity:0; filter:blur(4px); transition:all .6s ease; cursor:pointer; }
+    .fragment.visible{ opacity:1; filter:blur(0); }
+    #expanded{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); max-width:500px; font-size:14px; line-height:1.8; color:var(--carbon); opacity:0; pointer-events:none; text-align:center; }
+    #identity{ position:absolute; bottom:36px; left:50%; transform:translateX(-50%); text-align:center; opacity:0; transition:opacity 1.2s ease; }
+    #identity h1{ font-size:16px; letter-spacing:6px; font-weight:400; }
+    #finalMessage{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:14px; line-height:1.9; color:var(--carbon); opacity:0; text-align:center; white-space:pre-line; }
+    </style>
+    </head>
+    <body>
+    <div id="cursor"></div><div id="core"></div><div id="expanded"></div>
+    <div id="identity"><h1>HERNAN<span style='color:var(--carbon)'>PHY</span></h1></div>
+    <div id="finalMessage"></div>
+    <script>
+    const core=document.getElementById("core"), cursor=document.getElementById("cursor"), expanded=document.getElementById("expanded"), identity=document.getElementById("identity"), finalMessage=document.getElementById("finalMessage");
+    const fragmentsData=[{s:"Guadalajara",l:"Nací en Guadalajara, Jalisco..."},{s:"Autodidacta",l:"Gran parte de mi aprendizaje ha sido autodidacta..."},{s:"Python",l:"Python me permitió construir herramientas para NEXION."}];
+    let fragments=[], readCount=0, revealed=false;
+    function createFragments(){
+        fragmentsData.forEach(f=>{
+            const el=document.createElement("div"); el.className="fragment"; el.textContent=f.s;
+            el.style.left=Math.random()*70+15+"%"; el.style.top=Math.random()*70+15+"%";
+            core.appendChild(el); fragments.push(el);
+            el.onmousedown=()=>{ expanded.textContent=f.l; expanded.style.opacity=1; };
+            el.onmouseup=()=>{ expanded.style.opacity=0; if(el.dataset.read!=="true"){el.dataset.read="true"; readCount++;} if(readCount===fragments.length) endSequence(); };
+        });
+        fragments.forEach((f,i)=>setTimeout(()=>f.classList.add("visible"),i*100));
+    }
+    function endSequence(){
+        fragments.forEach(f=>f.style.opacity=0); identity.style.opacity=0;
+        setTimeout(()=>{ finalMessage.textContent="Gracias por tu tiempo."; finalMessage.style.opacity=1; },1000);
+    }
+    document.onmousemove=e=>{ cursor.style.left=e.clientX+"px"; cursor.style.top=e.clientY+"px"; if(!revealed){identity.style.opacity=1;} };
+    document.onclick=()=>{ if(!revealed){revealed=true; createFragments();} };
+    </script>
+    </body>
+    </html>
+    """.replace("\n", " ") # Limpiamos saltos de línea para el JS
+    
     st.markdown(f"""
-    <div class="footer">
+    <style>
+        .bio-link {{
+            color: {vars_css['text']};
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-decoration: none;
+            cursor: pointer;
+        }}
+    </style>
+    
+    <div class="footer" style="text-align:center; font-family:monospace; font-size:10px;">
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
-        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
-        <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
+        <span style="opacity:0.5; letter-spacing:4px;">ENGINEERED BY </span>
+        <a onclick="openBio()" class="bio-link">HERNANPHY</a>
     </div>
+    
+    <script>
+    function openBio() {{
+        const win = window.open("", "Bio", "width=700,height=500,resizable=yes");
+        win.document.write(`{bio_html_code}`);
+    }}
+    </script>
     """, unsafe_allow_html=True)
+
 
 
 
