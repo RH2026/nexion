@@ -194,40 +194,44 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- DATA EDITOR: GRIS AZULADO TÉCNICO (NEXION CORE) --- */
+/* --- DATA EDITOR: GRIS AZULADO TÉCNICO (NEXION FINAL) --- */
 
 :root {{
-    --st-color-background: {vars_css['bg']};
-    --st-color-secondary-background: {vars_css['card']};
+    /* Forzamos el color de fondo de la tabla al azul acero */
+    --st-color-background: #1e293b; 
+    --st-color-secondary-background: #0f172a;
 }}
 
-/* El Canvas: Filtro para Gris Azulado sobrio */
+/* Atacamos el contenedor de la tabla */
+[data-testid="stDataEditor"] {{
+    background-color: #0f172a !important;
+    border: 1px solid #334155 !important;
+}}
+
+/* Forzamos el color a las celdas del Canvas */
 [data-testid="data-grid-canvas"] {{
-    /* 1. Invertimos un poco para quitar el negro sólido */
-    /* 2. Rotamos a 200 grados (azul) */
-    /* 3. DESATURAMOS al 30% para que sea casi gris */
-    /* 4. Ajustamos brillo para que sea sutil */
-    filter: invert(0.05) hue-rotate(200deg) saturate(0.3) brightness(0.7) contrast(1.1) !important;
-    background-color: {vars_css['bg']} !important;
+    background-color: #0f172a !important;
+    /* Quitamos cualquier filtro previo que nos esté dando problemas */
+    filter: none !important; 
 }}
 
-/* Encabezados: Un gris acero sólido */
+/* Encabezados: Gris Acero */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
-    background-color: #262c3a !important; /* Un gris azulado oscuro sólido */
-    color: {vars_css['text']} !important;
+    background-color: #334155 !important;
+    color: #f1f5f9 !important;
     font-weight: 600 !important;
-    border-bottom: 1px solid {vars_css['border']} !important;
+    text-transform: uppercase !important;
 }}
 
-/* Líneas de la cuadrícula muy tenues */
+/* Estilo de los textos internos para que resalten sobre el gris azulado */
 [data-testid="stDataEditor"] * {{
-    border-color: rgba(255, 255, 255, 0.05) !important;
-    color: #cbd5e1 !important; /* Texto un poco más suave, no blanco puro */
+    color: #cbd5e1 !important;
+    border-color: #1e293b !important;
 }}
 
-/* Limpieza del contenedor */
+/* Eliminar el fondo negro del contenedor base */
 [data-baseweb="table-builder"] {{
-    background-color: {vars_css['bg']} !important;
+    background-color: #0f172a !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -1911,6 +1915,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
