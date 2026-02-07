@@ -267,6 +267,13 @@ input[data-testid="stDateInputView"] {{
         inset 0 0 18px rgba(148,163,184,0.18);
 }}
 
+/* FIX REAL: texto de encabezados */
+[data-testid="stTableColumnHeader"] * {{
+    color: {vars_css['text']} !important;
+    -webkit-text-fill-color: {vars_css['text']} !important;
+    opacity: 1 !important;
+}}
+
 /* 6. FOOTER FIJO */
 .footer {{ 
     position: fixed; 
@@ -1972,6 +1979,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
