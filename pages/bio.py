@@ -109,15 +109,16 @@ html,body{
   pointer-events:none;
 }
 
-/* BRANDING */
-#identity{
-  position:absolute;
-  bottom:36px;
-  left:50%;
-  transform:translateX(-50%);
-  text-align:center;
-  opacity:0;
-  transition:opacity 1.2s ease;
+/* BRANDING - MODIFICADO */
+#identity {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 1; /* Cambiado de 0 a 1 */
+  transition: opacity 1.2s ease;
+  z-index: 10; /* Asegura que esté por encima del core */
 }
 
 #identity h1{
@@ -304,34 +305,41 @@ Gracias.`,
   },900);
 }
 
-document.addEventListener("mousemove",e=>{
-  const now=Date.now();
-  const dx=e.clientX-lastX;
-  const dy=e.clientY-lastY;
-  const dt=now-lastTime;
+document.addEventListener("mousemove", e => {
+  // Eliminamos el IF de brandingShown para que no haya conflictos
+  identity.style.opacity = "1"; 
+  
+  const now = Date.now();
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  const dt = now - lastTime;
+  const speed = Math.sqrt(dx * dx + dy * dy) / dt;
 
-  const speed=Math.sqrt(dx*dx+dy*dy)/dt;
-
-  fragments.forEach(f=>{
-    if(speed>0.8){
-      f.classList.add("blur");
-    }else{
-      f.classList.remove("blur");
-    }
+  fragments.forEach(f => {
+    if (speed > 0.8) f.classList.add("blur");
+    else f.classList.remove("blur");
   });
 
-  lastX=e.clientX;
-  lastY=e.clientY;
-  lastTime=now;
+  lastX = e.clientX;
+  lastY = e.clientY;
+  lastTime = now;
 
-  cursor.style.left=e.clientX+"px";
-  cursor.style.top=e.clientY+"px";
+  cursor.style.left = e.clientX + "px";
+  cursor.style.top = e.clientY + "px";
+  cursor.style.opacity = "0.6"; // Asegura que el cursor sea visible
+});
 
-  if(!brandingShown){
-    identity.style.opacity=1;
-    brandingShown=true;
+document.addEventListener("click", () => {
+  if (!revealed) {
+    revealed = true;
+    createFragments();
   }
 });
+
+// Forzamos visibilidad inicial al cargar
+window.onload = () => {
+    identity.style.opacity = "1";
+};
 
 document.addEventListener("click",()=>{
   if(!brandingShown){
