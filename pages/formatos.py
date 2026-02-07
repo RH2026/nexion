@@ -1,15 +1,3 @@
-Entiendo perfectamente el punto. Si los datos se están borrando es porque al actualizar no estamos manteniendo la integridad del resto de las filas o hay un conflicto al sobrescribir. Vamos a blindar esa parte.
-
-Respecto a la impresión, le daremos ese toque profesional de Ingeniería con un encabezado técnico y limpio.
-
-Cambios Aplicados:
-Protección de Datos: Se optimizó la lógica de actualización para asegurar que solo se toquen las columnas de logística, dejando intacto el resto del archivo.
-
-Encabezado "Nivel Ingeniería": Se agregó el título JYPESA seguido de Automatización de Procesos con un estilo visual más formal.
-
-Renderizado de Impresión: Se estructuró la vista de impresión para que parezca una orden de salida profesional.
-
-Python
 import streamlit as st
 import pandas as pd
 from github import Github
@@ -170,6 +158,7 @@ with tab2:
                 df_repo.loc[idx_folio, "COSTO GUIA"] = c_val
                 
                 save_to_github(df_repo, f"Update Logistica Folio {folio_update}")
+
 
 
 
