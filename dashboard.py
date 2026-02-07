@@ -740,7 +740,7 @@ else:
                     """, unsafe_allow_html=True)
                     
                     # Todo el control y la tabla se encapsulan aquí
-                    with st.expander("🔍 FILTRAR Y ANALIZAR DETALLE DE RETRASOS", expanded=False):
+                    with st.expander("Filtrar y analizar detalle de retrasos", expanded=False):
                         # 5.1 Filtros internos
                         c1, c2 = st.columns(2)
                         with c1: 
@@ -837,9 +837,7 @@ else:
                                     "NÚMERO DE PEDIDO": st.column_config.TextColumn("PEDIDO"),
                                 }
                             )
-                    else:
-                        st.info(f"No hay entregas programadas aún para {nombre_prox_mes}")
-    
+                   
             
             elif st.session_state.menu_sub == "GANTT":
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
@@ -1988,6 +1986,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
