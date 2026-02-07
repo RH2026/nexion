@@ -194,12 +194,12 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- DATA EDITOR: BLINDAJE AZULADO (NEXION CORE) --- */
+/* --- DATA EDITOR: BLINDAJE AZUL PROFUNDO (NEXION CORE) --- */
 
-/* Inyectamos los colores en las variables que la tabla lee por defecto */
+/* 1. Forzamos las variables base de Streamlit al color de tu fondo */
 :root {{
     --st-color-background: {vars_css['bg']};
-    --st-color-secondary-background: {vars_css['card']};
+    --st-color-secondary-background: {vars_css['bg']};
 }}
 
 [data-testid="stDataEditor"] {{
@@ -207,30 +207,31 @@ input[data-testid="stDateInputView"] {{
     border: 1px solid {vars_css['border']} !important;
 }}
 
-/* EL TRUCO PARA ELIMINAR EL GRIS:
-   1. Subimos el brillo ligeramente.
-   2. Rotamos el color hacia los azules (210-220 grados).
-   3. Aumentamos la saturación para que el azul sea notable. */
+/* 2. FUERZA BRUTA: En lugar de rotar color (que da verde), 
+   ajustamos brillo y contraste para que el 'gris' nativo se funda con tu azul. */
 [data-testid="data-grid-canvas"] {{
-    filter: brightness(1.1) hue-rotate(215deg) saturate(1.4) contrast(0.9) !important;
+    filter: brightness(0.8) contrast(1.2) saturate(1.2) !important;
+    background-color: {vars_css['bg']} !important;
 }}
 
-/* Encabezados de tabla */
+/* 3. Encabezados: Color sólido para que no hereden filtros */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
+    border-bottom: 1px solid {vars_css['border']} !important;
 }}
 
-/* Estilo de celdas y texto */
+/* 4. Limpieza de celdas internas */
 [data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
     border-color: {vars_css['border']} !important;
+    background-color: transparent !important;
 }}
 
-/* Forzamos el fondo del contenedor de la tabla para que no haya fugas grises */
-[data-baseweb="table-builder"] {{
+/* 5. Eliminar cualquier rastro de gris en el contenedor */
+[data-baseweb="table-builder"], [role="grid"] {{
     background-color: {vars_css['bg']} !important;
 }}
 
@@ -1915,6 +1916,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
