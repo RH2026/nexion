@@ -1980,8 +1980,8 @@ else:
                 
     
     # ── FOOTER CON BIO INTERACTIVA (VERSIÓN DEFINITIVA) ────────────────────────
-    # Limpiamos el HTML para que no choque con Python-------
-    bio_html_compacto = """
+    # Tu código HTML tal cual lo pasaste, guardado en una variable limpia
+    mi_html_original = """
     <!DOCTYPE html>
     <html lang='es'>
     <head>
@@ -1989,90 +1989,110 @@ else:
     <style>
     :root{--bg:#0b0d10;--fg:#e5e7eb;--muted:#7a7f87;--carbon:#9aa0a6;}
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{width:100%;height:100%;background:var(--bg);font-family:monospace;overflow:hidden;cursor:default;}
+    html,body{width:100%;height:100%;background:var(--bg);font-family:"Courier New",monospace;overflow:hidden;cursor:none;}
     #cursor{position:fixed;width:14px;height:14px;border-radius:50%;border:1px solid var(--muted);pointer-events:none;transform:translate(-50%,-50%);opacity:.6;}
     #core{position:absolute;inset:0;}
-    .fragment{position:absolute;font-size:13px;letter-spacing:2px;color:var(--muted);opacity:0;filter:blur(4px);white-space:nowrap;transition:all .6s ease;cursor:pointer;}
+    .fragment{position:absolute;font-size:13px;letter-spacing:2px;color:var(--muted);opacity:0;filter:blur(4px);white-space:nowrap;transition:opacity .6s ease, filter .6s ease;user-select:text;}
     .fragment.visible{opacity:1;filter:blur(0);}
-    #expanded{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:560px;font-size:14px;line-height:1.8;color:var(--carbon);opacity:0;pointer-events:none;text-align:center;}
+    .fragment.blur{filter:blur(4px);}
+    .fragment.hidden{opacity:0;}
+    .fragment.read{opacity:0;pointer-events:none;}
+    #expanded{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:560px;font-size:14px;line-height:1.8;color:var(--carbon);opacity:0;pointer-events:none;}
     #identity{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);text-align:center;opacity:0;transition:opacity 1.2s ease;}
     #identity h1{font-size:16px;letter-spacing:6px;font-weight:400;color:var(--fg);}
-    #finalMessage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:14px;line-height:1.9;color:var(--carbon);opacity:0;white-space:pre-line;text-align:center;}
+    #identity p{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--muted);display:flex;justify-content:space-between;}
+    #finalMessage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:14px;line-height:1.9;letter-spacing:1px;color:var(--carbon);opacity:0;white-space:pre-line;transition:opacity 2.2s ease, filter 2.2s ease;}
+    #finalMessage.fade{opacity:0;filter:blur(6px);}
     </style>
     </head>
     <body>
     <div id='cursor'></div><div id='core'></div><div id='expanded'></div>
-    <div id='identity'><h1>HERNAN<span style='color:var(--carbon)'>PHY</span></h1></div>
+    <div id='identity'>
+      <h1>HERNAN<span style='color:var(--carbon)'>PHY</span></h1>
+      <p><span>TECNOLOGÍA</span><span>DISEÑO</span><span>LÓGICA</span></p>
+    </div>
     <div id='finalMessage'></div>
     <script>
-    const core=document.getElementById('core'),cursor=document.getElementById('cursor'),expanded=document.getElementById('expanded'),identity=document.getElementById('identity'),finalMessage=document.getElementById('finalMessage');
+    const core=document.getElementById("core"),cursor=document.getElementById("cursor"),expanded=document.getElementById("expanded"),identity=document.getElementById("identity"),finalMessage=document.getElementById("finalMessage");
     const fragmentsData=[
-    {s:'Guadalajara',l:'Nací en Guadalajara, Jalisco. Formación técnica en informática y diseño.'},
-    {s:'Autodidacta',l:'Gran parte de mi aprendizaje ha sido impulsado por la curiosidad constante.'},
-    {s:'Flash',l:'Adobe Flash me enseñó narrativa visual y lógica cuando los recursos eran limitados.'},
-    {s:'Python',l:'Python me permitió construir NEXION enfocado en datos y procesos.'}
+      {s:"Guadalajara",l:"Nací en Guadalajara, Jalisco. Mi formación académica no fue extensa. Me formé como técnico en informática, programación y diseño."},
+      {s:"Autodidacta",l:"Gran parte de mi aprendizaje ha sido autodidacta, impulsado por la curiosidad constante y la necesidad de comprender cómo funcionan las cosas."},
+      {s:"HTML",l:"Mis primeros acercamientos a la programación fueron con HTML y herramientas visuales que despertaron mi interés por la interacción."},
+      {s:"Flash",l:"Adobe Flash me enseñó narrativa visual, animación y lógica cuando los recursos eran limitados."},
+      {s:"Windows Me",l:"Mi primera computadora operaba con Windows Me y una conexión telefónica inestable."},
+      {s:"Logística",l:"La logística y los inventarios se convirtieron en un terreno natural para aplicar automatización y análisis."},
+      {s:"Python",l:"Python me permitió construir herramientas funcionales enfocadas en datos y procesos."},
+      {s:"UX",l:"Mi enfoque integra lógica, diseño y experiencia de usuario como un solo sistema."}
     ];
-    let fragments=[],readCount=0,revealed=false;
+    let fragments=[],readCount=0,revealed=false,brandingShown=false,activeFragment=null,lastX=0,lastY=0,lastTime=Date.now();
+    function randomPosition(el){el.style.left=Math.random()*80+10+"%";el.style.top=Math.random()*80+10+"%";}
+    function typeText(text,el,callback){el.textContent="";el.style.opacity=1;let i=0;const speed=32;const timer=setInterval(()=>{el.textContent+=text.charAt(i);i++;if(i>=text.length){clearInterval(timer);if(callback)callback();}},speed);}
     function createFragments(){
-    fragmentsData.forEach(f=>{
-    const el=document.createElement('div');el.className='fragment';el.textContent=f.s;
-    el.style.left=Math.random()*70+15+'%';el.style.top=Math.random()*70+15+'%';
-    core.appendChild(el);fragments.push(el);
-    el.onmousedown=()=>{expanded.textContent=f.l;expanded.style.opacity=1;};
-    el.onmouseup=()=>{expanded.style.opacity=0;if(el.dataset.read!=='true'){el.dataset.read='true';readCount++;}if(readCount===fragments.length)endSequence();};
-    });
-    fragments.forEach((f,i)=>setTimeout(()=>f.classList.add('visible'),i*80));
+      fragmentsData.forEach(f=>{
+        const el=document.createElement("div");el.className="fragment";el.textContent=f.s;el.dataset.long=f.l;el.dataset.read="false";randomPosition(el);core.appendChild(el);fragments.push(el);
+        el.addEventListener("mousedown",()=>{activeFragment=el;fragments.forEach(fr=>{if(fr!==el && fr.dataset.read==="false")fr.classList.add("hidden");});expanded.style.opacity=1;typeText(f.l,expanded);});
+        el.addEventListener("mouseup",()=>{if(el.dataset.read==="false"){el.dataset.read="true";readCount++;el.classList.add("read");}expanded.style.opacity=0;activeFragment=null;fragments.forEach(fr=>{if(fr.dataset.read==="false")fr.classList.remove("hidden");});if(readCount===fragments.length)endSequence();});
+      });
+      fragments.forEach((f,i)=>setTimeout(()=>f.classList.add("visible"),i*80));
     }
     function endSequence(){
-    fragments.forEach(f=>f.style.opacity=0);identity.style.opacity=0;
-    setTimeout(()=>{finalMessage.textContent='Gracias por recorrer esta biografía.';finalMessage.style.opacity=1;},1000);
+      fragments.forEach(f=>f.style.opacity=0);identity.style.opacity=0;cursor.style.opacity=0;
+      setTimeout(()=>{typeText(`Gracias por tu tiempo.\\n\\nNada aquí fue diseñado para apresurarse.\\n\\nGracias.`,finalMessage,()=>{setTimeout(()=>{finalMessage.classList.add("fade");setTimeout(()=>{document.body.innerHTML="";document.body.style.background="var(--bg)";},2300);},1600);});},900);
     }
-    document.onmousemove=e=>{cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';if(!revealed){identity.style.opacity=1;}};
-    document.onclick=()=>{if(!revealed){revealed=true;createFragments();}};
+    document.addEventListener("mousemove",e=>{
+      const now=Date.now();const dx=e.clientX-lastX,dy=e.clientY-lastY,dt=now-lastTime;const speed=Math.sqrt(dx*dx+dy*dy)/dt;
+      fragments.forEach(f=>{if(speed>0.8)f.classList.add("blur");else f.classList.remove("blur");});
+      lastX=e.clientX;lastY=e.clientY;lastTime=now;cursor.style.left=e.clientX+"px";cursor.style.top=e.clientY+"px";
+      if(!brandingShown){identity.style.opacity=1;brandingShown=true;}
+    });
+    document.addEventListener("click",()=>{if(!revealed){revealed=true;createFragments();}});
     </script>
     </body></html>
-    """.replace("\n", " ")
+    """.replace("\n", " ") # Esto evita el error de Python con los saltos de línea
     
+    # EL MARKDOWN QUE RESPETA TU DISEÑO DE NEXION
     st.markdown(f"""
     <style>
-        .footer-fixed {{
+        .footer-nexion {{
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
             background-color: transparent;
-            padding: 20px 0;
-            text-align: center;
-            z-index: 999;
-        }}
-        .bio-btn {{
             color: {vars_css['text']};
+            text-align: center;
+            padding: 20px 0;
             font-family: 'Courier New', monospace;
+            font-size: 10px;
+            z-index: 9999;
+        }}
+        .bio-trigger {{
+            color: {vars_css['text']};
             font-weight: 800;
             letter-spacing: 3px;
-            font-size: 10px;
             cursor: pointer;
             text-decoration: none;
         }}
     </style>
     
-    <div class="footer-fixed" style="color: {vars_css['text']}; font-family: 'Courier New', monospace; font-size: 10px;">
+    <div class="footer-nexion">
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
         <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
-        <span class="bio-btn" onclick="openBio()">HERNANPHY</span>
+        <a onclick="openBio()" class="bio-trigger">HERNANPHY</a>
     </div>
     
     <script>
     function openBio() {{
-        const win = window.open("", "HERNANPHY", "width=800,height=600");
-        if(win) {{
-            win.document.write(`{bio_html_compacto}`);
+        const win = window.open("", "Bio", "width=900,height=700");
+        if (win) {{
+            win.document.write(`{mi_html_original}`);
         }} else {{
-            alert("Por favor, permite las ventanas emergentes.");
+            alert("Pop-up bloqueado. Por favor permítelo para ver mi bio.");
         }}
     }}
     </script>
     """, unsafe_allow_html=True)
+
 
 
 
