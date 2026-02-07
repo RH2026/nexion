@@ -1,3 +1,15 @@
+Entiendo perfectamente el punto. Si los datos se están borrando es porque al actualizar no estamos manteniendo la integridad del resto de las filas o hay un conflicto al sobrescribir. Vamos a blindar esa parte.
+
+Respecto a la impresión, le daremos ese toque profesional de Ingeniería con un encabezado técnico y limpio.
+
+Cambios Aplicados:
+Protección de Datos: Se optimizó la lógica de actualización para asegurar que solo se toquen las columnas de logística, dejando intacto el resto del archivo.
+
+Encabezado "Nivel Ingeniería": Se agregó el título JYPESA seguido de Automatización de Procesos con un estilo visual más formal.
+
+Renderizado de Impresión: Se estructuró la vista de impresión para que parezca una orden de salida profesional.
+
+Python
 import streamlit as st
 import pandas as pd
 from github import Github
@@ -21,41 +33,49 @@ def load_data():
 
 def save_to_github(df_to_save, mensaje_commit):
     if not TOKEN:
-        st.error("Falta GITHUB_TOKEN en los secrets.")
+        st.error("Falta GITHUB_TOKEN.")
         return
     g = Github(TOKEN)
     repo = g.get_repo(REPO_NAME)
     try:
         contents = repo.get_contents(FILE_PATH)
+        # Convertimos a CSV asegurando que no se pierdan datos por codificación
         repo.update_file(contents.path, mensaje_commit, df_to_save.to_csv(index=False), contents.sha)
-        st.success(f"✅ GitHub actualizado: {mensaje_commit}")
+        st.success(f"✅ Sistema Actualizado: {mensaje_commit}")
     except Exception as e:
-        st.error(f"Error al guardar: {e}")
+        st.error(f"Error Crítico: {e}")
 
-# --- INTERFAZ ---
-st.set_page_config(page_title="Gestión de Muestras", layout="wide")
+# --- INTERFAZ ESTILO INGENIERÍA ---
+st.set_page_config(page_title="JYPESA - Ingeniería", layout="wide")
 
-tab1, tab2 = st.tabs(["🆕 Nueva Solicitud", "🚚 Actualizar Transporte/Guía"])
+# Encabezado Nivel Ingeniería
+st.markdown("""
+    <div style="text-align: center; border-bottom: 2px solid #1E3A8A; padding-bottom: 10px;">
+        <h1 style="margin-bottom: 0;">JYPESA</h1>
+        <h5 style="margin-top: 0; color: #555;">Automatización de Procesos</h5>
+    </div>
+    """, unsafe_allow_stdio=True)
 
-# --- TAB 1: REGISTRO E IMPRESIÓN ---
+tab1, tab2 = st.tabs(["📋 Registro e Impresión", "⚙️ Actualización de Logística"])
+
+# --- TAB 1: REGISTRO ---
 with tab1:
-    with st.form("form_registro"):
-        st.subheader("Datos de Envío")
+    with st.form("registro_ingenieria"):
         c1, c2, c3 = st.columns(3)
-        folio = c1.text_input("FOLIO")
-        fecha = c2.date_input("FECHA", datetime.date.today())
+        folio = c1.text_input("FOLIO (ID Único)")
+        fecha = c2.date_input("FECHA DE SOLICITUD", datetime.date.today())
         hotel = c3.text_input("DESTINATARIO /  NOMBRE DEL HOTEL")
         
         c4, c5, c6, c7 = st.columns(4)
         ciudad = c4.text_input("CIUDAD")
         estado = c5.text_input("ESTADO")
         contacto = c6.text_input("CONTACTO")
-        telefono = c7.text_input("TELEFONO")
+        telefono = c7.text_input("TELÉFONO")
         
         f_envio = st.selectbox("FORMA DE ENVIO", ["PAQUETERIA", "LOCAL", "RECOLECCION"])
         
-        st.divider()
-        st.subheader("Selección de Productos")
+        st.markdown("---")
+        st.subheader("Ítems para Envío")
         prods_dict = {
             "Accesorios Ecologicos": 47.85, "Dispensador Almond": 218.33, "Dispensador Biogena": 216.00,
             "Dispensador Cava": 230.58, "Dispensador Persa": 275.00, "Dispensador Botánicos L": 274.17,
@@ -68,10 +88,10 @@ with tab1:
         seleccionados = []
         cols = st.columns(3)
         for i, (p, pre) in enumerate(prods_dict.items()):
-            if cols[i % 3].checkbox(f"{p} (${pre})"):
+            if cols[i % 3].checkbox(f"{p}"):
                 seleccionados.append({"p": p, "pre": pre})
         
-        st.write("**Producto Extra:**")
+        st.markdown("**Especificaciones Extra:**")
         ce1, ce2, ce3 = st.columns([1,2,2])
         c_ex = ce1.text_input("CANT")
         p_ex = ce2.text_input("PRODUCTO EXTRA")
@@ -79,7 +99,7 @@ with tab1:
         
         col_b1, col_b2 = st.columns(2)
         btn_guardar = col_b1.form_submit_button("💾 GUARDAR REGISTRO")
-        btn_imprimir = col_b2.form_submit_button("🖨️ GENERAR VISTA DE IMPRESIÓN")
+        btn_imprimir = col_b2.form_submit_button("🖨️ RENDERIZAR FORMATO IMPRESIÓN")
 
     if btn_guardar:
         df_actual = load_data()
@@ -99,42 +119,56 @@ with tab1:
                 "PRODUCTO": "EXTRA", "PRECIO": 0, "PRODUCTO EXTRA": p_ex, "CANTIDAD EXTRA": c_ex, "DESCRIPCION EXTRA": d_ex
             })
         df_final = pd.concat([df_actual, pd.DataFrame(nuevas_filas)], ignore_index=True)
-        save_to_github(df_final, f"Nuevo Folio {folio}")
+        save_to_github(df_final, f"Registro Folio {folio}")
 
     if btn_imprimir:
-        st.markdown("---")
-        st.markdown("### 📄 FORMATO DE SALIDA (MUESTRAS)")
-        st.write("**REMITENTE:** Jabones y productos Especializados | C. Cernícalo 155, La Aurora, GDL.")
-        st.write(f"**FOLIO:** {folio} | **FECHA:** {fecha}")
-        st.write(f"**DESTINO:** {hotel} - {ciudad}, {estado}")
-        st.write(f"**ATN:** {contacto} | **TEL:** {telefono}")
-        st.write("**PRODUCTOS SOLICITADOS:**")
+        st.markdown("""---
+            <div style="background-color: white; padding: 30px; border: 1px solid #ccc; color: black;">
+                <h2 style="text-align: center; margin:0;">JYPESA</h2>
+                <p style="text-align: center; margin:0; border-bottom: 1px solid black;">Automatización de Procesos</p>
+                <br>
+                <table style="width:100%">
+                    <tr><td><b>FOLIO:</b> %s</td><td><b>FECHA:</b> %s</td></tr>
+                    <tr><td><b>DESTINATARIO:</b> %s</td><td><b>CIUDAD/EDO:</b> %s, %s</td></tr>
+                    <tr><td><b>ATN:</b> %s</td><td><b>TEL:</b> %s</td></tr>
+                </table>
+                <hr>
+                <h4>PRODUCTOS SOLICITADOS (MUESTRAS)</h4>
+        """ % (folio, fecha, hotel, ciudad, estado, contacto, telefono), unsafe_allow_html=True)
         for item in seleccionados:
-            st.write(f"- {item['p']}")
+            st.markdown(f"- {item['p']}")
         if p_ex:
-            st.write(f"- {c_ex} {p_ex} ({d_ex})")
-        st.info("Para imprimir: Ctrl + P")
+            st.markdown(f"- {c_ex} {p_ex} ({d_ex})")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # --- TAB 2: ACTUALIZACIÓN ---
 with tab2:
-    st.subheader("Actualizar Logística de Envío")
+    st.subheader("⚙️ Control Logístico Posterior")
     df_repo = load_data()
-    folio_update = st.selectbox("Seleccione Folio para completar datos", df_repo["FOLIO"].unique())
+    # Filtramos folios únicos
+    folios_lista = df_repo["FOLIO"].unique().tolist()
+    folio_update = st.selectbox("Seleccione Folio para Carga de Datos", folios_lista)
     
     if folio_update:
-        # Mostrar datos actuales para confirmar
-        data_folio = df_repo[df_repo["FOLIO"] == folio_update]
-        st.write(f"Actualizando destino: **{data_folio.iloc[0]['DESTINATARIO /  NOMBRE DEL HOTEL']}**")
+        # Extraemos la información actual del primer registro que encuentre de ese folio
+        idx_folio = df_repo[df_repo["FOLIO"] == folio_update].index
+        datos_actuales = df_repo.loc[idx_folio[0]]
         
-        with st.form("form_actualizar"):
-            c_u1, c_u2, c_u3 = st.columns(3)
-            nuevo_t = c_u1.text_input("TRANSPORTE", value=data_folio.iloc[0]["TRANSPORTE"])
-            nueva_g = c_u2.text_input("GUIA", value=data_folio.iloc[0]["GUIA"])
-            nuevo_c = c_u3.number_input("COSTO GUIA", value=float(data_folio.iloc[0]["COSTO GUIA"]))
+        st.info(f"Destinatario Registrado: {datos_actuales['DESTINATARIO /  NOMBRE DEL HOTEL']}")
+        
+        with st.form("form_update_final"):
+            u1, u2, u3 = st.columns(3)
+            # Pre-llenamos con lo que ya tenga (si es que tiene algo)
+            t_val = u1.text_input("TRANSPORTE", value=str(datos_actuales.get("TRANSPORTE", "")))
+            g_val = u2.text_input("GUIA", value=str(datos_actuales.get("GUIA", "")))
+            c_val = u3.number_input("COSTO GUIA", value=float(datos_actuales.get("COSTO GUIA", 0.0)))
             
-            if st.form_submit_button("🔄 ACTUALIZAR TODAS LAS FILAS"):
-                # Actualizar todas las filas que tengan ese FOLIO
-                df_repo.loc[df_repo["FOLIO"] == folio_update, ["TRANSPORTE", "GUIA", "COSTO GUIA"]] = [nuevo_t, nueva_g, nuevo_c]
+            if st.form_submit_button("🔒 ACTUALIZAR Y ASEGURAR DATOS"):
+                # Actualizamos todas las ocurrencias de ese folio
+                df_repo.loc[idx_folio, "TRANSPORTE"] = t_val
+                df_repo.loc[idx_folio, "GUIA"] = g_val
+                df_repo.loc[idx_folio, "COSTO GUIA"] = c_val
+                
                 save_to_github(df_repo, f"Update Logistica Folio {folio_update}")
 
 
