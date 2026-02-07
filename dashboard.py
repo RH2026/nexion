@@ -78,12 +78,12 @@ if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#111827",
-    "card": "#1F2937",    # Un gris azulado oscuro pero no negro
-    "text": "#F8FAFC",
-    "sub": "#94A3B8",
-    "border": "#374151",
-    "table_header": "#2D3748", # Color sólido para cabeceras
+    "bg": "#111827",      # Fondo profundo
+    "card": "#1F2937",    # Color para las celdas (Azul grisáceo)
+    "text": "#F8FAFC",    
+    "sub": "#94A3B8",     
+    "border": "#374151",  
+    "table_header": "#2D3748", # Encabezados un poco más claros
     "logo": "n1.png"
 }
 
@@ -194,43 +194,42 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- DATA EDITOR: BLINDAJE TOTAL (XENOCODE CORE) --- */
+/* --- DATA EDITOR: BLINDAJE AZULADO (NEXION CORE) --- */
 
-/* 1. Inyectamos tus colores en las variables internas de Streamlit */
+/* Inyectamos los colores en las variables que la tabla lee por defecto */
 :root {{
     --st-color-background: {vars_css['bg']};
     --st-color-secondary-background: {vars_css['card']};
-    --st-color-text: {vars_css['text']};
 }}
 
-/* 2. Contenedor principal de la tabla */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
 }}
 
-/* 3. Forzar el brillo del Canvas (donde se dibujan las celdas) */
-/* El valor 1.1 lo saca del negro sin hacerlo gris claro */
+/* EL TRUCO PARA ELIMINAR EL GRIS:
+   1. Subimos el brillo ligeramente.
+   2. Rotamos el color hacia los azules (210-220 grados).
+   3. Aumentamos la saturación para que el azul sea notable. */
 [data-testid="data-grid-canvas"] {{
-    filter: brightness(1.1) contrast(1) !important;
+    filter: brightness(1.1) hue-rotate(215deg) saturate(1.4) contrast(0.9) !important;
 }}
 
-/* 4. Encabezados: Usamos el color de borde para que se vea técnico */
+/* Encabezados de tabla */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
-    background-color: {vars_css['border']} !important;
+    background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
 }}
 
-/* 5. Texto y celdas internas */
+/* Estilo de celdas y texto */
 [data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
     border-color: {vars_css['border']} !important;
 }}
 
-/* 6. Quitar fondos blancos accidentales en celdas activas */
+/* Forzamos el fondo del contenedor de la tabla para que no haya fugas grises */
 [data-baseweb="table-builder"] {{
     background-color: {vars_css['bg']} !important;
 }}
@@ -1916,6 +1915,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
