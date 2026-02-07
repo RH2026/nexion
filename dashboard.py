@@ -1190,8 +1190,7 @@ else:
     
             # --- SUBSECCIÓN A: SALIDA DE PT ---
             if st.session_state.menu_sub == "SALIDA DE PT":
-                st.markdown("<h3>FORMATO SALIDA DE PRODUCTO TERMINADO</h3>", unsafe_allow_html=True)
-                
+                                
                 # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
                 if 'folio_nexion' not in st.session_state:
                     tz_gdl = pytz.timezone('America/Mexico_City') 
@@ -1227,8 +1226,8 @@ else:
                     fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
                 
                 # ── NUEVA SECCIÓN: BÚSQUEDA AUXILIAR ──────────────────────────
-                with st.expander(":material/search: BUSCADOR DE PRODUCTOS (AUXILIAR)", expanded=False):
-                    busqueda = st.text_input("Escribe el nombre del producto o código (ej. CEPILLO, GORRA):").strip().upper()
+                with st.expander(":material/search: Buscar Codigo", expanded=False):
+                    busqueda = st.text_input("Escribe el nombre del producto o código (ej. Cepillo, Gorra, Elemnts, Cava):").strip().upper()
                     if busqueda:
                         # Filtramos en el inventario por código o descripción que contengan la palabra
                         resultados = df_inv[
@@ -1273,9 +1272,9 @@ else:
                     key="editor_pt", 
                     on_change=lookup_pt,
                     column_config={
-                        "CODIGO": st.column_config.TextColumn(":material/qr_code: CÓDIGO"),
-                        "DESCRIPCION": st.column_config.TextColumn(":material/description: DESCRIPCIÓN"),
-                        "CANTIDAD": st.column_config.TextColumn(":material/pin: CANTIDAD", width="small")
+                        "CODIGO": st.column_config.TextColumn("CÓDIGO"),
+                        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
+                        "CANTIDAD": st.column_config.TextColumn("CANTIDAD", width="small")
                     }
                 )
                 # --- HTML PARA IMPRESIÓN PT (BLINDAJE TOTAL DE MÁRGENES) ---
@@ -1942,6 +1941,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
