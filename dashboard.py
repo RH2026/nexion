@@ -196,43 +196,72 @@ input[data-testid="stDateInputView"] {{
 
 /* --- DATA EDITOR: BLINDAJE AZUL PROFUNDO (NEXION CORE) --- */
 
-/* 1. Forzamos las variables base de Streamlit al color de tu fondo */
+/* 1. Variables base */
 :root {{
     --st-color-background: {vars_css['bg']};
     --st-color-secondary-background: {vars_css['bg']};
 }}
 
+/* 2. Contenedor principal */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
 }}
 
-/* 2. FUERZA BRUTA: En lugar de rotar color (que da verde), 
-   ajustamos brillo y contraste para que el 'gris' nativo se funda con tu azul. */
+/* 3. Canvas del grid */
 [data-testid="data-grid-canvas"] {{
-    filter: brightness(0.8) contrast(1.2) saturate(1.2) !important;
     background-color: {vars_css['bg']} !important;
+    filter: brightness(0.9) contrast(1.35) !important;
 }}
 
-/* 3. Encabezados: Color sólido para que no hereden filtros */
-[data-testid="stTableColumnHeader"], [class^="gdg-"] {{
+/* 4. Encabezados */
+[data-testid="stTableColumnHeader"],
+[class^="gdg-header"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     border-bottom: 1px solid {vars_css['border']} !important;
+    border-right: 1px solid {vars_css['border']} !important;
 }}
 
-/* 4. Limpieza de celdas internas */
-[data-testid="stDataEditor"] * {{
+/* 5. Celdas – líneas visibles */
+[data-testid="stDataEditor"] .gdg-cell {{
     color: {vars_css['text']} !important;
-    border-color: {vars_css['border']} !important;
+    background-color: transparent !important;
+    box-shadow:
+        inset -1px 0 0 {vars_css['border']},
+        inset 0 -1px 0 {vars_css['border']} !important;
+}}
+
+/* 6. Hover */
+[data-testid="stDataEditor"] .gdg-row:hover .gdg-cell {{
+    background-color: rgba(255,255,255,0.03) !important;
+}}
+
+/* 7. Inputs */
+[data-testid="stDataEditor"] input,
+[data-testid="stDataEditor"] textarea {{
+    color: {vars_css['text']} !important;
     background-color: transparent !important;
 }}
 
-/* 5. Eliminar cualquier rastro de gris en el contenedor */
-[data-baseweb="table-builder"], [role="grid"] {{
+/* 8. Limpieza */
+[data-baseweb="table-builder"],
+[role="grid"] {{
     background-color: {vars_css['bg']} !important;
+}}
+
+/* 9. Scrollbars */
+[data-testid="stDataEditor"] ::-webkit-scrollbar {{
+    width: 8px;
+    height: 8px;
+}}
+[data-testid="stDataEditor"] ::-webkit-scrollbar-thumb {{
+    background-color: {vars_css['border']};
+    border-radius: 4px;
 }}
 
 /* 6. FOOTER FIJO */
@@ -1940,6 +1969,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
