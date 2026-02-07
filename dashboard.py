@@ -196,13 +196,13 @@ input[data-testid="stDateInputView"] {{
 
 /* --- DATA EDITOR: BLINDAJE AZUL PROFUNDO (NEXION CORE) --- */
 
-/* 1. Base Streamlit */
+/* Base Streamlit */
 :root {{
     --st-color-background: {vars_css['bg']};
     --st-color-secondary-background: {vars_css['bg']};
 }}
 
-/* 2. Contenedor principal */
+/* Contenedor */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -210,24 +210,31 @@ input[data-testid="stDateInputView"] {{
     overflow: hidden !important;
 }}
 
-/* 3. Canvas del grid – MALLA REAL */
+/* CANVAS – MALLA QUE NO DESAPARECE */
 [data-testid="data-grid-canvas"] {{
     background-color: {vars_css['bg']} !important;
 
-    /* Líneas visibles pero elegantes */
+    /* Patrón repetido fino */
     background-image:
-        linear-gradient(to right, rgba(75,85,99,0.85) 1.25px, transparent 1.25px),
-        linear-gradient(to bottom, rgba(75,85,99,0.85) 1.25px, transparent 1.25px);
+        repeating-linear-gradient(
+            to right,
+            rgba(75,85,99,0.7) 0px,
+            rgba(75,85,99,0.7) 1px,
+            transparent 1px,
+            transparent 64px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(75,85,99,0.7) 0px,
+            rgba(75,85,99,0.7) 1px,
+            transparent 1px,
+            transparent 36px
+        );
 
-    /* Ajuste a grid */
-    background-size: 120px 100%, 100% 38px;
-    background-position: left top;
-
-    /* Micro contraste */
-    filter: brightness(0.92) contrast(1.15) !important;
+    filter: brightness(0.95) contrast(1.12) !important;
 }}
 
-/* 4. Encabezados */
+/* Encabezados */
 [data-testid="stTableColumnHeader"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
@@ -236,30 +243,30 @@ input[data-testid="stDateInputView"] {{
     border-bottom: 1px solid {vars_css['border']} !important;
 }}
 
-/* 5. Texto general */
+/* Texto */
 [data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
 }}
 
-/* 6. Hover de fila */
+/* Hover de fila */
 [data-testid="stDataEditor"] .gdg-row:hover {{
     background-color: rgba(255,255,255,0.035) !important;
 }}
 
-/* 7. Inputs editables */
+/* Inputs */
 [data-testid="stDataEditor"] input,
 [data-testid="stDataEditor"] textarea {{
     color: {vars_css['text']} !important;
     background-color: transparent !important;
 }}
 
-/* 8. Limpieza de contenedores */
+/* Limpieza */
 [data-baseweb="table-builder"],
 [role="grid"] {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* 9. Scrollbars */
+/* Scrollbars */
 [data-testid="stDataEditor"] ::-webkit-scrollbar {{
     width: 8px;
     height: 8px;
@@ -1974,6 +1981,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
