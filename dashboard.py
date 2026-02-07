@@ -239,16 +239,14 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* Hover de fila más marcado y fluido */
-    [data-testid="stDataEditor"] .gdg-row:hover {{
-        background-color: #ffffff !important;
-        transition: background-color 0.2s ease-in-out !important;
-        cursor: pointer !important;
+/* Intentamos atacar el contenedor del canvas */
+    [data-testid="stDataEditor"] div:hover {{
+        background-color: rgba(255, 255, 255, 0.05) !important;
     }}
 
-    /* Opcional: Para asegurar que el texto resalte sobre el hover */
-    [data-testid="stDataEditor"] .gdg-row:hover .gdg-cell {{
-        color: #FFFFFF !important;
+    /* Ajuste global para el tema oscuro en editores */
+    .st-emotion-cache-1y4p8pa {{
+        border: 1px solid #1C2529 !important;
     }}
 
 /* 6. FOOTER FIJO */
@@ -1956,6 +1954,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
