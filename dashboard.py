@@ -470,7 +470,7 @@ else:
                     stroke-width: 15; /* ¡MÁS GRUESA! */
                 }
             
-                .stat-bg { stroke: #1E262C; }
+                .stat-bg { stroke: #1F2937; }
                 
                 .stat-progress {
                     transition: stroke-dashoffset 0.8s ease-in-out;
@@ -1915,6 +1915,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
