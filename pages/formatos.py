@@ -54,9 +54,32 @@ with st.expander("📍 DATOS DEL REMITENTE (FIJOS)", expanded=False):
     **Contacto:** Rigoberto Hernandez | **Tel:** 3319753122
     """)
 
+# --- NUEVA SECCIÓN: BUSCADOR RÁPIDO POR FOLIO ---
+st.markdown("### 🔍 CONSULTA RÁPIDA DE ENVÍOS")
+df_busqueda = load_data_fresh()
+c_bus1, c_bus2 = st.columns([1, 3])
+folio_query = c_bus1.text_input("Ingresa Folio a consultar", placeholder="Ej. 3")
+
+if folio_query:
+    # Filtramos la información del folio
+    res = df_busqueda[df_busqueda["FOLIO"].astype(str) == str(folio_query)]
+    if not res.empty:
+        datos = res.iloc[0] # Tomamos el primero para datos generales
+        with st.container(border=True):
+            col_inf1, col_inf2, col_inf3, col_inf4 = st.columns(4)
+            col_inf1.metric("DESTINATARIO", datos["DESTINATARIO /  NOMBRE DEL HOTEL"])
+            col_inf2.metric("TRANSPORTE", datos["TRANSPORTE"] if pd.notna(datos["TRANSPORTE"]) else "Pendiente")
+            col_inf3.metric("GUÍA", datos["GUIA"] if pd.notna(datos["GUIA"]) else "Pendiente")
+            col_inf4.metric("COSTO GUÍA", f"${datos['COSTO GUIA']}")
+    else:
+        st.warning("No se encontró información para ese folio.")
+
+st.divider()
+
+# --- TABS ORIGINALES ---
 tab1, tab2 = st.tabs(["📋 Registro e Impresión", "⚙️ Actualización de Logística"])
 
-# --- TAB 1: REGISTRO ---
+# --- TAB 1: REGISTRO (IDÉNTICO) ---
 with tab1:
     with st.form("registro_ingenieria"):
         c1, c2, c3 = st.columns(3)
@@ -123,8 +146,6 @@ with tab1:
             df_final = pd.concat([df_actual, pd.DataFrame(nuevas_filas)], ignore_index=True)
             save_to_github(df_final, f"Registro Folio {folio}")
             st.rerun()
-        else:
-            st.warning("Selecciona al menos un producto.")
 
     if btn_imprimir:
         st.markdown(f"""
@@ -155,7 +176,7 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
-# --- TAB 2: ACTUALIZACIÓN ---
+# --- TAB 2: ACTUALIZACIÓN (IDÉNTICO) ---
 with tab2:
     c_ref1, c_ref2 = st.columns([1,4])
     if c_ref1.button("🔄 ACTUALIZAR LISTA"):
@@ -186,8 +207,7 @@ with tab2:
                     df_repo.loc[idx_folio, ["TRANSPORTE", "GUIA", "COSTO GUIA"]] = [t_val, g_val, c_val]
                     save_to_github(df_repo, f"Update Logistica Folio {folio_update}")
                     st.rerun()
-    else:
-        st.warning("No hay registros disponibles.")
+
 
 
 
