@@ -256,8 +256,6 @@ input[data-testid="stDateInputView"] {{
     background-color: rgba(255,255,255,0.03) !important;
 }}
 
-</style>
-""", unsafe_allow_html=True)
 
 /* 6. FOOTER FIJO */
 .footer {{ 
@@ -1964,6 +1962,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
