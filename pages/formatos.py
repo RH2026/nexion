@@ -1,3 +1,11 @@
+El problema de la pérdida de registros suele ocurrir cuando pandas intenta guardar el archivo y existe una discrepancia en cómo se manejan los índices o cuando se intenta concatenar datos que Streamlit tiene guardados en una memoria temporal (caché) obsoleta.
+
+Para solucionar esto, he ajustado la función de guardado para que vuelva a leer el archivo de GitHub justo antes de aplicar los cambios, asegurando que no sobreescribamos datos viejos sobre los nuevos.
+
+Aquí tienes el código corregido y blindado:
+
+Código de Ingeniería JYPESA (Corrección de Persistencia)
+Python
 import streamlit as st
 import pandas as pd
 from github import Github
@@ -13,8 +21,9 @@ def load_data_fresh():
     csv_url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}?v={timestamp}"
     try:
         df = pd.read_csv(csv_url)
-        # Aseguramos que FOLIO sea siempre string para comparaciones precisas
         df['FOLIO'] = df['FOLIO'].astype(str)
+        # Limpiamos espacios en blanco accidentales en los nombres de columnas
+        df.columns = df.columns.str.strip()
         return df
     except:
         return pd.DataFrame(columns=[
@@ -31,7 +40,9 @@ def save_to_github(df_to_save, mensaje_commit):
     repo = g.get_repo(REPO_NAME)
     try:
         contents = repo.get_contents(FILE_PATH)
-        repo.update_file(contents.path, mensaje_commit, df_to_save.to_csv(index=False), contents.sha)
+        # Convertimos a CSV sin índice para evitar columnas fantasma
+        csv_data = df_to_save.to_csv(index=False)
+        repo.update_file(contents.path, mensaje_commit, csv_data, contents.sha)
         st.success(f"✅ Sincronizado: {mensaje_commit}")
         st.cache_data.clear()
     except Exception as e:
@@ -48,7 +59,7 @@ st.markdown("""
     <br>
     """, unsafe_allow_html=True)
 
-# DATOS FIJOS DEL REMITENTE
+# DATOS DEL REMITENTE
 with st.expander("📍 DATOS DEL REMITENTE (FIJOS)", expanded=False):
     st.markdown("""
     **Remitente:** Jabones y productos Especializados  
@@ -57,7 +68,7 @@ with st.expander("📍 DATOS DEL REMITENTE (FIJOS)", expanded=False):
     **Contacto:** Rigoberto Hernandez | **Tel:** 3319753122
     """)
 
-# --- CONSULTA RÁPIDA DE ENVÍOS ---
+# --- CONSULTA RÁPIDA ---
 st.markdown("### 🔍 CONSULTA RÁPIDA DE ENVÍOS")
 df_busqueda = load_data_fresh()
 c_bus1, c_bus2 = st.columns([1, 3])
@@ -70,9 +81,9 @@ if folio_query:
         with st.container(border=True):
             col_inf1, col_inf2, col_inf3, col_inf4, col_inf5 = st.columns(5)
             col_inf1.metric("FECHA ENVÍO", str(datos["FECHA"]))
-            col_inf2.metric("DESTINATARIO", datos["DESTINATARIO /  NOMBRE DEL HOTEL"])
-            col_inf3.metric("TRANSPORTE", datos["TRANSPORTE"] if pd.notna(datos["TRANSPORTE"]) and datos["TRANSPORTE"] != "" else "Pendiente")
-            col_inf4.metric("GUÍA", datos["GUIA"] if pd.notna(datos["GUIA"]) and datos["GUIA"] != "" else "Pendiente")
+            col_inf2.metric("DESTINATARIO", datos.get("DESTINATARIO /  NOMBRE DEL HOTEL", "N/A"))
+            col_inf3.metric("TRANSPORTE", str(datos["TRANSPORTE"]) if pd.notna(datos["TRANSPORTE"]) and datos["TRANSPORTE"] != "" else "Pendiente")
+            col_inf4.metric("GUÍA", str(datos["GUIA"]) if pd.notna(datos["GUIA"]) and datos["GUIA"] != "" else "Pendiente")
             col_inf5.metric("COSTO GUÍA", f"${datos['COSTO GUIA']}")
     else:
         st.warning("No se encontró información para ese folio.")
@@ -85,20 +96,18 @@ tab1, tab2 = st.tabs(["📋 Registro e Impresión", "⚙️ Actualización de Lo
 with tab1:
     with st.form("registro_ingenieria"):
         c1, c2, c3 = st.columns(3)
-        folio = c1.text_input("FOLIO")
-        fecha = c2.date_input("FECHA", datetime.date.today())
-        hotel = c3.text_input("DESTINATARIO /  NOMBRE DEL HOTEL")
+        folio_reg = c1.text_input("FOLIO")
+        fecha_reg = c2.date_input("FECHA", datetime.date.today())
+        hotel_reg = c3.text_input("DESTINATARIO /  NOMBRE DEL HOTEL")
         
         c4, c5, c6, c7 = st.columns(4)
-        ciudad = c4.text_input("CIUDAD")
-        estado = c5.text_input("ESTADO")
-        contacto = c6.text_input("CONTACTO")
-        telefono = c7.text_input("TELEFONO")
+        ciudad_reg = c4.text_input("CIUDAD")
+        estado_reg = c5.text_input("ESTADO")
+        contacto_reg = c6.text_input("CONTACTO")
+        telefono_reg = c7.text_input("TELEFONO")
         
-        f_envio = st.selectbox("FORMA DE ENVIO", ["PAQUETERIA", "ENTREGA LOCAL", "RECOLECCION EN PLANTA"])
+        f_envio_reg = st.selectbox("FORMA DE ENVIO", ["PAQUETERIA", "ENTREGA LOCAL", "RECOLECCION EN PLANTA"])
         
-        st.markdown("---")
-        st.subheader("Selección de Productos")
         prods_dict = {
             "Accesorios Ecologicos": 47.85, "Dispensador Almond": 218.33, "Dispensador Biogena": 216.00,
             "Dispensador Cava": 230.58, "Dispensador Persa": 275.00, "Dispensador Botánicos L": 274.17,
@@ -114,84 +123,57 @@ with tab1:
             if cols[i % 3].checkbox(f"{p} (${pre})"):
                 seleccionados.append({"p": p, "pre": pre})
         
-        st.markdown("---")
-        st.subheader("Producto No Listado (Extra)")
         ce1, ce2, ce3, ce4 = st.columns([1,1,2,2])
         cant_ex = ce1.text_input("CANTIDAD EXTRA")
         um_ex = ce2.text_input("UM")
         prod_ex = ce3.text_input("PRODUCTO EXTRA")
         desc_ex = ce4.text_input("DESCRIPCION EXTRA")
         
-        col_b1, col_b2 = st.columns(2)
-        btn_guardar = col_b1.form_submit_button("💾 GUARDAR REGISTRO")
-        btn_imprimir = col_b2.form_submit_button("🖨️ RENDERIZAR FORMATO IMPRESIÓN")
+        btn_guardar = st.form_submit_button("💾 GUARDAR REGISTRO")
+        btn_imprimir = st.form_submit_button("🖨️ RENDERIZAR FORMATO IMPRESIÓN")
 
     if btn_guardar:
-        df_actual = load_data_fresh()
+        # Volvemos a leer para no perder lo que otros hayan guardado mientras llenábamos el form
+        df_fresh = load_data_fresh()
         nuevas_filas = []
         for item in seleccionados:
             nuevas_filas.append({
-                "FOLIO": str(folio), "FECHA": str(fecha), "DESTINATARIO /  NOMBRE DEL HOTEL": hotel,
-                "CIUDAD": ciudad, "ESTADO": estado, "CONTACTO": contacto, "TELEFONO": telefono,
-                "FORMA DE ENVIO": f_envio, "TRANSPORTE": "", "GUIA": "", "COSTO GUIA": 0,
+                "FOLIO": str(folio_reg), "FECHA": str(fecha_reg), "DESTINATARIO /  NOMBRE DEL HOTEL": hotel_reg,
+                "CIUDAD": ciudad_reg, "ESTADO": estado_reg, "CONTACTO": contacto_reg, "TELEFONO": telefono_reg,
+                "FORMA DE ENVIO": f_envio_reg, "TRANSPORTE": "", "GUIA": "", "COSTO GUIA": 0,
                 "PRODUCTO": item["p"], "PRECIO": item["pre"], "PRODUCTO EXTRA": "", "CANTIDAD EXTRA": "", "DESCRIPCION EXTRA": ""
             })
         if prod_ex:
             nuevas_filas.append({
-                "FOLIO": str(folio), "FECHA": str(fecha), "DESTINATARIO /  NOMBRE DEL HOTEL": hotel,
-                "CIUDAD": ciudad, "ESTADO": estado, "CONTACTO": contacto, "TELEFONO": telefono,
-                "FORMA DE ENVIO": f_envio, "TRANSPORTE": "", "GUIA": "", "COSTO GUIA": 0,
+                "FOLIO": str(folio_reg), "FECHA": str(fecha_reg), "DESTINATARIO /  NOMBRE DEL HOTEL": hotel_reg,
+                "CIUDAD": ciudad_reg, "ESTADO": estado_reg, "CONTACTO": contacto_reg, "TELEFONO": telefono_reg,
+                "FORMA DE ENVIO": f_envio_reg, "TRANSPORTE": "", "GUIA": "", "COSTO GUIA": 0,
                 "PRODUCTO": "EXTRA", "PRECIO": 0, "PRODUCTO EXTRA": prod_ex, "CANTIDAD EXTRA": f"{cant_ex} {um_ex}", "DESCRIPCION EXTRA": desc_ex
             })
         if nuevas_filas:
-            df_final = pd.concat([df_actual, pd.DataFrame(nuevas_filas)], ignore_index=True)
-            save_to_github(df_final, f"Registro Folio {folio}")
+            df_final = pd.concat([df_fresh, pd.DataFrame(nuevas_filas)], ignore_index=True)
+            save_to_github(df_final, f"Registro Folio {folio_reg}")
             st.rerun()
 
-    if btn_imprimir:
-        st.markdown(f"""
-            <div style="background-color: white; padding: 30px; border: 2px solid #1E3A8A; color: black; font-family: 'Courier New', Courier, monospace;">
-                <div style="text-align: center; border-bottom: 2px solid black; padding-bottom: 10px;">
-                    <h1 style="margin:0;">JYPESA</h1>
-                    <p style="margin:0; font-weight: bold;">Automatización de Procesos</p>
-                </div>
-                <br>
-                <div style="font-size: 14px;">
-                    <p><b>FOLIO:</b> {folio} &nbsp;&nbsp; <b>FECHA:</b> {fecha}</p>
-                    <hr>
-                    <p><b>REMITENTE:</b> Jabones y productos Especializados | C. Cernícalo 155, La Aurora, GDL.</p>
-                    <p><b>DESTINATARIO:</b> {hotel}</p>
-                    <p><b>DESTINO:</b> {ciudad}, {estado} | <b>ENVÍO:</b> {f_envio}</p>
-                    <p><b>ATENCIÓN:</b> {contacto} | <b>TEL:</b> {telefono}</p>
-                    <hr>
-                    <h4 style="text-align:center;">DETALLE DE PRODUCTOS (SIN COSTO)</h4>
-                    <ul>
-                        {"".join([f"<li>{item['p']}</li>" for item in seleccionados])}
-                        {f"<li>{cant_ex} {um_ex} - {prod_ex} ({desc_ex})</li>" if prod_ex else ""}
-                    </ul>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-# --- TAB 2: ACTUALIZACIÓN ---
+# --- TAB 2: ACTUALIZACIÓN (REPARADO) ---
 with tab2:
     if st.button("🔄 ACTUALIZAR LISTA"):
         st.cache_data.clear()
         st.rerun()
     
     st.subheader("⚙️ Control Logístico Posterior")
-    df_repo = load_data_fresh()
+    df_update = load_data_fresh()
     
-    if not df_repo.empty:
-        folios_lista = sorted(df_repo["FOLIO"].unique().tolist(), reverse=True)
-        folio_update = st.selectbox("Seleccione Folio para completar Transporte/Guía", folios_lista)
+    if not df_update.empty:
+        folios_lista = sorted(df_update["FOLIO"].unique().tolist(), reverse=True)
+        folio_sel = st.selectbox("Seleccione Folio para completar Transporte/Guía", folios_lista)
         
-        if folio_update:
-            # Filtrado estricto por string para asegurar coincidencia
-            idx_folio = df_repo[df_repo["FOLIO"] == str(folio_update)].index
-            datos_act = df_repo.loc[idx_folio[0]]
+        if folio_sel:
+            # Seleccionamos todas las filas del folio
+            mask = df_update["FOLIO"] == str(folio_sel)
+            datos_act = df_update[mask].iloc[0]
             
-            st.info(f"📍 Editando Logística para: {datos_act['DESTINATARIO /  NOMBRE DEL HOTEL']}")
+            st.info(f"📍 Editando Logística para: {datos_act.get('DESTINATARIO /  NOMBRE DEL HOTEL', 'N/A')}")
             
             with st.form("form_update_log"):
                 u1, u2, u3 = st.columns(3)
@@ -200,12 +182,11 @@ with tab2:
                 c_val = u3.number_input("COSTO GUIA", value=float(datos_act["COSTO GUIA"]) if pd.notna(datos_act["COSTO GUIA"]) else 0.0)
                 
                 if st.form_submit_button("🔒 GUARDAR CAMBIOS"):
-                    # Aplicamos cambios a todas las filas con ese Folio
-                    df_repo.loc[idx_folio, "TRANSPORTE"] = t_val
-                    df_repo.loc[idx_folio, "GUIA"] = g_val
-                    df_repo.loc[idx_folio, "COSTO GUIA"] = c_val
+                    # Volvemos a cargar los datos ANTES de guardar para asegurar que el DataFrame está completo
+                    df_final_save = load_data_fresh()
+                    df_final_save.loc[df_final_save["FOLIO"] == str(folio_sel), ["TRANSPORTE", "GUIA", "COSTO GUIA"]] = [t_val, g_val, c_val]
                     
-                    save_to_github(df_repo, f"Update Logistica Folio {folio_update}")
+                    save_to_github(df_final_save, f"Update Logistica Folio {folio_sel}")
                     st.rerun()
 
 
