@@ -1416,16 +1416,24 @@ else:
                 <html>
                 <head>
                     <style>
-                        /* Ocultar encabezados y pies de página del navegador */
                         @media print {{
                             @page {{ 
-                                margin: 10mm; 
-                                size: auto;   /* O usa landscape si prefieres horizontal */
+                                size: auto;   
+                                margin: 0;  /* Esto elimina encabezados y pies de página del navegador */
                             }}
-                            body {{ margin: 0; }}
+                            body {{ 
+                                margin: 0; 
+                                padding: 10mm; /* El margen visual lo damos con padding para que no se corten los textos */
+                            }}
                             header, footer {{ display: none !important; }}
                         }}
-                        body {{ font-family: Arial, sans-serif; background: white; color: black; }}
+                        
+                        body {{ 
+                            font-family: Arial, sans-serif; 
+                            background: white; 
+                            color: black; 
+                        }}
+                        
                         .print-box {{ padding: 20px; }}
                         table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
                         th, td {{ border-bottom: 1px solid black; padding: 8px; text-align: left; }}
@@ -1443,7 +1451,9 @@ else:
                                 <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
                             </div>
                         </div>
+                        
                         <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
+                        
                         <table>
                             <thead>
                                 <tr style="font-size:12px; border-bottom: 2px solid black;">
@@ -1455,6 +1465,7 @@ else:
                                 {espacios}
                             </tbody>
                         </table>
+                        
                         <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
                             <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
                             <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
@@ -1916,6 +1927,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
