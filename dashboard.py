@@ -194,44 +194,45 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- DATA EDITOR: GRIS AZULADO TÉCNICO (NEXION FINAL) --- */
+/* --- DATA EDITOR: BLINDAJE AZUL PROFUNDO (NEXION CORE) --- */
 
+/* 1. Forzamos las variables base de Streamlit al color de tu fondo */
 :root {{
-    /* Forzamos el color de fondo de la tabla al azul acero */
-    --st-color-background: #1e293b; 
-    --st-color-secondary-background: #0f172a;
+    --st-color-background: {vars_css['bg']};
+    --st-color-secondary-background: {vars_css['bg']};
 }}
 
-/* Atacamos el contenedor de la tabla */
 [data-testid="stDataEditor"] {{
-    background-color: #0f172a !important;
-    border: 1px solid #334155 !important;
+    background-color: {vars_css['bg']} !important;
+    border: 1px solid {vars_css['border']} !important;
 }}
 
-/* Forzamos el color a las celdas del Canvas */
+/* 2. FUERZA BRUTA: En lugar de rotar color (que da verde), 
+   ajustamos brillo y contraste para que el 'gris' nativo se funda con tu azul. */
 [data-testid="data-grid-canvas"] {{
-    background-color: #0f172a !important;
-    /* Quitamos cualquier filtro previo que nos esté dando problemas */
-    filter: none !important; 
+    filter: brightness(0.8) contrast(1.2) saturate(1.2) !important;
+    background-color: {vars_css['bg']} !important;
 }}
 
-/* Encabezados: Gris Acero */
+/* 3. Encabezados: Color sólido para que no hereden filtros */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
-    background-color: #334155 !important;
-    color: #f1f5f9 !important;
-    font-weight: 600 !important;
+    background-color: {vars_css['table_header']} !important;
+    color: {vars_css['text']} !important;
+    font-weight: 700 !important;
     text-transform: uppercase !important;
+    border-bottom: 1px solid {vars_css['border']} !important;
 }}
 
-/* Estilo de los textos internos para que resalten sobre el gris azulado */
+/* 4. Limpieza de celdas internas */
 [data-testid="stDataEditor"] * {{
-    color: #cbd5e1 !important;
-    border-color: #1e293b !important;
+    color: {vars_css['text']} !important;
+    border-color: {vars_css['border']} !important;
+    background-color: transparent !important;
 }}
 
-/* Eliminar el fondo negro del contenedor base */
-[data-baseweb="table-builder"] {{
-    background-color: #0f172a !important;
+/* 5. Eliminar cualquier rastro de gris en el contenedor */
+[data-baseweb="table-builder"], [role="grid"] {{
+    background-color: {vars_css['bg']} !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -1915,6 +1916,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
