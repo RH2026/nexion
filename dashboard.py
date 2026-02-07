@@ -1416,121 +1416,168 @@ else:
                 <html>
                 <head>
                     <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&display=swap');
+                        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Share+Tech+Mono&display=swap');
                         
                         @media print {{
-                            @page {{ margin: 10mm; size: portrait; }}
-                            body {{ margin: 0; -webkit-print-color-adjust: exact; }}
+                            @page {{ margin: 5mm; size: portrait; }}
+                            body {{ margin: 0; }}
                             .no-print {{ display: none; }}
                         }}
                 
                         body {{ 
-                            font-family: 'Inter', sans-serif; 
+                            font-family: 'Roboto Mono', monospace; 
                             background: white; 
-                            color: #1a1a1a; 
-                            margin: 0; padding: 20px; 
+                            color: #000; 
+                            margin: 0; padding: 15px;
                         }}
                 
-                        .header-container {{
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: flex-end;
-                            border-bottom: 3px solid #000;
-                            padding-bottom: 15px;
-                            margin-bottom: 20px;
-                        }}
-                
-                        .brand h1 {{ margin: 0; font-size: 28px; letter-spacing: -1px; font-weight: 800; }}
-                        .brand p {{ margin: 0; font-size: 11px; text-transform: uppercase; color: #444; letter-spacing: 3px; }}
-                
-                        .meta-info {{ text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; }}
-                        .folio-box {{ 
-                            background: #000; color: white; 
-                            padding: 5px 15px; font-weight: bold; 
-                            display: inline-block; margin-bottom: 5px; 
-                        }}
-                
-                        .title-block {{
-                            text-align: center;
-                            margin: 30px 0;
+                        /* --- CONTENEDOR TÉCNICO --- */
+                        .technical-sheet {{
+                            border: 2px solid #000;
                             padding: 10px;
-                            border: 1px solid #ddd;
-                            background: #f9f9f9;
-                            text-transform: uppercase;
-                            letter-spacing: 1px;
-                            font-weight: 700;
+                            position: relative;
                         }}
                 
-                        table {{ 
-                            width: 100%; 
-                            border-collapse: collapse; 
-                            margin-top: 10px; 
-                            font-size: 12px;
+                        /* --- HEADER TIPO FICHA --- */
+                        .header-table {{
+                            width: 100%;
+                            border-bottom: 2px solid #000;
+                            margin-bottom: 15px;
                         }}
                 
-                        th {{ 
-                            background: #f2f2f2; 
-                            text-transform: uppercase; 
-                            padding: 12px 8px; 
-                            border: 1px solid #000;
-                            font-weight: 800;
+                        .logo-area {{
+                            font-size: 32px;
+                            font-weight: 900;
+                            letter-spacing: -2px;
+                            padding: 10px;
+                            border-right: 2px solid #000;
+                            width: 30%;
                         }}
                 
-                        td {{ 
-                            padding: 10px 8px; 
-                            border: 1px solid #eee; 
-                            font-family: 'JetBrains Mono', monospace;
-                        }}
-                
-                        tr:nth-child(even) {{ background: #fafafa; }}
-                
-                        .footer-signatures {{
-                            margin-top: 80px;
-                            display: flex;
-                            justify-content: space-around;
-                        }}
-                
-                        .sig-box {{
-                            width: 250px;
+                        .center-meta {{
                             text-align: center;
+                            font-size: 14px;
+                            font-weight: bold;
+                            text-transform: uppercase;
+                        }}
+                
+                        .id-badge {{
+                            background: #000;
+                            color: #fff;
+                            padding: 8px;
+                            text-align: center;
+                            font-family: 'Share Tech Mono', monospace;
+                            font-size: 18px;
+                        }}
+                
+                        /* --- GRID DE DATOS MAESTROS --- */
+                        .data-grid {{
+                            display: grid;
+                            grid-template-columns: 1fr 1fr 1fr;
+                            border: 1px solid #000;
+                            margin-bottom: 20px;
+                            background: #f2f2f2;
+                        }}
+                
+                        .grid-item {{
+                            padding: 8px;
+                            border-right: 1px solid #000;
+                            font-size: 10px;
+                        }}
+                
+                        .grid-item b {{
+                            display: block;
+                            text-transform: uppercase;
+                            font-size: 9px;
+                            color: #444;
+                        }}
+                
+                        .grid-item:last-child {{ border-right: none; }}
+                
+                        /* --- TABLA DE INGENIERÍA --- */
+                        .main-table {{
+                            width: 100%;
+                            border-collapse: collapse;
+                        }}
+                
+                        .main-table th {{
+                            background: #000;
+                            color: #fff;
+                            font-size: 11px;
+                            padding: 10px;
+                            text-align: left;
+                            border: 1px solid #000;
+                        }}
+                
+                        .main-table td {{
+                            border: 1px solid #000;
+                            padding: 12px 8px;
+                            font-size: 13px;
+                            font-family: 'Share Tech Mono', monospace;
+                        }}
+                
+                        /* --- ZONA DE CONTROL Y FIRMAS --- */
+                        .footer-control {{
+                            margin-top: 50px;
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 40px;
+                        }}
+                
+                        .sig-block {{
                             border-top: 2px solid #000;
                             padding-top: 10px;
+                            text-align: center;
                             font-size: 11px;
                         }}
                 
-                        .stamp-area {{
-                            margin-top: 50px;
-                            text-align: right;
-                            font-size: 9px;
-                            color: #aaa;
-                            text-transform: uppercase;
+                        .watermark {{
+                            position: absolute;
+                            bottom: 5px;
+                            right: 10px;
+                            font-size: 8px;
+                            color: #ccc;
+                            font-family: 'Share Tech Mono', monospace;
                         }}
                     </style>
                 </head>
                 <body>
-                    <div class="print-box">
-                        <div class="header-container">
-                            <div class="brand">
-                                <h1>JYPESA</h1>
-                                <p>Automatización de Procesos Logísticos</p>
+                    <div class="technical-sheet">
+                        <table class="header-table">
+                            <tr>
+                                <td class="logo-area">JYPESA</td>
+                                <td class="center-meta">
+                                    SISTEMA DE CONTROL LOGÍSTICO<br>
+                                    <small>Automatización de Procesos</small>
+                                </td>
+                                <td style="width: 25%;">
+                                    <div class="id-badge">ID: {hora_reporte}</div>
+                                </td>
+                            </tr>
+                        </table>
+                
+                        <div class="data-grid">
+                            <div class="grid-item">
+                                <b>DOCUMENTO</b>
+                                REPORTE DE CONTRARECIBO
                             </div>
-                            <div class="meta-info">
-                                <div class="folio-box">ID: {hora_reporte}</div>
-                                <div>GENERADO: {now_gdl.strftime('%d/%m/%Y | %H:%M:%S')}</div>
+                            <div class="grid-item">
+                                <b>FECHA DE EMISIÓN</b>
+                                {now_gdl.strftime('%d/%m/%Y')}
+                            </div>
+                            <div class="grid-item">
+                                <b>HORA DE SISTEMA</b>
+                                {now_gdl.strftime('%H:%M:%S')}
                             </div>
                         </div>
                 
-                        <div class="title-block">
-                            REPORTE TÉCNICO: ENTREGA DE FACTURAS DE CONTRARECIBO
-                        </div>
-                
-                        <table>
+                        <table class="main-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 20%;">FECHA ENVÍO</th>
-                                    <th style="width: 25%;">CÓDIGO / SKU</th>
-                                    <th style="width: 35%;">PAQUETERÍA / SERVICIO</th>
-                                    <th style="text-align: center; width: 20%;">CANTIDAD UNIT.</th>
+                                    <th>FECHA REG.</th>
+                                    <th>CÓDIGO DE CONTROL</th>
+                                    <th>OPERADOR / PAQUETERÍA</th>
+                                    <th style="text-align:center;">CANTIDAD</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1539,20 +1586,21 @@ else:
                             </tbody>
                         </table>
                 
-                        <div class="footer-signatures">
-                            <div class="sig-box">
-                                <strong>RESPONSABLE DE EMISIÓN</strong><br>
-                                Rigoberto Hernandez<br>
-                                Coord. de Logística Nacional
+                        <div class="footer-control">
+                            <div class="sig-block">
+                                EMITIDO POR:<br>
+                                <b>Rigoberto Hernandez</b><br>
+                                NEXION Core Operator
                             </div>
-                            <div class="sig-box">
-                                <strong>REPRESENTANTE DE RECEPCIÓN</strong><br>
-                                Nombre, Firma y Sello
+                            <div class="sig-block">
+                                RECEPCCIÓN CONFORME:<br>
+                                <b>Nombre y Firma</b><br>
+                                Área de Finanzas / Recibo
                             </div>
                         </div>
                 
-                        <div class="stamp-area">
-                            Documento generado digitalmente por NEXION Core System v2.0 - JYPESA Logística
+                        <div class="watermark">
+                            GEN_BY_NEXION_V2_ENCRYPTED_LOG_{now_gdl.strftime('%y%m%d%H%M')}
                         </div>
                     </div>
                 </body>
@@ -2011,6 +2059,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
