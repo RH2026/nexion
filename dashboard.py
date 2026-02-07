@@ -440,7 +440,7 @@ else:
             # --- CONFIGURACIÓN DE PÁGINA ---
             st.markdown("""
             <style>
-                .stApp { background-color: #0B1114; }
+                .stApp {{ background-color: {vars_css['bg']} !important; }}
                 
                 .metric-container {
                     display: flex;
@@ -1918,6 +1918,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
