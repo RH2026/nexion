@@ -253,8 +253,10 @@ input[data-testid="stDateInputView"] {{
 
 /* Hover */
 [data-testid="stDataEditor"] .gdg-row:hover {{
-    background-color: rgba(148,163,184,0.12) !important;
-    box-shadow: inset 0 0 0 1px rgba(148,163,184,0.35);
+    background-color: rgba(148,163,184,0.22) !important;
+    box-shadow:
+        inset 0 0 0 1.5px rgba(148,163,184,0.55),
+        inset 0 0 18px rgba(148,163,184,0.18);
 }}
 
 /* 6. FOOTER FIJO */
@@ -1962,6 +1964,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
