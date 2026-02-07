@@ -208,13 +208,14 @@ input[data-testid="stDateInputView"] {{
 [data-testid="data-grid-canvas"] {{
     background-color: {vars_css['bg']} !important;
 
-    /* Malla de líneas */
     background-image:
-        linear-gradient(to right, {vars_css['border']} 1px, transparent 1px),
-        linear-gradient(to bottom, {vars_css['border']} 1px, transparent 1px);
+        linear-gradient(to right, rgba(75,85,99,0.9) 1.25px, transparent 1.25px),
+        linear-gradient(to bottom, rgba(75,85,99,0.9) 1.25px, transparent 1.25px);
 
-    background-size: 120px 100%, 100% 38px;
+    background-size: 96px 100%, 100% 34px;
     background-position: left top;
+
+    filter: brightness(0.95) contrast(1.15);
 }}
 
 /* Encabezados */
@@ -1941,6 +1942,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
