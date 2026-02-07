@@ -217,19 +217,19 @@ input[data-testid="stDateInputView"] {{
     /* Patrón repetido fino */
     background-image:
         repeating-linear-gradient(
-            to right,
-            rgba(75,85,99,0.9) 0px,
-            rgba(75,85,99,0.9) 1px,
-            transparent 1px,
-            transparent 64px
-        ),
-        repeating-linear-gradient(
-            to bottom,
-            rgba(75,85,99,0.9) 0px,
-            rgba(75,85,99,0.9) 1px,
-            transparent 1px,
-            transparent 36px
-        );
+        to right,
+        rgba(75,85,99,0.85) 0px,
+        rgba(75,85,99,0.85) 1px,
+        transparent 1px,
+        transparent 64px
+    ),
+    repeating-linear-gradient(
+        to bottom,
+        rgba(75,85,99,0.85) 0px,
+        rgba(75,85,99,0.85) 1px,
+        transparent 1px,
+        transparent 36px
+    );
 
     filter: brightness(0.95) contrast(1.12) !important;
 }}
@@ -1981,6 +1981,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
