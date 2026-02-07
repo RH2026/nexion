@@ -78,12 +78,12 @@ if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#121417",      # Casi negro, pero con un aire más ligero
-    "card": "#212529",    # Un gris carbón muy elegante
-    "text": "#F8F9FA",    # Blanco humo (muy brillante)
-    "sub": "#6C757D",     # Gris neutro para lo que no debe resaltar
-    "border": "#343A40",  # Bordes sutiles pero definidos
-    "logo": "n1.png"
+    "bg": "#F8F9FA",      # Fondo gris blanquecino (descansa la vista)
+    "card": "#FFFFFF",    # Tarjetas en blanco puro para que resalten
+    "text": "#1A1D21",    # Texto casi negro para máximo contraste
+    "sub": "#64748B",     # Gris azulado para etiquetas y secundarios
+    "border": "#E2E8F0",  # Bordes muy suaves y modernos
+    "logo": "n1.png"      # Asegúrate de que tu logo se vea bien en fondo claro
 }
 
 # ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
@@ -1885,6 +1885,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
