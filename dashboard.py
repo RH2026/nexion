@@ -194,34 +194,38 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- DATA EDITOR: NEXION BLUE CORE --- */
+/* --- DATA EDITOR: GRIS AZULADO TÉCNICO (NEXION CORE) --- */
 
-/* 1. Sincronización de variables nativas */
 :root {{
     --st-color-background: {vars_css['bg']};
     --st-color-secondary-background: {vars_css['card']};
 }}
 
-/* 2. El Canvas: Aplicamos un filtro de inversión + tinte azul */
-/* Esto convierte el gris oscuro en un azul profundo y brillante */
+/* El Canvas: Filtro para Gris Azulado sobrio */
 [data-testid="data-grid-canvas"] {{
-    filter: invert(0.1) sepia(1) hue-rotate(190deg) saturate(900%) brightness(0.4) !important;
+    /* 1. Invertimos un poco para quitar el negro sólido */
+    /* 2. Rotamos a 200 grados (azul) */
+    /* 3. DESATURAMOS al 30% para que sea casi gris */
+    /* 4. Ajustamos brillo para que sea sutil */
+    filter: invert(0.05) hue-rotate(200deg) saturate(0.3) brightness(0.7) contrast(1.1) !important;
+    background-color: {vars_css['bg']} !important;
 }}
 
-/* 3. Encabezados: Los mantenemos sólidos para que se lean bien */
+/* Encabezados: Un gris acero sólido */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
-    background-color: {vars_css['card']} !important;
+    background-color: #262c3a !important; /* Un gris azulado oscuro sólido */
     color: {vars_css['text']} !important;
-    font-weight: 700 !important;
-    border-bottom: 2px solid {vars_css['border']} !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid {vars_css['border']} !important;
 }}
 
-/* 4. Bordes de celdas: Casi invisibles para dar limpieza */
+/* Líneas de la cuadrícula muy tenues */
 [data-testid="stDataEditor"] * {{
-    border-color: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: #cbd5e1 !important; /* Texto un poco más suave, no blanco puro */
 }}
 
-/* 5. Forzamos el fondo del contenedor para evitar fugas de gris */
+/* Limpieza del contenedor */
 [data-baseweb="table-builder"] {{
     background-color: {vars_css['bg']} !important;
 }}
@@ -1907,6 +1911,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
