@@ -1226,6 +1226,21 @@ else:
                     t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in_pt")
                     fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
                 
+                # ── NUEVA SECCIÓN: BÚSQUEDA AUXILIAR ──────────────────────────
+                with st.expander(":material/search: BUSCADOR DE PRODUCTOS (AUXILIAR)", expanded=False):
+                    busqueda = st.text_input("Escribe el nombre del producto o código (ej. CEPILLO, GORRA):").strip().upper()
+                    if busqueda:
+                        # Filtramos en el inventario por código o descripción que contengan la palabra
+                        resultados = df_inv[
+                            df_inv['CODIGO'].astype(str).str.contains(busqueda, na=False) | 
+                            df_inv['DESCRIPCION'].astype(str).str.upper().str.contains(busqueda, na=False)
+                        ]
+                        if not resultados.empty:
+                            st.dataframe(resultados, use_container_width=True, hide_index=True)
+                        else:
+                            st.warning("No se encontraron coincidencias en el inventario.")
+                
+                
                 # ── D. MOTOR DE BÚSQUEDA INTERNO (LOOKUP) ──────────────────────────
                 def lookup_pt():
                     edits = st.session_state["editor_pt"].get("edited_rows", {})
@@ -1927,6 +1942,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
