@@ -753,7 +753,7 @@ else:
                     cols_finales = [next((c for c in p if c in df_viz.columns), None) for p in columnas_deseadas.values()]
                     cols_finales = [c for c in cols_finales if c is not None]
     
-                    with st.expander("DETALLE TÉCNICO DE RETRASOS", expanded=True):
+                    with st.expander("DETALLE TÉCNICO DE RETRASOS", expanded=False):
                         st.dataframe(
                             df_viz[cols_finales].sort_values("DIAS_ATRASO", ascending=False),
                             use_container_width=True,
@@ -1954,6 +1954,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
