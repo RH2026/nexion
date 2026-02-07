@@ -1980,24 +1980,31 @@ else:
                 
     
     # ── FOOTER CON BIO INTERACTIVA (VERSIÓN DEFINITIVA) ────────────────────────
-    # 1. FORZAR EL CONTENEDOR FIJO (Selector universal para componentes de Streamlit)
+    # --- 1. CSS GLOBAL: fijar el iframe correctamente -------------------------
     st.markdown(f"""
-        <style>
-        div[data-testid="stHtml"] iframe {{
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 999999;
-        }}
-        /* Ajuste para que el contenido de la app no quede tapado por el footer */
-        .main .block-container {{
-            padding-bottom: 100px;
-        }}
-        </style>
+    <style>
+    
+    /* Reservamos espacio abajo para que no tape contenido */
+    section.main > div {{
+        padding-bottom: 120px;
+    }}
+    
+    /* Fijamos SOLO el iframe del componente */
+    iframe[title="streamlit_components.v1.html"] {{
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100px !important;
+        z-index: 9999 !important;
+        border: none !important;
+        background: transparent !important;
+    }}
+    
+    </style>
     """, unsafe_allow_html=True)
     
-    # 2. TU DISEÑO ORIGINAL Y LA LÓGICA DEL POPUP
+    # --- 2. TU FOOTER ORIGINAL (intacto) ---
     footer_html = f"""
     <div style="text-align:center; font-family: 'Courier New', monospace; background: transparent; padding-bottom: 20px;">
         <div style="color: {vars_css['text']}; font-size: 10px; letter-spacing: 2px;">
@@ -2023,7 +2030,6 @@ else:
                         h1 {{ letter-spacing: 10px; font-weight: 400; font-size: 20px; }}
                         p {{ color: #7a7f87; font-size: 10px; letter-spacing: 3px; margin: 15px 0; }}
                         .close-btn {{ color: #444; font-size: 9px; text-decoration: none; border: 1px solid #333; padding: 5px 10px; cursor: pointer; }}
-                        .close-btn:hover {{ color: #fff; border-color: #fff; }}
                     </style>
                 </head>
                 <body>
@@ -2042,8 +2048,9 @@ else:
     </script>
     """
     
-    # Renderizado del componente
-    components.html(footer_html, height=80)
+    # --- 3. Render del footer ---
+    components.html(footer_html, height=100)
+
 
 
 
