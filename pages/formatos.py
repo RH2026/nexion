@@ -12,7 +12,10 @@ def load_data_fresh():
     timestamp = datetime.datetime.now().timestamp()
     csv_url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}?v={timestamp}"
     try:
-        return pd.read_csv(csv_url)
+        df = pd.read_csv(csv_url)
+        # Aseguramos que FOLIO sea siempre string para comparaciones precisas
+        df['FOLIO'] = df['FOLIO'].astype(str)
+        return df
     except:
         return pd.DataFrame(columns=[
             "FOLIO", "FECHA", "DESTINATARIO /  NOMBRE DEL HOTEL", "CIUDAD", "ESTADO", 
@@ -34,7 +37,7 @@ def save_to_github(df_to_save, mensaje_commit):
     except Exception as e:
         st.error(f"Error en GitHub: {e}")
 
-# --- INTERFAZ ESTILO INGENIERÍA ---
+# --- INTERFAZ ---
 st.set_page_config(page_title="JYPESA - Ingeniería", layout="wide")
 
 st.markdown("""
@@ -54,32 +57,31 @@ with st.expander("📍 DATOS DEL REMITENTE (FIJOS)", expanded=False):
     **Contacto:** Rigoberto Hernandez | **Tel:** 3319753122
     """)
 
-# --- NUEVA SECCIÓN: BUSCADOR RÁPIDO POR FOLIO ---
+# --- CONSULTA RÁPIDA DE ENVÍOS ---
 st.markdown("### 🔍 CONSULTA RÁPIDA DE ENVÍOS")
 df_busqueda = load_data_fresh()
 c_bus1, c_bus2 = st.columns([1, 3])
-folio_query = c_bus1.text_input("Ingresa Folio a consultar", placeholder="Ej. 3")
+folio_query = c_bus1.text_input("Ingresa Folio a consultar")
 
 if folio_query:
-    # Filtramos la información del folio
-    res = df_busqueda[df_busqueda["FOLIO"].astype(str) == str(folio_query)]
+    res = df_busqueda[df_busqueda["FOLIO"] == str(folio_query)]
     if not res.empty:
-        datos = res.iloc[0] # Tomamos el primero para datos generales
+        datos = res.iloc[0]
         with st.container(border=True):
-            col_inf1, col_inf2, col_inf3, col_inf4 = st.columns(4)
-            col_inf1.metric("DESTINATARIO", datos["DESTINATARIO /  NOMBRE DEL HOTEL"])
-            col_inf2.metric("TRANSPORTE", datos["TRANSPORTE"] if pd.notna(datos["TRANSPORTE"]) else "Pendiente")
-            col_inf3.metric("GUÍA", datos["GUIA"] if pd.notna(datos["GUIA"]) else "Pendiente")
-            col_inf4.metric("COSTO GUÍA", f"${datos['COSTO GUIA']}")
+            col_inf1, col_inf2, col_inf3, col_inf4, col_inf5 = st.columns(5)
+            col_inf1.metric("FECHA ENVÍO", str(datos["FECHA"]))
+            col_inf2.metric("DESTINATARIO", datos["DESTINATARIO /  NOMBRE DEL HOTEL"])
+            col_inf3.metric("TRANSPORTE", datos["TRANSPORTE"] if pd.notna(datos["TRANSPORTE"]) and datos["TRANSPORTE"] != "" else "Pendiente")
+            col_inf4.metric("GUÍA", datos["GUIA"] if pd.notna(datos["GUIA"]) and datos["GUIA"] != "" else "Pendiente")
+            col_inf5.metric("COSTO GUÍA", f"${datos['COSTO GUIA']}")
     else:
         st.warning("No se encontró información para ese folio.")
 
 st.divider()
 
-# --- TABS ORIGINALES ---
 tab1, tab2 = st.tabs(["📋 Registro e Impresión", "⚙️ Actualización de Logística"])
 
-# --- TAB 1: REGISTRO (IDÉNTICO) ---
+# --- TAB 1: REGISTRO ---
 with tab1:
     with st.form("registro_ingenieria"):
         c1, c2, c3 = st.columns(3)
@@ -97,7 +99,6 @@ with tab1:
         
         st.markdown("---")
         st.subheader("Selección de Productos")
-        
         prods_dict = {
             "Accesorios Ecologicos": 47.85, "Dispensador Almond": 218.33, "Dispensador Biogena": 216.00,
             "Dispensador Cava": 230.58, "Dispensador Persa": 275.00, "Dispensador Botánicos L": 274.17,
@@ -130,14 +131,14 @@ with tab1:
         nuevas_filas = []
         for item in seleccionados:
             nuevas_filas.append({
-                "FOLIO": folio, "FECHA": str(fecha), "DESTINATARIO /  NOMBRE DEL HOTEL": hotel,
+                "FOLIO": str(folio), "FECHA": str(fecha), "DESTINATARIO /  NOMBRE DEL HOTEL": hotel,
                 "CIUDAD": ciudad, "ESTADO": estado, "CONTACTO": contacto, "TELEFONO": telefono,
                 "FORMA DE ENVIO": f_envio, "TRANSPORTE": "", "GUIA": "", "COSTO GUIA": 0,
                 "PRODUCTO": item["p"], "PRECIO": item["pre"], "PRODUCTO EXTRA": "", "CANTIDAD EXTRA": "", "DESCRIPCION EXTRA": ""
             })
         if prod_ex:
             nuevas_filas.append({
-                "FOLIO": folio, "FECHA": str(fecha), "DESTINATARIO /  NOMBRE DEL HOTEL": hotel,
+                "FOLIO": str(folio), "FECHA": str(fecha), "DESTINATARIO /  NOMBRE DEL HOTEL": hotel,
                 "CIUDAD": ciudad, "ESTADO": estado, "CONTACTO": contacto, "TELEFONO": telefono,
                 "FORMA DE ENVIO": f_envio, "TRANSPORTE": "", "GUIA": "", "COSTO GUIA": 0,
                 "PRODUCTO": "EXTRA", "PRECIO": 0, "PRODUCTO EXTRA": prod_ex, "CANTIDAD EXTRA": f"{cant_ex} {um_ex}", "DESCRIPCION EXTRA": desc_ex
@@ -169,17 +170,12 @@ with tab1:
                         {f"<li>{cant_ex} {um_ex} - {prod_ex} ({desc_ex})</li>" if prod_ex else ""}
                     </ul>
                 </div>
-                <br><br>
-                <div style="text-align: center; font-size: 10px; color: #555; border-top: 1px dashed black;">
-                    PARA USO INTERNO - CONTROL DE MUESTRAS JYPESA
-                </div>
             </div>
             """, unsafe_allow_html=True)
 
-# --- TAB 2: ACTUALIZACIÓN (IDÉNTICO) ---
+# --- TAB 2: ACTUALIZACIÓN ---
 with tab2:
-    c_ref1, c_ref2 = st.columns([1,4])
-    if c_ref1.button("🔄 ACTUALIZAR LISTA"):
+    if st.button("🔄 ACTUALIZAR LISTA"):
         st.cache_data.clear()
         st.rerun()
     
@@ -187,26 +183,31 @@ with tab2:
     df_repo = load_data_fresh()
     
     if not df_repo.empty:
-        df_repo['FOLIO'] = df_repo['FOLIO'].astype(str)
         folios_lista = sorted(df_repo["FOLIO"].unique().tolist(), reverse=True)
         folio_update = st.selectbox("Seleccione Folio para completar Transporte/Guía", folios_lista)
         
         if folio_update:
-            idx_folio = df_repo[df_repo["FOLIO"] == folio_update].index
+            # Filtrado estricto por string para asegurar coincidencia
+            idx_folio = df_repo[df_repo["FOLIO"] == str(folio_update)].index
             datos_act = df_repo.loc[idx_folio[0]]
             
-            st.info(f"📍 Editando: {datos_act['DESTINATARIO /  NOMBRE DEL HOTEL']} ({datos_act['CIUDAD']})")
+            st.info(f"📍 Editando Logística para: {datos_act['DESTINATARIO /  NOMBRE DEL HOTEL']}")
             
             with st.form("form_update_log"):
                 u1, u2, u3 = st.columns(3)
-                t_val = u1.text_input("TRANSPORTE", value=str(datos_act.get("TRANSPORTE", "")))
-                g_val = u2.text_input("GUIA", value=str(datos_act.get("GUIA", "")))
-                c_val = u3.number_input("COSTO GUIA", value=float(datos_act.get("COSTO GUIA", 0.0)))
+                t_val = u1.text_input("TRANSPORTE", value=str(datos_act["TRANSPORTE"]) if pd.notna(datos_act["TRANSPORTE"]) else "")
+                g_val = u2.text_input("GUIA", value=str(datos_act["GUIA"]) if pd.notna(datos_act["GUIA"]) else "")
+                c_val = u3.number_input("COSTO GUIA", value=float(datos_act["COSTO GUIA"]) if pd.notna(datos_act["COSTO GUIA"]) else 0.0)
                 
                 if st.form_submit_button("🔒 GUARDAR CAMBIOS"):
-                    df_repo.loc[idx_folio, ["TRANSPORTE", "GUIA", "COSTO GUIA"]] = [t_val, g_val, c_val]
+                    # Aplicamos cambios a todas las filas con ese Folio
+                    df_repo.loc[idx_folio, "TRANSPORTE"] = t_val
+                    df_repo.loc[idx_folio, "GUIA"] = g_val
+                    df_repo.loc[idx_folio, "COSTO GUIA"] = c_val
+                    
                     save_to_github(df_repo, f"Update Logistica Folio {folio_update}")
                     st.rerun()
+
 
 
 
