@@ -239,10 +239,17 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* Hover de fila */
-[data-testid="stDataEditor"] .gdg-row:hover {{
-    background-color: rgba(255,255,255,0.035) !important;
-}}
+/* Hover de fila más marcado y fluido */
+    [data-testid="stDataEditor"] .gdg-row:hover {{
+        background-color: #1C2529 !important;
+        transition: background-color 0.2s ease-in-out !important;
+        cursor: pointer !important;
+    }}
+
+    /* Opcional: Para asegurar que el texto resalte sobre el hover */
+    [data-testid="stDataEditor"] .gdg-row:hover .gdg-cell {{
+        color: #FFFFFF !important;
+    }}
 
 /* 6. FOOTER FIJO */
 .footer {{ 
@@ -1949,6 +1956,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
