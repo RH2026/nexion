@@ -194,8 +194,6 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- DATA EDITOR: BLINDAJE AZUL PROFUNDO (NEXION CORE) --- */
-
 /* Contenedor */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
@@ -1952,6 +1950,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
