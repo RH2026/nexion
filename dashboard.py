@@ -1980,68 +1980,79 @@ else:
                 
     
     # ── FOOTER CON BIO INTERACTIVA (VERSIÓN DEFINITIVA) ────────────────────────
-    # ── CSS PARA FIJAR EL COMPONENTE AL FONDO ────────────────────────
+    # ── FOOTER ORIGINAL FIJO CON FUNCIÓN DE BIO ────────────────────────
     st.markdown(f"""
-        <style>
-        iframe[title="streamlit_components.v1.html"] {{
+    <style>
+        .footer {{
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            z-index: 9999;
+            background-color: transparent;
+            color: {vars_css['text']};
+            text-align: center;
+            padding: 20px 0;
+            font-family: 'Courier New', monospace;
+            z-index: 999;
         }}
-        </style>
-    """, unsafe_allow_html=True)
+        .hernanphy-link {{
+            color: {vars_css['text']};
+            font-weight: 800;
+            letter-spacing: 3px;
+            cursor: pointer;
+            text-decoration: none;
+        }}
+    </style>
     
-    # ── TU CÓDIGO CON EL DISEÑO DE FOOTER NEXION ────────────────────────
-    footer_html = f"""
-    <div style="text-align:center; font-family: 'Courier New', monospace; background: transparent; padding-bottom: 20px;">
-        <div style="color: #555; font-size: 10px; letter-spacing: 2px;">
-            NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026
-        </div>
-        <div style="margin-top: 5px;">
-            <span style="opacity:0.5; font-size:8px; color: gray; letter-spacing:4px;">ENGINEERED BY </span>
-            <a id="bioTrigger" style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px; cursor:pointer; text-decoration:none;">HERNANPHY</a>
-        </div>
+    <div class="footer">
+        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
+        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
+        <span class="hernanphy-link" onclick="openBio()">HERNANPHY</span>
     </div>
     
     <script>
-    const btn = document.getElementById("bioTrigger");
-    btn.onclick = function() {{
+    function openBio() {{
         const bioWindow = window.open("", "HERNANPHY", "width=800,height=600,scrollbars=no");
         if (bioWindow) {{
             bioWindow.document.write(`
                 <html>
                 <head>
-                <title>HERNANPHY | BIO</title>
-                <style>
-                body {{ background: #0b1114; color: #e5e7eb; font-family: "Courier New", monospace; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }}
-                .box {{ text-align: center; border: 1px solid #333; padding: 40px; border-radius: 2px; }}
-                h1 {{ letter-spacing: 10px; font-weight: 400; font-size: 20px; }}
-                p {{ color: #7a7f87; font-size: 10px; letter-spacing: 3px; margin: 15px 0; }}
-                .close-btn {{ color: #444; font-size: 9px; text-decoration: none; border: 1px solid #333; padding: 5px 10px; transition: 0.3s; }}
-                .close-btn:hover {{ color: #fff; border-color: #fff; }}
-                </style>
+                    <title>HERNANPHY | BIO</title>
+                    <style>
+                        body {{ 
+                            background: #0b1114; 
+                            color: #e5e7eb; 
+                            font-family: "Courier New", monospace; 
+                            margin: 0; 
+                            display: flex; 
+                            justify-content: center; 
+                            align-items: center; 
+                            height: 100vh; 
+                            overflow: hidden; 
+                        }}
+                        .box {{ text-align: center; border: 1px solid #333; padding: 40px; border-radius: 2px; }}
+                        h1 {{ letter-spacing: 10px; font-weight: 400; font-size: 20px; }}
+                        p {{ color: #7a7f87; font-size: 10px; letter-spacing: 3px; margin: 15px 0; }}
+                        .close-btn {{ color: #444; font-size: 9px; text-decoration: none; border: 1px solid #333; padding: 5px 10px; transition: 0.3s; cursor: pointer; }}
+                        .close-btn:hover {{ color: #fff; border-color: #fff; }}
+                    </style>
                 </head>
                 <body>
-                <div class="box">
-                <h1>HERNAN<span style="color:#9aa0a6">PHY</span></h1>
-                <p>TERMINAL DE IDENTIDAD // ACCESO NIVEL 0</p>
-                <a href="#" onclick="window.close()" class="close-btn">[ SALIR ]</a>
-                </div>
+                    <div class="box">
+                        <h1>HERNAN<span style="color:#9aa0a6">PHY</span></h1>
+                        <p>TERMINAL DE IDENTIDAD // ACCESO NIVEL 0</p>
+                        <a onclick="window.close()" class="close-btn">[ SALIR ]</a>
+                    </div>
                 </body>
                 </html>
             `);
         }} else {{
-            alert("Bloqueador de ventanas detectado. Por favor, permite los popups para ver la bio.");
+            alert("Por favor, permite las ventanas emergentes.");
         }}
-    }};
+    }}
     </script>
-    """
-    
-    # Renderizamos con altura suficiente para que no se corte el diseño
-    import streamlit.components.v1 as components
-    components.html(footer_html, height=80)
+    """, unsafe_allow_html=True)
+
 
 
 
