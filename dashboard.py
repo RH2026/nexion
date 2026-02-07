@@ -1978,49 +1978,53 @@ else:
                 else:
                     st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR ERP DATA...</div>", unsafe_allow_html=True)
                 
-    # ── FOOTER CON BIO INTERACTIVA ────────────────────────
-    # ── FOOTER CON BIO INTERACTIVA (VERSIÓN CORREGIDA) ────────────────────────
-    # Usamos comillas triples simples para no chocar con las dobles del HTML
-    st.markdown(f'''
-    <div class="footer" style="text-align:center; font-family:monospace; font-size:10px;">
+    
+    # ── FOOTER CON BIO INTERACTIVA (VERSIÓN LIMPIA) ────────────────────────
+    st.markdown('''
+    <div class="footer" style="text-align:center; font-family:monospace; font-size:10px; padding: 20px;">
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
         <span style="opacity:0.5; letter-spacing:4px;">ENGINEERED BY </span>
-        <a id="bioTrigger" style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px; cursor:pointer; text-decoration:none;">HERNANPHY</a>
+        <a id="bioTrigger" style="color:white; font-weight:800; letter-spacing:3px; cursor:pointer; text-decoration:none;">HERNANPHY</a>
     </div>
     
     <script>
-    document.getElementById("bioTrigger").onclick = function() {{
-        const bioWindow = window.open("", "HERNANPHY", "width=800,height=600");
-        
-        if (!bioWindow || bioWindow.closed || typeof bioWindow.closed == 'undefined') {{
-            alert("Por favor, permite las ventanas emergentes (popups) para ver la bio.");
-        }} else {{
-            bioWindow.document.write(`
-                <html>
-                <head>
-                    <title>HERNANPHY | BIO</title>
-                    <style>
-                        body {{ background: #0b0d10; color: #e5e7eb; font-family: "Courier New", monospace; margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; cursor: crosshair; }}
-                        .msg {{ text-align: center; border: 1px solid #333; padding: 40px; }}
-                        h1 {{ letter-spacing: 8px; font-weight: 400; font-size: 18px; }}
-                        p {{ color: #7a7f87; font-size: 11px; letter-spacing: 3px; margin-top: 10px; }}
-                        .btn {{ margin-top: 20px; color: #9aa0a6; border: 1px solid #444; padding: 5px 15px; display: inline-block; cursor: pointer; font-size: 10px; }}
-                        .btn:hover {{ background: #e5e7eb; color: #0b0d10; }}
-                    </style>
-                </head>
-                <body>
-                    <div class="msg">
-                        <h1>HERNANPHY</h1>
-                        <p>SISTEMA DE IDENTIDAD V.1.0</p>
-                        <div class="btn" onclick="window.close()">CERRAR ELEMENTO</div>
-                    </div>
-                </body>
-                </html>
-            `);
-        }}
-    }};
+    // Usamos una función que se ejecute solo cuando el elemento exista
+    setTimeout(() => {
+        const btn = document.getElementById("bioTrigger");
+        if (btn) {
+            btn.onclick = function() {
+                const bioWindow = window.open("", "HERNANPHY", "width=800,height=600");
+                if (bioWindow) {
+                    bioWindow.document.write(`
+                        <html>
+                        <head>
+                            <title>HERNANPHY | BIO</title>
+                            <style>
+                                body { background: #0b1114; color: #e5e7eb; font-family: monospace; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+                                .box { text-align: center; border: 1px solid #333; padding: 40px; }
+                                h1 { letter-spacing: 10px; font-weight: 400; }
+                                p { color: #7a7f87; font-size: 10px; letter-spacing: 2px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="box">
+                                <h1>HERNANPHY</h1>
+                                <p>ACCESO AUTORIZADO - BIOGRAFÍA EN PROCESO</p>
+                                <br>
+                                <a href="#" onclick="window.close()" style="color:#9aa0a6; font-size:9px;">[ CERRAR ]</a>
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                } else {
+                    alert("Por favor habilita los popups en tu navegador.");
+                }
+            };
+        }
+    }, 500);
     </script>
     ''', unsafe_allow_html=True)
+
 
 
 
