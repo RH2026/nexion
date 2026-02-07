@@ -193,29 +193,27 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* 5. DATA EDITOR (REFRECO) */
-/* Contenedor principal de la tabla */
+/* 5. DATA EDITOR (FUERZA BRUTA PARA STRING) */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px;
 }}
 
-/* Estilo para las celdas y el texto */
-[data-testid="stDataEditor"] div {{
+/* Forzar el brillo del Canvas (lo que dibuja la tabla) */
+[data-testid="data-grid-canvas"] {{
+    filter: brightness(1.5) contrast(0.9) !important;
+}}
+
+/* Forzar colores en los encabezados de columna */
+[data-testid="stTableColumnHeader"], [class^="gdg-"] {{
+    background-color: {vars_css['border']} !important;
+    color: {vars_css['text']} !important;
+}}
+
+/* Asegurar que el texto de las celdas sea visible */
+[data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
-}}
-
-/* Color de los encabezados de columna para que no sean negros */
-[data-testid="stDataEditor"] [data-testid="stTableColumnHeader"] {{
-    background-color: #2D3748 !important; /* Un gris azulado que resalta del fondo */
-    color: {vars_css['text']} !important;
-}}
-
-/* Suavizar el fondo del canvas (donde viven los datos) */
-[data-testid="data-grid-canvas"] {{
-    filter: brightness(1.1);
 }}
 
 /* 6. FOOTER FIJO */
@@ -1899,6 +1897,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
