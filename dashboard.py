@@ -194,45 +194,34 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- DATA EDITOR: AZULADO PROFUNDO (NEXION FINAL) --- */
+/* --- DATA EDITOR: NEXION BLUE CORE --- */
 
-/* 1. Sincronizamos las variables del motor de Streamlit */
+/* 1. Sincronización de variables nativas */
 :root {{
     --st-color-background: {vars_css['bg']};
     --st-color-secondary-background: {vars_css['card']};
 }}
 
-/* 2. Contenedor con profundidad */
-[data-testid="stDataEditor"] {{
-    background-color: {vars_css['bg']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-}}
-
-/* 3. EL TRUCO MAESTRO: 
-   En lugar de solo oscurecer, usamos 'opacity' y 'contrast' 
-   para que el azul de tu app se filtre a través de la tabla. */
+/* 2. El Canvas: Aplicamos un filtro de inversión + tinte azul */
+/* Esto convierte el gris oscuro en un azul profundo y brillante */
 [data-testid="data-grid-canvas"] {{
-    filter: opacity(0.9) brightness(1.2) contrast(0.8) saturate(1.2) !important;
-    background-color: transparent !important;
+    filter: invert(0.1) sepia(1) hue-rotate(190deg) saturate(900%) brightness(0.4) !important;
 }}
 
-/* 4. Encabezados Técnicos (Más claros para que no sea todo dark) */
+/* 3. Encabezados: Los mantenemos sólidos para que se lean bien */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     font-weight: 700 !important;
-    text-transform: uppercase !important;
     border-bottom: 2px solid {vars_css['border']} !important;
 }}
 
-/* 5. Texto de celdas con brillo para legibilidad */
+/* 4. Bordes de celdas: Casi invisibles para dar limpieza */
 [data-testid="stDataEditor"] * {{
-    color: {vars_css['text']} !important;
-    border-color: rgba(255, 255, 255, 0.05) !important; /* Líneas muy sutiles */
+    border-color: rgba(255, 255, 255, 0.03) !important;
 }}
 
-/* 6. Forzar que el fondo del builder sea tu azul exacto */
+/* 5. Forzamos el fondo del contenedor para evitar fugas de gris */
 [data-baseweb="table-builder"] {{
     background-color: {vars_css['bg']} !important;
 }}
@@ -1918,6 +1907,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
