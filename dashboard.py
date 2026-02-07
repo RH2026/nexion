@@ -241,7 +241,7 @@ input[data-testid="stDateInputView"] {{
 
 /* Hover de fila más marcado y fluido */
     [data-testid="stDataEditor"] .gdg-row:hover {{
-        background-color: #1C2529 !important;
+        background-color: #ffffff !important;
         transition: background-color 0.2s ease-in-out !important;
         cursor: pointer !important;
     }}
@@ -1956,6 +1956,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
