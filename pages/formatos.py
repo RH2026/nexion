@@ -27,26 +27,27 @@ def save_to_github(df_to_save, mensaje_commit):
     repo = g.get_repo(REPO_NAME)
     try:
         contents = repo.get_contents(FILE_PATH)
-        # Convertimos a CSV asegurando que no se pierdan datos por codificación
-        repo.update_file(contents.path, mensaje_commit, df_to_save.to_csv(index=False), contents.sha)
+        # Convertimos a CSV de forma segura
+        csv_data = df_to_save.to_csv(index=False)
+        repo.update_file(contents.path, mensaje_commit, csv_data, contents.sha)
         st.success(f"✅ Sistema Actualizado: {mensaje_commit}")
     except Exception as e:
-        st.error(f"Error Crítico: {e}")
+        st.error(f"Error Crítico al guardar en GitHub: {e}")
 
 # --- INTERFAZ ESTILO INGENIERÍA ---
 st.set_page_config(page_title="JYPESA - Ingeniería", layout="wide")
 
-# Encabezado Nivel Ingeniería
+# CORRECCIÓN AQUÍ: unsafe_allow_html=True
 st.markdown("""
     <div style="text-align: center; border-bottom: 2px solid #1E3A8A; padding-bottom: 10px;">
-        <h1 style="margin-bottom: 0;">JYPESA</h1>
-        <h5 style="margin-top: 0; color: #555;">Automatización de Procesos</h5>
+        <h1 style="margin-bottom: 0; color: #1E3A8A;">JYPESA</h1>
+        <h5 style="margin-top: 0; color: #555; letter-spacing: 2px;">AUTOMATIZACIÓN DE PROCESOS</h5>
     </div>
-    """, unsafe_allow_stdio=True)
+    <br>
+    """, unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["📋 Registro e Impresión", "⚙️ Actualización de Logística"])
 
-# --- TAB 1: REGISTRO ---
 with tab1:
     with st.form("registro_ingenieria"):
         c1, c2, c3 = st.columns(3)
@@ -76,7 +77,7 @@ with tab1:
         seleccionados = []
         cols = st.columns(3)
         for i, (p, pre) in enumerate(prods_dict.items()):
-            if cols[i % 3].checkbox(f"{p}"):
+            if cols[i % 3].checkbox(p):
                 seleccionados.append({"p": p, "pre": pre})
         
         st.markdown("**Especificaciones Extra:**")
@@ -110,54 +111,63 @@ with tab1:
         save_to_github(df_final, f"Registro Folio {folio}")
 
     if btn_imprimir:
-        st.markdown("""---
-            <div style="background-color: white; padding: 30px; border: 1px solid #ccc; color: black;">
-                <h2 style="text-align: center; margin:0;">JYPESA</h2>
-                <p style="text-align: center; margin:0; border-bottom: 1px solid black;">Automatización de Procesos</p>
+        st.markdown(f"""
+            <div style="background-color: white; padding: 30px; border: 2px solid #1E3A8A; color: black; font-family: sans-serif;">
+                <div style="text-align: center; border-bottom: 1px solid black; padding-bottom: 10px;">
+                    <h2 style="margin:0;">JYPESA</h2>
+                    <p style="margin:0; font-size: 12px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                </div>
                 <br>
-                <table style="width:100%">
-                    <tr><td><b>FOLIO:</b> %s</td><td><b>FECHA:</b> %s</td></tr>
-                    <tr><td><b>DESTINATARIO:</b> %s</td><td><b>CIUDAD/EDO:</b> %s, %s</td></tr>
-                    <tr><td><b>ATN:</b> %s</td><td><b>TEL:</b> %s</td></tr>
+                <table style="width:100%; font-size: 14px;">
+                    <tr><td><b>FOLIO:</b> {folio}</td><td style="text-align:right;"><b>FECHA:</b> {fecha}</td></tr>
+                    <tr><td colspan="2"><b>DESTINATARIO:</b> {hotel}</td></tr>
+                    <tr><td><b>UBICACIÓN:</b> {ciudad}, {estado}</td><td><b>FORMA ENVÍO:</b> {f_envio}</td></tr>
+                    <tr><td><b>ATN:</b> {contacto}</td><td><b>TEL:</b> {telefono}</td></tr>
                 </table>
-                <hr>
-                <h4>PRODUCTOS SOLICITADOS (MUESTRAS)</h4>
-        """ % (folio, fecha, hotel, ciudad, estado, contacto, telefono), unsafe_allow_html=True)
-        for item in seleccionados:
-            st.markdown(f"- {item['p']}")
-        if p_ex:
-            st.markdown(f"- {c_ex} {p_ex} ({d_ex})")
-        st.markdown("</div>", unsafe_allow_html=True)
+                <br>
+                <h4 style="border-bottom: 1px solid #ccc; padding-bottom: 5px;">ORDEN DE SALIDA (MUESTRAS)</h4>
+                <ul style="font-size: 14px;">
+                    {"".join([f"<li>{item['p']}</li>" for item in seleccionados])}
+                    {f"<li>{c_ex} {p_ex} - {d_ex}</li>" if p_ex else ""}
+                </ul>
+                <br><br>
+                <div style="text-align: center; font-size: 10px; color: #777;">
+                    Documento generado por sistema de gestión de ingeniería JYPESA
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
 # --- TAB 2: ACTUALIZACIÓN ---
 with tab2:
     st.subheader("⚙️ Control Logístico Posterior")
     df_repo = load_data()
-    # Filtramos folios únicos
-    folios_lista = df_repo["FOLIO"].unique().tolist()
-    folio_update = st.selectbox("Seleccione Folio para Carga de Datos", folios_lista)
     
-    if folio_update:
-        # Extraemos la información actual del primer registro que encuentre de ese folio
-        idx_folio = df_repo[df_repo["FOLIO"] == folio_update].index
-        datos_actuales = df_repo.loc[idx_folio[0]]
+    if not df_repo.empty:
+        folios_lista = sorted(df_repo["FOLIO"].unique().tolist(), reverse=True)
+        folio_update = st.selectbox("Seleccione Folio para Carga de Datos", folios_lista)
         
-        st.info(f"Destinatario Registrado: {datos_actuales['DESTINATARIO /  NOMBRE DEL HOTEL']}")
-        
-        with st.form("form_update_final"):
-            u1, u2, u3 = st.columns(3)
-            # Pre-llenamos con lo que ya tenga (si es que tiene algo)
-            t_val = u1.text_input("TRANSPORTE", value=str(datos_actuales.get("TRANSPORTE", "")))
-            g_val = u2.text_input("GUIA", value=str(datos_actuales.get("GUIA", "")))
-            c_val = u3.number_input("COSTO GUIA", value=float(datos_actuales.get("COSTO GUIA", 0.0)))
+        if folio_update:
+            idx_folio = df_repo[df_repo["FOLIO"] == folio_update].index
+            datos_actuales = df_repo.loc[idx_folio[0]]
             
-            if st.form_submit_button("🔒 ACTUALIZAR Y ASEGURAR DATOS"):
-                # Actualizamos todas las ocurrencias de ese folio
-                df_repo.loc[idx_folio, "TRANSPORTE"] = t_val
-                df_repo.loc[idx_folio, "GUIA"] = g_val
-                df_repo.loc[idx_folio, "COSTO GUIA"] = c_val
+            st.info(f"📍 Destino: {datos_actuales['DESTINATARIO /  NOMBRE DEL HOTEL']}")
+            
+            with st.form("form_update_log"):
+                u1, u2, u3 = st.columns(3)
+                t_val = u1.text_input("TRANSPORTE", value=str(datos_actuales.get("TRANSPORTE", "")))
+                g_val = u2.text_input("GUIA", value=str(datos_actuales.get("GUIA", "")))
+                c_val = u3.number_input("COSTO GUIA", value=float(datos_actuales.get("COSTO GUIA", 0.0)))
                 
-                save_to_github(df_repo, f"Update Logistica Folio {folio_update}")
+                if st.form_submit_button("🔒 GUARDAR CAMBIOS LOGÍSTICOS"):
+                    # Actualización forzada en memoria antes de subir
+                    df_repo.loc[idx_folio, "TRANSPORTE"] = t_val
+                    df_repo.loc[idx_folio, "GUIA"] = g_val
+                    df_repo.loc[idx_folio, "COSTO GUIA"] = c_val
+                    
+                    save_to_github(df_repo, f"Update Logistica Folio {folio_update}")
+    else:
+        st.warning("No hay datos registrados en muestras.csv")
+
 
 
 
