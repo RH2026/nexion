@@ -1014,7 +1014,7 @@ else:
                 )
                 
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
-                with st.expander(":material/edit_note: ABRIR EDITOR DE TAREAS", expanded=False):
+                with st.expander(":material/edit_note: Abrir editor de tareas", expanded=False):
                     st.subheader("EDITOR DE TAREAS")
                     df_editor = df_master.copy()
                     for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
@@ -1940,6 +1940,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
