@@ -1805,10 +1805,8 @@ else:
             
             elif st.session_state.menu_sub == "ORDER STAGING":
                 
-                st.markdown("<h3>PREPARAR ARCHIVO PARA S&t</h3>", unsafe_allow_html=True)
-
                 # Sección de instrucciones
-                with st.expander("OPERATIONAL GUIDE", expanded=False):
+                with st.expander("Dudas para usar este modulo?", expanded=False):
                     st.markdown(f"""
                     <div style='font-size: 14px; color: {vars_css['sub']}; letter-spacing: 1px;'>
                     1. <b>Cargar Archivo:</b> Sube tu archivo Excel (.xlsx) o CSV.<br>
@@ -1941,6 +1939,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
