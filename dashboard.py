@@ -218,15 +218,15 @@ input[data-testid="stDateInputView"] {{
     background-image:
         repeating-linear-gradient(
         to right,
-        rgba(75,85,99,0.85) 0px,
-        rgba(75,85,99,0.85) 1px,
+        rgba(75,85,99,2.0) 0px,
+        rgba(75,85,99,2.0) 1px,
         transparent 1px,
         transparent 64px
     ),
     repeating-linear-gradient(
         to bottom,
-        rgba(75,85,99,0.85) 0px,
-        rgba(75,85,99,0.85) 1px,
+        rgba(75,85,99,2.0) 0px,
+        rgba(75,85,99,2.0) 1px,
         transparent 1px,
         transparent 36px
     );
@@ -1981,6 +1981,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
