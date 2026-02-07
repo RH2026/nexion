@@ -204,18 +204,27 @@ input[data-testid="stDateInputView"] {{
     overflow: hidden;
 }}
 
-/* Canvas del grid – AQUÍ ESTÁ LA MAGIA */
+/* Canvas del grid – MAGIA ESTABLE (NO SE BORRA) */
 [data-testid="data-grid-canvas"] {{
     background-color: {vars_css['bg']} !important;
 
     background-image:
-        linear-gradient(to right, rgba(75,85,99,0.9) 1.25px, transparent 1.25px),
-        linear-gradient(to bottom, rgba(75,85,99,0.9) 1.25px, transparent 1.25px);
+        repeating-linear-gradient(
+            to right,
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 96px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 34px
+        );
 
-    background-size: 96px 100%, 100% 34px;
-    background-position: left top;
-
-    filter: brightness(0.95) contrast(1.15);
+    filter: brightness(0.95) contrast(1.15) !important;
 }}
 
 /* Encabezados */
@@ -1942,6 +1951,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
