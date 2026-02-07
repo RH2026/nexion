@@ -196,72 +196,44 @@ input[data-testid="stDateInputView"] {{
 
 /* --- DATA EDITOR: BLINDAJE AZUL PROFUNDO (NEXION CORE) --- */
 
-/* 1. Variables base */
-:root {{
-    --st-color-background: {vars_css['bg']};
-    --st-color-secondary-background: {vars_css['bg']};
-}}
-
-/* 2. Contenedor principal */
+/* Contenedor */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
+    border-radius: 8px;
+    overflow: hidden;
 }}
 
-/* 3. Canvas del grid */
+/* Canvas del grid – AQUÍ ESTÁ LA MAGIA */
 [data-testid="data-grid-canvas"] {{
     background-color: {vars_css['bg']} !important;
-    filter: brightness(0.9) contrast(1.35) !important;
+
+    /* Malla de líneas */
+    background-image:
+        linear-gradient(to right, {vars_css['border']} 1px, transparent 1px),
+        linear-gradient(to bottom, {vars_css['border']} 1px, transparent 1px);
+
+    background-size: 120px 100%, 100% 38px;
+    background-position: left top;
 }}
 
-/* 4. Encabezados */
-[data-testid="stTableColumnHeader"],
-[class^="gdg-header"] {{
+/* Encabezados */
+[data-testid="stTableColumnHeader"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
+    font-weight: 700;
+    text-transform: uppercase;
     border-bottom: 1px solid {vars_css['border']} !important;
-    border-right: 1px solid {vars_css['border']} !important;
 }}
 
-/* 5. Celdas – líneas visibles */
-[data-testid="stDataEditor"] .gdg-cell {{
+/* Texto */
+[data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
-    background-color: transparent !important;
-    box-shadow:
-        inset -1px 0 0 {vars_css['border']},
-        inset 0 -1px 0 {vars_css['border']} !important;
 }}
 
-/* 6. Hover */
-[data-testid="stDataEditor"] .gdg-row:hover .gdg-cell {{
+/* Hover de fila */
+[data-testid="stDataEditor"] .gdg-row:hover {{
     background-color: rgba(255,255,255,0.03) !important;
-}}
-
-/* 7. Inputs */
-[data-testid="stDataEditor"] input,
-[data-testid="stDataEditor"] textarea {{
-    color: {vars_css['text']} !important;
-    background-color: transparent !important;
-}}
-
-/* 8. Limpieza */
-[data-baseweb="table-builder"],
-[role="grid"] {{
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* 9. Scrollbars */
-[data-testid="stDataEditor"] ::-webkit-scrollbar {{
-    width: 8px;
-    height: 8px;
-}}
-[data-testid="stDataEditor"] ::-webkit-scrollbar-thumb {{
-    background-color: {vars_css['border']};
-    border-radius: 4px;
 }}
 
 /* 6. FOOTER FIJO */
@@ -1969,6 +1941,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
