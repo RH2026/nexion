@@ -193,27 +193,33 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* 5. DATA EDITOR (FUERZA BRUTA PARA STRING) */
+/* --- DATA EDITOR: FUERZA BRUTA CON TUS VARS --- */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
 }}
 
-/* Forzar el brillo del Canvas (lo que dibuja la tabla) */
+/* Forzar el brillo del Canvas para que las celdas no sean negras */
 [data-testid="data-grid-canvas"] {{
-    filter: brightness(1.5) contrast(0.9) !important;
+    filter: brightness(1.2) contrast(0.9) !important;
 }}
 
-/* Forzar colores en los encabezados de columna */
+/* Encabezados: usamos el color de borde para que se vean como una barra técnica */
 [data-testid="stTableColumnHeader"], [class^="gdg-"] {{
     background-color: {vars_css['border']} !important;
     color: {vars_css['text']} !important;
 }}
 
-/* Asegurar que el texto de las celdas sea visible */
+/* Texto de las celdas: usamos tu variable de texto principal */
 [data-testid="stDataEditor"] * {{
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
+    font-size: 12px !important;
+}}
+
+/* Línea de división entre filas */
+[data-testid="stDataEditor"] div {{
+    border-color: {vars_css['border']} !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -1897,6 +1903,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
