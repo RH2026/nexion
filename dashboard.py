@@ -243,7 +243,6 @@ input[data-testid="stDateInputView"] {{
 [data-testid="stDataEditor"] .gdg-row:hover {{
     background-color: rgba(255,255,255,0.035) !important;
 }}
-</style>
 
 /* 6. FOOTER FIJO */
 .footer {{ 
@@ -1950,6 +1949,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
