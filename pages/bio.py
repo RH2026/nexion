@@ -1,365 +1,59 @@
 import streamlit as st
-import streamlit.components.v1 as components
-import base64
+import pandas as pd
+from io import BytesIO
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(
-    page_title="HERNANPHY | BIO", 
-    layout="wide", 
-    initial_sidebar_state="collapsed"
-)
+st.set_page_config(page_title="Corrector Logístico", layout="wide")
 
-# 2. LIMPIEZA DE INTERFAZ
-st.markdown("""
-    <style>
-        [data-testid="stSidebar"] { display: none; }
-        header { visibility: hidden; height: 0; }
-        footer { visibility: hidden; }
-        .block-container { padding: 0rem; }
-        [data-testid="stAppViewContainer"] { background-color: #0b1114; overflow: hidden; }
-        html, body { overflow: hidden; cursor: none; }
-    </style>
-""", unsafe_allow_html=True)
+st.title("🛠️ Reparador de Costos: Exportación a Excel")
+st.markdown("Sube tu archivo y descarga el resultado corregido en formato **.xlsx**.")
 
-# 3. TU HTML (Pégalo aquí adentro)
-mi_html = """
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>HERNANPHY</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+uploaded_file = st.file_uploader("Elige tu archivo (CSV o Excel)", type=["csv", "xlsx"])
 
-<style>
-:root{
-  --bg:#0b0d10;
-  --fg:#e5e7eb;
-  --muted:#7a7f87;
-  --carbon:#9aa0a6;
-}
+if uploaded_file is not None:
+    # Cargar archivo dependiendo de la extensión
+    if uploaded_file.name.endswith('.csv'):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file)
+    
+    st.subheader("Datos Originales")
+    st.dataframe(df.head())
 
-*{margin:0;padding:0;box-sizing:border-box;}
+    # Configuración de columnas
+    st.sidebar.header("Configurar Columnas")
+    col_factura = st.sidebar.selectbox("Factura", df.columns)
+    col_guia = st.sidebar.selectbox("Guía", df.columns)
+    col_costo = st.sidebar.selectbox("Costo Repetido", df.columns)
+    col_cajas = st.sidebar.selectbox("Cajas", df.columns)
 
-html,body{
-  width:100%;
-  height:100%;
-  background:var(--bg);
-  font-family:"Courier New",monospace;
-  overflow:hidden;
-  cursor:none;
-}
+    if st.button("Procesar y Generar Excel"):
+        # Lógica de cálculo
+        df_totales = df.groupby(col_guia)[col_cajas].sum().reset_index()
+        df_totales.columns = [col_guia, 'TOTAL_CAJAS_GUIA']
 
-/* CURSOR */
-#cursor{
-  position:fixed;
-  width:14px;
-  height:14px;
-  border-radius:50%;
-  border:1px solid var(--muted);
-  pointer-events:none;
-  transform:translate(-50%,-50%);
-  opacity:.6;
-}
+        df_final = pd.merge(df, df_totales, on=col_guia)
+        
+        # Cálculo del costo real prorrateado
+        df_final['COSTO_REAL_AJUSTADO'] = (df_final[col_costo] / df_final['TOTAL_CAJAS_GUIA']) * df_final[col_cajas]
 
-/* CORE */
-#core{ position:absolute; inset:0; }
+        st.success("✅ Cálculos finalizados.")
 
-/* FRAGMENTOS */
-.fragment{
-  position:absolute;
-  font-size:13px;
-  letter-spacing:2px;
-  color:var(--muted);
-  opacity:0;
-  filter:blur(4px);
-  white-space:nowrap;
-  transition:opacity .6s ease, filter .6s ease;
-  user-select:text;
-}
+        # --- FUNCIÓN PARA CONVERTIR A EXCEL ---
+        def to_excel(df):
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False, sheet_name='Costos Corregidos')
+            processed_data = output.getvalue()
+            return processed_data
 
-.fragment.visible{
-  opacity:1;
-  filter:blur(0);
-}
+        excel_data = to_excel(df_final)
 
-.fragment.blur{
-  filter:blur(4px);
-}
-
-.fragment.hidden{
-  opacity:0;
-}
-
-.fragment.read{
-  opacity:0;
-  pointer-events:none;
-}
-
-/* TEXTO EXPANDIDO */
-#expanded{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  max-width:560px;
-  font-size:14px;
-  line-height:1.8;
-  color:var(--carbon);
-  opacity:0;
-  pointer-events:none;
-}
-
-/* BRANDING - MODIFICADO */
-#identity {
-  position: absolute;
-  bottom: 36px;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  opacity: 1; /* Cambiado de 0 a 1 */
-  transition: opacity 1.2s ease;
-  z-index: 10; /* Asegura que esté por encima del core */
-}
-
-#identity h1{
-  font-size:16px;
-  letter-spacing:6px;
-  font-weight:400;
-  color:var(--fg);
-}
-
-#identity p{
-  margin-top:6px;
-  font-size:9px;
-  letter-spacing:2px;
-  color:var(--muted);
-  display:flex;
-  justify-content:space-between;
-}
-
-/* MENSAJE FINAL */
-#finalMessage{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  font-size:14px;
-  line-height:1.9;
-  letter-spacing:1px;
-  color:var(--carbon);
-  opacity:0;
-  white-space:pre-line;
-  transition:opacity 2.2s ease, filter 2.2s ease;
-}
-
-#finalMessage.fade{
-  opacity:0;
-  filter:blur(6px);
-}
-</style>
-</head>
-
-<body>
-
-<div id="cursor"></div>
-<div id="core"></div>
-<div id="expanded"></div>
-
-<div id="identity">
-  <h1>HERNAN<span style="color:var(--carbon)">PHY</span></h1>
-  <p>
-    <span>TECNOLOGÍA</span>
-    <span>DISEÑO</span>
-    <span>LÓGICA</span>
-  </p>
-</div>
-
-<div id="finalMessage"></div>
-
-<script>
-const core = document.getElementById("core");
-const cursor = document.getElementById("cursor");
-const expanded = document.getElementById("expanded");
-const identity = document.getElementById("identity");
-const finalMessage = document.getElementById("finalMessage");
-
-const fragmentsData = [
-  {s:"Guadalajara",l:"Nací en Guadalajara, Jalisco. Mi formación académica no fue extensa. Me formé como técnico en informática, programación y diseño."},
-  {s:"Autodidacta",l:"Gran parte de mi aprendizaje ha sido autodidacta, impulsado por la curiosidad constante y la necesidad de comprender cómo funcionan las cosas."},
-  {s:"HTML",l:"Mis primeros acercamientos a la programación fueron con HTML y herramientas visuales que despertaron mi interés por la interacción."},
-  {s:"Flash",l:"Adobe Flash me enseñó narrativa visual, animación y lógica cuando los recursos eran limitados."},
-  {s:"Windows Me",l:"Mi primera computadora operaba con Windows Me y una conexión telefónica inestable."},
-  {s:"Logística",l:"La logística y los inventarios se convirtieron en un terreno natural para aplicar automatización y análisis."},
-  {s:"Python",l:"Python me permitió construir herramientas funcionales enfocadas en datos y procesos."},
-  {s:"UX",l:"Mi enfoque integra lógica, diseño y experiencia de usuario como un solo sistema."}
-];
-
-let fragments=[];
-let readCount=0;
-let revealed=false;
-let brandingShown=false;
-let activeFragment=null;
-
-let lastX=0;
-let lastY=0;
-let lastTime=Date.now();
-
-function randomPosition(el){
-  el.style.left=Math.random()*80+10+"%";
-  el.style.top=Math.random()*80+10+"%";
-}
-
-function typeText(text,el,callback){
-  el.textContent="";
-  el.style.opacity=1;
-  let i=0;
-  const speed=32;
-  const timer=setInterval(()=>{
-    el.textContent+=text.charAt(i);
-    i++;
-    if(i>=text.length){
-      clearInterval(timer);
-      if(callback) callback();
-    }
-  },speed);
-}
-
-function createFragments(){
-  fragmentsData.forEach(f=>{
-    const el=document.createElement("div");
-    el.className="fragment";
-    el.textContent=f.s;
-    el.dataset.long=f.l;
-    el.dataset.read="false";
-    randomPosition(el);
-    core.appendChild(el);
-    fragments.push(el);
-
-    el.addEventListener("mousedown",()=>{
-      activeFragment=el;
-
-      fragments.forEach(fr=>{
-        if(fr!==el && fr.dataset.read==="false"){
-          fr.classList.add("hidden");
-        }
-      });
-
-      expanded.style.opacity=1;
-      typeText(f.l,expanded);
-    });
-
-    el.addEventListener("mouseup",()=>{
-      if(el.dataset.read==="false"){
-        el.dataset.read="true";
-        readCount++;
-        el.classList.add("read");
-      }
-
-      expanded.style.opacity=0;
-      activeFragment=null;
-
-      fragments.forEach(fr=>{
-        if(fr.dataset.read==="false"){
-          fr.classList.remove("hidden");
-        }
-      });
-
-      if(readCount===fragments.length){
-        endSequence();
-      }
-    });
-  });
-
-  fragments.forEach((f,i)=>{
-    setTimeout(()=>f.classList.add("visible"),i*80);
-  });
-}
-
-function endSequence(){
-  fragments.forEach(f=>f.style.opacity=0);
-  identity.style.opacity=0;
-  cursor.style.opacity=0;
-
-  setTimeout(()=>{
-    typeText(
-`Gracias por tomarte el tiempo de recorrer esta biografía.
-
-Nada aquí fue diseñado para apresurarse,
-sino para ser leído con atención y silencio.
-
-Valoro profundamente que hayas llegado hasta el final.
-El tiempo que dedicaste es lo más importante.
-
-Gracias.`,
-      finalMessage,
-      ()=>{
-        setTimeout(()=>{
-          finalMessage.classList.add("fade");
-          setTimeout(()=>{
-            document.body.innerHTML="";
-            document.body.style.background="var(--bg)";
-          },2300);
-        },1600);
-      }
-    );
-  },900);
-}
-
-document.addEventListener("mousemove", e => {
-  // Eliminamos el IF de brandingShown para que no haya conflictos
-  identity.style.opacity = "1"; 
-  
-  const now = Date.now();
-  const dx = e.clientX - lastX;
-  const dy = e.clientY - lastY;
-  const dt = now - lastTime;
-  const speed = Math.sqrt(dx * dx + dy * dy) / dt;
-
-  fragments.forEach(f => {
-    if (speed > 0.8) f.classList.add("blur");
-    else f.classList.remove("blur");
-  });
-
-  lastX = e.clientX;
-  lastY = e.clientY;
-  lastTime = now;
-
-  cursor.style.left = e.clientX + "px";
-  cursor.style.top = e.clientY + "px";
-  cursor.style.opacity = "0.6"; // Asegura que el cursor sea visible
-});
-
-document.addEventListener("click", () => {
-  if (!revealed) {
-    revealed = true;
-    createFragments();
-  }
-});
-
-// Forzamos visibilidad inicial al cargar
-window.onload = () => {
-    identity.style.opacity = "1";
-};
-
-document.addEventListener("click",()=>{
-  if(!brandingShown){
-    identity.style.opacity=1;
-    brandingShown=true;
-  }
-  if(!revealed){
-    revealed=true;
-    createFragments();
-  }
-});
-</script>
-
-</body>
-</html>
-"""
-
-# 4. TRUCO ANTIBUGS: Convertir a Base64 para evitar el SyntaxError
-b64_html = base64.b64encode(mi_html.encode('utf-8')).decode('utf-8')
-src_data = f"data:text/html;base64,{b64_html}"
-
-# 5. RENDERIZADO INMERSIVO
-components.iframe(src=src_data, height=1200, scrolling=False)
+        st.download_button(
+            label="📥 Descargar Reporte en Excel (.xlsx)",
+            data=excel_data,
+            file_name="costos_logisticos_reparados.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
+        st.subheader("Vista Previa del Resultado")
+        st.write(df_final[[col_factura, col_guia, col_cajas, col_costo, 'COSTO_REAL_AJUSTADO']])
