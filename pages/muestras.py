@@ -2,11 +2,12 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-st.set_page_config(page_title="Corrector Logístico", layout="wide")
+st.set_page_config(page_title="Reparador Logístico", layout="wide")
 
-st.title("🛠️ Reparador de Costos")
+st.title("🛠️ Reparador de Costos Automático")
+st.markdown("Sube tu archivo y yo me encargo de encontrar las columnas, aunque tengan nombres extraños.")
 
-uploaded_file = st.file_uploader("Sube tu archivo (CSV o Excel)", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Sube tu Excel o CSV", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
@@ -16,64 +17,69 @@ if uploaded_file is not None:
         else:
             df = pd.read_excel(uploaded_file)
         
-        # Limpieza de nombres de columnas
-        df.columns = [str(c).strip().upper() for c in df.columns]
-        
-        st.info(f"Columnas detectadas: {list(df.columns)}")
+        # Limpieza básica de nombres de columnas (quitar espacios locos)
+        df.columns = [str(c).strip() for c in df.columns]
 
-        # 2. Selección de columnas
-        col_factura = st.selectbox("Columna Factura", df.columns)
-        col_guia = st.selectbox("Columna Guía", df.columns)
-        col_costo = st.selectbox("Columna Costo", df.columns)
-        col_cajas = st.selectbox("Columna Cajas", df.columns)
+        # --- LÓGICA DE DETECCIÓN INTELIGENTE ---
+        # Buscamos columnas que CONTENGAN las palabras clave
+        def encontrar_columna(lista, palabra_clave):
+            for c in lista:
+                if palabra_clave.upper() in c.upper():
+                    return c
+            return lista[0] # Si no halla nada, toma la primera por defecto
 
-        if st.button("Procesar Datos"):
+        c_factura = encontrar_columna(df.columns, "FACTURA")
+        c_guia = encontrar_columna(df.columns, "GUIA")
+        c_costo = encontrar_columna(df.columns, "COSTO")
+        c_cajas = encontrar_columna(df.columns, "CAJAS")
+
+        st.write(f"✅ **Columnas detectadas:** Factura: `{c_factura}`, Guía: `{c_guia}`, Costo: `{c_costo}`, Cajas: `{c_cajas}`")
+
+        if st.button("Reparar y Generar Excel"):
             res_df = df.copy()
 
-            # Asegurar números
-            res_df[col_cajas] = pd.to_numeric(res_df[col_cajas], errors='coerce').fillna(0)
-            res_df[col_costo] = pd.to_numeric(res_df[col_costo], errors='coerce').fillna(0)
+            # Limpiar datos numéricos (quitar símbolos de pesos, comas, etc.)
+            for col in [c_costo, c_cajas]:
+                if res_df[col].dtype == 'object':
+                    res_df[col] = res_df[col].str.replace('$', '').str.replace(',', '').str.strip()
+                res_df[col] = pd.to_numeric(res_df[col], errors='coerce').fillna(0)
 
-            # Lógica de prorrateo
-            df_sumas = res_df.groupby(col_guia, as_index=False)[col_cajas].sum()
-            df_sumas = df_sumas.rename(columns={col_cajas: 'TOTAL_CAJAS_GUIA'})
+            # 1. Sumar cajas por guía
+            df_sumas = res_df.groupby(c_guia, as_index=False)[c_cajas].sum()
+            df_sumas = df_sumas.rename(columns={c_cajas: 'TOTAL_CAJAS_DE_LA_GUIA'})
 
-            final_df = pd.merge(res_df, df_sumas, on=col_guia, how='left')
+            # 2. Unir y calcular
+            final_df = pd.merge(res_df, df_sumas, on=c_guia, how='left')
+            
+            # Prorrateo: (Costo Repetido / Total Cajas) * Cajas de la Factura
+            final_df['COSTO_UNITARIO_POR_CAJA'] = 0.0
+            mask = final_df['TOTAL_CAJAS_DE_LA_GUIA'] > 0
+            
+            final_df.loc[mask, 'COSTO_UNITARIO_POR_CAJA'] = final_df.loc[mask, c_costo] / final_df.loc[mask, 'TOTAL_CAJAS_DE_LA_GUIA']
+            final_df['COSTO_REAL_FILA'] = final_df['COSTO_UNITARIO_POR_CAJA'] * final_df[c_cajas]
 
-            final_df['COSTO_REAL_PRORRATEADO'] = 0.0
-            mask = final_df['TOTAL_CAJAS_GUIA'] > 0
-            final_df.loc[mask, 'COSTO_REAL_PRORRATEADO'] = (
-                final_df.loc[mask, col_costo] / final_df.loc[mask, 'TOTAL_CAJAS_GUIA']
-            ) * final_df.loc[mask, col_cajas]
-
-            st.success("✅ ¡Cálculo realizado!")
+            st.success("¡Listo! Costos corregidos.")
             st.dataframe(final_df.head(10))
 
-            # --- OPCIÓN DESCARGA EXCEL (engine openpyxl) ---
+            # --- DESCARGA ---
+            output = BytesIO()
+            # Usamos un try/except por si falla el motor de Excel, usar CSV
             try:
-                output = BytesIO()
-                # Cambiamos xlsxwriter por openpyxl que es más común
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    final_df.to_excel(writer, index=False, sheet_name='Resultado')
+                    final_df.to_excel(writer, index=False)
                 
                 st.download_button(
-                    label="📥 Descargar Excel (.xlsx)",
+                    label="📥 Descargar Excel Corregido",
                     data=output.getvalue(),
-                    file_name="reparacion_costos.xlsx",
+                    file_name="costos_reales_logistica.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-            except Exception:
-                st.warning("No pude generar el .xlsx, pero aquí tienes el CSV que Excel abre igual:")
-                csv_data = final_df.to_csv(index=False).encode('utf-8-sig')
-                st.download_button(
-                    label="📥 Descargar CSV para Excel",
-                    data=csv_data,
-                    file_name="reparacion_costos.csv",
-                    mime="text/csv"
-                )
+            except:
+                csv = final_df.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("📥 Descargar como CSV (Excel lo abre)", data=csv, file_name="costos_reales.csv")
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error inesperado: {e}")
 
 
 
