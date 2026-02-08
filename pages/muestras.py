@@ -4,86 +4,88 @@ from io import BytesIO
 
 st.set_page_config(page_title="Corrector Logístico", layout="wide")
 
-st.title("🛠️ Reparador de Costos: Exportación a Excel")
-st.markdown("Sube tu archivo y selecciona las columnas correspondientes.")
+st.title("🛠️ Reparador de Costos: Depuración de Columnas")
 
-uploaded_file = st.file_uploader("Elige tu archivo (CSV o Excel)", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Sube tu archivo (CSV o Excel)", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
-        # Cargar archivo
+        # 1. Intentar leer el archivo con limpieza de espacios iniciales
         if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
+            # El encoding 'utf-8-sig' elimina el BOM (caracteres invisibles)
+            df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
         else:
             df = pd.read_excel(uploaded_file)
         
-        # --- LIMPIEZA AUTOMÁTICA DE COLUMNAS ---
-        # Esto elimina espacios locos al principio o final de los nombres
-        df.columns = [str(c).strip() for c in df.columns]
+        # 2. LIMPIEZA EXTREMA de nombres de columnas
+        # Quitamos espacios, saltos de línea y convertimos todo a MAYÚSCULAS para evitar errores
+        df.columns = df.columns.astype(str).str.strip().str.replace('\n', '').str.upper()
         
-        st.subheader("Datos Originales")
+        # 3. MOSTRAR DIAGNÓSTICO (Para que veas qué ve la IA)
+        st.info(f"Columnas detectadas en tu archivo: {list(df.columns)}")
+        
+        st.subheader("Vista previa de los datos")
         st.dataframe(df.head())
 
-        # Configuración de columnas con selección manual para evitar el KeyError
-        st.sidebar.header("📍 Asignar Columnas")
-        st.sidebar.info("Selecciona el nombre real de tus columnas:")
+        # 4. CONFIGURACIÓN EN BARRA LATERAL
+        st.sidebar.header("📍 Mapeo de Columnas")
         
-        col_factura = st.sidebar.selectbox("¿Cuál es la columna de Factura?", df.columns)
-        col_guia = st.sidebar.selectbox("¿Cuál es la columna de Guía?", df.columns)
-        col_costo = st.sidebar.selectbox("¿Cuál es la columna de Costo?", df.columns)
-        col_cajas = st.sidebar.selectbox("¿Cuál es la columna de Cajas?", df.columns)
+        # Intentamos pre-seleccionar si existen, si no, el usuario elige
+        def find_col(name_list, target):
+            for col in name_list:
+                if target in col: return col
+            return name_list[0]
 
-        if st.button("Procesar y Generar Excel"):
-            temp_df = df.copy()
+        col_factura = st.sidebar.selectbox("Columna Factura", df.columns, index=df.columns.get_loc(find_col(df.columns, "FACTURA")))
+        col_guia = st.sidebar.selectbox("Columna Guía", df.columns, index=df.columns.get_loc(find_col(df.columns, "GUIA")))
+        col_costo = st.sidebar.selectbox("Columna Costo", df.columns, index=df.columns.get_loc(find_col(df.columns, "COSTO")))
+        col_cajas = st.sidebar.selectbox("Columna Cajas", df.columns, index=df.columns.get_loc(find_col(df.columns, "CAJA")))
 
-            # Convertir a números y limpiar nulos
-            temp_df[col_cajas] = pd.to_numeric(temp_df[col_cajas], errors='coerce').fillna(0)
-            temp_df[col_costo] = pd.to_numeric(temp_df[col_costo], errors='coerce').fillna(0)
+        if st.button("Procesar y Corregir"):
+            # Trabajamos sobre una copia
+            res_df = df.copy()
 
-            # 1. Calcular total de cajas por guía (as_index=False evita el error de antes)
-            df_totales = temp_df.groupby(col_guia, as_index=False)[col_cajas].sum()
+            # Asegurar que los datos sean numéricos
+            res_df[col_cajas] = pd.to_numeric(res_df[col_cajas], errors='coerce').fillna(0)
+            res_df[col_costo] = pd.to_numeric(res_df[col_costo], errors='coerce').fillna(0)
+
+            # Lógica de agrupación (as_index=False para evitar el error anterior)
+            # Agrupamos por Guía y sumamos cajas
+            df_sumas = res_df.groupby(col_guia, as_index=False)[col_cajas].sum()
+            df_sumas = df_sumas.rename(columns={col_cajas: 'TOTAL_CAJAS_GUIA'})
+
+            # Unir resultados
+            final_df = pd.merge(res_df, df_sumas, on=col_guia, how='left')
+
+            # Calcular prorrateo
+            # Si el total de cajas es > 0, dividimos costo/total y multiplicamos por cajas de la fila
+            final_df['COSTO_REAL_PRORRATEADO'] = 0.0
+            valid_mask = final_df['TOTAL_CAJAS_GUIA'] > 0
             
-            # Renombrar para evitar colisión
-            nombre_total_cajas = "Suma_Total_Cajas_Guia"
-            df_totales = df_totales.rename(columns={col_cajas: nombre_total_cajas})
+            final_df.loc[valid_mask, 'COSTO_REAL_PRORRATEADO'] = (
+                final_df.loc[valid_mask, col_costo] / final_df.loc[valid_mask, 'TOTAL_CAJAS_GUIA']
+            ) * final_df.loc[valid_mask, col_cajas]
 
-            # 2. Unir totales
-            df_final = pd.merge(temp_df, df_totales, on=col_guia, how='left')
+            st.success("✅ ¡Ajuste completado!")
+
+            # Botón de Descarga Excel
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                final_df.to_excel(writer, index=False, sheet_name='Resultado')
             
-            # 3. Lógica de prorrateo
-            df_final['COSTO_REAL_AJUSTADO'] = 0.0
-            
-            # Solo calcular donde el total de cajas sea mayor a 0 para no romper el programa
-            mask = df_final[nombre_total_cajas] > 0
-            df_final.loc[mask, 'COSTO_REAL_AJUSTADO'] = (
-                df_final.loc[mask, col_costo] / df_final.loc[mask, nombre_total_cajas]
-            ) * df_final.loc[mask, col_cajas]
-
-            st.success("✅ ¡Hecho! Los costos han sido prorrateados correctamente.")
-
-            # Función de descarga
-            def to_excel(df_to_save):
-                output = BytesIO()
-                # Usamos engine xlsxwriter para mejor compatibilidad
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_to_save.to_excel(writer, index=False, sheet_name='Resultados')
-                return output.getvalue()
-
-            excel_data = to_excel(df_final)
-
             st.download_button(
-                label="📥 Descargar Resultado en Excel",
-                data=excel_data,
-                file_name="reporte_costos_corregidos.xlsx",
+                label="📥 Descargar Excel Corregido",
+                data=output.getvalue(),
+                file_name="reparacion_facturas.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            
-            st.subheader("Vista Previa")
-            st.dataframe(df_final.head(20))
+
+            st.dataframe(final_df.head(15))
 
     except Exception as e:
-        st.error(f"Error detectado: {e}")
-        st.info("Asegúrate de que los nombres de las columnas en la barra lateral coincidan con tu archivo.")
+        st.error(f"Error crítico: {e}")
+        st.warning("Prueba lo siguiente: Abre tu Excel, asegúrate de que la primera fila sean los títulos y que no haya celdas combinadas.")
+
 
 
 
