@@ -1252,89 +1252,79 @@ else:
                 @st.cache_data
                 def load_data():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
+                    # Cargamos el CSV eliminando posibles espacios en blanco en los nombres de las columnas
                     df = pd.read_csv(url)
                     
-                    # Ordenar meses cronológicamente para que las gráficas no salgan alfabéticas
+                    # NORMALIZACIÓN CRÍTICA:
+                    # Eliminamos espacios en blanco alrededor de los nombres y convertimos a MAYÚSCULAS
+                    df.columns = df.columns.str.strip().str.upper()
+                    
+                    # Verificación de seguridad para la columna MES
+                    if 'MES' not in df.columns:
+                        st.error(f"No encontré la columna 'MES'. Columnas detectadas: {list(df.columns)}")
+                        st.stop()
+                
+                    # Limpieza de datos en la columna MES
+                    df['MES'] = df['MES'].astype(str).str.upper().str.strip()
+                    
+                    # Orden cronológico
                     orden_meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 
                                     'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
-                    df['MES'] = df['MES'].str.upper().str.strip()
+                    
+                    # Convertir a categoría ordenada para que las gráficas salgan bien
                     df['MES'] = pd.Categorical(df['MES'], categories=orden_meses, ordered=True)
                     df = df.sort_values('MES')
                     
-                    # Limpieza de porcentajes si vienen como texto (ej. "10%")
-                    cols_porcentaje = ['% DE INCIDENCIAS', '% DE INCREMENTO VS 2024']
-                    for col in cols_porcentaje:
-                        if df[col].dtype == 'object':
-                            df[col] = df[col].str.replace('%', '').astype(float)
+                    # Convertir columnas numéricas que puedan tener símbolos de pesos o comas
+                    cols_a_limpiar = ['FACTURACIÓN', 'COSTO LOGÍSTICO', 'COSTO POR CAJA', 'COSTO POR CAJA 2025']
+                    for col in cols_a_limpiar:
+                        if col in df.columns and df[col].dtype == 'object':
+                            df[col] = df[col].replace('[\$,]', '', regex=True).astype(float)
                             
                     return df
                 
-                df = load_data()
+                # Ejecución
+                try:
+                    df = load_data()
+                except Exception as e:
+                    st.error(f"Error procesando el archivo: {e}")
+                    st.stop()
                 
-                # --- SIDEBAR ---
-                st.sidebar.header("📊 Filtros de Operación")
-                meses_seleccionados = st.sidebar.multiselect("Periodos a Evaluar", 
-                                                             options=df['MES'].unique(), 
-                                                             default=df['MES'].unique())
+                # --- INTERFAZ ---
+                st.title("🚛 Dashboard Financiero Nexion 2026")
                 
-                df_filt = df[df['MES'].isin(meses_seleccionados)]
+                # Filtro en el Sidebar
+                meses_disp = df['MES'].unique().dropna().tolist()
+                sel_meses = st.sidebar.multiselect("Selecciona Meses", meses_disp, default=meses_disp)
                 
-                # --- HEADER ---
-                st.title("🚛 Nexion Logistics & Financial Analytics 2026")
-                st.markdown("---")
+                df_view = df[df['MES'].isin(sel_meses)]
                 
-                # --- BLOQUE 1: KPIs DE DIRECCIÓN ---
-                col1, col2, col3, col4 = st.columns(4)
+                # KPIs Rápidos
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    val = df_view['FACTURACIÓN'].sum()
+                    st.metric("Facturación", f"${val:,.2f}")
+                with c2:
+                    val = df_view['COSTO LOGÍSTICO'].sum()
+                    st.metric("Costo Logístico", f"${val:,.2f}")
+                with c3:
+                    # Cálculo de ahorro/incremento vs 2025
+                    c_2026 = df_view['COSTO POR CAJA'].mean()
+                    c_2025 = df_view['COSTO POR CAJA 2025'].mean()
+                    diff = ((c_2026 - c_2025) / c_2025) * 100
+                    st.metric("Costo/Caja vs 2025", f"${c_2026:.2f}", f"{diff:.1f}%")
                 
-                with col1:
-                    total_fact = df_filt['FACTURACIÓN'].sum()
-                    st.metric("Facturación Total", f"${total_fact:,.2f}")
+                # Gráfica de Barras Comparativa
+                st.subheader("Análisis de Costo por Caja: 2025 vs 2026")
+                fig = go.Figure()
+                fig.add_trace(go.Bar(x=df_view['MES'], y=df_view['COSTO POR CAJA 2025'], name='2025', marker_color='gray'))
+                fig.add_trace(go.Bar(x=df_view['MES'], y=df_view['COSTO POR CAJA'], name='2026', marker_color='#00d4ff'))
+                fig.update_layout(template="plotly_dark", barmode='group')
+                st.plotly_chart(fig, use_container_width=True)
                 
-                with col2:
-                    costo_log = df_filt['COSTO LOGÍSTICO'].sum()
-                    ratio_log = (costo_log / total_fact) * 100 if total_fact != 0 else 0
-                    st.metric("Costo Logístico", f"${costo_log:,.2f}", f"{ratio_log:.1f}% del Revenue")
-                
-                with col3:
-                    avg_incidencias = df_filt['% DE INCIDENCIAS'].mean()
-                    st.metric("Promedio Incidencias", f"{avg_incidencias:.2f}%", delta="-0.5%", delta_color="inverse")
-                
-                with col4:
-                    cajas = df_filt['CAJAS ENVIADAS'].sum()
-                    st.metric("Volumen Total", f"{cajas:,.0f} Cajas")
-                
-                # --- BLOQUE 2: ANÁLISIS DE INGENIERÍA ---
-                st.markdown("### 📈 Análisis Comparativo y Eficiencia")
-                tab1, tab2 = st.tabs(["Eficiencia por Caja", "Incidencias vs Metas"])
-                
-                with tab1:
-                    # Gráfica de barras doble: Costo por Caja 2025 vs 2026
-                    fig_eficiencia = go.Figure()
-                    fig_eficiencia.add_trace(go.Bar(x=df_filt['MES'], y=df_filt['COSTO POR CAJA 2025'], name='Costo Caja 2025', marker_color='#444'))
-                    fig_eficiencia.add_trace(go.Bar(x=df_filt['MES'], y=df_filt['COSTO POR CAJA'], name='Costo Caja 2026', marker_color='#00d4ff'))
-                    
-                    fig_eficiencia.update_layout(title="Comparativa Costo por Caja (Año vs Año)", template="plotly_dark", barmode='group')
-                    st.plotly_chart(fig_eficiencia, use_container_width=True)
-                
-                with tab2:
-                    # Análisis de Incidencias vs Meta
-                    fig_inc = px.line(df_filt, x='MES', y=['% DE INCIDENCIAS', 'META INDICADOR'], 
-                                      title="Control de Calidad: Incidencias vs Meta",
-                                      color_discrete_map={'% DE INCIDENCIAS': '#ff4b4b', 'META INDICADOR': '#00ff00'},
-                                      markers=True, template="plotly_dark")
-                    st.plotly_chart(fig_inc, use_container_width=True)
-                
-                # --- BLOQUE 3: MATRIZ DE DATOS ---
-                st.markdown("### 📋 Detalle de Auditoría")
-                # Formatear la tabla para dirección
-                st.dataframe(df_filt.style.format({
-                    'FACTURACIÓN': '${:,.2f}',
-                    'COSTO LOGÍSTICO': '${:,.2f}',
-                    'COSTO POR CAJA': '${:,.2f}',
-                    '% DE INCIDENCIAS': '{:.2f}%'
-                }).highlight_max(subset=['FACTURACIÓN'], color='#1f3a3a'), use_container_width=True)
-                
-                st.sidebar.info(f"**Análisis Activo:** {len(df_filt)} Meses cargados.")
+                # Tabla de Auditoría
+                with st.expander("Ver Datos Maestros"):
+                    st.write(df_view)
                 
                 
                                 
@@ -2131,6 +2121,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
