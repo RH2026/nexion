@@ -1580,29 +1580,34 @@ else:
                         worksheet.set_column('B:C', 20)
                     return output.getvalue()
                 
-                # =========================================================
-                # 2. SECCIÓN VISUAL (BOTONES Y "VACUNA" CONTRA CEROS)
-                # =========================================================
-                
-                st.write("---")
-                
-                # --- LA "VACUNA": CSS para ocultar el iframe que genera los ceros ---
+                # =========================================================--
+                # --- 1. LA VACUNA DEFINITIVA (Pon esto justo antes de los botones) ---
                 st.markdown("""
                     <style>
+                        /* Oculta CUALQUIER residuo de componentes HTML */
                         iframe[title="st.components.v1.html"] {
-                            display: none;
+                            display: none !important;
+                            height: 0px !important;
+                            border: none !important;
+                        }
+                        /* Ajuste para que los botones de descarga y normales se vean idénticos */
+                        .stDownloadButton, .stButton {
+                            display: flex;
+                            justify-content: center;
                         }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # Layout de botones estilo NEXION
+                # --- 2. BLOQUE DE ACCIONES CLONADO ---
+                st.write("---")
                 col_nexion_1, col_nexion_2 = st.columns(2)
                 
                 with col_nexion_1:
-                    if st.button(":material/print: GENERAR REPORTE PARA IMPRESIÓN", type="primary", use_container_width=True, key="btn_print_final"):
+                    # Botón de Impresión
+                    if st.button(":material/print: GENERAR REPORTE PARA IMPRESIÓN", type="primary", use_container_width=True, key="btn_nexion_print"):
                         reporte_html = generar_reporte_impresion(df_m, mes_sel)
-                        # Técnica de ventana emergente limpia
-                        components.html(f"""
+                        # Inyectamos el JS
+                        st.components.v1.html(f"""
                             <script>
                                 var win = window.open('', '', 'height=1100,width=900');
                                 win.document.write('<html><head><title>Reporte JYPESA</title></head><body>');
@@ -1617,6 +1622,7 @@ else:
                         """, height=0)
                 
                 with col_nexion_2:
+                    # Botón de Excel CLONADO (Mismo estilo, mismo ancho, mismo icono material)
                     excel_file = descargar_excel_ingenieria(df_m, mes_sel)
                     st.download_button(
                         label=":material/description: DESCARGAR REPORTE TÉCNICO (EXCEL)",
@@ -1624,7 +1630,8 @@ else:
                         file_name=f"Reporte_Logistica_{mes_sel}_2026.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
-                        key="btn_excel_final"
+                        type="primary", # Lo ponemos primary para que sea CLON del de impresión
+                        key="btn_nexion_excel_clon"
                     )
             
             
@@ -2395,6 +2402,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
