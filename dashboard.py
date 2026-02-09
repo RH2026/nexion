@@ -1248,73 +1248,75 @@ else:
                 """, unsafe_allow_html=True)
                 
                 @st.cache_data
-                def load_data_simple():
-                    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis.csv"
-                    # Cargamos con latin-1 y sin procesamientos complejos iniciales
-                    df = pd.read_csv(url, encoding='latin-1')
+                def load_data_armored():
+                    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
+                    # Cargamos ignorando nombres, leyendo la data cruda
+                    df = pd.read_csv(url, encoding='latin-1', skipinitialspace=True)
                     
-                    # Limpieza básica de nombres de columnas: solo quitar espacios extremos
-                    df.columns = [str(c).strip() for c in df.columns]
+                    # Limpieza forzada de nombres de columnas para que no haya espacios invisibles
+                    df.columns = [str(c).strip().upper() for c in df.columns]
                     
-                    # Asegurar que los números sean números (quitar comas y símbolos)
-                    cols_negocio = ['FACTURACIÓN', 'COSTO LOGÍSTICO', 'COSTO POR CAJA', 'COSTO POR CAJA 2025', '% DE INCIDENCIAS']
-                    for col in cols_negocio:
-                        if col in df.columns:
-                            df[col] = pd.to_numeric(df[col].astype(str).str.replace(r'[^\d.]', '', regex=True), errors='coerce')
-                    
+                    # Función para limpiar números de cualquier carácter raro ($, %, comas)
+                    def clean_num(value):
+                        if pd.isna(value): return 0
+                        s = str(value).replace('$', '').replace('%', '').replace(',', '').strip()
+                        try: return float(s)
+                        except: return 0
+                
+                    # Aplicamos limpieza a todo el dataframe excepto a la columna de MES
+                    for col in df.columns:
+                        if "MES" not in col:
+                            df[col] = df[col].apply(clean_num)
+                            
                     return df
                 
                 try:
-                    df = load_data_simple()
+                    df = load_data_armored()
                 except Exception as e:
-                    st.error(f"No se pudo leer el archivo: {e}")
+                    st.error(f"Error al conectar con GitHub: {e}")
                     st.stop()
                 
-                # --- HEADER SEGÚN TU DISEÑO ---
-                st.image("https://raw.githubusercontent.com/RH2026/nexion/main/nexion_logo.png", width=150) # Ajusta si tienes el logo
-                st.title("📊 Nexion Financial & Logistics Control")
+                # --- INTERFAZ ---
+                st.title("🚀 Nexion Strategic Report 2026")
                 
-                if df.empty:
-                    st.warning("El archivo se leyó pero no tiene datos. Revisa el CSV en GitHub.")
-                else:
-                    # --- FILTROS ---
-                    # Usamos la columna 'MES' directamente como viene en tu archivo
-                    mes_col = 'MES' if 'MES' in df.columns else df.columns[0]
-                    opciones_mes = df[mes_col].unique().tolist()
-                    
-                    sel_mes = st.sidebar.multiselect("Filtrar Meses", opciones_mes, default=opciones_mes)
-                    df_filt = df[df[mes_col].isin(sel_mes)]
+                if not df.empty:
+                    # Identificamos columnas por posición para evitar el KeyError
+                    # Pos 0: MES | Pos 2: FACTURACION | Pos 4: COSTO LOGISTICO | Pos 5: COSTO POR CAJA | Pos 12: COSTO POR CAJA 2025
+                    col_mes = df.columns[0]
+                    col_fact = df.columns[2]
+                    col_costo_log = df.columns[4]
+                    col_caja_26 = df.columns[5]
+                    col_incidencias = df.columns[8]
+                    col_caja_25 = df.columns[12]
                 
-                    # --- MÉTRICAS ---
-                    c1, c2, c3, c4 = st.columns(4)
-                    with c1:
-                        st.metric("Facturación", f"${df_filt['FACTURACIÓN'].sum():,.2f}" if 'FACTURACIÓN' in df.columns else "N/A")
-                    with c2:
-                        st.metric("Costo Logístico", f"${df_filt['COSTO LOGÍSTICO'].sum():,.2f}" if 'COSTO LOGÍSTICO' in df.columns else "N/A")
-                    with c3:
-                        # Comparativa rápida 2026 vs 2025
-                        cp26 = df_filt['COSTO POR CAJA'].mean()
-                        cp25 = df_filt['COSTO POR CAJA 2025'].mean()
-                        diff = ((cp26 - cp25) / cp25 * 100) if cp25 > 0 else 0
-                        st.metric("Costo/Caja", f"${cp26:.2f}", f"{diff:.1f}% vs 2025", delta_color="inverse")
-                    with c4:
-                        inc = df_filt['% DE INCIDENCIAS'].mean()
-                        st.metric("% Incidencias", f"{inc:.2f}%")
+                    # KPIs Principales
+                    m1, m2, m3, m4 = st.columns(4)
+                    with m1:
+                        st.metric("Facturación Total", f"${df[col_fact].sum():,.2f}")
+                    with m2:
+                        st.metric("Costo Logístico", f"${df[col_costo_log].sum():,.2f}")
+                    with m3:
+                        avg_26 = df[col_caja_26].mean()
+                        avg_25 = df[col_caja_25].mean()
+                        diff = ((avg_26 - avg_25) / avg_25 * 100) if avg_25 != 0 else 0
+                        st.metric("Costo/Caja Avg", f"${avg_26:.2f}", f"{diff:.1f}% vs 2025", delta_color="inverse")
+                    with m4:
+                        st.metric("% Incidencias", f"{df[col_incidencias].mean():.2f}%")
                 
-                    # --- GRÁFICA ---
-                    st.subheader("📈 Comparativa de Costos Unitarios")
+                    # Gráfica de Ingeniería (Comparativa 2025 vs 2026)
+                    st.subheader("📊 Comparativa Costo por Caja (Año tras Año)")
                     fig = go.Figure()
-                    if 'COSTO POR CAJA 2025' in df.columns:
-                        fig.add_trace(go.Bar(x=df_filt[mes_col], y=df_filt['COSTO POR CAJA 2025'], name='2025', marker_color='#4A4A4A'))
-                    if 'COSTO POR CAJA' in df.columns:
-                        fig.add_trace(go.Bar(x=df_filt[mes_col], y=df_filt['COSTO POR CAJA'], name='2026', marker_color='#00D4FF'))
-                    
-                    fig.update_layout(template="plotly_dark", barmode='group')
+                    fig.add_trace(go.Bar(x=df[col_mes], y=df[col_caja_25], name='Costo 2025', marker_color='#555555'))
+                    fig.add_trace(go.Bar(x=df[col_mes], y=df[col_caja_26], name='Costo 2026', marker_color='#00d4ff'))
+                    fig.update_layout(template="plotly_dark", barmode='group', height=400)
                     st.plotly_chart(fig, use_container_width=True)
                 
-                    # --- TABLA DE AUDITORÍA ---
-                    st.subheader("📂 Datos Maestros")
-                    st.table(df_filt) # Usamos st.table para que se vea siempre, no st.dataframe que a veces falla en la visualización
+                    # Tabla Maestra para Dirección
+                    st.subheader("📂 Desglose de Operaciones")
+                    st.dataframe(df, use_container_width=True)
+                
+                else:
+                    st.error("El archivo está vacío o no se pudo procesar correctamente.")
                 
                 
                                 
@@ -2111,6 +2113,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
