@@ -1254,38 +1254,68 @@ else:
                 def cargar_analisis_elite():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
                     try:
+                        # 1. Lectura robusta
                         df = pd.read_csv(url, encoding="latin-1", sep=None, engine='python')
                         df.columns = [str(c).strip().upper() for c in df.columns]
                         
-                        def fcol(k): return next((c for c in df.columns if k in c), None)
+                        # 2. Buscador de columnas mejorado (Prioriza coincidencias exactas)
+                        def fcol(k): 
+                            # Primero intenta buscar la frase exacta para evitar errores como 'LOGI' vs 'LOGISTICO'
+                            exacta = next((c for c in df.columns if k == c), None)
+                            if exacta: return exacta
+                            # Si no, busca la palabra contenida
+                            return next((c for c in df.columns if k in c), None)
                 
+                        # 3. Mapeo Quirúrgico (Ajustado a tus nombres reales)
                         mapeo = {
-                            'MES': fcol('MES'), 'FLETE': fcol('FLETE'), 'FACT': fcol('FACTURACI'),
-                            'CAJAS': fcol('CAJAS ENVIADAS'), 'LOGI': fcol('LOGI'), 'META': fcol('META'),
+                            'MES': fcol('MES'), 
+                            'FLETE': fcol('COSTO DE FLETE'), 
+                            'FACT': fcol('FACTURACIÓN') or fcol('FACTURACI'),
+                            'CAJAS': fcol('CAJAS ENVIADAS'), 
+                            'LOGI': fcol('COSTO LOGÍSTICO') or fcol('LOGI'), 
+                            'META': fcol('META INDICADOR') or fcol('META'),
                             'CC26': fcol('COSTO POR CAJA') if fcol('COSTO POR CAJA') and '2024' not in fcol('COSTO POR CAJA') else None,
-                            'VAL_INC': fcol('VALUACION'), 'POR_INC': fcol('PORCENTAJE DE INCIDENCIAS'),
-                            'INCR': fcol('INCREMENTO'), 'VS24': fcol('% DE INCREMENTO'), 'CC24': fcol('2024')
+                            'VAL_INC': fcol('VALUACION'), 
+                            'POR_INC': fcol('PORCENTAJE DE INCIDENCIAS') or fcol('% DE INC'),
+                            'INCR': fcol('INCREMENTO + VI') or fcol('INCREMENTO'), 
+                            'VS24': fcol('% DE INCREMENTO'), 
+                            'CC24': fcol('2024')
                         }
                 
                         if not mapeo['MES']: return None
                 
+                        # 4. Limpieza de filas basura
                         df = df.dropna(subset=[mapeo['MES']])
                         df = df[df[mapeo['MES']].astype(str).str.contains('Unnamed|TOTAL', case=False) == False]
                         
+                        # 5. Función de limpieza inteligente (Maneja $ y %)
                         def clean(v):
-                            if pd.isna(v): return 0.0
-                            s = str(v).replace('$', '').replace(',', '').replace('%', '').replace('(', '-').replace(')', '').strip()
-                            try: return float(s)
-                            except: return 0.0
+                            if pd.isna(v) or v == '': return 0.0
+                            s = str(v).strip()
+                            # Si es un porcentaje (ej. 6.06%), quitamos el símbolo y lo dejamos como número
+                            es_porcentaje = '%' in s
+                            s = s.replace('$', '').replace(',', '').replace('%', '').replace('(', '-').replace(')', '').strip()
+                            try:
+                                num = float(s)
+                                # OJO: Si el Excel tiene 0.0606 pero se ve como 6.06%, 
+                                # lo mantenemos como 6.06 para que tus tarjetas (f"{val:.1f}%") funcionen.
+                                return num
+                            except:
+                                return 0.0
                 
+                        # 6. Construcción del DataFrame Estándar
                         df_std = pd.DataFrame()
                         df_std['MES'] = df[mapeo['MES']]
                         for key, orig in mapeo.items():
                             if key != 'MES':
-                                df_std[key] = df[orig].apply(clean) if orig else 0.0
+                                if orig:
+                                    df_std[key] = df[orig].apply(clean)
+                                else:
+                                    df_std[key] = 0.0
+                                    
                         return df_std
                     except Exception as e:
-                        st.error(f"Error en Motor: {e}")
+                        st.error(f"Error crítico en Motor: {e}")
                         return None
                 
                 # --- 2. CSS MAESTRO ---
