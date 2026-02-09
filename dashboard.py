@@ -1240,155 +1240,180 @@ else:
     
             elif st.session_state.menu_sub == "OPS":
                 st.subheader("Eficiencia Operativa (OPS)")
-                # Estilo para que se vea de alto nivel
-                st.markdown("""
-                    <style>
-                    .main { background-color: #0e1117; }
-                    div[data-testid="stMetricValue"] { color: #00d4ff; }
-                    </style>
-                """, unsafe_allow_html=True)
-                
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
-                # --- 1. MOTOR DE DATOS NIVEL ELITE (NORMALIZADO) ---
                 @st.cache_data
                 def cargar_analisis_elite():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
                     try:
-                        # 1. Lectura robusta
                         df = pd.read_csv(url, encoding="latin-1", sep=None, engine='python')
                         df.columns = [str(c).strip().upper() for c in df.columns]
                         
-                        # 2. Buscador de columnas mejorado (Prioriza coincidencias exactas)
                         def fcol(k): 
-                            # Primero intenta buscar la frase exacta para evitar errores como 'LOGI' vs 'LOGISTICO'
                             exacta = next((c for c in df.columns if k == c), None)
                             if exacta: return exacta
-                            # Si no, busca la palabra contenida
                             return next((c for c in df.columns if k in c), None)
                 
-                        # 3. Mapeo Quirúrgico (Ajustado a tus nombres reales)
                         mapeo = {
-                            'MES': fcol('MES'), 
-                            'FLETE': fcol('COSTO DE FLETE'), 
+                            'MES': fcol('MES'), 'FLETE': fcol('COSTO DE FLETE'), 
                             'FACT': fcol('FACTURACIÓN') or fcol('FACTURACI'),
-                            'CAJAS': fcol('CAJAS ENVIADAS'), 
-                            'LOGI': fcol('COSTO LOGÍSTICO') or fcol('LOGI'), 
+                            'CAJAS': fcol('CAJAS ENVIADAS'), 'LOGI': fcol('COSTO LOGÍSTICO') or fcol('LOGI'), 
                             'META': fcol('META INDICADOR') or fcol('META'),
                             'CC26': fcol('COSTO POR CAJA') if fcol('COSTO POR CAJA') and '2024' not in fcol('COSTO POR CAJA') else None,
-                            'VAL_INC': fcol('VALUACION'), 
-                            'POR_INC': fcol('PORCENTAJE DE INCIDENCIAS') or fcol('% DE INC'),
+                            'VAL_INC': fcol('VALUACION'), 'POR_INC': fcol('PORCENTAJE DE INCIDENCIAS') or fcol('% DE INC'),
                             'INCR': fcol('INCREMENTO + VI') or fcol('INCREMENTO'), 
-                            'VS24': fcol('% DE INCREMENTO'), 
-                            'CC24': fcol('2024')
+                            'VS24': fcol('% DE INCREMENTO'), 'CC24': fcol('2024')
                         }
                 
                         if not mapeo['MES']: return None
                 
-                        # 4. Limpieza de filas basura
                         df = df.dropna(subset=[mapeo['MES']])
                         df = df[df[mapeo['MES']].astype(str).str.contains('Unnamed|TOTAL', case=False) == False]
                         
-                        # 5. Función de limpieza inteligente (Maneja $ y %)
                         def clean(v):
                             if pd.isna(v) or v == '': return 0.0
                             s = str(v).strip()
-                            # Si es un porcentaje (ej. 6.06%), quitamos el símbolo y lo dejamos como número
-                            es_porcentaje = '%' in s
                             s = s.replace('$', '').replace(',', '').replace('%', '').replace('(', '-').replace(')', '').strip()
-                            try:
-                                num = float(s)
-                                # OJO: Si el Excel tiene 0.0606 pero se ve como 6.06%, 
-                                # lo mantenemos como 6.06 para que tus tarjetas (f"{val:.1f}%") funcionen.
-                                return num
-                            except:
-                                return 0.0
+                            try: return float(s)
+                            except: return 0.0
                 
-                        # 6. Construcción del DataFrame Estándar
                         df_std = pd.DataFrame()
                         df_std['MES'] = df[mapeo['MES']]
                         for key, orig in mapeo.items():
                             if key != 'MES':
-                                if orig:
-                                    df_std[key] = df[orig].apply(clean)
-                                else:
-                                    df_std[key] = 0.0
-                                    
+                                df_std[key] = df[orig].apply(clean) if orig else 0.0
                         return df_std
                     except Exception as e:
                         st.error(f"Error crítico en Motor: {e}")
                         return None
                 
-                # --- 2. CSS MAESTRO ---
+                # --- 2. NUEVO DISEÑO "WAR ROOM" ---
                 st.markdown("""
                     <style>
-                    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;800&display=swap');
-                    .premium-header { font-family: 'Orbitron', sans-serif; color: #f8fafc; font-size: 14px; border-bottom: 2px solid #38bdf8; padding-bottom: 8px; margin: 20px 0; border:none!important; }
-                    .card-container { background-color: #0d1117; border-radius: 10px; padding: 15px; border: 1px solid #30363d; height: 130px; margin-bottom: 10px; }
-                    .card-label { color: #8b949e; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; }
-                    .card-value { font-size: 1.6rem; font-weight: 800; margin: 4px 0; font-family: 'Inter', sans-serif; }
-                    .card-footer { color: #484f58; font-size: 0.6rem; font-weight: 600; }
-                    .border-blue { border-left: 5px solid #38bdf8; } .border-green { border-left: 5px solid #00ffa2; }
-                    .border-red { border-left: 5px solid #fb7185; } .border-purple { border-left: 5px solid #a78bfa; }
-                    .border-yellow { border-left: 5px solid #eab308; } .border-pink { border-left: 5px solid #f472b6; }
-                    .insight-box { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; margin-top: 10px; }
-                    .calc-box { background: rgba(56, 189, 248, 0.05); border: 1px dashed #38bdf8; border-radius: 10px; padding: 15px; margin: 20px 0; font-family: 'Inter', sans-serif; color: #94a3b8; font-size: 0.85rem; }
+                    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+                    
+                    .main { background-color: #05070a; }
+                    
+                    /* Header Estilo Militar/Tech */
+                    .premium-header { 
+                        font-family: 'Orbitron', sans-serif; 
+                        color: #38bdf8; 
+                        font-size: 1.2rem; 
+                        letter-spacing: 3px;
+                        text-align: center;
+                        padding: 20px;
+                        background: linear-gradient(90deg, rgba(56,189,248,0) 0%, rgba(56,189,248,0.1) 50%, rgba(56,189,248,0) 100%);
+                        border-top: 1px solid #1e293b;
+                        border-bottom: 1px solid #1e293b;
+                        margin-bottom: 30px;
+                    }
+                
+                    /* Tarjetas Neón */
+                    .card-container { 
+                        background: linear-gradient(145deg, #0f172a, #020617);
+                        border-radius: 4px; 
+                        padding: 20px; 
+                        border: 1px solid #1e293b;
+                        position: relative;
+                        overflow: hidden;
+                        transition: 0.3s;
+                    }
+                    .card-container:hover { border-color: #38bdf8; box-shadow: 0 0 15px rgba(56,189,248,0.2); }
+                    
+                    .card-label { font-family: 'Rajdhani', sans-serif; color: #64748b; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+                    .card-value { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; font-weight: 700; margin: 8px 0; }
+                    .card-footer { font-family: 'Rajdhani', sans-serif; color: #475569; font-size: 0.75rem; border-top: 1px solid #1e293b; pt: 5px; }
+                
+                    /* Bordes de Color */
+                    .border-blue { border-top: 3px solid #38bdf8; } 
+                    .border-green { border-top: 3px solid #10b981; }
+                    .border-red { border-top: 3px solid #ef4444; } 
+                    .border-pink { border-top: 3px solid #f472b6; }
+                    .border-yellow { border-top: 3px solid #f59e0b; }
+                
+                    .insight-box { 
+                        background: #020617; 
+                        border: 1px solid #1e293b; 
+                        padding: 25px; 
+                        border-radius: 4px;
+                        margin-top: 20px;
+                        border-right: 5px solid #38bdf8;
+                    }
+                    
+                    /* Estilo para la tabla */
+                    .stDataFrame { border: 1px solid #1e293b; border-radius: 4px; }
                     </style>
                 """, unsafe_allow_html=True)
                 
                 def render_card(label, value, footer, target=None, actual=None, inv=False, b_base="border-blue"):
-                    color = "#f0f6fc"
+                    color = "#f8fafc"
                     border = b_base
                     if target is not None and actual is not None:
                         is_bad = actual > target if not inv else actual < target
-                        color = "#fb7185" if is_bad else "#00ffa2"
+                        color = "#fb7185" if is_bad else "#34d399"
                         border = "border-red" if is_bad else "border-green"
-                    st.markdown(f"<div class='card-container {border}'><div class='card-label'>{label}</div><div class='card-value' style='color:{color}'>{value}</div><div class='card-footer'>{footer}</div></div>", unsafe_allow_html=True)
+                    
+                    st.markdown(f"""
+                        <div class='card-container {border}'>
+                            <div class='card-label'>{label}</div>
+                            <div class='card-value' style='color:{color}'>{value}</div>
+                            <div class='card-footer'>{footer}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
                 
                 # --- 3. LÓGICA DE VISUALIZACIÓN ---
                 df_a = cargar_analisis_elite()
                 
                 if df_a is not None:
-                    meses = df_a["MES"].unique()
-                    mes_sel = st.selectbox("PERIODO DE ANÁLISIS", meses)
+                    # Selector de diseño minimalista
+                    c_top1, c_top2 = st.columns([2, 1])
+                    with c_top2:
+                        mes_sel = st.selectbox("📅 SELECCIONAR CICLO", df_a["MES"].unique())
+                    
                     df_m = df_a[df_a["MES"] == mes_sel].iloc[0]
                 
-                    st.markdown(f'<h4 class="premium-header">RESULTADOS: {mes_sel}</h4>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="premium-header">NEXION ANALYTICS SYSTEM // {mes_sel}</div>', unsafe_allow_html=True)
                 
-                    # Las 9 Tarjetas
+                    # Grid de Tarjetas
                     c1, c2, c3 = st.columns(3)
-                    with c1: render_card("Costo Logístico", f"{df_m['LOGI']:.1f}%", f"META: {df_m['META']}%", df_m['META'], df_m['LOGI'])
-                    with c2: render_card("Incremento + VI", f"${df_m['INCR']:,.0f}", "Impacto Real", 0, df_m['INCR'], inv=True)
-                    with c3: render_card("% Incr. vs 2024", f"{df_m['VS24']:.1f}%", "Variación Anual", b_base="border-pink")
+                    with c1: render_card("Eficiencia Logística", f"{df_m['LOGI']:.2f}%", f"OBJETIVO: {df_m['META']}%", df_m['META'], df_m['LOGI'])
+                    with c2: render_card("Impacto Económico (+VI)", f"${df_m['INCR']:,.0f}", "Pérdida/Ganancia Real", 0, df_m['INCR'], inv=True)
+                    with c3: render_card("Variación Anual", f"{df_m['VS24']:.1f}%", "vs Periodo 2024", b_base="border-pink")
                 
                     c4, c5, c6 = st.columns(3)
-                    with c4: render_card("Costo por Caja", f"${df_m['CC26']:.1f}", f"Target 24: ${df_m['CC24']:.1f}", df_m['CC24'], df_m['CC26'])
-                    with c5: render_card("Valuación Incidencias", f"${df_m['VAL_INC']:,.0f}", "Mermas", b_base="border-yellow")
-                    with c6: render_card("% Incidencias", f"{df_m['POR_INC']:.2f}%", "Calidad", b_base="border-purple")
+                    with c4: render_card("Costo x Unidad", f"${df_m['CC26']:.2f}", f"Referencia 24: ${df_m['CC24']:.2f}", df_m['CC24'], df_m['CC26'])
+                    with c5: render_card("Mermas e Incidencias", f"${df_m['VAL_INC']:,.0f}", "Valuación Total", b_base="border-yellow")
+                    with c6: render_card("Ratio de Calidad", f"{df_m['POR_INC']:.2f}%", "Incidencias / Cajas", b_base="border-blue")
                 
                     c7, c8, c9 = st.columns(3)
-                    with c7: render_card("Facturación", f"${df_m['FACT']:,.0f}", "Venta Bruta", b_base="border-blue")
-                    with c8: render_card("Cajas Enviadas", f"{int(df_m['CAJAS']):,.0f}", "Volumen", b_base="border-purple")
-                    with c9: render_card("Costo de Flete", f"${df_m['FLETE']:,.0f}", "Gasto de Flete", b_base="border-blue")
+                    with c7: render_card("Revenue Facturado", f"${df_m['FACT']:,.0f}", "Venta Registrada")
+                    with c8: render_card("Volumen de Salida", f"{int(df_m['CAJAS']):,.0f}", "Unidades Totales")
+                    with c9: render_card("Inversión en Flete", f"${df_m['FLETE']:,.0f}", "Costo Directo Operativo")
                 
-                    # --- 4. RADIOGRAFÍA Y DIAGNÓSTICO (SIN ERRORES) ---
+                    # --- 4. RADIOGRAFÍA ---
                     eficiencia = df_m['META'] - df_m['LOGI']
-                    msg_clase = "OPTIMIZACIÓN RADICAL" if eficiencia >= 0.5 else "ESTABILIDAD" if eficiencia >= 0 else "EROSIÓN DE MARGEN"
-                    msg_color = "#00ffa2" if eficiencia >= 0 else "#fb7185"
+                    msg_clase = "OPTIMIZACIÓN DE MARGEN" if eficiencia >= 0 else "EROSIÓN OPERATIVA"
+                    msg_color = "#34d399" if eficiencia >= 0 else "#fb7185"
                 
                     st.markdown(f"""
-                    <div class="calc-box">
-                        <b>Metodología ({mes_sel}):</b><br>
-                        • Eficiencia: (${df_m['FLETE']:,.2f} / ${df_m['FACT']:,.2f}) = {df_m['LOGI']:.2f}%<br>
-                        • Unitario: ${df_m['FLETE']:,.2f} / {int(df_m['CAJAS'])} cajas = ${df_m['CC26']:.2f}
-                    </div>
-                    <div class="insight-box" style="border-top: 4px solid {msg_color};">
-                        <h4 style="color:{msg_color}; margin:0; font-family:Orbitron; font-size:0.9rem;">🩺 RADIOGRAFÍA ESTRATÉGICA: {msg_clase}</h4>
-                        <p style="color:#f1f5f9; font-size:0.85rem; margin-top:15px; line-height:1.6;">
-                        Estamos operando <b>{abs(eficiencia):.1f}%</b> {'debajo' if eficiencia >= 0 else 'arriba'} de la meta. 
-                        Cada $1,000 de venta consumen <b>${(df_m['LOGI']/100)*1000:.2f}</b> de logística.
+                    <div class="insight-box">
+                        <h4 style="color:{msg_color}; margin:0; font-family:Orbitron; font-size:0.9rem; letter-spacing:2px;">🩺 DIAGNÓSTICO: {msg_clase}</h4>
+                        <p style="color:#94a3b8; font-size:0.85rem; margin-top:15px; line-height:1.6; font-family:'Rajdhani';">
+                        El análisis para <b>{mes_sel}</b> indica una desviación de <b>{abs(eficiencia):.2f}%</b> respecto al KPI planeado.<br>
+                        La operación requiere <b>${(df_m['LOGI']/100)*1000:.2f}</b> por cada $1,000 facturados.
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
+                
+                    st.write("---")
+                    
+                    # --- 5. TABLA CONTRAÍDA (EXPANDER) ---
+                    with st.expander("📊 EXPLORADOR DE DATOS MAESTRO (TABLA COMPLETA)"):
+                        st.markdown("<p style='font-size:0.8rem; color:#64748b;'>Datos normalizados desde el repositorio central.</p>", unsafe_allow_html=True)
+                        # Formateamos para que la tabla se vea profesional
+                        st.dataframe(df_a.style.format({
+                            'FLETE': '${:,.2f}', 'FACT': '${:,.2f}', 'LOGI': '{:.2f}%', 
+                            'META': '{:.2f}%', 'CC26': '${:,.2f}', 'INCR': '${:,.2f}'
+                        }), use_container_width=True)
                 
                     # Botón de Descarga PDF al final
                     if st.button("📄 GENERAR REPORTE EN PDF"):
@@ -2190,6 +2215,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
