@@ -1464,12 +1464,10 @@ else:
                             }
                         )
                                 
-                # --- LÓGICA DEL REPORTE PARA IMPRESIÓN ---
-                # --- LÓGICA DEL REPORTE (Sin vista previa fija, invocado por botón) ---
+                # --- LÓGICA DEL REPORTE PARA IMPRESIÓN ---        
                 def generar_reporte_impresion(df_m, mes_sel):
                     estatus_rep = "DENTRO DE PARÁMETROS" if (df_m['META'] - df_m['LOGI']) >= 0 else "FUERA DE PARÁMETROS"
                     
-                    # HTML del reporte (Sin marca de agua y diseño limpio)
                     html_content = f"""
                     <div id="printable-report" style="font-family: 'Courier New', Courier, monospace; padding: 30px; color: #000; background: #fff; border: 2px solid #000; max-width: 850px; margin: auto;">
                         
@@ -1536,26 +1534,6 @@ else:
                     """
                     return html_content
                 
-                # --- INTEGRACIÓN MEJORADA (SIN CEROS VERDES) ---
-                if st.button("🖨️ GENERAR REPORTE PARA IMPRESIÓN"):
-                    reporte_html = generar_reporte_impresion(df_m, mes_sel)
-                    
-                    # Inyectamos CSS para ocultar el contenedor y evitar los ceros verdes
-                    st.markdown("""<style>iframe[title="st.components.v1.html"] { display: none; }</style>""", unsafe_allow_html=True)
-                    
-                    st.components.v1.html(f"""
-                        <script>
-                            var win = window.open('', '', 'height=1100,width=900');
-                            win.document.write('<html><head><title>Reporte JYPESA</title></head><body>');
-                            win.document.write(`{reporte_html}`);
-                            win.document.write('</body></html>');
-                            win.document.close();
-                            win.print();
-                            win.close();
-                        </script>
-                    """, height=0)
-                
-                # --- FUNCIÓN EXCEL ---
                 def descargar_excel_ingenieria(df_m, mes_sel):
                     output = io.BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -1573,10 +1551,7 @@ else:
                         worksheet.merge_range('A1:D2', f'JYPESA - REPORTE TÉCNICO LOGÍSTICA: {mes_sel} 2026', header_fmt)
                         worksheet.write('A4', 'FECHA DE REPORTE:', subheader_fmt)
                         worksheet.write('B4', datetime.now().strftime('%d/%m/%Y'), data_fmt)
-                        worksheet.write('A5', 'ESTATUS OPERATIVO:', subheader_fmt)
-                        estatus = "EFICIENTE" if (df_m['META'] - df_m['LOGI']) >= 0 else "DESVIACIÓN"
-                        worksheet.write('B5', estatus, data_fmt)
-                
+                        
                         kpis = [
                             ['INDICADOR CLAVE', 'VALOR REGISTRADO', 'TARGET / REF'],
                             ['COSTO LOGÍSTICO', df_m['LOGI']/100, df_m['META']/100],
@@ -1601,23 +1576,56 @@ else:
                                     worksheet.write(row, 2, item[2], money_fmt if isinstance(item[2], (int, float)) else data_fmt)
                             row += 1
                 
-                        worksheet.set_column('A:A', 30); worksheet.set_column('B:C', 20)
-                        row += 4
-                        worksheet.write(row, 0, '_________________________', data_fmt)
-                        worksheet.write(row, 2, '_________________________', data_fmt)
-                        worksheet.write(row+1, 0, 'ELABORÓ: RIGOBERTO HERNÁNDEZ', data_fmt)
-                        worksheet.write(row+1, 2, 'AUTORIZÓ: DIRECCIÓN OPS', data_fmt)
-                
+                        worksheet.set_column('A:A', 30)
+                        worksheet.set_column('B:C', 20)
                     return output.getvalue()
                 
-                # --- BOTÓN EXCEL ---
-                excel_data = descargar_excel_ingenieria(df_m, mes_sel)
-                st.download_button(
-                    label="📊 DESCARGAR REPORTE TÉCNICO (EXCEL)",
-                    data=excel_data,
-                    file_name=f"Reporte_Logistica_{mes_sel}_2026.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+                # =========================================================
+                # 2. SECCIÓN VISUAL (BOTONES Y "VACUNA" CONTRA CEROS)
+                # =========================================================
+                
+                st.write("---")
+                
+                # --- LA "VACUNA": CSS para ocultar el iframe que genera los ceros ---
+                st.markdown("""
+                    <style>
+                        iframe[title="st.components.v1.html"] {
+                            display: none;
+                        }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # Layout de botones estilo NEXION
+                col_nexion_1, col_nexion_2 = st.columns(2)
+                
+                with col_nexion_1:
+                    if st.button(":material/print: GENERAR REPORTE PARA IMPRESIÓN", type="primary", use_container_width=True, key="btn_print_final"):
+                        reporte_html = generar_reporte_impresion(df_m, mes_sel)
+                        # Técnica de ventana emergente limpia
+                        components.html(f"""
+                            <script>
+                                var win = window.open('', '', 'height=1100,width=900');
+                                win.document.write('<html><head><title>Reporte JYPESA</title></head><body>');
+                                win.document.write(`{reporte_html}`);
+                                win.document.write('</body></html>');
+                                win.document.close();
+                                win.onload = function() {{
+                                    win.print();
+                                    win.close();
+                                }};
+                            </script>
+                        """, height=0)
+                
+                with col_nexion_2:
+                    excel_file = descargar_excel_ingenieria(df_m, mes_sel)
+                    st.download_button(
+                        label=":material/description: DESCARGAR REPORTE TÉCNICO (EXCEL)",
+                        data=excel_file,
+                        file_name=f"Reporte_Logistica_{mes_sel}_2026.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key="btn_excel_final"
+                    )
             
             
             elif st.session_state.menu_sub == "OTD":
@@ -2387,6 +2395,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
