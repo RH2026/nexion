@@ -1398,10 +1398,7 @@ else:
                         </div>""", unsafe_allow_html=True)
                 
                     # Botón de Descarga PDF al final
-                    if st.button("📄 GENERAR REPORTE EN PDF"):
-                        st.info("Función de exportación activa. Preparando documento...")
-                        # Aquí iría la lógica de FPDF (simplificada para este bloque)
-                
+                    
                 
                                 
     
@@ -2164,39 +2161,16 @@ else:
                 
     
     # ── FOOTER CON BIO INTERACTIVA (VERSIÓN DEFINITIVA) ────────────────────────
-    # ── FOOTER ORIGINAL FIJO ────────────────────────
+    # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
-    <style>
-        .footer {{
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: transparent;
-            color: {vars_css['text']};
-            text-align: center;
-            padding: 20px 0;
-            font-family: 'Courier New', monospace;
-            z-index: 999;
-        }}
-        .hernanphy-link {{
-            color: {vars_css['text']};
-            font-weight: 800;
-            letter-spacing: 3px;
-            text-decoration: none;
-            cursor: pointer;
-        }}
-        .hernanphy-link:hover {{
-            opacity: 0.7;
-        }}
-    </style>
-    
     <div class="footer">
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
         <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
-        <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
+        <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
+
 
 
 
