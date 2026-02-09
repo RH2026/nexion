@@ -1465,6 +1465,7 @@ else:
                         )
                                 
                 # --- LÓGICA DEL REPORTE PARA IMPRESIÓN ---        
+                # --- LÓGICA DEL REPORTE PARA IMPRESIÓN ---
                 def generar_reporte_impresion(df_m, mes_sel):
                     estatus_rep = "DENTRO DE PARÁMETROS" if (df_m['META'] - df_m['LOGI']) >= 0 else "FUERA DE PARÁMETROS"
                     
@@ -1534,104 +1535,34 @@ else:
                     """
                     return html_content
                 
-                def descargar_excel_ingenieria(df_m, mes_sel):
-                    output = io.BytesIO()
-                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                        workbook = writer.book
-                        worksheet = workbook.add_worksheet('REPORTE LOGÍSTICO')
-                
-                        # Formatos
-                        header_fmt = workbook.add_format({'bold': True, 'font_size': 14, 'font_name': 'Arial', 'border': 2, 'bg_color': '#000000', 'font_color': '#FFFFFF', 'align': 'center', 'valign': 'vcenter'})
-                        subheader_fmt = workbook.add_format({'bold': True, 'font_size': 10, 'bg_color': '#F2F2F2', 'border': 1, 'align': 'left', 'font_name': 'Arial'})
-                        data_fmt = workbook.add_format({'border': 1, 'font_name': 'Arial', 'font_size': 10})
-                        money_fmt = workbook.add_format({'num_format': '$#,##0.00', 'border': 1, 'font_name': 'Arial'})
-                        percent_fmt = workbook.add_format({'num_format': '0.00%', 'border': 1, 'font_name': 'Arial'})
-                
-                        # Escritura
-                        worksheet.merge_range('A1:D2', f'JYPESA - REPORTE TÉCNICO LOGÍSTICA: {mes_sel} 2026', header_fmt)
-                        worksheet.write('A4', 'FECHA DE REPORTE:', subheader_fmt)
-                        worksheet.write('B4', datetime.now().strftime('%d/%m/%Y'), data_fmt)
-                        
-                        kpis = [
-                            ['INDICADOR CLAVE', 'VALOR REGISTRADO', 'TARGET / REF'],
-                            ['COSTO LOGÍSTICO', df_m['LOGI']/100, df_m['META']/100],
-                            ['COSTO POR CAJA', df_m['CC26'], 59.00],
-                            ['FACTURACIÓN BRUTA', df_m['FACT'], '-'],
-                            ['INVERSIÓN FLETES', df_m['FLETE'], '-'],
-                            ['UNIDADES (CAJAS)', df_m['CAJAS'], '-'],
-                            ['INCREMENTO NETO', df_m['INCR'], '-']
-                        ]
-                
-                        row = 7
-                        for item in kpis:
-                            if row == 7:
-                                worksheet.write_row(row, 0, item, subheader_fmt)
-                            else:
-                                worksheet.write(row, 0, item[0], data_fmt)
-                                if 'LOGÍSTICO' in item[0]:
-                                    worksheet.write(row, 1, item[1], percent_fmt)
-                                    worksheet.write(row, 2, item[2], percent_fmt) if item[2] != '-' else worksheet.write(row, 2, '-', data_fmt)
-                                else:
-                                    worksheet.write(row, 1, item[1], money_fmt if isinstance(item[1], (int, float)) else data_fmt)
-                                    worksheet.write(row, 2, item[2], money_fmt if isinstance(item[2], (int, float)) else data_fmt)
-                            row += 1
-                
-                        worksheet.set_column('A:A', 30)
-                        worksheet.set_column('B:C', 20)
-                    return output.getvalue()
-                
-                # =========================================================--
-                # --- 1. LA VACUNA DEFINITIVA (Pon esto justo antes de los botones) ---
+                # --- INTERFAZ Y VACUNA CONTRA EL CERO ---
                 st.markdown("""
                 <style>
-                /* SOLO ocultamos iframes de impresión manual */
+                /* Oculta el contenedor del componente HTML para que no se vea el 0 */
                 iframe[data-testid="stHtml"] {
-                    height: 0px !important;
-                    border: none !important;
-                }
-                
-                /* Alineación idéntica de botones */
-                .stButton, .stDownloadButton {
-                    width: 100%;
+                    display: none !important;
                 }
                 </style>
                 """, unsafe_allow_html=True)
                 
-                # --- 2. BLOQUE DE ACCIONES CLONADO ---
                 st.write("---")
-                col_nexion_1, col_nexion_2 = st.columns(2)
-                
-                with col_nexion_1:
-                    # Botón de Impresión
-                    if st.button(":material/print: GENERAR REPORTE PARA IMPRESIÓN", type="primary", use_container_width=True, key="btn_nexion_print"):
-                        reporte_html = generar_reporte_impresion(df_m, mes_sel)
-                        # Inyectamos el JS
-                        st.components.v1.html(f"""
-                            <script>
-                                var win = window.open('', '', 'height=1100,width=900');
-                                win.document.write('<html><head><title>Reporte JYPESA</title></head><body>');
-                                win.document.write(`{reporte_html}`);
-                                win.document.write('</body></html>');
-                                win.document.close();
-                                win.onload = function() {{
-                                    win.print();
-                                    win.close();
-                                }};
-                            </script>
-                        """, height=0)
-                
-                with col_nexion_2:
-                    # Botón de Excel CLONADO (Mismo estilo, mismo ancho, mismo icono material)
-                    excel_file = descargar_excel_ingenieria(df_m, mes_sel)
-                    st.download_button(
-                        label=":material/description: DESCARGAR REPORTE TÉCNICO (EXCEL)",
-                        data=excel_file,
-                        file_name=f"Reporte_Logistica_{mes_sel}_2026.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True,
-                        type="primary", # Lo ponemos primary para que sea CLON del de impresión
-                        key="btn_nexion_excel_clon"
-                    )
+                if st.button(":material/print: GENERAR REPORTE PARA IMPRESIÓN", type="primary", use_container_width=True):
+                    reporte_html = generar_reporte_impresion(df_m, mes_sel)
+                    
+                    # Inyectamos el componente que lanza la ventana de impresión
+                    st.components.v1.html(f"""
+                        <script>
+                            var win = window.open('', '', 'height=1100,width=900');
+                            win.document.write('<html><head><title>Reporte JYPESA</title></head><body>');
+                            win.document.write(`{reporte_html}`);
+                            win.document.write('</body></html>');
+                            win.document.close();
+                            win.onload = function() {{
+                                win.print();
+                                win.close();
+                            }};
+                        </script>
+                    """, height=0)
             
             
             elif st.session_state.menu_sub == "OTD":
@@ -2401,6 +2332,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
