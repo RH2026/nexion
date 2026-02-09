@@ -1429,7 +1429,7 @@ else:
                     # Botón de Descarga PDF al final
                     # --- TABLA DE DATOS FINAL (CON NOMBRES REALES Y CONTRAÍDA) ---
                     st.markdown("<br>", unsafe_allow_html=True)
-                    with st.expander("📊 VER DATASET MAESTRO COMPLETO", expanded=False):
+                    with st.expander("Ver dataset completo", expanded=False):
                         # Creamos una copia para no afectar la lógica de los cálculos superiores
                         df_visual = df_a.copy()
                         
@@ -1464,7 +1464,119 @@ else:
                             }
                         )
                                 
-                                
+                # --- LÓGICA DEL REPORTE PARA IMPRESIÓN ---
+                # Extraemos los datos del mes seleccionado para el reporte
+                total_flete = df_m['FLETE']
+                eficiencia_val = df_m['META'] - df_m['LOGI']
+                estatus_rep = "DENTRO DE PARÁMETROS" if eficiencia_val >= 0 else "FUERA DE PARÁMETROS"
+                
+                # Construcción del HTML con estilo industrial/ingeniería
+                form_print = f"""
+                <div style="font-family: 'Courier New', Courier, monospace; padding: 30px; color: #000; background: #fff; border: 4px double #000; max-width: 900px; margin: auto;">
+                    
+                    <table style="width: 100%; border-bottom: 3px solid #000; margin-bottom: 20px;">
+                        <tr>
+                            <td style="width: 50%;">
+                                <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">JYPESA</h1>
+                                <p style="margin: 0; font-size: 10px; font-weight: bold; text-transform: uppercase;">División de Ingeniería Logística y Procesos</p>
+                            </td>
+                            <td style="width: 50%; text-align: right; font-size: 11px; line-height: 1.2;">
+                                <b>ID REPORTE:</b> LOG-2026-{mes_sel[:3].upper()}<br>
+                                <b>FECHA EMISIÓN:</b> {datetime.now().strftime('%d/%m/%Y')}<br>
+                                <b>HORA:</b> {datetime.now().strftime('%H:%M:%S')}<br>
+                                <b>ESTATUS:</b> <span style="background: {'#000; color:#fff;' if eficiencia_val >= 0 else '#fff; border:1px solid #000;'} padding: 2px 5px;">{estatus_rep}</span>
+                            </td>
+                        </tr>
+                    </table>
+                
+                    <h3 style="text-align: center; text-transform: uppercase; letter-spacing: 4px; border: 1px solid #000; padding: 5px; background: #f0f0f0;">
+                        Radiografía Operativa: {mes_sel} 2026
+                    </h3>
+                
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
+                        <div style="width: 31%; border: 1px solid #000; padding: 10px; text-align: center;">
+                            <div style="font-size: 9px; font-weight: bold; border-bottom: 1px solid #000; margin-bottom: 5px;">COSTO LOGÍSTICO / VENTA</div>
+                            <div style="font-size: 18px; font-weight: 900;">{df_m['LOGI']:.2f}%</div>
+                            <div style="font-size: 8px;">TARGET: {df_m['META']}%</div>
+                        </div>
+                        <div style="width: 31%; border: 1px solid #000; padding: 10px; text-align: center;">
+                            <div style="font-size: 9px; font-weight: bold; border-bottom: 1px solid #000; margin-bottom: 5px;">COSTO POR UNIDAD (CAJA)</div>
+                            <div style="font-size: 18px; font-weight: 900;">${df_m['CC26']:.2f}</div>
+                            <div style="font-size: 8px;">VAR. VS 2025: {df_m['VS24']:.1f}%</div>
+                        </div>
+                        <div style="width: 31%; border: 1px solid #000; padding: 10px; text-align: center;">
+                            <div style="font-size: 9px; font-weight: bold; border-bottom: 1px solid #000; margin-bottom: 5px;">VALUACIÓN DE INCIDENCIAS</div>
+                            <div style="font-size: 18px; font-weight: 900;">${df_m['VAL_INC']:,.0f}</div>
+                            <div style="font-size: 8px;">TASA: {df_m['POR_INC']:.2f}%</div>
+                        </div>
+                    </div>
+                
+                    <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background: #000; color: #fff;">
+                                <th style="border: 1px solid #000; padding: 8px; text-align: left;">DESCRIPCIÓN DE INDICADOR</th>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: center;">VALOR REGISTRADO</th>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: left;">NOTAS TÉCNICAS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 6px;">Facturación Bruta (Base de Cálculo)</td>
+                                <td style="border: 1px solid #000; padding: 6px; text-align: center;">${df_m['FACT']:,.2f}</td>
+                                <td style="border: 1px solid #000; padding: 6px; font-style: italic;">Monto total de salida de almacén</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 6px;">Inversión en Fletes Directos</td>
+                                <td style="border: 1px solid #000; padding: 6px; text-align: center;">${df_m['FLETE']:,.2f}</td>
+                                <td style="border: 1px solid #000; padding: 6px; font-style: italic;">Costo operativo transporte pesado/paquetería</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 6px;">Volumen Despachado (Unidades)</td>
+                                <td style="border: 1px solid #000; padding: 6px; text-align: center;">{int(df_m['CAJAS']):,.0f} Cajas</td>
+                                <td style="border: 1px solid #000; padding: 6px; font-style: italic;">Unidades de carga estandarizadas</td>
+                            </tr>
+                            <tr style="background: #f9f9f9; font-weight: bold;">
+                                <td style="border: 1px solid #000; padding: 6px;">INCREMENTO + VALUACIÓN INCIDENCIAS</td>
+                                <td style="border: 1px solid #000; padding: 6px; text-align: center;">${df_m['INCR']:,.2f}</td>
+                                <td style="border: 1px solid #000; padding: 6px;">Impacto financiero acumulado neto</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                
+                    <div style="margin-top: 50px; display: flex; justify-content: space-between; text-align: center; font-size: 10px;">
+                        <div style="width: 30%;">
+                            <div style="height: 40px;"></div>
+                            <div style="border-top: 2px solid #000; padding-top: 5px;">
+                                <b>ELABORÓ</b><br>
+                                Rigoberto Hernandez<br>
+                                Coord. de Ingeniería Logística
+                            </div>
+                        </div>
+                        <div style="width: 25%; display: flex; align-items: center; justify-content: center;">
+                             <div style="border: 4px double #ccc; padding: 10px; color: #ccc; transform: rotate(-15deg); font-weight: bold; font-size: 14px;">
+                                JYPESA<br>LOGÍSTICA
+                             </div>
+                        </div>
+                        <div style="width: 30%;">
+                            <div style="height: 40px;"></div>
+                            <div style="border-top: 2px solid #000; padding-top: 5px;">
+                                <b>AUTORIZÓ</b><br>
+                                Dirección de Operaciones<br>
+                                Control de Gestión
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div style="margin-top: 30px; font-size: 8px; color: #666; text-align: justify; line-height: 1;">
+                        ESTE DOCUMENTO ES UNA RADIOGRAFÍA GENERADA AUTOMÁTICAMENTE POR EL SISTEMA DE ANÁLISIS DE DATOS NEXION. CUALQUIER ALTERACIÓN DE LOS VALORES AQUÍ PRESENTADOS INVALIDA LA CERTIFICACIÓN OPERATIVA DEL MES EN CURSO.
+                    </div>
+                </div>
+                """
+                
+                # Para mostrarlo en Streamlit y que el usuario pueda imprimir (Ctrl+P)
+                st.markdown("---")
+                st.subheader("🖨️ Vista Previa de Impresión")
+                st.components.v1.html(form_print, height=800, scrolling=True)                
     
             elif st.session_state.menu_sub == "OTD":
                 st.subheader("On-Time Delivery (OTD)")
@@ -2233,6 +2345,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
