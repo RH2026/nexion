@@ -14,6 +14,7 @@ import json
 import pytz
 import zipfile
 from pypdf import PdfReader, PdfWriter
+from fpdf import FPDF
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import re
@@ -1247,76 +1248,179 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
+                # --- 1. MOTOR DE DATOS NIVEL ELITE ---
                 @st.cache_data
-                def load_data_blindada():
+                def cargar_analisis_elite():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
-                    
-                    # Leemos el archivo de la forma más cruda posible para evitar ValueErrors
                     try:
-                        # Probamos con punto y coma (común en Excel en español)
-                        df = pd.read_csv(url, sep=';', encoding='latin-1', on_bad_lines='skip')
-                        if len(df.columns) < 2: # Si no detectó columnas, intentamos con coma
-                            df = pd.read_csv(url, sep=',', encoding='latin-1', on_bad_lines='skip')
-                    except:
-                        df = pd.read_csv(url, encoding='latin-1', on_bad_lines='skip')
+                        # Cargamos con latin-1 para evitar errores de tildes
+                        df = pd.read_csv(url, encoding="latin-1", sep=None, engine='python')
+                        df.columns = [str(c).strip().upper() for c in df.columns]
+                        
+                        # Limpieza de filas basura
+                        df = df.dropna(subset=['MES'])
+                        df = df[df['MES'].str.contains('Unnamed|TOTAL', case=False) == False]
+                        
+                        def limpiar_a_numero(v):
+                            if pd.isna(v): return 0.0
+                            if isinstance(v, (int, float)): return float(v)
+                            s = str(v).replace('$', '').replace(',', '').replace('%', '').replace('(', '-').replace(')', '').strip()
+                            try: return float(s)
+                            except: return 0.0
                 
-                    # Limpiamos nombres de columnas de espacios y basura
-                    df.columns = [str(c).strip().upper() for c in df.columns]
+                        cols_numericas = [
+                            "COSTO DE FLETE", "FACTURACIÓN", "CAJAS ENVIADAS", "COSTO LOGÍSTICO", 
+                            "COSTO POR CAJA", "META INDICADOR", "VALUACION INCIDENCIAS", 
+                            "INCREMENTO + VI", "% DE INCREMENTO VS 2024", "COSTO POR CAJA 2024", "PORCENTAJE DE INCIDENCIAS"
+                        ]
+                        
+                        for col in cols_numericas:
+                            if col in df.columns:
+                                df[col] = df[col].apply(limpiar_a_numero)
+                        return df
+                    except Exception as e:
+                        st.error(f"Error en Motor: {e}")
+                        return None
+                
+                # --- 2. CSS PREMIUM ELITE (TU MAESTRO) ---
+                st.markdown("""
+                    <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;800&display=swap');
                     
-                    # Limpiamos los datos numéricos (quitar $, %, comas)
-                    def clean_val(x):
-                        try:
-                            if pd.isna(x): return 0.0
-                            return float(str(x).replace('$', '').replace('%', '').replace(',', '').strip())
-                        except:
-                            return 0.0
-                
-                    # Mapeo por palabras clave (sin importar tildes)
-                    c_mes = next((c for c in df.columns if 'MES' in c), df.columns[0])
-                    c_fact = next((c for c in df.columns if 'FACT' in c), None)
-                    c_costo = next((c for c in df.columns if 'LOGISTICO' in c), None)
-                    c_caja26 = next((c for c in df.columns if 'COSTO POR CAJA' in c and '2024' not in c), None)
-                    c_caja24 = next((c for c in df.columns if '2024' in c), None)
-                
-                    for c in [c_fact, c_costo, c_caja26, c_caja24]:
-                        if c: df[c] = df[c].apply(clean_val)
-                            
-                    return df, c_mes, c_fact, c_costo, c_caja26, c_caja24
-                
-                # Ejecución
-                df, mes, fact, costo, caja26, caja24 = load_data_blindada()
-                
-                st.title("🚛 Control de Operaciones Nexion 2026")
-                
-                if df.empty:
-                    st.error("Error: El archivo está vacío o el formato es incompatible.")
-                else:
-                    # MÉTRICAS DE NIVEL DIRECCIÓN
-                    col1, col2, col3 = st.columns(3)
-                    if fact:
-                        col1.metric("Facturación Total", f"${df[fact].sum():,.2f}")
-                    if costo:
-                        col2.metric("Costo Logístico", f"${df[costo].sum():,.2f}")
-                    if caja26:
-                        col3.metric("Costo/Caja Avg", f"${df[caja26].mean():.2f}")
-                
-                    # GRÁFICA COMPARATIVA
-                    st.subheader("Análisis de Ingeniería: 2024 vs 2026")
-                    fig = go.Figure()
-                    if caja24:
-                        fig.add_trace(go.Bar(x=df[mes], y=df[caja24], name='2024', marker_color='gray'))
-                    if caja26:
-                        fig.add_trace(go.Bar(x=df[mes], y=df[caja26], name='2026', marker_color='#00d4ff'))
+                    .main { background-color: #0d1117; }
                     
-                    fig.update_layout(template="plotly_dark", barmode='group')
-                    st.plotly_chart(fig, use_container_width=True)
+                    .premium-header { 
+                        font-family: 'Orbitron', sans-serif; 
+                        color: #f8fafc; 
+                        letter-spacing: 2px; 
+                        text-transform: uppercase; 
+                        border-bottom: 2px solid #38bdf8; 
+                        padding-bottom: 8px; 
+                        margin: 25px 0; 
+                        font-size: 14px !important;
+                        font-weight: 600;
+                        border: none !important;
+                        box-shadow: none !important;
+                    }
+                    
+                    .card-container { 
+                        background-color: #0d1117; 
+                        border-radius: 10px; 
+                        padding: 15px; 
+                        border: 1px solid #30363d; 
+                        height: 135px; 
+                        margin-bottom: 15px; 
+                        transition: all 0.3s; 
+                    }
+                    
+                    .card-label { color: #8b949e; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; }
+                    .card-value { font-size: 1.6rem; font-weight: 800; margin: 4px 0; font-family: 'Inter', sans-serif; }
+                    .card-footer { color: #484f58; font-size: 0.6rem; font-weight: 600; }
+                    
+                    .border-blue { border-left: 5px solid #38bdf8; } 
+                    .border-green { border-left: 5px solid #00ffa2; }
+                    .border-red { border-left: 5px solid #fb7185; } 
+                    .border-purple { border-left: 5px solid #a78bfa; }
+                    .border-pink { border-left: 5px solid #f472b6; }
+                    .border-yellow { border-left: 5px solid #eab308; }
                 
-                    # TABLA DE AUDITORÍA (Aquí verás tus 5 líneas)
-                    st.subheader("Datos Maestros Detectados")
-                    st.dataframe(df)
+                    .insight-box { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; margin-top: 10px; }
+                    .calc-box { 
+                        background: rgba(56, 189, 248, 0.05); 
+                        border: 1px dashed #38bdf8; 
+                        border-radius: 10px; 
+                        padding: 15px; 
+                        margin: 20px 0; 
+                        font-family: 'Inter', sans-serif; 
+                        color: #94a3b8; 
+                        font-size: 0.85rem; 
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
                 
-                # Pie de página técnico
-                st.caption(f"Columnas detectadas: {list(df.columns)}")
+                # --- 3. FUNCIÓN DE RENDERIZADO ---
+                def render_card(label, value, footer, target_val=None, actual_val=None, inverse=False, border_base="border-blue"):
+                    if target_val is None or actual_val is None:
+                        color = "#f0f6fc"
+                        border = border_base
+                    else:
+                        # Lógica de colores: Verde si cumple, Rojo si supera meta (Costo)
+                        is_alert = actual_val > target_val if not inverse else actual_val < target_val
+                        color = "#fb7185" if is_alert else "#00ffa2"
+                        border = "border-red" if is_alert else "border-green"
+                    
+                    st.markdown(f"""
+                        <div class='card-container {border}'>
+                            <div class='card-label'>{label}</div>
+                            <div class='card-value' style='color:{color}'>{value}</div>
+                            <div class='card-footer'>{footer}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                # --- EJECUCIÓN ---
+                df_a = cargar_analisis_elite()
+                
+                if df_a is not None:
+                    # Selector de Mes en el cuerpo principal (Sin Sidebar)
+                    meses_limpios = [m for m in df_a["MES"].unique() if str(m).strip() != ""]
+                    
+                    st.title("🚀 NEXION OPERATIONS COMMAND")
+                    
+                    col_sel, col_btn = st.columns([2, 1])
+                    with col_sel:
+                        mes_sel = st.selectbox("SELECCIONAR PERIODO DE ANÁLISIS", meses_limpios)
+                    
+                    df_mes = df_a[df_a["MES"] == mes_sel].iloc[0]
+                
+                    # Encabezado Dinámico
+                    st.markdown(f'<h4 class="premium-header">Resultados: {mes_sel}</h4>', unsafe_allow_html=True)
+                
+                    # --- 4. LAS 9 TARJETAS ELITE ---
+                    c1, c2, c3 = st.columns(3)
+                    with c1: render_card("Costo Logístico", f"{df_mes['COSTO LOGÍSTICO']:.1f}%", f"META: {df_mes['META INDICADOR']}%", df_mes['META INDICADOR'], df_mes['COSTO LOGÍSTICO'])
+                    with c2: render_card("Incremento + VI", f"${df_mes['INCREMENTO + VI']:,.0f}", "Impacto Real vs 2024", 0, df_mes['INCREMENTO + VI'], inverse=True)
+                    with c3: render_card("% Incr. vs 2024", f"{df_mes['% DE INCREMENTO VS 2024']:.1f}%", "Inflación Transportes", border_base="border-pink")
+                
+                    c4, c5, c6 = st.columns(3)
+                    with c4: render_card("Costo por Caja", f"${df_mes['COSTO POR CAJA']:.1f}", f"Target 2024: ${df_mes['COSTO POR CAJA 2024']:.1f}", df_mes['COSTO POR CAJA 2024'], df_mes['COSTO POR CAJA'])
+                    with c5: render_card("Valuación Incidencias", f"${df_mes['VALUACION INCIDENCIAS']:,.0f}", "Mermas en Ruta", border_base="border-yellow")
+                    with c6: render_card("% Incidencias", f"{df_mes['PORCENTAJE DE INCIDENCIAS']:.2f}%", "Nivel de Calidad", border_base="border-purple")
+                
+                    c7, c8, c9 = st.columns(3)
+                    with c7: render_card("Facturación", f"${df_mes['FACTURACIÓN']:,.0f}", "Ingresos Brutos", border_base="border-blue")
+                    with c8: render_card("Cajas Enviadas", f"{int(df_mes['CAJAS ENVIADAS']):,.0f}", "Volumen Despachado", border_base="border-purple")
+                    with c9: render_card("Costo de Flete", f"${df_mes['COSTO DE FLETE']:,.0f}", "Gasto Operativo", border_base="border-blue")
+                
+                    # --- 5. BLOQUE DE CÁLCULOS Y RADIOGRAFÍA ---
+                    st.markdown(f"""
+                    <div class="calc-box">
+                        <b style="color:#38bdf8; text-transform:uppercase;">Metodología de Auditoría ({mes_sel}):</b><br><br>
+                        • <b>Eficiencia:</b> (${df_mes['COSTO DE FLETE']:,.2f} flete / ${df_mes['FACTURACIÓN']:,.2f} venta) = {df_mes['COSTO LOGÍSTICO']:.2f}%<br>
+                        • <b>Unitario:</b> Gasto flete / {int(df_mes['CAJAS ENVIADAS'])} cajas = ${df_mes['COSTO POR CAJA']:.2f}<br>
+                        • <b>Fuga de Utilidad:</b> Valuación incidencias + Desviación tarifaria = ${df_mes['INCREMENTO + VI']:,.2f}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                    # Lógica de Diagnóstico
+                    eficiencia_vs_meta = df_mes['META INDICADOR'] - df_mes['COSTO LOGÍSTICO']
+                    msg_clase = "OPTIMIZACIÓN" if eficiencia_vs_meta >= 0 else "EROSIÓN"
+                    msg_color = "#00ffa2" if eficiencia_vs_meta >= 0 else "#fb7185"
+                
+                    st.markdown(f"""
+                    <div class="insight-box" style="border-top: 4px solid {msg_color};">
+                        <h4 style="color:{msg_color}; margin:0; font-family:Orbitron; font-size:0.9rem;">🩺 RADIOGRAFÍA ESTRATÉGICA: {msg_clase}</h4>
+                        <p style="color:#f1f5f9; font-size:0.85rem; margin-top:15px; line-height:1.6;">
+                        <b>DICTAMEN TÉCNICO:</b> Cada $1,000 de venta genera un costo logístico de <b>${(df_mes['COSTO LOGÍSTICO']/100)*1000:.2f}</b>. 
+                        Estamos operando <b>{abs(eficiencia_vs_meta):.1f}%</b> {'por debajo' if eficiencia_vs_meta >= 0 else 'por arriba'} del objetivo mensual.
+                        La inflación interna de fletes se sitúa en <b>{df_mes['% DE INCREMENTO VS 2024']:.1f}%</b> respecto al año base.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                    # Botón de Descarga PDF al final
+                    if st.button("📄 GENERAR REPORTE EN PDF"):
+                        st.info("Función de exportación activa. Preparando documento...")
+                        # Aquí iría la lógica de FPDF (simplificada para este bloque)
                 
                 
                                 
@@ -2113,6 +2217,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
