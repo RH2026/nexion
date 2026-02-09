@@ -309,6 +309,30 @@ div[data-baseweb="select"]:focus-within {{
     box-shadow: 0 0 0 1px #2563eb !important;
 }}
 
+/* ───────── SELECCIÓN ACTIVA EN DATAEDITOR (SIN TOCAR NADA MÁS) ───────── */
+
+/* Celda activa */
+[data-testid="stDataEditor"] [role="gridcell"]:focus {{
+    background-color: rgba(37, 99, 235, 0.25) !important;
+    outline: 1px solid #2563eb !important;
+}}
+
+/* Fila activa */
+[data-testid="stDataEditor"] [role="row"]:focus-within {{
+    background-color: rgba(37, 99, 235, 0.15) !important;
+}}
+
+/* Texto en celda activa */
+[data-testid="stDataEditor"] [role="gridcell"]:focus * {{
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}}
+
+/* Prioridad foco sobre hover */
+[data-testid="stDataEditor"] [role="gridcell"]:focus:hover {{
+    background-color: rgba(37, 99, 235, 0.28) !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -2346,6 +2370,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
