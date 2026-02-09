@@ -1241,8 +1241,9 @@ else:
             elif st.session_state.menu_sub == "OPS":
                 st.subheader("Eficiencia Operativa (OPS)")
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
+                # --- 1. MOTOR DE DATOS (Mapeo Completo) ---
                 @st.cache_data
-                def cargar_analisis_elite():
+                def cargar_datos_maestros():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
                     try:
                         df = pd.read_csv(url, encoding="latin-1", sep=None, engine='python')
@@ -1263,7 +1264,6 @@ else:
                             'VS24': fcol('% DE INCREMENTO'), 'CC24': fcol('COSTO POR CAJA 2025') or fcol('2024')
                         }
                 
-                        if not mapeo['MES']: return None
                         df = df.dropna(subset=[mapeo['MES']])
                         df = df[df[mapeo['MES']].astype(str).str.contains('Unnamed|TOTAL', case=False) == False]
                         
@@ -1280,147 +1280,125 @@ else:
                                 df_std[key] = df[orig].apply(clean) if orig else 0.0
                         return df_std
                     except Exception as e:
-                        st.error(f"Error en Motor: {e}")
+                        st.error(f"Error cargando datos: {e}")
                         return None
                 
-                # --- 2. CSS PROFESIONAL MEJORADO ---
+                # --- 2. CSS DISEÑO ORIGINAL (GLASSMORPHISM & DARK MODE) ---
                 st.markdown("""
                     <style>
                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
                     
-                    html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #0b0e14; color: white; }
+                    html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #050505; color: white; }
                     
-                    .main-title { font-weight: 900; font-size: 2.5rem; letter-spacing: -1.5px; margin-bottom: 0px; }
-                    .sub-title { color: #666; font-size: 0.9rem; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px; }
-                    
-                    /* Contenedor de Filtro Superior */
-                    .filter-container {
-                        background: rgba(255, 255, 255, 0.03);
-                        padding: 20px;
-                        border-radius: 15px;
-                        margin-bottom: 30px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                    }
+                    .main-title { font-weight: 900; font-size: 2.5rem; letter-spacing: -1.5px; color: #fff; margin-bottom: 0px; }
+                    .sub-title { color: #555; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
                 
-                    /* Tarjetas de 3 Datos */
+                    /* Tarjetas de 3 niveles */
                     .metric-card {
                         background: rgba(255, 255, 255, 0.03);
                         border: 1px solid rgba(255, 255, 255, 0.1);
                         padding: 22px;
                         border-radius: 12px;
-                        height: 160px;
+                        margin-bottom: 15px;
+                        min-height: 150px;
                         display: flex;
                         flex-direction: column;
                         justify-content: space-between;
-                        margin-bottom: 20px;
                     }
-                    .label { color: #888; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
-                    .value { color: #fff; font-size: 2.2rem; font-weight: 700; margin: 5px 0; }
-                    .meta { font-size: 0.75rem; color: #555; font-weight: 500; }
-                    
-                    /* Bordes de Color según Indicador */
-                    .card-blue { border-left: 4px solid #38bdf8; }
-                    .card-green { border-left: 4px solid #10b981; }
-                    .card-pink { border-left: 4px solid #f472b6; }
-                    .card-purple { border-left: 4px solid #a855f7; }
+                    .label { color: #888; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
+                    .value { color: #fff; font-size: 2rem; font-weight: 700; margin: 8px 0; }
+                    .meta-ind { font-size: 0.7rem; color: #444; font-weight: 600; text-transform: uppercase; }
                 
-                    /* Secciones Inferiores */
+                    /* Bloques de Análisis */
                     .section-box {
                         background: rgba(255, 255, 255, 0.02);
                         border-radius: 12px;
                         padding: 25px;
-                        margin-top: 15px;
+                        margin-top: 20px;
                         border: 1px solid rgba(255, 255, 255, 0.05);
                     }
+                    .deep-dive { border-left: 4px solid #38bdf8; }
+                    .radiografia { border-left: 4px solid #f472b6; }
+                    .metodologia { border-left: 4px solid #10b981; }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # --- 3. LÓGICA DE VISUALIZACIÓN ---
-                df_a = cargar_analisis_elite()
+                # --- 3. LOGICA Y RENDER ---
+                df_a = cargar_datos_maestros()
                 
                 if df_a is not None:
-                    # FILTRO INTEGRADO EN EL CUERPO
-                    st.markdown("<div class='main-title'>RESULTADOS OPERATIVOS</div>", unsafe_allow_html=True)
+                    # FILTRO SUPERIOR (FUERA DE SIDEBAR)
+                    st.markdown("<div class='main-title'>NEXION OPERATIONAL ANALYTICS</div>", unsafe_allow_html=True)
+                    col_sel, _ = st.columns([1, 3])
+                    with col_sel:
+                        mes_sel = st.selectbox("", df_a["MES"].unique(), label_visibility="collapsed")
                     
-                    col_f1, col_f2 = st.columns([1, 2])
-                    with col_f1:
-                        mes_sel = st.selectbox("SELECCIONAR PERIODO:", df_a["MES"].unique(), label_visibility="collapsed")
-                    
-                    st.markdown(f"<div class='sub-title'>NEXION ELITE // ANÁLISIS DE {mes_sel}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='sub-title'>DATA RADIOGRAPHY // PERIODO: {mes_sel}</div>", unsafe_allow_html=True)
                 
                     df_m = df_a[df_a["MES"] == mes_sel].iloc[0]
                 
-                    # GRID DE 9 TARJETAS CON 3 DATOS CADA UNA
+                    # --- GRID 9 TARJETAS (Título, Valor, Meta) ---
                     c1, c2, c3 = st.columns(3)
+                    eficiencia = df_m['META'] - df_m['LOGI']
+                    col_log = "#10b981" if eficiencia >= 0 else "#fb7185"
+                    
                     with c1:
-                        st.markdown(f"""<div class='metric-card card-green'>
-                            <div class='label'>Costo Logístico</div>
-                            <div class='value' style='color:#10b981'>{df_m['LOGI']:.2f}%</div>
-                            <div class='meta'>META: {df_m['META']}%</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>Costo Logístico</div><div class='value' style='color:{col_log}'>{df_m['LOGI']:.2f}%</div><div class='meta-ind'>Meta Indicador: {df_m['META']}%</div></div>", unsafe_allow_html=True)
                     with c2:
-                        st.markdown(f"""<div class='metric-card card-pink'>
-                            <div class='label'>Incremento + VI</div>
-                            <div class='value'>${df_m['INCR']:,.0f}</div>
-                            <div class='meta'>IMPACTO REAL EN MARGEN</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>Incremento + VI</div><div class='value'>${df_m['INCR']:,.0f}</div><div class='meta-ind'>Impacto Financiero Real</div></div>", unsafe_allow_html=True)
                     with c3:
-                        st.markdown(f"""<div class='metric-card card-blue'>
-                            <div class='label'>% Incr. vs 2024</div>
-                            <div class='value'>{df_m['VS24']:.1f}%</div>
-                            <div class='meta'>INFLACIÓN OPERATIVA</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>% Incr vs 2024</div><div class='value' style='color:#f472b6'>{df_m['VS24']:.1f}%</div><div class='meta-ind'>Variación vs Anterior</div></div>", unsafe_allow_html=True)
                 
                     c4, c5, c6 = st.columns(3)
                     with c4:
-                        st.markdown(f"""<div class='metric-card card-blue'>
-                            <div class='label'>Costo por Caja</div>
-                            <div class='value'>${df_m['CC26']:.2f}</div>
-                            <div class='meta'>TARGET '24: ${df_m['CC24']:.2f}</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>Costo por Caja</div><div class='value'>${df_m['CC26']:.2f}</div><div class='meta-ind'>Target 2024: ${df_m['CC24']:.2f}</div></div>", unsafe_allow_html=True)
                     with c5:
-                        st.markdown(f"""<div class='metric-card card-pink'>
-                            <div class='label'>Valuación Incidencias</div>
-                            <div class='value'>${df_m['VAL_INC']:,.0f}</div>
-                            <div class='meta'>MERMAS Y RECLAMACIONES</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>Valuación Incidencias</div><div class='value' style='color:#eab308'>${df_m['VAL_INC']:,.0f}</div><div class='meta-ind'>Pérdida Estimada Operativa</div></div>", unsafe_allow_html=True)
                     with c6:
-                        st.markdown(f"""<div class='metric-card card-purple'>
-                            <div class='label'>% de Incidencias</div>
-                            <div class='value'>{df_m['POR_INC']:.2f}%</div>
-                            <div class='meta'>RATIO DE CALIDAD</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>% de Incidencias</div><div class='value'>{df_m['POR_INC']:.2f}%</div><div class='meta-ind'>Calidad en Procesos</div></div>", unsafe_allow_html=True)
                 
                     c7, c8, c9 = st.columns(3)
                     with c7:
-                        st.markdown(f"""<div class='metric-card'>
-                            <div class='label'>Facturación</div>
-                            <div class='value'>${df_m['FACT']:,.0f}</div>
-                            <div class='meta'>VENTA BRUTA TOTAL</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>Facturación</div><div class='value'>${df_m['FACT']:,.0f}</div><div class='meta-ind'>Ingreso Bruto Mensual</div></div>", unsafe_allow_html=True)
                     with c8:
-                        st.markdown(f"""<div class='metric-card'>
-                            <div class='label'>Cajas Enviadas</div>
-                            <div class='value'>{int(df_m['CAJAS']):,.0f}</div>
-                            <div class='meta'>VOLUMEN DE SALIDA</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>Cajas Enviadas</div><div class='value'>{int(df_m['CAJAS']):,.0f}</div><div class='meta-ind'>Volumen de Despacho</div></div>", unsafe_allow_html=True)
                     with c9:
-                        st.markdown(f"""<div class='metric-card'>
-                            <div class='label'>Costo de Flete</div>
-                            <div class='value'>${df_m['FLETE']:,.0f}</div>
-                            <div class='meta'>GASTO LOGÍSTICO TOTAL</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-card'><div class='label'>Costo de Flete</div><div class='value'>${df_m['FLETE']:,.0f}</div><div class='meta-ind'>Inversión Logística Directa</div></div>", unsafe_allow_html=True)
                 
-                    # --- 4. SECCIÓN DE METODOLOGÍA (DATA DINÁMICA) ---
+                    # --- BLOQUES DE ANÁLISIS EXPLICATIVO ---
+                    
+                    # 1. Metodología de Cálculo
                     st.markdown(f"""
-                    <div class='section-box' style='border-left: 4px solid #10b981;'>
-                        <h3 style='color:#10b981; font-size:1rem; margin-top:0;'>📐 METODOLOGÍA DE CÁLCULO ({mes_sel})</h3>
-                        <p style='color:#ccc; font-size:0.9rem; font-family:monospace;'>
-                        • <b>Eficiencia:</b> (${df_m['FLETE']:,.2f} / ${df_m['FACT']:,.2f}) = {df_m['LOGI']:.2f}%<br>
-                        • <b>Unitario:</b> ${df_m['FLETE']:,.2f} / {int(df_m['CAJAS'])} cajas = ${df_m['CC26']:.2f}
+                    <div class='section-box metodologia'>
+                        <h3 style='color:#10b981; font-size:1rem; margin-top:0;'>📐 Metodología de Cálculo para {mes_sel}:</h3>
+                        <p style='color:#ccc; font-size:0.95rem; font-family:monospace;'>
+                        • <b>Logístico:</b> (${df_m['FLETE']:,.2f} / ${df_m['FACT']:,.2f}) = <b>{df_m['LOGI']:.2f}%</b><br>
+                        • <b>C/Caja:</b> ${df_m['FLETE']:,.2f} / {int(df_m['CAJAS'])} cajas = <b>${df_m['CC26']:.2f}</b><br>
+                        • <b>Impacto:</b> (Ahorro Incidencias) - (Variación Tarifaria vs 2024 * Cajas) = <b>${df_m['INCR']:,.2f}</b>
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
+                
+                    col_inf1, col_inf2 = st.columns(2)
+                    with col_inf1:
+                        st.markdown(f"""<div class='section-box deep-dive'>
+                            <h3 style='color:#38bdf8; font-size:1rem; margin-top:0;'>🔍 DEEP DIVE</h3>
+                            <p style='color:#999; font-size:0.85rem;'>
+                            Durante el mes de <b>{mes_sel}</b>, la operación gestionó un flujo de <b>{int(df_m['CAJAS']):,.0f}</b> paquetes. 
+                            El rendimiento financiero muestra una facturación de <b>${df_m['FACT']:,.2f}</b> con un costo unitario por caja de <b>${df_m['CC26']:.2f}</b>.
+                            </p>
+                        </div>""", unsafe_allow_html=True)
+                
+                    with col_inf2:
+                        estatus = "EFICIENCIA" if eficiencia >= 0 else "DESVIACIÓN"
+                        st.markdown(f"""<div class='section-box radiografia'>
+                            <h3 style='color:#f472b6; font-size:1rem; margin-top:0;'>🩺 RADIOGRAFÍA</h3>
+                            <p style='color:#999; font-size:0.85rem;'>
+                            Estado: <b style='color:#fff;'>{estatus} OPERATIVA</b><br>
+                            La desviación respecto a la meta es de <b>{abs(eficiencia):.2f}%</b>. <br>
+                            Cada $1,000 MXN facturados están consumiendo <b>${(df_m['LOGI']/100)*1000:.2f}</b> de presupuesto logístico.
+                            </p>
+                        </div>""", unsafe_allow_html=True)
                 
                     # Botón de Descarga PDF al final
                     if st.button("📄 GENERAR REPORTE EN PDF"):
@@ -2222,6 +2200,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
