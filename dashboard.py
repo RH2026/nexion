@@ -1427,10 +1427,42 @@ else:
                         </div>""", unsafe_allow_html=True)
                 
                     # Botón de Descarga PDF al final
-                    # --- TABLA DE DATOS FINAL (CONTRAÍDA) ---
+                    # --- TABLA DE DATOS FINAL (CON NOMBRES REALES Y CONTRAÍDA) ---
                     st.markdown("<br>", unsafe_allow_html=True)
-                    with st.expander("📊 Ver Dataset Maestro", expanded=False):
-                        st.dataframe(df_a, use_container_width=True, hide_index=True)
+                    with st.expander("📊 VER DATASET MAESTRO COMPLETO", expanded=False):
+                        # Creamos una copia para no afectar la lógica de los cálculos superiores
+                        df_visual = df_a.copy()
+                        
+                        # Renombramos las columnas a los nombres reales solicitados
+                        df_visual = df_visual.rename(columns={
+                            'MES': 'MES',
+                            'FLETE': 'COSTO DE FLETE',
+                            'FACT': 'FACTURACIÓN',
+                            'CAJAS': 'CAJAS ENVIADAS',
+                            'LOGI': 'COSTO LOGISTICO',
+                            'CC26': 'COSTO POR CAJA',
+                            'META': 'META INDICADOR',
+                            'VAL_INC': 'VALUACION INCIDENCIAS',
+                            'POR_INC': '% DE INCIDENCIAS',
+                            'INCR': 'INCREMENTO + VI',
+                            'VS24': '% DE INCREMENTO VS 2025',
+                            'CC24': 'COSTO POR CAJA 2025'
+                        })
+                        
+                        # Mostramos la tabla con un estilo limpio
+                        st.dataframe(
+                            df_visual, 
+                            use_container_width=True, 
+                            hide_index=True,
+                            column_config={
+                                "COSTO DE FLETE": st.column_config.NumberColumn(format="$%.2f"),
+                                "FACTURACIÓN": st.column_config.NumberColumn(format="$%.2f"),
+                                "COSTO LOGISTICO": st.column_config.NumberColumn(format="%.2f%%"),
+                                "COSTO POR CAJA": st.column_config.NumberColumn(format="$%.2f"),
+                                "INCREMENTO + VI": st.column_config.NumberColumn(format="$%.2f"),
+                                "% DE INCREMENTO VS 2025": st.column_config.NumberColumn(format="%.2f%%")
+                            }
+                        )
                                 
                                 
     
@@ -2201,6 +2233,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
