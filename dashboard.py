@@ -1533,87 +1533,50 @@ else:
                             </div>
                         </div>
                     </div>
-                    
-                    <script>
-                        function printReport() {{
-                            var printContents = document.getElementById('printable-report').innerHTML;
-                            var originalContents = document.body.innerHTML;
-                            document.body.innerHTML = printContents;
-                            window.print();
-                            document.body.innerHTML = originalContents;
-                            window.location.reload(); 
-                        }}
-                    </script>
                     """
                     return html_content
-                
-                # --- INTEGRACIÓN EN EL DASHBOARD ---
                 
                 # --- INTEGRACIÓN MEJORADA (SIN CEROS VERDES) ---
                 if st.button("🖨️ GENERAR REPORTE PARA IMPRESIÓN"):
                     reporte_html = generar_reporte_impresion(df_m, mes_sel)
                     
-                    # Usamos un placeholder vacío para que no deje residuos visuales
-                    print_container = st.empty()
+                    # Inyectamos CSS para ocultar el contenedor y evitar los ceros verdes
+                    st.markdown("""<style>iframe[title="st.components.v1.html"] { display: none; }</style>""", unsafe_allow_html=True)
                     
-                    with print_container:
-                        st.components.v1.html(f"""
-                            {reporte_html}
-                            <script>
-                                window.onload = function() {{
-                                    var content = document.getElementById('printable-report').innerHTML;
-                                    var win = window.open('', '', 'height=1100,width=900');
-                                    win.document.write('<html><head><title>Reporte Logística JYPESA</title></head><body>');
-                                    win.document.write(content);
-                                    win.document.write('</body></html>');
-                                    win.document.close();
-                                    win.print();
-                                    // Al cerrar, el contenedor de Streamlit se limpia solo
-                                }}
-                            </script>
-                        """, height=0)
-                    
-                    # Opcional: limpiar el componente después de un par de segundos
-                    # import time
-                    # time.sleep(2)
-                    # print_container.empty()          
+                    st.components.v1.html(f"""
+                        <script>
+                            var win = window.open('', '', 'height=1100,width=900');
+                            win.document.write('<html><head><title>Reporte JYPESA</title></head><body>');
+                            win.document.write(`{reporte_html}`);
+                            win.document.write('</body></html>');
+                            win.document.close();
+                            win.print();
+                            win.close();
+                        </script>
+                    """, height=0)
+                
+                # --- FUNCIÓN EXCEL ---
                 def descargar_excel_ingenieria(df_m, mes_sel):
                     output = io.BytesIO()
-                    # Creamos el escritor de Excel con el motor xlsxwriter
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                         workbook = writer.book
                         worksheet = workbook.add_worksheet('REPORTE LOGÍSTICO')
                 
-                        # --- DEFINICIÓN DE FORMATOS (ESTILO INGENIERÍA) ---
-                        header_fmt = workbook.add_format({
-                            'bold': True, 'font_size': 14, 'font_name': 'Arial',
-                            'border': 2, 'bg_color': '#000000', 'font_color': '#FFFFFF',
-                            'align': 'center', 'valign': 'vcenter'
-                        })
-                        
-                        subheader_fmt = workbook.add_format({
-                            'bold': True, 'font_size': 10, 'bg_color': '#F2F2F2',
-                            'border': 1, 'align': 'left', 'font_name': 'Arial'
-                        })
-                
+                        # Formatos
+                        header_fmt = workbook.add_format({'bold': True, 'font_size': 14, 'font_name': 'Arial', 'border': 2, 'bg_color': '#000000', 'font_color': '#FFFFFF', 'align': 'center', 'valign': 'vcenter'})
+                        subheader_fmt = workbook.add_format({'bold': True, 'font_size': 10, 'bg_color': '#F2F2F2', 'border': 1, 'align': 'left', 'font_name': 'Arial'})
                         data_fmt = workbook.add_format({'border': 1, 'font_name': 'Arial', 'font_size': 10})
-                        
                         money_fmt = workbook.add_format({'num_format': '$#,##0.00', 'border': 1, 'font_name': 'Arial'})
                         percent_fmt = workbook.add_format({'num_format': '0.00%', 'border': 1, 'font_name': 'Arial'})
-                        
-                        # --- ESTRUCTURACIÓN DEL REPORTE ---
-                        # 1. Encabezado Principal
+                
+                        # Escritura
                         worksheet.merge_range('A1:D2', f'JYPESA - REPORTE TÉCNICO LOGÍSTICA: {mes_sel} 2026', header_fmt)
-                        
-                        # 2. Metadatos
                         worksheet.write('A4', 'FECHA DE REPORTE:', subheader_fmt)
                         worksheet.write('B4', datetime.now().strftime('%d/%m/%Y'), data_fmt)
                         worksheet.write('A5', 'ESTATUS OPERATIVO:', subheader_fmt)
-                        eficiencia = df_m['META'] - df_m['LOGI']
-                        estatus = "EFICIENTE" if eficiencia >= 0 else "DESVIACIÓN"
+                        estatus = "EFICIENTE" if (df_m['META'] - df_m['LOGI']) >= 0 else "DESVIACIÓN"
                         worksheet.write('B5', estatus, data_fmt)
                 
-                        # 3. Tabla de KPI's (Fila 7)
                         kpis = [
                             ['INDICADOR CLAVE', 'VALOR REGISTRADO', 'TARGET / REF'],
                             ['COSTO LOGÍSTICO', df_m['LOGI']/100, df_m['META']/100],
@@ -1626,26 +1589,19 @@ else:
                 
                         row = 7
                         for item in kpis:
-                            if row == 7: # Encabezado de tabla
+                            if row == 7:
                                 worksheet.write_row(row, 0, item, subheader_fmt)
                             else:
                                 worksheet.write(row, 0, item[0], data_fmt)
-                                # Aplicar formatos numéricos específicos
-                                if '%' in str(item[0]) or 'LOGÍSTICO' in str(item[0]):
+                                if 'LOGÍSTICO' in item[0]:
                                     worksheet.write(row, 1, item[1], percent_fmt)
                                     worksheet.write(row, 2, item[2], percent_fmt) if item[2] != '-' else worksheet.write(row, 2, '-', data_fmt)
-                                elif '$' in str(item[0]) or any(x in str(item[0]) for x in ['CAJA', 'FACT', 'FLET', 'INCR']):
-                                    worksheet.write(row, 1, item[1], money_fmt)
-                                    worksheet.write(row, 2, item[2], money_fmt) if item[2] != '-' else worksheet.write(row, 2, '-', data_fmt)
                                 else:
-                                    worksheet.write_row(row, 1, item[1:], data_fmt)
+                                    worksheet.write(row, 1, item[1], money_fmt if isinstance(item[1], (int, float)) else data_fmt)
+                                    worksheet.write(row, 2, item[2], money_fmt if isinstance(item[2], (int, float)) else data_fmt)
                             row += 1
                 
-                        # Ajustar anchos de columna
-                        worksheet.set_column('A:A', 30)
-                        worksheet.set_column('B:C', 20)
-                        
-                        # 4. Bloque de Firmas (Más abajo)
+                        worksheet.set_column('A:A', 30); worksheet.set_column('B:C', 20)
                         row += 4
                         worksheet.write(row, 0, '_________________________', data_fmt)
                         worksheet.write(row, 2, '_________________________', data_fmt)
@@ -1654,9 +1610,8 @@ else:
                 
                     return output.getvalue()
                 
-                # --- BOTÓN EN EL DASHBOARD ---
+                # --- BOTÓN EXCEL ---
                 excel_data = descargar_excel_ingenieria(df_m, mes_sel)
-                
                 st.download_button(
                     label="📊 DESCARGAR REPORTE TÉCNICO (EXCEL)",
                     data=excel_data,
@@ -2432,6 +2387,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
