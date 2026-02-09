@@ -1249,130 +1249,109 @@ else:
                 """, unsafe_allow_html=True)
                 
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
-                # --- 1. MOTOR DE DATOS NIVEL ELITE (ANTI-KEYERROR) ---
+                # --- 1. MOTOR DE DATOS NIVEL ELITE (NORMALIZADO) ---
                 @st.cache_data
                 def cargar_analisis_elite():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
                     try:
-                        # Cargamos con encoding flexible y detección de separador
                         df = pd.read_csv(url, encoding="latin-1", sep=None, engine='python')
                         df.columns = [str(c).strip().upper() for c in df.columns]
                         
-                        # Función para buscar columnas por aproximación (evita errores de tildes)
-                        def find_col(k):
-                            return next((c for c in df.columns if k in c), None)
+                        # Buscador flexible para ignorar tildes y espacios
+                        def fcol(k): return next((c for c in df.columns if k in c), None)
                 
-                        # Mapeo de seguridad: Buscamos palabras clave en tus columnas
-                        cols = {
-                            'MES': find_col('MES'),
-                            'FLETE': find_col('FLETE'),
-                            'FACT': find_col('FACTURACI'),
-                            'CAJAS': find_col('CAJAS ENVIADAS'),
-                            'LOGI': find_col('LOGISTICO') or find_col('LOGÍSTICO'),
-                            'CC26': find_col('COSTO POR CAJA') if find_col('COSTO POR CAJA') and '2024' not in find_col('COSTO POR CAJA') else None,
-                            'META': find_col('META'),
-                            'VAL_INC': find_col('VALUACION'),
-                            'POR_INC': find_col('PORCENTAJE DE INCIDENCIAS'),
-                            'INCR': find_col('INCREMENTO + VI'),
-                            'VS24': find_col('% DE INCREMENTO'),
-                            'CC24': find_col('2024')
+                        # Mapeo de columnas a nombres cortos y seguros
+                        mapeo = {
+                            'MES': fcol('MES'), 'FLETE': fcol('FLETE'), 'FACT': fcol('FACTURACI'),
+                            'CAJAS': fcol('CAJAS ENVIADAS'), 'LOGI': fcol('LOGI'), 'META': fcol('META'),
+                            'CC26': fcol('COSTO POR CAJA') if fcol('COSTO POR CAJA') and '2024' not in fcol('COSTO POR CAJA') else None,
+                            'VAL_INC': fcol('VALUACION'), 'POR_INC': fcol('PORCENTAJE DE INCIDENCIAS'),
+                            'INCR': fcol('INCREMENTO'), 'VS24': fcol('% DE INCREMENTO'), 'CC24': fcol('2024')
                         }
                 
-                        # Validamos que al menos exista la columna MES
-                        if not cols['MES']:
-                            st.error("No se encontró la columna MES.")
-                            return None
+                        if not mapeo['MES']: return None
                 
-                        df = df.dropna(subset=[cols['MES']])
-                        df = df[df[cols['MES']].astype(str).str.contains('Unnamed|TOTAL', case=False) == False]
+                        df = df.dropna(subset=[mapeo['MES']])
+                        df = df[df[mapeo['MES']].astype(str).str.contains('Unnamed|TOTAL', case=False) == False]
                         
-                        def to_f(v):
+                        def clean(v):
                             if pd.isna(v): return 0.0
                             s = str(v).replace('$', '').replace(',', '').replace('%', '').replace('(', '-').replace(')', '').strip()
                             try: return float(s)
                             except: return 0.0
                 
-                        # Creamos un DataFrame estandarizado para que el Dashboard nunca falle
+                        # Crear DataFrame limpio
                         df_std = pd.DataFrame()
-                        df_std['MES'] = df[cols['MES']]
-                        for key, original_name in cols.items():
+                        df_std['MES'] = df[mapeo['MES']]
+                        for key, orig in mapeo.items():
                             if key != 'MES':
-                                df_std[key] = df[original_name].apply(to_f) if original_name else 0.0
-                                
+                                df_std[key] = df[orig].apply(clean) if orig else 0.0
                         return df_std
                     except Exception as e:
                         st.error(f"Error en Motor: {e}")
                         return None
                 
-                # --- 2. CSS PREDISEÑADO ---
+                # --- 2. CSS MAESTRO ---
                 st.markdown("""
                     <style>
                     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;800&display=swap');
-                    .premium-header { font-family: 'Orbitron', sans-serif; color: #f8fafc; font-size: 14px; border-bottom: 1px solid #38bdf8; padding-bottom: 5px; margin-bottom: 20px; }
-                    .card-container { background-color: #0d1117; border-radius: 10px; padding: 15px; border: 1px solid #30363d; margin-bottom: 15px; }
-                    .card-label { color: #8b949e; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+                    .premium-header { font-family: 'Orbitron', sans-serif; color: #f8fafc; font-size: 14px; border-bottom: 2px solid #38bdf8; padding-bottom: 8px; margin: 20px 0; border:none!important; }
+                    .card-container { background-color: #0d1117; border-radius: 10px; padding: 15px; border: 1px solid #30363d; height: 130px; margin-bottom: 10px; }
+                    .card-label { color: #8b949e; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; }
                     .card-value { font-size: 1.6rem; font-weight: 800; margin: 4px 0; font-family: 'Inter', sans-serif; }
                     .card-footer { color: #484f58; font-size: 0.6rem; font-weight: 600; }
                     .border-blue { border-left: 5px solid #38bdf8; } .border-green { border-left: 5px solid #00ffa2; }
-                    .border-red { border-left: 5px solid #fb7185; } .border-yellow { border-left: 5px solid #eab308; }
-                    .calc-box { background: rgba(56, 189, 248, 0.05); border: 1px dashed #38bdf8; border-radius: 10px; padding: 15px; margin: 20px 0; color: #94a3b8; font-size: 0.85rem; }
+                    .border-red { border-left: 5px solid #fb7185; } .border-purple { border-left: 5px solid #a78bfa; }
+                    .border-yellow { border-left: 5px solid #eab308; } .border-pink { border-left: 5px solid #f472b6; }
+                    .insight-box { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; margin-top: 10px; }
+                    .calc-box { background: rgba(56, 189, 248, 0.05); border: 1px dashed #38bdf8; border-radius: 10px; padding: 15px; margin: 20px 0; font-family: 'Inter', sans-serif; color: #94a3b8; font-size: 0.85rem; }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                def render_card(label, value, footer, target=None, actual=None, border="border-blue"):
+                def render_card(label, value, footer, target=None, actual=None, inverse=False, b_base="border-blue"):
                     color = "#f0f6fc"
+                    border = b_base
                     if target is not None and actual is not None:
-                        is_bad = actual > target
-                        color = "#fb7185" if is_bad else "#00ffa2"
-                        border = "border-red" if is_bad else "border-green"
-                    
-                    st.markdown(f"""
-                        <div class='card-container {border}'>
-                            <div class='card-label'>{label}</div>
-                            <div class='card-value' style='color:{color}'>{value}</div>
-                            <div class='card-footer'>{footer}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        is_alert = actual > target if not inverse else actual < target
+                        color = "#fb7185" if is_alert else "#00ffa2"
+                        border = "border-red" if is_alert else "border-green"
+                    st.markdown(f"<div class='card-container {border}'><div class='card-label'>{label}</div><div class='card-value' style='color:{color}'>{value}</div><div class='card-footer'>{footer}</div></div>", unsafe_allow_html=True)
                 
-                # --- 3. DASHBOARD ---
+                # --- 3. LÓGICA DE VISUALIZACIÓN ---
                 df_a = cargar_analisis_elite()
                 
                 if df_a is not None:
-                    meses = df_a['MES'].unique()
-                    mes_sel = st.selectbox("SELECCIONAR MES", meses)
-                    df_m = df_a[df_a['MES'] == mes_sel].iloc[0]
+                    # Selector central (Sin Sidebar)
+                    meses = df_a["MES"].unique()
+                    mes_sel = st.selectbox("PERIODO DE ANÁLISIS", meses)
+                    df_m = df_a[df_a["MES"] == mes_sel].iloc[0]
                 
                     st.markdown(f'<h4 class="premium-header">RESULTADOS: {mes_sel}</h4>', unsafe_allow_html=True)
                 
-                    # Filas de Tarjetas
+                    # 9 Tarjetas
                     c1, c2, c3 = st.columns(3)
                     with c1: render_card("Costo Logístico", f"{df_m['LOGI']:.1f}%", f"META: {df_m['META']}%", df_m['META'], df_m['LOGI'])
-                    with c2: render_card("Incremento + VI", f"${df_m['INCR']:,.0f}", "Impacto Real", border="border-yellow")
-                    with c3: render_card("% Incr. vs 2024", f"{df_m['VS24']:.1f}%", "Variación Anual")
+                    with c2: render_card("Incremento + VI", f"${df_m['INCR']:,.0f}", "Impacto Real", 0, df_m['INCR'], inverse=True)
+                    with c3: render_card("% Incr. vs 2024", f"{df_m['VS24']:.1f}%", "Variación Anual", b_base="border-pink")
                 
                     c4, c5, c6 = st.columns(3)
                     with c4: render_card("Costo por Caja", f"${df_m['CC26']:.1f}", f"Target 24: ${df_m['CC24']:.1f}", df_m['CC24'], df_m['CC26'])
-                    with c5: render_card("Valuación Incidencias", f"${df_m['VAL_INC']:,.0f}", "Mermas")
-                    with c6: render_card("% Incidencias", f"{df_m['POR_INC']:.2f}%", "Calidad")
+                    with c5: render_card("Valuación Incidencias", f"${df_m['VAL_INC']:,.0f}", "Mermas", b_base="border-yellow")
+                    with c6: render_card("% Incidencias", f"{df_m['POR_INC']:.2f}%", "Calidad Operativa", b_base="border-purple")
                 
                     c7, c8, c9 = st.columns(3)
-                    with c7: render_card("Facturación", f"${df_m['FACT']:,.0f}", "Venta Bruta")
-                    with c8: render_card("Cajas Enviadas", f"{int(df_m['CAJAS']):,.0f}", "Volumen")
-                    with c9: render_card("Costo de Flete", f"${df_m['FLETE']:,.0f}", "Gasto Operativo")
+                    with c7: render_card("Facturación", f"${df_m['FACT']:,.0f}", "Venta Bruta", b_base="border-blue")
+                    with c8: render_card("Cajas Enviadas", f"{int(df_m['CAJAS']):,.0f}", "Volumen", b_base="border-purple")
+                    with c9: render_card("Costo de Flete", f"${df_m['FLETE']:,.0f}", "Gasto de Flete", b_base="border-blue")
                 
-                    # Bloque de Cálculos
-                    st.markdown(f"""
-                    <div class="calc-box">
-                        <b>Metodología de Auditoría ({mes_sel}):</b><br>
-                        • Eficiencia: (${df_m['FLETE']:,.2f} / ${df_m['FACT']:,.2f}) = {df_m['LOGI']:.2f}%<br>
-                        • Costo/Caja: ${df_m['FLETE']:,.2f} / {int(df_m['CAJAS'])} = ${df_m['CC26']:.2f}
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Cálculos y Diagnóstico (Variables corregidas para evitar NameError)
+                    st.markdown(f'<div class="calc-box"><b>Metodología ({mes_sel}):</b><br>• Eficiencia: (${df_m["FLETE"]:,.2f} / ${df_m["FACT"]:,.2f}) = {df_m["LOGI"]:.2f}%<br>• Unitario: ${df_m["FLETE"]:,.2f} / {int(df_m["CAJAS"])} = ${df_m["CC26"]:.2f}</div>', unsafe_allow_html=True)
                 
-                    # Lógica de Diagnóstico
-                    eficiencia_vs_meta = df_mes['META INDICADOR'] - df_mes['COSTO LOGÍSTICO']
-                    msg_clase = "OPTIMIZACIÓN" if eficiencia_vs_meta >= 0 else "EROSIÓN"
-                    msg_color = "#00ffa2" if eficiencia_vs_meta >= 0 else "#fb7185"
+                    eficiencia = df_m['META'] - df_m['LOGI']
+                    msg_color = "#00ffa2" if eficiencia >= 0 else "#fb7185"
+                    st.markdown(f'<div class="insight-box" style="border-top:4px solid {msg_color}"><b>RADIOGRAFÍA:</b> Estamos operando {abs(eficiencia):.1f}% {"debajo" if eficiencia >= 0 else "arriba"} del objetivo. Cada $1,000 de venta consume ${(df_m["LOGI"]/100)*1000:.2f} de logística.</div>', unsafe_allow_html=True)
+                              
+                    
                 
                     st.markdown(f"""
                     <div class="insight-box" style="border-top: 4px solid {msg_color};">
@@ -2185,6 +2164,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
