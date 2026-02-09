@@ -1239,84 +1239,89 @@ else:
     
             elif st.session_state.menu_sub == "OPS":
                 st.subheader("Eficiencia Operativa (OPS)")
-                # Estilos rápidos para que se vea como tu captura
+                # Estilo para que se vea de alto nivel
                 st.markdown("""
                     <style>
-                    .main { background-color: #0e1117; color: white; }
-                    .stMetric { background-color: #1a1c24; padding: 10px; border-radius: 5px; }
+                    .main { background-color: #0e1117; }
+                    div[data-testid="stMetricValue"] { color: #00d4ff; }
                     </style>
                 """, unsafe_allow_html=True)
                 
                 @st.cache_data
-                def load_data_armored():
+                def load_data():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
-                    # Cargamos ignorando nombres, leyendo la data cruda
-                    df = pd.read_csv(url, encoding='latin-1', skipinitialspace=True)
+                    # Cargamos con latin-1 para que las tildes de tus columnas no rompan el código
+                    df = pd.read_csv(url, encoding='latin-1', sep=None, engine='python')
                     
-                    # Limpieza forzada de nombres de columnas para que no haya espacios invisibles
-                    df.columns = [str(c).strip().upper() for c in df.columns]
+                    # Limpieza forzada de nombres para eliminar espacios invisibles que mete Excel
+                    df.columns = [c.strip() for c in df.columns]
                     
-                    # Función para limpiar números de cualquier carácter raro ($, %, comas)
-                    def clean_num(value):
-                        if pd.isna(value): return 0
-                        s = str(value).replace('$', '').replace('%', '').replace(',', '').strip()
+                    # Función para limpiar números (quita $, %, comas y espacios)
+                    def clean_num(v):
+                        if pd.isna(v): return 0.0
+                        s = str(v).replace('$', '').replace('%', '').replace(',', '').strip()
                         try: return float(s)
-                        except: return 0
+                        except: return 0.0
                 
-                    # Aplicamos limpieza a todo el dataframe excepto a la columna de MES
-                    for col in df.columns:
-                        if "MES" not in col:
-                            df[col] = df[col].apply(clean_num)
+                    # Columnas numéricas críticas según tu lista
+                    cols_num = ['FACTURACIÓN', 'COSTO LOGÍSTICO', 'COSTO POR CAJA', 
+                                'COSTO POR CAJA 2024', 'VALUACION INCIDENCIAS', 'CAJAS ENVIADAS']
+                    
+                    for c in cols_num:
+                        if c in df.columns:
+                            df[c] = df[c].apply(clean_num)
                             
                     return df
                 
-                try:
-                    df = load_data_armored()
-                except Exception as e:
-                    st.error(f"Error al conectar con GitHub: {e}")
-                    st.stop()
+                df = load_data()
                 
                 # --- INTERFAZ ---
-                st.title("🚀 Nexion Strategic Report 2026")
+                st.title("🚛 Nexion Logistics & Financial Intelligence 2026")
                 
-                if not df.empty:
-                    # Identificamos columnas por posición para evitar el KeyError
-                    # Pos 0: MES | Pos 2: FACTURACION | Pos 4: COSTO LOGISTICO | Pos 5: COSTO POR CAJA | Pos 12: COSTO POR CAJA 2025
-                    col_mes = df.columns[0]
-                    col_fact = df.columns[2]
-                    col_costo_log = df.columns[4]
-                    col_caja_26 = df.columns[5]
-                    col_incidencias = df.columns[8]
-                    col_caja_25 = df.columns[12]
-                
-                    # KPIs Principales
+                if df.empty:
+                    st.error("No se detectaron datos en el archivo.")
+                else:
+                    # 1. KPIs DE DIRECCIÓN
                     m1, m2, m3, m4 = st.columns(4)
+                    
                     with m1:
-                        st.metric("Facturación Total", f"${df[col_fact].sum():,.2f}")
+                        total_fact = df['FACTURACIÓN'].sum()
+                        st.metric("Facturación Total", f"${total_fact:,.2f}")
+                    
                     with m2:
-                        st.metric("Costo Logístico", f"${df[col_costo_log].sum():,.2f}")
+                        costo_log = df['COSTO LOGÍSTICO'].sum()
+                        st.metric("Costo Logístico", f"${costo_log:,.2f}")
+                        
                     with m3:
-                        avg_26 = df[col_caja_26].mean()
-                        avg_25 = df[col_caja_25].mean()
-                        diff = ((avg_26 - avg_25) / avg_25 * 100) if avg_25 != 0 else 0
-                        st.metric("Costo/Caja Avg", f"${avg_26:.2f}", f"{diff:.1f}% vs 2025", delta_color="inverse")
+                        caja_26 = df['COSTO POR CAJA'].mean()
+                        caja_24 = df['COSTO POR CAJA 2024'].mean()
+                        # Cálculo de eficiencia
+                        delta_caja = ((caja_26 - caja_24) / caja_24 * 100) if caja_24 != 0 else 0
+                        st.metric("Costo/Caja Promedio", f"${caja_26:.2f}", f"{delta_caja:.1f}% vs 2024", delta_color="inverse")
+                        
                     with m4:
-                        st.metric("% Incidencias", f"{df[col_incidencias].mean():.2f}%")
+                        incidencias = df['VALUACION INCIDENCIAS'].sum()
+                        st.metric("Valuación Incidencias", f"${incidencias:,.2f}")
                 
-                    # Gráfica de Ingeniería (Comparativa 2025 vs 2026)
-                    st.subheader("📊 Comparativa Costo por Caja (Año tras Año)")
+                    # 2. GRÁFICA COMPARATIVA DE INGENIERÍA
+                    st.subheader("📈 Comparativa de Costo por Caja (2024 vs 2026)")
                     fig = go.Figure()
-                    fig.add_trace(go.Bar(x=df[col_mes], y=df[col_caja_25], name='Costo 2025', marker_color='#555555'))
-                    fig.add_trace(go.Bar(x=df[col_mes], y=df[col_caja_26], name='Costo 2026', marker_color='#00d4ff'))
-                    fig.update_layout(template="plotly_dark", barmode='group', height=400)
+                    fig.add_trace(go.Bar(x=df['MES'], y=df['COSTO POR CAJA 2024'], name='Año 2024', marker_color='#444444'))
+                    fig.add_trace(go.Bar(x=df['MES'], y=df['COSTO POR CAJA'], name='Año 2026', marker_color='#00d4ff'))
+                    
+                    fig.update_layout(template="plotly_dark", barmode='group', margin=dict(l=20, r=20, t=40, b=20))
                     st.plotly_chart(fig, use_container_width=True)
                 
-                    # Tabla Maestra para Dirección
-                    st.subheader("📂 Desglose de Operaciones")
-                    st.dataframe(df, use_container_width=True)
-                
-                else:
-                    st.error("El archivo está vacío o no se pudo procesar correctamente.")
+                    # 3. TABLA DE CONTROL DE DIRECCIÓN
+                    st.subheader("📋 Auditoría de Operaciones")
+                    # Formateamos la tabla para que se vea impecable
+                    st.dataframe(df.style.format({
+                        'FACTURACIÓN': '${:,.2f}',
+                        'COSTO LOGÍSTICO': '${:,.2f}',
+                        'COSTO POR CAJA': '${:,.2f}',
+                        'COSTO POR CAJA 2024': '${:,.2f}',
+                        'VALUACION INCIDENCIAS': '${:,.2f}'
+                    }), use_container_width=True)
                 
                 
                                 
@@ -2113,6 +2118,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
