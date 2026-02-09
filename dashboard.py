@@ -65,165 +65,80 @@ def load_lottieurl(url: str):
         return None
     return r.json()
 
-# ── LOGIN ──────────────────────────
-if "autenticado" not in st.session_state:
-    st.session_state.autenticado = False
-if "splash_completado" not in st.session_state:
-    st.session_state.splash_completado = False
-
-# ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
-if "tema" not in st.session_state:
-    st.session_state.tema = "oscuro"
-if "menu_main" not in st.session_state:
-    st.session_state.menu_main = "DASHBOARD"
-if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#10161F",      # Fondo profundo
-    "card": "#1F2937",    # Color para las celdas (Azul grisáceo)
+    "bg": "#10161F",      
+    "card": "#1F2937",    
     "text": "#F8FAFC",    
     "sub": "#94A3B8",     
     "border": "#374151",  
-    "table_header": "#2D3748", # Encabezados un poco más claros
     "logo": "n1.png"
 }
 
-# ── CSS MAESTRO INTEGRAL (RESETEO TOTAL DE TABLAS) ──
+# 3. CSS MAESTRO ÚNICO (LIMPIO Y SIN ERRORES)
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. Limpieza de Interfaz */
-header, footer, [data-testid="stHeader"] {{
-    visibility: hidden;
-    height: 0px;
-}}
+/* Ocultar basura de Streamlit */
+header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
 
-/* APP BASE */
-html, body {{
-    background-color: {vars_css['bg']} !important;
-    color: {vars_css['text']} !important;
-}}
-
+/* Fondo y Fuente Global */
 .stApp {{ 
     background-color: {vars_css['bg']} !important; 
     color: {vars_css['text']} !important; 
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* CONTENEDOR PRINCIPAL */
-.block-container {{ 
-    padding-top: 0.8rem !important; 
-    padding-bottom: 5rem !important; 
-    background-color: {vars_css['bg']} !important;
-}}
+/* Contenedor principal */
+.block-container {{ padding-top: 1rem !important; padding-bottom: 5rem !important; }}
 
-/* 2. ANIMACIÓN DE ENTRADA */
-@keyframes fadeInUp {{ 
-    from {{ opacity: 0; transform: translateY(15px); }} 
-    to {{ opacity: 1; transform: translateY(0); }} 
-}}
-
-[data-testid="stVerticalBlock"] > div {{
-    animation: fadeInUp 0.6s ease-out;
-}}
-
-/* 3. TÍTULOS */
-h3, .op-query-text {{ 
-    font-size: 11px !important; 
-    letter-spacing: 8px !important; 
-    text-align: center !important; 
-    margin-top: 8px !important; 
-    margin-bottom: 18px !important; 
-    color: {vars_css['sub']} !important; 
-    display: block !important; 
-    width: 100% !important; 
-}}
-
-/* 4. BOTONES SLIM */
+/* Botones con estilo minimalista */
 div.stButton > button {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
     border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
-    font-weight: 700 !important; 
-    text-transform: uppercase; 
+    border-radius: 4px !important; 
     font-size: 10px !important; 
-    height: 28px !important; 
-    min-height: 28px !important; 
-    line-height: 28px !important; 
-    transition: all 0.2s ease !important; 
-    width: 100% !important; 
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    height: 32px !important;
 }}
 
 div.stButton > button:hover {{ 
     background-color: #ffffff !important; 
     color: #000000 !important; 
-    border-color: #ffffff !important; 
 }}
 
-/* 5. INPUTS Y SELECTORES */
-.stTextInput input {{ 
+/* Inputs y Selectores */
+.stTextInput input, div[data-baseweb="select"] div {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
-    border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
-    height: 45px !important; 
-    text-align: center !important; 
-    letter-spacing: 2px; 
+    border-radius: 4px !important;
 }}
 
-[data-testid="stWidgetLabel"] p {{
-    font-size: 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 2px !important;
-    color: {vars_css['sub']} !important;
-    font-weight: 600 !important;
-}}
+/* --- ESTILOS PARA DASHBOARD (DONAS KPI) --- */
+.metric-container {{ display: flex; flex-direction: column; align-items: center; width: 100%; }}
+.metric-title {{ color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; }}
+.stat-circle {{ transform: rotate(-90deg); width: 160px; height: 160px; }}
+.stat-circle circle {{ fill: none; stroke-width: 10; }}
+.stat-bg {{ stroke: #151D29; }}
+.stat-progress {{ transition: stroke-dashoffset 0.8s ease; }}
+.stat-value {{ position: absolute; color: white; font-size: 24px; font-weight: 800; top: 50%; left: 50%; transform: translate(-50%, -50%); }}
 
-div[data-baseweb="select"] div {{
-    font-size: 12px !important; 
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
+/* --- RESET DE TABLAS: AQUÍ SE ELIMINÓ TODO LO QUE BLOQUEABA EL AZUL --- */
+[data-testid="stDataFrame"] {{
+    background-color: transparent !important;
 }}
-
-input[data-testid="stDateInputView"] {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* 6. FOOTER FIJO */
-.footer {{ 
-    position: fixed; 
-    bottom: 0 !important; 
-    left: 0 !important; 
-    width: 100% !important; 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['sub']} !important; 
-    text-align: center; 
-    padding: 12px 0px !important; 
-    font-size: 9px; 
-    letter-spacing: 2px; 
-    border-top: 1px solid {vars_css['border']} !important; 
-    z-index: 999999 !important; 
-}}
-
-/* 7. GRÁFICOS / IFRAME */
-.stPlotlyChart {{
-    visibility: visible !important;
-    opacity: 1 !important;
-}}
-
-iframe {{
-    background-color: {vars_css['bg']} !important;
-    border: 1px solid {vars_css['border']} !important;
-}}
-
-/* NOTA: SE ELIMINARON TODOS LOS ESTILOS DE TABLA PARA RECUPERAR EL AZUL NATIVO */
 
 </style>
 """, unsafe_allow_html=True)
+
+# ── LOGICA DE SESIÓN ──
+if "autenticado" not in st.session_state: st.session_state.autenticado = False
+if "splash_completado" not in st.session_state: st.session_state.splash_completado = False
+if "menu_main" not in st.session_state: st.session_state.menu_main = "DASHBOARD"
+if "menu_sub" not in st.session_state: st.session_state.menu_sub = "GENERAL"
 
 
 
@@ -2111,6 +2026,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
