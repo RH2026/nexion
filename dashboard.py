@@ -89,94 +89,230 @@ vars_css = {
     "logo": "n1.png"
 }
 
-# ── CSS MAESTRO (CON ANIMACIONES ELITE) ─────────────────────
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-    header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-    
-    .block-container {{ 
-        padding-top: 0.5rem !important; 
-        padding-bottom: 0rem !important; 
-    }}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-    .stApp {{ 
-        background: {vars_css['bg']} !important; 
-        color: {vars_css['text']} !important; 
-        font-family: 'Inter', sans-serif !important;
-        transition: background-color 0.8s ease, color 0.8s ease !important;
-    }}
+/* 1. Limpieza de Interfaz */
+header, footer, [data-testid="stHeader"] {{
+    visibility: hidden;
+    height: 0px;
+}}
 
-    /* ── ANIMACIÓN DE ENTRADA (FADE & SLIDE) ── */
-    @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(15px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
+/* APP BASE */
+html, body {{
+    background-color: {vars_css['bg']} !important;
+    color: {vars_css['text']} !important;
+}}
 
-    /* Aplicar a los contenedores principales */
-    [data-testid="stVerticalBlock"] > div {{
-        animation: fadeInUp 0.6s ease-out;
-    }}
+.stApp {{ 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['text']} !important; 
+    font-family: 'Inter', sans-serif !important; 
+}}
 
-    /* INPUT DE BÚSQUEDA */
-    .stTextInput input {{
-        background: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important;
-        border-radius: 2px !important;
-        height: 42px !important;
-        font-size: 11px !important;
-        text-align: center !important;
-        line-height: 42px !important;
-        padding: 0px !important;
-        letter-spacing: 2px;
-        transition: all 0.3s ease;
-    }}
-    .stTextInput input:focus {{
-        border-color: {vars_css['text']} !important;
-        box-shadow: 0 0 10px rgba(240, 246, 252, 0.1);
-    }}
+/* CONTENEDOR PRINCIPAL */
+.block-container {{ 
+    padding-top: 0.8rem !important; 
+    padding-bottom: 5rem !important; 
+    background-color: {vars_css['bg']} !important;
+}}
 
-    /* BOTONES Y HOVER */
-    div.stButton>button {{
-        background: {vars_css['card']} !important; 
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important; 
-        border-radius: 2px !important;
-        font-weight: 700 !important; 
-        text-transform: uppercase;
-        font-size: 10px !important;
-        height: 32px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        width: 100%;
-    }}
-    div.stButton>button:hover {{
-        background: {vars_css['text']} !important; 
-        color: {vars_css['bg']} !important; 
-        transform: translateY(-1px);
-    }}
+/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
+@keyframes fadeInUp {{ 
+    from {{ opacity: 0; transform: translateY(15px); }} 
+    to {{ opacity: 1; transform: translateY(0); }} 
+}}
 
-    /* LOGO Y NITIDEZ */
-    div[data-testid='stImage'] img {{
-        image-rendering: -webkit-optimize-contrast !important;
-        image-rendering: crisp-edges !important;
-    }}
-    div[data-testid='stImage'] {{ margin-top: -20px !important; }}
+[data-testid="stVerticalBlock"] > div {{
+    animation: fadeInUp 0.6s ease-out;
+}}
 
-    .footer {{
-        position: fixed;
-        bottom: 0; left: 0; width: 100%;
-        background-color: {vars_css['bg']};
-        color: {vars_css['sub']};
-        text-align: center;
-        padding: 10px;
-        font-size: 9px;
-        letter-spacing: 2px;
-        border-top: 1px solid {vars_css['border']};
-        z-index: 100;
-    }}
+/* 3. TÍTULOS Y OPERATIONAL QUERY */
+h3, .op-query-text {{ 
+    font-size: 11px !important; 
+    letter-spacing: 8px !important; 
+    text-align: center !important; 
+    margin-top: 8px !important; 
+    margin-bottom: 18px !important; 
+    color: {vars_css['sub']} !important; 
+    display: block !important; 
+    width: 100% !important; 
+}}
+
+/* 4. BOTONES SLIM */
+div.stButton > button {{ 
+    background-color: {vars_css['card']} !important; 
+    color: {vars_css['text']} !important; 
+    border: 1px solid {vars_css['border']} !important; 
+    border-radius: 2px !important; 
+    font-weight: 700 !important; 
+    text-transform: uppercase; 
+    font-size: 10px !important; 
+    height: 28px !important; 
+    min-height: 28px !important; 
+    line-height: 28px !important; 
+    transition: all 0.2s ease !important; 
+    width: 100% !important; 
+}}
+
+div.stButton > button:hover {{ 
+    background-color: #ffffff !important; 
+    color: #000000 !important; 
+    border-color: #ffffff !important; 
+}}
+
+/* 5. INPUTS */
+.stTextInput input {{ 
+    background-color: {vars_css['card']} !important; 
+    color: {vars_css['text']} !important; 
+    border: 1px solid {vars_css['border']} !important; 
+    border-radius: 2px !important; 
+    height: 45px !important; 
+    text-align: center !important; 
+    letter-spacing: 2px; 
+}}
+
+/* Bajar tamaño de los nombres de los filtros (Labels) */
+[data-testid="stWidgetLabel"] p {{
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    color: {vars_css['sub']} !important;
+    font-weight: 600 !important;
+}}
+
+/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
+div[data-baseweb="select"] div {{
+    font-size: 12px !important;
+    color: {vars_css['text']} !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+
+/* Cambiar el texto de ADENTRO del input de fecha */
+input[data-testid="stDateInputView"] {{
+    font-size: 12px !important;
+    color: {vars_css['text']} !important;
+}}
+
+/* Contenedor */
+[data-testid="stDataEditor"] {{
+    background-color: {vars_css['bg']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}}
+
+/* CANVAS – MALLA QUE NO DESAPARECE */
+[data-testid="data-grid-canvas"] {{
+    background-color: {vars_css['bg']} !important;
+
+    background-image:
+        repeating-linear-gradient(
+            to right,
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 72px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 36px
+        );
+
+    filter: brightness(0.96) contrast(1.12) !important;
+}}
+
+/* Encabezados */
+[data-testid="stTableColumnHeader"] {{
+    background-color: {vars_css['table_header']} !important;
+    color: {vars_css['text']} !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    border-bottom: 1px solid {vars_css['border']} !important;
+}}
+
+/* Texto */
+[data-testid="stDataEditor"] * {{
+    color: {vars_css['text']} !important;
+}}
+
+/* Hover */
+[data-testid="stDataEditor"] div:hover {{
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}}
+
+/* Ajuste global para el tema oscuro en editores */
+.st-emotion-cache-1y4p8pa {{
+    border: 1px solid #1C2529 !important;
+}}
+
+/* 6. FOOTER FIJO */
+.footer {{ 
+    position: fixed; 
+    bottom: 0 !important; 
+    left: 0 !important; 
+    width: 100% !important; 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['sub']} !important; 
+    text-align: center; 
+    padding: 12px 0px !important; 
+    font-size: 9px; 
+    letter-spacing: 2px; 
+    border-top: 1px solid {vars_css['border']} !important; 
+    z-index: 999999 !important; 
+    animation: none !important; 
+    transform: none !important; 
+}}
+
+/* 7. GRÁFICOS / IFRAME */
+.stPlotlyChart {{
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 300px !important;
+}}
+
+iframe {{
+    background-color: {vars_css['bg']} !important;
+    border: 1px solid {vars_css['border']} !important;
+}}
+
+/* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
+
+/* Chips seleccionadas – Multiselect */
+div[data-baseweb="tag"] {{
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+}}
+
+div[data-baseweb="tag"] span {{
+    color: #ffffff !important;
+}}
+
+div[data-baseweb="tag"] svg {{
+    fill: #ffffff !important;
+}}
+
+/* Valor seleccionado – Selectbox */
+div[data-baseweb="select"] > div {{
+    background-color: rgba(37, 99, 235, 0.12) !important;
+    border: 1px solid #2563eb !important;
+}}
+
+/* Focus */
+div[data-baseweb="select"]:focus-within {{
+    box-shadow: 0 0 0 1px #2563eb !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
+
+
 
 
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
@@ -2210,8 +2346,6 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
-
-
 
 
 
