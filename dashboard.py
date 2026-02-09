@@ -1249,7 +1249,7 @@ else:
                 
                 @st.cache_data
                 def load_data_simple():
-                    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
+                    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis.csv"
                     # Cargamos con latin-1 y sin procesamientos complejos iniciales
                     df = pd.read_csv(url, encoding='latin-1')
                     
@@ -2111,6 +2111,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
