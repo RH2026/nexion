@@ -1249,21 +1249,36 @@ else:
                 """, unsafe_allow_html=True)
                 
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
+                # --- 1. MOTOR DE DATOS NIVEL ELITE (VERSIÓN ANTIFALLOS) ---
                 @st.cache_data
                 def cargar_analisis_elite():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
                     try:
-                        # Cargamos con latin-1 para evitar errores de tildes
+                        # Cargamos detectando el separador automáticamente para evitar errores de lectura
                         df = pd.read_csv(url, encoding="latin-1", sep=None, engine='python')
-                        df.columns = [str(c).strip().upper() for c in df.columns]
                         
+                        # Limpieza radical de nombres de columnas
+                        df.columns = [str(c).strip().upper() for c in df.columns]
+                
+                        # BUSCADOR DE COLUMNA MES (Por si tiene tildes o caracteres raros)
+                        col_mes_real = next((c for c in df.columns if "MES" in c), None)
+                        
+                        if col_mes_real:
+                            # Renombramos a "MES" estándar para que el resto del código funcione
+                            df = df.rename(columns={col_mes_real: "MES"})
+                        else:
+                            st.error("No se encontró ninguna columna que contenga la palabra 'MES'")
+                            st.write("Columnas detectadas:", list(df.columns))
+                            return None
+                
                         # Limpieza de filas basura
                         df = df.dropna(subset=['MES'])
-                        df = df[df['MES'].str.contains('Unnamed|TOTAL', case=False) == False]
+                        df = df[df['MES'].astype(str).str.contains('Unnamed|TOTAL', case=False) == False]
                         
                         def limpiar_a_numero(v):
                             if pd.isna(v): return 0.0
                             if isinstance(v, (int, float)): return float(v)
+                            # Quitamos todo lo que no sea número o punto
                             s = str(v).replace('$', '').replace(',', '').replace('%', '').replace('(', '-').replace(')', '').strip()
                             try: return float(s)
                             except: return 0.0
@@ -1275,11 +1290,14 @@ else:
                         ]
                         
                         for col in cols_numericas:
-                            if col in df.columns:
-                                df[col] = df[col].apply(limpiar_a_numero)
+                            # Buscador flexible para cada columna numérica
+                            col_encontrada = next((c for c in df.columns if col in c or col.replace('Ó', 'O') in c), None)
+                            if col_encontrada:
+                                df[col] = df[col_encontrada].apply(limpiar_a_numero)
+                                
                         return df
                     except Exception as e:
-                        st.error(f"Error en Motor: {e}")
+                        st.error(f"Error crítico en Motor: {e}")
                         return None
                 
                 # --- 2. CSS PREMIUM ELITE (TU MAESTRO) ---
@@ -2217,6 +2235,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
