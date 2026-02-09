@@ -65,48 +65,221 @@ def load_lottieurl(url: str):
         return None
     return r.json()
 
+# ── LOGIN ──────────────────────────
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+if "splash_completado" not in st.session_state:
+    st.session_state.splash_completado = False
 
-# 2. SESIÓN
-if "autenticado" not in st.session_state: st.session_state.autenticado = False
-if "splash_completado" not in st.session_state: st.session_state.splash_completado = False
-if "menu_main" not in st.session_state: st.session_state.menu_main = "DASHBOARD"
-if "menu_sub" not in st.session_state: st.session_state.menu_sub = "GENERAL"
+# ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
+if "tema" not in st.session_state:
+    st.session_state.tema = "oscuro"
+if "menu_main" not in st.session_state:
+    st.session_state.menu_main = "DASHBOARD"
+if "menu_sub" not in st.session_state:
+    st.session_state.menu_sub = "GENERAL"
 
-vars_css = {"bg": "#10161F", "card": "#1F2937", "text": "#F8FAFC", "sub": "#94A3B8", "border": "#374151"}
+vars_css = {
+    "bg": "#10161F",      # Fondo profundo
+    "card": "#1F2937",    # Color para las celdas (Azul grisáceo)
+    "text": "#F8FAFC",    
+    "sub": "#94A3B8",     
+    "border": "#374151",  
+    "table_header": "#2D3748", # Encabezados un poco más claros
+    "logo": "n1.png"
+}
 
-# 3. EL ÚNICO CSS QUE DEBE EXISTIR (RESET TOTAL)
+# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
 st.markdown(f"""
 <style>
-    /* RESET GLOBAL */
-    header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-    .stApp {{ background-color: {vars_css['bg']}; color: {vars_css['text']}; font-family: 'Inter', sans-serif; }}
-    
-    /* BOTONES */
-    div.stButton > button {{ 
-        background-color: {vars_css['card']} !important; color: white !important; 
-        border: 1px solid {vars_css['border']} !important; border-radius: 4px;
-        font-size: 10px; font-weight: 700; text-transform: uppercase;
-    }}
-    div.stButton > button:hover {{ background-color: white !important; color: black !important; }}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-    /* INPUTS */
-    .stTextInput input, div[data-baseweb="select"] div {{ 
-        background-color: {vars_css['card']} !important; color: white !important; 
+/* 1. Limpieza de Interfaz */
+header, footer, [data-testid="stHeader"] {{
+    visibility: hidden;
+    height: 0px;
+}}
+
+/* APP BASE */
+html, body {{
+    background-color: {vars_css['bg']} !important;
+    color: {vars_css['text']} !important;
+}}
+
+.stApp {{ 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['text']} !important; 
+    font-family: 'Inter', sans-serif !important; 
+}}
+
+/* CONTENEDOR PRINCIPAL */
+.block-container {{ 
+    padding-top: 0.8rem !important; 
+    padding-bottom: 5rem !important; 
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
+@keyframes fadeInUp {{ 
+    from {{ opacity: 0; transform: translateY(15px); }} 
+    to {{ opacity: 1; transform: translateY(0); }} 
+}}
+
+[data-testid="stVerticalBlock"] > div {{
+    animation: fadeInUp 0.6s ease-out;
+}}
+
+/* 3. TÍTULOS Y OPERATIONAL QUERY */
+h3, .op-query-text {{ 
+    font-size: 11px !important; 
+    letter-spacing: 8px !important; 
+    text-align: center !important; 
+    margin-top: 8px !important; 
+    margin-bottom: 18px !important; 
+    color: {vars_css['sub']} !important; 
+    display: block !important; 
+    width: 100% !important; 
+}}
+
+/* 4. BOTONES SLIM */
+div.stButton > button {{ 
+    background-color: {vars_css['card']} !important; 
+    color: {vars_css['text']} !important; 
+    border: 1px solid {vars_css['border']} !important; 
+    border-radius: 2px !important; 
+    font-weight: 700 !important; 
+    text-transform: uppercase; 
+    font-size: 10px !important; 
+    height: 28px !important; 
+    min-height: 28px !important; 
+    line-height: 28px !important; 
+    transition: all 0.2s ease !important; 
+    width: 100% !important; 
+}}
+
+div.stButton > button:hover {{ 
+    background-color: #ffffff !important; 
+    color: #000000 !important; 
+    border-color: #ffffff !important; 
+}}
+
+/* 5. INPUTS */
+.stTextInput input {{ 
+    background-color: {vars_css['card']} !important; 
+    color: {vars_css['text']} !important; 
+    border: 1px solid {vars_css['border']} !important; 
+    border-radius: 2px !important; 
+    height: 45px !important; 
+    text-align: center !important; 
+    letter-spacing: 2px; 
+}}
+
+/* Bajar tamaño de los nombres de los filtros (Labels) */
+[data-testid="stWidgetLabel"] p {{
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    color: {vars_css['sub']} !important;
+    font-weight: 600 !important;
+}}
+
+/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
+div[data-baseweb="select"] div {{
+    font-size: 12px !important; /* Ajusta este tamaño a tu gusto */
+    color: {vars_css['text']} !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+
+/* Cambiar el texto de ADENTRO del input de fecha */
+input[data-testid="stDateInputView"] {{
+    font-size: 12px !important;
+    color: {vars_css['text']} !important;
+}}
+
+/* Contenedor */
+[data-testid="stDataEditor"] {{
+    background-color: {vars_css['bg']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}}
+
+/* CANVAS – MALLA QUE NO DESAPARECE */
+[data-testid="data-grid-canvas"] {{
+    background-color: {vars_css['bg']} !important;
+
+    background-image:
+        repeating-linear-gradient(
+            to right,
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 72px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 36px
+        );
+
+    filter: brightness(0.96) contrast(1.12) !important;
+}}
+
+/* Encabezados */
+[data-testid="stTableColumnHeader"] {{
+    background-color: {vars_css['table_header']} !important;
+    color: {vars_css['text']} !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    border-bottom: 1px solid {vars_css['border']} !important;
+}}
+
+/* Texto */
+[data-testid="stDataEditor"] * {{
+    color: {vars_css['text']} !important;
+}}
+
+/* Intentamos atacar el contenedor del canvas */
+    [data-testid="stDataEditor"] div:hover {{
+        background-color: rgba(255, 255, 255, 0.05) !important;
     }}
 
-    /* DASHBOARD KPIs (CONSTRUIDO AQUÍ PARA NO REPETIR) */
-    .metric-container {{ display: flex; flex-direction: column; align-items: center; width: 100%; }}
-    .stat-circle {{ transform: rotate(-90deg); width: 160px; height: 160px; }}
-    .stat-circle circle {{ fill: none; stroke-width: 10; }}
-    .stat-bg {{ stroke: #151D29; }}
-    .stat-progress {{ transition: stroke-dashoffset 0.8s ease; }}
-    .stat-value {{ position: absolute; color: white; font-size: 24px; font-weight: 800; top: 50%; left: 50%; transform: translate(-50%, -50%); }}
-    
-    /* TABLAS: FORZAMOS ELIMINACIÓN DE CUALQUIER FILTRO */
-    [data-testid="stDataFrame"], [data-testid="stTable"], canvas {{
-        filter: none !important;
-        color: inherit !important;
+    /* Ajuste global para el tema oscuro en editores */
+    .st-emotion-cache-1y4p8pa {{
+        border: 1px solid #1C2529 !important;
     }}
+
+/* 6. FOOTER FIJO */
+.footer {{ 
+    position: fixed; 
+    bottom: 0 !important; 
+    left: 0 !important; 
+    width: 100% !important; 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['sub']} !important; 
+    text-align: center; 
+    padding: 12px 0px !important; 
+    font-size: 9px; 
+    letter-spacing: 2px; 
+    border-top: 1px solid {vars_css['border']} !important; 
+    z-index: 999999 !important; 
+    animation: none !important; 
+    transform: none !important; 
+}}
+
+/* 7. GRÁFICOS / IFRAME (PLOTLY + FRAPPE) */
+.stPlotlyChart {{
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 300px !important;
+}}
+
+iframe {{
+    background-color: {vars_css['bg']} !important;
+    border: 1px solid {vars_css['border']} !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -278,7 +451,67 @@ else:
     with main_container:
         # 1. DASHBOARD
         if st.session_state.menu_main == "DASHBOARD":        
-                        
+            # --- CONFIGURACIÓN DE PÁGINA ---
+            st.markdown("""
+            <style>
+                .stApp {{ background-color: {vars_css['bg']} !important; }}
+                
+                .metric-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0px; /* Reducimos padding para ganar espacio */
+                    width: 100%;
+                }
+            
+                .metric-title {
+                    color: #94a3b8;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                    margin-bottom: 10px;
+                    font-weight: 600;
+                }
+            
+                /* SVG - DONA GRANDE Y SIN CORTES */
+                .stat-circle {
+                    transform: rotate(-90deg);
+                    width: 160px; /* Tamaño visual grande */
+                    height: 160px;
+                    overflow: visible; 
+                }
+            
+                .stat-circle circle {
+                    fill: none;
+                    stroke-width: 15; /* ¡MÁS GRUESA! */
+                }
+            
+                .stat-bg { stroke: #151D29; }
+                
+                .stat-progress {
+                    transition: stroke-dashoffset 0.8s ease-in-out;
+                    stroke-linecap: butt;
+                }
+            
+                .stat-value {
+                    position: absolute;
+                    color: white;
+                    font-size: 22px; /* Número más imponente */
+                    font-weight: 800;
+                    font-family: 'Inter', sans-serif;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                }
+            
+                .stat-percent {
+                    font-size: 16px;
+                    margin-top: 5px;
+                    font-weight: 700;
+                }
+            </style>
+            """, unsafe_allow_html=True)
             # --- 1. CARGA DE DATOS ---
             def cargar_datos():
                 t = int(time.time())
@@ -1936,11 +2169,6 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
-
-
-
-
-
 
 
 
