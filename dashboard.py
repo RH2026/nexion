@@ -1549,26 +1549,34 @@ else:
                 
                 # --- INTEGRACIÓN EN EL DASHBOARD ---
                 
-                # Botón para disparar la acción
+                # --- INTEGRACIÓN MEJORADA (SIN CEROS VERDES) ---
                 if st.button("🖨️ GENERAR REPORTE PARA IMPRESIÓN"):
                     reporte_html = generar_reporte_impresion(df_m, mes_sel)
                     
-                    # Mostramos el reporte en un contenedor oculto o pequeño que se dispare
-                    st.components.v1.html(f"""
-                        {reporte_html}
-                        <script>
-                            // Disparar la impresión automáticamente al cargar
-                            window.onload = function() {{
-                                var content = document.getElementById('printable-report').innerHTML;
-                                var win = window.open('', '', 'height=1100,width=900');
-                                win.document.write('<html><head><title>Reporte Logística JYPESA</title></head><body>');
-                                win.document.write(content);
-                                win.document.write('</body></html>');
-                                win.document.close();
-                                win.print();
-                            }}
-                        </script>
-                    """, height=0)              
+                    # Usamos un placeholder vacío para que no deje residuos visuales
+                    print_container = st.empty()
+                    
+                    with print_container:
+                        st.components.v1.html(f"""
+                            {reporte_html}
+                            <script>
+                                window.onload = function() {{
+                                    var content = document.getElementById('printable-report').innerHTML;
+                                    var win = window.open('', '', 'height=1100,width=900');
+                                    win.document.write('<html><head><title>Reporte Logística JYPESA</title></head><body>');
+                                    win.document.write(content);
+                                    win.document.write('</body></html>');
+                                    win.document.close();
+                                    win.print();
+                                    // Al cerrar, el contenedor de Streamlit se limpia solo
+                                }}
+                            </script>
+                        """, height=0)
+                    
+                    # Opcional: limpiar el componente después de un par de segundos
+                    # import time
+                    # time.sleep(2)
+                    # print_container.empty()            
                 def descargar_excel_ingenieria(df_m, mes_sel):
                     output = io.BytesIO()
                     # Creamos el escritor de Excel con el motor xlsxwriter
@@ -2424,6 +2432,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
