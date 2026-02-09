@@ -1569,7 +1569,94 @@ else:
                             }}
                         </script>
                     """, height=0)              
-    
+                def descargar_excel_ingenieria(df_m, mes_sel):
+                    output = io.BytesIO()
+                    # Creamos el escritor de Excel con el motor xlsxwriter
+                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                        workbook = writer.book
+                        worksheet = workbook.add_worksheet('REPORTE LOGÍSTICO')
+                
+                        # --- DEFINICIÓN DE FORMATOS (ESTILO INGENIERÍA) ---
+                        header_fmt = workbook.add_format({
+                            'bold': True, 'font_size': 14, 'font_name': 'Arial',
+                            'border': 2, 'bg_color': '#000000', 'font_color': '#FFFFFF',
+                            'align': 'center', 'valign': 'vcenter'
+                        })
+                        
+                        subheader_fmt = workbook.add_format({
+                            'bold': True, 'font_size': 10, 'bg_color': '#F2F2F2',
+                            'border': 1, 'align': 'left', 'font_name': 'Arial'
+                        })
+                
+                        data_fmt = workbook.add_format({'border': 1, 'font_name': 'Arial', 'font_size': 10})
+                        
+                        money_fmt = workbook.add_format({'num_format': '$#,##0.00', 'border': 1, 'font_name': 'Arial'})
+                        percent_fmt = workbook.add_format({'num_format': '0.00%', 'border': 1, 'font_name': 'Arial'})
+                        
+                        # --- ESTRUCTURACIÓN DEL REPORTE ---
+                        # 1. Encabezado Principal
+                        worksheet.merge_range('A1:D2', f'JYPESA - REPORTE TÉCNICO LOGÍSTICA: {mes_sel} 2026', header_fmt)
+                        
+                        # 2. Metadatos
+                        worksheet.write('A4', 'FECHA DE REPORTE:', subheader_fmt)
+                        worksheet.write('B4', datetime.now().strftime('%d/%m/%Y'), data_fmt)
+                        worksheet.write('A5', 'ESTATUS OPERATIVO:', subheader_fmt)
+                        eficiencia = df_m['META'] - df_m['LOGI']
+                        estatus = "EFICIENTE" if eficiencia >= 0 else "DESVIACIÓN"
+                        worksheet.write('B5', estatus, data_fmt)
+                
+                        # 3. Tabla de KPI's (Fila 7)
+                        kpis = [
+                            ['INDICADOR CLAVE', 'VALOR REGISTRADO', 'TARGET / REF'],
+                            ['COSTO LOGÍSTICO', df_m['LOGI']/100, df_m['META']/100],
+                            ['COSTO POR CAJA', df_m['CC26'], 59.00],
+                            ['FACTURACIÓN BRUTA', df_m['FACT'], '-'],
+                            ['INVERSIÓN FLETES', df_m['FLETE'], '-'],
+                            ['UNIDADES (CAJAS)', df_m['CAJAS'], '-'],
+                            ['INCREMENTO NETO', df_m['INCR'], '-']
+                        ]
+                
+                        row = 7
+                        for item in kpis:
+                            if row == 7: # Encabezado de tabla
+                                worksheet.write_row(row, 0, item, subheader_fmt)
+                            else:
+                                worksheet.write(row, 0, item[0], data_fmt)
+                                # Aplicar formatos numéricos específicos
+                                if '%' in str(item[0]) or 'LOGÍSTICO' in str(item[0]):
+                                    worksheet.write(row, 1, item[1], percent_fmt)
+                                    worksheet.write(row, 2, item[2], percent_fmt) if item[2] != '-' else worksheet.write(row, 2, '-', data_fmt)
+                                elif '$' in str(item[0]) or any(x in str(item[0]) for x in ['CAJA', 'FACT', 'FLET', 'INCR']):
+                                    worksheet.write(row, 1, item[1], money_fmt)
+                                    worksheet.write(row, 2, item[2], money_fmt) if item[2] != '-' else worksheet.write(row, 2, '-', data_fmt)
+                                else:
+                                    worksheet.write_row(row, 1, item[1:], data_fmt)
+                            row += 1
+                
+                        # Ajustar anchos de columna
+                        worksheet.set_column('A:A', 30)
+                        worksheet.set_column('B:C', 20)
+                        
+                        # 4. Bloque de Firmas (Más abajo)
+                        row += 4
+                        worksheet.write(row, 0, '_________________________', data_fmt)
+                        worksheet.write(row, 2, '_________________________', data_fmt)
+                        worksheet.write(row+1, 0, 'ELABORÓ: RIGOBERTO HERNÁNDEZ', data_fmt)
+                        worksheet.write(row+1, 2, 'AUTORIZÓ: DIRECCIÓN OPS', data_fmt)
+                
+                    return output.getvalue()
+                
+                # --- BOTÓN EN EL DASHBOARD ---
+                excel_data = descargar_excel_ingenieria(df_m, mes_sel)
+                
+                st.download_button(
+                    label="📊 DESCARGAR REPORTE TÉCNICO (EXCEL)",
+                    data=excel_data,
+                    file_name=f"Reporte_Logistica_{mes_sel}_2026.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            
+            
             elif st.session_state.menu_sub == "OTD":
                 st.subheader("On-Time Delivery (OTD)")
                 # [Aquí va tu código o función para el reporte OTD]
@@ -2337,6 +2424,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
