@@ -9,6 +9,8 @@ pypdf
 reportlab
 pytz
 fpdf2
+xlsxwriter
+
 
 
 
