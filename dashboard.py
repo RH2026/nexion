@@ -89,249 +89,149 @@ vars_css = {
     "logo": "n1.png"
 }
 
-st.markdown(f"""
+st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. Limpieza de Interfaz */
-header, footer, [data-testid="stHeader"] {{
-    visibility: hidden;
-    height: 0px;
-}}
+/* ================================
+   MAESTRO GLOBAL – NO TOCAR
+   ================================ */
 
-/* APP BASE */
-html, body {{
-    background-color: {vars_css['bg']} !important;
-    color: {vars_css['text']} !important;
-}}
+/* --------- BODY --------- */
+html, body {
+    background-color: #0E1117;
+    color: #E6EAF0;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
 
-.stApp {{ 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['text']} !important; 
-    font-family: 'Inter', sans-serif !important; 
-}}
+/* --------- CONTENEDOR PRINCIPAL STREAMLIT --------- */
+[data-testid="stAppViewContainer"] {
+    background-color: #0E1117;
+}
 
-/* CONTENEDOR PRINCIPAL */
-.block-container {{ 
-    padding-top: 0.8rem !important; 
-    padding-bottom: 5rem !important; 
-    background-color: {vars_css['bg']} !important;
-}}
+/* --------- HEADER --------- */
+header[data-testid="stHeader"] {
+    background: transparent;
+    border-bottom: 1px solid #1F2937;
+}
 
-/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
-@keyframes fadeInUp {{ 
-    from {{ opacity: 0; transform: translateY(15px); }} 
-    to {{ opacity: 1; transform: translateY(0); }} 
-}}
+/* --------- SIDEBAR --------- */
+section[data-testid="stSidebar"] {
+    background-color: #0B0F14;
+    border-right: 1px solid #1F2937;
+}
 
-[data-testid="stVerticalBlock"] > div {{
-    animation: fadeInUp 0.6s ease-out;
-}}
+/* --------- TÍTULOS --------- */
+h1, h2, h3, h4, h5, h6 {
+    color: #E6EAF0;
+    font-weight: 600;
+}
 
-/* 3. TÍTULOS Y OPERATIONAL QUERY */
-h3, .op-query-text {{ 
-    font-size: 11px !important; 
-    letter-spacing: 8px !important; 
-    text-align: center !important; 
-    margin-top: 8px !important; 
-    margin-bottom: 18px !important; 
-    color: {vars_css['sub']} !important; 
-    display: block !important; 
-    width: 100% !important; 
-}}
+/* --------- TEXTO --------- */
+p, span, label, div {
+    color: #CBD5E1;
+}
 
-/* 4. BOTONES SLIM */
-div.stButton > button {{ 
-    background-color: {vars_css['card']} !important; 
-    color: {vars_css['text']} !important; 
-    border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
-    font-weight: 700 !important; 
-    text-transform: uppercase; 
-    font-size: 10px !important; 
-    height: 28px !important; 
-    min-height: 28px !important; 
-    line-height: 28px !important; 
-    transition: all 0.2s ease !important; 
-    width: 100% !important; 
-}}
+/* --------- INPUTS --------- */
+input, textarea, select {
+    background-color: #0B0F14 !important;
+    color: #E6EAF0 !important;
+    border: 1px solid #1F2937 !important;
+    border-radius: 6px !important;
+}
 
-div.stButton > button:hover {{ 
-    background-color: #ffffff !important; 
-    color: #000000 !important; 
-    border-color: #ffffff !important; 
-}}
+/* --------- BOTONES --------- */
+button {
+    background-color: #111827 !important;
+    color: #E6EAF0 !important;
+    border: 1px solid #1F2937 !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease;
+}
 
-/* 5. INPUTS */
-.stTextInput input {{ 
-    background-color: {vars_css['card']} !important; 
-    color: {vars_css['text']} !important; 
-    border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
-    height: 45px !important; 
-    text-align: center !important; 
-    letter-spacing: 2px; 
-}}
+button:hover {
+    background-color: #1F2937 !important;
+}
 
-/* Bajar tamaño de los nombres de los filtros (Labels) */
-[data-testid="stWidgetLabel"] p {{
-    font-size: 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 2px !important;
-    color: {vars_css['sub']} !important;
-    font-weight: 600 !important;
-}}
-
-/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
-div[data-baseweb="select"] div {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
-}}
-
-/* Cambiar el texto de ADENTRO del input de fecha */
-input[data-testid="stDateInputView"] {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* Contenedor */
-[data-testid="stDataEditor"] {{
-    background-color: {vars_css['bg']} !important;
-    border: 1px solid {vars_css['border']} !important;
+/* --------- DATAEDITOR --------- */
+[data-testid="stDataEditor"] {
+    background-color: #0B0F14 !important;
+    border: 1px solid #1F2937 !important;
     border-radius: 8px !important;
-    overflow: hidden !important;
-}}
+}
 
-/* CANVAS – MALLA QUE NO DESAPARECE */
-[data-testid="data-grid-canvas"] {{
-    background-color: {vars_css['bg']} !important;
+/* Encabezados DataEditor */
+[data-testid="stDataEditor"] thead th {
+    background-color: #131A24 !important;
+    color: #E6EAF0 !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid #1F2937 !important;
+}
 
-    background-image:
-        repeating-linear-gradient(
-            to right,
-            rgba(75,85,99,0.9) 0px,
-            rgba(75,85,99,0.9) 1.25px,
-            transparent 1.25px,
-            transparent 72px
-        ),
-        repeating-linear-gradient(
-            to bottom,
-            rgba(75,85,99,0.9) 0px,
-            rgba(75,85,99,0.9) 1.25px,
-            transparent 1.25px,
-            transparent 36px
-        );
+/* Celdas DataEditor */
+[data-testid="stDataEditor"] tbody td {
+    background-color: #0B0F14 !important;
+    color: #CBD5E1 !important;
+    border-bottom: 1px solid #1F2937 !important;
+}
 
-    filter: brightness(0.96) contrast(1.12) !important;
-}}
+/* --------- TABLAS --------- */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
 
-/* Encabezados */
-[data-testid="stTableColumnHeader"] {{
-    background-color: {vars_css['table_header']} !important;
-    color: {vars_css['text']} !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    border-bottom: 1px solid {vars_css['border']} !important;
-}}
+th, td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #1F2937;
+}
 
-/* Texto */
-[data-testid="stDataEditor"] * {{
-    color: {vars_css['text']} !important;
-}}
+/* --------- IFRAME / GRÁFICOS --------- */
+iframe {
+    background-color: #0B0F14 !important;
+    border: 1px solid #1F2937 !important;
+    border-radius: 8px !important;
+}
 
-/* Hover */
-[data-testid="stDataEditor"] div:hover {{
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}}
-
-/* Ajuste global para el tema oscuro en editores */
-.st-emotion-cache-1y4p8pa {{
-    border: 1px solid #1C2529 !important;
-}}
-
-/* 6. FOOTER FIJO */
-.footer {{ 
-    position: fixed; 
-    bottom: 0 !important; 
-    left: 0 !important; 
-    width: 100% !important; 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['sub']} !important; 
-    text-align: center; 
-    padding: 12px 0px !important; 
-    font-size: 9px; 
-    letter-spacing: 2px; 
-    border-top: 1px solid {vars_css['border']} !important; 
-    z-index: 999999 !important; 
-    animation: none !important; 
-    transform: none !important; 
-}}
-
-/* 7. GRÁFICOS / IFRAME */
-.stPlotlyChart {{
+/* Plotly visible */
+.stPlotlyChart {
     visibility: visible !important;
     opacity: 1 !important;
     min-height: 300px !important;
-}}
+}
 
-iframe {{
-    background-color: {vars_css['bg']} !important;
-    border: 1px solid {vars_css['border']} !important;
-}}
+/* --------- FOOTER FIJO --------- */
+iframe[title="streamlit_components.v1.html"] {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
+}
 
-/* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
+/* --------- SCROLLBAR --------- */
+::-webkit-scrollbar {
+    width: 8px;
+}
 
-/* Chips seleccionadas – Multiselect */
-div[data-baseweb="tag"] {{
-    background-color: #2563eb !important;
-    color: #ffffff !important;
-    border-radius: 4px !important;
-    font-weight: 600 !important;
-}}
+::-webkit-scrollbar-track {
+    background: #0B0F14;
+}
 
-div[data-baseweb="tag"] span {{
-    color: #ffffff !important;
-}}
+::-webkit-scrollbar-thumb {
+    background: #1F2937;
+    border-radius: 8px;
+}
 
-div[data-baseweb="tag"] svg {{
-    fill: #ffffff !important;
-}}
+::-webkit-scrollbar-thumb:hover {
+    background: #374151;
+}
 
-/* Valor seleccionado – Selectbox */
-div[data-baseweb="select"] > div {{
-    background-color: rgba(37, 99, 235, 0.12) !important;
-    border: 1px solid #2563eb !important;
-}}
-
-/* Focus */
-div[data-baseweb="select"]:focus-within {{
-    box-shadow: 0 0 0 1px #2563eb !important;
-}}
-
-/* ───────── SELECCIÓN ACTIVA EN DATAEDITOR (SIN TOCAR NADA MÁS) ───────── */
-
-/* Celda activa */
-[data-testid="stDataEditor"] [role="gridcell"]:focus {{
-    background-color: rgba(37, 99, 235, 0.25) !important;
-    outline: 1px solid #2563eb !important;
-}}
-
-/* Fila activa */
-[data-testid="stDataEditor"] [role="row"]:focus-within {{
-    background-color: rgba(37, 99, 235, 0.15) !important;
-}}
-
-/* Texto en celda activa */
-[data-testid="stDataEditor"] [role="gridcell"]:focus * {{
-    color: #ffffff !important;
-    font-weight: 600 !important;
-}}
-
-/* Prioridad foco sobre hover */
-[data-testid="stDataEditor"] [role="gridcell"]:focus:hover {{
-    background-color: rgba(37, 99, 235, 0.28) !important;
-}}
+/* ================================
+   FIN MAESTRO
+   ================================ */
 
 </style>
 """, unsafe_allow_html=True)
@@ -2370,6 +2270,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
