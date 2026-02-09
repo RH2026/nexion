@@ -1241,7 +1241,7 @@ else:
             elif st.session_state.menu_sub == "OPS":
                 st.subheader("Eficiencia Operativa (OPS)")
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
-                # --- 1. MOTOR DE DATOS (Mapeo Completo) ---
+                # --- 1. MOTOR DE DATOS (Mapeo Completo e Intacto) ---
                 @st.cache_data
                 def cargar_datos_maestros():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
@@ -1283,17 +1283,18 @@ else:
                         st.error(f"Error cargando datos: {e}")
                         return None
                 
-                # --- 2. CSS DISEÑO ORIGINAL (GLASSMORPHISM & DARK MODE) ---
+                # --- 2. CSS DISEÑO ACTUALIZADO (TEXTOS CLAROS & ICONOS) ---
                 st.markdown("""
+                    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
                     <style>
                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
                     
                     html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #050505; color: white; }
                     
-                    .main-title { font-weight: 900; font-size: 2.5rem; letter-spacing: -1.5px; color: #fff; margin-bottom: 0px; }
-                    .sub-title { color: #555; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
+                    .main-title { font-weight: 900; font-size: 2.5rem; letter-spacing: -1.5px; color: #fff; margin-bottom: 0px; display: flex; align-items: center; gap: 10px; }
+                    .sub-title { color: #888; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
                 
-                    /* Tarjetas de 3 niveles */
+                    /* Tarjetas */
                     .metric-card {
                         background: rgba(255, 255, 255, 0.03);
                         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1305,30 +1306,33 @@ else:
                         flex-direction: column;
                         justify-content: space-between;
                     }
-                    .label { color: #888; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
-                    .value { color: #fff; font-size: 2rem; font-weight: 700; margin: 8px 0; }
-                    .meta-ind { font-size: 0.7rem; color: #444; font-weight: 600; text-transform: uppercase; }
+                    .label { color: #BBB; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
+                    .value { color: #fff; font-size: 2.1rem; font-weight: 700; margin: 8px 0; }
+                    .meta-ind { font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; }
                 
-                    /* Bloques de Análisis */
+                    /* Bloques de Análisis (Sin fondo de color, solo bordes) */
                     .section-box {
-                        background: rgba(255, 255, 255, 0.02);
+                        background: transparent;
                         border-radius: 12px;
                         padding: 25px;
                         margin-top: 20px;
-                        border: 1px solid rgba(255, 255, 255, 0.05);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
                     }
                     .deep-dive { border-left: 4px solid #38bdf8; }
                     .radiografia { border-left: 4px solid #f472b6; }
                     .metodologia { border-left: 4px solid #10b981; }
+                    
+                    .section-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; margin-top: 0; margin-bottom: 15px; font-weight: 700; }
+                    .material-icons { font-size: 20px; vertical-align: middle; }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # --- 3. LOGICA Y RENDER ---
+                # --- 3. LÓGICA Y RENDER ---
                 df_a = cargar_datos_maestros()
                 
                 if df_a is not None:
-                    # FILTRO SUPERIOR (FUERA DE SIDEBAR)
-                    st.markdown("<div class='main-title'>NEXION OPERATIONAL ANALYTICS</div>", unsafe_allow_html=True)
+                    # FILTRO SUPERIOR
+                    st.markdown("<div class='main-title'><span class='material-icons' style='font-size:35px'>insights</span> NEXION OPERATIONAL ANALYTICS</div>", unsafe_allow_html=True)
                     col_sel, _ = st.columns([1, 3])
                     with col_sel:
                         mes_sel = st.selectbox("", df_a["MES"].unique(), label_visibility="collapsed")
@@ -1337,7 +1341,7 @@ else:
                 
                     df_m = df_a[df_a["MES"] == mes_sel].iloc[0]
                 
-                    # --- GRID 9 TARJETAS (Título, Valor, Meta) ---
+                    # --- GRID 9 TARJETAS ---
                     c1, c2, c3 = st.columns(3)
                     eficiencia = df_m['META'] - df_m['LOGI']
                     col_log = "#10b981" if eficiencia >= 0 else "#fb7185"
@@ -1365,13 +1369,13 @@ else:
                     with c9:
                         st.markdown(f"<div class='metric-card'><div class='label'>Costo de Flete</div><div class='value'>${df_m['FLETE']:,.0f}</div><div class='meta-ind'>Inversión Logística Directa</div></div>", unsafe_allow_html=True)
                 
-                    # --- BLOQUES DE ANÁLISIS EXPLICATIVO ---
+                    # --- BLOQUES DE ANÁLISIS ---
                     
-                    # 1. Metodología de Cálculo
+                    # 1. Metodología
                     st.markdown(f"""
                     <div class='section-box metodologia'>
-                        <h3 style='color:#10b981; font-size:1rem; margin-top:0;'>📐 Metodología de Cálculo para {mes_sel}:</h3>
-                        <p style='color:#ccc; font-size:0.95rem; font-family:monospace;'>
+                        <div class='section-title' style='color:#10b981;'><span class='material-icons'>calculate</span> Metodología de Cálculo para {mes_sel}:</div>
+                        <p style='color:#E0E0E0; font-size:0.95rem; font-family:monospace;'>
                         • <b>Logístico:</b> (${df_m['FLETE']:,.2f} / ${df_m['FACT']:,.2f}) = <b>{df_m['LOGI']:.2f}%</b><br>
                         • <b>C/Caja:</b> ${df_m['FLETE']:,.2f} / {int(df_m['CAJAS'])} cajas = <b>${df_m['CC26']:.2f}</b><br>
                         • <b>Impacto:</b> (Ahorro Incidencias) - (Variación Tarifaria vs 2024 * Cajas) = <b>${df_m['INCR']:,.2f}</b>
@@ -1382,8 +1386,8 @@ else:
                     col_inf1, col_inf2 = st.columns(2)
                     with col_inf1:
                         st.markdown(f"""<div class='section-box deep-dive'>
-                            <h3 style='color:#38bdf8; font-size:1rem; margin-top:0;'>🔍 DEEP DIVE</h3>
-                            <p style='color:#999; font-size:0.85rem;'>
+                            <div class='section-title' style='color:#38bdf8;'><span class='material-icons'>search</span> DEEP DIVE</div>
+                            <p style='color:#CCC; font-size:0.9rem;'>
                             Durante el mes de <b>{mes_sel}</b>, la operación gestionó un flujo de <b>{int(df_m['CAJAS']):,.0f}</b> paquetes. 
                             El rendimiento financiero muestra una facturación de <b>${df_m['FACT']:,.2f}</b> con un costo unitario por caja de <b>${df_m['CC26']:.2f}</b>.
                             </p>
@@ -1392,8 +1396,8 @@ else:
                     with col_inf2:
                         estatus = "EFICIENCIA" if eficiencia >= 0 else "DESVIACIÓN"
                         st.markdown(f"""<div class='section-box radiografia'>
-                            <h3 style='color:#f472b6; font-size:1rem; margin-top:0;'>🩺 RADIOGRAFÍA</h3>
-                            <p style='color:#999; font-size:0.85rem;'>
+                            <div class='section-title' style='color:#f472b6;'><span class='material-icons'>analytics</span> RADIOGRAFÍA</div>
+                            <p style='color:#CCC; font-size:0.9rem;'>
                             Estado: <b style='color:#fff;'>{estatus} OPERATIVA</b><br>
                             La desviación respecto a la meta es de <b>{abs(eficiencia):.2f}%</b>. <br>
                             Cada $1,000 MXN facturados están consumiendo <b>${(df_m['LOGI']/100)*1000:.2f}</b> de presupuesto logístico.
@@ -2200,6 +2204,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
