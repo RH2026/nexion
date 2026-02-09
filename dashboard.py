@@ -89,7 +89,6 @@ vars_css = {
     "logo": "n1.png"
 }
 
-# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -185,7 +184,7 @@ div.stButton > button:hover {{
 
 /* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
 div[data-baseweb="select"] div {{
-    font-size: 12px !important; /* Ajusta este tamaño a tu gusto */
+    font-size: 12px !important;
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
 }}
@@ -241,15 +240,15 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* Intentamos atacar el contenedor del canvas */
-    [data-testid="stDataEditor"] div:hover {{
-        background-color: rgba(255, 255, 255, 0.05) !important;
-    }}
+/* Hover */
+[data-testid="stDataEditor"] div:hover {{
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}}
 
-    /* Ajuste global para el tema oscuro en editores */
-    .st-emotion-cache-1y4p8pa {{
-        border: 1px solid #1C2529 !important;
-    }}
+/* Ajuste global para el tema oscuro en editores */
+.st-emotion-cache-1y4p8pa {{
+    border: 1px solid #1C2529 !important;
+}}
 
 /* 6. FOOTER FIJO */
 .footer {{ 
@@ -269,7 +268,7 @@ input[data-testid="stDateInputView"] {{
     transform: none !important; 
 }}
 
-/* 7. GRÁFICOS / IFRAME (PLOTLY + FRAPPE) */
+/* 7. GRÁFICOS / IFRAME */
 .stPlotlyChart {{
     visibility: visible !important;
     opacity: 1 !important;
@@ -280,6 +279,36 @@ iframe {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
 }}
+
+/* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
+
+/* Chips seleccionadas – Multiselect */
+div[data-baseweb="tag"] {{
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+}}
+
+div[data-baseweb="tag"] span {{
+    color: #ffffff !important;
+}}
+
+div[data-baseweb="tag"] svg {{
+    fill: #ffffff !important;
+}}
+
+/* Valor seleccionado – Selectbox */
+div[data-baseweb="select"] > div {{
+    background-color: rgba(37, 99, 235, 0.12) !important;
+    border: 1px solid #2563eb !important;
+}}
+
+/* Focus */
+div[data-baseweb="select"]:focus-within {{
+    box-shadow: 0 0 0 1px #2563eb !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -2169,6 +2198,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
