@@ -1228,8 +1228,7 @@ else:
     
         # 3. REPORTES
         elif st.session_state.menu_main == "REPORTES":
-            st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
-
+            
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "APQ":
                 st.subheader("Análisis de Producto y Quejas (APQ)")
@@ -1239,8 +1238,86 @@ else:
     
             elif st.session_state.menu_sub == "OPS":
                 st.subheader("Eficiencia Operativa (OPS)")
-                # [Aquí va tu código o función para el reporte OPS]
-                st.write("Métricas de rendimiento de planta.")
+                # 1. Inyectar tu CSS Maestro
+                def local_css(url):
+                    response = requests.get(url)
+                    if response.status_status == 200:
+                        st.markdown(f'<style>{response.text}</style>', unsafe_allow_html=True)
+                                
+                # 2. Carga de Datos
+                @st.cache_data
+                def load_data():
+                    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
+                    df = pd.read_csv(url)
+                    # Convertir fecha a datetime
+                    df['fecha'] = pd.to_datetime(df['fecha'])
+                    df['mes'] = df['fecha'].dt.month_name()
+                    return df
+                
+                try:
+                    df = load_data()
+                except Exception as e:
+                    st.error(f"Error al cargar datos: {e}")
+                    st.stop()
+                
+                # 3. Sidebar - Filtros de Ingeniería
+                st.sidebar.header("📊 Filtros Maestros")
+                month_filter = st.sidebar.multiselect("Seleccionar Mes", options=df['mes'].unique(), default=df['mes'].unique())
+                data_filtered = df[df['mes'].isin(month_filter)]
+                
+                # 4. Header de Reporte
+                st.title("🚀 Business Intelligence & Financial Report 2026")
+                st.markdown("---")
+                
+                # 5. KPIs Principales (Métricas de Dirección)
+                col1, col2, col3, col4 = st.columns(4)
+                total_revenue = data_filtered['ingresos'].sum()
+                total_costs = data_filtered['gastos'].sum()
+                margin = ((total_revenue - total_costs) / total_revenue) * 100
+                
+                with col1:
+                    st.metric("Total Ingresos", f"${total_revenue:,.2f}", delta="8.5%")
+                with col2:
+                    st.metric("Costos Operativos", f"${total_costs:,.2f}", delta="-2.1%", delta_color="inverse")
+                with col3:
+                    st.metric("Margen Neto", f"{margin:.2f}%", delta="1.2%")
+                with col4:
+                    st.metric("ROI Proyectado", "24.8%", delta="0.5%")
+                
+                # 6. Análisis Gráfico Profundo
+                st.markdown("### 📈 Análisis de Tendencias y Comparativas")
+                c1, c2 = st.columns(2)
+                
+                with c1:
+                    # Gráfico de Líneas de Ingeniería (Tendencia)
+                    fig_trend = px.line(data_filtered, x='fecha', y=['ingresos', 'gastos'], 
+                                        title="Evolución Financiera Temporal",
+                                        template="plotly_dark", color_discrete_sequence=['#00d4ff', '#ff4b4b'])
+                    st.plotly_chart(fig_trend, use_container_width=True)
+                
+                with c2:
+                    # Comparativa de Categorías
+                    fig_bar = px.bar(data_filtered, x='categoria', y='ingresos', color='categoria',
+                                     title="Ingresos por Unidad de Negocio",
+                                     template="plotly_dark")
+                    st.plotly_chart(fig_bar, use_container_width=True)
+                
+                # 7. Análisis de Correlación y Deep Dive
+                st.markdown("### 🔍 Análisis de Ingeniería de Datos")
+                tab1, tab2 = st.tabs(["Distribución de Gastos", "Data Raw para Auditoría"])
+                
+                with tab1:
+                    fig_pie = px.pie(data_filtered, values='gastos', names='categoria', hole=.4,
+                                     title="Distribución Porcentual del Gasto",
+                                     color_discrete_sequence=px.colors.sequential.RdBu)
+                    st.plotly_chart(fig_pie, use_container_width=True)
+                
+                with tab2:
+                    st.dataframe(data_filtered, use_container_width=True)
+                
+                # 8. Footer Informativo
+                st.info("💡 Reporte generado automáticamente para la Dirección de Nexion 2026.")
+                                st.write("Métricas de rendimiento de planta.")
     
             elif st.session_state.menu_sub == "OTD":
                 st.subheader("On-Time Delivery (OTD)")
@@ -2034,6 +2111,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
