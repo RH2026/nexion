@@ -89,7 +89,7 @@ vars_css = {
     "logo": "n1.png"
 }
 
-# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA - TABLAS POR DEFAULT) ──
+# ── CSS MAESTRO INTEGRAL (RESETEO TOTAL DE TABLAS) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -119,7 +119,7 @@ html, body {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
+/* 2. ANIMACIÓN DE ENTRADA */
 @keyframes fadeInUp {{ 
     from {{ opacity: 0; transform: translateY(15px); }} 
     to {{ opacity: 1; transform: translateY(0); }} 
@@ -129,7 +129,7 @@ html, body {{
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* 3. TÍTULOS Y OPERATIONAL QUERY */
+/* 3. TÍTULOS */
 h3, .op-query-text {{ 
     font-size: 11px !important; 
     letter-spacing: 8px !important; 
@@ -163,7 +163,7 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* 5. INPUTS Y SELECTORES (TABLAS ELIMINADAS PARA DEFAULT) */
+/* 5. INPUTS Y SELECTORES */
 .stTextInput input {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -207,21 +207,21 @@ input[data-testid="stDateInputView"] {{
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
-    animation: none !important; 
-    transform: none !important; 
 }}
 
 /* 7. GRÁFICOS / IFRAME */
 .stPlotlyChart {{
     visibility: visible !important;
     opacity: 1 !important;
-    min-height: 300px !important;
 }}
 
 iframe {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
 }}
+
+/* NOTA: SE ELIMINARON TODOS LOS ESTILOS DE TABLA PARA RECUPERAR EL AZUL NATIVO */
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -2111,6 +2111,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
