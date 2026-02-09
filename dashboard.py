@@ -1229,6 +1229,27 @@ else:
         # 3. REPORTES
         elif st.session_state.menu_main == "REPORTES":
             st.subheader(f"MÓDULO DE INTELIGENCIA > {st.session_state.menu_sub}")
+
+            # Aquí creamos el "espacio" para cada uno
+            if st.session_state.menu_sub == "APQ":
+                st.subheader("Análisis de Producto y Quejas (APQ)")
+                # [Aquí va tu código o función para el reporte APQ]
+                st.info("Cargando datos de calidad...")
+                # Ejemplo: st.dataframe(df_apq)
+    
+            elif st.session_state.menu_sub == "OPS":
+                st.subheader("Eficiencia Operativa (OPS)")
+                # [Aquí va tu código o función para el reporte OPS]
+                st.write("Métricas de rendimiento de planta.")
+    
+            elif st.session_state.menu_sub == "OTD":
+                st.subheader("On-Time Delivery (OTD)")
+                # [Aquí va tu código o función para el reporte OTD]
+                st.bar_chart({"Entregas": [10, 20, 15, 30]})
+
+
+
+        
     
         # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
         elif st.session_state.menu_main == "FORMATOS":
@@ -2013,6 +2034,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
