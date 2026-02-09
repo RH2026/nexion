@@ -185,7 +185,7 @@ div.stButton > button:hover {{
 
 /* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
 div[data-baseweb="select"] div {{
-    font-size: 12px !important; /* Ajusta este tamaño a tu gusto */
+    font-size: 12px !important; 
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
 }}
@@ -204,27 +204,25 @@ input[data-testid="stDateInputView"] {{
     overflow: hidden !important;
 }}
 
-/* CANVAS – MALLA QUE NO DESAPARECE */
+/* CANVAS – MALLA REPARADA (SIN FILTRO QUE APAGUE EL AZUL) */
 [data-testid="data-grid-canvas"] {{
     background-color: {vars_css['bg']} !important;
-
     background-image:
         repeating-linear-gradient(
             to right,
-            rgba(75,85,99,0.9) 0px,
-            rgba(75,85,99,0.9) 1.25px,
+            rgba(75,85,99,0.3) 0px,
+            rgba(75,85,99,0.3) 1.25px,
             transparent 1.25px,
             transparent 72px
         ),
         repeating-linear-gradient(
             to bottom,
-            rgba(75,85,99,0.9) 0px,
-            rgba(75,85,99,0.9) 1.25px,
+            rgba(75,85,99,0.3) 0px,
+            rgba(75,85,99,0.3) 1.25px,
             transparent 1.25px,
             transparent 36px
-        );
-
-    filter: brightness(0.96) contrast(1.12) !important;
+        ) !important;
+    filter: none !important; /* ELIMINADO EL OSCURECIMIENTO PARA RECUPERAR EL AZUL */
 }}
 
 /* Encabezados */
@@ -236,20 +234,20 @@ input[data-testid="stDateInputView"] {{
     border-bottom: 1px solid {vars_css['border']} !important;
 }}
 
-/* Texto */
-[data-testid="stDataEditor"] * {{
+/* Texto (AJUSTADO PARA NO SOBRESCRIBIR LAS BARRAS) */
+[data-testid="stDataEditor"] [role="gridcell"] {{
     color: {vars_css['text']} !important;
 }}
 
 /* Intentamos atacar el contenedor del canvas */
-    [data-testid="stDataEditor"] div:hover {{
-        background-color: rgba(255, 255, 255, 0.05) !important;
-    }}
+[data-testid="stDataEditor"] div:hover {{
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}}
 
-    /* Ajuste global para el tema oscuro en editores */
-    .st-emotion-cache-1y4p8pa {{
-        border: 1px solid #1C2529 !important;
-    }}
+/* Ajuste global para el tema oscuro en editores */
+.st-emotion-cache-1y4p8pa {{
+    border: 1px solid #1C2529 !important;
+}}
 
 /* 6. FOOTER FIJO */
 .footer {{ 
@@ -2169,6 +2167,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
