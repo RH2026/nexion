@@ -1238,82 +1238,102 @@ else:
     
             elif st.session_state.menu_sub == "OPS":
                 st.subheader("Eficiencia Operativa (OPS)")
-                # 1. Inyectar tu CSS Maestro
-                def local_css(url):
-                    response = requests.get(url)
-                    if response.status_status == 200:
-                        st.markdown(f'<style>{response.text}</style>', unsafe_allow_html=True)
-                                
-                # 2. Carga de Datos
+                # 1. Estilo CSS para que se vea "Pro"
+                st.markdown("""
+                    <style>
+                    .main { background-color: #0e1117; }
+                    div[data-testid="stMetricValue"] { font-size: 28px; color: #00d4ff; }
+                    .stDataFrame { border: 1px solid #30363d; }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # 2. Carga y Procesamiento de Datos
                 @st.cache_data
                 def load_data():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
                     df = pd.read_csv(url)
-                    # Convertir fecha a datetime
-                    df['fecha'] = pd.to_datetime(df['fecha'])
-                    df['mes'] = df['fecha'].dt.month_name()
+                    
+                    # Ordenar meses cronológicamente para que las gráficas no salgan alfabéticas
+                    orden_meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 
+                                    'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
+                    df['MES'] = df['MES'].str.upper().str.strip()
+                    df['MES'] = pd.Categorical(df['MES'], categories=orden_meses, ordered=True)
+                    df = df.sort_values('MES')
+                    
+                    # Limpieza de porcentajes si vienen como texto (ej. "10%")
+                    cols_porcentaje = ['% DE INCIDENCIAS', '% DE INCREMENTO VS 2024']
+                    for col in cols_porcentaje:
+                        if df[col].dtype == 'object':
+                            df[col] = df[col].str.replace('%', '').astype(float)
+                            
                     return df
                 
-                try:
-                    df = load_data()
-                except Exception as e:
-                    st.error(f"Error al cargar datos: {e}")
-                    st.stop()
+                df = load_data()
                 
-                # 3. Sidebar - Filtros de Ingeniería
-                st.sidebar.header("📊 Filtros Maestros")
-                month_filter = st.sidebar.multiselect("Seleccionar Mes", options=df['mes'].unique(), default=df['mes'].unique())
-                data_filtered = df[df['mes'].isin(month_filter)]
+                # --- SIDEBAR ---
+                st.sidebar.header("📊 Filtros de Operación")
+                meses_seleccionados = st.sidebar.multiselect("Periodos a Evaluar", 
+                                                             options=df['MES'].unique(), 
+                                                             default=df['MES'].unique())
                 
-                # 4. Header de Reporte
-                st.title("🚀 Business Intelligence & Financial Report 2026")
+                df_filt = df[df['MES'].isin(meses_seleccionados)]
+                
+                # --- HEADER ---
+                st.title("🚛 Nexion Logistics & Financial Analytics 2026")
                 st.markdown("---")
                 
-                # 5. KPIs Principales (Métricas de Dirección)
+                # --- BLOQUE 1: KPIs DE DIRECCIÓN ---
                 col1, col2, col3, col4 = st.columns(4)
-                total_revenue = data_filtered['ingresos'].sum()
-                total_costs = data_filtered['gastos'].sum()
-                margin = ((total_revenue - total_costs) / total_revenue) * 100
                 
                 with col1:
-                    st.metric("Total Ingresos", f"${total_revenue:,.2f}", delta="8.5%")
+                    total_fact = df_filt['FACTURACIÓN'].sum()
+                    st.metric("Facturación Total", f"${total_fact:,.2f}")
+                
                 with col2:
-                    st.metric("Costos Operativos", f"${total_costs:,.2f}", delta="-2.1%", delta_color="inverse")
+                    costo_log = df_filt['COSTO LOGÍSTICO'].sum()
+                    ratio_log = (costo_log / total_fact) * 100 if total_fact != 0 else 0
+                    st.metric("Costo Logístico", f"${costo_log:,.2f}", f"{ratio_log:.1f}% del Revenue")
+                
                 with col3:
-                    st.metric("Margen Neto", f"{margin:.2f}%", delta="1.2%")
+                    avg_incidencias = df_filt['% DE INCIDENCIAS'].mean()
+                    st.metric("Promedio Incidencias", f"{avg_incidencias:.2f}%", delta="-0.5%", delta_color="inverse")
+                
                 with col4:
-                    st.metric("ROI Proyectado", "24.8%", delta="0.5%")
+                    cajas = df_filt['CAJAS ENVIADAS'].sum()
+                    st.metric("Volumen Total", f"{cajas:,.0f} Cajas")
                 
-                # 6. Análisis Gráfico Profundo
-                st.markdown("### 📈 Análisis de Tendencias y Comparativas")
-                c1, c2 = st.columns(2)
-                
-                with c1:
-                    # Gráfico de Líneas de Ingeniería (Tendencia)
-                    fig_trend = px.line(data_filtered, x='fecha', y=['ingresos', 'gastos'], 
-                                        title="Evolución Financiera Temporal",
-                                        template="plotly_dark", color_discrete_sequence=['#00d4ff', '#ff4b4b'])
-                    st.plotly_chart(fig_trend, use_container_width=True)
-                
-                with c2:
-                    # Comparativa de Categorías
-                    fig_bar = px.bar(data_filtered, x='categoria', y='ingresos', color='categoria',
-                                     title="Ingresos por Unidad de Negocio",
-                                     template="plotly_dark")
-                    st.plotly_chart(fig_bar, use_container_width=True)
-                
-                # 7. Análisis de Correlación y Deep Dive
-                st.markdown("### 🔍 Análisis de Ingeniería de Datos")
-                tab1, tab2 = st.tabs(["Distribución de Gastos", "Data Raw para Auditoría"])
+                # --- BLOQUE 2: ANÁLISIS DE INGENIERÍA ---
+                st.markdown("### 📈 Análisis Comparativo y Eficiencia")
+                tab1, tab2 = st.tabs(["Eficiencia por Caja", "Incidencias vs Metas"])
                 
                 with tab1:
-                    fig_pie = px.pie(data_filtered, values='gastos', names='categoria', hole=.4,
-                                     title="Distribución Porcentual del Gasto",
-                                     color_discrete_sequence=px.colors.sequential.RdBu)
-                    st.plotly_chart(fig_pie, use_container_width=True)
+                    # Gráfica de barras doble: Costo por Caja 2025 vs 2026
+                    fig_eficiencia = go.Figure()
+                    fig_eficiencia.add_trace(go.Bar(x=df_filt['MES'], y=df_filt['COSTO POR CAJA 2025'], name='Costo Caja 2025', marker_color='#444'))
+                    fig_eficiencia.add_trace(go.Bar(x=df_filt['MES'], y=df_filt['COSTO POR CAJA'], name='Costo Caja 2026', marker_color='#00d4ff'))
+                    
+                    fig_eficiencia.update_layout(title="Comparativa Costo por Caja (Año vs Año)", template="plotly_dark", barmode='group')
+                    st.plotly_chart(fig_eficiencia, use_container_width=True)
                 
                 with tab2:
-                    st.dataframe(data_filtered, use_container_width=True)
+                    # Análisis de Incidencias vs Meta
+                    fig_inc = px.line(df_filt, x='MES', y=['% DE INCIDENCIAS', 'META INDICADOR'], 
+                                      title="Control de Calidad: Incidencias vs Meta",
+                                      color_discrete_map={'% DE INCIDENCIAS': '#ff4b4b', 'META INDICADOR': '#00ff00'},
+                                      markers=True, template="plotly_dark")
+                    st.plotly_chart(fig_inc, use_container_width=True)
+                
+                # --- BLOQUE 3: MATRIZ DE DATOS ---
+                st.markdown("### 📋 Detalle de Auditoría")
+                # Formatear la tabla para dirección
+                st.dataframe(df_filt.style.format({
+                    'FACTURACIÓN': '${:,.2f}',
+                    'COSTO LOGÍSTICO': '${:,.2f}',
+                    'COSTO POR CAJA': '${:,.2f}',
+                    '% DE INCIDENCIAS': '{:.2f}%'
+                }).highlight_max(subset=['FACTURACIÓN'], color='#1f3a3a'), use_container_width=True)
+                
+                st.sidebar.info(f"**Análisis Activo:** {len(df_filt)} Meses cargados.")
                 
                 
                                 
@@ -2110,6 +2130,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
