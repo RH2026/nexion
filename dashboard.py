@@ -1349,8 +1349,8 @@ else:
                 
                     c4, c5, c6 = st.columns(3)
                     with c4:
-                    # Ajuste: Texto "Target 2026" y valor fijo "$59.00"
-                    st.markdown(f"<div class='metric-card'><div class='label'>Costo por Caja</div><div class='value'>${df_m['CC26']:.2f}</div><div class='meta-ind'>Target 2026: $59.00</div></div>", unsafe_allow_html=True)
+                        # Ajuste: Texto "Target 2026" y valor fijo "$59.00"
+                        st.markdown(f"<div class='metric-card'><div class='label'>Costo por Caja</div><div class='value'>${df_m['CC26']:.2f}</div><div class='meta-ind'>Target 2026: $59.00</div></div>", unsafe_allow_html=True)
                     with c5:
                         st.markdown(f"<div class='metric-card'><div class='label'>Valuación Incidencias</div><div class='value' style='color:#eab308'>${df_m['VAL_INC']:,.0f}</div><div class='meta-ind'>Pérdida Estimada Operativa</div></div>", unsafe_allow_html=True)
                     with c6:
@@ -2197,6 +2197,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
