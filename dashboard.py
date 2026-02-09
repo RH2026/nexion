@@ -7,6 +7,7 @@ import streamlit.components.v1 as components
 import requests
 from io import StringIO
 import plotly.graph_objects as go
+import plotly.express as px
 import time
 from github import Github
 import json
@@ -2130,6 +2131,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
