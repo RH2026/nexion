@@ -1583,19 +1583,18 @@ else:
                 # =========================================================--
                 # --- 1. LA VACUNA DEFINITIVA (Pon esto justo antes de los botones) ---
                 st.markdown("""
-                    <style>
-                        /* Oculta CUALQUIER residuo de componentes HTML */
-                        iframe[title="st.components.v1.html"] {
-                            display: none !important;
-                            height: 0px !important;
-                            border: none !important;
-                        }
-                        /* Ajuste para que los botones de descarga y normales se vean idénticos */
-                        .stDownloadButton, .stButton {
-                            display: flex;
-                            justify-content: center;
-                        }
-                    </style>
+                <style>
+                /* SOLO ocultamos iframes de impresión manual */
+                iframe[data-testid="stHtml"] {
+                    height: 0px !important;
+                    border: none !important;
+                }
+                
+                /* Alineación idéntica de botones */
+                .stButton, .stDownloadButton {
+                    width: 100%;
+                }
+                </style>
                 """, unsafe_allow_html=True)
                 
                 # --- 2. BLOQUE DE ACCIONES CLONADO ---
@@ -2402,6 +2401,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
