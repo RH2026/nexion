@@ -1326,7 +1326,7 @@ else:
                 df_a = cargar_datos_maestros()
                 
                 if df_a is not None:
-                    st.markdown("<div class='main-title'>NEXION OPERATIONAL ANALYTICS</div>", unsafe_allow_html=True)
+                    st.markdown("<div class='main-title'></div>", unsafe_allow_html=True)
                     col_sel, _ = st.columns([1, 3])
                     with col_sel:
                         mes_sel = st.selectbox("", df_a["MES"].unique(), label_visibility="collapsed")
@@ -2197,6 +2197,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
