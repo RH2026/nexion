@@ -1248,80 +1248,75 @@ else:
                 """, unsafe_allow_html=True)
                 
                 @st.cache_data
-                def load_data():
+                def load_data_blindada():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
-                    # Cargamos con latin-1 para que las tildes de tus columnas no rompan el código
-                    df = pd.read_csv(url, encoding='latin-1', sep=None, engine='python')
                     
-                    # Limpieza forzada de nombres para eliminar espacios invisibles que mete Excel
-                    df.columns = [c.strip() for c in df.columns]
-                    
-                    # Función para limpiar números (quita $, %, comas y espacios)
-                    def clean_num(v):
-                        if pd.isna(v): return 0.0
-                        s = str(v).replace('$', '').replace('%', '').replace(',', '').strip()
-                        try: return float(s)
-                        except: return 0.0
+                    # Leemos el archivo de la forma más cruda posible para evitar ValueErrors
+                    try:
+                        # Probamos con punto y coma (común en Excel en español)
+                        df = pd.read_csv(url, sep=';', encoding='latin-1', on_bad_lines='skip')
+                        if len(df.columns) < 2: # Si no detectó columnas, intentamos con coma
+                            df = pd.read_csv(url, sep=',', encoding='latin-1', on_bad_lines='skip')
+                    except:
+                        df = pd.read_csv(url, encoding='latin-1', on_bad_lines='skip')
                 
-                    # Columnas numéricas críticas según tu lista
-                    cols_num = ['FACTURACIÓN', 'COSTO LOGÍSTICO', 'COSTO POR CAJA', 
-                                'COSTO POR CAJA 2024', 'VALUACION INCIDENCIAS', 'CAJAS ENVIADAS']
+                    # Limpiamos nombres de columnas de espacios y basura
+                    df.columns = [str(c).strip().upper() for c in df.columns]
                     
-                    for c in cols_num:
-                        if c in df.columns:
-                            df[c] = df[c].apply(clean_num)
+                    # Limpiamos los datos numéricos (quitar $, %, comas)
+                    def clean_val(x):
+                        try:
+                            if pd.isna(x): return 0.0
+                            return float(str(x).replace('$', '').replace('%', '').replace(',', '').strip())
+                        except:
+                            return 0.0
+                
+                    # Mapeo por palabras clave (sin importar tildes)
+                    c_mes = next((c for c in df.columns if 'MES' in c), df.columns[0])
+                    c_fact = next((c for c in df.columns if 'FACT' in c), None)
+                    c_costo = next((c for c in df.columns if 'LOGISTICO' in c), None)
+                    c_caja26 = next((c for c in df.columns if 'COSTO POR CAJA' in c and '2024' not in c), None)
+                    c_caja24 = next((c for c in df.columns if '2024' in c), None)
+                
+                    for c in [c_fact, c_costo, c_caja26, c_caja24]:
+                        if c: df[c] = df[c].apply(clean_val)
                             
-                    return df
+                    return df, c_mes, c_fact, c_costo, c_caja26, c_caja24
                 
-                df = load_data()
+                # Ejecución
+                df, mes, fact, costo, caja26, caja24 = load_data_blindada()
                 
-                # --- INTERFAZ ---
-                st.title("🚛 Nexion Logistics & Financial Intelligence 2026")
+                st.title("🚛 Control de Operaciones Nexion 2026")
                 
                 if df.empty:
-                    st.error("No se detectaron datos en el archivo.")
+                    st.error("Error: El archivo está vacío o el formato es incompatible.")
                 else:
-                    # 1. KPIs DE DIRECCIÓN
-                    m1, m2, m3, m4 = st.columns(4)
-                    
-                    with m1:
-                        total_fact = df['FACTURACIÓN'].sum()
-                        st.metric("Facturación Total", f"${total_fact:,.2f}")
-                    
-                    with m2:
-                        costo_log = df['COSTO LOGÍSTICO'].sum()
-                        st.metric("Costo Logístico", f"${costo_log:,.2f}")
-                        
-                    with m3:
-                        caja_26 = df['COSTO POR CAJA'].mean()
-                        caja_24 = df['COSTO POR CAJA 2024'].mean()
-                        # Cálculo de eficiencia
-                        delta_caja = ((caja_26 - caja_24) / caja_24 * 100) if caja_24 != 0 else 0
-                        st.metric("Costo/Caja Promedio", f"${caja_26:.2f}", f"{delta_caja:.1f}% vs 2024", delta_color="inverse")
-                        
-                    with m4:
-                        incidencias = df['VALUACION INCIDENCIAS'].sum()
-                        st.metric("Valuación Incidencias", f"${incidencias:,.2f}")
+                    # MÉTRICAS DE NIVEL DIRECCIÓN
+                    col1, col2, col3 = st.columns(3)
+                    if fact:
+                        col1.metric("Facturación Total", f"${df[fact].sum():,.2f}")
+                    if costo:
+                        col2.metric("Costo Logístico", f"${df[costo].sum():,.2f}")
+                    if caja26:
+                        col3.metric("Costo/Caja Avg", f"${df[caja26].mean():.2f}")
                 
-                    # 2. GRÁFICA COMPARATIVA DE INGENIERÍA
-                    st.subheader("📈 Comparativa de Costo por Caja (2024 vs 2026)")
+                    # GRÁFICA COMPARATIVA
+                    st.subheader("Análisis de Ingeniería: 2024 vs 2026")
                     fig = go.Figure()
-                    fig.add_trace(go.Bar(x=df['MES'], y=df['COSTO POR CAJA 2024'], name='Año 2024', marker_color='#444444'))
-                    fig.add_trace(go.Bar(x=df['MES'], y=df['COSTO POR CAJA'], name='Año 2026', marker_color='#00d4ff'))
+                    if caja24:
+                        fig.add_trace(go.Bar(x=df[mes], y=df[caja24], name='2024', marker_color='gray'))
+                    if caja26:
+                        fig.add_trace(go.Bar(x=df[mes], y=df[caja26], name='2026', marker_color='#00d4ff'))
                     
-                    fig.update_layout(template="plotly_dark", barmode='group', margin=dict(l=20, r=20, t=40, b=20))
+                    fig.update_layout(template="plotly_dark", barmode='group')
                     st.plotly_chart(fig, use_container_width=True)
                 
-                    # 3. TABLA DE CONTROL DE DIRECCIÓN
-                    st.subheader("📋 Auditoría de Operaciones")
-                    # Formateamos la tabla para que se vea impecable
-                    st.dataframe(df.style.format({
-                        'FACTURACIÓN': '${:,.2f}',
-                        'COSTO LOGÍSTICO': '${:,.2f}',
-                        'COSTO POR CAJA': '${:,.2f}',
-                        'COSTO POR CAJA 2024': '${:,.2f}',
-                        'VALUACION INCIDENCIAS': '${:,.2f}'
-                    }), use_container_width=True)
+                    # TABLA DE AUDITORÍA (Aquí verás tus 5 líneas)
+                    st.subheader("Datos Maestros Detectados")
+                    st.dataframe(df)
+                
+                # Pie de página técnico
+                st.caption(f"Columnas detectadas: {list(df.columns)}")
                 
                 
                                 
@@ -2118,6 +2113,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
