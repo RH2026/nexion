@@ -1427,8 +1427,11 @@ else:
                         </div>""", unsafe_allow_html=True)
                 
                     # Botón de Descarga PDF al final
-                    
-                
+                    # --- TABLA DE DATOS FINAL (CONTRAÍDA) ---
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    with st.expander("📊 Ver Dataset Maestro", expanded=False):
+                        st.dataframe(df_a, use_container_width=True, hide_index=True)
+                                
                                 
     
             elif st.session_state.menu_sub == "OTD":
@@ -2198,6 +2201,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
