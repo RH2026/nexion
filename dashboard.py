@@ -1249,7 +1249,7 @@ else:
                 
                 @st.cache_data
                 def load_data_blindada():
-                    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis.csv"
+                    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
                     
                     # Leemos el archivo de la forma más cruda posible para evitar ValueErrors
                     try:
@@ -2113,6 +2113,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
