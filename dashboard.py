@@ -1257,10 +1257,8 @@ else:
                         df = pd.read_csv(url, encoding="latin-1", sep=None, engine='python')
                         df.columns = [str(c).strip().upper() for c in df.columns]
                         
-                        # Buscador flexible para ignorar tildes y espacios
                         def fcol(k): return next((c for c in df.columns if k in c), None)
                 
-                        # Mapeo de columnas a nombres cortos y seguros
                         mapeo = {
                             'MES': fcol('MES'), 'FLETE': fcol('FLETE'), 'FACT': fcol('FACTURACI'),
                             'CAJAS': fcol('CAJAS ENVIADAS'), 'LOGI': fcol('LOGI'), 'META': fcol('META'),
@@ -1280,7 +1278,6 @@ else:
                             try: return float(s)
                             except: return 0.0
                 
-                        # Crear DataFrame limpio
                         df_std = pd.DataFrame()
                         df_std['MES'] = df[mapeo['MES']]
                         for key, orig in mapeo.items():
@@ -1308,58 +1305,57 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
-                def render_card(label, value, footer, target=None, actual=None, inverse=False, b_base="border-blue"):
+                def render_card(label, value, footer, target=None, actual=None, inv=False, b_base="border-blue"):
                     color = "#f0f6fc"
                     border = b_base
                     if target is not None and actual is not None:
-                        is_alert = actual > target if not inverse else actual < target
-                        color = "#fb7185" if is_alert else "#00ffa2"
-                        border = "border-red" if is_alert else "border-green"
+                        is_bad = actual > target if not inv else actual < target
+                        color = "#fb7185" if is_bad else "#00ffa2"
+                        border = "border-red" if is_bad else "border-green"
                     st.markdown(f"<div class='card-container {border}'><div class='card-label'>{label}</div><div class='card-value' style='color:{color}'>{value}</div><div class='card-footer'>{footer}</div></div>", unsafe_allow_html=True)
                 
                 # --- 3. LÓGICA DE VISUALIZACIÓN ---
                 df_a = cargar_analisis_elite()
                 
                 if df_a is not None:
-                    # Selector central (Sin Sidebar)
                     meses = df_a["MES"].unique()
                     mes_sel = st.selectbox("PERIODO DE ANÁLISIS", meses)
                     df_m = df_a[df_a["MES"] == mes_sel].iloc[0]
                 
                     st.markdown(f'<h4 class="premium-header">RESULTADOS: {mes_sel}</h4>', unsafe_allow_html=True)
                 
-                    # 9 Tarjetas
+                    # Las 9 Tarjetas
                     c1, c2, c3 = st.columns(3)
                     with c1: render_card("Costo Logístico", f"{df_m['LOGI']:.1f}%", f"META: {df_m['META']}%", df_m['META'], df_m['LOGI'])
-                    with c2: render_card("Incremento + VI", f"${df_m['INCR']:,.0f}", "Impacto Real", 0, df_m['INCR'], inverse=True)
+                    with c2: render_card("Incremento + VI", f"${df_m['INCR']:,.0f}", "Impacto Real", 0, df_m['INCR'], inv=True)
                     with c3: render_card("% Incr. vs 2024", f"{df_m['VS24']:.1f}%", "Variación Anual", b_base="border-pink")
                 
                     c4, c5, c6 = st.columns(3)
                     with c4: render_card("Costo por Caja", f"${df_m['CC26']:.1f}", f"Target 24: ${df_m['CC24']:.1f}", df_m['CC24'], df_m['CC26'])
                     with c5: render_card("Valuación Incidencias", f"${df_m['VAL_INC']:,.0f}", "Mermas", b_base="border-yellow")
-                    with c6: render_card("% Incidencias", f"{df_m['POR_INC']:.2f}%", "Calidad Operativa", b_base="border-purple")
+                    with c6: render_card("% Incidencias", f"{df_m['POR_INC']:.2f}%", "Calidad", b_base="border-purple")
                 
                     c7, c8, c9 = st.columns(3)
                     with c7: render_card("Facturación", f"${df_m['FACT']:,.0f}", "Venta Bruta", b_base="border-blue")
                     with c8: render_card("Cajas Enviadas", f"{int(df_m['CAJAS']):,.0f}", "Volumen", b_base="border-purple")
                     with c9: render_card("Costo de Flete", f"${df_m['FLETE']:,.0f}", "Gasto de Flete", b_base="border-blue")
                 
-                    # Cálculos y Diagnóstico (Variables corregidas para evitar NameError)
-                    st.markdown(f'<div class="calc-box"><b>Metodología ({mes_sel}):</b><br>• Eficiencia: (${df_m["FLETE"]:,.2f} / ${df_m["FACT"]:,.2f}) = {df_m["LOGI"]:.2f}%<br>• Unitario: ${df_m["FLETE"]:,.2f} / {int(df_m["CAJAS"])} = ${df_m["CC26"]:.2f}</div>', unsafe_allow_html=True)
-                
+                    # --- 4. RADIOGRAFÍA Y DIAGNÓSTICO (SIN ERRORES) ---
                     eficiencia = df_m['META'] - df_m['LOGI']
+                    msg_clase = "OPTIMIZACIÓN RADICAL" if eficiencia >= 0.5 else "ESTABILIDAD" if eficiencia >= 0 else "EROSIÓN DE MARGEN"
                     msg_color = "#00ffa2" if eficiencia >= 0 else "#fb7185"
-                    st.markdown(f'<div class="insight-box" style="border-top:4px solid {msg_color}"><b>RADIOGRAFÍA:</b> Estamos operando {abs(eficiencia):.1f}% {"debajo" if eficiencia >= 0 else "arriba"} del objetivo. Cada $1,000 de venta consume ${(df_m["LOGI"]/100)*1000:.2f} de logística.</div>', unsafe_allow_html=True)
-                              
-                    
                 
                     st.markdown(f"""
+                    <div class="calc-box">
+                        <b>Metodología ({mes_sel}):</b><br>
+                        • Eficiencia: (${df_m['FLETE']:,.2f} / ${df_m['FACT']:,.2f}) = {df_m['LOGI']:.2f}%<br>
+                        • Unitario: ${df_m['FLETE']:,.2f} / {int(df_m['CAJAS'])} cajas = ${df_m['CC26']:.2f}
+                    </div>
                     <div class="insight-box" style="border-top: 4px solid {msg_color};">
                         <h4 style="color:{msg_color}; margin:0; font-family:Orbitron; font-size:0.9rem;">🩺 RADIOGRAFÍA ESTRATÉGICA: {msg_clase}</h4>
                         <p style="color:#f1f5f9; font-size:0.85rem; margin-top:15px; line-height:1.6;">
-                        <b>DICTAMEN TÉCNICO:</b> Cada $1,000 de venta genera un costo logístico de <b>${(df_mes['COSTO LOGÍSTICO']/100)*1000:.2f}</b>. 
-                        Estamos operando <b>{abs(eficiencia_vs_meta):.1f}%</b> {'por debajo' if eficiencia_vs_meta >= 0 else 'por arriba'} del objetivo mensual.
-                        La inflación interna de fletes se sitúa en <b>{df_mes['% DE INCREMENTO VS 2024']:.1f}%</b> respecto al año base.
+                        Estamos operando <b>{abs(eficiencia):.1f}%</b> {'debajo' if eficiencia >= 0 else 'arriba'} de la meta. 
+                        Cada $1,000 de venta consumen <b>${(df_m['LOGI']/100)*1000:.2f}</b> de logística.
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2164,6 +2160,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
