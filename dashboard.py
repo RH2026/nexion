@@ -89,7 +89,7 @@ vars_css = {
     "logo": "n1.png"
 }
 
-# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA Y SIN ERRORES) ──
+# ── CSS MAESTRO INTEGRAL (REPARACIÓN DEFINITIVA - TABLAS POR DEFAULT) ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -163,7 +163,7 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* 5. INPUTS */
+/* 5. INPUTS Y SELECTORES (TABLAS ELIMINADAS PARA DEFAULT) */
 .stTextInput input {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -174,7 +174,6 @@ div.stButton > button:hover {{
     letter-spacing: 2px; 
 }}
 
-/* Bajar tamaño de los nombres de los filtros (Labels) */
 [data-testid="stWidgetLabel"] p {{
     font-size: 12px !important;
     text-transform: uppercase !important;
@@ -183,70 +182,15 @@ div.stButton > button:hover {{
     font-weight: 600 !important;
 }}
 
-/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
 div[data-baseweb="select"] div {{
     font-size: 12px !important; 
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
 }}
 
-/* Cambiar el texto de ADENTRO del input de fecha */
 input[data-testid="stDateInputView"] {{
     font-size: 12px !important;
     color: {vars_css['text']} !important;
-}}
-
-/* Contenedor */
-[data-testid="stDataEditor"] {{
-    background-color: {vars_css['bg']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-}}
-
-/* CANVAS – MALLA REPARADA (SIN FILTRO QUE APAGUE EL AZUL) */
-[data-testid="data-grid-canvas"] {{
-    background-color: {vars_css['bg']} !important;
-    background-image:
-        repeating-linear-gradient(
-            to right,
-            rgba(75,85,99,0.3) 0px,
-            rgba(75,85,99,0.3) 1.25px,
-            transparent 1.25px,
-            transparent 72px
-        ),
-        repeating-linear-gradient(
-            to bottom,
-            rgba(75,85,99,0.3) 0px,
-            rgba(75,85,99,0.3) 1.25px,
-            transparent 1.25px,
-            transparent 36px
-        ) !important;
-    filter: none !important; /* ELIMINADO EL OSCURECIMIENTO PARA RECUPERAR EL AZUL */
-}}
-
-/* Encabezados */
-[data-testid="stTableColumnHeader"] {{
-    background-color: {vars_css['table_header']} !important;
-    color: {vars_css['text']} !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    border-bottom: 1px solid {vars_css['border']} !important;
-}}
-
-/* Texto (AJUSTADO PARA NO SOBRESCRIBIR LAS BARRAS) */
-[data-testid="stDataEditor"] [role="gridcell"] {{
-    color: {vars_css['text']} !important;
-}}
-
-/* Intentamos atacar el contenedor del canvas */
-[data-testid="stDataEditor"] div:hover {{
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}}
-
-/* Ajuste global para el tema oscuro en editores */
-.st-emotion-cache-1y4p8pa {{
-    border: 1px solid #1C2529 !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -267,7 +211,7 @@ input[data-testid="stDateInputView"] {{
     transform: none !important; 
 }}
 
-/* 7. GRÁFICOS / IFRAME (PLOTLY + FRAPPE) */
+/* 7. GRÁFICOS / IFRAME */
 .stPlotlyChart {{
     visibility: visible !important;
     opacity: 1 !important;
@@ -2167,6 +2111,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
