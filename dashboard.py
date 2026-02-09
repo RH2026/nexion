@@ -162,7 +162,7 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* 5. INPUTS */
+/* 5. INPUTS Y SELECTS */
 .stTextInput input {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -181,33 +181,7 @@ div.stButton > button:hover {{
     font-weight: 600 !important;
 }}
 
-div[data-baseweb="select"] div {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
-}}
-
-input[data-testid="stDateInputView"] {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* ───────── SECCIÓN DE TABLA (RESET NATIVO) ───────── */
-
-/* Solo mantenemos el borde y fondo general para que no desentone con el tema */
-[data-testid="stDataEditor"] {{
-    background-color: transparent !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 8px !important;
-}}
-
-/* Ajuste para que el editor de celdas combine con el fondo oscuro */
-.st-emotion-cache-1y4p8pa {{
-    border: 1px solid {vars_css['border']} !important;
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* ───────── FIN SECCIÓN DE TABLA ───────── */
+/* --- AQUÍ NO HAY NADA DE TABLAS, LAS DEJAMOS EN PAZ --- */
 
 /* 6. FOOTER FIJO */
 .footer {{ 
@@ -237,24 +211,11 @@ iframe {{
     border: 1px solid {vars_css['border']} !important;
 }}
 
-/* RECUPERACIÓN DEL AZUL EN FILTROS */
+/* CHIPS MULTISELECT */
 div[data-baseweb="tag"] {{
     background-color: #2563eb !important;
     color: #ffffff !important;
     border-radius: 4px !important;
-    font-weight: 600 !important;
-}}
-
-div[data-baseweb="tag"] span {{ color: #ffffff !important; }}
-div[data-baseweb="tag"] svg {{ fill: #ffffff !important; }}
-
-div[data-baseweb="select"] > div {{
-    background-color: rgba(37, 99, 235, 0.12) !important;
-    border: 1px solid #2563eb !important;
-}}
-
-div[data-baseweb="select"]:focus-within {{
-    box-shadow: 0 0 0 1px #2563eb !important;
 }}
 
 </style>
@@ -2294,6 +2255,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
