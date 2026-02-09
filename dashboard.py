@@ -1253,106 +1253,91 @@ else:
                 def load_data():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
                     
-                    # Intentamos cargar con 'latin-1' para evitar el error de decodificación de tildes
+                    # Probamos múltiples encodings por seguridad
                     try:
                         df = pd.read_csv(url, encoding='latin-1')
                     except:
                         df = pd.read_csv(url, encoding='utf-8', errors='replace')
                     
-                    # NORMALIZACIÓN MAESTRA DE COLUMNAS
-                    # 1. Quitamos espacios y pasamos a mayúsculas
-                    # 2. Reemplazamos tildes manualmente para evitar errores de referencia
-                    df.columns = (df.columns.str.strip().str.upper()
-                                  .str.replace('Ó', 'O').str.replace('Í', 'I')
-                                  .str.replace('Á', 'A').str.replace('É', 'E'))
-                    
-                    # Limpieza de la columna MES
-                    if 'MES' in df.columns:
-                        df['MES'] = df['MES'].astype(str).str.upper().str.strip()
-                        
-                        # Orden cronológico para Ingeniería Financiera
-                        orden_meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 
-                                        'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
-                        df['MES'] = pd.Categorical(df['MES'], categories=orden_meses, ordered=True)
-                        df = df.sort_values('MES')
+                    # 1. Limpieza radical de nombres de columnas
+                    # Quitamos espacios, tildes y caracteres especiales
+                    import unicodedata
+                    def normalize_str(text):
+                        text = str(text).upper().strip()
+                        text = "".join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+                        return text
                 
-                    # Limpieza de números (por si vienen con $ o ,)
+                    df.columns = [normalize_str(c) for c in df.columns]
+                    
+                    # 2. Identificación dinámica de columnas clave
+                    # Esto evita el KeyError: 'MES' porque busca la columna que contenga "MES"
+                    col_mes = next((c for c in df.columns if "MES" in c), None)
+                    
+                    if not col_mes:
+                        st.error(f"No se encontró columna de tiempo. Columnas disponibles: {list(df.columns)}")
+                        st.stop()
+                        
+                    # Renombrar para consistencia interna del código
+                    df = df.rename(columns={col_mes: 'MES_SISTEMA'})
+                    
+                    # 3. Limpieza de datos internos
+                    df['MES_SISTEMA'] = df['MES_SISTEMA'].apply(normalize_str)
+                    
+                    # Ordenar meses
+                    orden = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 
+                             'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
+                    df['MES_SISTEMA'] = pd.Categorical(df['MES_SISTEMA'], categories=orden, ordered=True)
+                    df = df.sort_values('MES_SISTEMA')
+                
+                    # Limpiar columnas numéricas (quitar $, %, comas)
                     for col in df.columns:
-                        if df[col].dtype == 'object' and col != 'MES':
-                            # Intentamos convertir a número si parece financiero
-                            try:
-                                df[col] = df[col].replace(r'[\$,%]', '', regex=True).astype(float)
-                            except:
-                                pass
-                                
+                        if df[col].dtype == 'object' and col != 'MES_SISTEMA':
+                            df[col] = df[col].astype(str).str.replace(r'[^\d.]', '', regex=True)
+                            df[col] = pd.to_numeric(df[col], errors='coerce')
+                            
                     return df
                 
-                # --- EJECUCIÓN ---
                 try:
                     df = load_data()
                 except Exception as e:
-                    st.error(f"Error fatal al leer el CSV: {e}")
+                    st.error(f"Error en carga: {e}")
                     st.stop()
                 
-                # --- DASHBOARD UI ---
-                st.title("🚀 Nexion Strategic Report 2026")
-                st.sidebar.header("Configuración de Reporte")
+                # --- INTERFAZ DINÁMICA ---
+                st.title("📊 Nexion Financial & Logistics Control")
                 
-                meses_disponibles = df['MES'].unique().dropna().tolist()
-                filtro_mes = st.sidebar.multiselect("Meses a Analizar", meses_disponibles, default=meses_disponibles)
-                df_filt = df[df['MES'].isin(filtro_mes)]
+                # Filtro inteligente
+                opciones_mes = df['MES_SISTEMA'].unique().dropna().tolist()
+                sel_mes = st.sidebar.multiselect("Seleccionar Periodos", opciones_mes, default=opciones_mes)
                 
-                # --- MÉTRICAS NIVEL DIRECCIÓN ---
-                c1, c2, c3, c4 = st.columns(4)
+                df_filt = df[df['MES_SISTEMA'].isin(sel_mes)]
                 
-                # Mapeo de nombres limpios (sin tildes por la normalización)
-                f_col = 'FACTURACION'
-                cl_col = 'COSTO LOGISTICO'
-                cp_col = 'COSTO POR CAJA'
-                cp25_col = 'COSTO POR CAJA 2025'
+                # --- DASHBOARD ---
+                # Usamos búsqueda parcial para las métricas por si cambian los nombres en el CSV
+                def get_col(name_part):
+                    return next((c for c in df.columns if name_part in c), None)
                 
-                with c1:
-                    total = df_filt[f_col].sum()
-                    st.metric("Facturación Total", f"${total:,.2f}")
-                with c2:
-                    costo = df_filt[cl_col].sum()
-                    st.metric("Costo Logístico", f"${costo:,.2f}", f"{(costo/total)*100:.1f}% del Rev")
-                with c3:
-                    caja_avg = df_filt[cp_col].mean()
-                    st.metric("Costo/Caja Promedio", f"${caja_avg:.2f}")
-                with c4:
-                    incidencias = df_filt['% DE INCIDENCIAS'].mean()
-                    st.metric("% Incidencias", f"{incidencias:.2f}%", delta="-0.8%", delta_color="inverse")
+                c_fact = get_col("FACTURACION")
+                c_costo = get_col("COSTO LOGISTICO")
+                c_caja = get_col("COSTO POR CAJA")
+                c_caja25 = get_col("COSTO POR CAJA 2025")
                 
-                # --- ANÁLISIS PROFUNDO ---
-                st.markdown("---")
-                col_a, col_b = st.columns([2, 1])
+                m1, m2, m3 = st.columns(3)
+                if c_fact and c_costo:
+                    m1.metric("Facturación", f"${df_filt[c_fact].sum():,.2f}")
+                    m2.metric("Costo Logístico", f"${df_filt[c_costo].sum():,.2f}")
+                    m3.metric("Eficiencia (Costo/Venta)", f"{(df_filt[c_costo].sum()/df_filt[c_fact].sum())*100:.1f}%")
                 
-                with col_a:
-                    st.subheader("📊 Comparativa Eficiencia de Costos (2025 vs 2026)")
+                # Gráfica Comparativa de Ingeniería
+                st.markdown("### 📈 Comparativa de Costos Unitarios")
+                if c_caja and c_caja25:
                     fig = go.Figure()
-                    fig.add_trace(go.Bar(x=df_filt['MES'], y=df_filt[cp25_col], name='Costo Caja 2025', marker_color='#555'))
-                    fig.add_trace(go.Bar(x=df_filt['MES'], y=df_filt[cp_col], name='Costo Caja 2026', marker_color='#00d4ff'))
-                    fig.update_layout(template="plotly_dark", barmode='group', height=400)
+                    fig.add_trace(go.Bar(x=df_filt['MES_SISTEMA'], y=df_filt[c_caja25], name='2025', marker_color='#4A4A4A'))
+                    fig.add_trace(go.Bar(x=df_filt['MES_SISTEMA'], y=df_filt[c_caja], name='2026', marker_color='#00D4FF'))
+                    fig.update_layout(template="plotly_dark", barmode='group', margin=dict(l=20, r=20, t=40, b=20))
                     st.plotly_chart(fig, use_container_width=True)
                 
-                with col_b:
-                    st.subheader("🎯 Desempeño vs Meta")
-                    fig_gauge = go.Figure(go.Indicator(
-                        mode = "gauge+number",
-                        value = incidencias,
-                        title = {'text': "% Incidencias Promedio"},
-                        gauge = {'axis': {'range': [0, 10]},
-                                 'bar': {'color': "#ff4b4b"},
-                                 'steps': [
-                                     {'range': [0, 3], 'color': "green"},
-                                     {'range': [3, 5], 'color': "yellow"}]}
-                    ))
-                    fig_gauge.update_layout(template="plotly_dark", height=400)
-                    st.plotly_chart(fig_gauge, use_container_width=True)
-                
-                # --- TABLA MAESTRA ---
-                with st.expander("🔍 Auditoría de Datos de Ingeniería"):
+                with st.expander("📂 Ver Tabla de Auditoría Completa"):
                     st.dataframe(df_filt, use_container_width=True)
                 
                 
@@ -2150,6 +2135,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
