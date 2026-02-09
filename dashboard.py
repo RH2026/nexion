@@ -1576,7 +1576,7 @@ else:
                     # Opcional: limpiar el componente después de un par de segundos
                     # import time
                     # time.sleep(2)
-                    # print_container.empty()            
+                    # print_container.empty()          
                 def descargar_excel_ingenieria(df_m, mes_sel):
                     output = io.BytesIO()
                     # Creamos el escritor de Excel con el motor xlsxwriter
@@ -2432,6 +2432,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
