@@ -1241,7 +1241,6 @@ else:
             elif st.session_state.menu_sub == "OPS":
                 st.subheader("Eficiencia Operativa (OPS)")
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
-                # --- 1. MOTOR DE DATOS (Mapeo Completo e Intacto) ---
                 @st.cache_data
                 def cargar_datos_maestros():
                     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
@@ -1283,15 +1282,14 @@ else:
                         st.error(f"Error cargando datos: {e}")
                         return None
                 
-                # --- 2. CSS DISEÑO ACTUALIZADO (TEXTOS CLAROS & ICONOS) ---
+                # --- 2. CSS DISEÑO ACTUALIZADO (TEXTOS CLAROS, SIN ICONOS, SIN FONDO EN ANÁLISIS) ---
                 st.markdown("""
-                    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
                     <style>
                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
                     
                     html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #050505; color: white; }
                     
-                    .main-title { font-weight: 900; font-size: 2.5rem; letter-spacing: -1.5px; color: #fff; margin-bottom: 0px; display: flex; align-items: center; gap: 10px; }
+                    .main-title { font-weight: 900; font-size: 2.5rem; letter-spacing: -1.5px; color: #fff; margin-bottom: 0px; }
                     .sub-title { color: #888; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
                 
                     /* Tarjetas */
@@ -1322,8 +1320,7 @@ else:
                     .radiografia { border-left: 4px solid #f472b6; }
                     .metodologia { border-left: 4px solid #10b981; }
                     
-                    .section-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; margin-top: 0; margin-bottom: 15px; font-weight: 700; }
-                    .material-icons { font-size: 20px; vertical-align: middle; }
+                    .section-title { font-size: 1rem; margin-top: 0; margin-bottom: 15px; font-weight: 700; }
                     </style>
                 """, unsafe_allow_html=True)
                 
@@ -1332,7 +1329,7 @@ else:
                 
                 if df_a is not None:
                     # FILTRO SUPERIOR
-                    st.markdown("<div class='main-title'><span class='material-icons' style='font-size:35px'>insights</span> NEXION OPERATIONAL ANALYTICS</div>", unsafe_allow_html=True)
+                    st.markdown("<div class='main-title'>NEXION OPERATIONAL ANALYTICS</div>", unsafe_allow_html=True)
                     col_sel, _ = st.columns([1, 3])
                     with col_sel:
                         mes_sel = st.selectbox("", df_a["MES"].unique(), label_visibility="collapsed")
@@ -1374,7 +1371,7 @@ else:
                     # 1. Metodología
                     st.markdown(f"""
                     <div class='section-box metodologia'>
-                        <div class='section-title' style='color:#10b981;'><span class='material-icons'>calculate</span> Metodología de Cálculo para {mes_sel}:</div>
+                        <div class='section-title' style='color:#10b981;'>Metodología de Cálculo para {mes_sel}:</div>
                         <p style='color:#E0E0E0; font-size:0.95rem; font-family:monospace;'>
                         • <b>Logístico:</b> (${df_m['FLETE']:,.2f} / ${df_m['FACT']:,.2f}) = <b>{df_m['LOGI']:.2f}%</b><br>
                         • <b>C/Caja:</b> ${df_m['FLETE']:,.2f} / {int(df_m['CAJAS'])} cajas = <b>${df_m['CC26']:.2f}</b><br>
@@ -1386,7 +1383,7 @@ else:
                     col_inf1, col_inf2 = st.columns(2)
                     with col_inf1:
                         st.markdown(f"""<div class='section-box deep-dive'>
-                            <div class='section-title' style='color:#38bdf8;'><span class='material-icons'>search</span> DEEP DIVE</div>
+                            <div class='section-title' style='color:#38bdf8;'>DEEP DIVE</div>
                             <p style='color:#CCC; font-size:0.9rem;'>
                             Durante el mes de <b>{mes_sel}</b>, la operación gestionó un flujo de <b>{int(df_m['CAJAS']):,.0f}</b> paquetes. 
                             El rendimiento financiero muestra una facturación de <b>${df_m['FACT']:,.2f}</b> con un costo unitario por caja de <b>${df_m['CC26']:.2f}</b>.
@@ -1396,7 +1393,7 @@ else:
                     with col_inf2:
                         estatus = "EFICIENCIA" if eficiencia >= 0 else "DESVIACIÓN"
                         st.markdown(f"""<div class='section-box radiografia'>
-                            <div class='section-title' style='color:#f472b6;'><span class='material-icons'>analytics</span> RADIOGRAFÍA</div>
+                            <div class='section-title' style='color:#f472b6;'>RADIOGRAFÍA</div>
                             <p style='color:#CCC; font-size:0.9rem;'>
                             Estado: <b style='color:#fff;'>{estatus} OPERATIVA</b><br>
                             La desviación respecto a la meta es de <b>{abs(eficiencia):.2f}%</b>. <br>
@@ -2204,6 +2201,7 @@ else:
         <a href="bio" target="_self" class="hernanphy-link">HERNANPHY</a>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
