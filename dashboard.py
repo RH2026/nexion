@@ -661,7 +661,7 @@ else:
                     col_space1, col_search, col_space2 = st.columns([1, 2, 1])
                     
                     with col_search:
-                        busqueda_manual = st.text_input("", key="busqueda_clean", placeholder="FACTURA O GUÍA...").strip()
+                        busqueda_manual = st.text_input("", key="busqueda_clean", placeholder="Ingrese numero de guia o factura...").strip()
                 
                     # LÓGICA DE AUTO-RELLENO: Si no hay búsqueda, usamos el primer registro del mes actual
                     if not busqueda_manual:
@@ -2447,6 +2447,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
