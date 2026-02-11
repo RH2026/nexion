@@ -83,7 +83,7 @@ vars_css = {
     "bg": "#10161F",      # Fondo profundo
     "card": "#1F2937",    # Color para las celdas (Azul grisáceo)
     "text": "#FFFFFF",    
-    "sub": "#94A3B8",     
+    "sub": "#FFFFFF",     
     "border": "#374151",  
     "table_header": "#2D3748", # Encabezados un poco más claros
     "logo": "n1.png"
@@ -2447,6 +2447,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
