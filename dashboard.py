@@ -162,15 +162,23 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* 5. INPUTS */
+/* 5. INPUTS ACTUALIZADOS */
 .stTextInput input {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
     border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
+    border-radius: 4px !important; 
     height: 45px !important; 
     text-align: center !important; 
     letter-spacing: 2px; 
+    transition: all 0.3s ease !important;
+}}
+
+/* Efecto Focus con llaves dobles para el f-string */
+.stTextInput input:focus {{
+    border-color: #2563eb !important; 
+    box-shadow: 0 0 0 1px #2563eb !important;
+    outline: none !important;
 }}
 
 /* Bajar tamaño de los nombres de los filtros (Labels) */
@@ -2457,6 +2465,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
