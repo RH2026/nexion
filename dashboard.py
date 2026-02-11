@@ -620,7 +620,7 @@ else:
                 .metric-title {{ color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; }}
                 .stat-circle {{ transform: rotate(-90deg); width: 160px; height: 160px; overflow: visible; }}
                 .stat-circle circle {{ fill: none; stroke-width: 15; }}
-                .stat-bg {{ stroke: #1B1E23; }}
+                .stat-bg {{ stroke: #3D4651; }}
                 .stat-progress {{ transition: stroke-dashoffset 0.8s ease-in-out; stroke-linecap: butt; }}
                 .stat-value {{ position: absolute; color: white; font-size: 22px; font-weight: 800; top: 50%; left: 50%; transform: translate(-50%, -50%); }}
                 .stat-percent {{ font-size: 16px; margin-top: 5px; font-weight: 700; }}
@@ -2480,6 +2480,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
