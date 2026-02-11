@@ -657,12 +657,21 @@ else:
                     st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                     st.markdown(f'<div class="op-query-text">CONSULTA DE ESTATUS LOGÍSTICO</div>', unsafe_allow_html=True)
                 
-                    # CREAMOS COLUMNAS PARA CENTRAR Y REDUCIR EL TAMAÑO (25% | 50% | 25%)
+                    # COLUMNAS PARA CENTRAR LA BÚSQUEDA
                     col_space1, col_search, col_space2 = st.columns([1, 2, 1])
                     
                     with col_search:
-                        busqueda = st.text_input("NUMERO DE RASTREO", key="busqueda_clean", placeholder="FACTURA O GUÍA...").strip()
+                        busqueda_manual = st.text_input("NUMERO DE RASTREO", key="busqueda_clean", placeholder="FACTURA O GUÍA...").strip()
                 
+                    # LÓGICA DE AUTO-RELLENO: Si no hay búsqueda, usamos el primer registro del mes actual
+                    if not busqueda_manual:
+                        hoy_ref = pd.Timestamp(datetime.now())
+                        # Filtramos por el mes actual (Febrero) para mostrar algo de inicio
+                        df_mes = df_raw[pd.to_datetime(df_raw["FECHA DE ENVÍO"], dayfirst=True).dt.month == hoy_ref.month]
+                        busqueda = str(df_mes.iloc[0]["NÚMERO DE PEDIDO"]) if not df_mes.empty else None
+                    else:
+                        busqueda = busqueda_manual
+
                     if busqueda:
                         resultado = df_raw[(df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda, case=False)) | (df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda, case=False))]
                 
@@ -696,7 +705,7 @@ else:
                                 status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True) <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
                                 color_entrega = status_color
 
-                            # RENDER EN UNA SOLA LÍNEA (MANTENIENDO TU DISEÑO CHULO)
+                            # RENDER EN UNA SOLA LÍNEA (TODO IGUALITO)
                             timeline_html = f'<div style="background: {vars_css["card"]}; padding: 30px; border-radius: 4px; border: 1px solid {vars_css["border"]}; margin-top: 10px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;"><h2 style="margin:0; color:{vars_css["text"]}; font-size:14px; letter-spacing:2px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding: 4px 12px; border-radius: 2px; font-weight:700; font-size:10px; border: 1px solid {status_color}; letter-spacing:1px;">{status_text}</span></div><div style="display: flex; align-items: center; width: 100%; position: relative; padding: 0 10px;"><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:400;">{f_envio}</div></div><div style="flex-grow: 1; height: 2px; background: {linea_1_2}; margin-bottom: 35px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">GUÍA</div><div style="font-size:10px; color:white; font-weight:400;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow: 1; height: 2px; background: {linea_2_3}; margin-bottom: 35px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">PROMESA</div><div style="font-size:10px; color:white; font-weight:400;">{f_promesa}</div></div><div style="flex-grow: 1; height: 2px; background: {linea_3_4}; margin-bottom: 35px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; box-shadow: {"0 0 10px "+color_entrega+"44" if entregado_real else "none"};"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:8px; font-weight:700;">ENTREGA</div><div style="font-size:10px; color:white; font-weight:400;">{f_entrega_val}</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 35px; border-top: 1px solid {vars_css["border"]}; padding-top: 20px;"><div style="text-align:left;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:12px;">{envio["FLETERA"]}</div></div><div style="text-align:left;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:12px;">{n_guia}</div></div><div style="text-align:left;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:12px;">{envio["DESTINO"]}</div></div></div></div>'
                             
                             st.markdown(timeline_html, unsafe_allow_html=True)
@@ -2438,6 +2447,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
