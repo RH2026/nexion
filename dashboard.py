@@ -599,12 +599,7 @@ else:
                 df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
                 en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
-                total_t = len(df_trans)
-    
-                # --- 4. SUBMENÚ Y RENDERIZADO ---
-                tab_rastreo, tab_estado, tab_volumen, tab_retrasos = st.tabs([
-                    "KPI´S", "RASTREO", "VOLUMEN", "RETRASOS"
-                ])
+                total_t = len(df_trans)  
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 # Definimos los 4 nombres de las pestañas
@@ -630,7 +625,7 @@ else:
                 with tab_rastreo:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.subheader("Rastreo de Guías y Facturas")
-                    # --- DENTRO DE TAB RASTREO ---
+                    # --- RASTREO ---
                     with tab_rastreo:
                         st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                         
@@ -2473,6 +2468,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
