@@ -625,8 +625,8 @@ else:
                 with tab_rastreo:
                     st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                     
-                    # 1. BARRA DE BÚSQUEDA MINIMALISTA (Sin el bloque negro)
-                    st.markdown('<style>.search-header { margin-bottom: 20px; } .search-label { color: white; font-size: 24px; font-weight: 700; margin-bottom: 10px; } div[data-baseweb="input"] { border-radius: 8px !important; background-color: #1e293b !important; border: 1px solid #334155 !important; }</style><div class="search-header"><div class="search-label"></div></div>', unsafe_allow_html=True)
+                    # 1. BARRA DE BÚSQUEDA MINIMALISTA
+                    st.markdown('<style>.search-header { margin-bottom: 20px; } .search-label { color: white; font-size: 24px; font-weight: 700; margin-bottom: 10px; } div[data-baseweb="input"] { border-radius: 8px !important; background-color: #1e293b !important; border: 1px solid #334155 !important; }</style><div class="search-header"><div class="search-label">Rastree su Envío</div></div>', unsafe_allow_html=True)
                 
                     busqueda = st.text_input("Ingresar el o los número de rastreo.", key="busqueda_clean", placeholder="Ej: Factura o Número de Guía").strip()
                 
@@ -642,6 +642,9 @@ else:
                             f_promesa = envio["PROMESA DE ENTREGA"]
                             f_entrega_val = envio["FECHA DE ENTREGA REAL"] if pd.notna(envio["FECHA DE ENTREGA REAL"]) else "PENDIENTE"
                             
+                            # Validar si tiene número de guía
+                            n_guia = envio["NÚMERO DE GUÍA"] if pd.notna(envio["NÚMERO DE GUÍA"]) and str(envio["NÚMERO DE GUÍA"]).strip() != "" else "Entregado a paquetería (Generando Guía)"
+                            
                             f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True)
                             f_entrega_dt = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True)
                             hoy = pd.Timestamp(datetime.now())
@@ -651,8 +654,8 @@ else:
                             else:
                                 status_text, status_color = ("ENTREGADO", "#00FFAA") if f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
                 
-                            # 2. RENDER DEL TIMELINE (Todo en una sola línea de HTML para evitar el error visual de la imagen)
-                            timeline_html = f'<div style="background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151; margin-top: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;"><h2 style="margin:0; color:white; font-size:18px; font-family:sans-serif;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}22; color:{status_color}; padding: 4px 12px; border-radius: 20px; font-weight:700; font-size:11px; border: 1px solid {status_color};">{status_text}</span></div><div style="display: flex; align-items: center; width: 100%; position: relative;"><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:14px; height:14px; background:#38bdf8; border-radius:50%;"></div><div style="font-size:10px; color:#9ca3af; margin-top:8px;">ENVÍO</div><div style="font-size:11px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 34px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:14px; height:14px; background:#a855f7; border-radius:50%;"></div><div style="font-size:10px; color:#9ca3af; margin-top:8px;">PROMESA</div><div style="font-size:11px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 34px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:18px; height:18px; background:{status_color}; border-radius:50%; box-shadow: 0 0 8px {status_color}66;"></div><div style="font-size:10px; color:#9ca3af; margin-top:6px;">ENTREGA REAL</div><div style="font-size:11px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; border-top: 1px solid #374151; padding-top: 20px;"><div style="color:#9ca3af; font-size:12px;"><b>Fletera:</b><br><span style="color:white;">{envio["FLETERA"]}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Guía:</b><br><span style="color:white;">{envio["NÚMERO DE GUÍA"]}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Destino:</b><br><span style="color:white;">{envio["DESTINO"]}</span></div></div></div>'
+                            # 2. RENDER DEL TIMELINE (HTML en una sola línea)
+                            timeline_html = f'<div style="background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151; margin-top: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;"><h2 style="margin:0; color:white; font-size:18px; font-family:sans-serif;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}22; color:{status_color}; padding: 4px 12px; border-radius: 20px; font-weight:700; font-size:11px; border: 1px solid {status_color};">{status_text}</span></div><div style="display: flex; align-items: center; width: 100%; position: relative;"><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:14px; height:14px; background:#38bdf8; border-radius:50%;"></div><div style="font-size:10px; color:#9ca3af; margin-top:8px;">ENVÍO</div><div style="font-size:11px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 34px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:14px; height:14px; background:#a855f7; border-radius:50%;"></div><div style="font-size:10px; color:#9ca3af; margin-top:8px;">PROMESA</div><div style="font-size:11px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 34px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:18px; height:18px; background:{status_color}; border-radius:50%; box-shadow: 0 0 8px {status_color}66;"></div><div style="font-size:10px; color:#9ca3af; margin-top:6px;">ENTREGA REAL</div><div style="font-size:11px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; border-top: 1px solid #374151; padding-top: 20px;"><div style="color:#9ca3af; font-size:12px;"><b>Fletera:</b><br><span style="color:white;">{envio["FLETERA"]}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Guía:</b><br><span style="color:white;">{n_guia}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Destino:</b><br><span style="color:white;">{envio["DESTINO"]}</span></div></div></div>'
                             
                             st.markdown(timeline_html, unsafe_allow_html=True)
                         else:
@@ -2393,6 +2396,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
