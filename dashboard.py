@@ -603,7 +603,7 @@ else:
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 tab_rastreo, tab_estado, tab_volumen, tab_retrasos = st.tabs([
-                    "📄 RASTREO", "⚙️ ESTADO DE CARGA", "📊 VOLUMEN", "⚠️ RETRASOS"
+                    "📄 KPI´S", "⚙️ RASTREO", "📊 VOLUMEN", "⚠️ RETRASOS"
                 ])
     
                 with tab_rastreo:
@@ -2357,6 +2357,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
