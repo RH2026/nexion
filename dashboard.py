@@ -319,22 +319,25 @@ button[data-baseweb="tab"] {{
 }}
 
 /* Estilo para la pestaña cuando está activa (seleccionada) */
-button[aria-selected="true"] {{
-    background-color: {vars_css['card']} !important; /* Fondo igual a tus celdas */
-    color: {vars_css['text']} !important; /* Texto blanco */
-    font-weight: 700 !important;
+div[data-baseweb="tab-list"] button[aria-selected="true"] {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
 }}
 
-/* La línea indicadora debajo del botón (Focus bar) */
+div[data-baseweb="tab-list"] button:focus, 
+div[data-baseweb="tab-list"] button:active {{
+    outline: none !important;
+    box-shadow: none !important;
+}}
+
+div[data-baseweb="tab-list"] button {{
+    background-color: transparent !important;
+    color: {vars_css['sub']} !important;
+    border: none !important;
+}}
+
 div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important; /* Color cian/verde neón para que resalte con clase */
-    height: 2px !important;
-}}
-
-/* Efecto Hover para que se sienta interactivo */
-button[data-baseweb="tab"]:hover {{
-    color: white !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: #00FFAA !important; 
 }}
 
 </style>
@@ -2431,6 +2434,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
