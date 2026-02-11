@@ -479,168 +479,168 @@ else:
     main_container = st.container()
     with main_container:
         # 1. DASHBOARD
-    if st.session_state.menu_main == "DASHBOARD":        
-        # --- CONFIGURACIÓN DE PÁGINA (MANTENIENDO TU DISEÑO) ---
-        st.markdown(f"""
-        <style>
-            .stApp {{ background-color: {vars_css['bg']} !important; }}
-            
-            .metric-container {{
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 0px;
-                width: 100%;
-            }}
-        
-            .metric-title {{
-                color: #94a3b8;
-                font-size: 10px;
-                text-transform: uppercase;
-                letter-spacing: 2px;
-                margin-bottom: 10px;
-                font-weight: 600;
-            }}
-        
-            .stat-circle {{
-                transform: rotate(-90deg);
-                width: 160px;
-                height: 160px;
-                overflow: visible; 
-            }}
-        
-            .stat-circle circle {{
-                fill: none;
-                stroke-width: 15;
-            }}
-        
-            .stat-bg {{ stroke: #151D29; }}
-            
-            .stat-progress {{
-                transition: stroke-dashoffset 0.8s ease-in-out;
-                stroke-linecap: butt;
-            }}
-        
-            .stat-value {{
-                position: absolute;
-                color: white;
-                font-size: 22px;
-                font-weight: 800;
-                font-family: 'Inter', sans-serif;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }}
-        
-            .stat-percent {{
-                font-size: 16px;
-                margin-top: 5px;
-                font-weight: 700;
-            }}
-
-            /* Estilo opcional para que los Tabs se parezcan a tu imagen */
-            .stTabs [data-baseweb="tab-list"] {{
-                gap: 10px;
-            }}
-            .stTabs [data-baseweb="tab"] {{
-                background-color: #003399; /* Azul como tu imagen */
-                border-radius: 4px;
-                color: white;
-                padding: 8px 16px;
-            }}
-        </style>
-        """, unsafe_allow_html=True)
-
-        # --- FUNCIONES INTERNAS ---
-        def cargar_datos():
-            t = int(time.time())
-            url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
-            try:
-                df = pd.read_csv(url, encoding='utf-8-sig')
-                df.columns = df.columns.str.strip()
-                return df
-            except Exception as e:
-                st.error(f"Error: {e}")
-                return None
-
-        def render_kpi(valor, total, titulo, color):
-            porc = (valor / total * 100) if total > 0 else 0
-            circunferencia = 238.76
-            offset = circunferencia - (porc / 100 * circunferencia)
-            
+        if st.session_state.menu_main == "DASHBOARD":        
+            # --- CONFIGURACIÓN DE PÁGINA (MANTENIENDO TU DISEÑO) ---
             st.markdown(f"""
-                <div class="metric-container">
-                    <div class="metric-title">{titulo}</div>
-                    <div style="position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;">
-                        <svg class="stat-circle" viewBox="0 0 100 100">
-                            <circle class="stat-bg" cx="50" cy="50" r="38"></circle>
-                            <circle class="stat-progress" cx="50" cy="50" r="38" 
-                                    style="stroke: {color}; 
-                                           stroke-dasharray: {circunferencia}; 
-                                           stroke-dashoffset: {offset};">
-                            </circle>
-                        </svg>
-                        <div class="stat-value">{valor}</div>
-                    </div>
-                    <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
-                </div>
+            <style>
+                .stApp {{ background-color: {vars_css['bg']} !important; }}
+                
+                .metric-container {{
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0px;
+                    width: 100%;
+                }}
+            
+                .metric-title {{
+                    color: #94a3b8;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                    margin-bottom: 10px;
+                    font-weight: 600;
+                }}
+            
+                .stat-circle {{
+                    transform: rotate(-90deg);
+                    width: 160px;
+                    height: 160px;
+                    overflow: visible; 
+                }}
+            
+                .stat-circle circle {{
+                    fill: none;
+                    stroke-width: 15;
+                }}
+            
+                .stat-bg {{ stroke: #151D29; }}
+                
+                .stat-progress {{
+                    transition: stroke-dashoffset 0.8s ease-in-out;
+                    stroke-linecap: butt;
+                }}
+            
+                .stat-value {{
+                    position: absolute;
+                    color: white;
+                    font-size: 22px;
+                    font-weight: 800;
+                    font-family: 'Inter', sans-serif;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                }}
+            
+                .stat-percent {{
+                    font-size: 16px;
+                    margin-top: 5px;
+                    font-weight: 700;
+                }}
+    
+                /* Estilo opcional para que los Tabs se parezcan a tu imagen */
+                .stTabs [data-baseweb="tab-list"] {{
+                    gap: 10px;
+                }}
+                .stTabs [data-baseweb="tab"] {{
+                    background-color: #003399; /* Azul como tu imagen */
+                    border-radius: 4px;
+                    color: white;
+                    padding: 8px 16px;
+                }}
+            </style>
             """, unsafe_allow_html=True)
-
-        # --- 1. PROCESAMIENTO DE DATOS ---
-        df_raw = cargar_datos()
-        
-        if df_raw is not None:
-            tz_gdl = pytz.timezone('America/Mexico_City')
-            hoy_gdl = datetime.now(tz_gdl).date()
-            hoy_dt = pd.Timestamp(hoy_gdl)
-            meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
+    
+            # --- FUNCIONES INTERNAS ---
+            def cargar_datos():
+                t = int(time.time())
+                url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+                try:
+                    df = pd.read_csv(url, encoding='utf-8-sig')
+                    df.columns = df.columns.str.strip()
+                    return df
+                except Exception as e:
+                    st.error(f"Error: {e}")
+                    return None
+    
+            def render_kpi(valor, total, titulo, color):
+                porc = (valor / total * 100) if total > 0 else 0
+                circunferencia = 238.76
+                offset = circunferencia - (porc / 100 * circunferencia)
+                
+                st.markdown(f"""
+                    <div class="metric-container">
+                        <div class="metric-title">{titulo}</div>
+                        <div style="position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;">
+                            <svg class="stat-circle" viewBox="0 0 100 100">
+                                <circle class="stat-bg" cx="50" cy="50" r="38"></circle>
+                                <circle class="stat-progress" cx="50" cy="50" r="38" 
+                                        style="stroke: {color}; 
+                                               stroke-dasharray: {circunferencia}; 
+                                               stroke-dashoffset: {offset};">
+                                </circle>
+                            </svg>
+                            <div class="stat-value">{valor}</div>
+                        </div>
+                        <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+            # --- 1. PROCESAMIENTO DE DATOS ---
+            df_raw = cargar_datos()
             
-            col_f1, _ = st.columns([1, 4])
-            with col_f1:
-                mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
-        
-            df = df_raw.copy()
-            for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
-        
-            df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
-        
-            # Cálculos
-            total_p = len(df_mes)
-            entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
-            df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
-            en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
-            retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
-            total_t = len(df_trans)
-
-            # --- 2. SUBMENÚ (TABS) ---
-            tab_rastreo, tab_estado, tab_volumen, tab_retrasos = st.tabs([
-                "📋 RASTREO", "⚙️ ESTADO DE CARGA", "📊 VOLUMEN", "⚠️ RETRASOS"
-            ])
-
-            # RENDERIZADO POR PESTAÑA
-            with tab_rastreo:
-                c1, c2, c3, c4, c5 = st.columns(5)
-                with c1: render_kpi(total_p, total_p, "Pedidos", "#ffffff")
-                with c2: render_kpi(entregados, total_p, "Entregados", "#00FFAA")
-                with c3: render_kpi(total_t, total_p, "Tránsito", "#38bdf8")
-                with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#a855f7")
-                with c5: render_kpi(retrasados, total_p, "Retraso", "#ff4b4b")
+            if df_raw is not None:
+                tz_gdl = pytz.timezone('America/Mexico_City')
+                hoy_gdl = datetime.now(tz_gdl).date()
+                hoy_dt = pd.Timestamp(hoy_gdl)
+                meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
+                
+                col_f1, _ = st.columns([1, 4])
+                with col_f1:
+                    mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
             
-                st.markdown("<br><br>", unsafe_allow_html=True)
-                with st.expander("DETALLE OPERATIVO"):
-                    st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
-
-            with tab_estado:
-                st.info("Sección: Actualización de Logística / Estado de Carga")
-                # Aquí puedes meter contenido adicional sin que afecte a la primera pestaña
-
-            with tab_volumen:
-                st.write("Visualización de Volumen")
-
-            with tab_retrasos:
-                st.write("Análisis de Retrasos")
+                df = df_raw.copy()
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                    df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+            
+                df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
+            
+                # Cálculos
+                total_p = len(df_mes)
+                entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
+                df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
+                en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
+                retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
+                total_t = len(df_trans)
+    
+                # --- 2. SUBMENÚ (TABS) ---
+                tab_rastreo, tab_estado, tab_volumen, tab_retrasos = st.tabs([
+                    "📋 RASTREO", "⚙️ ESTADO DE CARGA", "📊 VOLUMEN", "⚠️ RETRASOS"
+                ])
+    
+                # RENDERIZADO POR PESTAÑA
+                with tab_rastreo:
+                    c1, c2, c3, c4, c5 = st.columns(5)
+                    with c1: render_kpi(total_p, total_p, "Pedidos", "#ffffff")
+                    with c2: render_kpi(entregados, total_p, "Entregados", "#00FFAA")
+                    with c3: render_kpi(total_t, total_p, "Tránsito", "#38bdf8")
+                    with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#a855f7")
+                    with c5: render_kpi(retrasados, total_p, "Retraso", "#ff4b4b")
+                
+                    st.markdown("<br><br>", unsafe_allow_html=True)
+                    with st.expander("DETALLE OPERATIVO"):
+                        st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
+    
+                with tab_estado:
+                    st.info("Sección: Actualización de Logística / Estado de Carga")
+                    # Aquí puedes meter contenido adicional sin que afecte a la primera pestaña
+    
+                with tab_volumen:
+                    st.write("Visualización de Volumen")
+    
+                with tab_retrasos:
+                    st.write("Análisis de Retrasos")
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -2367,6 +2367,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
