@@ -309,6 +309,34 @@ div[data-baseweb="select"]:focus-within {{
     box-shadow: 0 0 0 1px #2563eb !important;
 }}
 
+/* Eliminar el azul de fondo de la pestaña seleccionada */
+button[data-baseweb="tab"] {{
+    background-color: transparent !important;
+    border: none !important;
+    color: {vars_css['sub']} !important; /* Texto grisáceo para los no seleccionados */
+    font-weight: 400 !important;
+    transition: all 0.3s ease !important;
+}}
+
+/* Estilo para la pestaña cuando está activa (seleccionada) */
+button[aria-selected="true"] {{
+    background-color: {vars_css['card']} !important; /* Fondo igual a tus celdas */
+    color: {vars_css['text']} !important; /* Texto blanco */
+    font-weight: 700 !important;
+}}
+
+/* La línea indicadora debajo del botón (Focus bar) */
+div[data-baseweb="tab-highlight"] {{
+    background-color: #00FFAA !important; /* Color cian/verde neón para que resalte con clase */
+    height: 2px !important;
+}}
+
+/* Efecto Hover para que se sienta interactivo */
+button[data-baseweb="tab"]:hover {{
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -2403,6 +2431,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
