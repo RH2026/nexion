@@ -606,10 +606,15 @@ else:
                     "KPI´S", "RASTREO", "VOLUMEN", "RETRASOS"
                 ])
     
-                with tab_rastreo:
-                    # Contenedor para el espacio superior (puedes aumentar el height si quieres más espacio)
+                # --- 4. SUBMENÚ Y RENDERIZADO ---
+                # Definimos los 4 nombres de las pestañas
+                tab_kpis, tab_rastreo, tab_volumen, tab_retrasos = st.tabs([
+                    "KPI´S", "RASTREO", "VOLUMEN", "RETRASOS"
+                ])
+    
+                # PESTAÑA 1: KPI'S (Tus donitas)
+                with tab_kpis:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    
                     c1, c2, c3, c4, c5 = st.columns(5)
                     with c1: render_kpi(total_p, total_p, "Pedidos", "#ffffff")
                     with c2: render_kpi(entregados, total_p, "Entregados", "#00FFAA")
@@ -621,14 +626,11 @@ else:
                     with st.expander("DETALLE OPERATIVO"):
                         st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
     
-                with tab_estado:
+                # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
+                with tab_rastreo:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    st.subheader("Estado de Carga Logística")
-                    
-    
-                with tab_volumen:
-                    st.write("Visualización de Volumen")
-                    # --- RASTREO ---
+                    st.subheader("Rastreo de Guías y Facturas")
+                    # --- DENTRO DE TAB RASTREO ---
                     with tab_rastreo:
                         st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                         
@@ -735,8 +737,16 @@ else:
                                 st.error("No se encontró ningún registro con ese número de factura o guía.")
                         else:
                             st.write("Esperando datos... Por favor, ingresa una referencia arriba.")
+    
+                # PESTAÑA 3: VOLUMEN
+                with tab_volumen:
+                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+                    st.write("Visualización de Volumen de Carga")
+                    
+                # PESTAÑA 4: RETRASOS
                 with tab_retrasos:
-                    st.write("Análisis de Retrasos")
+                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+                    st.write("Análisis Detallado de Retrasos")
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -2463,6 +2473,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
