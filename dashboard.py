@@ -162,30 +162,36 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* 5. INPUTS - CORREGIDO PARA LÍNEAS CONTINUAS */
+/* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
+
+/* Atacamos al contenedor que envuelve el input */
+div[data-baseweb="input"] {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    transition: all 0.3s ease-in-out !important;
+}}
+
+/* Cuando el usuario hace clic (Focus) en el contenedor */
+div[data-baseweb="input"]:focus-within {{
+    border: 1px solid #2563eb !important;
+    box-shadow: 0 0 0 1px #2563eb !important;
+}}
+
+/* Estilo del campo de texto real */
 .stTextInput input {{ 
-    background-color: {vars_css['card']} !important; 
+    background-color: transparent !important; /* Para que se vea el fondo del contenedor */
     color: {vars_css['text']} !important; 
-    /* Forzamos el borde sólido y quitamos sombras que lo cortan */
-    border: 1px solid {vars_css['border']} !important; 
-    border-radius: 4px !important; 
+    border: none !important; /* Quitamos el borde de aquí para que no choque */
+    box-shadow: none !important; 
     height: 45px !important; 
     text-align: center !important; 
     letter-spacing: 2px; 
-    box-shadow: none !important; /* Esto evita que se vea cortado */
-    -webkit-appearance: none !important;
-}}
-
-/* Estado Focus: Línea azul continua */
-.stTextInput input:focus {{
-    border: 1px solid #2563eb !important; 
-    box-shadow: 0 0 0 1px #2563eb !important; /* Refuerza la línea para que sea nítida */
     outline: none !important;
-    background-color: {vars_css['card']} !important;
 }}
 
-/* Quitar bordes rojos de error de Streamlit que a veces interfieren */
-.stTextInput div[data-baseweb="input"] {{
+/* Eliminamos cualquier borde extra que Streamlit ponga por defecto */
+div[data-baseweb="base-input"] {{
     border: none !important;
     background-color: transparent !important;
 }}
@@ -2474,6 +2480,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
