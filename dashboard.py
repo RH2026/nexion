@@ -622,6 +622,7 @@ else:
                         st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
     
                 # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
+               
                 with tab_rastreo:
                     st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                     
@@ -637,30 +638,37 @@ else:
                         if not resultado.empty:
                             envio = resultado.iloc[0]
                             
-                            # Lógica de Fechas y Status
+                            # --- LÓGICA DE CONTROL DE AVANCE ---
                             f_envio = envio["FECHA DE ENVÍO"]
                             f_promesa = envio["PROMESA DE ENTREGA"]
                             f_entrega_val = envio["FECHA DE ENTREGA REAL"] if pd.notna(envio["FECHA DE ENTREGA REAL"]) else "PENDIENTE"
                             
-                            # Lógica específica para el punto de la Guía
-                            tiene_guia = pd.notna(envio["NÚMERO DE GUÍA"]) and str(envio["NÚMERO DE GUÍA"]).strip() != ""
-                            n_guia = envio["NÚMERO DE GUÍA"] if tiene_guia else "Entregado a paquetería (Generando Guía)"
-                            dot_guia_color = "#38bdf8" if tiene_guia else "#64748b" # Azul si hay guía, gris si se está generando
-                            label_guia = "GUÍA GENERADA" if tiene_guia else "PROCESANDO GUÍA"
+                            # Verificación de Guía
+                            tiene_guia = pd.notna(envio["NÚMERO DE GUÍA"]) and str(envio["NÚMERO DE GUÍA"]).strip() not in ["", "0", "nan"]
+                            n_guia = envio["NÚMERO DE GUÍA"] if tiene_guia else "Generando Guía..."
                             
+                            # Colores de los puntos según el avance
+                            # Si no hay guía, los siguientes puntos (Promesa y Entrega) se apagan (gris)
+                            color_envio = "#38bdf8"
+                            color_guia = "#38bdf8" if tiene_guia else "#4b5563" 
+                            color_promesa = "#a855f7" if tiene_guia else "#4b5563"
+                            
+                            # Estado y Color del Badge Principal
                             f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True)
-                            f_entrega_dt = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True)
                             hoy = pd.Timestamp(datetime.now())
-                
-                            if pd.isna(envio["FECHA DE ENTREGA REAL"]):
+
+                            if not tiene_guia:
+                                status_text, status_color = ("GENERANDO GUÍA", "#94a3b8")
+                                color_entrega = "#4b5563"
+                            elif pd.isna(envio["FECHA DE ENTREGA REAL"]):
                                 status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                                if not tiene_guia:
-                                    status_text, status_color = ("GENERANDO GUÍA", "#94a3b8")
+                                color_entrega = status_color
                             else:
-                                status_text, status_color = ("ENTREGADO", "#00FFAA") if f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
-                
-                            # 2. RENDER DEL TIMELINE (4 PUNTOS EN UNA SOLA LÍNEA)
-                            timeline_html = f'<div style="background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151; margin-top: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;"><h2 style="margin:0; color:white; font-size:18px; font-family:sans-serif;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}22; color:{status_color}; padding: 4px 12px; border-radius: 20px; font-weight:700; font-size:11px; border: 1px solid {status_color};">{status_text}</span></div><div style="display: flex; align-items: center; width: 100%; position: relative;"><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:#38bdf8; border-radius:50%;"></div><div style="font-size:9px; color:#9ca3af; margin-top:8px;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 30px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:{dot_guia_color}; border-radius:50%;"></div><div style="font-size:9px; color:#9ca3af; margin-top:8px;">{label_guia}</div><div style="font-size:10px; color:white; font-weight:600;">LOGÍSTICA</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 30px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:#a855f7; border-radius:50%;"></div><div style="font-size:9px; color:#9ca3af; margin-top:8px;">PROMESA</div><div style="font-size:10px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 30px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:16px; height:16px; background:{status_color}; border-radius:50%; box-shadow: 0 0 8px {status_color}66;"></div><div style="font-size:9px; color:#9ca3af; margin-top:6px;">ENTREGA REAL</div><div style="font-size:10px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; border-top: 1px solid #374151; padding-top: 20px;"><div style="color:#9ca3af; font-size:12px;"><b>Fletera:</b><br><span style="color:white;">{envio["FLETERA"]}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Guía:</b><br><span style="color:white;">{n_guia}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Destino:</b><br><span style="color:white;">{envio["DESTINO"]}</span></div></div></div>'
+                                status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True) <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                                color_entrega = status_color
+
+                            # 2. RENDER DEL TIMELINE (4 PUNTOS - AVANCE DINÁMICO)
+                            timeline_html = f'<div style="background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151; margin-top: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;"><h2 style="margin:0; color:white; font-size:18px; font-family:sans-serif;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}22; color:{status_color}; padding: 4px 12px; border-radius: 20px; font-weight:700; font-size:11px; border: 1px solid {status_color};">{status_text}</span></div><div style="display: flex; align-items: center; width: 100%; position: relative;"><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%;"></div><div style="font-size:9px; color:#9ca3af; margin-top:8px;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow: 1; height: 1px; background: {"#38bdf8" if tiene_guia else "#374151"}; margin-bottom: 30px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%;"></div><div style="font-size:9px; color:#9ca3af; margin-top:8px;">GUÍA</div><div style="font-size:10px; color:white; font-weight:600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow: 1; height: 1px; background: {"#a855f7" if (tiene_guia and pd.isna(envio["FECHA DE ENTREGA REAL"])) else "#374151"}; margin-bottom: 30px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%;"></div><div style="font-size:9px; color:#9ca3af; margin-top:8px;">PROMESA</div><div style="font-size:10px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow: 1; height: 1px; background: {"#00FFAA" if pd.notna(envio["FECHA DE ENTREGA REAL"]) else "#374151"}; margin-bottom: 30px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; box-shadow: {"0 0 8px "+color_entrega+"66" if status_text == "ENTREGADO" else "none"};"></div><div style="font-size:9px; color:#9ca3af; margin-top:6px;">ENTREGA</div><div style="font-size:10px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; border-top: 1px solid #374151; padding-top: 20px;"><div style="color:#9ca3af; font-size:12px;"><b>Fletera:</b><br><span style="color:white;">{envio["FLETERA"]}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Guía:</b><br><span style="color:white;">{n_guia}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Destino:</b><br><span style="color:white;">{envio["DESTINO"]}</span></div></div></div>'
                             
                             st.markdown(timeline_html, unsafe_allow_html=True)
                         else:
@@ -2401,6 +2409,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
