@@ -756,26 +756,36 @@ else:
                     f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
                     
                     with f_col1:
+                        # Definimos la lista de meses para poder calcular fechas incluso si el selector está en la col2
                         meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
-                        mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
-                    
-                    with f_col2:
-                        mes_num = meses.index(mes_sel) + 1
-                        inicio_m = date(hoy_gdl.year, mes_num, 1)
-                        if mes_num == 12:
+                        
+                        # Lógica de fechas (ahora en la primera columna)
+                        # Nota: mes_num depende de mes_sel, así que lo calculamos aquí internamente 
+                        # o usamos el mes actual por defecto para inicializar el calendario.
+                        mes_num_inicial = hoy_gdl.month
+                        inicio_m = date(hoy_gdl.year, mes_num_inicial, 1)
+                        
+                        if mes_num_inicial == 12:
                             fin_m = date(hoy_gdl.year, 12, 31)
                         else:
-                            fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
+                            fin_m = date(hoy_gdl.year, mes_num_inicial + 1, 1) - pd.Timedelta(days=1)
                         
                         fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
                         
                         rango_fechas = st.date_input(
                             "RANGO DE ANÁLISIS",
-                            value=(inicio_m, min(hoy_gdl, fin_m_final) if mes_num == hoy_gdl.month else fin_m_final),
+                            value=(inicio_m, min(hoy_gdl, fin_m_final)),
                             format="DD/MM/YYYY"
                         )
-    
+                    
+                    with f_col2:
+                        # Selector de Mes Operativo
+                        mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
+                        # Actualizamos mes_num basado en la selección del usuario
+                        mes_num = meses.index(mes_sel) + 1
+                    
                     with f_col3:
+                        # Filtro de Fletera
                         opciones_f = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
                         filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f, placeholder="TODOS")
     
@@ -2447,6 +2457,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
