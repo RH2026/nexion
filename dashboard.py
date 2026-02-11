@@ -624,7 +624,11 @@ else:
                 with tab_estado:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.subheader("Estado de Carga Logística")
-                    # --- DENTRO DE TAB RASTREO ---
+                    
+    
+                with tab_volumen:
+                    st.write("Visualización de Volumen")
+                    # --- RASTREO ---
                     with tab_rastreo:
                         st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                         
@@ -731,10 +735,6 @@ else:
                                 st.error("No se encontró ningún registro con ese número de factura o guía.")
                         else:
                             st.write("Esperando datos... Por favor, ingresa una referencia arriba.")
-    
-                with tab_volumen:
-                    st.write("Visualización de Volumen")
-    
                 with tab_retrasos:
                     st.write("Análisis de Retrasos")
         
@@ -2463,6 +2463,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
