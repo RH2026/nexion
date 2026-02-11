@@ -623,107 +623,44 @@ else:
     
                 # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
                 with tab_rastreo:
-                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    st.subheader("Rastreo de Guías y Facturas")
-                    # --- DENTRO DE TAB RASTREO ---
-                    with tab_rastreo:
-                        st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
-                        
-                        # 1. CAJA DE BÚSQUEDA TIPO DHL (Inspirada en tu imagen)
-                        st.markdown("""
-                            <style>
-                                .dhl-container {
-                                    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://www.dhl.com/content/dam/dhl/global/core/images/teaser-main/dhl-courier-smiling.jpg');
-                                    background-size: cover;
-                                    background-position: center;
-                                    padding: 60px 40px;
-                                    border-radius: 15px;
-                                    margin-bottom: 30px;
-                                    text-align: left;
-                                }
-                                .dhl-label {
-                                    color: white;
-                                    font-size: 32px;
-                                    font-weight: 800;
-                                    margin-bottom: 20px;
-                                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-                                }
-                                /* Input de Streamlit personalizado para parecerse a la barra blanca */
-                                div[data-baseweb="input"] {
-                                    border-radius: 4px !important;
-                                    background-color: white !important;
-                                }
-                            </style>
-                            <div class="dhl-container">
-                                <div class="dhl-label">Rastree su Envío</div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                    st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                     
-                        # Barra de entrada blanca pura
-                        busqueda = st.text_input("Ingresar el o los número de rastreo.", key="busqueda_dhl", placeholder="Ej: Factura o Número de Guía").strip()
-                    
-                        if busqueda:
-                            # Filtrado en el DataFrame
-                            resultado = df_raw[(df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda, case=False)) | 
-                                               (df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda, case=False))]
-                    
-                            if not resultado.empty:
-                                envio = resultado.iloc[0]
-                                
-                                # --- LÓGICA DE ESTADOS ---
-                                f_promesa = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True)
-                                f_entrega = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True)
-                                hoy = pd.Timestamp(datetime.now())
-                    
-                                if pd.isna(envio["FECHA DE ENTREGA REAL"]):
-                                    status_text, status_color = ("EN TRÁNSITO (EN TIEMPO)", "#38bdf8") if hoy <= f_promesa else ("EN TRÁNSITO (RETRASO)", "#ff4b4b")
-                                else:
-                                    status_text, status_color = ("ENTREGADO EN TIEMPO", "#00FFAA") if f_entrega <= f_promesa else ("ENTREGADO CON RETRASO", "#ff4b4b")
-                    
-                                # 2. TIMELINE EN UNA SOLA LÍNEA PROFESIONAL
-                                st.markdown(f"""
-                                    <div style="background: #1a2432; padding: 30px; border-radius: 12px; border: 1px solid #334155; margin-top: 20px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                                            <h2 style="margin:0; color:white; font-size:20px;">{envio['NOMBRE DEL CLIENTE']}</h2>
-                                            <span style="background:{status_color}22; color:{status_color}; padding: 5px 15px; border-radius: 15px; font-weight:700; font-size:12px; border: 1px solid {status_color};">
-                                                {status_text}
-                                            </span>
-                                        </div>
-                    
-                                        <div style="display: flex; align-items: center; width: 100%; position: relative; padding: 10px 0;">
-                                            
-                                            <div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;">
-                                                <div style="width:16px; height:16px; background:#38bdf8; border-radius:50%; z-index:2;"></div>
-                                                <div style="font-size:11px; color:#94a3b8; margin-top:8px;">ENVÍO</div>
-                                                <div style="font-size:12px; color:white; font-weight:700;">{envio['FECHA DE ENVÍO']}</div>
-                                            </div>
-                    
-                                            <div style="flex-grow: 1; height: 2px; background: #334155; margin: 0 10px 30px 10px;"></div>
-                    
-                                            <div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;">
-                                                <div style="width:16px; height:16px; background:#a855f7; border-radius:50%; z-index:2;"></div>
-                                                <div style="font-size:11px; color:#94a3b8; margin-top:8px;">PROMESA</div>
-                                                <div style="font-size:12px; color:white; font-weight:700;">{envio['PROMESA DE ENTREGA']}</div>
-                                            </div>
-                    
-                                            <div style="flex-grow: 1; height: 2px; background: #334155; margin: 0 10px 30px 10px;"></div>
-                    
-                                            <div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;">
-                                                <div style="width:22px; height:22px; background:{status_color}; border-radius:50%; z-index:2; box-shadow: 0 0 10px {status_color}88;"></div>
-                                                <div style="font-size:11px; color:#94a3b8; margin-top:5px;">ENTREGA REAL</div>
-                                                <div style="font-size:12px; color:white; font-weight:700;">{envio['FECHA DE ENTREGA REAL'] if pd.notna(envio['FECHA DE ENTREGA REAL']) else 'PENDIENTE'}</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px;">
-                                            <div style="color:#94a3b8; font-size:13px;"><b>Fletera:</b><br><span style="color:white;">{envio['FLETERA']}</span></div>
-                                            <div style="color:#94a3b8; font-size:13px;"><b>Guía:</b><br><span style="color:white;">{envio['NÚMERO DE GUÍA']}</span></div>
-                                            <div style="color:#94a3b8; font-size:13px;"><b>Destino:</b><br><span style="color:white;">{envio['DESTINO']}</span></div>
-                                        </div>
-                                    </div>
-                                """, unsafe_allow_html=True)
+                    # 1. CAJA DE BÚSQUEDA TIPO DHL
+                    st.markdown('<style>.dhl-container { background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://www.dhl.com/content/dam/dhl/global/core/images/teaser-main/dhl-courier-smiling.jpg"); background-size: cover; background-position: center; padding: 60px 40px; border-radius: 15px; margin-bottom: 30px; text-align: left; } .dhl-label { color: white; font-size: 32px; font-weight: 800; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); } div[data-baseweb="input"] { border-radius: 4px !important; background-color: white !important; }</style><div class="dhl-container"><div class="dhl-label">Rastree su Envío</div></div>', unsafe_allow_html=True)
+                
+                    busqueda = st.text_input("Ingresar el o los número de rastreo.", key="busqueda_dhl", placeholder="Ej: Factura o Número de Guía").strip()
+                
+                    if busqueda:
+                        resultado = df_raw[(df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda, case=False)) | 
+                                           (df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda, case=False))]
+                
+                        if not resultado.empty:
+                            envio = resultado.iloc[0]
+                            
+                            # Lógica de Fechas
+                            f_envio = envio["FECHA DE ENVÍO"]
+                            f_promesa = envio["PROMESA DE ENTREGA"]
+                            f_entrega_val = envio["FECHA DE ENTREGA REAL"] if pd.notna(envio["FECHA DE ENTREGA REAL"]) else "PENDIENTE"
+                            
+                            # Determinación de Status y Color
+                            f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True)
+                            f_entrega_dt = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True)
+                            hoy = pd.Timestamp(datetime.now())
+                
+                            if pd.isna(envio["FECHA DE ENTREGA REAL"]):
+                                status_text, status_color = ("EN TRÁNSITO (EN TIEMPO)", "#38bdf8") if hoy <= f_promesa_dt else ("EN TRÁNSITO (RETRASO)", "#ff4b4b")
                             else:
-                                st.warning("No se encontraron resultados para su búsqueda.")
+                                status_text, status_color = ("ENTREGADO EN TIEMPO", "#00FFAA") if f_entrega_dt <= f_promesa_dt else ("ENTREGADO CON RETRASO", "#ff4b4b")
+                
+                            # 2. RENDER DEL CARD Y TIMELINE (Todo en una sola línea de HTML para evitar errores de renderizado)
+                            timeline_html = f'<div style="background: #1a2432; padding: 30px; border-radius: 12px; border: 1px solid #334155; margin-top: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;"><h2 style="margin:0; color:white; font-size:20px;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}22; color:{status_color}; padding: 5px 15px; border-radius: 15px; font-weight:700; font-size:12px; border: 1px solid {status_color};">{status_text}</span></div><div style="display: flex; align-items: center; width: 100%; position: relative; padding: 10px 0;"><div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;"><div style="width:16px; height:16px; background:#38bdf8; border-radius:50%; z-index:2;"></div><div style="font-size:11px; color:#94a3b8; margin-top:8px;">ENVÍO</div><div style="font-size:12px; color:white; font-weight:700;">{f_envio}</div></div><div style="flex-grow: 1; height: 2px; background: #334155; margin: 0 10px 30px 10px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;"><div style="width:16px; height:16px; background:#a855f7; border-radius:50%; z-index:2;"></div><div style="font-size:11px; color:#94a3b8; margin-top:8px;">PROMESA</div><div style="font-size:12px; color:white; font-weight:700;">{f_promesa}</div></div><div style="flex-grow: 1; height: 2px; background: #334155; margin: 0 10px 30px 10px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;"><div style="width:22px; height:22px; background:{status_color}; border-radius:50%; z-index:2; box-shadow: 0 0 10px {status_color}88;"></div><div style="font-size:11px; color:#94a3b8; margin-top:5px;">ENTREGA REAL</div><div style="font-size:12px; color:white; font-weight:700;">{f_entrega_val}</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px;"><div style="color:#94a3b8; font-size:13px;"><b>Fletera:</b><br><span style="color:white;">{envio["FLETERA"]}</span></div><div style="color:#94a3b8; font-size:13px;"><b>Guía:</b><br><span style="color:white;">{envio["NÚMERO DE GUÍA"]}</span></div><div style="color:#94a3b8; font-size:13px;"><b>Destino:</b><br><span style="color:white;">{envio["DESTINO"]}</span></div></div></div>'
+                            
+                            st.markdown(timeline_html, unsafe_allow_html=True)
+                            
+                            if pd.notna(envio["COMENTARIOS"]):
+                                st.info(f"💡 **Comentarios:** {envio['COMENTARIOS']}")
+                        else:
+                            st.warning("No se encontraron registros para esta búsqueda.")
     
                 # PESTAÑA 3: VOLUMEN
                 with tab_volumen:
@@ -2460,6 +2397,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
