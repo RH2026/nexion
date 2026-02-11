@@ -626,7 +626,7 @@ else:
                     st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                     
                     # 1. BARRA DE BÚSQUEDA MINIMALISTA (Sin el bloque negro)
-                    st.markdown('<style>.search-header { margin-bottom: 20px; } .search-label { color: white; font-size: 24px; font-weight: 700; margin-bottom: 10px; } div[data-baseweb="input"] { border-radius: 8px !important; background-color: #1e293b !important; border: 1px solid #334155 !important; }</style><div class="search-header"><div class="search-label">Rastree su Envío</div></div>', unsafe_allow_html=True)
+                    st.markdown('<style>.search-header { margin-bottom: 20px; } .search-label { color: white; font-size: 24px; font-weight: 700; margin-bottom: 10px; } div[data-baseweb="input"] { border-radius: 8px !important; background-color: #1e293b !important; border: 1px solid #334155 !important; }</style><div class="search-header"><div class="search-label"></div></div>', unsafe_allow_html=True)
                 
                     busqueda = st.text_input("Ingresar el o los número de rastreo.", key="busqueda_clean", placeholder="Ej: Factura o Número de Guía").strip()
                 
@@ -2393,6 +2393,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
