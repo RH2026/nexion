@@ -625,10 +625,10 @@ else:
                 with tab_rastreo:
                     st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                     
-                    # 1. CAJA DE BÚSQUEDA TIPO DHL
-                    st.markdown('<style>.dhl-container { background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://www.dhl.com/content/dam/dhl/global/core/images/teaser-main/dhl-courier-smiling.jpg"); background-size: cover; background-position: center; padding: 60px 40px; border-radius: 15px; margin-bottom: 30px; text-align: left; } .dhl-label { color: white; font-size: 32px; font-weight: 800; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); } div[data-baseweb="input"] { border-radius: 4px !important; background-color: white !important; }</style><div class="dhl-container"><div class="dhl-label">Rastree su Envío</div></div>', unsafe_allow_html=True)
+                    # 1. BARRA DE BÚSQUEDA MINIMALISTA (Sin el bloque negro)
+                    st.markdown('<style>.search-header { margin-bottom: 20px; } .search-label { color: white; font-size: 24px; font-weight: 700; margin-bottom: 10px; } div[data-baseweb="input"] { border-radius: 8px !important; background-color: #1e293b !important; border: 1px solid #334155 !important; }</style><div class="search-header"><div class="search-label">Rastree su Envío</div></div>', unsafe_allow_html=True)
                 
-                    busqueda = st.text_input("Ingresar el o los número de rastreo.", key="busqueda_dhl", placeholder="Ej: Factura o Número de Guía").strip()
+                    busqueda = st.text_input("Ingresar el o los número de rastreo.", key="busqueda_clean", placeholder="Ej: Factura o Número de Guía").strip()
                 
                     if busqueda:
                         resultado = df_raw[(df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda, case=False)) | 
@@ -637,31 +637,27 @@ else:
                         if not resultado.empty:
                             envio = resultado.iloc[0]
                             
-                            # Lógica de Fechas
+                            # Lógica de Fechas y Status
                             f_envio = envio["FECHA DE ENVÍO"]
                             f_promesa = envio["PROMESA DE ENTREGA"]
                             f_entrega_val = envio["FECHA DE ENTREGA REAL"] if pd.notna(envio["FECHA DE ENTREGA REAL"]) else "PENDIENTE"
                             
-                            # Determinación de Status y Color
                             f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True)
                             f_entrega_dt = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True)
                             hoy = pd.Timestamp(datetime.now())
                 
                             if pd.isna(envio["FECHA DE ENTREGA REAL"]):
-                                status_text, status_color = ("EN TRÁNSITO (EN TIEMPO)", "#38bdf8") if hoy <= f_promesa_dt else ("EN TRÁNSITO (RETRASO)", "#ff4b4b")
+                                status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
                             else:
-                                status_text, status_color = ("ENTREGADO EN TIEMPO", "#00FFAA") if f_entrega_dt <= f_promesa_dt else ("ENTREGADO CON RETRASO", "#ff4b4b")
+                                status_text, status_color = ("ENTREGADO", "#00FFAA") if f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
                 
-                            # 2. RENDER DEL CARD Y TIMELINE (Todo en una sola línea de HTML para evitar errores de renderizado)
-                            timeline_html = f'<div style="background: #1a2432; padding: 30px; border-radius: 12px; border: 1px solid #334155; margin-top: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;"><h2 style="margin:0; color:white; font-size:20px;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}22; color:{status_color}; padding: 5px 15px; border-radius: 15px; font-weight:700; font-size:12px; border: 1px solid {status_color};">{status_text}</span></div><div style="display: flex; align-items: center; width: 100%; position: relative; padding: 10px 0;"><div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;"><div style="width:16px; height:16px; background:#38bdf8; border-radius:50%; z-index:2;"></div><div style="font-size:11px; color:#94a3b8; margin-top:8px;">ENVÍO</div><div style="font-size:12px; color:white; font-weight:700;">{f_envio}</div></div><div style="flex-grow: 1; height: 2px; background: #334155; margin: 0 10px 30px 10px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;"><div style="width:16px; height:16px; background:#a855f7; border-radius:50%; z-index:2;"></div><div style="font-size:11px; color:#94a3b8; margin-top:8px;">PROMESA</div><div style="font-size:12px; color:white; font-weight:700;">{f_promesa}</div></div><div style="flex-grow: 1; height: 2px; background: #334155; margin: 0 10px 30px 10px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;"><div style="width:22px; height:22px; background:{status_color}; border-radius:50%; z-index:2; box-shadow: 0 0 10px {status_color}88;"></div><div style="font-size:11px; color:#94a3b8; margin-top:5px;">ENTREGA REAL</div><div style="font-size:12px; color:white; font-weight:700;">{f_entrega_val}</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px;"><div style="color:#94a3b8; font-size:13px;"><b>Fletera:</b><br><span style="color:white;">{envio["FLETERA"]}</span></div><div style="color:#94a3b8; font-size:13px;"><b>Guía:</b><br><span style="color:white;">{envio["NÚMERO DE GUÍA"]}</span></div><div style="color:#94a3b8; font-size:13px;"><b>Destino:</b><br><span style="color:white;">{envio["DESTINO"]}</span></div></div></div>'
+                            # 2. RENDER DEL TIMELINE (Todo en una sola línea de HTML para evitar el error visual de la imagen)
+                            timeline_html = f'<div style="background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151; margin-top: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;"><h2 style="margin:0; color:white; font-size:18px; font-family:sans-serif;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}22; color:{status_color}; padding: 4px 12px; border-radius: 20px; font-weight:700; font-size:11px; border: 1px solid {status_color};">{status_text}</span></div><div style="display: flex; align-items: center; width: 100%; position: relative;"><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:14px; height:14px; background:#38bdf8; border-radius:50%;"></div><div style="font-size:10px; color:#9ca3af; margin-top:8px;">ENVÍO</div><div style="font-size:11px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 34px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:14px; height:14px; background:#a855f7; border-radius:50%;"></div><div style="font-size:10px; color:#9ca3af; margin-top:8px;">PROMESA</div><div style="font-size:11px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow: 1; height: 1px; background: #374151; margin-bottom: 34px;"></div><div style="display: flex; flex-direction: column; align-items: center; min-width: 100px;"><div style="width:18px; height:18px; background:{status_color}; border-radius:50%; box-shadow: 0 0 8px {status_color}66;"></div><div style="font-size:10px; color:#9ca3af; margin-top:6px;">ENTREGA REAL</div><div style="font-size:11px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; border-top: 1px solid #374151; padding-top: 20px;"><div style="color:#9ca3af; font-size:12px;"><b>Fletera:</b><br><span style="color:white;">{envio["FLETERA"]}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Guía:</b><br><span style="color:white;">{envio["NÚMERO DE GUÍA"]}</span></div><div style="color:#9ca3af; font-size:12px;"><b>Destino:</b><br><span style="color:white;">{envio["DESTINO"]}</span></div></div></div>'
                             
                             st.markdown(timeline_html, unsafe_allow_html=True)
-                            
-                            if pd.notna(envio["COMENTARIOS"]):
-                                st.info(f"💡 **Comentarios:** {envio['COMENTARIOS']}")
                         else:
-                            st.warning("No se encontraron registros para esta búsqueda.")
-    
+                            st.warning("No se encontró información para esa guía o factura.")
+                    
                 # PESTAÑA 3: VOLUMEN
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
@@ -2397,6 +2393,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
