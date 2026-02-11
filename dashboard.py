@@ -478,78 +478,137 @@ else:
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
     with main_container:
-        if st.session_state.menu_main == "DASHBOARD":        
-            # --- CONFIGURACIÓN DE PÁGINA Y ESTILOS MEJORADOS ---
+        # 1. DASHBOARD
+        if st.session_state.menu_main == "DASHBOARD":
+            
+            # --- 1. DEFINICIÓN DE FUNCIONES (Primero definimos para evitar NameError) ---
+            def cargar_datos():
+                import time
+                t = int(time.time())
+                url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+                try:
+                    df = pd.read_csv(url, encoding='utf-8-sig')
+                    df.columns = df.columns.str.strip()
+                    return df
+                except Exception as e:
+                    st.error(f"Error al cargar datos: {e}")
+                    return None
+    
+            def render_kpi(valor, total, titulo, color):
+                porc = (valor / total * 100) if total > 0 else 0
+                # Circunferencia basada en radio 38
+                circunferencia = 238.76
+                offset = circunferencia - (porc / 100 * circunferencia)
+                
+                st.markdown(f"""
+                    <div class="metric-container">
+                        <div class="metric-title">{titulo}</div>
+                        <div style="position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;">
+                            <svg class="stat-circle" viewBox="0 0 100 100">
+                                <circle class="stat-bg" cx="50" cy="50" r="38"></circle>
+                                <circle class="stat-progress" cx="50" cy="50" r="38" 
+                                        style="stroke: {color}; 
+                                               stroke-dasharray: {circunferencia}; 
+                                               stroke-dashoffset: {offset};">
+                                </circle>
+                            </svg>
+                            <div class="stat-value">{valor}</div>
+                        </div>
+                        <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+            # --- 2. CONFIGURACIÓN DE ESTILOS (CSS) ---
             st.markdown(f"""
             <style>
                 .stApp {{ background-color: {vars_css['bg']} !important; }}
                 
-                /* 1. ESPACIADO ENTRE MENÚ Y DONAS */
-                .main-content-wrapper {{
-                    padding-top: 40px; /* Aquí ajustas el espacio que querías */
+                /* ESPACIO EXTRA ENTRE EL MENÚ Y LAS DONAS */
+                .spacer-menu {{
+                    margin-top: 50px; /* Ajusta este valor si quieres más o menos espacio */
                 }}
     
-                /* 2. ESTILOS PARA LAS PESTAÑAS (SUBMENÚ) */
+                /* ESTILOS DE LOS TABS (SUBMENÚ) */
                 .stTabs [data-baseweb="tab-list"] {{
-                    gap: 12px;
-                    border-bottom: none;
+                    gap: 15px;
+                    border-bottom: 1px solid #1e293b;
                 }}
     
                 .stTabs [data-baseweb="tab"] {{
-                    background-color: #1a2432; /* Color apagado por defecto */
-                    border-radius: 6px 6px 0px 0px;
+                    background-color: #1a2432;
+                    border-radius: 4px 4px 0px 0px;
                     color: #94a3b8;
                     padding: 10px 20px;
                     transition: all 0.3s ease;
-                    border: 1px solid transparent;
                 }}
     
-                /* Efecto Hover */
+                /* EFECTO HOVER */
                 .stTabs [data-baseweb="tab"]:hover {{
                     background-color: #26354a;
                     color: #ffffff;
-                    border-bottom: 2px solid #38bdf8;
                 }}
     
-                /* Estado Activo (Donde estás actualmente) */
+                /* ESTADO ACTIVO (DÓNDE ESTÁS) */
                 .stTabs [aria-selected="true"] {{
-                    background-color: #003399 !important; /* Azul intenso de tu imagen */
+                    background-color: #003399 !important; /* El azul de tu imagen */
                     color: white !important;
-                    font-weight: bold;
                     border-bottom: 2px solid #00FFAA !important;
                 }}
     
-                /* Ajustes de las Donas para que no se peguen */
+                /* ESTILOS DE TUS DONAS (KPIs) */
                 .metric-container {{
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    margin-top: 20px;
+                    justify-content: center;
+                    width: 100%;
                 }}
-                
-                /* ... (Tus estilos stat-circle y stat-value se mantienen igual) ... */
+                .metric-title {{ color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; }}
+                .stat-circle {{ transform: rotate(-90deg); width: 160px; height: 160px; overflow: visible; }}
+                .stat-circle circle {{ fill: none; stroke-width: 15; }}
+                .stat-bg {{ stroke: #151D29; }}
+                .stat-progress {{ transition: stroke-dashoffset 0.8s ease-in-out; stroke-linecap: butt; }}
+                .stat-value {{ position: absolute; color: white; font-size: 22px; font-weight: 800; top: 50%; left: 50%; transform: translate(-50%, -50%); }}
+                .stat-percent {{ font-size: 16px; margin-top: 5px; font-weight: 700; }}
             </style>
             """, unsafe_allow_html=True)
     
-            # (Funciones cargar_datos y render_kpi se mantienen iguales)
-    
+            # --- 3. CARGA Y PROCESAMIENTO ---
             df_raw = cargar_datos()
             
             if df_raw is not None:
-                # --- PROCESAMIENTO DE DATOS ---
-                # ... (Tus cálculos de total_p, entregados, etc.) ...
+                import pytz
+                from datetime import datetime
+                tz_gdl = pytz.timezone('America/Mexico_City')
+                hoy_gdl = datetime.now(tz_gdl).date()
+                hoy_dt = pd.Timestamp(hoy_gdl)
+                meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
+                
+                col_f1, _ = st.columns([1, 4])
+                with col_f1:
+                    mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
+            
+                df = df_raw.copy()
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                    df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+            
+                df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
+            
+                total_p = len(df_mes)
+                entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
+                df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
+                en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
+                retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
+                total_t = len(df_trans)
     
-                # Creamos el envoltorio para el espacio superior
-                st.markdown('<div class="main-content-wrapper">', unsafe_allow_html=True)
-    
-                # --- SUBMENÚ COMO PESTAÑAS CON ESTADO ---
+                # --- 4. SUBMENÚ Y RENDERIZADO ---
                 tab_rastreo, tab_estado, tab_volumen, tab_retrasos = st.tabs([
-                    "📋 RASTREO", "⚙️ ESTADO DE CARGA", "📊 VOLUMEN", "⚠️ RETRASOS"
+                    "📄 RASTREO", "⚙️ ESTADO DE CARGA", "📊 VOLUMEN", "⚠️ RETRASOS"
                 ])
     
                 with tab_rastreo:
-                    # Contenedor para dar espacio extra solo a los KPIs
-                    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+                    # Contenedor para el espacio superior (puedes aumentar el height si quieres más espacio)
+                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     
                     c1, c2, c3, c4, c5 = st.columns(5)
                     with c1: render_kpi(total_p, total_p, "Pedidos", "#ffffff")
@@ -563,9 +622,9 @@ else:
                         st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
     
                 with tab_estado:
-                    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-                    st.info("Configuración de Logística")
-                        # Aquí puedes meter contenido adicional sin que afecte a la primera pestaña
+                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+                    st.subheader("Estado de Carga Logística")
+                    # Contenido para esta pestaña...
     
                 with tab_volumen:
                     st.write("Visualización de Volumen")
@@ -2298,6 +2357,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
