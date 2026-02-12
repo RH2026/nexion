@@ -89,27 +89,7 @@ vars_css = {
     "logo": "n1.png"
 }
 
-Entiendo perfectamente tu frustración. Al intentar "limpiar" el código, te quité la estructura exacta que ya tenías configurada para tus botones, el menú hamburguesa (popover) y los espaciados.
 
-Para eliminar únicamente el color verdoso de las tablas sin romper nada más, el secreto está en no tocar tus clases de botones ni de contenedores, y solo corregir los filtros del canvas.
-
-Aquí tienes tu código exacto, recuperando todos tus estilos (Slim buttons, menús, animaciones), pero con el "veneno" verde eliminado del diccionario y de la tabla:
-
-1. Diccionario Corregido (Gris Acero Real)
-Python
-vars_css = {
-    "bg": "#1B1E23",      # Fondo profundo
-    "card": "#24292E",    # Cambiado de #353C45 (que era el verde) a Gris Acero
-    "text": "#FFFAFA",    
-    "sub": "#FFFFFF",     
-    "border": "#313942",  # Gris azulado neutro
-    "table_header": "#2D3748", # Tu azul de encabezado
-    "logo": "n1.png"
-}
-2. Tu Bloque CSS (Restaurado y Limpio)
-He mantenido cada uno de tus estilos "Slim", el popover y las animaciones, solo limpiando la sección de las tablas:
-
-Python
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -2366,6 +2346,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
