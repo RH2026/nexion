@@ -363,11 +363,6 @@ div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
 
-Tienes toda la razón, al estar dentro de un f-string de Python, los corchetes { } del CSS chocan con las variables de Python y rompen el código. Para que funcione por "fuerza bruta", debemos duplicar los corchetes {{ }} para que Python los ignore y se los pase limpios al navegador.
-
-Aquí tienes el bloque listo para copiar y pegar dentro de tu st.markdown(f""" ... """). Ponlo justo antes de cerrar el estilo:
-
-CSS
 /* --- FUERZA BRUTA PARA SELECCIÓN EN TABLAS (DENTRO DE F-STRING) --- */
 
 /* 1. Fondo de la celda seleccionada */
@@ -2518,6 +2513,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
