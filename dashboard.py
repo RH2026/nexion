@@ -89,7 +89,6 @@ vars_css = {
     "logo": "n1.png"
 }
 
-
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -119,7 +118,7 @@ html, body {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* 2. ANIMACIÓN DE ENTRADA */
+/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
 @keyframes fadeInUp {{ 
     from {{ opacity: 0; transform: translateY(15px); }} 
     to {{ opacity: 1; transform: translateY(0); }} 
@@ -141,7 +140,7 @@ h3, .op-query-text {{
     width: 100% !important; 
 }}
 
-/* 4. BOTONES SLIM (Restaurado Original) */
+/* 4. BOTONES SLIM */
 div.stButton > button {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -163,17 +162,27 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* 5. INPUTS - SOLUCIÓN PARA BORDES */
+/* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
+
+/* Atacamos al contenedor que envuelve el input */
 div[data-baseweb="input"] {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
+    transition: all 0.3s ease-in-out !important;
 }}
 
+/* Cuando el usuario hace clic (Focus) en el contenedor */
+div[data-baseweb="input"]:focus-within {{
+    border: 1px solid #2563eb !important;
+    box-shadow: 0 0 0 1px #2563eb !important;
+}}
+
+/* Estilo del campo de texto real */
 .stTextInput input {{ 
-    background-color: transparent !important; 
+    background-color: transparent !important; /* Para que se vea el fondo del contenedor */
     color: {vars_css['text']} !important; 
-    border: none !important; 
+    border: none !important; /* Quitamos el borde de aquí para que no choque */
     box-shadow: none !important; 
     height: 45px !important; 
     text-align: center !important; 
@@ -181,25 +190,90 @@ div[data-baseweb="input"] {{
     outline: none !important;
 }}
 
-/* 6. TABLAS (Aquí es donde quitamos lo verde sin afectar lo demás) */
+/* Eliminamos cualquier borde extra que Streamlit ponga por defecto */
+div[data-baseweb="base-input"] {{
+    border: none !important;
+    background-color: transparent !important;
+}}
+
+/* Bajar tamaño de los nombres de los filtros (Labels) */
+[data-testid="stWidgetLabel"] p {{
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    color: {vars_css['sub']} !important;
+    font-weight: 600 !important;
+}}
+
+/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
+div[data-baseweb="select"] div {{
+    font-size: 12px !important;
+    color: {vars_css['text']} !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+
+/* Cambiar el texto de ADENTRO del input de fecha */
+input[data-testid="stDateInputView"] {{
+    font-size: 12px !important;
+    color: {vars_css['text']} !important;
+}}
+
+/* Contenedor */
 [data-testid="stDataEditor"] {{
     background-color: {vars_css['bg']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 8px !important;
+    overflow: hidden !important;
 }}
 
+/* CANVAS – MALLA QUE NO DESAPARECE */
 [data-testid="data-grid-canvas"] {{
     background-color: {vars_css['bg']} !important;
-    filter: none !important; /* ELIMINADO EL FILTRO QUE HACÍA VERDE TODO */
+
+    background-image:
+        repeating-linear-gradient(
+            to right,
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 72px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(75,85,99,0.9) 0px,
+            rgba(75,85,99,0.9) 1.25px,
+            transparent 1.25px,
+            transparent 36px
+        );
+
+    filter: brightness(0.96) contrast(1.12) !important;
 }}
 
+/* Encabezados */
 [data-testid="stTableColumnHeader"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
     border-bottom: 1px solid {vars_css['border']} !important;
 }}
 
-/* 7. FOOTER Y OTROS (Sin cambios) */
+/* Texto */
+[data-testid="stDataEditor"] * {{
+    color: {vars_css['text']} !important;
+}}
+
+/* Hover */
+[data-testid="stDataEditor"] div:hover {{
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}}
+
+/* Ajuste global para el tema oscuro en editores */
+.st-emotion-cache-1y4p8pa {{
+    border: 1px solid {vars_css['border']} !important;
+}}
+
+/* 6. FOOTER FIJO */
 .footer {{ 
     position: fixed; 
     bottom: 0 !important; 
@@ -210,25 +284,85 @@ div[data-baseweb="input"] {{
     text-align: center; 
     padding: 12px 0px !important; 
     font-size: 9px; 
+    letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
+    animation: none !important; 
+    transform: none !important; 
 }}
 
-/* PESTAÑAS (Restaurado Original) */
+/* 7. GRÁFICOS / IFRAME */
+.stPlotlyChart {{
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 300px !important;
+}}
+
+iframe {{
+    background-color: {vars_css['bg']} !important;
+    border: 1px solid {vars_css['border']} !important;
+}}
+
+/* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
+
+/* Chips seleccionadas – Multiselect */
+div[data-baseweb="tag"] {{
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+}}
+
+div[data-baseweb="tag"] span {{
+    color: #ffffff !important;
+}}
+
+div[data-baseweb="tag"] svg {{
+    fill: #ffffff !important;
+}}
+
+/* Valor seleccionado – Selectbox */
+div[data-baseweb="select"] > div {{
+    background-color: rgba(37, 99, 235, 0.12) !important;
+    border: 1px solid #2563eb !important;
+}}
+
+/* Focus */
+div[data-baseweb="select"]:focus-within {{
+    box-shadow: 0 0 0 1px #2563eb !important;
+}}
+
+/* Eliminar el azul de fondo de la pestaña seleccionada */
 button[data-baseweb="tab"] {{
     background-color: transparent !important;
     border: none !important;
-    color: {vars_css['sub']} !important;
+    color: {vars_css['sub']} !important; /* Texto grisáceo para los no seleccionados */
+    font-weight: 400 !important;
+    transition: all 0.3s ease !important;
 }}
 
+/* Estilo para la pestaña cuando está activa (seleccionada) */
 div[data-baseweb="tab-list"] button[aria-selected="true"] {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
 }}
 
+div[data-baseweb="tab-list"] button:focus, 
+div[data-baseweb="tab-list"] button:active {{
+    outline: none !important;
+    box-shadow: none !important;
+}}
+
+div[data-baseweb="tab-list"] button {{
+    background-color: transparent !important;
+    color: {vars_css['sub']} !important;
+    border: none !important;
+}}
+
 div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -2346,9 +2480,6 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
-
-
-
 
 
 
