@@ -607,7 +607,14 @@ else:
                 
                     st.markdown("<br><br>", unsafe_allow_html=True)
                     with st.expander("DETALLE OPERATIVO"):
-                        st.dataframe(df_mes.sort_values("FECHA DE ENVÍO", ascending=False), use_container_width=True, hide_index=True)
+                        # Cambiamos .dataframe por .data_editor
+                        st.data_editor(
+                            df_mes.sort_values("FECHA DE ENVÍO", ascending=False), 
+                            use_container_width=True, 
+                            hide_index=True,
+                            num_rows="dynamic", # Esto permite agregar/borrar filas si lo necesitas
+                            key="detalle_operativo_nexion" # Es vital ponerle una key diferente si cambias el comando
+                        )
     
                 # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
                 with tab_rastreo:
@@ -2414,6 +2421,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
