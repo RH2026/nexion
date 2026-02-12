@@ -296,52 +296,6 @@ div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
 
-/* ─── SOLUCIÓN FINAL PARA TABLAS (DENTRO DE CANVAS) ─── */
-
-/* 1. Forzamos los colores base que el motor de la tabla hereda */
-:root {{
-    --primary-color: #2563eb !important;
-    --background-color: {vars_css['bg']} !important;
-    --secondary-background-color: #262b32 !important; /* Color de las filas alternas */
-}}
-
-/* 2. El contenedor de la tabla */
-[data-testid="stDataFrame"], [data-testid="stDataEditor"] {{
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    padding: 5px !important;
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* 3. Inyección de estilos para las líneas de la cuadrícula y Focus */
-/* Intentamos forzar que el canvas sea traslúcido para ver el fondo */
-[data-testid="stDataFrame"] canvas, [data-testid="stDataEditor"] canvas {{
-    filter: contrast(0.95) brightness(1.1) !important;
-}}
-
-/* 4. Hack para el Header de la tabla */
-[data-testid="stDataFrame"] header, [data-testid="stDataEditor"] header {{
-    background-color: {vars_css['table_header']} !important;
-}}
-
-/* 5. Si usas st.dataframe, esto ayuda a que el hover se note en los bordes */
-[data-testid="stDataFrame"] [role="grid"]:hover, 
-[data-testid="stDataEditor"] [role="grid"]:hover {{
-    border-color: #2563eb !important;
-    transition: border-color 0.3s ease;
-}}
-
-/* 6. Estilo específico para las celdas cuando se logra hacer foco */
-[data-testid="stDataEditor"] div[data-testid="stVerticalBlock"] div:focus-within {{
-    border: 1px solid #2563eb !important;
-}}
-
-/* Estilo para que el texto sea legible dentro de la tabla */
-[data-testid="stDataFrame"] *, [data-testid="stDataEditor"] * {{
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
-}}
-
 
 </style>
 """, unsafe_allow_html=True)
@@ -2460,6 +2414,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
