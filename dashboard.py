@@ -364,104 +364,76 @@ elif not st.session_state.autenticado:
 # 3. ¿Todo listo? Mostrar NEXION CORE
 else:
     # ── HEADER REESTRUCTURADO (CENTRADITO Y BALANCEADO) ──────────────────────────
+    # 1. Identificamos al usuario actual
+    usuario = st.session_state.get("usuario_activo", "")
+    
+    # 2. Definimos la estructura completa
+    # (Aquí aplicamos la lógica de qué ve cada quién)
+    menu_completo = {
+        "DASHBOARD": ["GENERAL"],
+        "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
+        "REPORTES": ["APQ", "OPS", "OTD"],
+        "FORMATOS": ["SALIDA DE PT", "CONTRARRECIBOS"],
+        "HUB LOG": ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]
+    }
+    
+    # 3. FILTRADO DE RESTRICCIONES (Lógica blindada)
+    # Si es JMoreno, solo dejamos FORMATOS -> SALIDA DE PT
+    if usuario == "JMoreno":
+        menu_visible = {
+            "FORMATOS": ["SALIDA DE PT"]
+        }
+    else:
+        menu_visible = menu_completo
+    
+    # 4. Renderizado del Header
     header_zone = st.container()
     with header_zone:
-        # Usamos proporciones que den espacio suficiente a los lados para que el centro sea real
-        c1, c2, c3 = st.columns([1.5, 4, 1.5], vertical_alignment="center")
+        c_logo, c_menu = st.columns([1, 4], vertical_alignment="center")
         
-        with c1:
-            try:
-                st.image(vars_css["logo"], width=110)
-                st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px; margin-left:2px;'>SYSTEM SOLUTIONS</p>", unsafe_allow_html=True)
-            except:
-                st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0; color:{vars_css['text']};'>NEXION</h3>", unsafe_allow_html=True)
+        with c_logo:
+            try: st.image(vars_css["logo"], width=100)
+            except: st.markdown(f"<h3 style='margin:0;'>NEXION</h3>", unsafe_allow_html=True)
     
-        with c2:
-            # INDICADOR GENERAL (CENTRADO ABSOLUTO CON ESPACIADO NEXION)
-            if st.session_state.menu_sub != "GENERAL":
-                # Agregamos espacios manuales solo al separador "|" para que no se pegue a las letras
-                ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
-            else:
-                ruta = st.session_state.menu_main
+        with c_menu:
+            # Generamos las pestañas basadas SOLO en lo que el usuario puede ver
+            nombres_principales = list(menu_visible.keys())
             
-            st.markdown(f"""
-                <div style='display: flex; justify-content: center; align-items: center; width: 100%; margin: 20px 0;'>
-                    <p style='font-size: 11px; 
-                              letter-spacing: 8px;  /* ← Aumentado para efecto de doble espacio */
-                              color: {vars_css['sub']}; 
-                              margin: 0; 
-                              font-weight: 700; 
-                              text-transform: uppercase;
-                              text-align: center;'>
-                        {ruta}
-                    </p>
-                </div>
-            """, unsafe_allow_html=True)
+            # Validación de seguridad: Si por algo el estado quedó en un menú prohibido, lo reseteamos
+            if st.session_state.menu_main not in nombres_principales:
+                st.session_state.menu_main = nombres_principales[0]
+                st.session_state.menu_sub = menu_visible[nombres_principales[0]][0]
     
-        with c3:
-            # BOTÓN HAMBURGUESA - Alineado a la derecha del contenedor
-            # Usamos una columna anidada o un div para empujar el popover a la derecha
-            _, btn_col = st.columns([1, 2]) 
-            with btn_col:
-                with st.popover("☰", use_container_width=True):
-                    st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
-                    
-                    # Identificamos quién está operando
-                    usuario = st.session_state.get("usuario_activo", "")
-
-                    # --- SECCIONES RESTRINGIDAS (J Moreno NO las ve) ---
-                    if usuario != "JMoreno":
-                        # DASHBOARD
-                        if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                            st.session_state.menu_main = "DASHBOARD"
-                            st.session_state.menu_sub = "GENERAL"
-                            st.rerun()
-                        
-                        # SEGUIMIENTO
-                        with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                            for s in ["TRK", "GANTT", "QUEJAS"]:
-                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                                if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
-                                    st.session_state.menu_main = "SEGUIMIENTO"
-                                    st.session_state.menu_sub = s
-                                    st.rerun()
-
-                        # REPORTES
-                        with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                            for s in ["APQ", "OPS", "OTD"]:
-                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                                if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
-                                    st.session_state.menu_main = "REPORTES"
-                                    st.session_state.menu_sub = s
-                                    st.rerun()
-
-                    # --- SECCIÓN FORMATOS (Visible para todos, pero con opciones filtradas) ---
-                    with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        # Definimos qué formatos ve cada uno
-                        if usuario == "JMoreno":
-                            formatos_visibles = ["SALIDA DE PT"]
-                        else:
-                            formatos_visibles = ["SALIDA DE PT", "CONTRARRECIBOS"]
-
-                        for s in formatos_visibles:
-                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
-                                st.session_state.menu_main = "FORMATOS"
-                                st.session_state.menu_sub = s
-                                st.rerun()
-
-                    # --- SECCIÓN HUB LOG (J Moreno NO la ve) ---
-                    if usuario != "JMoreno":
-                        with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                            for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
-                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                                if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
-                                    st.session_state.menu_main = "HUB LOG"
-                                    st.session_state.menu_sub = s
-                                    st.rerun()
-                    
+            # Render de Tabs
+            default_index = nombres_principales.index(st.session_state.menu_main)
+            tabs_main = st.tabs(nombres_principales)
+            
+            for i, tab in enumerate(tabs_main):
+                with tab:
+                    nombre_tab = nombres_principales[i]
+                    # Detectamos el cambio de pestaña
+                    if st.session_state.menu_main != nombre_tab:
+                        st.session_state.menu_main = nombre_tab
+                        st.session_state.menu_sub = menu_visible[nombre_tab][0]
+                        st.rerun()
     
-    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
+        # --- 5. SUB-MENÚ DINÁMICO ---
+        sub_opciones = menu_visible.get(st.session_state.menu_main, ["GENERAL"])
+        
+        # Solo mostramos botones de sub-menú si hay más de una opción
+        if len(sub_opciones) > 1:
+            # Creamos una fila de columnas para los botones del sub-menú
+            cols_sub = st.columns(len(sub_opciones) + 3) 
+            for idx, sub in enumerate(sub_opciones):
+                with cols_sub[idx]:
+                    es_activo = st.session_state.menu_sub == sub
+                    # El "»" indica visualmente dónde estás parado en el sub-menú
+                    label = f"» {sub}" if es_activo else sub
+                    if st.button(label, key=f"btn_sub_{sub}", use_container_width=True):
+                        st.session_state.menu_sub = sub
+                        st.rerun()
+    
+    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 25px; opacity:0.1;'>", unsafe_allow_html=True)
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
@@ -2421,6 +2393,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
