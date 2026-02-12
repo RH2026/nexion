@@ -218,61 +218,6 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* Contenedor */
-[data-testid="stDataEditor"] {{
-    background-color: {vars_css['bg']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-}}
-
-/* CANVAS – MALLA QUE NO DESAPARECE */
-[data-testid="data-grid-canvas"] {{
-    background-color: {vars_css['bg']} !important;
-
-    background-image:
-        repeating-linear-gradient(
-            to right,
-            rgba(75,85,99,0.9) 0px,
-            rgba(75,85,99,0.9) 1.25px,
-            transparent 1.25px,
-            transparent 72px
-        ),
-        repeating-linear-gradient(
-            to bottom,
-            rgba(75,85,99,0.9) 0px,
-            rgba(75,85,99,0.9) 1.25px,
-            transparent 1.25px,
-            transparent 36px
-        );
-
-    filter: brightness(0.96) contrast(1.12) !important;
-}}
-
-/* Encabezados */
-[data-testid="stTableColumnHeader"] {{
-    background-color: {vars_css['table_header']} !important;
-    color: {vars_css['text']} !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    border-bottom: 1px solid {vars_css['border']} !important;
-}}
-
-/* Texto */
-[data-testid="stDataEditor"] * {{
-    color: {vars_css['text']} !important;
-}}
-
-/* Hover */
-[data-testid="stDataEditor"] div:hover {{
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}}
-
-/* Ajuste global para el tema oscuro en editores */
-.st-emotion-cache-1y4p8pa {{
-    border: 1px solid {vars_css['border']} !important;
-}}
-
 /* 6. FOOTER FIJO */
 .footer {{ 
     position: fixed; 
@@ -289,18 +234,6 @@ input[data-testid="stDateInputView"] {{
     z-index: 999999 !important; 
     animation: none !important; 
     transform: none !important; 
-}}
-
-/* 7. GRÁFICOS / IFRAME */
-.stPlotlyChart {{
-    visibility: visible !important;
-    opacity: 1 !important;
-    min-height: 300px !important;
-}}
-
-iframe {{
-    background-color: {vars_css['bg']} !important;
-    border: 1px solid {vars_css['border']} !important;
 }}
 
 /* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
@@ -363,29 +296,6 @@ div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
 
-/* EL ÚLTIMO RECURSO: HACKEO DE VARIABLES DE TEMA INTERNAS */
-:root {{
-    --primary-color: #2563eb !important; /* Esto obliga a Streamlit a usar Azul en selecciones */
-}}
-
-[data-testid="stDataEditor"] {{
-    --style-secondary-background-color: rgba(37, 99, 235, 0.2) !important;
-}}
-
-/* Forzar el contenedor del editor para que use el azul */
-.st-emotion-cache-1y4p8pa {{
-    border-color: #2563eb !important;
-}}
-
-/* Si nada de eso sirve, es por el Canvas. Intentemos pintar la capa de eventos: */
-canvas {{
-    pointer-events: auto !important;
-}}
-
-/* Este selector es muy específico para la capa de foco de Streamlit */
-[data-testid="stDataEditor"] > div:first-child {{
-    --state-selected-background: rgba(37, 99, 235, 0.4) !important;
-}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -2504,6 +2414,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
