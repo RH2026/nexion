@@ -363,6 +363,44 @@ div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
 
+Tienes toda la razón, al estar dentro de un f-string de Python, los corchetes { } del CSS chocan con las variables de Python y rompen el código. Para que funcione por "fuerza bruta", debemos duplicar los corchetes {{ }} para que Python los ignore y se los pase limpios al navegador.
+
+Aquí tienes el bloque listo para copiar y pegar dentro de tu st.markdown(f""" ... """). Ponlo justo antes de cerrar el estilo:
+
+CSS
+/* --- FUERZA BRUTA PARA SELECCIÓN EN TABLAS (DENTRO DE F-STRING) --- */
+
+/* 1. Fondo de la celda seleccionada */
+[data-testid="stDataEditor"] [role="gridcell"]:focus,
+[data-testid="stDataEditor"] [aria-selected="true"] {{
+    background-color: rgba(37, 99, 235, 0.3) !important;
+    outline: none !important;
+}}
+
+/* 2. El recuadro de selección (Capa superior) */
+[data-testid="stDataEditor"] div[class*="selection-layer"] {{
+    border: 2px solid #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
+    z-index: 10 !important;
+}}
+
+/* 3. Color de fila seleccionada */
+[data-testid="stDataEditor"] [class*="gdg-row-selected"] {{
+    background-color: rgba(37, 99, 235, 0.2) !important;
+}}
+
+/* 4. Forzar el color del texto en la celda activa */
+[data-testid="stDataEditor"] [aria-selected="true"] * {{
+    color: #ffffff !important;
+}}
+
+/* 5. Estilo del editor cuando estás escribiendo */
+[data-testid="stDataEditor"] input {{
+    background-color: {vars_css['bg']} !important;
+    color: white !important;
+    border: 1px solid #2563eb !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -2480,6 +2518,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
