@@ -363,37 +363,28 @@ div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
 
-/* --- FUERZA BRUTA PARA SELECCIÓN EN TABLAS (DENTRO DE F-STRING) --- */
-
-/* 1. Fondo de la celda seleccionada */
-[data-testid="stDataEditor"] [role="gridcell"]:focus,
-[data-testid="stDataEditor"] [aria-selected="true"] {{
-    background-color: rgba(37, 99, 235, 0.3) !important;
-    outline: none !important;
+/* EL ÚLTIMO RECURSO: HACKEO DE VARIABLES DE TEMA INTERNAS */
+:root {{
+    --primary-color: #2563eb !important; /* Esto obliga a Streamlit a usar Azul en selecciones */
 }}
 
-/* 2. El recuadro de selección (Capa superior) */
-[data-testid="stDataEditor"] div[class*="selection-layer"] {{
-    border: 2px solid #2563eb !important;
-    background-color: rgba(37, 99, 235, 0.1) !important;
-    z-index: 10 !important;
+[data-testid="stDataEditor"] {{
+    --style-secondary-background-color: rgba(37, 99, 235, 0.2) !important;
 }}
 
-/* 3. Color de fila seleccionada */
-[data-testid="stDataEditor"] [class*="gdg-row-selected"] {{
-    background-color: rgba(37, 99, 235, 0.2) !important;
+/* Forzar el contenedor del editor para que use el azul */
+.st-emotion-cache-1y4p8pa {{
+    border-color: #2563eb !important;
 }}
 
-/* 4. Forzar el color del texto en la celda activa */
-[data-testid="stDataEditor"] [aria-selected="true"] * {{
-    color: #ffffff !important;
+/* Si nada de eso sirve, es por el Canvas. Intentemos pintar la capa de eventos: */
+canvas {{
+    pointer-events: auto !important;
 }}
 
-/* 5. Estilo del editor cuando estás escribiendo */
-[data-testid="stDataEditor"] input {{
-    background-color: {vars_css['bg']} !important;
-    color: white !important;
-    border: 1px solid #2563eb !important;
+/* Este selector es muy específico para la capa de foco de Streamlit */
+[data-testid="stDataEditor"] > div:first-child {{
+    --state-selected-background: rgba(37, 99, 235, 0.4) !important;
 }}
 
 </style>
@@ -2513,6 +2504,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
