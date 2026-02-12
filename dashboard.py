@@ -386,7 +386,7 @@ else:
     else:
         menu_visible = menu_completo
     
-    # 4. Renderizado del Header
+    # 4. Renderizado del Header (SOLO NAVEGACIÓN)
     header_zone = st.container()
     with header_zone:
         c_logo, c_menu = st.columns([1, 4], vertical_alignment="center")
@@ -396,29 +396,41 @@ else:
             except: st.markdown(f"<h3 style='margin:0;'>NEXION</h3>", unsafe_allow_html=True)
     
         with c_menu:
-            # Generamos las pestañas basadas SOLO en lo que el usuario puede ver
             nombres_principales = list(menu_visible.keys())
             
-            # Validación de seguridad: Si por algo el estado quedó en un menú prohibido, lo reseteamos
+            # --- SOLUCIÓN AL TRABADO ---
+            # Usamos el índice de la sesión para que el Tab sepa dónde estar sin forzar rerun constante
             if st.session_state.menu_main not in nombres_principales:
                 st.session_state.menu_main = nombres_principales[0]
-                st.session_state.menu_sub = menu_visible[nombres_principales[0]][0]
-    
-            # Render de Tabs
-            default_index = nombres_principales.index(st.session_state.menu_main)
+            
+            idx_actual = nombres_principales.index(st.session_state.menu_main)
+            
+            # Renderizamos los tabs y capturamos la interacción de forma pasiva
             tabs_main = st.tabs(nombres_principales)
             
+            # Solo ejecutamos el cambio si el usuario hace clic en un TAB distinto al actual
             for i, tab in enumerate(tabs_main):
                 with tab:
-                    nombre_tab = nombres_principales[i]
-                    # Detectamos el cambio de pestaña
-                    if st.session_state.menu_main != nombre_tab:
-                        st.session_state.menu_main = nombre_tab
-                        st.session_state.menu_sub = menu_visible[nombre_tab][0]
+                    if st.session_state.menu_main != nombres_principales[i]:
+                        st.session_state.menu_main = nombres_principales[i]
+                        st.session_state.menu_sub = menu_visible[nombres_principales[i]][0]
                         st.rerun()
+
+    # --- 5. SUB-MENÚ DINÁMICO (BOTONES TIPO PÍLDORA) ---
+    sub_opciones = menu_visible.get(st.session_state.menu_main, ["GENERAL"])
     
-        # --- 5. SUB-MENÚ DINÁMICO ---
-        sub_opciones = menu_visible.get(st.session_state.menu_main, ["GENERAL"])
+    # Solo mostramos si hay opciones reales de navegación interna
+    if len(sub_opciones) > 1:
+        st.markdown("<div style='margin-top:-15px;'></div>", unsafe_allow_html=True)
+        cols_sub = st.columns([1] * len(sub_opciones) + [3]) # Ajusta espacio a la derecha
+        for idx, sub in enumerate(sub_opciones):
+            with cols_sub[idx]:
+                es_activo = st.session_state.menu_sub == sub
+                # Estilo visual para saber en qué sub-menú estamos
+                label_btn = f"● {sub}" if es_activo else sub
+                if st.button(label_btn, key=f"btn_sub_{sub}", use_container_width=True):
+                    st.session_state.menu_sub = sub
+                    st.rerun()
         
         # Solo mostramos botones de sub-menú si hay más de una opción
         if len(sub_opciones) > 1:
@@ -2393,6 +2405,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
