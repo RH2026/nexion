@@ -29,7 +29,6 @@ st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_st
 
 # --- MOTOR DE INTELIGENCIA LOGÍSTICA (XENOCODE CORE) ---
 def d_local(dir_val):
-    """Detecta si una dirección pertenece a la ZMG basada en CPs."""
     rangos = [(44100, 44990), (45010, 45245), (45400, 45429), (45500, 45595)]
     cps = re.findall(r'\b\d{5}\b', str(dir_val))
     for cp in cps:
@@ -42,7 +41,6 @@ def d_local(dir_val):
 
 @st.cache_data
 def motor_logistico_central():
-    """Carga la matriz historial para recomendaciones de fleteras."""
     try:
         if os.path.exists("matriz_historial.csv"):
             h = pd.read_csv("matriz_historial.csv", encoding='utf-8-sig')
@@ -57,115 +55,69 @@ def motor_logistico_central():
         pass
     return {}, {}
 
-def load_lottieurl(url: str):
-    """Carga la animación Lottie desde una URL"""
-    r = requests.get(url)
-    if r.status_code != 200:
-        return None
-    return r.json()
-
-# ── INICIALIZACIÓN DE ESTADOS ──────────────────────────
+# --- ESTADOS DE SESIÓN ---
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
-if "usuario_activo" not in st.session_state:
-    st.session_state.usuario_activo = None
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "DASHBOARD"
 if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#1B1E23",      
-    "card": "#282D34",    
-    "text": "#FFFAFA",    
-    "sub": "#FFFFFF",     
-    "border": "#414852",  
-    "table_header": "#2D3748", 
-    "logo": "n1.png"
+    "bg": "#1B1E23", "card": "#282D34", "text": "#FFFAFA",
+    "sub": "#FFFFFF", "border": "#414852", "logo": "n1.png"
 }
 
-# ── ESTILOS CSS (TU BLOQUE ORIGINAL) ──────────────────────────
+# --- TU CSS ORIGINAL ---
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-html, body {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; }}
-.stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
-.block-container {{ padding-top: 0.8rem !important; padding-bottom: 5rem !important; background-color: {vars_css['bg']} !important; }}
-@keyframes fadeInUp {{ from {{ opacity: 0; transform: translateY(15px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-[data-testid="stVerticalBlock"] > div {{ animation: fadeInUp 0.6s ease-out; }}
-h3, .op-query-text {{ font-size: 11px !important; letter-spacing: 8px !important; text-align: center !important; margin-top: 8px !important; margin-bottom: 18px !important; color: {vars_css['sub']} !important; display: block !important; width: 100% !important; }}
-div.stButton > button {{ background-color: {vars_css['card']} !important; color: {vars_css['text']} !important; border: 1px solid {vars_css['border']} !important; border-radius: 2px !important; font-weight: 700 !important; text-transform: uppercase; font-size: 10px !important; height: 28px !important; min-height: 28px !important; line-height: 28px !important; transition: all 0.2s ease !important; width: 100% !important; }}
-div.stButton > button:hover {{ background-color: #ffffff !important; color: #000000 !important; border-color: #ffffff !important; }}
-div[data-baseweb="input"] {{ background-color: {vars_css['card']} !important; border: 1px solid {vars_css['border']} !important; border-radius: 4px !important; transition: all 0.3s ease-in-out !important; }}
-div[data-baseweb="input"]:focus-within {{ border: 1px solid #2563eb !important; box-shadow: 0 0 0 1px #2563eb !important; }}
-.stTextInput input {{ background-color: transparent !important; color: {vars_css['text']} !important; border: none !important; box-shadow: none !important; height: 45px !important; text-align: center !important; letter-spacing: 2px; outline: none !important; }}
-div[data-baseweb="base-input"] {{ border: none !important; background-color: transparent !important; }}
-[data-testid="stWidgetLabel"] p {{ font-size: 12px !important; text-transform: uppercase !important; letter-spacing: 2px !important; color: {vars_css['sub']} !important; font-weight: 600 !important; }}
-div[data-baseweb="select"] div {{ font-size: 12px !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
-input[data-testid="stDateInputView"] {{ font-size: 12px !important; color: {vars_css['text']} !important; }}
-.footer {{ position: fixed; bottom: 0 !important; left: 0 !important; width: 100% !important; background-color: {vars_css['bg']} !important; color: {vars_css['sub']} !important; text-align: center; padding: 12px 0px !important; font-size: 9px; letter-spacing: 2px; border-top: 1px solid {vars_css['border']} !important; z-index: 999999 !important; }}
-div[data-baseweb="tag"] {{ background-color: #2563eb !important; color: #ffffff !important; border-radius: 4px !important; font-weight: 600 !important; }}
-div[data-baseweb="tag"] span {{ color: #ffffff !important; }}
-div[data-baseweb="tag"] svg {{ fill: #ffffff !important; }}
-div[data-baseweb="select"] > div {{ background-color: rgba(37, 99, 235, 0.12) !important; border: 1px solid #2563eb !important; }}
-div[data-baseweb="select"]:focus-within {{ box-shadow: 0 0 0 1px #2563eb !important; }}
-button[data-baseweb="tab"] {{ background-color: transparent !important; border: none !important; color: {vars_css['sub']} !important; font-weight: 400 !important; transition: all 0.3s ease !important; }}
-div[data-baseweb="tab-list"] button[aria-selected="true"] {{ background-color: {vars_css['card']} !important; color: {vars_css['text']} !important; }}
-div[data-baseweb="tab-list"] button {{ background-color: transparent !important; color: {vars_css['sub']} !important; border: none !important; }}
+html, body, .stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
+.block-container {{ padding-top: 0.8rem !important; }}
+h3 {{ font-size: 11px !important; letter-spacing: 8px !important; text-align: center !important; color: {vars_css['sub']} !important; }}
+div.stButton > button {{ background-color: {vars_css['card']} !important; color: {vars_css['text']} !important; border: 1px solid {vars_css['border']} !important; font-size: 10px !important; height: 28px !important; width: 100% !important; }}
+div.stButton > button:hover {{ background-color: #ffffff !important; color: #000000 !important; }}
+.stTextInput input {{ background-color: {vars_css['card']} !important; color: {vars_css['text']} !important; text-align: center !important; border: 1px solid {vars_css['border']} !important; }}
 div[data-baseweb="tab-highlight"] {{ background-color: #00FFAA !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
+# ── FUNCIÓN DE LOGIN ───────────────────
 def login_screen():
     _, col, _ = st.columns([2, 2, 2]) 
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; margin-bottom: 30px;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
-        with st.container():
-            user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
-            pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
-            st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
-            if st.button("VERIFY IDENTITY"):
-                lista_usuarios = st.secrets.get("usuarios", {})
-                if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
-                    st.session_state.autenticado = True
-                    st.session_state.usuario_activo = user_input
-                    if user_input == "JMoreno":
-                        st.session_state.menu_main = "FORMATOS"
-                        st.session_state.menu_sub = "SALIDA DE PT"
-                    else:
-                        st.session_state.menu_main = "DASHBOARD"
-                        st.session_state.menu_sub = "GENERAL"
-                    st.success(f"BIENVENIDO!, {user_input.upper()}")
-                    time.sleep(1) 
-                    st.rerun()
+        st.markdown("<h3>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
+        user_input = st.text_input("OPERATOR ID")
+        pass_input = st.text_input("ACCESS KEY", type="password")
+        if st.button("VERIFY IDENTITY"):
+            lista_usuarios = st.secrets.get("usuarios", {})
+            if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
+                st.session_state.autenticado = True
+                st.session_state.usuario_activo = user_input
+                # Ajuste de restricciones iniciales
+                if user_input == "JMoreno":
+                    st.session_state.menu_main = "FORMATOS"
+                    st.session_state.menu_sub = "SALIDA DE PT"
+                st.rerun()
 
-# ── FLUJO DE CONTROL PRINCIPAL ──────────────────────────
+# ── FLUJO PRINCIPAL ─────────────────────
 if not st.session_state.splash_completado:
-    p = st.empty()
-    with p.container():
-        for m in ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]:
-            st.markdown(f"""
-            <div style="height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <div style="width:40px;height:40px;border:1px solid {vars_css['border']}; border-top:1px solid {vars_css['text']};border-radius:50%;animation:spin 1s linear infinite;"></div>
-                <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:{vars_css['text']};">{m}</p>
-            </div>
-            <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
-            """, unsafe_allow_html=True)
-            time.sleep(.10)
     st.session_state.splash_completado = True
+    time.sleep(0.5) # Simulación rápida
     st.rerun()
 
 elif not st.session_state.autenticado:
     login_screen()
 
 else:
-    # ── LOGICA DE APP (POST-LOGIN) ──
-    usuario = st.session_state.get("usuario_activo", "")
+    # ── SÓLO SE EJECUTA SI YA SE LOGUEÓ ──
+    usuario = st.session_state.usuario_activo
+    
+    # Configuración de Menú Dinámico
     menu_completo = {
         "DASHBOARD": ["GENERAL"],
         "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
@@ -173,44 +125,44 @@ else:
         "FORMATOS": ["SALIDA DE PT", "CONTRARRECIBOS"],
         "HUB LOG": ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]
     }
+    
+    menu_visible = {"FORMATOS": ["SALIDA DE PT"]} if usuario == "JMoreno" else menu_completo
+    nombres_tabs = list(menu_visible.keys())
 
-    if usuario == "JMoreno":
-        menu_visible = {"FORMATOS": ["SALIDA DE PT"]}
-    else:
-        menu_visible = menu_completo
+    # Header con Tabs
+    c_logo, c_tabs = st.columns([1, 4])
+    with c_logo:
+        st.markdown(f"## NEXION") # O st.image(vars_css["logo"])
+    
+    with c_tabs:
+        # Buscamos el índice actual para que Streamlit no se confunda
+        try:
+            default_idx = nombres_tabs.index(st.session_state.menu_main)
+        except:
+            default_idx = 0
+            st.session_state.menu_main = nombres_tabs[0]
 
-    # 4. Renderizado del Header
-    header_zone = st.container()
-    with header_zone:
-        c_logo, c_menu = st.columns([1, 4], vertical_alignment="center")
-        with c_logo:
-            try: st.image(vars_css["logo"], width=100)
-            except: st.markdown(f"<h3 style='margin:0;'>NEXION</h3>", unsafe_allow_html=True)
-        with c_menu:
-            nombres_principales = list(menu_visible.keys())
-            if st.session_state.menu_main not in nombres_principales:
-                st.session_state.menu_main = nombres_principales[0]
-                st.session_state.menu_sub = menu_visible[nombres_principales[0]][0]
-            
-            tabs_main = st.tabs(nombres_principales)
-            for i, tab in enumerate(tabs_main):
-                with tab:
-                    nombre_tab = nombres_principales[i]
-                    if st.session_state.menu_main != nombre_tab:
-                        st.session_state.menu_main = nombre_tab
-                        st.session_state.menu_sub = menu_visible[nombre_tab][0]
-                        st.rerun()
+        # EL TRUCO: Solo asignamos el resultado de los tabs si el usuario realmente cambió
+        chosen_tab = st.tabs(nombres_tabs)
+        
+        for i, tab in enumerate(chosen_tab):
+            with tab:
+                if st.session_state.menu_main != nombres_tabs[i]:
+                    st.session_state.menu_main = nombres_tabs[i]
+                    st.session_state.menu_sub = menu_visible[nombres_tabs[i]][0]
+                    st.rerun()
 
-    # 5. Sub-menú
-    sub_opciones = menu_visible.get(st.session_state.menu_main, ["GENERAL"])
-    if len(sub_opciones) > 1:
-        cols_sub = st.columns(len(sub_opciones) + 3) 
-        for idx, sub in enumerate(sub_opciones):
+    st.markdown("---")
+    
+    # Sub-menú (Botones horizontales)
+    subs = menu_visible[st.session_state.menu_main]
+    if len(subs) > 1:
+        cols_sub = st.columns(len(subs) + 2)
+        for idx, s in enumerate(subs):
             with cols_sub[idx]:
-                es_activo = st.session_state.menu_sub == sub
-                label = f"» {sub}" if es_activo else sub
-                if st.button(label, key=f"btn_sub_{sub}", use_container_width=True):
-                    st.session_state.menu_sub = sub
+                label = f"● {s}" if st.session_state.menu_sub == s else s
+                if st.button(label, key=f"sub_{s}"):
+                    st.session_state.menu_sub = s
                     st.rerun()
 
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 25px; opacity:0.1;'>", unsafe_allow_html=True)
@@ -2173,6 +2125,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
