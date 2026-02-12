@@ -30,7 +30,6 @@ st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_st
 # --- MOTOR DE INTELIGENCIA LOGÍSTICA (XENOCODE CORE) ---
 def d_local(dir_val):
     """Detecta si una dirección pertenece a la ZMG basada en CPs."""
-    # Rangos de Zapopan, Guadalajara, Tonalá y Tlaquepaque
     rangos = [(44100, 44990), (45010, 45245), (45400, 45429), (45500, 45595)]
     cps = re.findall(r'\b\d{5}\b', str(dir_val))
     for cp in cps:
@@ -65,283 +64,87 @@ def load_lottieurl(url: str):
         return None
     return r.json()
 
-# ── LOGIN ──────────────────────────
+# ── INICIALIZACIÓN DE ESTADOS ──────────────────────────
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
-
-# ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
-if "tema" not in st.session_state:
-    st.session_state.tema = "oscuro"
+if "usuario_activo" not in st.session_state:
+    st.session_state.usuario_activo = None
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "DASHBOARD"
 if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#1B1E23",      # Fondo profundo
-    "card": "#282D34",    # Color para las celdas (Azul grisáceo)
+    "bg": "#1B1E23",      
+    "card": "#282D34",    
     "text": "#FFFAFA",    
     "sub": "#FFFFFF",     
     "border": "#414852",  
-    "table_header": "#2D3748", # Encabezados un poco más claros
+    "table_header": "#2D3748", 
     "logo": "n1.png"
 }
 
+# ── ESTILOS CSS (TU BLOQUE ORIGINAL) ──────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-
-/* 1. Limpieza de Interfaz */
-header, footer, [data-testid="stHeader"] {{
-    visibility: hidden;
-    height: 0px;
-}}
-
-/* APP BASE */
-html, body {{
-    background-color: {vars_css['bg']} !important;
-    color: {vars_css['text']} !important;
-}}
-
-.stApp {{ 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['text']} !important; 
-    font-family: 'Inter', sans-serif !important; 
-}}
-
-/* CONTENEDOR PRINCIPAL */
-.block-container {{ 
-    padding-top: 0.8rem !important; 
-    padding-bottom: 5rem !important; 
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
-@keyframes fadeInUp {{ 
-    from {{ opacity: 0; transform: translateY(15px); }} 
-    to {{ opacity: 1; transform: translateY(0); }} 
-}}
-
-[data-testid="stVerticalBlock"] > div {{
-    animation: fadeInUp 0.6s ease-out;
-}}
-
-/* 3. TÍTULOS Y OPERATIONAL QUERY */
-h3, .op-query-text {{ 
-    font-size: 11px !important; 
-    letter-spacing: 8px !important; 
-    text-align: center !important; 
-    margin-top: 8px !important; 
-    margin-bottom: 18px !important; 
-    color: {vars_css['sub']} !important; 
-    display: block !important; 
-    width: 100% !important; 
-}}
-
-/* 4. BOTONES SLIM */
-div.stButton > button {{ 
-    background-color: {vars_css['card']} !important; 
-    color: {vars_css['text']} !important; 
-    border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
-    font-weight: 700 !important; 
-    text-transform: uppercase; 
-    font-size: 10px !important; 
-    height: 28px !important; 
-    min-height: 28px !important; 
-    line-height: 28px !important; 
-    transition: all 0.2s ease !important; 
-    width: 100% !important; 
-}}
-
-div.stButton > button:hover {{ 
-    background-color: #ffffff !important; 
-    color: #000000 !important; 
-    border-color: #ffffff !important; 
-}}
-
-/* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
-
-/* Atacamos al contenedor que envuelve el input */
-div[data-baseweb="input"] {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    transition: all 0.3s ease-in-out !important;
-}}
-
-/* Cuando el usuario hace clic (Focus) en el contenedor */
-div[data-baseweb="input"]:focus-within {{
-    border: 1px solid #2563eb !important;
-    box-shadow: 0 0 0 1px #2563eb !important;
-}}
-
-/* Estilo del campo de texto real */
-.stTextInput input {{ 
-    background-color: transparent !important; /* Para que se vea el fondo del contenedor */
-    color: {vars_css['text']} !important; 
-    border: none !important; /* Quitamos el borde de aquí para que no choque */
-    box-shadow: none !important; 
-    height: 45px !important; 
-    text-align: center !important; 
-    letter-spacing: 2px; 
-    outline: none !important;
-}}
-
-/* Eliminamos cualquier borde extra que Streamlit ponga por defecto */
-div[data-baseweb="base-input"] {{
-    border: none !important;
-    background-color: transparent !important;
-}}
-
-/* Bajar tamaño de los nombres de los filtros (Labels) */
-[data-testid="stWidgetLabel"] p {{
-    font-size: 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 2px !important;
-    color: {vars_css['sub']} !important;
-    font-weight: 600 !important;
-}}
-
-/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
-div[data-baseweb="select"] div {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
-}}
-
-/* Cambiar el texto de ADENTRO del input de fecha */
-input[data-testid="stDateInputView"] {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* 6. FOOTER FIJO */
-.footer {{ 
-    position: fixed; 
-    bottom: 0 !important; 
-    left: 0 !important; 
-    width: 100% !important; 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['sub']} !important; 
-    text-align: center; 
-    padding: 12px 0px !important; 
-    font-size: 9px; 
-    letter-spacing: 2px; 
-    border-top: 1px solid {vars_css['border']} !important; 
-    z-index: 999999 !important; 
-    animation: none !important; 
-    transform: none !important; 
-}}
-
-/* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
-
-/* Chips seleccionadas – Multiselect */
-div[data-baseweb="tag"] {{
-    background-color: #2563eb !important;
-    color: #ffffff !important;
-    border-radius: 4px !important;
-    font-weight: 600 !important;
-}}
-
-div[data-baseweb="tag"] span {{
-    color: #ffffff !important;
-}}
-
-div[data-baseweb="tag"] svg {{
-    fill: #ffffff !important;
-}}
-
-/* Valor seleccionado – Selectbox */
-div[data-baseweb="select"] > div {{
-    background-color: rgba(37, 99, 235, 0.12) !important;
-    border: 1px solid #2563eb !important;
-}}
-
-/* Focus */
-div[data-baseweb="select"]:focus-within {{
-    box-shadow: 0 0 0 1px #2563eb !important;
-}}
-
-/* Eliminar el azul de fondo de la pestaña seleccionada */
-button[data-baseweb="tab"] {{
-    background-color: transparent !important;
-    border: none !important;
-    color: {vars_css['sub']} !important; /* Texto grisáceo para los no seleccionados */
-    font-weight: 400 !important;
-    transition: all 0.3s ease !important;
-}}
-
-/* Estilo para la pestaña cuando está activa (seleccionada) */
-div[data-baseweb="tab-list"] button[aria-selected="true"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-}}
-
-div[data-baseweb="tab-list"] button:focus, 
-div[data-baseweb="tab-list"] button:active {{
-    outline: none !important;
-    box-shadow: none !important;
-}}
-
-div[data-baseweb="tab-list"] button {{
-    background-color: transparent !important;
-    color: {vars_css['sub']} !important;
-    border: none !important;
-}}
-
-div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important; 
-}}
-
-
+header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
+html, body {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; }}
+.stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
+.block-container {{ padding-top: 0.8rem !important; padding-bottom: 5rem !important; background-color: {vars_css['bg']} !important; }}
+@keyframes fadeInUp {{ from {{ opacity: 0; transform: translateY(15px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+[data-testid="stVerticalBlock"] > div {{ animation: fadeInUp 0.6s ease-out; }}
+h3, .op-query-text {{ font-size: 11px !important; letter-spacing: 8px !important; text-align: center !important; margin-top: 8px !important; margin-bottom: 18px !important; color: {vars_css['sub']} !important; display: block !important; width: 100% !important; }}
+div.stButton > button {{ background-color: {vars_css['card']} !important; color: {vars_css['text']} !important; border: 1px solid {vars_css['border']} !important; border-radius: 2px !important; font-weight: 700 !important; text-transform: uppercase; font-size: 10px !important; height: 28px !important; min-height: 28px !important; line-height: 28px !important; transition: all 0.2s ease !important; width: 100% !important; }}
+div.stButton > button:hover {{ background-color: #ffffff !important; color: #000000 !important; border-color: #ffffff !important; }}
+div[data-baseweb="input"] {{ background-color: {vars_css['card']} !important; border: 1px solid {vars_css['border']} !important; border-radius: 4px !important; transition: all 0.3s ease-in-out !important; }}
+div[data-baseweb="input"]:focus-within {{ border: 1px solid #2563eb !important; box-shadow: 0 0 0 1px #2563eb !important; }}
+.stTextInput input {{ background-color: transparent !important; color: {vars_css['text']} !important; border: none !important; box-shadow: none !important; height: 45px !important; text-align: center !important; letter-spacing: 2px; outline: none !important; }}
+div[data-baseweb="base-input"] {{ border: none !important; background-color: transparent !important; }}
+[data-testid="stWidgetLabel"] p {{ font-size: 12px !important; text-transform: uppercase !important; letter-spacing: 2px !important; color: {vars_css['sub']} !important; font-weight: 600 !important; }}
+div[data-baseweb="select"] div {{ font-size: 12px !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
+input[data-testid="stDateInputView"] {{ font-size: 12px !important; color: {vars_css['text']} !important; }}
+.footer {{ position: fixed; bottom: 0 !important; left: 0 !important; width: 100% !important; background-color: {vars_css['bg']} !important; color: {vars_css['sub']} !important; text-align: center; padding: 12px 0px !important; font-size: 9px; letter-spacing: 2px; border-top: 1px solid {vars_css['border']} !important; z-index: 999999 !important; }}
+div[data-baseweb="tag"] {{ background-color: #2563eb !important; color: #ffffff !important; border-radius: 4px !important; font-weight: 600 !important; }}
+div[data-baseweb="tag"] span {{ color: #ffffff !important; }}
+div[data-baseweb="tag"] svg {{ fill: #ffffff !important; }}
+div[data-baseweb="select"] > div {{ background-color: rgba(37, 99, 235, 0.12) !important; border: 1px solid #2563eb !important; }}
+div[data-baseweb="select"]:focus-within {{ box-shadow: 0 0 0 1px #2563eb !important; }}
+button[data-baseweb="tab"] {{ background-color: transparent !important; border: none !important; color: {vars_css['sub']} !important; font-weight: 400 !important; transition: all 0.3s ease !important; }}
+div[data-baseweb="tab-list"] button[aria-selected="true"] {{ background-color: {vars_css['card']} !important; color: {vars_css['text']} !important; }}
+div[data-baseweb="tab-list"] button {{ background-color: transparent !important; color: {vars_css['sub']} !important; border: none !important; }}
+div[data-baseweb="tab-highlight"] {{ background-color: #00FFAA !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-
-
-
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
 def login_screen():
-    # Ajustamos las proporciones a [3, 2, 3] para que la columna central sea más angosta
     _, col, _ = st.columns([2, 2, 2]) 
-    
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        # Usamos una clase personalizada para asegurar que el texto se vea bien en el centro
         st.markdown("<h3 style='text-align: center; margin-bottom: 30px;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
-        
         with st.container():
             user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
             pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
-            
-            # Espacio extra antes del botón
             st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
-            
             if st.button("VERIFY IDENTITY"):
                 lista_usuarios = st.secrets.get("usuarios", {})
-                
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
                     st.session_state.usuario_activo = user_input
-                    
-                    # REDIRECCIÓN ESPECÍFICA
                     if user_input == "JMoreno":
                         st.session_state.menu_main = "FORMATOS"
                         st.session_state.menu_sub = "SALIDA DE PT"
                     else:
-                        # Forzamos que cualquier otro usuario entre a DASHBOARD
                         st.session_state.menu_main = "DASHBOARD"
                         st.session_state.menu_sub = "GENERAL"
-                    
                     st.success(f"BIENVENIDO!, {user_input.upper()}")
                     time.sleep(1) 
                     st.rerun()
-# ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
 
-# 1. ¿Falta mostrar el Splash?
+# ── FLUJO DE CONTROL PRINCIPAL ──────────────────────────
 if not st.session_state.splash_completado:
     p = st.empty()
     with p.container():
@@ -357,18 +160,12 @@ if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
-# 2. ¿Splash listo pero no se ha loggeado?
 elif not st.session_state.autenticado:
     login_screen()
 
-# 3. ¿Todo listo? Mostrar NEXION CORE
 else:
-    # ── HEADER REESTRUCTURADO (CENTRADITO Y BALANCEADO) ──────────────────────────
-    # 1. Identificamos al usuario actual
+    # ── LOGICA DE APP (POST-LOGIN) ──
     usuario = st.session_state.get("usuario_activo", "")
-    
-    # 2. Definimos la estructura completa
-    # (Aquí aplicamos la lógica de qué ve cada quién)
     menu_completo = {
         "DASHBOARD": ["GENERAL"],
         "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
@@ -376,75 +173,46 @@ else:
         "FORMATOS": ["SALIDA DE PT", "CONTRARRECIBOS"],
         "HUB LOG": ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]
     }
-    
-    # 3. FILTRADO DE RESTRICCIONES (Lógica blindada)
-    # Si es JMoreno, solo dejamos FORMATOS -> SALIDA DE PT
+
     if usuario == "JMoreno":
-        menu_visible = {
-            "FORMATOS": ["SALIDA DE PT"]
-        }
+        menu_visible = {"FORMATOS": ["SALIDA DE PT"]}
     else:
         menu_visible = menu_completo
-    
-    # 4. Renderizado del Header (SOLO NAVEGACIÓN)
+
+    # 4. Renderizado del Header
     header_zone = st.container()
     with header_zone:
         c_logo, c_menu = st.columns([1, 4], vertical_alignment="center")
-        
         with c_logo:
             try: st.image(vars_css["logo"], width=100)
             except: st.markdown(f"<h3 style='margin:0;'>NEXION</h3>", unsafe_allow_html=True)
-    
         with c_menu:
             nombres_principales = list(menu_visible.keys())
-            
-            # --- SOLUCIÓN AL TRABADO ---
-            # Usamos el índice de la sesión para que el Tab sepa dónde estar sin forzar rerun constante
             if st.session_state.menu_main not in nombres_principales:
                 st.session_state.menu_main = nombres_principales[0]
+                st.session_state.menu_sub = menu_visible[nombres_principales[0]][0]
             
-            idx_actual = nombres_principales.index(st.session_state.menu_main)
-            
-            # Renderizamos los tabs y capturamos la interacción de forma pasiva
             tabs_main = st.tabs(nombres_principales)
-            
-            # Solo ejecutamos el cambio si el usuario hace clic en un TAB distinto al actual
             for i, tab in enumerate(tabs_main):
                 with tab:
-                    if st.session_state.menu_main != nombres_principales[i]:
-                        st.session_state.menu_main = nombres_principales[i]
-                        st.session_state.menu_sub = menu_visible[nombres_principales[i]][0]
+                    nombre_tab = nombres_principales[i]
+                    if st.session_state.menu_main != nombre_tab:
+                        st.session_state.menu_main = nombre_tab
+                        st.session_state.menu_sub = menu_visible[nombre_tab][0]
                         st.rerun()
 
-    # --- 5. SUB-MENÚ DINÁMICO (BOTONES TIPO PÍLDORA) ---
+    # 5. Sub-menú
     sub_opciones = menu_visible.get(st.session_state.menu_main, ["GENERAL"])
-    
-    # Solo mostramos si hay opciones reales de navegación interna
     if len(sub_opciones) > 1:
-        st.markdown("<div style='margin-top:-15px;'></div>", unsafe_allow_html=True)
-        cols_sub = st.columns([1] * len(sub_opciones) + [3]) # Ajusta espacio a la derecha
+        cols_sub = st.columns(len(sub_opciones) + 3) 
         for idx, sub in enumerate(sub_opciones):
             with cols_sub[idx]:
                 es_activo = st.session_state.menu_sub == sub
-                # Estilo visual para saber en qué sub-menú estamos
-                label_btn = f"● {sub}" if es_activo else sub
-                if st.button(label_btn, key=f"btn_sub_{sub}", use_container_width=True):
+                label = f"» {sub}" if es_activo else sub
+                if st.button(label, key=f"btn_sub_{sub}", use_container_width=True):
                     st.session_state.menu_sub = sub
                     st.rerun()
-        
-        # Solo mostramos botones de sub-menú si hay más de una opción
-        if len(sub_opciones) > 1:
-            # Creamos una fila de columnas para los botones del sub-menú
-            cols_sub = st.columns(len(sub_opciones) + 3) 
-            for idx, sub in enumerate(sub_opciones):
-                with cols_sub[idx]:
-                    es_activo = st.session_state.menu_sub == sub
-                    # El "»" indica visualmente dónde estás parado en el sub-menú
-                    label = f"» {sub}" if es_activo else sub
-                    if st.button(label, key=f"btn_sub_{sub}", use_container_width=True):
-                        st.session_state.menu_sub = sub
-                        st.rerun()
-    
+
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 25px; opacity:0.1;'>", unsafe_allow_html=True)
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
@@ -2405,6 +2173,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
