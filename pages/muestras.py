@@ -130,7 +130,7 @@ html, body {{
 
 /* 3. TÍTULOS Y OPERATIONAL QUERY */
 h3, .op-query-text {{ 
-    font-size: 16px !important; 
+    font-size: 11px !important; 
     letter-spacing: 8px !important; 
     text-align: center !important; 
     margin-top: 8px !important; 
@@ -2603,6 +2603,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
