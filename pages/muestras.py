@@ -418,7 +418,8 @@ else:
             try:
                 st.image(vars_css["logo"], width=160)
                 st.markdown(f"<p style='text-align:center; font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:4px; margin-bottom:0;'>SYSTEM SOLUTIONS</p>", unsafe_allow_html=True)
-                                        
+            except Exception as e:
+                st.write("Error al cargar el logo:", e)                            
         with c2:
             # INDICADOR GENERAL (CENTRADO ABSOLUTO CON ESPACIADO NEXION)
             if st.session_state.menu_sub != "GENERAL":
