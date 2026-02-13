@@ -1248,17 +1248,26 @@ else:
                 
                 # ── FUNCIONES DE SOPORTE ──
                 def cargar_datos_gastos():
+                    # Estas son las columnas que el editor ESPERA recibir
                     columnas_base = ["FECHA", "ID", "QUEJA", "ESTATUS", "INCONFORMIDAD", "AGENTE", "ULTIMA ACCION", "GASTOS ADICIONALES"]
                     try:
                         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                         if r.status_code == 200:
                             df = pd.read_csv(io.StringIO(r.text))
+                            # Normalizamos nombres (Mayúsculas y sin espacios)
                             df.columns = [str(c).strip().upper() for c in df.columns]
-                            # Asegurar que existan las columnas por si acaso
+                            
+                            # TRUCO ANTIFALLO: Si alguna columna falta (porque el CSV es viejo), 
+                            # la creamos vacía para que st.data_editor no lance el error de compatibilidad.
                             for col in columnas_base:
-                                if col not in df.columns: df[col] = ""
+                                if col not in df.columns:
+                                    df[col] = ""
+                            
                             return df[columnas_base]
-                    except: pass
+                    except Exception as e:
+                        print(f"Error al cargar: {e}")
+                    
+                    # Si todo falla, devolvemos un DataFrame vacío con la estructura correcta
                     return pd.DataFrame(columns=columnas_base)
                 
                 def guardar_en_github(df_to_save):
@@ -1278,15 +1287,16 @@ else:
                 # ── INTERFAZ ──
                 st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL DE QUEJAS | LOGÍSTICA</p>", unsafe_allow_html=True)
                 
+                # Cargamos los datos asegurando compatibilidad
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
                 
-                # ── EDITOR DE DATOS ──
+                # ── EDITOR DE DATOS (YA NO DEBERÍA DAR ERROR) ──
                 df_editado = st.data_editor(
                     st.session_state.df_gastos,
                     use_container_width=True,
                     num_rows="dynamic",
-                    key="editor_quejas_v1",
+                    key="editor_quejas_v_final",
                     column_config={
                         "FECHA": st.column_config.TextColumn("FECHA"),
                         "ID": st.column_config.TextColumn("ID"),
@@ -1307,7 +1317,7 @@ else:
                 if not filas_v.empty:
                     filas_v["GASTOS ADICIONALES"] = pd.to_numeric(filas_v["GASTOS ADICIONALES"], errors='coerce').fillna(0)
                     for _, r in filas_v.iterrows():
-                        gasto_fmt = f"${float(r['GASTOS ADICIONALES']):,.2f}"
+                        gasto_fmt = f"${float(r.get('GASTOS ADICIONALES', 0)):,.2f}"
                         tabla_html += f"""
                         <tr>
                             <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
@@ -1326,17 +1336,16 @@ else:
                 <div style="font-family:Arial; padding:20px; color:black; background:white;">
                     <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:15px;">
                         <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:9px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
-                        <div style="text-align:right; font-size:10px;"><b>FECHA REPORTE:</b> {datetime.now().strftime('%d/%m/%Y')}<br><b>HORA:</b> {datetime.now().strftime('%I:%M %p').lower()}</div>
+                        <div style="text-align:right; font-size:10px;"><b>FECHA REPORTE:</b> {datetime.now().strftime('%d/%m/%Y')}</div>
                     </div>
-                    <h4 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">Reporte de Seguimiento de Quejas</h4>
                     <table style="width:100%; border-collapse:collapse;">
                         <thead><tr style="background:#eee; font-size:10px;">
-                            <th>FECHA</th><th>ID</th><th>QUEJA</th><th>ESTATUS</th><th>INCONFORMIDAD</th><th>AGENTE</th><th>ÚLTIMA ACCIÓN</th><th>GASTOS</th>
+                            <th>FECHA</th><th>ID</th><th>QUEJA</th><th>ESTATUS</th><th>INCONFORMIDAD</th><th>AGENTE</th><th>ACCION</th><th>GASTOS</th>
                         </tr></thead>
                         <tbody>{tabla_html}</tbody>
-                        <tfoot><tr style="font-weight:bold; background:#eee; font-size:11px;">
-                            <td colspan="7" style="border:1px solid #000; text-align:right; padding:5px;">TOTAL GASTOS:</td>
-                            <td style="border:1px solid #000; text-align:right; padding:5px;">${total_c:,.2f}</td>
+                        <tfoot><tr style="font-weight:bold; background:#eee;">
+                            <td colspan="7" style="border:1px solid #000; text-align:right;">TOTAL:</td>
+                            <td style="border:1px solid #000; text-align:right;">${total_c:,.2f}</td>
                         </tr></tfoot>
                     </table>
                 </div>"""
@@ -1352,7 +1361,7 @@ else:
                     if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
                         if guardar_en_github(df_editado):
                             st.session_state.df_gastos = df_editado
-                            st.toast("Guardado en GitHub correctamente", icon="✅")
+                            st.toast("Datos sincronizados", icon="✅")
                             time.sleep(1); st.rerun()
                 with c3:
                     if st.button(":material/print: IMPRIMIR", use_container_width=True):
@@ -2451,6 +2460,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
