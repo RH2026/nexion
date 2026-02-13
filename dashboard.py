@@ -1241,6 +1241,7 @@ else:
             elif st.session_state.menu_sub == "QUEJAS":
                 st.subheader("SEGUIMIENTO > QUEJAS")
                 # ── CONFIGURACIÓN GITHUB (GASTOS) ──
+                # ── CONFIGURACIÓN GITHUB (GASTOS) ──
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
                 FILE_PATH = "gastos.csv"
@@ -1248,13 +1249,15 @@ else:
                 
                 # ── FUNCIONES DE SOPORTE ──
                 def cargar_datos_gastos():
-                    # Nombres exactos que queremos
                     columnas_base = ["FECHA", "ID", "QUEJA", "ESTATUS", "INCONFORMIDAD", "AGENTE", "ULTIMA ACCION", "GASTOS ADICIONALES"]
                     
-                    # Mapeo para forzar la conversión de nombres viejos a nuevos
                     mapeo_nombres = {
-                        "PAQUETERIA": "ID", "CLIENTE": "QUEJA", "SOLICITO": "ESTATUS",
-                        "DESTINO": "INCONFORMIDAD", "CANTIDAD": "AGENTE", "UM": "ULTIMA ACCION",
+                        "PAQUETERIA": "ID",
+                        "CLIENTE": "QUEJA",
+                        "SOLICITO": "ESTATUS",
+                        "DESTINO": "INCONFORMIDAD",
+                        "CANTIDAD": "AGENTE",
+                        "UM": "ULTIMA ACCION",
                         "COSTO": "GASTOS ADICIONALES"
                     }
                 
@@ -1262,53 +1265,97 @@ else:
                         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                         if r.status_code == 200:
                             df = pd.read_csv(io.StringIO(r.text))
-                            # Limpiar nombres de columnas (quitar espacios y poner en mayúsculas)
+                
+                            # Normalizar columnas
                             df.columns = [str(c).strip().upper() for c in df.columns]
-                            
-                            # Renombrar lo que sea necesario
+                
+                            # Renombrar si aplica
                             df = df.rename(columns=mapeo_nombres)
-                            
-                            # Crear columnas faltantes con valores vacíos para que el editor no truene
+                
+                            # Crear columnas faltantes
                             for col in columnas_base:
                                 if col not in df.columns:
                                     df[col] = ""
-                            
-                            # Forzar el orden y contenido exacto
+                
+                            # Orden exacto
                             df = df[columnas_base]
-                            
-                            # Asegurar que la columna de gastos sea numérica para evitar conflictos de tipo
-                            df["GASTOS ADICIONALES"] = pd.to_numeric(df["GASTOS ADICIONALES"], errors='coerce').fillna(0)
-                            
+                
+                            # 🔥 LIMPIEZA FUERTE DE NUMÉRICOS
+                            df["GASTOS ADICIONALES"] = (
+                                df["GASTOS ADICIONALES"]
+                                .astype(str)
+                                .str.replace("$", "", regex=False)
+                                .str.replace(",", "", regex=False)
+                                .str.strip()
+                            )
+                
+                            df["GASTOS ADICIONALES"] = pd.to_numeric(
+                                df["GASTOS ADICIONALES"], errors="coerce"
+                            ).fillna(0.0)
+                
                             return df
-                    except:
-                        pass
-                    # Si falla, devolvemos un DataFrame vacío con la estructura correcta
+                
+                    except Exception as e:
+                        print("Error cargando gastos:", e)
+                
                     return pd.DataFrame(columns=columnas_base)
                 
+                
                 def guardar_en_github(df_to_save):
-                    if not TOKEN: return False
+                    if not TOKEN:
+                        return False
                     try:
                         from github import Github
-                        g = Github(TOKEN); repo = g.get_repo(REPO_NAME)
+                        g = Github(TOKEN)
+                        repo = g.get_repo(REPO_NAME)
+                
+                        # 🔥 FORZAR NUMÉRICO ANTES DE GUARDAR
+                        df_to_save["GASTOS ADICIONALES"] = pd.to_numeric(
+                            df_to_save["GASTOS ADICIONALES"], errors="coerce"
+                        ).fillna(0.0)
+                
                         csv_data = df_to_save.to_csv(index=False)
+                
                         try:
                             contents = repo.get_contents(FILE_PATH)
-                            repo.update_file(contents.path, f"Update gastos {datetime.now()}", csv_data, contents.sha)
+                            repo.update_file(
+                                contents.path,
+                                f"Update gastos {datetime.now()}",
+                                csv_data,
+                                contents.sha
+                            )
                         except:
-                            repo.create_file(FILE_PATH, f"Initial gastos", csv_data)
+                            repo.create_file(
+                                FILE_PATH,
+                                "Initial gastos",
+                                csv_data
+                            )
+                
                         return True
-                    except: return False
+                    except Exception as e:
+                        print("Error guardando en GitHub:", e)
+                        return False
+                
                 
                 # ── INTERFAZ ──
-                st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>", unsafe_allow_html=True)
+                st.markdown(
+                    "<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>",
+                    unsafe_allow_html=True
+                )
                 
-                # Cargamos datos asegurando que la estructura sea perfecta para el editor
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
                 
-                # ── EDITOR DE DATOS (CONFIGURACIÓN ROBUSTA) ──
+                # 🔥 COPIA SEGURA PARA EDITOR
+                df_base = st.session_state.df_gastos.copy()
+                
+                df_base["GASTOS ADICIONALES"] = pd.to_numeric(
+                    df_base["GASTOS ADICIONALES"], errors="coerce"
+                ).fillna(0.0)
+                
+                # ── EDITOR DE DATOS ──
                 df_editado = st.data_editor(
-                    st.session_state.df_gastos,
+                    df_base,
                     use_container_width=True,
                     num_rows="dynamic",
                     key="editor_gastos_v_final_secure",
@@ -1320,18 +1367,38 @@ else:
                         "INCONFORMIDAD": st.column_config.TextColumn("INCONFORMIDAD"),
                         "AGENTE": st.column_config.TextColumn("AGENTE"),
                         "ULTIMA ACCION": st.column_config.TextColumn("ÚLTIMA ACCIÓN"),
-                        "GASTOS ADICIONALES": st.column_config.NumberColumn("GASTOS ADICIONALES", format="$%.2f")
+                        "GASTOS ADICIONALES": st.column_config.NumberColumn(
+                            "GASTOS ADICIONALES",
+                            format="$%.2f"
+                        )
                     }
                 )
                 
+                # 🔥 BLINDAJE POST-EDICIÓN
+                df_editado["GASTOS ADICIONALES"] = (
+                    df_editado["GASTOS ADICIONALES"]
+                    .astype(str)
+                    .str.replace("$", "", regex=False)
+                    .str.replace(",", "", regex=False)
+                    .str.strip()
+                )
+                
+                df_editado["GASTOS ADICIONALES"] = pd.to_numeric(
+                    df_editado["GASTOS ADICIONALES"], errors="coerce"
+                ).fillna(0.0)
+                
+                
                 # ── PREPARACIÓN DE IMPRESIÓN ──
-                # Limpieza de columnas post-edición
                 df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
-                filas_v = df_editado[df_editado["ID"].notna() & (df_editado["ID"].astype(str).str.strip() != "")].copy()
+                
+                filas_v = df_editado[
+                    df_editado["ID"].notna() &
+                    (df_editado["ID"].astype(str).str.strip() != "")
+                ].copy()
                 
                 tabla_html = ""
+                
                 if not filas_v.empty:
-                    filas_v["GASTOS ADICIONALES"] = pd.to_numeric(filas_v["GASTOS ADICIONALES"], errors='coerce').fillna(0)
                     for _, r in filas_v.iterrows():
                         costo_fmt = f"${float(r.get('GASTOS ADICIONALES', 0)):,.2f}"
                         tabla_html += f"""
@@ -1371,22 +1438,30 @@ else:
                     </div>
                 </div>"""
                 
+                
                 # ── BOTONES ──
                 st.markdown("<br>", unsafe_allow_html=True)
                 c1, c2, c3 = st.columns(3)
+                
                 with c1:
                     if st.button(":material/refresh: ACTUALIZAR", use_container_width=True):
                         st.session_state.df_gastos = cargar_datos_gastos()
                         st.rerun()
+                
                 with c2:
                     if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
                         if guardar_en_github(df_editado):
                             st.session_state.df_gastos = df_editado
                             st.toast("Sincronización exitosa", icon="✅")
-                            time.sleep(1); st.rerun()
+                            time.sleep(1)
+                            st.rerun()
+                
                 with c3:
                     if st.button(":material/print: IMPRIMIR", use_container_width=True):
-                        components.html(f"<html><body>{form_print}<script>window.print();</script></body></html>", height=0)
+                        components.html(
+                            f"<html><body>{form_print}<script>window.print();</script></body></html>",
+                            height=0
+                        )
                         st.toast("Generando vista previa", icon="🖨️")
                 
             else:
@@ -2482,6 +2557,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
