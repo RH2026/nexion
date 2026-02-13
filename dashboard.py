@@ -140,7 +140,7 @@ h3, .op-query-text {{
     width: 100% !important; 
 }}
 
-/* 4. BOTONES SLIM (Mantenemos tus botones generales) */
+/* 4. BOTONES SLIM */
 div.stButton > button {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -150,6 +150,8 @@ div.stButton > button {{
     text-transform: uppercase; 
     font-size: 10px !important; 
     height: 28px !important; 
+    min-height: 28px !important; 
+    line-height: 28px !important; 
     transition: all 0.2s ease !important; 
     width: 100% !important; 
 }}
@@ -157,6 +159,7 @@ div.stButton > button {{
 div.stButton > button:hover {{ 
     background-color: #ffffff !important; 
     color: #000000 !important; 
+    border-color: #ffffff !important; 
 }}
 
 /* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
@@ -2418,8 +2421,6 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
-
-
 
 
 
