@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import datetime
 import os
 import streamlit.components.v1 as components
 import requests
@@ -58,68 +57,68 @@ if "autenticado" not in st.session_state:
 if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
 
-# Definición de variables de color (PARA EVITAR EL NAMEERROR)
 vars_css = {
     "bg": "#1B1E23", "card": "#282D34", "text": "#FFFAFA", 
     "sub": "#FFFFFF", "border": "#414852", "accent": "#00FFAA"
 }
 
-# ── CSS DEFINITIVO BASADO EN TU IMAGEN ──
+# ── CSS RECONSTRUIDO AL 100% PARA ALINEACIÓN DUAL ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
 .stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
-.block-container {{ padding-top: 1.5rem !important; padding-bottom: 5rem !important; }}
+.block-container {{ padding-top: 1rem !important; padding-bottom: 5rem !important; }}
 
-/* HEADER: LOGO IZQUIERDA Y TITULO CENTRAL */
-.header-wrapper {{
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    position: relative;
-    padding-bottom: 10px;
+/* 1. LOGO IZQUIERDA */
+.logo-container {{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 1000;
 }}
-.logo-box {{ text-align: left; line-height: 1; }}
-.logo-text {{ font-weight: 800; letter-spacing: 4px; font-size: 22px; }}
-.logo-sub {{ font-size: 8px; letter-spacing: 3px; opacity: 0.6; display: block; }}
+.logo-main {{ font-weight: 800; letter-spacing: 3px; font-size: 20px; color: {vars_css['text']}; }}
+.logo-sub {{ font-size: 7px; letter-spacing: 2px; opacity: 0.6; display: block; margin-top: -5px; }}
 
+/* 2. TÍTULO CENTRAL IZQUIERDA (D A S H B O A R D) */
 .center-title {{
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    top: 15px;
+    top: 20px;
     font-size: 10px;
     letter-spacing: 8px;
     font-weight: 600;
-    opacity: 0.8;
     text-transform: uppercase;
+    color: {vars_css['text']};
+    opacity: 0.8;
 }}
 
-/* MENU PRINCIPAL (NIVEL 1 - DERECHA) */
+/* 3. MENU PRINCIPAL (DERECHA) */
 div[data-testid="stTabNav"] > div[role="tablist"] {{
     justify-content: flex-end !important;
     gap: 15px;
-    border-bottom: 1px solid {vars_css['border']}22 !important;
+    border-bottom: 1px solid {vars_css['border']}33 !important;
 }}
 
-/* SUBSECCIONES (NIVEL 2 - IZQUIERDA) */
+/* 4. SUBMENUS (IZQUIERDA) - Forzamos el bloque vertical */
 div[data-testid="stVerticalBlock"] div[data-testid="stTabNav"] > div[role="tablist"] {{
     justify-content: flex-start !important;
-    margin-top: 20px !important;
+    margin-top: 25px !important;
     border-bottom: none !important;
 }}
 
-/* ESTILO PESTAÑAS */
+/* ESTILOS DE TABS COMUNES */
 button[data-baseweb="tab"] {{
     background-color: transparent !important;
+    border: none !important;
     color: {vars_css['sub']} !important;
     font-size: 11px !important;
     letter-spacing: 2px !important;
     text-transform: uppercase;
-    opacity: 0.4;
-    border: none !important;
+    opacity: 0.5;
+    padding: 10px 15px !important;
 }}
 button[data-baseweb="tab"][aria-selected="true"] {{
     opacity: 1 !important;
@@ -139,16 +138,14 @@ div[data-baseweb="tab-highlight"] {{ background-color: {vars_css['accent']} !imp
 
 # ── LOGO Y IDENTIDAD ──
 st.markdown(f'''
-<div class="header-wrapper">
-    <div class="logo-box">
-        <div class="logo-text">NEXION</div>
-        <div class="logo-sub">SYSTEM SOLUTIONS</div>
-    </div>
-    <div class="center-title">D A S H B O A R D</div>
+<div class="logo-container">
+    <div class="logo-main">NEXION</div>
+    <div class="logo-sub">SYSTEM SOLUTIONS</div>
 </div>
+<div class="center-title">D A S H B O A R D</div>
 ''', unsafe_allow_html=True)
 
-# ── LÓGICA DE SPLASH Y LOGIN ──
+# ── LÓGICA DE FLUJO ORIGINAL ──
 if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
@@ -156,14 +153,14 @@ if not st.session_state.splash_completado:
 if not st.session_state.autenticado:
     _, col_login, _ = st.columns([1, 1, 1])
     with col_login:
-        st.markdown("<br><br><h3 style='text-align:center;'>SYSTEM ACCESS</h3>", unsafe_allow_html=True)
+        st.markdown("<br><br><h3 style='text-align:center;'>ACCESS REQUIRED</h3>", unsafe_allow_html=True)
         user = st.text_input("OPERATOR_ID")
         key = st.text_input("ACCESS_KEY", type="password")
         if st.button("VERIFY IDENTITY", use_container_width=True):
             st.session_state.autenticado = True
             st.rerun()
 else:
-    # ── NAVEGACIÓN PRINCIPAL (DERECHA) ──
+    # ── MENU PRINCIPAL (DERECHA) ──
     tabs_n1 = st.tabs(["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"])
 
     with tabs_n1[0]: # DASHBOARD
@@ -172,14 +169,16 @@ else:
         
         with sub_dashboard[0]: # KPI'S
             st.markdown("<br><br>", unsafe_allow_html=True)
-            st.write("Cargando indicadores visuales...")
+            # Aquí van tus Donuts (Pedidos, Entregados, etc.)
+            st.write("Visualización de Indicadores Activa")
 
     with tabs_n1[1]: # SEGUIMIENTO
         sub_seguimiento = st.tabs(["TRK", "GANTT", "QUEJAS"])
-        with sub_seguimiento[0]: st.write("Trackings activos...")
+        with sub_seguimiento[0]: st.write("Contenido de Tracking")
 
     # ── FOOTER ──
     st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY <b>HERNANPHY</b></div>""", unsafe_allow_html=True)
+
 
 
 
