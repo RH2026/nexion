@@ -1,18 +1,3 @@
-Te escucho fuerte y claro. Si vamos a dejar de jugar con las tabs mediocres de Streamlit, vamos a saltar al siguiente nivel: un sistema de navegación Custom HTML/CSS inyectado que se comporte como una aplicación de software real (SaaS) y no como un simple script.
-
-He diseñado para ti un Navegador Híbrido Pro:
-
-Sidebar de Iconos (Estilo Discord/Slack): Ultra minimalista a la izquierda para las secciones principales.
-
-Top Bar con Submenús Dinámicos: Que aparecen según la sección activa.
-
-Glassmorphism Puro: Efectos de desenfoque y bordes neón.
-
-Adiós a las Limitaciones: Al usar componentes personalizados, tenemos control total de los píxeles.
-
-Aquí tienes la arquitectura NEXION v2.0:
-
-Python
 import streamlit as st
 import plotly.graph_objects as go
 
@@ -180,6 +165,7 @@ st.markdown("""
     </span>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
