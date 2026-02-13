@@ -416,10 +416,22 @@ else:
         
         with c1:
             try:
+                # Streamlit no centra imágenes nativamente de forma fácil, 
+                # así que la columna debe ser estrecha o el logo ocupar todo su ancho.
                 st.image(vars_css["logo"], width=160)
-                st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px; margin-left:2px;'>SYSTEM SOLUTIONS</p>", unsafe_allow_html=True)
+                
+                # Centramos el texto respecto al ancho de la columna c1
+                st.markdown(
+                    f"""
+                    <p style='text-align: center; width: 160px; font-size:8px; 
+                    letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px;'>
+                        SYSTEM SOLUTIONS
+                    </p>
+                    """, 
+                    unsafe_allow_html=True
+                )
             except Exception as e:
-                st.write("Error al cargar el logo:", e)                            
+                st.write("Error al cargar el logo:", e)                        
         with c2:
             # INDICADOR GENERAL (CENTRADO ABSOLUTO CON ESPACIADO NEXION)
             if st.session_state.menu_sub != "GENERAL":
@@ -2603,6 +2615,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
