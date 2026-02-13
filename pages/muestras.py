@@ -1,8 +1,3 @@
-¡Entendido, reina! Cero experimentos fallidos. Vamos a lo seguro y a lo que se ve bien: todo alineado a la derecha para que mantenga la simetría con tu logo a la izquierda, respetando el texto de "SYSTEM SOLUTIONS" y quitando el filtro de periodo para limpiar la interfaz.
-
-Aquí tienes el código completo, con el logo n1.png y la estructura de navegación anidada (Tabs sobre Tabs) que tanto querías, todo fluyendo hacia la derecha.
-
-Python
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -174,6 +169,7 @@ else:
 
     # ── FOOTER ──
     st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY <b>HERNANPHY</b></div>""", unsafe_allow_html=True)
+
 
 
 
