@@ -283,12 +283,6 @@ button[data-baseweb="tab"] {{
 
 /* --- ESTILOS DE TABS REPARADOS --- */
 
-¡Cierto! Tienes toda la razón, al estar dentro de un f-string de Python (entre las comillas triples f""" ... """), las llaves de CSS { } confunden a Python porque cree que son variables.
-
-Para que Python las ignore y las pase tal cual al navegador, debemos usar doble llave {{ }}. Aquí tienes el código reparado y listo para copiar dentro de tu string:
-
-Python
-/* --- ESTILOS DE TABS REPARADOS (PARA F-STRING) --- */
 
 /* 1. EL CULPABLE: Quitamos o suavizamos la línea gris del fondo */
 div[data-baseweb="tab-list"] {{
@@ -2622,6 +2616,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
