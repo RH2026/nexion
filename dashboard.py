@@ -161,7 +161,8 @@ div.stButton > button:hover {{
     color: #000000 !important; 
     border-color: #ffffff !important; 
 }}
-/* 4.1 ESPECÍFICO PARA EL BOTÓN DE NAVEGACIÓN (POPOVER) */
+
+/* ELIMINAR EL TONO VERDOSO DEL POPOVER (DENTRO DE F-STRING) */
 div[data-testid="stPopover"] > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -169,15 +170,17 @@ div[data-testid="stPopover"] > button {{
     border-radius: 2px !important;
     height: 28px !important;
     min-height: 28px !important;
-    line-height: 28px !important;
+    box-shadow: none !important;
+    outline: none !important;
 }}
 
-/* Forzamos el color del icono de la hamburguesa y la flechita */
-div[data-testid="stPopover"] > button svg {{
+/* Forzar el icono a blanco nieve */
+div[data-testid="stPopover"] svg {{
     fill: {vars_css['text']} !important;
+    color: {vars_css['text']} !important;
 }}
 
-/* Efecto Hover para que sea igual a los demás */
+/* Hover: Fondo blanco, texto e icono negro */
 div[data-testid="stPopover"] > button:hover {{
     background-color: #ffffff !important;
     color: #000000 !important;
@@ -2447,6 +2450,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
