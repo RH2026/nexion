@@ -70,9 +70,6 @@ if "splash_completado" not in st.session_state:
     st.session_state.splash_completado = False
 
 # ── TEMA FIJO (TUS VARIABLES ORIGINALES) ──────────────────────────
-if "tema" not in st.session_state:
-    st.session_state.tema = "oscuro"
-
 vars_css = {
     "bg": "#1B1E23",      
     "card": "#282D34",    
@@ -83,18 +80,16 @@ vars_css = {
     "logo": "n1.png"
 }
 
-# ── TU BLOQUE DE CSS ORIGINAL (SIN CAMBIOS) ──────────────────────────
+# ── TU BLOQUE DE CSS ORIGINAL (ÍNTEGRO) ──────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. Limpieza de Interfaz */
 header, footer, [data-testid="stHeader"] {{
     visibility: hidden;
     height: 0px;
 }}
 
-/* APP BASE */
 html, body {{
     background-color: {vars_css['bg']} !important;
     color: {vars_css['text']} !important;
@@ -106,14 +101,12 @@ html, body {{
     font-family: 'Inter', sans-serif !important; 
 }}
 
-/* CONTENEDOR PRINCIPAL */
 .block-container {{ 
     padding-top: 0.8rem !important; 
     padding-bottom: 5rem !important; 
     background-color: {vars_css['bg']} !important;
 }}
 
-/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
 @keyframes fadeInUp {{ 
     from {{ opacity: 0; transform: translateY(15px); }} 
     to {{ opacity: 1; transform: translateY(0); }} 
@@ -123,7 +116,6 @@ html, body {{
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* 3. TÍTULOS Y OPERATIONAL QUERY */
 h3, .op-query-text {{ 
     font-size: 11px !important; 
     letter-spacing: 8px !important; 
@@ -135,7 +127,6 @@ h3, .op-query-text {{
     width: 100% !important; 
 }}
 
-/* 4. BOTONES SLIM */
 div.stButton > button {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -157,7 +148,6 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* 5. INPUTS */
 div[data-baseweb="input"] {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -181,7 +171,6 @@ div[data-baseweb="input"]:focus-within {{
     outline: none !important;
 }}
 
-/* 6. FOOTER FIJO */
 .footer {{ 
     position: fixed; 
     bottom: 0 !important; 
@@ -197,15 +186,19 @@ div[data-baseweb="input"]:focus-within {{
     z-index: 999999 !important; 
 }}
 
-/* TABS Y FILTROS */
-div[data-baseweb="tag"] {{
-    background-color: #2563eb !important;
-    color: #ffffff !important;
+/* Estilos de Pestañas Superiores */
+button[data-baseweb="tab"] {{
+    font-size: 10px !important;
+    letter-spacing: 2px !important;
+    border: none !important;
+    text-transform: uppercase !important;
+    color: {vars_css['sub']} !important;
+    opacity: 0.6;
 }}
 
-div[data-baseweb="tab-list"] button[aria-selected="true"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
+button[data-baseweb="tab"][aria-selected="true"] {{
+    opacity: 1 !important;
+    font-weight: 800 !important;
 }}
 
 div[data-baseweb="tab-highlight"] {{
@@ -214,81 +207,136 @@ div[data-baseweb="tab-highlight"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# ── LÓGICA DE NAVEGACIÓN ──────────────────────────
+# ── FLUJO INICIAL ──────────────────────────
 if not st.session_state.splash_completado:
     st.session_state.splash_completado = True
     st.rerun()
 
 if not st.session_state.autenticado:
-    # Pantalla de login simplificada para tu reparación
+    # Login simplificado sin restricciones
     _, col, _ = st.columns([2, 2, 2])
     with col:
-        st.markdown("<br><br><h3 style='text-align: center;'>SYSTEM ACCESS</h3>", unsafe_allow_html=True)
-        st.text_input("OPERATOR ID", key="user")
-        st.text_input("ACCESS KEY", type="password", key="pass")
+        st.markdown("<br><br><br><h3 style='text-align: center;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
+        st.text_input("OPERATOR ID", key="user_id")
+        st.text_input("ACCESS KEY", type="password", key="access_key")
         if st.button("VERIFY IDENTITY"):
             st.session_state.autenticado = True
             st.rerun()
 else:
-    # --- HEADER CON TABS PRINCIPALES ---
-    c1, c2 = st.columns([1, 4], vertical_alignment="center")
+    # ── HEADER Y MENÚ PRINCIPAL (NIVEL 1) ──────────────────────────
+    c1, c2 = st.columns([1, 5], vertical_alignment="center")
     with c1:
-        st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0; text-align:left !important;'>NEXION</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='letter-spacing:4px; font-weight:800; margin:0;'>NEXION</h2>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size:7px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-5px;'>SYSTEM SOLUTIONS</p>", unsafe_allow_html=True)
     
     with c2:
-        tab_principal = st.tabs(["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"])
+        tabs_n1 = st.tabs(["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"])
 
-    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:0px 0 20px; opacity:0.2;'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:-15px 0 20px; opacity:0.2;'>", unsafe_allow_html=True)
 
-    # --- CONTENEDOR DE CONTENIDO (CON SUBMENUS INTERNOS) ---
-    
-    # 1. DASHBOARD
-    with tab_principal[0]:
-        st.write("### DASHBOARD CENTRAL")
+    # ── RENDERIZADO DE CONTENIDO POR MÓDULO ──────────────────────────────
 
-    # 2. SEGUIMIENTO
-    with tab_principal[1]:
-        # Submenú interno tipo botones (como tu imagen)
-        sub_c = st.columns([1, 1, 1, 6])
-        if sub_c[0].button("TRK"): st.session_state.sub_seg = "TRK"
-        if sub_c[1].button("GANTT"): st.session_state.sub_seg = "GANTT"
-        if sub_c[2].button("QUEJAS"): st.session_state.sub_seg = "QUEJAS"
+    # --- 1. DASHBOARD ---
+    with tabs_n1[0]:
+        st.markdown("<h3 class='op-query-text'>DASHBOARD</h3>", unsafe_allow_html=True)
         
-        st.markdown("---")
-        actual = st.session_state.get("sub_seg", "TRK")
-        st.write(f"Modulo: {actual}")
-
-    # 3. REPORTES
-    with tab_principal[2]:
-        sub_c = st.columns([1, 1, 1, 6])
-        if sub_c[0].button("APQ"): st.session_state.sub_rep = "APQ"
-        if sub_c[1].button("OPS"): st.session_state.sub_rep = "OPS"
-        if sub_c[2].button("OTD"): st.session_state.sub_rep = "OTD"
+        # Filtro de Período (Imagen)
+        st.markdown("<p style='font-size:9px; letter-spacing:2px;'>PERÍODO</p>", unsafe_allow_html=True)
+        st.selectbox("FEBRERO", ["ENERO", "FEBRERO", "MARZO", "ABRIL"], label_visibility="collapsed")
         
-        st.markdown("---")
-        st.write(f"Reporte: {st.session_state.get('sub_rep', 'APQ')}")
-
-    # 4. FORMATOS
-    with tab_principal[3]:
-        sub_c = st.columns([1.5, 1.5, 1, 5])
-        if sub_c[0].button("SALIDA PT"): st.session_state.sub_for = "SALIDA PT"
-        if sub_c[1].button("CONTRARRECIBOS"): st.session_state.sub_for = "CONTRARRECIBOS"
-        if sub_c[2].button("MUESTRAS"): st.session_state.sub_for = "MUESTRAS"
+        # Submenú Nivel 2
+        sub_d = st.columns([1, 1, 1, 1, 6])
+        if sub_d[0].button("KPI'S"): st.session_state.d_sub = "KPI"
+        if sub_d[1].button("RASTREO"): st.session_state.d_sub = "RASTREO"
+        if sub_d[2].button("VOLUMEN"): st.session_state.d_sub = "VOLUMEN"
+        if sub_d[3].button("RETRASOS"): st.session_state.d_sub = "RETRASOS"
         
-        st.markdown("---")
-        st.write(f"Formato: {st.session_state.get('sub_for', 'SALIDA PT')}")
-
-    # 5. HUB LOG
-    with tab_principal[4]:
-        sub_c = st.columns([1.5, 1.5, 1.5, 4.5])
-        if sub_c[0].button("SMART ROUTING"): st.session_state.sub_hub = "SMART ROUTING"
-        if sub_c[1].button("DATA MGMT"): st.session_state.sub_hub = "DATA MGMT"
-        if sub_c[2].button("ORDER STAGING"): st.session_state.sub_hub = "ORDER STAGING"
+        st.markdown("<hr style='border-top:1px solid #414852; opacity:0.1; margin-top:0;'>", unsafe_allow_html=True)
         
-        st.markdown("---")
-        st.write(f"Hub: {st.session_state.get('sub_hub', 'SMART ROUTING')}")
+        # Lógica de renderizado Dashboard
+        d_view = st.session_state.get("d_sub", "KPI")
+        if d_view == "KPI":
+            st.write("Cargando indicadores clave (Donut Charts)...")
+        elif d_view == "RASTREO":
+            st.write("Vista de Rastreo de Unidades")
 
-    # ── FOOTER ORIGINAL ────────────────────────
+    # --- 2. SEGUIMIENTO ---
+    with tabs_n1[1]:
+        st.markdown("<h3 class='op-query-text'>SEGUIMIENTO</h3>", unsafe_allow_html=True)
+        
+        sub_s = st.columns([1, 1, 1, 7])
+        if sub_s[0].button("TRK"): st.session_state.s_sub = "TRK"
+        if sub_s[1].button("GANTT"): st.session_state.s_sub = "GANTT"
+        if sub_s[2].button("QUEJAS"): st.session_state.s_sub = "QUEJAS"
+        
+        st.markdown("<hr style='border-top:1px solid #414852; opacity:0.1; margin-top:0;'>", unsafe_allow_html=True)
+        
+        s_view = st.session_state.get("s_sub", "TRK")
+        if s_view == "TRK":
+            st.write("Módulo de Tracking en tiempo real")
+        elif s_view == "GANTT":
+            st.write("Diagrama de Gantt Logístico")
+        elif s_view == "QUEJAS":
+            st.write("Gestión de Incidencias y Quejas")
+
+    # --- 3. REPORTES ---
+    with tabs_n1[2]:
+        st.markdown("<h3 class='op-query-text'>REPORTES</h3>", unsafe_allow_html=True)
+        
+        sub_r = st.columns([1, 1, 1, 7])
+        if sub_r[0].button("APQ"): st.session_state.r_sub = "APQ"
+        if sub_r[1].button("OPS"): st.session_state.r_sub = "OPS"
+        if sub_r[2].button("OTD"): st.session_state.r_sub = "OTD"
+        
+        st.markdown("<hr style='border-top:1px solid #414852; opacity:0.1; margin-top:0;'>", unsafe_allow_html=True)
+        
+        r_view = st.session_state.get("r_sub", "APQ")
+        if r_view == "APQ":
+            st.subheader("Análisis de Producto y Quejas (APQ)")
+        elif r_view == "OPS":
+            st.subheader("Eficiencia Operativa (OPS)")
+        elif r_view == "OTD":
+            st.subheader("On-Time Delivery (OTD)")
+
+    # --- 4. FORMATOS ---
+    with tabs_n1[3]:
+        st.markdown("<h3 class='op-query-text'>FORMATOS</h3>", unsafe_allow_html=True)
+        
+        sub_f = st.columns([1.5, 1.5, 1, 6])
+        if sub_f[0].button("SALIDA PT"): st.session_state.f_sub = "SALIDA"
+        if sub_f[1].button("CONTRARRECIBOS"): st.session_state.f_sub = "RECIBOS"
+        if sub_f[2].button("MUESTRAS"): st.session_state.f_sub = "MUESTRAS"
+        
+        st.markdown("<hr style='border-top:1px solid #414852; opacity:0.1; margin-top:0;'>", unsafe_allow_html=True)
+        
+        f_view = st.session_state.get("f_sub", "SALIDA")
+        if f_view == "SALIDA":
+            st.write("Generador de Formatos: Salida de Producto Terminado")
+        elif f_view == "RECIBOS":
+            st.write("Generador de Contrarrecibos")
+        elif f_view == "MUESTRAS":
+            st.write("Módulo de Gestión y Formatos para Muestras")
+
+    # --- 5. HUB LOG ---
+    with tabs_n1[4]:
+        st.markdown("<h3 class='op-query-text'>HUB LOG</h3>", unsafe_allow_html=True)
+        
+        sub_h = st.columns([1.5, 1.5, 1.5, 5.5])
+        if sub_h[0].button("SMART ROUTING"): st.session_state.h_sub = "ROUTING"
+        if sub_h[1].button("DATA MANAGEMENT"): st.session_state.h_sub = "DATA"
+        if sub_h[2].button("ORDER STAGING"): st.session_state.h_sub = "STAGING"
+        
+        st.markdown("<hr style='border-top:1px solid #414852; opacity:0.1; margin-top:0;'>", unsafe_allow_html=True)
+        
+        h_view = st.session_state.get("h_sub", "ROUTING")
+        if h_view == "ROUTING":
+            st.write("Optimización de Rutas Inteligentes")
+        elif h_view == "DATA":
+            st.write("Administración de Base de Datos Logística")
+        elif h_view == "STAGING":
+            st.write("Preparación y Etiquetado de Órdenes")
+
+    # ── FOOTER FIJO (BRANDING) ────────────────────────
     st.markdown(f"""
     <div class="footer">
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
@@ -296,6 +344,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
