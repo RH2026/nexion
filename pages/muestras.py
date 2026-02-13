@@ -1,183 +1,157 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-import os
-import streamlit.components.v1 as components
-import requests
-from io import StringIO
 import plotly.graph_objects as go
-import plotly.express as px
-import time
-from github import Github
-import json
-import pytz
-import zipfile
-from pypdf import PdfReader, PdfWriter
-from fpdf import FPDF
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-import re
-import unicodedata
-import io
-import altair as alt
-from datetime import date, datetime, timedelta
-from io import BytesIO
+import os
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
+# 1. CONFIGURACIÓN MAESTRA
+st.set_page_config(page_title="NEXION | CORE", layout="wide", initial_sidebar_state="collapsed")
 
-# --- MOTOR DE INTELIGENCIA LOGÍSTICA ---
-def d_local(dir_val):
-    rangos = [(44100, 44990), (45010, 45245), (45400, 45429), (45500, 45595)]
-    cps = re.findall(r'\b\d{5}\b', str(dir_val))
-    for cp in cps:
-        try:
-            if any(inicio <= int(cp) <= fin for inicio, fin in rangos): return "LOCAL"
-        except: continue
-    return "FORÁNEO"
+# 2. VARIABLES DE DISEÑO (NEÓN & DARK)
+accent = "#00FFAA"
+bg_dark = "#1B1E23"
+card_bg = "#262C34"
 
-@st.cache_data
-def motor_logistico_central():
-    try:
-        if os.path.exists("matriz_historial.csv"):
-            h = pd.read_csv("matriz_historial.csv", encoding='utf-8-sig')
-            h.columns = [str(c).upper().strip() for c in h.columns]
-            c_pre = [c for c in h.columns if 'PRECIO' in c][0]
-            c_flet = [c for c in h.columns if 'FLETERA' in c or 'TRANSPORTE' in c][0]
-            c_dir = [c for c in h.columns if 'DIRECCION' in c][0]
-            h[c_pre] = pd.to_numeric(h[c_pre], errors='coerce').fillna(0)
-            mejores = h.loc[h.groupby(c_dir)[c_pre].idxmin()]
-            return mejores.set_index(c_dir)[c_flet].to_dict(), mejores.set_index(c_dir)[c_pre].to_dict()
-    except: pass
-    return {}, {}
-
-# ── ESTADOS DE SESIÓN ──────────────────────────
-if "autenticado" not in st.session_state:
-    st.session_state.autenticado = False
-if "splash_completado" not in st.session_state:
-    st.session_state.splash_completado = False
-
-vars_css = {
-    "bg": "#1B1E23", "card": "#282D34", "text": "#FFFAFA", 
-    "sub": "#FFFFFF", "border": "#414852", "accent": "#00FFAA"
-}
-
-# ── CSS RECONSTRUIDO AL 100% PARA ALINEACIÓN DUAL ──
+# 3. CSS PROFESIONAL (HARDCODED)
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+    
+    /* Reset total */
+    header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
+    .stApp {{ background-color: {bg_dark} !important; font-family: 'Inter', sans-serif; }}
+    .block-container {{ padding: 0rem !important; }}
 
-header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-.stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
-.block-container {{ padding-top: 1rem !important; padding-bottom: 5rem !important; }}
+    /* BARRA DE NAVEGACIÓN SUPERIOR (CUSTOM) */
+    .nav-bar {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 40px;
+        background: rgba(27, 30, 35, 0.95);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+    }}
 
-/* 1. LOGO IZQUIERDA */
-.logo-container {{
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    z-index: 1000;
-}}
-.logo-main {{ font-weight: 800; letter-spacing: 3px; font-size: 20px; color: {vars_css['text']}; }}
-.logo-sub {{ font-size: 7px; letter-spacing: 2px; opacity: 0.6; display: block; margin-top: -5px; }}
+    .logo-section {{ line-height: 1; }}
+    .logo-main {{ font-weight: 900; letter-spacing: 4px; font-size: 24px; color: white; }}
+    .logo-sub {{ font-size: 9px; letter-spacing: 3px; color: {accent}; opacity: 0.8; display: block; }}
 
-/* 2. TÍTULO CENTRAL IZQUIERDA (D A S H B O A R D) */
-.center-title {{
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 20px;
-    font-size: 10px;
-    letter-spacing: 8px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: {vars_css['text']};
-    opacity: 0.8;
-}}
+    .center-title {{ 
+        font-size: 11px; letter-spacing: 10px; font-weight: 400; 
+        color: white; opacity: 0.5; text-transform: uppercase;
+    }}
 
-/* 3. MENU PRINCIPAL (DERECHA) */
-div[data-testid="stTabNav"] > div[role="tablist"] {{
-    justify-content: flex-end !important;
-    gap: 15px;
-    border-bottom: 1px solid {vars_css['border']}33 !important;
-}}
+    /* EL CONTENEDOR DE TABS DE STREAMLIT (NIVEL 1) */
+    div[data-testid="stTabNav"] {{
+        background: transparent !important;
+        justify-content: flex-end !important;
+        margin-right: 20px;
+    }}
 
-/* 4. SUBMENUS (IZQUIERDA) - Forzamos el bloque vertical */
-div[data-testid="stVerticalBlock"] div[data-testid="stTabNav"] > div[role="tablist"] {{
-    justify-content: flex-start !important;
-    margin-top: 25px !important;
-    border-bottom: none !important;
-}}
+    button[data-baseweb="tab"] {{
+        font-size: 11px !important;
+        letter-spacing: 2px !important;
+        font-weight: 700 !important;
+        color: rgba(255,255,255,0.4) !important;
+        border: none !important;
+        padding: 10px 20px !important;
+    }}
 
-/* ESTILOS DE TABS COMUNES */
-button[data-baseweb="tab"] {{
-    background-color: transparent !important;
-    border: none !important;
-    color: {vars_css['sub']} !important;
-    font-size: 11px !important;
-    letter-spacing: 2px !important;
-    text-transform: uppercase;
-    opacity: 0.5;
-    padding: 10px 15px !important;
-}}
-button[data-baseweb="tab"][aria-selected="true"] {{
-    opacity: 1 !important;
-    border-bottom: 2px solid {vars_css['accent']} !important;
-}}
-div[data-baseweb="tab-highlight"] {{ background-color: {vars_css['accent']} !important; }}
+    button[data-baseweb="tab"][aria-selected="true"] {{
+        color: {accent} !important;
+        background: rgba(0, 255, 170, 0.05) !important;
+        border-bottom: 2px solid {accent} !important;
+    }}
 
-/* FOOTER */
-.footer {{ 
-    position: fixed; bottom: 0; left: 0; width: 100%; 
-    background-color: {vars_css['bg']}; color: {vars_css['sub']}; 
-    text-align: center; padding: 12px 0; font-size: 8px; letter-spacing: 2px;
-    border-top: 1px solid {vars_css['border']}; z-index: 999;
-}}
+    /* SUBMENÚS (NIVEL 2 - IZQUIERDA FORZADA) */
+    .sub-nav-container {{
+        padding: 0 40px;
+        margin-top: 20px;
+    }}
+
+    div[data-testid="stVerticalBlock"] div[data-testid="stTabNav"] {{
+        justify-content: flex-start !important;
+    }}
+
+    /* TARJETAS DE KPIS */
+    .kpi-card {{
+        background: {card_bg};
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid rgba(255,255,255,0.03);
+        text-align: center;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── LOGO Y IDENTIDAD ──
+# 4. HEADER UI (ESTÁTICO)
 st.markdown(f'''
-<div class="logo-container">
-    <div class="logo-main">NEXION</div>
-    <div class="logo-sub">SYSTEM SOLUTIONS</div>
-</div>
-<div class="center-title">D A S H B O A R D</div>
+<div class="nav-bar">
+    <div class="logo-section">
+        <span class="logo-main">NEXION</span>
+        <span class="logo-sub">SYSTEM SOLUTIONS</span>
+    </div>
+    <div class="center-title">D A S H B O A R D</div>
+    <div style="width: 200px;"></div> </div>
 ''', unsafe_allow_html=True)
 
-# ── LÓGICA DE FLUJO ORIGINAL ──
-if not st.session_state.splash_completado:
-    st.session_state.splash_completado = True
-    st.rerun()
+# 5. ESTRUCTURA DE MENÚS
+# Menú Principal a la Derecha (Controlado por CSS superior)
+menu_principal = st.tabs(["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"])
 
-if not st.session_state.autenticado:
-    _, col_login, _ = st.columns([1, 1, 1])
-    with col_login:
-        st.markdown("<br><br><h3 style='text-align:center;'>ACCESS REQUIRED</h3>", unsafe_allow_html=True)
-        user = st.text_input("OPERATOR_ID")
-        key = st.text_input("ACCESS_KEY", type="password")
-        if st.button("VERIFY IDENTITY", use_container_width=True):
-            st.session_state.autenticado = True
-            st.rerun()
-else:
-    # ── MENU PRINCIPAL (DERECHA) ──
-    tabs_n1 = st.tabs(["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"])
-
-    with tabs_n1[0]: # DASHBOARD
-        # SUBSECCIONES (IZQUIERDA)
-        sub_dashboard = st.tabs(["KPI'S", "RASTREO", "VOLUMEN", "RETRASOS"])
+with menu_principal[0]:
+    st.markdown('<div class="sub-nav-container">', unsafe_allow_html=True)
+    # Submenú a la Izquierda
+    submenu = st.tabs(["KPI'S", "RASTREO", "VOLUMEN", "RETRASOS"])
+    
+    with submenu[0]: # VISTA DE KPIS (LOS 5 DONUTS)
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        with sub_dashboard[0]: # KPI'S
-            st.markdown("<br><br>", unsafe_allow_html=True)
-            # Aquí van tus Donuts (Pedidos, Entregados, etc.)
-            st.write("Visualización de Indicadores Activa")
+        # Grid para los Donuts
+        cols = st.columns(5)
+        
+        metrics = [
+            ("PEDIDOS", 341, "100.0%", "#FFFFFF"),
+            ("ENTREGADOS", 219, "64.2%", "#00FFAA"),
+            ("TRÁNSITO", 122, "35.8%", "#00D4FF"),
+            ("EN TIEMPO", 98, "28.7%", "#BB86FC"),
+            ("RETRASO", 23, "6.7%", "#FF4B4B")
+        ]
 
-    with tabs_n1[1]: # SEGUIMIENTO
-        sub_seguimiento = st.tabs(["TRK", "GANTT", "QUEJAS"])
-        with sub_seguimiento[0]: st.write("Contenido de Tracking")
+        for i, (label, value, perc, color) in enumerate(metrics):
+            with cols[i]:
+                fig = go.Figure(go.Pie(
+                    values=[value, 100], # Simplificado para visual
+                    hole=.75,
+                    marker_colors=[color, "#2D343D"],
+                    textinfo='none',
+                    hoverinfo='none'
+                ))
+                fig.update_layout(
+                    showlegend=False,
+                    margin=dict(t=0, b=0, l=0, r=0),
+                    height=150,
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    annotations=[dict(text=str(value), x=0.5, y=0.5, font_size=20, font_color="white", font_family="Inter", showarrow=False)]
+                )
+                st.markdown(f"<p style='text-align:center; font-size:10px; letter-spacing:2px; opacity:0.6;'>{label}</p>", unsafe_allow_html=True)
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                st.markdown(f"<p style='text-align:center; font-size:12px; font-weight:bold; color:{color};'>{perc}</p>", unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── FOOTER ──
-    st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY <b>HERNANPHY</b></div>""", unsafe_allow_html=True)
+# 6. FOOTER PROFESIONAL
+st.markdown(f"""
+<div style="position: fixed; bottom: 0; width: 100%; background: {bg_dark}; padding: 15px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
+    <span style="font-size: 8px; letter-spacing: 3px; color: white; opacity: 0.4;">
+        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY HERNANPHY
+    </span>
+</div>
+""", unsafe_allow_html=True)
+
 
 
 
