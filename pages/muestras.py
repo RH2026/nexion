@@ -86,7 +86,7 @@ vars_css = {
     "sub": "#5F5F5F",         # Secundario definido pero fino
     "border": "#CFCAC1",      # Bordes un poco más visibles
     "table_header": "#E7E4DD", # Header ligeramente más marcado
-    "logo": "n1.png"
+    "logo": "n2.png"
 }
 
 st.markdown(f"""
@@ -2598,6 +2598,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
