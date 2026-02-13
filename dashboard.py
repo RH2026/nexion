@@ -1339,6 +1339,29 @@ else:
                 # ── INTERFAZ ──                
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
+                               
+                
+                # 👇 AQUÍ VA EL CSS
+                st.markdown("""
+                <style>
+                
+                [data-testid="stDataEditor"] div[role="gridcell"] {
+                    white-space: pre-wrap !important;
+                    word-break: break-word !important;
+                    overflow-wrap: break-word !important;
+                }
+                
+                [data-testid="stDataEditor"] div[role="gridcell"] > div {
+                    overflow: visible !important;
+                }
+                
+                [data-testid="stDataEditor"] div[role="row"] {
+                    align-items: stretch !important;
+                }
+                
+                </style>
+                """, unsafe_allow_html=True)
+                
                 
                 # ── COPIA SEGURA PARA EDITOR ──
                 df_base = st.session_state.df_gastos.copy()
@@ -2562,6 +2585,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
