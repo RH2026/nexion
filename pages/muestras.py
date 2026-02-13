@@ -80,7 +80,7 @@ if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-   "bg": "#E5E4E2",          # Fondo perla base
+   "bg": "#EBEAE9",          # Fondo perla base
     "card": "#FFFFFF",        # Tarjetas blancas puras (crean profundidad)
     "text": "#1F1F1F",        # Texto más oscuro (contraste real)
     "sub": "#5F5F5F",         # Secundario definido pero fino
@@ -2616,6 +2616,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
