@@ -52,64 +52,75 @@ def motor_logistico_central():
     except: pass
     return {}, {}
 
-# ── ESTADOS DE NAVEGACIÓN (CONTROL MANUAL) ──
-if "menu_principal" not in st.session_state:
-    st.session_state.menu_principal = "DASHBOARD"
-if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "GENERAL"
-if "splash_completado" not in st.session_state:
-    st.session_state.splash_completado = False
-
+# ── VARIABLES DE TEMA ──
 vars_css = {
     "bg": "#1B1E23", "card": "#282D34", "text": "#FFFAFA", 
-    "sub": "#FFFFFF", "border": "#414852", "logo": "n1.png"
+    "sub": "#FFFFFF", "border": "#414852", "accent": "#00FFAA"
 }
 
-# ── ESTILOS CSS PERSONALIZADOS (MODO DUAL) ──
+# ── CSS MAESTRO: NAVEGACIÓN DUAL ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
 .stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
-.block-container {{ padding-top: 0rem !important; padding-bottom: 5rem !important; }}
+.block-container {{ padding-top: 1rem !important; }}
 
-/* CONTENEDOR DE NAVEGACIÓN SUPERIOR */
-.nav-wrapper {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 30px;
-    background: {vars_css['bg']};
-    border-bottom: 1px solid {vars_css['border']}33;
-    position: sticky; top: 0; z-index: 999;
+/* --- MENÚ PRINCIPAL (BOTONES DERECHA) --- */
+div.stButton > button {{
+    background-color: transparent !important;
+    color: {vars_css['sub']} !important;
+    border: none !important;
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+    font-weight: 700 !important;
+    opacity: 0.5;
+    transition: 0.3s;
+}}
+div.stButton > button:hover {{ opacity: 1; color: {vars_css['accent']} !important; }}
+
+/* --- SUBMENÚ: BARRA CONTINUA (RADIO HORIZONTAL) --- */
+div[data-testid="stHorizontalBlock"] div[data-testid="stWidgetLabel"] {{ display: none; }} /* Oculta labels de radio */
+
+div[role="radiogroup"] {{
+    flex-direction: row !important;
+    background-color: rgba(255,255,255,0.03) !important;
+    padding: 5px !important;
+    border-radius: 5px !important;
+    border: 1px solid {vars_css['border']}44 !important;
+    width: fit-content !important;
 }}
 
-/* BOTONES DE MENÚ (DERECHA) */
-.main-nav-btns {{
-    display: flex;
-    gap: 20px;
+div[role="radiogroup"] label {{
+    background-color: transparent !important;
+    padding: 6px 15px !important;
+    border-radius: 4px !important;
+    margin-right: 5px !important;
+    transition: 0.3s !important;
 }}
 
-/* BOTONES DE SUBMENÚ (IZQUIERDA) */
-.sub-nav-wrapper {{
-    display: flex;
-    justify-content: flex-start;
-    padding: 10px 30px;
-    gap: 25px;
-    background: rgba(255,255,255,0.02);
-    border-bottom: 1px solid {vars_css['border']}11;
+div[role="radiogroup"] label[data-baseweb="radio"] {{
+    background-color: transparent !important;
+    color: {vars_css['sub']} !important;
+    opacity: 0.6;
 }}
 
-/* ESTILO DE BOTÓN COMO PESTAÑA (SIN SER TAB) */
-.nav-btn {{
-    background: none; border: none; color: white; opacity: 0.4;
-    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-    font-weight: 700; cursor: pointer; transition: 0.3s;
-    padding: 8px 0;
+div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {{
+    background-color: {vars_css['accent']}11 !important;
+    color: {vars_css['accent']} !important;
+    opacity: 1;
+    border: 1px solid {vars_css['accent']}33 !important;
 }}
-.nav-btn:hover {{ opacity: 1; }}
-.nav-btn.active {{ opacity: 1; border-bottom: 2px solid #00FFAA; }}
+
+/* Ocultar el círculo del radio original */
+div[role="radiogroup"] [data-testid="stMarkdownContainer"] p {{
+    font-size: 10px !important;
+    letter-spacing: 2px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+}}
+div[role="radiogroup"] div[data-id="stRadio-option-label"] div:first-child {{ display: none !important; }}
 
 /* FOOTER */
 .footer {{ 
@@ -121,38 +132,30 @@ header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── LOGO Y MENÚ PRINCIPAL (CONTROL MANUAL) ──
-# Creamos el Header
-col_logo, col_space, col_menu = st.columns([1, 1, 3])
+# ── ESTRUCTURA DE NAVEGACIÓN ──
+if "main_choice" not in st.session_state: st.session_state.main_choice = "DASHBOARD"
 
-with col_logo:
-    st.markdown("<br>", unsafe_allow_html=True)
-    if os.path.exists(vars_css["logo"]):
-        st.image(vars_css["logo"], width=110)
-    else:
-        st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0;'>NEXION</h3>", unsafe_allow_html=True)
-    st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-5px; opacity:0.6;'>SYSTEM SOLUTIONS</p>", unsafe_allow_html=True)
+# 1. HEADER: LOGO E IZQUIERDA | TÍTULO CENTRO | MENÚ DERECHA
+h_col1, h_col2, h_col3 = st.columns([1.5, 2, 3])
 
-with col_space:
-    st.markdown(f"<p style='text-align:center; font-size:10px; letter-spacing:10px; opacity:0.3; margin-top:25px;'>DASHBOARD</p>", unsafe_allow_html=True)
+with h_col1:
+    st.markdown(f"**NEXION** \n<span style='font-size:7px; letter-spacing:3px; opacity:0.6;'>SYSTEM SOLUTIONS</span>", unsafe_allow_html=True)
 
-with col_menu:
-    # Simulamos el menú a la derecha usando columnas de botones
-    m_cols = st.columns(5)
-    opciones = ["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"]
-    for i, op in enumerate(opciones):
-        if m_cols[i].button(op, key=f"main_{op}", use_container_width=True):
-            st.session_state.menu_principal = op
-            # Resetear submenú al cambiar principal
-            default_sub = {"DASHBOARD":"GENERAL", "SEGUIMIENTO":"TRK", "REPORTES":"APQ", "FORMATOS":"SALIDA DE PT", "HUB LOG":"SMART ROUTING"}
-            st.session_state.menu_sub = default_sub[op]
+with h_col2:
+    st.markdown(f"<p style='text-align:center; font-size:10px; letter-spacing:8px; opacity:0.3; margin-top:10px;'>D A S H B O A R D</p>", unsafe_allow_html=True)
+
+with h_col3:
+    m_btns = st.columns(5)
+    labels = ["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"]
+    for i, l in enumerate(labels):
+        if m_btns[i].button(l):
+            st.session_state.main_choice = l
             st.rerun()
 
-# Línea divisoria decorativa
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}33; margin:0;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}22; margin: 0 0 15px 0;'>", unsafe_allow_html=True)
 
-# ── SUBMENÚ (IZQUIERDA) ──
-sub_options = {
+# 2. BARRA DE SUBMENÚ (ALINEADA A LA IZQUIERDA)
+sub_map = {
     "DASHBOARD": ["GENERAL", "KPI'S", "RASTREO", "VOLUMEN", "RETRASOS"],
     "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
     "REPORTES": ["APQ", "OPS", "OTD"],
@@ -160,38 +163,27 @@ sub_options = {
     "HUB LOG": ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]
 }
 
-current_subs = sub_options[st.session_state.menu_principal]
-s_cols = st.columns(len(current_subs) + 1) # +1 para dejar espacio a la derecha
+# La barra de submenú como un Radio Horizontal (estilo Apple/SaaS)
+c_sub, _ = st.columns([4, 1])
+with c_sub:
+    sub_choice = st.radio("", sub_map[st.session_state.main_choice], horizontal=True, label_visibility="collapsed")
 
-for i, s_op in enumerate(current_subs):
-    # Estilo especial si está activo
-    label = f"● {s_op}" if st.session_state.menu_sub == s_op else s_op
-    if s_cols[i].button(label, key=f"sub_{s_op}"):
-        st.session_state.menu_sub = s_op
-        st.rerun()
-
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}11; margin:0;'>", unsafe_allow_html=True)
-
-# ── ÁREA DE CONTENIDO ──
 st.markdown("<br>", unsafe_allow_html=True)
 
-if st.session_state.menu_principal == "FORMATOS":
-    if st.session_state.menu_sub == "MUESTRAS":
+# ── CONTENIDO DINÁMICO ──
+if st.session_state.main_choice == "FORMATOS":
+    if sub_choice == "MUESTRAS":
         st.subheader("CONTROL DE MUESTRAS")
-        st.info("Espacio para gestión de muestras logísticas.")
-    elif st.session_state.menu_sub == "SALIDA DE PT":
+        # Aquí va tu lógica de Muestras
+    elif sub_choice == "SALIDA DE PT":
         st.subheader("SALIDA DE PRODUCTO TERMINADO")
 
-elif st.session_state.menu_principal == "DASHBOARD":
-    if st.session_state.menu_sub == "KPI'S":
-        st.write("Visualización de Indicadores Clave")
+elif st.session_state.main_choice == "DASHBOARD":
+    st.write(f"VISTA ACTIVA: {sub_choice}")
 
 # ── FOOTER ──
-st.markdown(f"""
-<div class="footer">
-    NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY <b>HERNANPHY</b>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // © 2026 // ENGINEERED BY <b>HERNANPHY</b></div>""", unsafe_allow_html=True)
+
 
 
 
