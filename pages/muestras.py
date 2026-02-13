@@ -417,7 +417,7 @@ else:
         with c1:
             try:
                 # Mostramos únicamente el logo, sin Markdown adicional debajo
-                st.image(vars_css["logo"], width=160)
+                st.image(vars_css["logo"], width=180)
             except Exception as e:
                 st.write("Error al cargar el logo:", e)                     
         with c2:
@@ -2603,6 +2603,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
