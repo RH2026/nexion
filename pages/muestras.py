@@ -24,10 +24,10 @@ import altair as alt
 from datetime import date, datetime, timedelta
 from io import BytesIO
 
-# 1. CONFIGURACIÓN DE PÁGINA
+# 1. CONFIGURACIÓN MAESTRA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
-# --- MOTOR DE INTELIGENCIA LOGÍSTICA ---
+# --- MOTOR DE INTELIGENCIA LOGÍSTICA (XENOCODE CORE) ---
 def d_local(dir_val):
     rangos = [(44100, 44990), (45010, 45245), (45400, 45429), (45500, 45595)]
     cps = re.findall(r'\b\d{5}\b', str(dir_val))
@@ -37,124 +37,101 @@ def d_local(dir_val):
         except: continue
     return "FORÁNEO"
 
-@st.cache_data
-def motor_logistico_central():
-    try:
-        if os.path.exists("matriz_historial.csv"):
-            h = pd.read_csv("matriz_historial.csv", encoding='utf-8-sig')
-            h.columns = [str(c).upper().strip() for c in h.columns]
-            c_pre = [c for c in h.columns if 'PRECIO' in c][0]
-            c_flet = [c for c in h.columns if 'FLETERA' in c or 'TRANSPORTE' in c][0]
-            c_dir = [c for c in h.columns if 'DIRECCION' in c][0]
-            h[c_pre] = pd.to_numeric(h[c_pre], errors='coerce').fillna(0)
-            mejores = h.loc[h.groupby(c_dir)[c_pre].idxmin()]
-            return mejores.set_index(c_dir)[c_flet].to_dict(), mejores.set_index(c_dir)[c_pre].to_dict()
-    except: pass
-    return {}, {}
-
-# ── VARIABLES DE TEMA ──
-vars_css = {
-    "bg": "#1B1E23", "card": "#282D34", "text": "#FFFAFA", 
-    "sub": "#FFFFFF", "border": "#414852", "accent": "#00FFAA"
-}
-
-# ── CSS MAESTRO: NAVEGACIÓN DUAL ──
+# --- ESTILOS DE ALTO IMPACTO (CERO PENDEJADAS) ---
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+    
+    /* Reset de UI */
+    header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
+    .stApp {{ background-color: #0F1115 !important; font-family: 'Inter', sans-serif !important; }}
+    .block-container {{ padding: 0rem !important; }}
 
-header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-.stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
-.block-container {{ padding-top: 1rem !important; }}
+    /* HEADER INDUSTRIAL */
+    .custom-header {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 60px;
+        background: rgba(18, 20, 24, 0.95);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        position: sticky; top: 0; z-index: 999;
+    }}
+    .brand-section {{ line-height: 1; }}
+    .brand-logo {{ font-weight: 900; letter-spacing: 5px; font-size: 22px; color: white; }}
+    .brand-tag {{ font-size: 7px; letter-spacing: 3px; color: #00FFAA; display: block; opacity: 0.8; }}
 
-/* --- MENÚ PRINCIPAL (BOTONES DERECHA) --- */
-div.stButton > button {{
-    background-color: transparent !important;
-    color: {vars_css['sub']} !important;
-    border: none !important;
-    font-size: 11px !important;
-    letter-spacing: 2px !important;
-    font-weight: 700 !important;
-    opacity: 0.5;
-    transition: 0.3s;
-}}
-div.stButton > button:hover {{ opacity: 1; color: {vars_css['accent']} !important; }}
+    /* BARRA DE SUBMENÚ (BARRA ÚNICA) */
+    .sub-bar {{
+        background: #16191E;
+        padding: 10px 60px;
+        display: flex;
+        gap: 35px;
+        border-bottom: 1px solid rgba(0, 255, 170, 0.1);
+    }}
 
-/* --- SUBMENÚ: BARRA CONTINUA (RADIO HORIZONTAL) --- */
-div[data-testid="stHorizontalBlock"] div[data-testid="stWidgetLabel"] {{ display: none; }} /* Oculta labels de radio */
-
-div[role="radiogroup"] {{
-    flex-direction: row !important;
-    background-color: rgba(255,255,255,0.03) !important;
-    padding: 5px !important;
-    border-radius: 5px !important;
-    border: 1px solid {vars_css['border']}44 !important;
-    width: fit-content !important;
-}}
-
-div[role="radiogroup"] label {{
-    background-color: transparent !important;
-    padding: 6px 15px !important;
-    border-radius: 4px !important;
-    margin-right: 5px !important;
-    transition: 0.3s !important;
-}}
-
-div[role="radiogroup"] label[data-baseweb="radio"] {{
-    background-color: transparent !important;
-    color: {vars_css['sub']} !important;
-    opacity: 0.6;
-}}
-
-div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {{
-    background-color: {vars_css['accent']}11 !important;
-    color: {vars_css['accent']} !important;
-    opacity: 1;
-    border: 1px solid {vars_css['accent']}33 !important;
-}}
-
-/* Ocultar el círculo del radio original */
-div[role="radiogroup"] [data-testid="stMarkdownContainer"] p {{
-    font-size: 10px !important;
-    letter-spacing: 2px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-}}
-div[role="radiogroup"] div[data-id="stRadio-option-label"] div:first-child {{ display: none !important; }}
-
-/* FOOTER */
-.footer {{ 
-    position: fixed; bottom: 0; left: 0; width: 100%; 
-    background-color: {vars_css['bg']}; color: {vars_css['sub']}; 
-    text-align: center; padding: 12px 0; font-size: 8px; letter-spacing: 2px;
-    border-top: 1px solid {vars_css['border']}; z-index: 999;
-}}
+    /* SOBREESCRIBIR BOTONES PARA QUE PAREZCAN TEXTO DE MENÚ */
+    div.stButton > button {{
+        background: none !important;
+        border: none !important;
+        color: rgba(255,255,255,0.4) !important;
+        font-size: 11px !important;
+        letter-spacing: 2px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        padding: 0px !important;
+        width: auto !important;
+        transition: 0.3s !important;
+    }}
+    div.stButton > button:hover {{
+        color: #00FFAA !important;
+        transform: translateY(-1px);
+    }}
+    
+    /* FOOTER */
+    .footer-core {{
+        position: fixed; bottom: 0; width: 100%;
+        padding: 15px; background: #0F1115;
+        border-top: 1px solid rgba(255,255,255,0.03);
+        text-align: center; font-size: 8px; letter-spacing: 4px; color: rgba(255,255,255,0.3);
+    }}
 </style>
 """, unsafe_allow_html=True)
 
-# ── ESTRUCTURA DE NAVEGACIÓN ──
-if "main_choice" not in st.session_state: st.session_state.main_choice = "DASHBOARD"
+# --- LÓGICA DE NAVEGACIÓN ---
+if "main_nav" not in st.session_state: st.session_state.main_nav = "DASHBOARD"
+if "sub_nav" not in st.session_state: st.session_state.sub_nav = "GENERAL"
 
-# 1. HEADER: LOGO E IZQUIERDA | TÍTULO CENTRO | MENÚ DERECHA
-h_col1, h_col2, h_col3 = st.columns([1.5, 2, 3])
+# --- RENDERIZADO DE HEADER (LOGO IZQUIERDA | MENÚ DERECHA) ---
+st.markdown(f"""
+<div class="custom-header">
+    <div class="brand-section">
+        <span class="brand-logo">NEXION</span>
+        <span class="brand-tag">SYSTEM SOLUTIONS</span>
+    </div>
+    <div style="font-size: 10px; letter-spacing: 10px; opacity: 0.2;">{st.session_state.main_nav}</div>
+</div>
+""", unsafe_allow_html=True)
 
-with h_col1:
-    st.markdown(f"**NEXION** \n<span style='font-size:7px; letter-spacing:3px; opacity:0.6;'>SYSTEM SOLUTIONS</span>", unsafe_allow_html=True)
+# Inyectamos los botones del menú principal a la derecha usando columnas sobre el header
+# (Usamos un truco de margen negativo para subirlos al nivel del header)
+cols_main = st.columns([4, 1, 1, 1, 1, 1])
+main_labels = ["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"]
 
-with h_col2:
-    st.markdown(f"<p style='text-align:center; font-size:10px; letter-spacing:8px; opacity:0.3; margin-top:10px;'>D A S H B O A R D</p>", unsafe_allow_html=True)
-
-with h_col3:
-    m_btns = st.columns(5)
-    labels = ["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"]
-    for i, l in enumerate(labels):
-        if m_btns[i].button(l):
-            st.session_state.main_choice = l
+for i, label in enumerate(main_labels):
+    with cols_main[i+1]:
+        st.markdown("<div style='margin-top: -55px;'>", unsafe_allow_html=True)
+        # Resaltado si está activo
+        estilo = "color: #00FFAA !important; opacity: 1;" if st.session_state.main_nav == label else ""
+        if st.button(label, key=f"m_{label}"):
+            st.session_state.main_nav = label
+            # Reset subnav
+            defaults = {"DASHBOARD":"GENERAL", "SEGUIMIENTO":"TRK", "REPORTES":"APQ", "FORMATOS":"SALIDA DE PT", "HUB LOG":"SMART ROUTING"}
+            st.session_state.sub_nav = defaults[label]
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}22; margin: 0 0 15px 0;'>", unsafe_allow_html=True)
-
-# 2. BARRA DE SUBMENÚ (ALINEADA A LA IZQUIERDA)
+# --- RENDERIZADO DE SUBMENÚ (BARRA ÚNICA IZQUIERDA) ---
 sub_map = {
     "DASHBOARD": ["GENERAL", "KPI'S", "RASTREO", "VOLUMEN", "RETRASOS"],
     "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
@@ -163,26 +140,35 @@ sub_map = {
     "HUB LOG": ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]
 }
 
-# La barra de submenú como un Radio Horizontal (estilo Apple/SaaS)
-c_sub, _ = st.columns([4, 1])
-with c_sub:
-    sub_choice = st.radio("", sub_map[st.session_state.main_choice], horizontal=True, label_visibility="collapsed")
+# Barra de submenú
+st.markdown('<div style="background: #16191E; border-bottom: 1px solid rgba(0,255,170,0.1); padding: 5px 60px;">', unsafe_allow_html=True)
+cols_sub = st.columns([1 for _ in sub_map[st.session_state.main_nav]] + [5]) # El final es para empujar a la izquierda
+for i, sub_label in enumerate(sub_map[st.session_state.main_nav]):
+    with cols_sub[i]:
+        # El punto indica que está activo
+        display_text = f"● {sub_label}" if st.session_state.sub_nav == sub_label else sub_label
+        if st.button(display_text, key=f"s_{sub_label}"):
+            st.session_state.sub_nav = sub_label
+            st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
+# --- ÁREA DE TRABAJO ---
+st.markdown("<div style='padding: 40px 60px;'>", unsafe_allow_html=True)
 
-# ── CONTENIDO DINÁMICO ──
-if st.session_state.main_choice == "FORMATOS":
-    if sub_choice == "MUESTRAS":
-        st.subheader("CONTROL DE MUESTRAS")
-        # Aquí va tu lógica de Muestras
-    elif sub_choice == "SALIDA DE PT":
-        st.subheader("SALIDA DE PRODUCTO TERMINADO")
+if st.session_state.main_nav == "FORMATOS":
+    if st.session_state.sub_nav == "MUESTRAS":
+        st.markdown("<h2 style='letter-spacing:-1px;'>Control de Muestras</h2>", unsafe_allow_html=True)
+        st.write("Interfaz de gestión de muestras lista para código.")
+    elif st.session_state.sub_nav == "SALIDA DE PT":
+        st.markdown("<h2 style='letter-spacing:-1px;'>Salida de Producto Terminado</h2>", unsafe_allow_html=True)
 
-elif st.session_state.main_choice == "DASHBOARD":
-    st.write(f"VISTA ACTIVA: {sub_choice}")
+# --- FOOTER ---
+st.markdown("""
+<div class="footer-core">
+    NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY HERNANPHY
+</div>
+""", unsafe_allow_html=True)
 
-# ── FOOTER ──
-st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // © 2026 // ENGINEERED BY <b>HERNANPHY</b></div>""", unsafe_allow_html=True)
 
 
 
