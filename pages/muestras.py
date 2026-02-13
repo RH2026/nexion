@@ -63,7 +63,7 @@ vars_css = {
     "sub": "#FFFFFF", "border": "#414852", "accent": "#00FFAA"
 }
 
-# ── ESTILOS ORIGINALES + CORRECCIONES DE PESTAÑAS ANIDADAS ──────────────────────────
+# ── CSS REPARADO ──
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -72,7 +72,15 @@ header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
 .stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
 .block-container {{ padding-top: 1rem !important; padding-bottom: 5rem !important; }}
 
-/* NAVEGACIÓN PRINCIPAL (NIVEL 1 - DERECHA) */
+/* LOGO POSICIÓN */
+.logo-container {{
+    position: absolute;
+    top: -5px;
+    left: 0px;
+    z-index: 1000;
+}}
+
+/* MENU PRINCIPAL (NIVEL 1 - DERECHA) */
 div[data-baseweb="tab-list"] {{
     display: flex;
     justify-content: flex-end !important;
@@ -80,7 +88,12 @@ div[data-baseweb="tab-list"] {{
     border-bottom: 1px solid {vars_css['border']}33;
 }}
 
-/* ESTILO PARA TODOS LOS TABS (PRINCIPALES Y SUBSECCIONES) */
+/* SUBMENUS (NIVEL 2 - IZQUIERDA) */
+/* Este selector fuerza a que los tabs dentro del contenido se alineen a la izquierda */
+div[data-testid="stVerticalBlock"] div[data-baseweb="tab-list"] {{
+    justify-content: flex-start !important;
+}}
+
 button[data-baseweb="tab"] {{
     background-color: transparent !important;
     border: none !important;
@@ -99,29 +112,6 @@ button[data-baseweb="tab"][aria-selected="true"] {{
 
 div[data-baseweb="tab-highlight"] {{ background-color: {vars_css['accent']} !important; }}
 
-/* LOGO IZQUIERDA */
-.logo-container {{
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    z-index: 1000;
-}}
-
-/* TÍTULO SECCIÓN CENTRAL */
-.section-title {{
-    text-align: center;
-    font-size: 10px;
-    letter-spacing: 6px;
-    color: {vars_css['text']};
-    margin: -35px 0 25px 0;
-    text-transform: uppercase;
-    font-weight: 600;
-}}
-
-/* INPUTS Y LOGIN STYLE */
-div[data-baseweb="input"] {{ background-color: {vars_css['card']} !important; border: 1px solid {vars_css['border']} !important; }}
-.stTextInput input {{ color: {vars_css['text']} !important; text-align: center !important; letter-spacing: 2px; }}
-
 /* FOOTER */
 .footer {{ 
     position: fixed; bottom: 0; left: 0; width: 100%; 
@@ -132,13 +122,20 @@ div[data-baseweb="input"] {{ background-color: {vars_css['card']} !important; bo
 </style>
 """, unsafe_allow_html=True)
 
-# ── LÓGICA DE SPLASH Y LOGIN (RESTAURADA) ──────────────────────────
+# ── LOGO CON IMAGEN n1.png ──
+if os.path.exists("n1.png"):
+    st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+    st.image("n1.png", width=180)
+    st.markdown('</div>', unsafe_allow_html=True)
+else:
+    # Fallback si no encuentra el archivo para que no se vea vacío el espacio
+    st.markdown(f'''<div class="logo-container">
+        <span style="font-weight:800; letter-spacing:3px; font-size:18px;">NEXION</span><br>
+        <span style="font-size:7px; letter-spacing:2px; opacity:0.6;">SYSTEM SOLUTIONS</span>
+    </div>''', unsafe_allow_html=True)
+
+# ── LÓGICA DE LOGIN (RESTAURADA) ──
 if not st.session_state.splash_completado:
-    container = st.empty()
-    with container.container():
-        st.markdown("<br><br><br><br><h1 style='text-align:center; letter-spacing:15px; font-weight:800;'>NEXION</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; letter-spacing:5px; opacity:0.5;'>INITIALIZING CORE SYSTEMS...</p>", unsafe_allow_html=True)
-        time.sleep(1.5)
     st.session_state.splash_completado = True
     st.rerun()
 
@@ -152,59 +149,46 @@ if not st.session_state.autenticado:
             st.session_state.autenticado = True
             st.rerun()
 else:
-    # ── LOGO NEXION (IZQUIERDA) ──
-    st.markdown('''
-    <div class="logo-container">
-        <span style="font-weight:800; letter-spacing:3px; font-size:18px;">NEXION</span><br>
-        <span style="font-size:7px; letter-spacing:2px; opacity:0.6;">SYSTEM SOLUTIONS</span>
-    </div>
-    ''', unsafe_allow_html=True)
-
     # ── MENÚ PRINCIPAL (A LA DERECHA) ──
     tabs_n1 = st.tabs(["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"])
 
+    # ── RENDERIZADO DE CONTENIDO ──
+    
     # --- 1. DASHBOARD ---
     with tabs_n1[0]:
-        st.markdown("<div class='section-title'>DASHBOARD</div>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:9px; letter-spacing:2px; margin: 10px 0 0 0;'>PERÍODO</p>", unsafe_allow_html=True)
+        st.selectbox("MES", ["FEBRERO", "MARZO", "ABRIL"], label_visibility="collapsed")
         
-        # SUBSECCIONES EN TABS (Mismo aspecto que el principal)
+        # Submenú anidado (Alineado a la izquierda por CSS)
         sub_dashboard = st.tabs(["KPI'S", "RASTREO", "VOLUMEN", "RETRASOS"])
         
         with sub_dashboard[0]: # KPI'S
-            st.write("Visualización de Gráficos de Dona")
-        with sub_dashboard[1]: # RASTREO
-            st.write("Detalle de Rastreo")
-        with sub_dashboard[2]: # VOLUMEN
-            st.write("Métricas de Volumen")
-        with sub_dashboard[3]: # RETRASOS
-            st.write("Análisis de Retrasos")
+            st.write("Cargando Gráficos...")
+        with sub_dashboard[1]: st.write("Sección Rastreo")
 
     # --- 2. SEGUIMIENTO ---
     with tabs_n1[1]:
-        st.markdown("<div class='section-title'>SEGUIMIENTO</div>", unsafe_allow_html=True)
         sub_seguimiento = st.tabs(["TRK", "GANTT", "QUEJAS"])
-        with sub_seguimiento[0]: st.write("Tracking en vivo")
+        with sub_seguimiento[0]: st.write("Contenido Seguimiento")
 
     # --- 3. REPORTES ---
     with tabs_n1[2]:
-        st.markdown("<div class='section-title'>REPORTES</div>", unsafe_allow_html=True)
         sub_reportes = st.tabs(["APQ", "OPS", "OTD"])
-        with sub_reportes[0]: st.write("Reporte APQ")
+        with sub_reportes[0]: st.write("Contenido Reportes")
 
     # --- 4. FORMATOS ---
     with tabs_n1[3]:
-        st.markdown("<div class='section-title'>FORMATOS</div>", unsafe_allow_html=True)
         sub_formatos = st.tabs(["SALIDA PT", "CONTRARRECIBOS", "MUESTRAS"])
-        with sub_formatos[0]: st.write("Generación Salida PT")
+        with sub_formatos[0]: st.write("Contenido Formatos")
 
     # --- 5. HUB LOG ---
     with tabs_n1[4]:
-        st.markdown("<div class='section-title'>HUB LOG</div>", unsafe_allow_html=True)
         sub_hub = st.tabs(["SMART ROUTING", "DATA MGMT", "ORDER STAGING"])
-        with sub_hub[0]: st.write("Smart Routing System")
+        with sub_hub[0]: st.write("Contenido Hub")
 
     # ── FOOTER ──
     st.markdown(f"""<div class="footer">NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY <b>HERNANPHY</b></div>""", unsafe_allow_html=True)
+
 
 
 
