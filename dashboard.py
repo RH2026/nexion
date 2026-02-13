@@ -1239,6 +1239,7 @@ else:
     
             
             elif st.session_state.menu_sub == "QUEJAS":
+                st.subheader("SEGUIMIENTO > QUEJAS")
                 # ── CONFIGURACIÓN GITHUB (GASTOS) ──
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
@@ -1247,12 +1248,29 @@ else:
                 
                 # ── FUNCIONES DE SOPORTE ──
                 def cargar_datos_gastos():
+                    # Nombres que el código espera usar de ahora en adelante
                     columnas_base = ["FECHA", "ID", "QUEJA", "ESTATUS", "INCONFORMIDAD", "AGENTE", "ULTIMA ACCION", "GASTOS ADICIONALES"]
+                    
+                    # Diccionario para convertir lo viejo a lo nuevo automáticamente al cargar
+                    mapeo_nombres = {
+                        "PAQUETERIA": "ID",
+                        "CLIENTE": "QUEJA",
+                        "SOLICITO": "ESTATUS",
+                        "DESTINO": "INCONFORMIDAD",
+                        "CANTIDAD": "AGENTE",
+                        "UM": "ULTIMA ACCION",
+                        "COSTO": "GASTOS ADICIONALES"
+                    }
+                
                     try:
                         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                         if r.status_code == 200:
                             df = pd.read_csv(io.StringIO(r.text))
                             df.columns = [str(c).strip().upper() for c in df.columns]
+                            
+                            # PASO CRÍTICO: Renombrar las columnas si vienen con nombres viejos
+                            df = df.rename(columns=mapeo_nombres)
+                            
                             for col in columnas_base:
                                 if col not in df.columns: df[col] = ""
                             return df[columnas_base]
@@ -1273,7 +1291,9 @@ else:
                         return True
                     except: return False
                 
-                # ── INTERFAZ ──                
+                # ── INTERFAZ ──
+                st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>", unsafe_allow_html=True)
+                
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
                 
@@ -1297,7 +1317,6 @@ else:
                 
                 # ── PREPARACIÓN DE IMPRESIÓN ──
                 df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
-                # Filtramos por la columna ID para determinar filas válidas
                 filas_v = df_editado[df_editado["ID"].notna() & (df_editado["ID"].astype(str) != "")].copy()
                 
                 if not filas_v.empty:
@@ -1305,7 +1324,7 @@ else:
                 
                 tabla_html = ""
                 for _, r in filas_v.iterrows():
-                    costo_fmt = f"${float(r['GASTOS ADICIONALES']):,.2f}"
+                    costo_fmt = f"${float(r.get('GASTOS ADICIONALES', 0)):,.2f}"
                     tabla_html += f"""
                     <tr>
                         <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
@@ -2454,6 +2473,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
