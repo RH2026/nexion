@@ -230,7 +230,7 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['sub']} !important; 
     text-align: center; 
     padding: 12px 0px !important; 
-    font-size: 9px; 
+    font-size: 11px; 
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
@@ -2612,10 +2612,11 @@ else:
     st.markdown(f"""
     <div class="footer">
         NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
-        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
+        <span style="opacity:0.5; font-size:11px; letter-spacing:4px;">ENGINEERED BY </span>
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
