@@ -430,7 +430,7 @@ else:
             
             st.markdown(f"""
                 <div style='display: flex; justify-content: center; align-items: center; width: 100%; margin: 20px 0;'>
-                    <p style='font-size: 11px; 
+                    <p style='font-size: 14px; 
                               letter-spacing: 8px;  /* ← Aumentado para efecto de doble espacio */
                               color: {vars_css['sub']}; 
                               margin: 0; 
@@ -2603,6 +2603,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
