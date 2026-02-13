@@ -82,7 +82,7 @@ if "menu_sub" not in st.session_state:
 vars_css = {
    "bg": "#EBEAE9",          # Fondo perla base
     "card": "#FBFBFB",        # Tarjetas blancas puras (crean profundidad)
-    "text": "#FFFFFF",        # Texto más oscuro (contraste real)
+    "text": "#808080",        # Texto más oscuro (contraste real)
     "sub": "#5F5F5F",         # Secundario definido pero fino
     "border": "#CFCAC1",      # Bordes un poco más visibles
     "table_header": "#E7E4DD", # Header ligeramente más marcado
@@ -2616,6 +2616,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
