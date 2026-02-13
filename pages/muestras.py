@@ -286,7 +286,7 @@ button[data-baseweb="tab"] {{
 
 /* 1. EL CULPABLE: Quitamos o suavizamos la línea gris del fondo */
 div[data-baseweb="tab-list"] {{
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-bottom:0.5px solid rgba(255, 255, 255, 0.05) !important;
     gap: 20px !important;
 }}
 
@@ -302,7 +302,7 @@ div[data-baseweb="tab-list"] button {{
 div[data-baseweb="tab-list"] button[aria-selected="true"] {{
     background-color: transparent !important;
     color: {vars_css['text']} !important;
-    border-bottom: 2px solid #00FFAA !important;
+    border-bottom: 3px solid #00FFAA !important;
 }}
 
 /* 4. Quitamos el subrayado por defecto de Streamlit */
@@ -2616,6 +2616,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
