@@ -1,10 +1,3 @@
-Entiendo perfectamente tu frustración. Las st.tabs de Streamlit son increíblemente rígidas: o todas a la derecha o todas a la izquierda, pero no te dejan jugar con la posición de forma independiente. Si queremos el Menú Principal a la derecha y el Submenú a la izquierda, la única forma profesional de hacerlo es crear nuestra propia barra de navegación con HTML/CSS y usar botones invisibles o selectores para cambiar el contenido.
-
-He rediseñado el sistema usando un Navegador Dual de Alto Impacto. Este no usa las pestañas nativas, sino un contenedor inyectado que se ve y se siente como una aplicación real.
-
-Aquí tienes el código con todos tus imports, el motor logístico, y la subsección de MUESTRAS:
-
-Python
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -199,6 +192,7 @@ st.markdown(f"""
     NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY <b>HERNANPHY</b>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
