@@ -328,8 +328,8 @@ button[kind="secondary"] {{
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
 
-    height: 24px !important;
-    min-height: 24px !important;
+    height: 26px !important;
+    min-height: 26px !important;
     padding: 0 8px !important;
     font-size: 10px !important;
     line-height: 20px !important;
@@ -2459,6 +2459,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
