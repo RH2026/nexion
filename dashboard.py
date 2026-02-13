@@ -1346,12 +1346,22 @@ else:
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
                 
-                # 🔥 COPIA SEGURA PARA EDITOR
+                # ── COPIA SEGURA PARA EDITOR ──
                 df_base = st.session_state.df_gastos.copy()
                 
+                # 🔥 Forzar tipos exactos
+                columnas_texto = [
+                    "FECHA", "ID", "QUEJA", "ESTATUS",
+                    "INCONFORMIDAD", "AGENTE", "ULTIMA ACCION"
+                ]
+                
+                for col in columnas_texto:
+                    df_base[col] = df_base[col].astype("string")
+                
                 df_base["GASTOS ADICIONALES"] = pd.to_numeric(
-                    df_base["GASTOS ADICIONALES"], errors="coerce"
-                ).fillna(0.0)
+                    df_base["GASTOS ADICIONALES"],
+                    errors="coerce"
+                ).fillna(0.0).astype("float64")  # 👈 esto es CLAVE
                 
                 # ── EDITOR DE DATOS ──
                 df_editado = st.data_editor(
@@ -2557,6 +2567,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
