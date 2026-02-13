@@ -1239,7 +1239,7 @@ else:
     
             
             elif st.session_state.menu_sub == "QUEJAS":
-                st.subheader("SEGUIMIENTO > QUEJAS")
+                
                 # ── CONFIGURACIÓN GITHUB (GASTOS) ──
                 # ── CONFIGURACIÓN GITHUB (GASTOS) ──
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
@@ -1337,12 +1337,7 @@ else:
                         return False
                 
                 
-                # ── INTERFAZ ──
-                st.markdown(
-                    "<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>",
-                    unsafe_allow_html=True
-                )
-                
+                # ── INTERFAZ ──                
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
                 
@@ -2567,6 +2562,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
