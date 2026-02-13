@@ -80,12 +80,12 @@ if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#F6F5F2",          # Fondo blanco perla elegante
-    "card": "#FFFFFF",        # Tarjetas / celdas limpias
-    "text": "#2B2B2B",        # Texto principal oscuro suave
-    "sub": "#6B6B6B",         # Texto secundario gris refinado
-    "border": "#D8D5CE",      # Bordes suaves tipo lino
-    "table_header": "#EFEDE8", # Encabezados perla ligeramente más profundo
+   "bg": "#F3F1EC",          # Fondo perla base
+    "card": "#FFFFFF",        # Tarjetas blancas puras (crean profundidad)
+    "text": "#1F1F1F",        # Texto más oscuro (contraste real)
+    "sub": "#5F5F5F",         # Secundario definido pero fino
+    "border": "#CFCAC1",      # Bordes un poco más visibles
+    "table_header": "#E7E4DD", # Header ligeramente más marcado
     "logo": "n1.png"
 }
 
@@ -2598,6 +2598,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
