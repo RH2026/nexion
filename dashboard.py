@@ -140,7 +140,7 @@ h3, .op-query-text {{
     width: 100% !important; 
 }}
 
-/* 4. BOTONES SLIM */
+/* 4. BOTONES SLIM (Mantenemos tus botones generales) */
 div.stButton > button {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -150,8 +150,6 @@ div.stButton > button {{
     text-transform: uppercase; 
     font-size: 10px !important; 
     height: 28px !important; 
-    min-height: 28px !important; 
-    line-height: 28px !important; 
     transition: all 0.2s ease !important; 
     width: 100% !important; 
 }}
@@ -159,7 +157,23 @@ div.stButton > button {{
 div.stButton > button:hover {{ 
     background-color: #ffffff !important; 
     color: #000000 !important; 
-    border-color: #ffffff !important; 
+}}
+
+/* ───────── NUEVO: ESTILO EXCLUSIVO PARA EL POPOVER ───────── */
+/* Esto hace que el botón de la hamburguesa sea azul y no se vea "muerto" */
+
+div[data-testid="stPopover"] > button {{
+    background-color: transparent !important; 
+    color: #2563eb !important; /* El azul que pusimos en el TOML */
+    border: 1px solid #2563eb !important;
+    border-radius: 4px !important;
+    font-size: 16px !important; /* Un poco más grande para que la ☰ se vea bien */
+}}
+
+div[data-testid="stPopover"] > button:hover {{
+    background-color: rgba(37, 99, 235, 0.2) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
 }}
 
 /* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
@@ -2421,6 +2435,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
