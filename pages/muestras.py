@@ -85,7 +85,7 @@ vars_css = {
     "text": "#2B2B2B",        # Texto principal oscuro suave
     "sub": "#6B6B6B",         # Texto secundario gris refinado
     "border": "#D8D5CE",      # Bordes suaves tipo lino
-    "table_header": "#EFEDE8" # Encabezados perla ligeramente más profundo
+    "table_header": "#EFEDE8", # Encabezados perla ligeramente más profundo
     "logo": "n1.png"
 }
 
@@ -2598,6 +2598,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
