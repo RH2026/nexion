@@ -162,18 +162,6 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* Color inicial del menú de hamburguesa */
-header[data-testid="stHeader"] button {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
-}}
-
-/* Para asegurar que los iconos internos (las rayas y la flecha) hereden el color */
-header[data-testid="stHeader"] button svg {{
-    fill: {vars_css['text']} !important;
-}}
 
 /* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
 
@@ -2434,6 +2422,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
