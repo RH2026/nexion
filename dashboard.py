@@ -318,9 +318,9 @@ button[kind="secondary"] {{
 }}
 
 button[kind="secondary"]:hover {{
-    background-color: #2563eb !important;
-    color: #ffffff !important;
-    border-color: #2563eb !important;
+    background-color: #3A4049 !important;   /* un poco más claro que tu card */
+    color: {vars_css['text']} !important;
+    border-color: #3A4049 !important;
 }}
 
 </style>
@@ -2447,6 +2447,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
