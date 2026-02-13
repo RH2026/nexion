@@ -416,29 +416,10 @@ else:
         
         with c1:
             try:
-                # Mostramos el logo
+                # Mostramos únicamente el logo, sin Markdown adicional debajo
                 st.image(vars_css["logo"], width=160)
-                
-                # El truco está en 'margin-top' negativo y 'line-height'
-                st.markdown(
-                    f"""
-                    <p style='
-                        text-align: center; 
-                        width: 160px; 
-                        font-size: 8px; 
-                        letter-spacing: 2px; 
-                        color: {vars_css['sub']}; 
-                        margin-top: -25px; 
-                        line-height: 1;
-                        display: block;
-                    '>
-                        SYSTEM SOLUTIONS
-                    </p>
-                    """, 
-                    unsafe_allow_html=True
-                )
             except Exception as e:
-                st.write("Error:", e)                      
+                st.write("Error al cargar el logo:", e)                     
         with c2:
             # INDICADOR GENERAL (CENTRADO ABSOLUTO CON ESPACIADO NEXION)
             if st.session_state.menu_sub != "GENERAL":
@@ -2622,6 +2603,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
