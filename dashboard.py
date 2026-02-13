@@ -1239,7 +1239,7 @@ else:
     
             
             elif st.session_state.menu_sub == "QUEJAS":
-                st.markdown("<br><br><br>", unsafe_allow_html=True)
+                st.markdown("<br><br>", unsafe_allow_html=True)
                 # ── CONFIGURACIÓN GITHUB (QUEJAS) ──
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
@@ -2561,6 +2561,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
