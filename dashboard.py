@@ -162,34 +162,7 @@ div.stButton > button:hover {{
     border-color: #ffffff !important; 
 }}
 
-/* ELIMINAR EL TONO VERDOSO DEL POPOVER (DENTRO DE F-STRING) */
-div[data-testid="stPopover"] > button {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 2px !important;
-    height: 28px !important;
-    min-height: 28px !important;
-    box-shadow: none !important;
-    outline: none !important;
-}}
 
-/* Forzar el icono a blanco nieve */
-div[data-testid="stPopover"] svg {{
-    fill: {vars_css['text']} !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* Hover: Fondo blanco, texto e icono negro */
-div[data-testid="stPopover"] > button:hover {{
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-color: #ffffff !important;
-}}
-
-div[data-testid="stPopover"] > button:hover svg {{
-    fill: #000000 !important;
-}}
 
 /* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
 
@@ -325,6 +298,30 @@ div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
 
+/* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
+
+div[data-baseweb="layer"] div[data-baseweb="popover"] > div {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+}}
+
+div[data-baseweb="popover"] {{
+    color: {vars_css['text']} !important;
+}}
+
+button[kind="secondary"] {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+}}
+
+button[kind="secondary"]:hover {{
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #2563eb !important;
+}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -2450,6 +2447,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
