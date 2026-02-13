@@ -1273,9 +1273,7 @@ else:
                         return True
                     except: return False
                 
-                # ── INTERFAZ ──
-                st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL LOGISTICO | QUEJAS</p>", unsafe_allow_html=True)
-                
+                # ── INTERFAZ ──                
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
                 
@@ -2456,6 +2454,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
