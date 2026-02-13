@@ -1254,6 +1254,7 @@ else:
                         if r.status_code == 200:
                             df = pd.read_csv(io.StringIO(r.text))
                             df.columns = [str(c).strip().upper() for c in df.columns]
+                            # Asegurar que existan las columnas por si acaso
                             for col in columnas_base:
                                 if col not in df.columns: df[col] = ""
                             return df[columnas_base]
@@ -1268,14 +1269,14 @@ else:
                         csv_data = df_to_save.to_csv(index=False)
                         try:
                             contents = repo.get_contents(FILE_PATH)
-                            repo.update_file(contents.path, f"Update gastos {datetime.now()}", csv_data, contents.sha)
+                            repo.update_file(contents.path, f"Update quejas {datetime.now()}", csv_data, contents.sha)
                         except:
-                            repo.create_file(FILE_PATH, f"Initial gastos", csv_data)
+                            repo.create_file(FILE_PATH, f"Initial quejas", csv_data)
                         return True
                     except: return False
                 
                 # ── INTERFAZ ──
-                st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL DE QUEJAS | LOGÍSTICA</p>", unsafe_allow_html=True)
                 
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
@@ -1285,7 +1286,7 @@ else:
                     st.session_state.df_gastos,
                     use_container_width=True,
                     num_rows="dynamic",
-                    key="editor_gastos_v_final_secure",
+                    key="editor_quejas_v1",
                     column_config={
                         "FECHA": st.column_config.TextColumn("FECHA"),
                         "ID": st.column_config.TextColumn("ID"),
@@ -1293,32 +1294,31 @@ else:
                         "ESTATUS": st.column_config.TextColumn("ESTATUS"),
                         "INCONFORMIDAD": st.column_config.TextColumn("INCONFORMIDAD"),
                         "AGENTE": st.column_config.TextColumn("AGENTE"),
-                        "ULTIMA ACCION": st.column_config.TextColumn("ULTIMA ACCIÓN"),
+                        "ULTIMA ACCION": st.column_config.TextColumn("ÚLTIMA ACCIÓN"),
                         "GASTOS ADICIONALES": st.column_config.NumberColumn("GASTOS ADICIONALES", format="$%.2f")
                     }
                 )
                 
                 # ── PREPARACIÓN DE IMPRESIÓN ──
                 df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
-                filas_v = df_editado[df_editado["ID"].notna() & (df_editado["ID"] != "")].copy()
-                
-                if not filas_v.empty:
-                    filas_v["GASTOS ADICIONALES"] = pd.to_numeric(filas_v["GASTOS ADICIONALES"], errors='coerce').fillna(0)
+                filas_v = df_editado[df_editado["ID"].notna() & (df_editado["ID"].astype(str) != "")].copy()
                 
                 tabla_html = ""
-                for _, r in filas_v.iterrows():
-                    gasto_fmt = f"${float(r['GASTOS ADICIONALES']):,.2f}"
-                    tabla_html += f"""
-                    <tr>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ID', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('QUEJA', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ESTATUS', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('INCONFORMIDAD', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('AGENTE', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ULTIMA ACCION', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:right;'>{gasto_fmt}</td>
-                    </tr>"""
+                if not filas_v.empty:
+                    filas_v["GASTOS ADICIONALES"] = pd.to_numeric(filas_v["GASTOS ADICIONALES"], errors='coerce').fillna(0)
+                    for _, r in filas_v.iterrows():
+                        gasto_fmt = f"${float(r['GASTOS ADICIONALES']):,.2f}"
+                        tabla_html += f"""
+                        <tr>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ID', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('QUEJA', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ESTATUS', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('INCONFORMIDAD', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('AGENTE', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ULTIMA ACCION', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:right;'>{gasto_fmt}</td>
+                        </tr>"""
                 
                 total_c = filas_v["GASTOS ADICIONALES"].sum() if not filas_v.empty else 0
                 
@@ -1328,21 +1328,17 @@ else:
                         <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:9px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
                         <div style="text-align:right; font-size:10px;"><b>FECHA REPORTE:</b> {datetime.now().strftime('%d/%m/%Y')}<br><b>HORA:</b> {datetime.now().strftime('%I:%M %p').lower()}</div>
                     </div>
-                    <h4 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">Reporte Detallado de Gastos Logística</h4>
+                    <h4 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">Reporte de Seguimiento de Quejas</h4>
                     <table style="width:100%; border-collapse:collapse;">
                         <thead><tr style="background:#eee; font-size:10px;">
-                            <th>FECHA</th><th>ID</th><th>QUEJA</th><th>ESTATUS</th><th>INCONFORMIDAD</th><th>AGENTE</th><th>ULTIMA ACCIÓN</th><th>GASTOS ADICIONALES</th>
+                            <th>FECHA</th><th>ID</th><th>QUEJA</th><th>ESTATUS</th><th>INCONFORMIDAD</th><th>AGENTE</th><th>ÚLTIMA ACCIÓN</th><th>GASTOS</th>
                         </tr></thead>
                         <tbody>{tabla_html}</tbody>
                         <tfoot><tr style="font-weight:bold; background:#eee; font-size:11px;">
-                            <td colspan="7" style="border:1px solid #000; text-align:right; padding:5px;">TOTAL GENERAL:</td>
+                            <td colspan="7" style="border:1px solid #000; text-align:right; padding:5px;">TOTAL GASTOS:</td>
                             <td style="border:1px solid #000; text-align:right; padding:5px;">${total_c:,.2f}</td>
                         </tr></tfoot>
                     </table>
-                    <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
-                        <div style="width:40%; border-top:1px solid black;">ELABORÓ<br>Rigoberto Hernandez / Cord. Logística</div>
-                        <div style="width:40%; border-top:1px solid black;">AUTORIZÓ<br>Dirección de Operaciones</div>
-                    </div>
                 </div>"""
                 
                 # ── BOTONES ──
@@ -1356,12 +1352,11 @@ else:
                     if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
                         if guardar_en_github(df_editado):
                             st.session_state.df_gastos = df_editado
-                            st.toast("Sincronización exitosa", icon="✅")
+                            st.toast("Guardado en GitHub correctamente", icon="✅")
                             time.sleep(1); st.rerun()
                 with c3:
                     if st.button(":material/print: IMPRIMIR", use_container_width=True):
                         components.html(f"<html><body>{form_print}<script>window.print();</script></body></html>", height=0)
-                        st.toast("Generando vista previa", icon="🖨️")
                 
             else:
                 st.subheader("MÓDULO DE SEGUIMIENTO")
@@ -2456,6 +2451,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
