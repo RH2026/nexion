@@ -281,28 +281,47 @@ button[data-baseweb="tab"] {{
     transition: all 0.3s ease !important;
 }}
 
-/* Estilo para la pestaña cuando está activa (seleccionada) */
-div[data-baseweb="tab-list"] button[aria-selected="true"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
+/* --- ESTILOS DE TABS REPARADOS --- */
+
+¡Cierto! Tienes toda la razón, al estar dentro de un f-string de Python (entre las comillas triples f""" ... """), las llaves de CSS { } confunden a Python porque cree que son variables.
+
+Para que Python las ignore y las pase tal cual al navegador, debemos usar doble llave {{ }}. Aquí tienes el código reparado y listo para copiar dentro de tu string:
+
+Python
+/* --- ESTILOS DE TABS REPARADOS (PARA F-STRING) --- */
+
+/* 1. EL CULPABLE: Quitamos o suavizamos la línea gris del fondo */
+div[data-baseweb="tab-list"] {{
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    gap: 20px !important;
 }}
 
+/* 2. Base de los botones: Transparentes y sin bordes */
+div[data-baseweb="tab-list"] button {{
+    background-color: transparent !important;
+    color: {vars_css['sub']} !important;
+    border: none !important;
+    font-weight: 400 !important;
+}}
+
+/* 3. Pestaña seleccionada: Sin fondo azul y con barrita verde */
+div[data-baseweb="tab-list"] button[aria-selected="true"] {{
+    background-color: transparent !important;
+    color: {vars_css['text']} !important;
+    border-bottom: 2px solid #00FFAA !important;
+}}
+
+/* 4. Quitamos el subrayado por defecto de Streamlit */
+div[data-baseweb="tab-highlight"] {{
+    background-color: transparent !important;
+}}
+
+/* 5. Limpieza de efectos visuales */
 div[data-baseweb="tab-list"] button:focus, 
 div[data-baseweb="tab-list"] button:active {{
     outline: none !important;
     box-shadow: none !important;
 }}
-
-div[data-baseweb="tab-list"] button {{
-    background-color: transparent !important;
-    color: {vars_css['sub']} !important;
-    border: none !important;
-}}
-
-div[data-baseweb="tab-highlight"] {{
-    background-color: transparent !important; 
-}}
-
 
 /* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
 
@@ -2603,6 +2622,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
