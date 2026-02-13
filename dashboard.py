@@ -1248,17 +1248,13 @@ else:
                 
                 # ── FUNCIONES DE SOPORTE ──
                 def cargar_datos_gastos():
-                    # Nombres que el código espera usar de ahora en adelante
+                    # Nombres exactos que queremos
                     columnas_base = ["FECHA", "ID", "QUEJA", "ESTATUS", "INCONFORMIDAD", "AGENTE", "ULTIMA ACCION", "GASTOS ADICIONALES"]
                     
-                    # Diccionario para convertir lo viejo a lo nuevo automáticamente al cargar
+                    # Mapeo para forzar la conversión de nombres viejos a nuevos
                     mapeo_nombres = {
-                        "PAQUETERIA": "ID",
-                        "CLIENTE": "QUEJA",
-                        "SOLICITO": "ESTATUS",
-                        "DESTINO": "INCONFORMIDAD",
-                        "CANTIDAD": "AGENTE",
-                        "UM": "ULTIMA ACCION",
+                        "PAQUETERIA": "ID", "CLIENTE": "QUEJA", "SOLICITO": "ESTATUS",
+                        "DESTINO": "INCONFORMIDAD", "CANTIDAD": "AGENTE", "UM": "ULTIMA ACCION",
                         "COSTO": "GASTOS ADICIONALES"
                     }
                 
@@ -1266,15 +1262,27 @@ else:
                         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                         if r.status_code == 200:
                             df = pd.read_csv(io.StringIO(r.text))
+                            # Limpiar nombres de columnas (quitar espacios y poner en mayúsculas)
                             df.columns = [str(c).strip().upper() for c in df.columns]
                             
-                            # PASO CRÍTICO: Renombrar las columnas si vienen con nombres viejos
+                            # Renombrar lo que sea necesario
                             df = df.rename(columns=mapeo_nombres)
                             
+                            # Crear columnas faltantes con valores vacíos para que el editor no truene
                             for col in columnas_base:
-                                if col not in df.columns: df[col] = ""
-                            return df[columnas_base]
-                    except: pass
+                                if col not in df.columns:
+                                    df[col] = ""
+                            
+                            # Forzar el orden y contenido exacto
+                            df = df[columnas_base]
+                            
+                            # Asegurar que la columna de gastos sea numérica para evitar conflictos de tipo
+                            df["GASTOS ADICIONALES"] = pd.to_numeric(df["GASTOS ADICIONALES"], errors='coerce').fillna(0)
+                            
+                            return df
+                    except:
+                        pass
+                    # Si falla, devolvemos un DataFrame vacío con la estructura correcta
                     return pd.DataFrame(columns=columnas_base)
                 
                 def guardar_en_github(df_to_save):
@@ -1294,10 +1302,11 @@ else:
                 # ── INTERFAZ ──
                 st.markdown(f"<p class='op-query-text' style='letter-spacing:5px;'>CONTROL FINANCIERO | GASTOS</p>", unsafe_allow_html=True)
                 
+                # Cargamos datos asegurando que la estructura sea perfecta para el editor
                 if "df_gastos" not in st.session_state:
                     st.session_state.df_gastos = cargar_datos_gastos()
                 
-                # ── EDITOR DE DATOS ──
+                # ── EDITOR DE DATOS (CONFIGURACIÓN ROBUSTA) ──
                 df_editado = st.data_editor(
                     st.session_state.df_gastos,
                     use_container_width=True,
@@ -1316,26 +1325,26 @@ else:
                 )
                 
                 # ── PREPARACIÓN DE IMPRESIÓN ──
+                # Limpieza de columnas post-edición
                 df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
-                filas_v = df_editado[df_editado["ID"].notna() & (df_editado["ID"].astype(str) != "")].copy()
-                
-                if not filas_v.empty:
-                    filas_v["GASTOS ADICIONALES"] = pd.to_numeric(filas_v["GASTOS ADICIONALES"], errors='coerce').fillna(0)
+                filas_v = df_editado[df_editado["ID"].notna() & (df_editado["ID"].astype(str).str.strip() != "")].copy()
                 
                 tabla_html = ""
-                for _, r in filas_v.iterrows():
-                    costo_fmt = f"${float(r.get('GASTOS ADICIONALES', 0)):,.2f}"
-                    tabla_html += f"""
-                    <tr>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ID', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('QUEJA', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ESTATUS', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('INCONFORMIDAD', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('AGENTE', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ULTIMA ACCION', '')}</td>
-                        <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:right;'>{costo_fmt}</td>
-                    </tr>"""
+                if not filas_v.empty:
+                    filas_v["GASTOS ADICIONALES"] = pd.to_numeric(filas_v["GASTOS ADICIONALES"], errors='coerce').fillna(0)
+                    for _, r in filas_v.iterrows():
+                        costo_fmt = f"${float(r.get('GASTOS ADICIONALES', 0)):,.2f}"
+                        tabla_html += f"""
+                        <tr>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ID', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('QUEJA', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ESTATUS', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('INCONFORMIDAD', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('AGENTE', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ULTIMA ACCION', '')}</td>
+                            <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:right;'>{costo_fmt}</td>
+                        </tr>"""
                 
                 total_c = filas_v["GASTOS ADICIONALES"].sum() if not filas_v.empty else 0
                 
@@ -2473,6 +2482,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
