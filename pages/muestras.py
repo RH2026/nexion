@@ -24,7 +24,7 @@ import altair as alt
 from datetime import date, datetime, timedelta
 from io import BytesIO
 
-# 1. CONFIGURACIÓN MAESTRA
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
 
 # --- MOTOR DE INTELIGENCIA LOGÍSTICA (XENOCODE CORE) ---
@@ -37,137 +37,140 @@ def d_local(dir_val):
         except: continue
     return "FORÁNEO"
 
-# --- ESTILOS DE ALTO IMPACTO (CERO PENDEJADAS) ---
+# --- ESTILOS DE ARQUITECTURA (SHELl & CANVAS) ---
+vars_css = {
+    "shell_bg": "#0F1115",    # Fondo más oscuro exterior
+    "canvas_bg": "#1B1E23",   # El bloque claro de tus fotos
+    "accent": "#00FFAA",      # Neón Nexion
+    "border": "#2D323A",
+    "text": "#FFFAFA"
+}
+
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
     
-    /* Reset de UI */
     header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-    .stApp {{ background-color: #0F1115 !important; font-family: 'Inter', sans-serif !important; }}
-    .block-container {{ padding: 0rem !important; }}
-
-    /* HEADER INDUSTRIAL */
-    .custom-header {{
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 60px;
-        background: rgba(18, 20, 24, 0.95);
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        position: sticky; top: 0; z-index: 999;
-    }}
-    .brand-section {{ line-height: 1; }}
-    .brand-logo {{ font-weight: 900; letter-spacing: 5px; font-size: 22px; color: white; }}
-    .brand-tag {{ font-size: 7px; letter-spacing: 3px; color: #00FFAA; display: block; opacity: 0.8; }}
-
-    /* BARRA DE SUBMENÚ (BARRA ÚNICA) */
-    .sub-bar {{
-        background: #16191E;
-        padding: 10px 60px;
-        display: flex;
-        gap: 35px;
-        border-bottom: 1px solid rgba(0, 255, 170, 0.1);
+    
+    .stApp {{ 
+        background-color: {vars_css['shell_bg']} !important; 
+        font-family: 'Inter', sans-serif !important; 
     }}
 
-    /* SOBREESCRIBIR BOTONES PARA QUE PAREZCAN TEXTO DE MENÚ */
+    /* CONTENEDOR PRINCIPAL (CANVAS) */
+    .main-canvas {{
+        background-color: {vars_css['canvas_bg']};
+        border: 1px solid {vars_css['border']};
+        border-radius: 4px;
+        padding: 20px;
+        min-height: 80vh;
+        margin-top: 10px;
+    }}
+
+    /* BOTONES DEL MENÚ PRINCIPAL (DERECHA) */
     div.stButton > button {{
-        background: none !important;
-        border: none !important;
+        background: transparent !important;
+        border: 1px solid transparent !important;
         color: rgba(255,255,255,0.4) !important;
         font-size: 11px !important;
         letter-spacing: 2px !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
-        padding: 0px !important;
-        width: auto !important;
-        transition: 0.3s !important;
+        transition: 0.3s;
     }}
     div.stButton > button:hover {{
-        color: #00FFAA !important;
-        transform: translateY(-1px);
+        color: {vars_css['accent']} !important;
+        border-bottom: 1px solid {vars_css['accent']} !important;
     }}
-    
-    /* FOOTER */
-    .footer-core {{
-        position: fixed; bottom: 0; width: 100%;
-        padding: 15px; background: #0F1115;
-        border-top: 1px solid rgba(255,255,255,0.03);
-        text-align: center; font-size: 8px; letter-spacing: 4px; color: rgba(255,255,255,0.3);
+
+    /* SUBMENU TABS (DENTRO DEL CANVAS) */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 10px;
+        background-color: transparent;
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        height: 40px;
+        background-color: rgba(255,255,255,0.03) !important;
+        border: 1px solid {vars_css['border']} !important;
+        color: rgba(255,255,255,0.5) !important;
+        font-size: 10px !important;
+        letter-spacing: 1px !important;
+    }}
+    .stTabs [aria-selected="true"] {{
+        background-color: {vars_css['accent']}11 !important;
+        color: {vars_css['accent']} !important;
+        border: 1px solid {vars_css['accent']} !important;
     }}
 </style>
 """, unsafe_allow_html=True)
 
-# --- LÓGICA DE NAVEGACIÓN ---
-if "main_nav" not in st.session_state: st.session_state.main_nav = "DASHBOARD"
-if "sub_nav" not in st.session_state: st.session_state.sub_nav = "GENERAL"
+# --- HEADER (FUERA DEL CANVAS) ---
+col_logo, col_empty, col_nav = st.columns([1.5, 2, 4])
 
-# --- RENDERIZADO DE HEADER (LOGO IZQUIERDA | MENÚ DERECHA) ---
+with col_logo:
+    st.markdown(f"<div style='margin-top:10px;'><span style='font-weight:900; letter-spacing:5px; color:white; font-size:20px;'>NEXION</span><br><span style='font-size:7px; letter-spacing:3px; color:{vars_css['accent']}; opacity:0.8;'>SYSTEM SOLUTIONS</span></div>", unsafe_allow_html=True)
+
+with col_nav:
+    # Menú Principal a la derecha como en tu imagen
+    m_cols = st.columns(5)
+    labels = ["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"]
+    if "main_choice" not in st.session_state: st.session_state.main_choice = "DASHBOARD"
+    
+    for i, l in enumerate(labels):
+        if m_cols[i].button(l, key=f"main_{l}"):
+            st.session_state.main_choice = l
+            st.rerun()
+
+# --- RENDERIZADO DEL CANVAS (EL BLOQUE CLARO) ---
+# Todo lo que ocurra aquí adentro estará contenido en el bloque visual
+with st.container():
+    st.markdown('<div class="main-canvas">', unsafe_allow_html=True)
+    
+    # Título de Sección (el que aparece en el centro en tu foto)
+    st.markdown(f"<p style='text-align:center; font-size:10px; letter-spacing:10px; opacity:0.3; margin-bottom:30px;'>{st.session_state.main_choice}</p>", unsafe_allow_html=True)
+
+    # Definición de Subbloques según la sección
+    sub_map = {
+        "DASHBOARD": ["KPI'S", "RASTREO", "VOLUMEN", "RETRASOS"],
+        "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
+        "REPORTES": ["APQ", "OPS", "OTD"],
+        "FORMATOS": ["SALIDA DE PT", "CONTRARRECIBOS", "MUESTRAS"],
+        "HUB LOG": ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]
+    }
+
+    # Renderizamos los subbloques como pestañas integradas al canvas
+    subs = st.tabs(sub_map[st.session_state.main_choice])
+    
+    # ── LOGICA DE CONTENIDO POR SECCIÓN ──
+    current_main = st.session_state.main_choice
+    
+    # Ejemplo para FORMATOS -> MUESTRAS
+    if current_main == "FORMATOS":
+        with subs[0]: st.write("Contenido Salida PT")
+        with subs[1]: st.write("Contenido Contrarrecibos")
+        with subs[2]: 
+            st.markdown("### GESTIÓN DE MUESTRAS")
+            st.info("Renderizando subbloque de muestras...")
+
+    # Ejemplo para DASHBOARD
+    elif current_main == "DASHBOARD":
+        with subs[0]: # KPI'S
+            st.markdown("#### PERFORMANCE OPERATIVO")
+            # Aquí pondrías tus gráficos circulares como los de la imagen
+            c1, c2, c3, c4, c5 = st.columns(5)
+            # Simulación de métricas
+            c1.metric("PEDIDOS", "341", "100%")
+            c2.metric("ENTREGADOS", "219", "64.2%")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ── FOOTER ──
 st.markdown(f"""
-<div class="custom-header">
-    <div class="brand-section">
-        <span class="brand-logo">NEXION</span>
-        <span class="brand-tag">SYSTEM SOLUTIONS</span>
-    </div>
-    <div style="font-size: 10px; letter-spacing: 10px; opacity: 0.2;">{st.session_state.main_nav}</div>
+<div style="position: fixed; bottom: 0; width: 100%; text-align: center; padding: 10px; font-size: 8px; color: rgba(255,255,255,0.2); letter-spacing: 3px;">
+    NEXION // LOGISTICS OS // © 2026 // ENGINEERED BY HERNANPHY
 </div>
 """, unsafe_allow_html=True)
 
-# Inyectamos los botones del menú principal a la derecha usando columnas sobre el header
-# (Usamos un truco de margen negativo para subirlos al nivel del header)
-cols_main = st.columns([4, 1, 1, 1, 1, 1])
-main_labels = ["DASHBOARD", "SEGUIMIENTO", "REPORTES", "FORMATOS", "HUB LOG"]
-
-for i, label in enumerate(main_labels):
-    with cols_main[i+1]:
-        st.markdown("<div style='margin-top: -55px;'>", unsafe_allow_html=True)
-        # Resaltado si está activo
-        estilo = "color: #00FFAA !important; opacity: 1;" if st.session_state.main_nav == label else ""
-        if st.button(label, key=f"m_{label}"):
-            st.session_state.main_nav = label
-            # Reset subnav
-            defaults = {"DASHBOARD":"GENERAL", "SEGUIMIENTO":"TRK", "REPORTES":"APQ", "FORMATOS":"SALIDA DE PT", "HUB LOG":"SMART ROUTING"}
-            st.session_state.sub_nav = defaults[label]
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-
-# --- RENDERIZADO DE SUBMENÚ (BARRA ÚNICA IZQUIERDA) ---
-sub_map = {
-    "DASHBOARD": ["GENERAL", "KPI'S", "RASTREO", "VOLUMEN", "RETRASOS"],
-    "SEGUIMIENTO": ["TRK", "GANTT", "QUEJAS"],
-    "REPORTES": ["APQ", "OPS", "OTD"],
-    "FORMATOS": ["SALIDA DE PT", "CONTRARRECIBOS", "MUESTRAS"],
-    "HUB LOG": ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]
-}
-
-# Barra de submenú
-st.markdown('<div style="background: #16191E; border-bottom: 1px solid rgba(0,255,170,0.1); padding: 5px 60px;">', unsafe_allow_html=True)
-cols_sub = st.columns([1 for _ in sub_map[st.session_state.main_nav]] + [5]) # El final es para empujar a la izquierda
-for i, sub_label in enumerate(sub_map[st.session_state.main_nav]):
-    with cols_sub[i]:
-        # El punto indica que está activo
-        display_text = f"● {sub_label}" if st.session_state.sub_nav == sub_label else sub_label
-        if st.button(display_text, key=f"s_{sub_label}"):
-            st.session_state.sub_nav = sub_label
-            st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- ÁREA DE TRABAJO ---
-st.markdown("<div style='padding: 40px 60px;'>", unsafe_allow_html=True)
-
-if st.session_state.main_nav == "FORMATOS":
-    if st.session_state.sub_nav == "MUESTRAS":
-        st.markdown("<h2 style='letter-spacing:-1px;'>Control de Muestras</h2>", unsafe_allow_html=True)
-        st.write("Interfaz de gestión de muestras lista para código.")
-    elif st.session_state.sub_nav == "SALIDA DE PT":
-        st.markdown("<h2 style='letter-spacing:-1px;'>Salida de Producto Terminado</h2>", unsafe_allow_html=True)
-
-# --- FOOTER ---
-st.markdown("""
-<div class="footer-core">
-    NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 // ENGINEERED BY HERNANPHY
-</div>
-""", unsafe_allow_html=True)
 
 
 
