@@ -6,5 +6,5 @@ FECHA,FECHA_FIN,IMPORTANCIA,TAREA,ULTIMO ACCION,PROGRESO,DEPENDENCIAS,TIPO,GRUPO
 2026-02-10,2026-02-10,Alta,"234154 - GLZ02810782 Cliente no recibio pedido, requiere maniobras - TRES GUERRAS",NO ENTREGADA,50,,Hito,ENTREGAS PENDIENTES
 2026-02-11,2026-02-11,Alta,234283 - Cliente está hablando a castores pidiendo una remisión? Ya le dieron la factura pero insiste en que una remisión,SIN INFORMACION,50,,Hito,ENTREGAS PENDIENTES
 2026-02-11,2026-02-11,Alta,"234364 - GLZ02813120 - se fue cobro destino, cliente no pago flete",NO ENTREGADA,50,,Hito,ENTREGAS PENDIENTES
-2026-02-11,2026-02-11,Alta,234045 - Cliente no tenia efectivo para pagar flete,NO ENTREGADA,80,None,Hito,ENTREGAS PENDIENTES
-2026-02-11,2026-02-11,Alta,"234271 - GLZ02812889 - se fue cobro destino, cliente no pago flete",NO ENTREGADA,80,None,Hito,ENTREGAS PENDIENTES
+2026-02-11,2026-02-11,Alta,234045 - Cliente no tenia efectivo para pagar flete,NO ENTREGADA,80,,Hito,ENTREGAS PENDIENTES
+2026-02-11,2026-02-11,Alta,"234271 - GLZ02812889 - se fue cobro destino, cliente no pago flete",NO ENTREGADA,80,,Hito,ENTREGAS PENDIENTES
