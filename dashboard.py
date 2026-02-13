@@ -161,7 +161,32 @@ div.stButton > button:hover {{
     color: #000000 !important; 
     border-color: #ffffff !important; 
 }}
+/* 4.1 ESPECÍFICO PARA EL BOTÓN DE NAVEGACIÓN (POPOVER) */
+div[data-testid="stPopover"] > button {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 2px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    line-height: 28px !important;
+}}
 
+/* Forzamos el color del icono de la hamburguesa y la flechita */
+div[data-testid="stPopover"] > button svg {{
+    fill: {vars_css['text']} !important;
+}}
+
+/* Efecto Hover para que sea igual a los demás */
+div[data-testid="stPopover"] > button:hover {{
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #ffffff !important;
+}}
+
+div[data-testid="stPopover"] > button:hover svg {{
+    fill: #000000 !important;
+}}
 
 /* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
 
@@ -2422,6 +2447,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
