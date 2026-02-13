@@ -240,57 +240,49 @@ input[data-testid="stDateInputView"] {{
 
 /* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
 
-Vamos a dejar todo respirando verde #00A844 pero con elegancia, no como semáforo en hora pico 🌿✨
-Mantengo tus dobles llaves porque esto vive dentro de un f""" """.
-
-Aquí va limpio, coherente y todo alineado al verde:
 
 /* Chips seleccionadas – Multiselect */
 div[data-baseweb="tag"] {{
-    background-color: #00A844 !important;
-    color: #FFFFFF !important;
-    border-radius: 6px !important;
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-radius: 4px !important;
     font-weight: 600 !important;
-    border: 1px solid #00A844 !important;
 }}
 
 div[data-baseweb="tag"] span {{
-    color: #FFFFFF !important;
+    color: #ffffff !important;
 }}
 
 div[data-baseweb="tag"] svg {{
-    fill: #FFFFFF !important;
+    fill: #ffffff !important;
 }}
 
 /* Valor seleccionado – Selectbox */
 div[data-baseweb="select"] > div {{
-    background-color: rgba(0, 168, 68, 0.10) !important;
-    border: 1px solid #00A844 !important;
+    background-color: rgba(37, 99, 235, 0.12) !important;
+    border: 1px solid #2563eb !important;
 }}
 
 /* Focus */
 div[data-baseweb="select"]:focus-within {{
-    box-shadow: 0 0 0 2px rgba(0, 168, 68, 0.35) !important;
-    border-color: #00A844 !important;
+    box-shadow: 0 0 0 1px #2563eb !important;
 }}
 
-/* Tabs base */
+/* Eliminar el azul de fondo de la pestaña seleccionada */
 button[data-baseweb="tab"] {{
     background-color: transparent !important;
     border: none !important;
-    color: {vars_css['sub']} !important;
-    font-weight: 500 !important;
-    transition: all 0.25s ease !important;
+    color: {vars_css['sub']} !important; /* Texto grisáceo para los no seleccionados */
+    font-weight: 400 !important;
+    transition: all 0.3s ease !important;
 }}
 
-/* Tab activa */
+/* Estilo para la pestaña cuando está activa (seleccionada) */
 div[data-baseweb="tab-list"] button[aria-selected="true"] {{
-    background-color: rgba(0, 168, 68, 0.08) !important;
-    color: #00A844 !important;
-    font-weight: 600 !important;
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
 }}
 
-/* Quitar focus azul feo */
 div[data-baseweb="tab-list"] button:focus, 
 div[data-baseweb="tab-list"] button:active {{
     outline: none !important;
@@ -303,10 +295,10 @@ div[data-baseweb="tab-list"] button {{
     border: none !important;
 }}
 
-/* Línea indicadora inferior */
 div[data-baseweb="tab-highlight"] {{
-    background-color: #00A844 !important; 
+    background-color: #00FFAA !important; 
 }}
+
 
 /* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
 
@@ -2608,6 +2600,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
