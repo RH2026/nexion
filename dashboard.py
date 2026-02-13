@@ -1345,18 +1345,31 @@ else:
                 st.markdown("""
                 <style>
                 
-                [data-testid="stDataEditor"] div[role="gridcell"] {
-                    white-space: pre-wrap !important;
-                    word-break: break-word !important;
-                    overflow-wrap: break-word !important;
+                /* Forzar wrap real dentro del DataEditor */
+                [data-testid="stDataEditor"] [role="gridcell"] {
+                    white-space: normal !important;
+                    line-height: 1.4 !important;
                 }
                 
-                [data-testid="stDataEditor"] div[role="gridcell"] > div {
+                /* El texto interno del cell */
+                [data-testid="stDataEditor"] [role="gridcell"] div {
+                    white-space: normal !important;
                     overflow: visible !important;
+                    text-overflow: unset !important;
+                    word-break: break-word !important;
                 }
                 
-                [data-testid="stDataEditor"] div[role="row"] {
+                /* Quitar ellipsis */
+                [data-testid="stDataEditor"] span {
+                    white-space: normal !important;
+                    overflow: visible !important;
+                    text-overflow: unset !important;
+                }
+                
+                /* Permitir que la fila crezca */
+                [data-testid="stDataEditor"] [role="row"] {
                     align-items: stretch !important;
+                    height: auto !important;
                 }
                 
                 </style>
@@ -1385,7 +1398,7 @@ else:
                     df_base,
                     use_container_width=True,
                     num_rows="dynamic",
-                    row_height=60, 
+                    row_height=90, 
                     key="editor_gastos_v_final_secure",
                     column_config={
                         "FECHA": st.column_config.TextColumn("FECHA"),
@@ -2585,6 +2598,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
