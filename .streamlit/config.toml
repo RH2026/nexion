@@ -1,5 +1,5 @@
 [theme]
 primaryColor = "#00A844"            # Azul elegante para acentos y botones
-backgroundColor = "#F3F1EC"         # Fondo blanco perla
+backgroundColor = "#FFFFFF"         # Fondo blanco perla
 secondaryBackgroundColor = "#F3F1EC" # Cards y contenedores
-textColor = "#000000"               # Texto principal oscuro suave
+textColor = "#607D8B"               # Texto principal oscuro suave
