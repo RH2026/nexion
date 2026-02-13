@@ -5,7 +5,7 @@ FECHA,FECHA_FIN,IMPORTANCIA,TAREA,ULTIMO ACCION,PROGRESO,DEPENDENCIAS,TIPO,GRUPO
 2026-02-11,2026-02-11,Alta,"234364 - GLZ02813120 - se fue cobro destino, cliente no pago flete",NO ENTREGADA,50,,Hito,ENTREGAS PENDIENTES
 2026-02-11,2026-02-11,Alta,234045 - Cliente no tenia efectivo para pagar flete,NO ENTREGADA,80,,Hito,ENTREGAS PENDIENTES
 2026-02-11,2026-02-11,Alta,"234271 - GLZ02812889 - se fue cobro destino, cliente no pago flete",NO ENTREGADA,80,,Hito,ENTREGAS PENDIENTES
-2026-02-13,2026-02-20,Urgente,Revisar devolucion de Adrian Rodriguez,SIN DICTAMEN,50,,Tarea,DEVOLUCIONES
+2026-02-13,2026-02-20,Urgente,Revisar devolucion de Adrian Rodriguez PRUEVA DE VISUALIZACION,SIN DICTAMEN,50,,Tarea,DEVOLUCIONES
 2026-02-13,2026-02-20,Urgente,Revisar devolucion de Brenda de 4 cajas,SIN DICTAMEN,50,,Tarea,DEVOLUCIONES
 2026-02-13,2026-02-20,Urgente,Revisar devolucion de Narcedalia Xinu,SIN DICTAMEN,50,,Tarea,DEVOLUCIONES
 2026-02-13,2026-02-20,Urgente,Actualizar quejas en el portal,EN PROCESO,80,,Tarea,QUEJAS
