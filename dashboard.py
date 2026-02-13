@@ -159,23 +159,6 @@ div.stButton > button:hover {{
     color: #000000 !important; 
 }}
 
-/* ───────── NUEVO: ESTILO EXCLUSIVO PARA EL POPOVER ───────── */
-/* Esto hace que el botón de la hamburguesa sea azul y no se vea "muerto" */
-
-div[data-testid="stPopover"] > button {{
-    background-color: transparent !important; 
-    color: #2563eb !important; /* El azul que pusimos en el TOML */
-    border: 1px solid #2563eb !important;
-    border-radius: 4px !important;
-    font-size: 16px !important; /* Un poco más grande para que la ☰ se vea bien */
-}}
-
-div[data-testid="stPopover"] > button:hover {{
-    background-color: rgba(37, 99, 235, 0.2) !important;
-    border-color: #ffffff !important;
-    color: #ffffff !important;
-}}
-
 /* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
 
 /* Atacamos al contenedor que envuelve el input */
@@ -2435,6 +2418,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
