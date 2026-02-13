@@ -300,7 +300,7 @@ div[data-baseweb="tab-list"] button {{
 }}
 
 div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important; 
+    background-color: transparent !important; 
 }}
 
 
@@ -2603,6 +2603,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
