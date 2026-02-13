@@ -416,7 +416,7 @@ else:
         
         with c1:
             try:
-                st.image(vars_css["logo"], width=110)
+                st.image(vars_css["logo"], width=160)
                 st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px; margin-left:2px;'>SYSTEM SOLUTIONS</p>", unsafe_allow_html=True)
             except Exception as e:
                 st.write("Error al cargar el logo:", e)                            
@@ -2603,6 +2603,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
