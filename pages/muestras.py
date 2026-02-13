@@ -242,7 +242,7 @@ input[data-testid="stDateInputView"] {{
 
 /* Chips seleccionadas – Multiselect */
 div[data-baseweb="tag"] {{
-    background-color: #2563eb !important;
+    background-color: #00A844 !important;
     color: #ffffff !important;
     border-radius: 4px !important;
     font-weight: 600 !important;
@@ -259,12 +259,12 @@ div[data-baseweb="tag"] svg {{
 /* Valor seleccionado – Selectbox */
 div[data-baseweb="select"] > div {{
     background-color: rgba(37, 99, 235, 0.12) !important;
-    border: 1px solid #2563eb !important;
+    border: 1px solid #00A844 !important;
 }}
 
 /* Focus */
 div[data-baseweb="select"]:focus-within {{
-    box-shadow: 0 0 0 1px #2563eb !important;
+    box-shadow: 0 0 0 1px #00A844 !important;
 }}
 
 /* Eliminar el azul de fondo de la pestaña seleccionada */
@@ -295,7 +295,7 @@ div[data-baseweb="tab-list"] button {{
 }}
 
 div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important; 
+    background-color: #00A844 !important; 
 }}
 
 /* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
@@ -2598,6 +2598,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
