@@ -2,4 +2,4 @@
 primaryColor = "#2563EB"            # Azul elegante para acentos y botones
 backgroundColor = "#F3F1EC"         # Fondo blanco perla
 secondaryBackgroundColor = "#FFFFFF" # Cards y contenedores
-textColor = "#1F1F1F"               # Texto principal oscuro suave
+textColor = "#FFFFFF"               # Texto principal oscuro suave
