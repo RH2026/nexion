@@ -334,44 +334,7 @@ button[kind="secondary"] {{
     font-size: 11px !important;
     line-height: 30px !important;
 }}
-/* ───────── DATAEDITOR DARK FIX COMPLETO ───────── */
 
-/* Contenedor general */
-[data-testid="stDataEditor"] {{
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* Capa interna */
-[data-testid="stDataEditor"] > div {{
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* Grid virtualizado */
-[data-testid="stDataEditor"] .gdg-main {{
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* CANVAS (el que causa el verde) */
-[data-testid="stDataEditor"] canvas {{
-    background-color: {vars_css['card']} !important;
-}}
-
-/* Celdas */
-[data-testid="stDataEditor"] div[role="gridcell"] {{
-    color: {vars_css['text']} !important;
-}}
-
-/* Encabezados */
-[data-testid="stDataEditor"] div[role="columnheader"] {{
-    background-color: {vars_css['table_header']} !important;
-    color: {vars_css['text']} !important;
-    border-bottom: 1px solid {vars_css['border']} !important;
-}}
-
-/* Filas alternas suaves */
-[data-testid="stDataEditor"] div[role="row"]:nth-child(even) div[role="gridcell"] {{
-    background-color: #22262C !important;
-}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -682,6 +645,34 @@ else:
                     with c5: render_kpi(retrasados, total_p, "Retraso", "#ff4b4b")
                 
                     st.markdown("<br><br>", unsafe_allow_html=True)
+                    st.markdown("""
+                    <style>
+                    
+                    /* ───────── FIX REAL DATAEDITOR OSCURO ───────── */
+                    
+                    /* Forzamos el canvas interno */
+                    [data-testid="stDataEditor"] canvas {
+                        background-color: #1E1E1E !important;
+                    }
+                    
+                    /* Contenedor principal */
+                    [data-testid="stDataEditor"] {
+                        background-color: #121212 !important;
+                    }
+                    
+                    /* Header */
+                    [data-testid="stDataEditor"] div[role="columnheader"] {
+                        background-color: #252526 !important;
+                        color: #EAEAEA !important;
+                    }
+                    
+                    /* Texto general */
+                    [data-testid="stDataEditor"] {
+                        color: #EAEAEA !important;
+                    }
+                    
+                    </style>
+                    """, unsafe_allow_html=True)
                     with st.expander("DETALLE OPERATIVO"):
                         # Cambiamos .dataframe por .data_editor
                         st.data_editor(
@@ -2497,6 +2488,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
