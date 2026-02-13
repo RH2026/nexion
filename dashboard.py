@@ -335,29 +335,33 @@ button[kind="secondary"] {{
     line-height: 30px !important;
 }}
 
-/* ───────── CORRECCIÓN FONDO DATAEDITOR ───────── */
+/* ───────── OVERRIDE TOTAL DATAEDITOR ───────── */
 
-/* Fondo general del DataEditor */
-[data-testid="stDataEditor"] {{
+/* Contenedor principal */
+[data-testid="stDataEditor"] > div {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* Fondo de las celdas */
+/* Grid interno (Glide Data Grid root) */
+[data-testid="stDataEditor"] div[data-testid="gridContainer"] {{
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* Celdas reales */
 [data-testid="stDataEditor"] div[role="gridcell"] {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
 }}
 
-/* Filas alternas */
-[data-testid="stDataEditor"] div[role="row"]:nth-child(even) div[role="gridcell"] {{
-    background-color: #22262C !important;
-}}
-
-/* Encabezados */
+/* Header */
 [data-testid="stDataEditor"] div[role="columnheader"] {{
     background-color: {vars_css['table_header']} !important;
     color: {vars_css['text']} !important;
-    border-bottom: 1px solid {vars_css['border']} !important;
+}}
+
+/* Scroll container interno */
+[data-testid="stDataEditor"] .gdg-main {{
+    background-color: {vars_css['bg']} !important;
 }}
 
 </style>
@@ -2484,6 +2488,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
