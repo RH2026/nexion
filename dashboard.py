@@ -1362,6 +1362,7 @@ else:
                     df_base,
                     use_container_width=True,
                     num_rows="dynamic",
+                    row_height=60, 
                     key="editor_gastos_v_final_secure",
                     column_config={
                         "FECHA": st.column_config.TextColumn("FECHA"),
@@ -2561,6 +2562,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
