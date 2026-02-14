@@ -434,7 +434,7 @@ else:
                               letter-spacing: 8px;  /* ← Aumentado para efecto de doble espacio */
                               color: {vars_css['sub']}; 
                               margin: 0; 
-                              font-weight: 700; 
+                              font-weight: 500; 
                               text-transform: uppercase;
                               text-align: center;'>
                         {ruta}
@@ -2554,6 +2554,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
