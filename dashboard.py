@@ -83,8 +83,8 @@ if "menu_sub" not in st.session_state:
 vars_css = {
     "bg": "#384A52",           # Fondo profundo (Base)
     "card": "#2B343B",         # Azul grisáceo oscuro para celdas
-    "text": "#F9F6F2",         # Blanco Perla Ultra Chic (Texto principal)
-    "sub": "#B0BEC5",          # Gris Azulado Claro (Subtítulos/Secundario)
+    "text": "#FFFFFF",         # Blanco Perla Ultra Chic (Texto principal)
+    "sub": "#FFFFFF",          # Gris Azulado Claro (Subtítulos/Secundario)
     "border": "#4B5D67",       # Contorno sutil para elevación
     "table_header": "#242D32", # Tono profundo para encabezados de tabla
     "logo": "n1.png"           # Tu archivo de imagen
@@ -2599,6 +2599,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
