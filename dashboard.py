@@ -244,7 +244,7 @@ input[data-testid="stDateInputView"] {{
 
 /* Chips seleccionadas – Multiselect */
 div[data-baseweb="tag"] {{
-    background-color: #718096 !important; /* Gris slate más visible */
+    background-color: #718096 !important;
     color: #ffffff !important;
     border-radius: 4px !important;
     font-weight: 600 !important;
@@ -260,14 +260,15 @@ div[data-baseweb="tag"] svg {{
 
 /* Valor seleccionado – Selectbox */
 div[data-baseweb="select"] > div {{
-    background-color: rgba(113, 128, 150, 0.15) !important; /* Fondo sutil acorde al borde */
-    border: 1px solid #718096 !important; /* Borde más definido y visible */
+    background-color: rgba(113, 128, 150, 0.15) !important;
+    border: 1px solid #718096 !important;
 }}
 
-/* Focus - Mantenemos el azul brillante solo al interactuar para feedback claro */
+/* Focus - Sin color azul, mantiene el estilo neutro */
 div[data-baseweb="select"]:focus-within {{
-    border-color: #2563eb !important;
-    box-shadow: 0 0 0 1px #2563eb !important;
+    border-color: #718096 !important; /* Mantiene el gris slate */
+    box-shadow: none !important;      /* Elimina cualquier resplandor azul */
+    outline: none !important;
 }}
 
 /* Eliminar el azul de fondo de la pestaña seleccionada */
@@ -2602,6 +2603,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
