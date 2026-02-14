@@ -86,7 +86,7 @@ vars_css = {
     "text": "#FFFFFF",         # Blanco Perla Ultra Chic (Texto principal)
     "sub": "#FFFFFF",          # Gris Azulado Claro (Subtítulos/Secundario)
     "border": "#4B5D67",       # Contorno sutil para elevación
-    "table_header": "#242D32",
+    "table_header": "#ffffff",
     "table_bg": "#2B343B",# Tono profundo para encabezados de tabla
     "logo": "n1.png"           # Tu archivo de imagen
 }
@@ -2601,6 +2601,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
