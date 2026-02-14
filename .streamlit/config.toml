@@ -1,5 +1,15 @@
 [theme]
-primaryColor = "#00A844"            # Azul elegante para acentos y botones
-backgroundColor = "#FFFFFF"         # Fondo blanco perla
-secondaryBackgroundColor = "#F3F1EC" # Cards y contenedores
-textColor = "#000000"               # Texto principal oscuro suave
+# Azul pizarra de tu botón original para acentos y botones
+primaryColor = "#546E7A"           
+
+# Fondo profundo para la aplicación
+backgroundColor = "#384A52"        
+
+# Color para las cards y contenedores (Azul grisáceo oscuro)
+secondaryBackgroundColor = "#2B343B" 
+
+# Texto principal en Blanco Perla Ultra Chic
+textColor = "#F9F6F2"              
+
+# Color de los widgets (se adapta al gris azulado para coherencia)
+# font = "sans serif"
