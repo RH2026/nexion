@@ -6,7 +6,7 @@ primaryColor = "#00A0A8"
 backgroundColor = "#384A52"        
 
 # Color para las cards y contenedores (Azul grisáceo oscuro)
-secondaryBackgroundColor = "#2B343B" 
+secondaryBackgroundColor = "#3F4D57" 
 
 # Texto principal en Blanco Perla Ultra Chic
 textColor = "#F9F6F2"              
