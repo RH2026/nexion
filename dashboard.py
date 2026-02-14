@@ -411,10 +411,11 @@ else:
         
         with c1:
             try:
-                st.image(vars_css["logo"], width=110)
-                st.markdown(f"<p style='font-size:8px; letter-spacing:2px; color:{vars_css['sub']}; margin-top:-22px; margin-left:2px;'>SYSTEM SOLUTIONS</p>", unsafe_allow_html=True)
+                # Solo mostramos el logo con el ancho que definiste
+                st.image(vars_css["logo"], width=180)
             except:
-                st.markdown(f"<h3 style='letter-spacing:4px; font-weight:800; margin:0; color:{vars_css['text']};'>NEXION</h3>", unsafe_allow_html=True)
+                # Si falla la carga de la imagen, no mostramos nada (o podrías dejar un pass)
+                pass
     
         with c2:
             # INDICADOR GENERAL (CENTRADO ABSOLUTO CON ESPACIADO NEXION)
@@ -2599,6 +2600,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
