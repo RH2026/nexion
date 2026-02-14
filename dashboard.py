@@ -178,7 +178,7 @@ div[data-baseweb="input"] {{
 
 /* Cuando el usuario hace clic (Focus) en el contenedor */
 div[data-baseweb="input"]:focus-within {{
-    border: 1px solid #2563eb !important;
+    border: 1px solid #ffffff !important;
     box-shadow: 0 0 0 1px #2563eb !important;
 }}
 
@@ -430,7 +430,7 @@ else:
             
             st.markdown(f"""
                 <div style='display: flex; justify-content: center; align-items: center; width: 100%; margin: 20px 0;'>
-                    <p style='font-size: 11px; 
+                    <p style='font-size: 13px; 
                               letter-spacing: 8px;  /* ← Aumentado para efecto de doble espacio */
                               color: {vars_css['sub']}; 
                               margin: 0; 
@@ -2554,6 +2554,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
