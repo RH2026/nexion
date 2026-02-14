@@ -80,12 +80,12 @@ if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
 vars_css = {
-    "bg": "#384A52",      # Fondo profundo
-    "card": "#282D34",    # Color para las celdas (Azul grisáceo)
-    "text": "#FFFAFA",    
-    "sub": "#FFFFFF",     
-    "border": "#414852",  
-    "table_header": "#2D3748", # Encabezados un poco más claros
+    "bg": "#384A52",           // Fondo profundo original
+    "card": "#2B343B",         // Azul grisáceo oscuro para profundidad
+    "text": "#F9F6F2",         // Blanco Perla Ultra Chic (Principal)
+    "sub": "#B0BEC5",          // Gris Azulado Claro (Secundario)
+    "border": "#4B5D67",       // Contorno sutil para elevación
+    "table_header": "#242D32", // Tono profundo para encabezados
     "logo": "n1.png"
 }
 
@@ -2598,6 +2598,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
