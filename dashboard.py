@@ -158,9 +158,9 @@ div.stButton > button {{
 }}
 
 div.stButton > button:hover {{ 
-    background-color: #ffffff !important; 
-    color: #000000 !important; 
-    border-color: #ffffff !important; 
+    background-color: ##57737F !important; 
+    color: #ffffff !important; 
+    border-color: ##57737F !important; 
 }}
 
 
@@ -2600,6 +2600,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
