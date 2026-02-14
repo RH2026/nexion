@@ -178,8 +178,8 @@ div[data-baseweb="input"] {{
 
 /* Cuando el usuario hace clic (Focus) en el contenedor */
 div[data-baseweb="input"]:focus-within {{
-    border: 1px solid #ECECEC !important;
-    box-shadow: 0 0 0 1px #ECECEC !important;
+    border: 1px solid #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
 }}
 
 /* Estilo del campo de texto real */
@@ -2554,6 +2554,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
