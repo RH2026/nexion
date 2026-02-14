@@ -760,40 +760,35 @@ else:
                     st.write("")
                     f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
                     
-                    with f_col1:
-                        # Definimos la lista de meses para poder calcular fechas incluso si el selector está en la col2
+                    with f_col2:
+                        # Movemos el selector de mes arriba o lo calculamos primero para que el calendario lo use
                         meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+                        mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
+                        mes_num = meses.index(mes_sel) + 1
+                    
+                    with f_col1:
+                        # Lógica de fechas sincronizada con mes_sel
+                        inicio_m = date(hoy_gdl.year, mes_num, 1)
                         
-                        # Lógica de fechas (ahora en la primera columna)
-                        # Nota: mes_num depende de mes_sel, así que lo calculamos aquí internamente 
-                        # o usamos el mes actual por defecto para inicializar el calendario.
-                        mes_num_inicial = hoy_gdl.month
-                        inicio_m = date(hoy_gdl.year, mes_num_inicial, 1)
-                        
-                        if mes_num_inicial == 12:
+                        if mes_num == 12:
                             fin_m = date(hoy_gdl.year, 12, 31)
                         else:
-                            fin_m = date(hoy_gdl.year, mes_num_inicial + 1, 1) - pd.Timedelta(days=1)
+                            fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
                         
+                        # Aseguramos que fin_m sea objeto date puro
                         fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
                         
                         rango_fechas = st.date_input(
                             "RANGO DE ANÁLISIS",
-                            value=(inicio_m, min(hoy_gdl, fin_m_final)),
+                            value=(inicio_m, min(hoy_gdl.date() if hasattr(hoy_gdl, 'date') else hoy_gdl, fin_m_final)),
                             format="DD/MM/YYYY"
                         )
-                    
-                    with f_col2:
-                        # Selector de Mes Operativo
-                        mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
-                        # Actualizamos mes_num basado en la selección del usuario
-                        mes_num = meses.index(mes_sel) + 1
                     
                     with f_col3:
                         # Filtro de Fletera
                         opciones_f = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
                         filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f, placeholder="TODOS")
-    
+                
                 # ── 2. PROCESAMIENTO DE DATOS KPI ──
                 df_kpi = df_seguimiento.copy()
                 df_kpi.columns = [c.upper() for c in df_kpi.columns]
@@ -807,30 +802,29 @@ else:
                 if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
                     df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & 
                                     (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])]
-    
+                
                 # B. Filtrado por fletera
                 if filtro_global_fletera:
                     df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
-    
+                
                 # C. Identificación de "En Tránsito" y Cálculo de Atrasos
                 df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
                 df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
-    
+                
                 # --- AQUÍ CALCULAMOS LA COLUMNA QUE DABA ERROR ---
                 if not df_sin_entregar.empty:
                     df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
                     df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if (pd.notna(x) and x > 0) else 0)
                     df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
                 else:
-                    # Si está vacío, creamos las columnas manualmente para evitar el KeyError
                     df_sin_entregar["DIAS_ATRASO"] = 0
                     df_sin_entregar["DIAS_TRANS"] = 0
-    
+                
                 # D. Lógica para el PRÓXIMO MES
                 proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
                 anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
                 nombre_prox_mes = meses[proximo_mes_num - 1]
-    
+                
                 # Buscamos en toda la base original los que se entregan el próximo mes
                 df_full = df_seguimiento.copy()
                 df_full.columns = [c.upper() for c in df_full.columns]
@@ -839,25 +833,25 @@ else:
                     conteo_proximo = len(df_full[(fechas_promesa.dt.month == proximo_mes_num) & (fechas_promesa.dt.year == anio_proximo)])
                 else:
                     conteo_proximo = 0
-    
+                
                 # E. Métricas Finales
                 total_p = len(df_kpi)
                 pend_p = len(df_sin_entregar)
                 entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
                 eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
-    
+                
                 # ── 3. RENDERIZADO TARJETAS (4 COLUMNAS) ──
                 st.markdown("<br>", unsafe_allow_html=True)
                 m1, m2, m3, m4 = st.columns(4)
-    
+                
                 m1.markdown(f"<div class='main-card-kpi' style='border-left-color:#94a3b8;'><div class='kpi-label'>Carga Total {mes_sel}</div><div class='kpi-value' style='font-size:28px; font-weight:800;'>{total_p}</div></div>", unsafe_allow_html=True)
                 m2.markdown(f"<div class='main-card-kpi' style='border-left-color:#38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8; font-size:28px; font-weight:800;'>{pend_p}</div></div>", unsafe_allow_html=True)
                 m3.markdown(f"<div class='main-card-kpi' style='border-left-color:#a855f7;'><div class='kpi-label'>Entregas {nombre_prox_mes}</div><div class='kpi-value' style='color:#a855f7; font-size:28px; font-weight:800;'>{conteo_proximo}</div></div>", unsafe_allow_html=True)
                 
                 color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
                 m4.markdown(f"<div class='main-card-kpi' style='border-left-color:{color_ef};'><div class='kpi-label'>Eficiencia</div><div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
-    
-                # ── 4. SEMÁFORO DE ALERTAS (YA NO DARÁ ERROR) ──
+                
+                # ── 4. SEMÁFORO DE ALERTAS ──
                 st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; color:{vars_css['sub']}; text-align:center; margin-top:30px;'>S E M Á F O R O DE ALERTAS</p>", unsafe_allow_html=True)
                 
                 a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
@@ -868,49 +862,27 @@ else:
                 c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
                 c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
                 c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)                     
-               
-                # =========================================================
-                # 5. PANEL DE EXCEPCIONES (FILTROS INTEGRADOS)
-                # =========================================================
-                st.divider()
                 
-                # Preparación de datos críticos
+                # 5. PANEL DE EXCEPCIONES
+                st.divider()
                 df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
                 
                 if not df_criticos.empty:
-                    st.markdown(f"""
-                        <p style='font-size:11px; font-weight:700; letter-spacing:8px; 
-                        color:{vars_css.get('sub', '#666')}; text-transform:uppercase; 
-                        text-align:center; margin-bottom:20px;'>
-                            PANEL DE EXCEPCIONES
-                        </p>
-                    """, unsafe_allow_html=True)
-                    
-                    # Todo el control y la tabla se encapsulan aquí
+                    st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css.get('sub', '#666')}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES</p>""", unsafe_allow_html=True)
                     with st.expander("Filtrar y analizar detalle de retrasos", expanded=False):
-                        # 5.1 Filtros internos
                         c1, c2 = st.columns(2)
                         with c1: 
                             sel_f = st.multiselect("TRANSPORTISTA:", sorted(df_criticos["FLETERA"].unique()), placeholder="TODOS")
                         with c2: 
                             sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"])
                         
-                        st.markdown("---") # Separador visual interno
-                
-                        # 5.2 Lógica de filtrado dinámico
+                        st.markdown("---")
                         df_viz = df_criticos.copy()
-                        
-                        if sel_f: 
-                            df_viz = df_viz[df_viz["FLETERA"].isin(sel_f)]
-                        
-                        if sel_g == "CRÍTICO (+5 DÍAS)": 
-                            df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
-                        elif sel_g == "MODERADO (2-4 DÍAS)": 
-                            df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
-                        elif sel_g == "LEVE (1 DÍA)": 
-                            df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
+                        if sel_f: df_viz = df_viz[df_viz["FLETERA"].isin(sel_f)]
+                        if sel_g == "CRÍTICO (+5 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
+                        elif sel_g == "MODERADO (2-4 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
+                        elif sel_g == "LEVE (1 DÍA)": df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
                 
-                        # 5.3 Mapeo de columnas dinámico
                         columnas_deseadas = {
                             "NÚMERO DE PEDIDO": ["NÚMERO DE PEDIDO", "PEDIDO"],
                             "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
@@ -922,16 +894,13 @@ else:
                             "DIAS_TRANS": ["DIAS_TRANS"],
                             "DIAS_ATRASO": ["DIAS_ATRASO"]
                         }
-                        
                         cols_finales = [next((c for c in p if c in df_viz.columns), None) for p in columnas_deseadas.values()]
                         cols_finales = [c for c in cols_finales if c is not None]
                 
-                        # 5.4 Visualización de tabla
                         if not df_viz.empty:
                             st.dataframe(
                                 df_viz[cols_finales].sort_values("DIAS_ATRASO", ascending=False),
-                                use_container_width=True,
-                                hide_index=True,
+                                use_container_width=True, hide_index=True,
                                 column_config={
                                     "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
                                     "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
@@ -944,41 +913,23 @@ else:
                 else:
                     st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
                 
-                
-                # =========================================================
                 # 6. DETALLE DE ENTREGAS DEL PRÓXIMO MES
-                # =========================================================
                 st.divider()
-                
                 df_detalle_prox = df_seguimiento.copy()
                 df_detalle_prox.columns = [c.upper() for c in df_detalle_prox.columns]
                 
                 if "PROMESA DE ENTREGA" in df_detalle_prox.columns:
-                    # Aseguramos formato fecha
                     df_detalle_prox["PROMESA DE ENTREGA"] = pd.to_datetime(df_detalle_prox["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-                    
-                    # Filtro basado en variables externas (proximo_mes_num y anio_proximo)
-                    df_futuro = df_detalle_prox[
-                        (df_detalle_prox["PROMESA DE ENTREGA"].dt.month == proximo_mes_num) & 
-                        (df_detalle_prox["PROMESA DE ENTREGA"].dt.year == anio_proximo)
-                    ].copy()
+                    df_futuro = df_detalle_prox[(df_detalle_prox["PROMESA DE ENTREGA"].dt.month == proximo_mes_num) & (df_detalle_prox["PROMESA DE ENTREGA"].dt.year == anio_proximo)].copy()
                 
                     if not df_futuro.empty:
-                        st.markdown(f"""
-                            <p style='font-size:11px; font-weight:700; letter-spacing:5px; 
-                            color:#a855f7; text-transform:uppercase; text-align:center;'>
-                                PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}
-                            </p>
-                        """, unsafe_allow_html=True)
-                        
+                        st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:5px; color:#a855f7; text-transform:uppercase; text-align:center;'>PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}</p>""", unsafe_allow_html=True)
                         with st.expander(f"VER LISTADO DE {len(df_futuro)} PEDIDOS PARA {nombre_prox_mes}", expanded=False):
                             cols_prox = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO", "PROMESA DE ENTREGA", "FLETERA", "ESTATUS"]
                             cols_prox_existentes = [c for c in cols_prox if c in df_futuro.columns]
-                            
                             st.dataframe(
                                 df_futuro[cols_prox_existentes].sort_values("PROMESA DE ENTREGA"),
-                                use_container_width=True,
-                                hide_index=True,
+                                use_container_width=True, hide_index=True,
                                 column_config={
                                     "PROMESA DE ENTREGA": st.column_config.DateColumn("FECHA PACTADA", format="DD/MM/YYYY"),
                                     "NÚMERO DE PEDIDO": st.column_config.TextColumn("PEDIDO"),
@@ -2603,6 +2554,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
