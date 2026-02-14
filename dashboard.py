@@ -79,14 +79,15 @@ if "menu_main" not in st.session_state:
 if "menu_sub" not in st.session_state:
     st.session_state.menu_sub = "GENERAL"
 
+
 vars_css = {
-    "bg": "#384A52",           // Fondo profundo original
-    "card": "#2B343B",         // Azul grisáceo oscuro para profundidad
-    "text": "#F9F6F2",         // Blanco Perla Ultra Chic (Principal)
-    "sub": "#B0BEC5",          // Gris Azulado Claro (Secundario)
-    "border": "#4B5D67",       // Contorno sutil para elevación
-    "table_header": "#242D32", // Tono profundo para encabezados
-    "logo": "n1.png"
+    "bg": "#384A52",           # Fondo profundo (Base)
+    "card": "#2B343B",         # Azul grisáceo oscuro para celdas
+    "text": "#F9F6F2",         # Blanco Perla Ultra Chic (Texto principal)
+    "sub": "#B0BEC5",          # Gris Azulado Claro (Subtítulos/Secundario)
+    "border": "#4B5D67",       # Contorno sutil para elevación
+    "table_header": "#242D32", # Tono profundo para encabezados de tabla
+    "logo": "n1.png"           # Tu archivo de imagen
 }
 
 st.markdown(f"""
@@ -2598,6 +2599,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
