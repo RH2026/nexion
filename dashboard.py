@@ -390,7 +390,7 @@ if not st.session_state.splash_completado:
     with p.container():
         for m in ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]:
             st.markdown(f"""
-            <div style="height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+            <div style="height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
                 <div style="width:60px;height:60px;border:1px solid {vars_css['border']}; border-top:1px solid {vars_css['text']};border-radius:50%;animation:spin 1s linear infinite;"></div>
                 <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:{vars_css['text']};">{m}</p>
             </div>
@@ -2554,6 +2554,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
