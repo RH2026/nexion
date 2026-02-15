@@ -396,7 +396,7 @@ if not st.session_state.splash_completado:
             </div>
             <style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
             """, unsafe_allow_html=True)
-            time.sleep(.10)
+            time.sleep(.13)
     st.session_state.splash_completado = True
     st.rerun()
 
@@ -2554,6 +2554,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
