@@ -339,16 +339,18 @@ button[kind="secondary"] {{
     line-height: 30px !important;
 }}
 
-/* ───────── SIDEBAR NAV HOVER PERSONALIZADO ───────── */
+/* ───────── ITEMS INTERNOS DEL POPOVER ───────── */
 
-section[data-testid="stSidebar"] div[role="button"]:hover {{
-    background-color: #57737F !important;
-    color: #ffffff !important;
+/* Estado normal */
+div[data-baseweb="popover"] div[role="menuitem"] {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
 }}
 
-section[data-testid="stSidebar"] div[role="button"][aria-selected="true"] {{
-    background-color: #2B343B !important;
-    color: #FFFFFF !important;
+/* Hover real (el gris rebelde) */
+div[data-baseweb="popover"] div[role="menuitem"]:hover {{
+    background-color: #617F8D !important;
+    color: {vars_css['text']} !important;
 }}
 
 </style>
@@ -2563,6 +2565,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
