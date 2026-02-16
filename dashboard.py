@@ -723,7 +723,61 @@ else:
                 # PESTAÑA 4: RETRASOS
                 with tab_retrasos:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    st.write("Análisis Detallado de Retrasos")
+                    st.title("📂 Explorador de Datos: Matriz Maestra")
+                    st.markdown("Este módulo se encarga exclusivamente de la conexión y validación de la estructura del archivo alojado en GitHub.")
+                    
+                    # Configuración de la fuente de datos
+                    URL_RAW = "https://raw.githubusercontent.com/RH2026/nexion/heads/main/Costo_Logistico_Mensual.csv"
+                    
+                    # Contenedor principal de conexión
+                    with st.container(border=True):
+                        st.markdown("### :material/cloud_download: Estado de la Conexión")
+                        st.write(f"**Origen:** `{URL_RAW}`")
+                        
+                        if st.button(":material/sync: Cargar y Analizar Columnas", type="primary", use_container_width=True):
+                            try:
+                                # Intentamos la carga
+                                # Nota: Usamos low_memory=False para evitar advertencias de tipos de datos mixtos
+                                df = pd.read_csv(URL_RAW, low_memory=False)
+                                
+                                st.success("✅ Conexión establecida. Datos recuperados.")
+                                
+                                # --- PANEL DE COLUMNAS ---
+                                st.subheader("📊 Estructura Detectada", divider="gray")
+                                
+                                cols = df.columns.tolist()
+                                
+                                # Organizamos la info en 3 métricas rápidas
+                                m1, m2, m3 = st.columns(3)
+                                m1.metric("Total Columnas", len(cols))
+                                m2.metric("Total Registros", df.shape[0])
+                                m3.metric("Columnas con _x000D_", sum(1 for c in cols if "_x000D_" in c))
+                    
+                                # Lista expandible de columnas para inspección técnica
+                                with st.expander(":material/list: Ver nombres técnicos de las columnas"):
+                                    # Mostramos las columnas como una lista de Python para que puedas copiar/pegar
+                                    st.code(cols)
+                    
+                                # --- VISTA PREVIA DE DATOS ---
+                                st.subheader("👀 Previsualización de Datos", divider="blue")
+                                st.dataframe(df.head(15), use_container_width=True)
+                    
+                                # --- VALIDACIÓN DE LIMPIEZA ---
+                                st.subheader("🧹 Diagnóstico de Calidad")
+                                
+                                # Verificamos si hay valores nulos importantes
+                                nulos = df.isnull().sum().sum()
+                                if nulos > 0:
+                                    st.warning(f":material/warning: Se detectaron {nulos} celdas vacías en el archivo.")
+                                else:
+                                    st.info(":material/check_circle: No se detectaron celdas vacías en la carga inicial.")
+                    
+                            except Exception as e:
+                                st.error(f":material/report_problem: Error al conectar con GitHub")
+                                st.exception(e)
+                    
+                    st.divider()
+                    st.caption("Módulo de Validación de Datos | Nexion 2026")
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -2630,6 +2684,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
