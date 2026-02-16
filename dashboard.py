@@ -339,18 +339,6 @@ button[kind="secondary"] {{
     line-height: 30px !important;
 }}
 
-/* ───────── CONTENEDOR REAL DEL BOTÓN POPOVER ───────── */
-
-div[data-baseweb="button"] {{
-    background-color: #FFFFFF !important;
-    border: 1px solid #FFFFFF !important;
-    border-radius: 6px !important;
-}}
-
-div[data-baseweb="button"]:hover {{
-    background-color: #FFFFFF !important;
-}}
-
 
 </style>
 """, unsafe_allow_html=True)
@@ -2564,6 +2552,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
