@@ -2411,82 +2411,6 @@ else:
                         st.code(f"ID Registro: {last_commit.sha[:7]}", language="bash")
                     except:
                         st.info("Conectando con el servidor de seguridad de GitHub...")
-                
-                st.divider()
-                # ── MÓDULO REPARADOR DE COSTOS ──
-                # --- EXPANDER DE INSTRUCCIONES ---
-                with st.expander("Reparador de Costos Logísticos ¿Dudas para usar este módulo?", icon=":material/help:"):
-                    st.markdown("""
-                    ### Pasos para reparar tu archivo
-                    1. **Subida de datos:** Sube tu archivo Excel/CSV de operación diaria. 
-                    2. **Configuración:** Verifica que los selectores coincidan con las columnas de tu archivo.
-                    3. **Procesamiento:** El sistema prorrateará el costo **solo si es idéntico** en todas las filas de la misma guía.
-                    4. **Descarga:** Genera un archivo `.xlsx` corregido.
-                    """)
-                
-                st.info("Esta herramienta detecta costos duplicados por guía y los prorratea proporcionalmente según el número de cajas.", icon=":material/info:")
-                
-                uploaded_file = st.file_uploader("1. Sube tu archivo de operación (CSV o Excel)", type=["csv", "xlsx"], key="repair_uploader")
-                
-                if uploaded_file is not None:
-                    if uploaded_file.name.endswith('.csv'):
-                        df = pd.read_csv(uploaded_file)
-                    else:
-                        df = pd.read_excel(uploaded_file)
-                    
-                    st.subheader("2. Configuración de Columnas", divider="gray")
-                    
-                    c1, c2, c3, c4 = st.columns(4)
-                    with c1:
-                        col_factura = st.selectbox("Columna Factura", df.columns, 
-                                                 index=df.columns.get_loc("DocNum") if "DocNum" in df.columns else 0)
-                    with c2:
-                        col_guia = st.selectbox("Columna Guía", df.columns, 
-                                              index=df.columns.get_loc("U_BXP_NGUIA") if "U_BXP_NGUIA" in df.columns else 0)
-                    with c3:
-                        col_costo = st.selectbox("Columna Costo", df.columns, 
-                                               index=df.columns.get_loc("U_BXP_COSTO_GUIA") if "U_BXP_COSTO_GUIA" in df.columns else 0)
-                    with c4:
-                        col_cajas = st.selectbox("Columna Cajas", df.columns, 
-                                               index=df.columns.get_loc("U_BXP_CAJAS_ENV") if "U_BXP_CAJAS_ENV" in df.columns else 0)
-                
-                    if st.button("Procesar y Reparar Datos", use_container_width=True, type="primary", icon=":material/database_gear:"):
-                        try:
-                            # Lógica de Reparación
-                            stats_guia = df.groupby(col_guia).agg({col_costo: 'nunique', col_cajas: 'sum'}).reset_index()
-                            stats_guia.columns = [col_guia, 'costos_unicos', 'TOTAL_CAJAS_GUIA']
-                            df_final = pd.merge(df, stats_guia, on=col_guia)
-                
-                            def aplicar_reparacion(row):
-                                if row['costos_unicos'] == 1:
-                                    return (row[col_costo] / row['TOTAL_CAJAS_GUIA']) * row[col_cajas]
-                                return row[col_costo]
-                
-                            df_final['COSTO_REAL_AJUSTADO'] = df_final.apply(aplicar_reparacion, axis=1)
-                            st.success("Proceso completado con éxito.", icon=":material/check_circle:")
-                
-                            # Descarga
-                            output = BytesIO()
-                            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                                df_final.to_excel(writer, index=False, sheet_name='Costos Reparados')
-                            
-                            st.download_button(
-                                label="Descargar Reporte Corregido (.xlsx)",
-                                data=output.getvalue(),
-                                file_name="reporte_logistico_reparado.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                icon=":material/download_for_offline:",
-                                use_container_width=True
-                            )
-                            
-                            st.subheader("Vista Previa del Análisis", divider="blue")
-                            columnas_vista = [col_factura, col_guia, col_cajas, col_costo, 'TOTAL_CAJAS_GUIA', 'COSTO_REAL_AJUSTADO']
-                            st.dataframe(df_final[columnas_vista].head(20), use_container_width=True)
-                
-                        except Exception as e:
-                            st.error(f"Error al procesar: {e}", icon=":material/error:")
-                else:
-                    st.info("Esperando archivo de operación...", icon=":material/upload_file:")
             
             
             elif st.session_state.menu_sub == "ORDER STAGING":
@@ -2616,9 +2540,84 @@ else:
                         
                 else:
                     st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR ERP DATA...</div>", unsafe_allow_html=True)
+
+
+                st.divider()
+                # ── MÓDULO REPARADOR DE COSTOS ──
+                # --- EXPANDER DE INSTRUCCIONES ---
+                with st.expander("Reparador de Costos Logísticos ¿Dudas para usar este módulo?", icon=":material/help:"):
+                    st.markdown("""
+                    ### Pasos para reparar tu archivo
+                    1. **Subida de datos:** Sube tu archivo Excel/CSV de operación diaria. 
+                    2. **Configuración:** Verifica que los selectores coincidan con las columnas de tu archivo.
+                    3. **Procesamiento:** El sistema prorrateará el costo **solo si es idéntico** en todas las filas de la misma guía.
+                    4. **Descarga:** Genera un archivo `.xlsx` corregido.
+                    """)
                 
+                st.info("Esta herramienta detecta costos duplicados por guía y los prorratea proporcionalmente según el número de cajas.", icon=":material/info:")
+                
+                uploaded_file = st.file_uploader("1. Sube tu archivo de operación (CSV o Excel)", type=["csv", "xlsx"], key="repair_uploader")
+                
+                if uploaded_file is not None:
+                    if uploaded_file.name.endswith('.csv'):
+                        df = pd.read_csv(uploaded_file)
+                    else:
+                        df = pd.read_excel(uploaded_file)
+                    
+                    st.subheader("2. Configuración de Columnas", divider="gray")
+                    
+                    c1, c2, c3, c4 = st.columns(4)
+                    with c1:
+                        col_factura = st.selectbox("Columna Factura", df.columns, 
+                                                 index=df.columns.get_loc("DocNum") if "DocNum" in df.columns else 0)
+                    with c2:
+                        col_guia = st.selectbox("Columna Guía", df.columns, 
+                                              index=df.columns.get_loc("U_BXP_NGUIA") if "U_BXP_NGUIA" in df.columns else 0)
+                    with c3:
+                        col_costo = st.selectbox("Columna Costo", df.columns, 
+                                               index=df.columns.get_loc("U_BXP_COSTO_GUIA") if "U_BXP_COSTO_GUIA" in df.columns else 0)
+                    with c4:
+                        col_cajas = st.selectbox("Columna Cajas", df.columns, 
+                                               index=df.columns.get_loc("U_BXP_CAJAS_ENV") if "U_BXP_CAJAS_ENV" in df.columns else 0)
+                
+                    if st.button("Procesar y Reparar Datos", use_container_width=True, type="primary", icon=":material/database_gear:"):
+                        try:
+                            # Lógica de Reparación
+                            stats_guia = df.groupby(col_guia).agg({col_costo: 'nunique', col_cajas: 'sum'}).reset_index()
+                            stats_guia.columns = [col_guia, 'costos_unicos', 'TOTAL_CAJAS_GUIA']
+                            df_final = pd.merge(df, stats_guia, on=col_guia)
+                
+                            def aplicar_reparacion(row):
+                                if row['costos_unicos'] == 1:
+                                    return (row[col_costo] / row['TOTAL_CAJAS_GUIA']) * row[col_cajas]
+                                return row[col_costo]
+                
+                            df_final['COSTO_REAL_AJUSTADO'] = df_final.apply(aplicar_reparacion, axis=1)
+                            st.success("Proceso completado con éxito.", icon=":material/check_circle:")
+                
+                            # Descarga
+                            output = BytesIO()
+                            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                                df_final.to_excel(writer, index=False, sheet_name='Costos Reparados')
+                            
+                            st.download_button(
+                                label="Descargar Reporte Corregido (.xlsx)",
+                                data=output.getvalue(),
+                                file_name="reporte_logistico_reparado.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                icon=":material/download_for_offline:",
+                                use_container_width=True
+                            )
+                            
+                            st.subheader("Vista Previa del Análisis", divider="blue")
+                            columnas_vista = [col_factura, col_guia, col_cajas, col_costo, 'TOTAL_CAJAS_GUIA', 'COSTO_REAL_AJUSTADO']
+                            st.dataframe(df_final[columnas_vista].head(20), use_container_width=True)
+                
+                        except Exception as e:
+                            st.error(f"Error al procesar: {e}", icon=":material/error:")
+                else:
+                    st.info("Esperando archivo de operación...", icon=":material/upload_file:")
     
-    # ── FOOTER CON BIO INTERACTIVA (VERSIÓN DEFINITIVA) ────────────────────────
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
     <div class="footer">
@@ -2627,6 +2626,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
