@@ -2547,12 +2547,11 @@ else:
                 # --- EXPANDER DE INSTRUCCIONES ---
                 with st.expander("Reparador de Costos Logísticos ¿Dudas para usar este módulo?", icon=":material/help:"):
                     st.markdown("""
-                    ### Pasos para reparar tu archivo
                     1. **Subida de datos:** Haz clic en el cargador o arrastra tu archivo Excel/CSV. 
                     2. **Configuración de columnas:** Verifica que los selectores coincidan con las columnas de tu archivo.
                     3. **Procesamiento:** El sistema detectará automáticamente si los costos por guía están duplicados.
                     
-                    ### ¿Cómo funciona la reparación?
+                    
                     * **Si el costo es idéntico:** Si una guía tiene varias facturas con el mismo costo, el sistema **prorratea** el costo según las cajas.
                     * **Si los costos son diferentes:** Si una guía tiene montos distintos, el sistema **no los toca** (asume cargos independientes).
                     
@@ -2631,6 +2630,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
