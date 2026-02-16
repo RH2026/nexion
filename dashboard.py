@@ -2413,12 +2413,9 @@ else:
                         st.info("Conectando con el servidor de seguridad de GitHub...")
                 
                 st.divider()
-                
                 # ── MÓDULO REPARADOR DE COSTOS ──
-                st.header("Reparador de Costos Logísticos", divider="blue")
-                
                 # --- EXPANDER DE INSTRUCCIONES ---
-                with st.expander("❓ ¿Dudas para usar este módulo?", icon=":material/help:"):
+                with st.expander("Reparador de Costos Logísticos ¿Dudas para usar este módulo?", icon=":material/help:"):
                     st.markdown("""
                     ### Pasos para reparar tu archivo
                     1. **Subida de datos:** Sube tu archivo Excel/CSV de operación diaria. 
@@ -2630,6 +2627,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
