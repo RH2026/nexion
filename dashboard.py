@@ -2347,40 +2347,39 @@ else:
     
                 st.write("---")
     
-                # ── ÁREA DE CARGA EXCLUSIVA ──
+                # ── ÁREA DE CARGA EXCLUSIVA (GITHUB) ──
                 with st.container(border=True):
-                    st.markdown(f"#### :material/security: Zona de Carga Crítica")
+                    st.markdown("#### :material/security: Zona de Carga Crítica")
                     st.caption(f"Solo se permite la actualización de: `{NOMBRE_EXCLUSIVO}`")
                     
-                    uploaded_file = st.file_uploader("", type=["csv"], help="Arrastra el archivo maestro aquí")
-    
-                    if uploaded_file is not None:
-                        if uploaded_file.name != NOMBRE_EXCLUSIVO:
-                            st.error(f":material/error: Nombre inválido: **{uploaded_file.name}**")
+                    uploaded_file_master = st.file_uploader("Actualizar Matriz Maestra", type=["csv"], help="Arrastra el archivo maestro aquí", key="master_uploader")
+                
+                    if uploaded_file_master is not None:
+                        if uploaded_file_master.name != NOMBRE_EXCLUSIVO:
+                            st.error(f":material/error: Nombre inválido: **{uploaded_file_master.name}**")
                             st.warning(f"El archivo debe renombrarse a: `{NOMBRE_EXCLUSIVO}` antes de subirlo.")
                         else:
-                            st.success(f":material/check_circle: Archivo validado: {uploaded_file.name}")
+                            st.success(f":material/check_circle: Archivo validado: {uploaded_file_master.name}")
                             
-                            # Preview de datos
                             with st.expander(":material/visibility: Previsualizar datos locales"):
                                 try:
-                                    df_preview = pd.read_csv(uploaded_file)
+                                    df_preview = pd.read_csv(uploaded_file_master)
                                     st.dataframe(df_preview.head(5), use_container_width=True)
-                                    uploaded_file.seek(0)
+                                    uploaded_file_master.seek(0)
                                 except:
                                     st.error("No se pudo generar la vista previa del CSV.")
-    
+                
                             commit_msg = st.text_input("Mensaje de Sincronización", 
                                                      value=f"Update Master {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-    
-                            if st.button(":material/cloud_sync: SINCRONIZAR AHORA", type="primary", use_container_width=True):
+                
+                            if st.button(":material/cloud_sync: SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
                                 with st.status("Iniciando conexión con GitHub...", expanded=True) as status:
                                     try:
                                         from github import Github
                                         g = Github(TOKEN)
                                         repo = g.get_repo(REPO_NAME)
-                                        file_content = uploaded_file.getvalue()
-    
+                                        file_content = uploaded_file_master.getvalue()
+                
                                         st.write("Buscando archivo en el repositorio...")
                                         try:
                                             contents = repo.get_contents(NOMBRE_EXCLUSIVO)
@@ -2391,14 +2390,13 @@ else:
                                             status.update(label="¡Archivo creado exitosamente!", state="complete", expanded=False)
                                         
                                         st.toast("GitHub actualizado correctamente", icon="✅")
-                                        # Limpiar caché para forzar lectura fresca
                                         st.cache_data.clear()
                                         time.sleep(1)
                                         st.rerun()
                                     except Exception as e:
                                         status.update(label=f"Fallo en la carga: {e}", state="error")
                 
-                # ── HISTORIAL DE ACTIVIDAD (ALINEADO CORRECTAMENTE) ──
+                # ── HISTORIAL DE ACTIVIDAD ──
                 with st.expander(":material/history: Última actividad en el servidor"):
                     try:
                         from github import Github
@@ -2413,126 +2411,85 @@ else:
                         st.code(f"ID Registro: {last_commit.sha[:7]}", language="bash")
                     except:
                         st.info("Conectando con el servidor de seguridad de GitHub...")
-            
-                st.title("Reparador de Costos Logísticos")
-
+                
+                st.divider()
+                
+                # ── MÓDULO REPARADOR DE COSTOS ──
+                st.header("Reparador de Costos Logísticos", divider="blue")
+                
                 # --- EXPANDER DE INSTRUCCIONES ---
-                with st.expander("¿Dudas para usar este módulo? Lea las instrucciones aquí", icon=":material/help:"):
+                with st.expander("❓ ¿Dudas para usar este módulo?", icon=":material/help:"):
                     st.markdown("""
                     ### Pasos para reparar tu archivo
-                    1. **Subida de datos:** Haz clic en el cargador o arrastra tu archivo Excel/CSV. 
-                    2. **Configuración de columnas:** Verifica que los selectores coincidan con las columnas de tu archivo.
-                    3. **Procesamiento:** El sistema detectará automáticamente si los costos por guía están duplicados.
-                    
-                    ### ¿Cómo funciona la reparación?
-                    * **Si el costo es idéntico:** Si una guía tiene varias facturas con el mismo costo, el sistema **prorratea** el costo según las cajas.
-                    * **Si los costos son diferentes:** Si una guía tiene montos distintos, el sistema **no los toca** (asume cargos independientes).
-                    
-                    4. **Descarga:** Genera un archivo `.xlsx` listo para reportes.
+                    1. **Subida de datos:** Sube tu archivo Excel/CSV de operación diaria. 
+                    2. **Configuración:** Verifica que los selectores coincidan con las columnas de tu archivo.
+                    3. **Procesamiento:** El sistema prorrateará el costo **solo si es idéntico** en todas las filas de la misma guía.
+                    4. **Descarga:** Genera un archivo `.xlsx` corregido.
                     """)
                 
-                st.markdown("""
-                Esta herramienta detecta costos duplicados por guía y los prorratea proporcionalmente según el número de cajas. 
-                """)
+                st.info("Esta herramienta detecta costos duplicados por guía y los prorratea proporcionalmente según el número de cajas.", icon=":material/info:")
                 
-                # 1. Subida de archivo
-                uploaded_file = st.file_uploader("1. Sube tu archivo (CSV o Excel)", type=["csv", "xlsx"])
+                uploaded_file = st.file_uploader("1. Sube tu archivo de operación (CSV o Excel)", type=["csv", "xlsx"], key="repair_uploader")
                 
                 if uploaded_file is not None:
-                    # Cargar archivo
                     if uploaded_file.name.endswith('.csv'):
                         df = pd.read_csv(uploaded_file)
                     else:
                         df = pd.read_excel(uploaded_file)
                     
                     st.subheader("2. Configuración de Columnas", divider="gray")
-                    st.info("Confirma que las columnas seleccionadas sean las correctas:", icon=":material/settings_suggest:")
-                
-                    # Selectores en el cuerpo principal
+                    
                     c1, c2, c3, c4 = st.columns(4)
-                
                     with c1:
-                        col_factura = st.selectbox(
-                            "Columna Factura", 
-                            df.columns, 
-                            index=df.columns.get_loc("DocNum") if "DocNum" in df.columns else 0,
-                            help="Selecciona la columna de identificador de factura"
-                        )
+                        col_factura = st.selectbox("Columna Factura", df.columns, 
+                                                 index=df.columns.get_loc("DocNum") if "DocNum" in df.columns else 0)
                     with c2:
-                        col_guia = st.selectbox(
-                            "Columna Guía", 
-                            df.columns, 
-                            index=df.columns.get_loc("U_BXP_NGUIA") if "U_BXP_NGUIA" in df.columns else 0,
-                            help="Selecciona la columna de número de guía"
-                        )
+                        col_guia = st.selectbox("Columna Guía", df.columns, 
+                                              index=df.columns.get_loc("U_BXP_NGUIA") if "U_BXP_NGUIA" in df.columns else 0)
                     with c3:
-                        col_costo = st.selectbox(
-                            "Columna Costo", 
-                            df.columns, 
-                            index=df.columns.get_loc("U_BXP_COSTO_GUIA") if "U_BXP_COSTO_GUIA" in df.columns else 0,
-                            help="Selecciona la columna del costo repetido"
-                        )
+                        col_costo = st.selectbox("Columna Costo", df.columns, 
+                                               index=df.columns.get_loc("U_BXP_COSTO_GUIA") if "U_BXP_COSTO_GUIA" in df.columns else 0)
                     with c4:
-                        col_cajas = st.selectbox(
-                            "Columna Cajas", 
-                            df.columns, 
-                            index=df.columns.get_loc("U_BXP_CAJAS_ENV") if "U_BXP_CAJAS_ENV" in df.columns else 0,
-                            help="Selecciona la columna de cantidad de cajas"
-                        )
+                        col_cajas = st.selectbox("Columna Cajas", df.columns, 
+                                               index=df.columns.get_loc("U_BXP_CAJAS_ENV") if "U_BXP_CAJAS_ENV" in df.columns else 0)
                 
-                    st.divider()
-                
-                    # Botón de proceso con icono
                     if st.button("Procesar y Reparar Datos", use_container_width=True, type="primary", icon=":material/database_gear:"):
                         try:
-                            # --- LÓGICA DE REPARACIÓN AVANZADA ---
-                            stats_guia = df.groupby(col_guia).agg({
-                                col_costo: 'nunique', 
-                                col_cajas: 'sum'
-                            }).reset_index()
-                            
+                            # Lógica de Reparación
+                            stats_guia = df.groupby(col_guia).agg({col_costo: 'nunique', col_cajas: 'sum'}).reset_index()
                             stats_guia.columns = [col_guia, 'costos_unicos', 'TOTAL_CAJAS_GUIA']
-                
                             df_final = pd.merge(df, stats_guia, on=col_guia)
                 
                             def aplicar_reparacion(row):
                                 if row['costos_unicos'] == 1:
                                     return (row[col_costo] / row['TOTAL_CAJAS_GUIA']) * row[col_cajas]
-                                else:
-                                    return row[col_costo]
+                                return row[col_costo]
                 
                             df_final['COSTO_REAL_AJUSTADO'] = df_final.apply(aplicar_reparacion, axis=1)
-                
                             st.success("Proceso completado con éxito.", icon=":material/check_circle:")
                 
-                            # --- GENERACIÓN DE EXCEL ---
-                            def to_excel(df_to_save):
-                                output = BytesIO()
-                                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                                    df_to_save.to_excel(writer, index=False, sheet_name='Costos Reparados')
-                                return output.getvalue()
-                
-                            excel_data = to_excel(df_final)
-                
+                            # Descarga
+                            output = BytesIO()
+                            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                                df_final.to_excel(writer, index=False, sheet_name='Costos Reparados')
+                            
                             st.download_button(
                                 label="Descargar Reporte Corregido (.xlsx)",
-                                data=excel_data,
+                                data=output.getvalue(),
                                 file_name="reporte_logistico_reparado.xlsx",
                                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                 icon=":material/download_for_offline:",
                                 use_container_width=True
                             )
                             
-                            # --- VISTA PREVIA ---
                             st.subheader("Vista Previa del Análisis", divider="blue")
                             columnas_vista = [col_factura, col_guia, col_cajas, col_costo, 'TOTAL_CAJAS_GUIA', 'COSTO_REAL_AJUSTADO']
                             st.dataframe(df_final[columnas_vista].head(20), use_container_width=True)
                 
                         except Exception as e:
                             st.error(f"Error al procesar: {e}", icon=":material/error:")
-                
                 else:
-                    st.info("Esperando archivo... Sube un Excel o CSV para comenzar.", icon=":material/upload_file:")
+                    st.info("Esperando archivo de operación...", icon=":material/upload_file:")
             
             
             elif st.session_state.menu_sub == "ORDER STAGING":
@@ -2673,6 +2630,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
