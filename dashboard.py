@@ -339,9 +339,10 @@ button[kind="secondary"] {{
     line-height: 30px !important;
 }}
 
-/* ───────── HAMBURGUESA ESTADO NATURAL ───────── */
+/* ───────── BOTÓN POPOVER HAMBURGUESA ESTADO NORMAL ───────── */
 
-button[data-testid="collapsedControl"] {{
+div[data-baseweb="popover"] button[kind="secondary"],
+button[kind="secondary"] {{
     background-color: #2B343B !important;
     color: #FFFFFF !important;
     border: 1px solid #57737F !important;
@@ -2559,6 +2560,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
