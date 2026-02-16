@@ -339,45 +339,23 @@ button[kind="secondary"] {{
     line-height: 30px !important;
 }}
 
-/* ───────── FIX DEFINITIVO DATA EDITOR ───────── */
+/* ───────── OVERRIDE REAL GLIDE DATA GRID ───────── */
 
-/* Contenedor general */
 [data-testid="stDataEditor"] {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 6px !important;
+    background: {vars_css['card']} !important;
+
+    --gdg-bg-cell: {vars_css['card']} !important;
+    --gdg-bg-cell-medium: {vars_css['card']} !important;
+    --gdg-bg-header: {vars_css['bg']} !important;
+    --gdg-bg-header-hovered: #3f5560 !important;
+    --gdg-bg-row-hover: #34424A !important;
+    --gdg-text-dark: {vars_css['text']} !important;
+    --gdg-text-medium: {vars_css['text']} !important;
+    --gdg-border-color: {vars_css['border']} !important;
 }}
 
-/* Canvas interno (el negro real vive aquí) */
 [data-testid="stDataEditor"] canvas {{
-    background-color: {vars_css['card']} !important;
-}}
-
-/* Grid completo */
-[data-testid="stDataEditor"] [role="grid"] {{
-    background-color: {vars_css['card']} !important;
-}}
-
-/* Encabezados */
-[data-testid="stDataEditor"] [role="columnheader"] {{
-    background-color: {vars_css['bg']} !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* Celdas */
-[data-testid="stDataEditor"] [role="gridcell"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* Hover fila */
-[data-testid="stDataEditor"] [role="row"]:hover {{
-    background-color: #34424A !important;
-}}
-
-/* Quitar sombras oscuras internas */
-[data-testid="stDataEditor"] div {{
-    background-color: transparent !important;
+    background: {vars_css['card']} !important;
 }}
 
 </style>
@@ -2592,6 +2570,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
