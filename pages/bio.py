@@ -5,17 +5,17 @@ from io import BytesIO
 # Configuración inicial
 st.set_page_config(page_title="Corrector Logístico Pro", layout="wide")
 
-st.title("🛠️ Reparador de Costos Logísticos")
+st.title("Reparador de Costos Logísticos")
 
 # --- EXPANDER DE INSTRUCCIONES ---
-with st.expander("❓ ¿Dudas para usar este módulo? Lea las instrucciones aquí", icon=":material/help:"):
+with st.expander("¿Dudas para usar este módulo? Lea las instrucciones aquí", icon=":material/help:"):
     st.markdown("""
-    ### 📋 Pasos para reparar tu archivo
+    ### Pasos para reparar tu archivo
     1. **Subida de datos:** Haz clic en el cargador o arrastra tu archivo Excel/CSV. 
     2. **Configuración de columnas:** Verifica que los selectores coincidan con las columnas de tu archivo.
     3. **Procesamiento:** El sistema detectará automáticamente si los costos por guía están duplicados.
     
-    ### 🧠 ¿Cómo funciona la reparación?
+    ### ¿Cómo funciona la reparación?
     * **Si el costo es idéntico:** Si una guía tiene varias facturas con el mismo costo, el sistema **prorratea** el costo según las cajas.
     * **Si los costos son diferentes:** Si una guía tiene montos distintos, el sistema **no los toca** (asume cargos independientes).
     
