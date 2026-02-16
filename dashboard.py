@@ -724,82 +724,60 @@ else:
                 with tab_retrasos:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     # --- ESTILO Y TÍTULO ---
-                    st.title("📊 Dashboard de Participación de Transporte")
-                    st.markdown("Análisis de costos prorrateados por pedido y eficiencia logística.")
-                    
+                    st.title("📦 Participación de Cajas por Transporte")
+
                     URL_RAW = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
                     
                     @st.cache_data
                     def load_data():
                         df = pd.read_csv(URL_RAW, low_memory=False)
-                        # Limpieza básica de nombres de columnas por si acaso
+                        # Limpieza de nombres de columnas
                         df.columns = [c.replace('_x000D_', '').strip() for c in df.columns]
                         return df
                     
                     try:
                         df = load_data()
                     
-                        # --- LÓGICA DE CÁLCULO PRO ---
-                        # 1. Agrupamos por Guía para contar cuántos pedidos (facturas) tiene cada una
-                        df_guias = df.groupby('U_BXP_NGUIA').agg({
-                            'FACTURA': 'count',
-                            'COSTO GUIA': 'first'  # Tomamos el costo único de la guía
-                        }).reset_index()
-                        
-                        df_guias.columns = ['U_BXP_NGUIA', 'NUM_PEDIDOS', 'COSTO_TOTAL_GUIA']
-                    
-                        # 2. Unimos y calculamos el costo prorrateado por pedido
-                        df_analisis = pd.merge(df, df_guias, on='U_BXP_NGUIA')
-                        df_analisis['COSTO_POR_PEDIDO'] = df_analisis['COSTO_TOTAL_GUIA'] / df_analisis['NUM_PEDIDOS']
-                    
-                        # --- MÉTRICAS PRINCIPALES ---
-                        m1, m2, m3, m4 = st.columns(4)
-                        m1.metric("Total Pedidos", f"{df_analisis['FACTURA'].nunique():,}")
-                        m2.metric("Cajas Totales", f"{df_analisis['CAJAS'].sum():,}")
-                        m3.metric("Gasto Total", f"${df_analisis['COSTO_POR_PEDIDO'].sum():,.2f}")
-                        m4.metric("Transportistas", df_analisis['TRANSPORTE'].nunique())
+                        # Métricas rápidas
+                        m1, m2, m3 = st.columns(3)
+                        m1.metric("Cajas Totales", f"{df['CAJAS'].sum():,}")
+                        m2.metric("Transportistas", df['TRANSPORTE'].nunique())
+                        m3.metric("Total Pedidos", f"{df['FACTURA'].nunique():,}")
                     
                         st.divider()
                     
-                        # --- GRÁFICOS PRO ---
-                        col_chart1, col_chart2 = st.columns(2)
-                    
-                        with col_chart1:
-                            st.subheader("💰 Gasto por Transportista")
-                            # Sumamos el costo prorrateado por cada transportista
-                            costo_transp = df_analisis.groupby('TRANSPORTE')['COSTO_POR_PEDIDO'].sum().sort_values(ascending=False).reset_index()
-                            fig_costo = px.bar(costo_transp, x='TRANSPORTE', y='COSTO_POR_PEDIDO', 
-                                               color='COSTO_POR_PEDIDO', template="plotly_dark",
-                                               labels={'COSTO_POR_PEDIDO': 'Costo Prorrateado ($)'})
-                            st.plotly_chart(fig_costo, use_container_width=True)
-                    
-                        with col_chart2:
-                            st.subheader("📦 Participación por Cajas")
-                            # Participación de cajas por destino
-                            fig_pie = px.pie(df_analisis, values='CAJAS', names='TRANSPORTE', 
-                                             hole=0.4, template="plotly_dark")
-                            fig_pie.update_traces(textinfo='percent+label')
-                            st.plotly_chart(fig_pie, use_container_width=True)
-                    
-                        # --- TABLA DETALLADA ---
-                        st.subheader("📑 Detalle de Participación Prorrateada", divider="blue")
+                        # --- ÚNICO GRÁFICO: PARTICIPACIÓN POR CAJAS ---
+                        st.subheader("📊 Distribución de Cajas 📦")
                         
-                        # Columnas solicitadas para el reporte final
-                        cols_finales = ['FACTURA', 'DIRECCION', 'TRANSPORTE', 'CAJAS', 'DESTINO', 'U_BXP_NGUIA', 'COSTO_TOTAL_GUIA', 'COSTO_POR_PEDIDO']
+                        # Agrupamos por transporte para el gráfico
+                        fig_pie = px.pie(
+                            df, 
+                            values='CAJAS', 
+                            names='TRANSPORTE', 
+                            hole=0.5, 
+                            template="plotly_dark",
+                            color_discrete_sequence=px.colors.qualitative.Pastel
+                        )
                         
-                        st.dataframe(
-                            df_analisis[cols_finales].sort_values(by='COSTO_POR_PEDIDO', ascending=False),
-                            use_container_width=True,
-                            column_config={
-                                "COSTO_TOTAL_GUIA": st.column_config.NumberColumn("Costo Guía", format="$%.2f"),
-                                "COSTO_POR_PEDIDO": st.column_config.NumberColumn("Costo Prorrateado", format="$%.2f"),
-                                "CAJAS": st.column_config.NumberColumn("Cajas", format="%d 📦")
-                            }
+                        fig_pie.update_traces(
+                            textinfo='percent+label',
+                            marker=dict(line=dict(color='#000000', width=2))
+                        )
+                        
+                        fig_pie.update_layout(
+                            showlegend=True,
+                            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
                         )
                     
+                        st.plotly_chart(fig_pie, use_container_width=True)
+                    
+                        # --- TABLA DE APOYO ---
+                        with st.expander("Ver resumen numérico de cajas"):
+                            resumen = df.groupby('TRANSPORTE')['CAJAS'].sum().sort_values(ascending=False).reset_index()
+                            st.table(resumen)
+                    
                     except Exception as e:
-                        st.error(f"Error procesando el análisis: {e}")
-                        st.info("Revisa que los nombres de las columnas en el CSV coincidan exactamente.")
+                        st.error(f"Error al cargar el gráfico: {e}")
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -2706,6 +2684,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
