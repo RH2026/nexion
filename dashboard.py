@@ -339,6 +339,18 @@ button[kind="secondary"] {{
     line-height: 30px !important;
 }}
 
+/* ───────── SIDEBAR NAV HOVER PERSONALIZADO ───────── */
+
+section[data-testid="stSidebar"] div[role="button"]:hover {{
+    background-color: #57737F !important;
+    color: #ffffff !important;
+}}
+
+section[data-testid="stSidebar"] div[role="button"][aria-selected="true"] {{
+    background-color: #2B343B !important;
+    color: #FFFFFF !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -2551,6 +2563,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
