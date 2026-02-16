@@ -339,25 +339,6 @@ button[kind="secondary"] {{
     line-height: 30px !important;
 }}
 
-/* ───────── OVERRIDE REAL GLIDE DATA GRID ───────── */
-
-[data-testid="stDataEditor"] {{
-    background: {vars_css['card']} !important;
-
-    --gdg-bg-cell: {vars_css['card']} !important;
-    --gdg-bg-cell-medium: {vars_css['card']} !important;
-    --gdg-bg-header: {vars_css['bg']} !important;
-    --gdg-bg-header-hovered: #3f5560 !important;
-    --gdg-bg-row-hover: #34424A !important;
-    --gdg-text-dark: {vars_css['text']} !important;
-    --gdg-text-medium: {vars_css['text']} !important;
-    --gdg-border-color: {vars_css['border']} !important;
-}}
-
-[data-testid="stDataEditor"] canvas {{
-    background: {vars_css['card']} !important;
-}}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -2570,6 +2551,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
