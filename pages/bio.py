@@ -6,10 +6,25 @@ from io import BytesIO
 st.set_page_config(page_title="Corrector Logístico Pro", layout="wide")
 
 st.title("🛠️ Reparador de Costos Logísticos")
-st.markdown("""
-Esta herramienta detecta costos duplicados por guía y los prorratea proporcionalmente según el número de cajas. 
-**Nota:** Solo se reparan las guías cuyos costos sean idénticos en todas sus filas.
-""")
+with st.expander("¿Dudas para usar este módulo? Lea las instrucciones aquí"):
+    st.markdown("""
+    ### 📋 Pasos para reparar tu archivo
+    
+    1. **Subida de datos:** Haz clic en 'Browse files' o arrastra tu archivo Excel/CSV. El sistema cargará una vista previa automática.
+    2. **Configuración de columnas:** Verifica que los selectores coincidan con las columnas de tu archivo:
+        * **Factura:** Identificador del documento.
+        * **Guía:** Número de guía de transporte.
+        * **Costo:** El monto que sospechas está duplicado.
+        * **Cajas:** Cantidad de bultos por factura.
+    3. **Procesamiento:** Haz clic en el botón **🚀 Procesar y Reparar Datos**.
+    
+    ### 🧠 ¿Cómo funciona la reparación?
+    El sistema aplica un filtro de seguridad para no dañar tus datos:
+    * **Si el costo es idéntico:** Si una guía tiene varias facturas y todas marcan el mismo costo (ej. $100), el sistema entiende que es un error de duplicidad y **prorratea** el costo según las cajas de cada factura.
+    * **Si los costos son diferentes:** Si una guía tiene montos distintos en sus filas, el sistema **no los toca**, asumiendo que son cargos independientes (ej. flete + maniobra).
+    
+    4. **Descarga:** Una vez finalizado, aparecerá un botón verde para descargar tu nuevo archivo corregido.
+    """)
 
 uploaded_file = st.file_uploader("1. Sube tu archivo (CSV o Excel)", type=["csv", "xlsx"])
 
