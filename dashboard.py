@@ -723,38 +723,44 @@ else:
                 # PESTAÑA 4: RETRASOS
                 with tab_retrasos:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    st.title("🚛 Cuota de Participación por Paquetería")
-                    st.markdown("Distribución porcentual de la carga operativa basada en el total de cajas.")
                     
+                    # --- 1. LÓGICA DE CARGA DE DATOS ---
                     URL_RAW = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
                     
                     @st.cache_data
                     def load_data():
-                        df = pd.read_csv(URL_RAW, low_memory=False)
-                        df.columns = [c.replace('_x000D_', '').strip() for c in df.columns]
-                        # Aseguramos que CAJAS sea numérico
-                        df['CAJAS'] = pd.to_numeric(df['CAJAS'], errors='coerce').fillna(0)
-                        return df
+                        try:
+                            df = pd.read_csv(URL_RAW, low_memory=False)
+                            # Limpieza de columnas para evitar errores de matching
+                            df.columns = [c.replace('_x000D_', '').strip() for c in df.columns]
+                            df['CAJAS'] = pd.to_numeric(df['CAJAS'], errors='coerce').fillna(0)
+                            return df
+                        except Exception as e:
+                            st.error(f"Error de conexión: {e}")
+                            return None
                     
-                    try:
-                        df = load_data()
+                    df = load_data()
                     
-                        # Cálculo de porcentajes
+                    if df is not None:
+                        # --- 2. TÍTULO (Hereda h3 de tu CSS) ---
+                        st.markdown("<h3>Cuota de Participación por Paquetería</h3>", unsafe_allow_html=True)
+                        
+                        # Cálculos operativos
                         total_cajas = df['CAJAS'].sum()
                         df_participacion = df.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
                         df_participacion['PORCENTAJE'] = (df_participacion['CAJAS'] / total_cajas) * 100
-                        df_participacion = df_participacion.sort_values(by='PORCENTAJE', ascending=True) # Ascendente para que la más alta salga arriba en barras horizontales
+                        df_participacion = df_participacion.sort_values(by='PORCENTAJE', ascending=True)
                     
-                        # Métricas clave
-                        m1, m2 = st.columns(2)
-                        m1.metric("Cajas Totales Movilizadas", f"{int(total_cajas):,}")
-                        m2.metric("Paquetería Líder", df_participacion.iloc[-1]['TRANSPORTE'])
+                        # --- 3. MÉTRICAS (Usando columnas de Streamlit) ---
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>TOTAL CAJAS MOVILIZADAS</p>", unsafe_allow_html=True)
+                            st.markdown(f"<h2 style='text-align:center; color:#FFFFFF;'>{int(total_cajas):,}</h2>", unsafe_allow_html=True)
+                        with c2:
+                            st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>PAQUETERÍA LÍDER</p>", unsafe_allow_html=True)
+                            st.markdown(f"<h2 style='text-align:center; color:#00FFAA;'>{df_participacion.iloc[-1]['TRANSPORTE']}</h2>", unsafe_allow_html=True)
                     
-                        st.divider()
-                    
-                        # --- GRÁFICO DE BARRAS HORIZONTALES ---
-                        st.subheader("📊 Porcentaje de Participación (Carga de Trabajo)")
-                        
+                        # --- 4. GRÁFICO DE BARRAS (Configurado para fondo transparente) ---
                         fig_bar = px.bar(
                             df_participacion, 
                             x='PORCENTAJE', 
@@ -762,42 +768,39 @@ else:
                             orientation='h',
                             text=df_participacion['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
                             template="plotly_dark",
-                            labels={'PORCENTAJE': '% de Carga Total', 'TRANSPORTE': 'Paquetería'},
+                            labels={'PORCENTAJE': '% de Carga', 'TRANSPORTE': 'Paquetería'},
                             color='PORCENTAJE',
-                            color_continuous_scale='Blues'
+                            color_continuous_scale=['#4B5D67', '#00FFAA'] # Gris a Turquesa Nexion
                         )
                     
                         fig_bar.update_traces(
                             textposition='outside',
-                            cliponaxis=False,
-                            marker_line_color='rgb(8,48,107)',
-                            marker_line_width=1.5, 
+                            marker_line_color='#4B5D67',
+                            marker_line_width=1, 
                             opacity=0.9
                         )
                     
                         fig_bar.update_layout(
-                            xaxis_range=[0, df_participacion['PORCENTAJE'].max() * 1.15], # Espacio extra para las etiquetas
+                            paper_bgcolor='rgba(0,0,0,0)', # Transparente para usar tu bg
+                            plot_bgcolor='rgba(0,0,0,0)',  # Transparente para usar tu bg
+                            xaxis_range=[0, df_participacion['PORCENTAJE'].max() * 1.2],
                             showlegend=False,
-                            height=500,
-                            margin=dict(l=20, r=20, t=20, b=20)
+                            height=400,
+                            font=dict(family="Inter", size=11, color="#FFFFFF"),
+                            margin=dict(l=20, r=20, t=10, b=10)
                         )
                     
-                        st.plotly_chart(fig_bar, use_container_width=True)
+                        st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
                     
-                        # --- TABLA DE AUDITORÍA ---
-                        with st.expander("Ver desglose detallado de unidades"):
-                            st.dataframe(
-                                df_participacion.sort_values('PORCENTAJE', ascending=False),
-                                column_config={
-                                    "PORCENTAJE": st.column_config.NumberColumn("Cuota (%)", format="%.2f%%"),
-                                    "CAJAS": st.column_config.NumberColumn("Total Cajas", format="%d")
-                                },
-                                use_container_width=True,
-                                hide_index=True
-                            )
+                        # --- 5. FOOTER (Hereda .footer de tu CSS) ---
+                        st.markdown(f"""
+                        <div class="footer">
+                            NEXION OPERATIONAL QUERY | {datetime.now().strftime('%Y')} | SHARE ANALYSIS MODULE
+                        </div>
+                        """, unsafe_allow_html=True)
                     
-                    except Exception as e:
-                        st.error(f"Error al generar el análisis: {e}")
+                    else:
+                        st.info("Sincronizando con base de datos maestra...")
         
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -2704,6 +2707,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
