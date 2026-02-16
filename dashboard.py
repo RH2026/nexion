@@ -724,85 +724,72 @@ else:
                 with tab_retrasos:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     
-                    # URL de la matriz logística (Costo Logístico)
-                    URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
-                    
-                    @st.cache_data
-                    def load_data_logistica():
-                        try:
-                            # Cargamos el archivo de costos
-                            df_l = pd.read_csv(URL_LOGISTICA, low_memory=False)
-                            df_l.columns = [c.replace('_x000D_', '').strip() for c in df_l.columns]
-                            
-                            # Convertimos columnas clave
-                            df_l['CAJAS'] = pd.to_numeric(df_l['CAJAS'], errors='coerce').fillna(0)
-                            # Usamos MES o la fecha para filtrar (asumimos que existe columna MES o FECHA)
-                            # Si no hay fecha exacta, usaremos la columna 'MES' que mencionaste antes
-                            return df_l
-                        except Exception as e:
-                            st.error(f"Error de conexión en Logística: {e}")
-                            return None
-                    
-                    df_log = load_data_logistica()
-                    
-                    if df_log is not None:
-                        # --- LÓGICA DE FILTRADO POR PERÍODO ---
-                        # Filtramos df_log basándonos en el 'mes_sel' capturado en el selectbox principal del Dashboard
-                        # mes_sel viene como "ENERO", "FEBRERO", etc.
-                        df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
+                    # PESTAÑA 4: RETRASOS (Participación de Paqueterías)
+                    with tab_retrasos:
+                        st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+                        
+                        URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
+                        
+                        @st.cache_data
+                        def load_data_logistica():
+                            try:
+                                df_l = pd.read_csv(URL_LOGISTICA, low_memory=False)
+                                # 1. Limpieza de nombres de columnas
+                                df_l.columns = [c.replace('_x000D_', '').strip() for c in df_l.columns]
+                                # 2. Limpieza de la columna MES (Pasar a mayúsculas y quitar espacios)
+                                if 'MES' in df_l.columns:
+                                    df_l['MES'] = df_l['MES'].astype(str).str.upper().str.strip()
+                                # 3. Limpieza de CAJAS
+                                df_l['CAJAS'] = pd.to_numeric(df_l['CAJAS'], errors='coerce').fillna(0)
+                                return df_l
+                            except Exception as e:
+                                st.error(f"Error de conexión: {e}")
+                                return None
+                        
+                        df_log = load_data_logistica()
+                        
+                        if df_log is not None:
+                            # --- NORMALIZAR FILTRO ---
+                            # mes_sel viene de tu selectbox (ej. "FEBRERO")
+                            # Lo comparamos con la columna MES ya normalizada arriba
+                            df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
+    
+                            if not df_log_filtrado.empty:
+                                st.markdown(f"<h3>Participación de Paqueterías - {mes_sel}</h3>", unsafe_allow_html=True)
+                                
+                                total_cajas_mes = df_log_filtrado['CAJAS'].sum()
+                                df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
+                                df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
+                                df_part = df_part.sort_values(by='PORCENTAJE', ascending=True)
+                                
+                                c1, c2 = st.columns(2)
+                                with c1:
+                                    st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>CAJAS EN {mes_sel}</p>", unsafe_allow_html=True)
+                                    st.markdown(f"<h2 style='text-align:center; color:#FFFFFF;'>{int(total_cajas_mes):,}</h2>", unsafe_allow_html=True)
+                                with c2:
+                                    st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>LÍDER DEL MES</p>", unsafe_allow_html=True)
+                                    lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
+                                    st.markdown(f"<h2 style='text-align:center; color:#00FFAA;'>{lider_n}</h2>", unsafe_allow_html=True)
+                                
+                                fig_bar = px.bar(
+                                    df_part, x='PORCENTAJE', y='TRANSPORTE', orientation='h',
+                                    text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
+                                    template="plotly_dark", color='PORCENTAJE',
+                                    color_continuous_scale=['#4B5D67', '#00FFAA']
+                                )
+                                fig_bar.update_layout(
+                                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                    xaxis_range=[0, df_part['PORCENTAJE'].max() * 1.2],
+                                    font=dict(family="Inter", size=11, color="#FFFFFF"),
+                                    margin=dict(l=20, r=20, t=10, b=10), showlegend=False
+                                )
+                                st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+                            else:
+                                # SI NO HAY DATOS, mostramos qué meses SÍ existen en el archivo para debuguear
+                                meses_disponibles = df_log['MES'].unique()
+                                st.warning(f"No hay datos para {mes_sel}. ")
+                                st.info(f"Meses detectados en el CSV: {list(meses_disponibles)}")
 
-                        if not df_log_filtrado.empty:
-                            # --- 2. TÍTULO ---
-                            st.markdown(f"<h3>Participación de Paqueterías - {mes_sel}</h3>", unsafe_allow_html=True)
-                            
-                            # Cálculos operativos sobre el mes seleccionado
-                            total_cajas_mes = df_log_filtrado['CAJAS'].sum()
-                            df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
-                            df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
-                            df_part = df_part.sort_values(by='PORCENTAJE', ascending=True)
-                            
-                            # --- 3. MÉTRICAS ---
-                            c1, c2 = st.columns(2)
-                            with c1:
-                                st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>CAJAS EN {mes_sel}</p>", unsafe_allow_html=True)
-                                st.markdown(f"<h2 style='text-align:center; color:#FFFFFF;'>{int(total_cajas_mes):,}</h2>", unsafe_allow_html=True)
-                            with c2:
-                                st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>LÍDER DEL MES</p>", unsafe_allow_html=True)
-                                lider_nombre = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
-                                st.markdown(f"<h2 style='text-align:center; color:#00FFAA;'>{lider_nombre}</h2>", unsafe_allow_html=True)
-                            
-                            # --- 4. GRÁFICO DE BARRAS ---
-                            fig_bar = px.bar(
-                                df_part, 
-                                x='PORCENTAJE', 
-                                y='TRANSPORTE',
-                                orientation='h',
-                                text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
-                                template="plotly_dark",
-                                color='PORCENTAJE',
-                                color_continuous_scale=['#4B5D67', '#00FFAA']
-                            )
-
-                            fig_bar.update_traces(
-                                textposition='outside',
-                                marker_line_color='#4B5D67',
-                                marker_line_width=1, 
-                                opacity=0.9
-                            )
-
-                            fig_bar.update_layout(
-                                paper_bgcolor='rgba(0,0,0,0)',
-                                plot_bgcolor='rgba(0,0,0,0)',
-                                xaxis_range=[0, df_part['PORCENTAJE'].max() * 1.2] if not df_part.empty else [0, 100],
-                                showlegend=False,
-                                height=400,
-                                font=dict(family="Inter", size=11, color="#FFFFFF"),
-                                margin=dict(l=20, r=20, t=10, b=10)
-                            )
-
-                            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
-                        else:
-                            st.warning(f"No hay datos de logística registrados para {mes_sel}.")
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
             # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
@@ -2708,6 +2695,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
