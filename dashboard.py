@@ -771,6 +771,7 @@ else:
                                     lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
                                     st.markdown(f"<h2 style='text-align:center; color:#00FFAA;'>{lider_n}</h2>", unsafe_allow_html=True)
                                 
+                                # --- 4. GRÁFICO DE BARRAS ---
                                 fig_bar = px.bar(
                                     df_part, x='PORCENTAJE', y='TRANSPORTE', orientation='h',
                                     text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
@@ -784,8 +785,25 @@ else:
                                     margin=dict(l=20, r=20, t=10, b=10), showlegend=False
                                 )
                                 st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+    
+                                # --- 5. TABLA DE AUDITORÍA (Lo que me pediste) ---
+                                st.markdown("<br>", unsafe_allow_html=True)
+                                with st.expander(f"VER DESGLOSE DE PARTICIPACIÓN - {mes_sel}"):
+                                    # Ordenamos de mayor a menor para la tabla
+                                    df_tabla = df_part.sort_values(by='PORCENTAJE', ascending=False)
+                                    
+                                    st.dataframe(
+                                        df_tabla,
+                                        column_config={
+                                            "TRANSPORTE": "PAQUETERÍA",
+                                            "CAJAS": st.column_config.NumberColumn("TOTAL CAJAS", format="%d 📦"),
+                                            "PORCENTAJE": st.column_config.NumberColumn("SHARE (%)", format="%.2f%%")
+                                        },
+                                        use_container_width=True,
+                                        hide_index=True
+                                    )
                             else:
-                                # SI NO HAY DATOS, mostramos qué meses SÍ existen en el archivo para debuguear
+                                # SI NO HAY DATOS
                                 meses_disponibles = df_log['MES'].unique()
                                 st.warning(f"No hay datos para {mes_sel}. ")
                                 st.info(f"Meses detectados en el CSV: {list(meses_disponibles)}")
@@ -2695,6 +2713,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
