@@ -1,10 +1,3 @@
-Ese error, aunque parece intimidante, es simplemente un error de sintaxis. El rastro (Traceback) indica que Streamlit ni siquiera pudo empezar a ejecutar el código porque falló al intentar "leerlo" (ast.parse).
-
-Como hemos estado moviendo bloques de código grandes, lo más probable es que al copiar y pegar se haya quedado un paréntesis sin cerrar, una comilla abierta, o un error de indentación (espacios/tabulaciones mal puestos).
-
-Aquí te dejo el código completamente limpio y revisado para Python 3.13. Asegúrate de borrar todo lo que tengas en ese archivo y pegar este desde cero:
-
-Python
 import streamlit as st
 import pandas as pd
 import io
@@ -139,6 +132,7 @@ if uploaded_file:
         st.error(f"Error de datos: {e}")
 else:
     st.info("Esperando archivo ERP...")
+
 
 
 
