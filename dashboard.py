@@ -2738,16 +2738,15 @@ else:
     <style>
     .spotify-footer {
         position: fixed;
-        bottom: 10px;
+        bottom: -70px;
         left: 50%;
         transform: translateX(-50%);
-        width: 320px;          /* tamaño compacto */
-        background: transparent;
-        z-index: 9999;
+        width: 320px;
+        transition: bottom 0.3s ease;
     }
     
-    .spotify-footer iframe {
-        border-radius: 12px;   /* leve suavidad minimal */
+    .spotify-footer:hover {
+        bottom: 8px;
     }
     </style>
     
@@ -2764,6 +2763,7 @@ else:
     
     # Espacio para que no tape contenido
     st.markdown("<div style='height:100px;'></div>", unsafe_allow_html=True)
+
 
 
 
