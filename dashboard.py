@@ -2733,39 +2733,16 @@ else:
                 else:
                     st.info("Esperando archivo de operación...", icon=":material/upload_file:")
     
-    # ── FOOTER SPOTIFY ULTRA SLIM VISUAL ─────────────────────
-    st.markdown("""
-    <style>
-    .mini-player {
-        position: fixed;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 320px;
-        height: 42px;
-        background: #111;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        padding: 0 12px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.4);
-        z-index: 9999;
-    }
     
-    .mini-player audio {
-        width: 100%;
-        height: 30px;
-    }
-    </style>
-    
-    <div class="mini-player">
-        <audio controls>
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-        </audio>
-    </div>
+    # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+    st.markdown(f"""
+        <div class="footer">
+            NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
+            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
+            <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
+        </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div style='height:70px;'></div>", unsafe_allow_html=True)
 
 
 
