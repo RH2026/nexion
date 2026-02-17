@@ -2733,31 +2733,35 @@ else:
                 else:
                     st.info("Esperando archivo de operación...", icon=":material/upload_file:")
     
-    #--- CONFIGURACIÓN DEL TRACK/PLAYLIST ---
-    # Tip: Puedes usar una playlist de 'Phonk' o 'Deep Focus' para el mood de logística
-    track_url = "https://open.spotify.com/embed/playlist/37i9dQZF1DX8Ueb9CidzhR?utm_source=generator&theme=0"
+    # Convertimos tu enlace normal en un enlace de "Embed"
+    # Tu enlace original: http://googleusercontent.com/spotify.com/6
+    # El ID es: 195v6pT2tA890f5XmG8KzY
+    spotify_embed_url = "http://googleusercontent.com/spotify.com/7?utm_source=generator&theme=0"
     
-    # ── FOOTER FIJO CON REPRODUCTOR (BRANDING XENOCODE) ────────────────────────
+    # ── FOOTER FIJO (REPRODUCTOR + BRANDING) ────────────────────────
     st.markdown(f"""
         <div class="footer">
-            <div style="margin-bottom: 10px; width: 100%;">
+            <div style="margin-bottom: 12px; width: 100%;">
                 <iframe 
-                    style="border-radius:8px;" 
-                    src="{track_url}" 
+                    src="{spotify_embed_url}" 
                     width="100%" 
                     height="80" 
                     frameBorder="0" 
                     allowfullscreen="" 
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                    style="border-radius:12px; border: none;"
                     loading="lazy">
                 </iframe>
             </div>
             
-            NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
-            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
-            <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
+            <div style="line-height: 1.4;">
+                NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
+                <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
+                <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
