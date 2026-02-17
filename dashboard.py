@@ -720,11 +720,6 @@ else:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.write("Visualización de Volumen de Carga")
                     
-                # PESTAÑA 4: RETRASOS
-                # PESTAÑA 4: RETRASOS (Participación de Paqueterías)
-                with tab_retrasos:
-                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    
                     URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
                     
                     @st.cache_data
@@ -794,22 +789,33 @@ else:
                                 hide_index=True
                             )
 
-                            # --- 6. EXPANDER: DESGLOSE POR DESTINO CON FILTRO ---
+                            # --- 6. EXPANDER: DESGLOSE POR DESTINO CON MULTI-FILTRO ---
                             st.markdown("<br>", unsafe_allow_html=True)
                             with st.expander("🌐 EXPLORADOR DE RUTAS Y DESTINOS"):
-                                # Filtro dinámico por Carrier
+                                # Filtro MULTIPLE por Carrier
                                 lista_carriers = sorted(df_log_filtrado['TRANSPORTE'].unique())
-                                carrier_dest_sel = st.selectbox("Seleccionar Carrier para auditar:", ["TODOS"] + lista_carriers)
+                                carriers_seleccionados = st.multiselect(
+                                    "Filtrar por uno o varios Carriers:", 
+                                    options=lista_carriers,
+                                    default=None,
+                                    placeholder="Selecciona paqueterías para comparar..."
+                                )
                                 
-                                # Aplicar filtro
-                                df_dest_filtered = df_log_filtrado.copy()
-                                if carrier_dest_sel != "TODOS":
-                                    df_dest_filtered = df_dest_filtered[df_dest_filtered['TRANSPORTE'] == carrier_dest_sel]
+                                # Aplicar filtro dinámico
+                                if carriers_seleccionados:
+                                    df_dest_filtered = df_log_filtrado[df_log_filtrado['TRANSPORTE'].isin(carriers_seleccionados)].copy()
+                                else:
+                                    # Si no hay nada seleccionado, mostramos todos por defecto
+                                    df_dest_filtered = df_log_filtrado.copy()
                                 
-                                # Agrupación para la tabla
+                                # Agrupación para la tabla de rutas
                                 df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO'])['CAJAS'].sum().reset_index()
-                                df_dest_sum = df_dest_sum.sort_values(by='CAJAS', ascending=False)
+                                df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
                                 
+                                # Métrica rápida de lo seleccionado
+                                total_sel = df_dest_sum['CAJAS'].sum()
+                                st.markdown(f"<p style='color:#00FFAA; font-size:12px;'>Unidades en selección actual: {int(total_sel):,}</p>", unsafe_allow_html=True)
+
                                 st.dataframe(
                                     df_dest_sum,
                                     column_config={
@@ -2730,6 +2736,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
