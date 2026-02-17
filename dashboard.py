@@ -1,28 +1,29 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-import datetime
 import os
-import streamlit.components.v1 as components
+import io
+import re
+import json
+import time
+import zipfile
+import unicodedata
 import requests
-from io import StringIO
+from io import StringIO, BytesIO
+from datetime import datetime, date, timedelta
+
+import pandas as pd
+import numpy as np  # Opcional, pero suele ir de la mano con pandas
+import streamlit as st
+import streamlit.components.v1 as components
+import altair as alt
 import plotly.graph_objects as go
 import plotly.express as px
-import time
-from github import Github
-import json
+
 import pytz
-import zipfile
+from github import Github
 from pypdf import PdfReader, PdfWriter
 from fpdf import FPDF
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-import re
-import unicodedata
-import io
-import altair as alt
-from datetime import date, datetime, timedelta
-from io import BytesIO
+
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
@@ -2245,20 +2246,26 @@ else:
             if st.session_state.menu_sub == "SMART ROUTING":
                 st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
                 
-                # --- RUTAS Y MOTOR ---
-                archivo_log = "log_maestro_acumulado.csv"
+                # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
+                @st.cache_data(ttl=60) # Actualiza la caché cada minuto
+                def obtener_matriz_github():
+                    # Añadimos un timestamp para forzar a GitHub a no servir una versión cacheada
+                    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
+                    try:
+                        m = pd.read_csv(url)
+                        m.columns = [str(c).upper().strip() for c in m.columns]
+                        return m
+                    except Exception as e:
+                        st.error(f"Error fatal al conectar con GitHub: {e}")
+                        return pd.DataFrame()
                 
-                # Intentar obtener el motor logístico (asegura que la función esté definida)
-                try:
-                    d_flet, d_price = motor_logistico_central()
-                except:
-                    d_flet, d_price = {}, {}
-                    st.warning("Motor logístico central no detectado. Cargando en modo manual.")
-    
-                if 'db_acumulada' not in st.session_state:
-                    st.session_state.db_acumulada = pd.read_csv(archivo_log) if os.path.exists(archivo_log) else pd.DataFrame()
-    
-                # --- FUNCIONES DE SELLADO INTERNAS ---
+                def limpiar_texto(texto):
+                    if pd.isna(texto): return ""
+                    texto = "".join(c for c in unicodedata.normalize('NFD', str(texto)) if unicodedata.category(c) != 'Mn').upper()
+                    texto = re.sub(r'[^A-Z0-9\s]', ' ', texto) 
+                    return " ".join(texto.split())
+                
+                # --- 2. FUNCIONES MAESTRAS PDF ---
                 def generar_sellos_fisicos(lista_textos, x, y):
                     output = PdfWriter()
                     for texto in lista_textos:
@@ -2272,7 +2279,7 @@ else:
                     out_io = io.BytesIO()
                     output.write(out_io)
                     return out_io.getvalue()
-    
+                
                 def marcar_pdf_digital(pdf_file, texto_sello, x, y):
                     packet = io.BytesIO()
                     can = canvas.Canvas(packet, pagesize=letter)
@@ -2291,133 +2298,134 @@ else:
                     out_io = io.BytesIO()
                     output.write(out_io)
                     return out_io.getvalue()
-    
-                # --- CARGA Y PROCESAMIENTO ERP ----
-                file_p = st.file_uploader(":material/upload_file: SUBIR ARCHIVO ERP (CSV)", type="csv") 
                 
-                # --- 1. ESTADO DE ESPERA: CALIBRACIÓN DE ESPACIOS ---
-                if not file_p:
-                    st.markdown(f"""
-                        <div class="nexion-fixed-wrapper">
-                            <div class="nexion-center-node">
-                                <div class="nexion-core-point"></div>
-                                <div class="nexion-halo-ring"></div>
-                            </div>
-                            <p class="nexion-tech-label">LOGISTICS INTELLIGENCE HUB | SYSTEM READY</p>
-                        </div>
-                        <style>
-                            .nexion-fixed-wrapper {{ height: 250px !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: transparent !important; position: relative !important; }}
-                            .nexion-center-node {{ position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 20px !important; height: 20px !important; }}
-                            .nexion-core-point {{ width: 14px !important; height: 14px !important; background-color: #54AFE7 !important; border-radius: 50% !important; box-shadow: 0 0 20px #54AFE7, 0 0 40px rgba(84,175,231,0.4) !important; animation: nexion-vibrance 2s ease-in-out infinite !important; z-index: 10 !important; position: absolute !important; }}
-                            .nexion-halo-ring {{ position: absolute !important; width: 14px !important; height: 14px !important; border: 1px solid #54AFE7 !important; border-radius: 50% !important; opacity: 0 !important; animation: nexion-perfect-spread 4s linear infinite !important; z-index: 5 !important; }}
-                            .nexion-tech-label {{ color: #54AFE7 !important; font-family: 'Monospace', monospace !important; letter-spacing: 5px !important; font-size: 10px !important; margin-top: 35px !important; opacity: 0.8 !important; text-align: center !important; }}
-                            @keyframes nexion-vibrance {{ 0%, 100% {{ transform: scale(1); filter: brightness(1); }} 50% {{ transform: scale(1.2); filter: brightness(1.4); }} }}
-                            @keyframes nexion-perfect-spread {{ 0% {{ transform: scale(1); opacity: 0; }} 20% {{ opacity: 0.4; }} 100% {{ transform: scale(6); opacity: 0; }} }}
-                        </style>
-                    """, unsafe_allow_html=True)
+                # --- BLOQUE 1: PREPARACIÓN S&T ---
+                st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T PREPARATION MODULE</p>", unsafe_allow_html=True)
+                uploaded_file = st.file_uploader("Subir archivo ERP", type=["xlsx", "csv"], label_visibility="collapsed")
                 
-                # --- 2. ESTADO ACTIVO: MOTOR SMART ---
-                else:
-                    if "archivo_actual" not in st.session_state or st.session_state.archivo_actual != file_p.name:
-                        if "df_analisis" in st.session_state: del st.session_state["df_analisis"]
-                        st.session_state.archivo_actual = file_p.name
-                        st.rerun()
-    
+                if uploaded_file is not None:
                     try:
-                        if "df_analisis" not in st.session_state:
-                            p = pd.read_csv(file_p, encoding='utf-8-sig')
-                            p.columns = [str(c).upper().strip() for c in p.columns]
-                            col_id = 'FACTURA' if 'FACTURA' in p.columns else ('DOCNUM' if 'DOCNUM' in p.columns else p.columns[0])
+                        df = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+                        df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
+                        
+                        col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower() or 'folio' in c.lower()), df.columns[0])
+                        
+                        col_left, col_right = st.columns([1, 2], gap="large")
+                        with col_left:
+                            st.markdown(f"<p class='op-query-text'>FILTROS</p>", unsafe_allow_html=True)
+                            serie = pd.to_numeric(df[col_folio], errors='coerce').dropna()
+                            inicio = st.number_input("Desde:", value=int(serie.min()) if not serie.empty else 0)
+                            final = st.number_input("Hasta:", value=int(serie.max()) if not serie.empty else 0)
+                            df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
+                            df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
+                
+                        with col_right:
+                            st.markdown(f"<p class='op-query-text'>SELECCIÓN</p>", unsafe_allow_html=True)
+                            if not df_rango.empty:
+                                info = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
+                                info.insert(0, "Incluir", True)
+                                edited_df = st.data_editor(info, hide_index=True, use_container_width=True, key="ed_v4")
+                            else: st.warning("Rango vacío")
+                
+                        if not df_rango.empty and not edited_df.empty:
+                            folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
+                            c1, c2, c3 = st.columns([1,1,2])
                             
-                            if 'DIRECCION' in p.columns:
-                                def motor_prioridad(row):
-                                    addr = str(row['DIRECCION']).upper()
-                                    # Lógica local GDL
-                                    if any(loc in addr for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA"]):
-                                        return "LOCAL"
-                                    return d_flet.get(row['DIRECCION'], "SIN HISTORIAL")
-    
-                                p['RECOMENDACION'] = p.apply(motor_prioridad, axis=1)
-                                p['COSTO'] = p.apply(lambda r: 0.0 if r['RECOMENDACION'] == "LOCAL" else d_price.get(r['DIRECCION'], 0.0), axis=1)
-                                p['FECHA_HORA'] = dt_class.now().strftime("%Y-%m-%d %H:%M")
+                            if c1.button("RENDERIZAR"):
+                                st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
+                            
+                            if "df_final_st" in st.session_state:
+                                df_st = st.session_state.df_final_st
+                                st.dataframe(df_st, use_container_width=True)
                                 
-                                cols_sistema = [col_id, 'RECOMENDACION', 'COSTO', 'FECHA_HORA']
-                                otras = [c for c in p.columns if c not in cols_sistema]
-                                st.session_state.df_analisis = p[cols_sistema + otras]
-    
-                        st.markdown("### :material/analytics: RECOMENDACIONES GENERADAS")
-                        modo_edicion = st.toggle(":material/edit_note: EDITAR VALORES")
-                        
-                        p_editado = st.data_editor(
-                            st.session_state.df_analisis,
-                            use_container_width=True,
-                            num_rows="fixed",
-                            column_config={
-                                "RECOMENDACION": st.column_config.TextColumn(":material/local_shipping: FLETERA", disabled=not modo_edicion),
-                                "COSTO": st.column_config.NumberColumn(":material/payments: TARIFA", format="$%.2f", disabled=not modo_edicion),
-                            },
-                            key="editor_pro_v11"
-                        )
-    
-                        with st.container():
-                            st.download_button(
-                                label=":material/download: DESCARGAR RESULTADOS (CSV ANALIZADO)",
-                                data=p_editado.to_csv(index=False).encode('utf-8-sig'),
-                                file_name="Analisis_Nexion.csv",
-                                use_container_width=True,
-                                key="btn_descarga_top"
-                            )
-                            st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
-                            c_izq, c_der = st.columns(2)
-                            with c_izq:
-                                if st.button(":material/push_pin: FIJAR CAMBIOS", use_container_width=True):
-                                    st.session_state.df_analisis = p_editado
-                                    st.toast("Cambios aplicados", icon="📌")
-                            with c_der:
-                                id_guardado = f"guardado_{st.session_state.archivo_actual}"
-                                if not st.session_state.get(id_guardado, False):
-                                    if st.button(":material/save: GUARDAR REGISTROS", use_container_width=True):
-                                        st.session_state[id_guardado] = True
-                                        st.snow()
+                                sc1, sc2, sc3 = st.columns([1,1,2])
+                                with sc1:
+                                    towrite = io.BytesIO()
+                                    df_st.to_excel(towrite, index=False, engine='openpyxl')
+                                    st.download_button(label="📥 DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", mime="application/vnd.ms-excel")
+                                
+                                with sc3:
+                                    if st.button("🚀 SMART ROUTING (CRUCE GITHUB)", type="primary"):
+                                        df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
+                                        matriz_db = obtener_matriz_github()
+                                        
+                                        col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
+                                        col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
+                                        col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
+                                        # AJUSTE CRÍTICO: Buscar "PRECIO POR CAJA" para la tarifa
+                                        col_tarifa_matriz = 'PRECIO POR CAJA' if 'PRECIO POR CAJA' in matriz_db.columns else 'COSTO'
+                
+                                        def motor_v4(row):
+                                            if not col_dir_erp: return "ERROR: COL DIRECCION", 0.0
+                                            dir_limpia = limpiar_texto(row[col_dir_erp])
+                                            if any(loc in dir_limpia for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA", "TLAJOMULCO"]):
+                                                return "LOCAL", 0.0
+                                            for _, fila in matriz_db.iterrows():
+                                                dest_key = limpiar_texto(fila[col_dest_matriz])
+                                                if dest_key and (dest_key in dir_limpia):
+                                                    flet = fila.get(col_flet_matriz, "ASIGNADO")
+                                                    # Forzamos conversión numérica para evitar el 0.0 accidental
+                                                    costo_val = pd.to_numeric(fila.get(col_tarifa_matriz, 0.0), errors='coerce')
+                                                    return flet, costo_val
+                                            return "REVISIÓN MANUAL", 0.0
+                
+                                        res = df_log.apply(motor_v4, axis=1)
+                                        df_log['RECOMENDACION'] = [r[0] for r in res]
+                                        df_log['COSTO'] = [r[1] for r in res]
+                                        
+                                        df_log = df_log.rename(columns={col_folio: "Factura"})
+                                        cols_deseadas = ["Factura", "RECOMENDACION", "COSTO", "Transporte", "Nombre_Cliente", "Nombre_Extran", "Quantity", "DIRECCION", "DESTINO"]
+                                        cols_finales = [c for c in cols_deseadas if c in df_log.columns]
+                                        
+                                        st.session_state.df_analisis = df_log[cols_finales]
+                                        st.success("¡Motor sincronizado con datos recientes!")
                                         st.rerun()
-                                else:
-                                    st.button(":material/verified_user: REGISTROS ASEGURADOS", use_container_width=True, disabled=True)
+                
+                    except Exception as e: st.error(f"Error: {e}")
+                
+                # --- BLOQUE 2: SMART ROUTING & ANALISIS ---
+                if "df_analisis" in st.session_state:
+                    st.markdown("---")
+                    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
+                    
+                    p = st.session_state.df_analisis
+                    modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
+                    
+                    p_editado = st.data_editor(
+                        p, use_container_width=True, hide_index=True,
+                        column_config={
+                            "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
+                            "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
+                        },
+                        key="editor_final_github"
+                    )
+                
+                    ba1, ba2, ba3 = st.columns([1,1,2])
+                    with ba1:
+                        if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
+                            st.session_state.df_analisis = p_editado
+                            st.toast("Cambios guardados", icon="✅")
+                    with ba2:
+                        output_xlsx = io.BytesIO()
+                        p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
+                        st.download_button(label="📊 DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
+                
+                    with st.expander("SISTEMA DE SELLADO", expanded=False):
+                        cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
+                        if st.button("GENERAR SELLOS PAPEL"):
+                            st.download_button("Descargar", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf")
                         
-                        # --- SISTEMA DE SELLADO ---
-                        st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
-                        st.markdown("<h3 style='font-size: 16px; color: white;'>:material/print: SISTEMA DE SELLADO Y SOBREIMPRESIÓN</h3>", unsafe_allow_html=True)
-                        
-                        with st.expander(":material/settings: PANEL DE CALIBRACIÓN", expanded=True):
-                            col_x, col_y = st.columns(2)
-                            ajuste_x = col_x.slider("Eje X (Horizontal)", 0, 612, 510)
-                            ajuste_y = col_y.slider("Eje Y (Vertical)", 0, 792, 760)
-    
-                        st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>IMPRESIÓN FÍSICA</p>", unsafe_allow_html=True)
-                        if st.button(":material/article: GENERAR SELLOS PARA FACTURAS (PAPEL)", use_container_width=True):
-                            sellos = st.session_state.df_analisis['RECOMENDACION'].tolist()
-                            if sellos:
-                                pdf_out = generar_sellos_fisicos(sellos, ajuste_x, ajuste_y)
-                                st.download_button(":material/download: DESCARGAR PDF DE SELLOS", pdf_out, "Sellos_Fisicos.pdf", use_container_width=True)
-                        
-                        st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
-                        st.markdown("<p style='font-weight: 800; font-size: 12px; letter-spacing: 1px; margin-bottom:5px;'>SELLADO DIGITAL (SOBRE PDF)</p>", unsafe_allow_html=True)
-                        with st.container(border=True):
-                            pdfs = st.file_uploader("Subir Facturas PDF", type="pdf", accept_multiple_files=True)
-                            if pdfs:
-                                if st.button("EJECUTAR ESTAMPADO DIGITAL"):
-                                    df_ref = st.session_state.get('df_analisis', pd.DataFrame())
-                                    if not df_ref.empty:
-                                        mapa = pd.Series(df_ref.RECOMENDACION.values, index=df_ref[df_ref.columns[0]].astype(str)).to_dict()
-                                        z_buf = io.BytesIO()
-                                        with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
-                                            for pdf in pdfs:
-                                                f_id = next((f for f in mapa.keys() if f in pdf.name.upper()), None)
-                                                if f_id:
-                                                    zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
-                                        st.download_button(":material/folder_zip: DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
-    
-                    except Exception as e:
-                        st.error(f"Error en procesamiento Smart: {e}")
+                        st.markdown("---")
+                        pdfs = st.file_uploader("Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+                        if pdfs and st.button("EJECUTAR SELLADO DIGITAL"):
+                            mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
+                            z_io = io.BytesIO()
+                            with zipfile.ZipFile(z_io, "a") as zf:
+                                for pdf in pdfs:
+                                    f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
+                                    if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
+                            st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip")
+
     
             elif st.session_state.menu_sub == "DATA MANAGEMENT":
                 st.info("Estado de Servidores : Online | Nexion Core: Active")
@@ -2743,6 +2751,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
