@@ -633,7 +633,7 @@ else:
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 # Definimos los 4 nombres de las pestañas
-                tab_kpis, tab_rastreo, tab_volumen, tab_retrasos = st.tabs([
+                tab_kpis, tab_rastreo, tab_volumen, tab_participacion = st.tabs([
                     "KPI´S", "RASTREO", "VOLUMEN", "% PARTICIPACIÓN"
                 ])
     
@@ -2741,6 +2741,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
