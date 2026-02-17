@@ -747,13 +747,7 @@ else:
 
                         if not df_log_filtrado.empty:
                             # --- CABECERA DE INGENIERÍA ---
-                            col_t, col_p = st.columns([4, 1])
-                            with col_t:
-                                st.markdown(f"<h3>ANÁLISIS DE CARGA E INGENIERÍA LOGÍSTICA - {mes_sel}</h3>", unsafe_allow_html=True)
-                            with col_p:
-                                # BOTÓN DE IMPRESIÓN NIVEL INGENIERÍA
-                                if st.button("🖨️ EXPORTAR REPORTE"):
-                                    st.markdown("<script>window.print();</script>", unsafe_allow_html=True)
+                            st.markdown(f"<h3>ANÁLISIS DE CARGA E INGENIERÍA LOGÍSTICA - {mes_sel}</h3>", unsafe_allow_html=True)
                             
                             total_cajas_mes = df_log_filtrado['CAJAS'].sum()
                             df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
@@ -799,6 +793,31 @@ else:
                                 use_container_width=True,
                                 hide_index=True
                             )
+
+                            # --- 6. EXPANDER: DESTINOS (OMITIENDO TRES GUERRAS) ---
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            with st.expander("🌐 VER DESGLOSE DE DESTINOS (EXCLUYENDO LÍDER)"):
+                                # Filtramos para omitir TRES GUERRAS y agrupamos por Transporte y Destino
+                                # Nota: Asegúrate que la columna en tu CSV se llame 'DESTINO'
+                                df_destinos = df_log_filtrado[df_log_filtrado['TRANSPORTE'] != "TRES GUERRAS"].copy()
+                                
+                                if not df_destinos.empty:
+                                    df_dest_sum = df_destinos.groupby(['TRANSPORTE', 'DESTINO'])['CAJAS'].sum().reset_index()
+                                    df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
+                                    
+                                    st.dataframe(
+                                        df_dest_sum,
+                                        column_config={
+                                            "TRANSPORTE": "CARRIER",
+                                            "DESTINO": "CIUDAD / ESTADO",
+                                            "CAJAS": st.column_config.NumberColumn("UNITS", format="%d")
+                                        },
+                                        use_container_width=True,
+                                        hide_index=True
+                                    )
+                                else:
+                                    st.info("No hay datos de otros transportes fuera del líder para este periodo.")
+
                         else:
                             meses_disponibles = df_log['MES'].unique()
                             st.warning(f"No hay datos para {mes_sel}. ")
@@ -2708,6 +2727,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
