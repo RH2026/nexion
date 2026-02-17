@@ -2733,20 +2733,17 @@ else:
                 else:
                     st.info("Esperando archivo de operación...", icon=":material/upload_file:")
     
-    # ── FOOTER FIJO SPOTIFY ULTRA MINI ────────────────────────
+    # ── FOOTER SPOTIFY ULTRA SLIM VISUAL ─────────────────────
     st.markdown("""
     <style>
     .spotify-footer {
         position: fixed;
-        bottom: -70px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 320px;
-        transition: bottom 0.3s ease;
-    }
-    
-    .spotify-footer:hover {
         bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%) scale(0.90);  /* lo comprimimos visualmente */
+        transform-origin: center;
+        width: 320px;
+        z-index: 9999;
     }
     </style>
     
@@ -2761,8 +2758,8 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Espacio para que no tape contenido
-    st.markdown("<div style='height:100px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:90px;'></div>", unsafe_allow_html=True)
+
 
 
 
