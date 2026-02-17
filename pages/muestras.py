@@ -3,6 +3,7 @@ import io
 import zipfile
 import pandas as pd
 import streamlit as st
+import time
 from io import BytesIO
 from datetime import datetime
 import unicodedata
@@ -22,10 +23,11 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. CARGA DE MATRIZ DESDE GITHUB ---
-@st.cache_data
+# --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
+@st.cache_data(ttl=60) # Actualiza la caché cada minuto
 def obtener_matriz_github():
-    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv"
+    # Añadimos un timestamp para forzar a GitHub a no servir una versión cacheada
+    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
     try:
         m = pd.read_csv(url)
         m.columns = [str(c).upper().strip() for c in m.columns]
@@ -83,7 +85,6 @@ if uploaded_file is not None:
         df = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
         
-        # Identificar columna de Factura/Folio
         col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower() or 'folio' in c.lower()), df.columns[0])
         
         col_left, col_right = st.columns([1, 2], gap="large")
@@ -128,6 +129,8 @@ if uploaded_file is not None:
                         col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
                         col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
                         col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
+                        # AJUSTE CRÍTICO: Buscar "PRECIO POR CAJA" para la tarifa
+                        col_tarifa_matriz = 'PRECIO POR CAJA' if 'PRECIO POR CAJA' in matriz_db.columns else 'COSTO'
 
                         def motor_v4(row):
                             if not col_dir_erp: return "ERROR: COL DIRECCION", 0.0
@@ -138,24 +141,21 @@ if uploaded_file is not None:
                                 dest_key = limpiar_texto(fila[col_dest_matriz])
                                 if dest_key and (dest_key in dir_limpia):
                                     flet = fila.get(col_flet_matriz, "ASIGNADO")
-                                    costo = fila.get('COSTO', 0.0) if 'COSTO' in matriz_db.columns else 0.0
-                                    return flet, costo
+                                    # Forzamos conversión numérica para evitar el 0.0 accidental
+                                    costo_val = pd.to_numeric(fila.get(col_tarifa_matriz, 0.0), errors='coerce')
+                                    return flet, costo_val
                             return "REVISIÓN MANUAL", 0.0
 
                         res = df_log.apply(motor_v4, axis=1)
                         df_log['RECOMENDACION'] = [r[0] for r in res]
                         df_log['COSTO'] = [r[1] for r in res]
                         
-                        # --- FILTRADO DE COLUMNAS SOLICITADAS ---
-                        # Renombrar columna de folio a "Factura" para cumplir tu lista
                         df_log = df_log.rename(columns={col_folio: "Factura"})
-                        
                         cols_deseadas = ["Factura", "RECOMENDACION", "COSTO", "Transporte", "Nombre_Cliente", "Nombre_Extran", "Quantity", "DIRECCION", "DESTINO"]
-                        # Solo dejamos las que existan en el dataframe
                         cols_finales = [c for c in cols_deseadas if c in df_log.columns]
                         
                         st.session_state.df_analisis = df_log[cols_finales]
-                        st.success("¡Motor sincronizado!")
+                        st.success("¡Motor sincronizado con datos recientes!")
                         st.rerun()
 
     except Exception as e: st.error(f"Error: {e}")
@@ -195,7 +195,6 @@ if "df_analisis" in st.session_state:
         st.markdown("---")
         pdfs = st.file_uploader("Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
         if pdfs and st.button("EJECUTAR SELLADO DIGITAL"):
-            # Usamos "Factura" que es el nombre que fijamos arriba
             mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
             z_io = io.BytesIO()
             with zipfile.ZipFile(z_io, "a") as zf:
@@ -203,6 +202,7 @@ if "df_analisis" in st.session_state:
                     f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
                     if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
             st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip")
+
 
 
 
