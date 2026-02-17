@@ -2736,29 +2736,37 @@ else:
     # ── FOOTER SPOTIFY ULTRA SLIM VISUAL ─────────────────────
     st.markdown("""
     <style>
-    .spotify-footer {
+    .mini-player {
         position: fixed;
-        bottom: 8px;
+        bottom: 10px;
         left: 50%;
-        transform: translateX(-50%) scale(0.90);  /* lo comprimimos visualmente */
-        transform-origin: center;
+        transform: translateX(-50%);
         width: 320px;
+        height: 42px;
+        background: #111;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.4);
         z-index: 9999;
+    }
+    
+    .mini-player audio {
+        width: 100%;
+        height: 30px;
     }
     </style>
     
-    <div class="spotify-footer">
-        <iframe 
-            src="https://open.spotify.com/embed/playlist/37i9dQZF1DZ06evO2oVGJD"
-            width="320" 
-            height="80" 
-            frameborder="0" 
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-        </iframe>
+    <div class="mini-player">
+        <audio controls>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        </audio>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div style='height:90px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:70px;'></div>", unsafe_allow_html=True)
+
 
 
 
