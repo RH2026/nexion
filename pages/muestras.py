@@ -5,11 +5,12 @@ import pandas as pd
 import streamlit as st
 from io import BytesIO
 from datetime import datetime
+import unicodedata
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from pypdf import PdfReader, PdfWriter
 
-# --- 0. CONFIGURACIÓN Y ESTILOS (TUS VARIABLES) ---
+# --- 0. CONFIGURACIÓN Y ESTILOS ---
 st.set_page_config(layout="wide")
 vars_css = {'sub': '#54AFE7', 'border': '#333'}
 
@@ -20,11 +21,16 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. FUNCIONES MAESTRAS (CONSERVADAS AL 100%) ---
+# --- 1. FUNCIONES MAESTRAS ---
 def motor_logistico_central():
-    # Sustituir con tu lógica real de diccionarios
-    d_flet = {"MEXICO": "TRES GUERRAS", "GUADALAJARA": "LOCAL"}
-    d_price = {"MEXICO": 150.0}
+    # Diccionario de búsqueda -> Fletera asignada
+    d_flet = {
+        "MEXICO": "TRES GUERRAS", 
+        "GUADALAJARA": "LOCAL",
+        "MONTERREY": "PMM",
+        "QUERETARO": "CASTORES"
+    }
+    d_price = {"MEXICO": 150.0, "MONTERREY": 200.0}
     return d_flet, d_price
 
 def generar_sellos_fisicos(lista_textos, x, y):
@@ -60,35 +66,27 @@ def marcar_pdf_digital(pdf_file, texto_sello, x, y):
     output.write(out_io)
     return out_io.getvalue()
 
-# --- BLOQUE 1: PREPARACIÓN S&T (CÓDIGO ORIGINAL 1) ---
+# --- BLOQUE 1: PREPARACIÓN S&T ---
 st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T PREPARATION MODULE</p>", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("Subir archivo", type=["xlsx", "csv"], label_visibility="collapsed")
 
 if uploaded_file is not None:
     try:
-        # Carga con detección automática
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file, sep=None, engine='python', encoding='utf-8-sig')
         else:
             df = pd.read_excel(uploaded_file)
         
-        # Limpieza agresiva de columnas
         df.columns = [str(c).strip().replace('\n', '').replace('\t', '') for c in df.columns]
         
         col_folio = next((c for c in df.columns if c.lower() == 'factura'), None)
-        col_transporte = next((c for c in df.columns if c.lower() == 'transporte'), None)
         if not col_folio:
             col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower()), df.columns[0])
-        if not col_transporte:
-            col_transporte = next((c for c in df.columns if 'transporte' in c.lower()), None)
         
         st.toast(f"DETECTADO -> Factura: {col_folio}", icon="🔍")
 
-        # PANEL DE CONTROL S&T
-        st.markdown("<br>", unsafe_allow_html=True)
         col_left, col_right = st.columns([1, 2], gap="large")
-    
         with col_left:
             st.markdown(f"<p class='op-query-text'>FILTROS DE RANGO</p>", unsafe_allow_html=True)
             serie_folios = pd.to_numeric(df[col_folio], errors='coerce').dropna()
@@ -101,26 +99,14 @@ if uploaded_file is not None:
         with col_right:
             st.markdown(f"<p class='op-query-text'>SELECCIÓN DE FOLIOS</p>", unsafe_allow_html=True)
             if not df_rango.empty:
-                cols_to_show = [col_folio]
-                if col_transporte: cols_to_show.append(col_transporte)
-                info_folios = df_rango.drop_duplicates(subset=[col_folio])[cols_to_show]
+                info_folios = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
                 selector_df = info_folios.copy()
                 selector_df.insert(0, "Incluir", True)
-                
-                edited_df = st.data_editor(
-                    selector_df,
-                    column_config={
-                        "Incluir": st.column_config.CheckboxColumn("SEL", default=True),
-                        col_folio: st.column_config.TextColumn("FACTURA", disabled=True)
-                    },
-                    hide_index=True, height=300, use_container_width=True, key="editor_s_t"
-                )
+                edited_df = st.data_editor(selector_df, hide_index=True, height=300, use_container_width=True, key="editor_s_t")
             else:
                 st.warning("Sin datos en el rango.")
                 edited_df = pd.DataFrame()
 
-        # ACCIONES S&T
-        st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; opacity:0.2;'>", unsafe_allow_html=True)
         if not edited_df.empty:
             folios_finales = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
             c1, c2, c3 = st.columns([1,1,2])
@@ -142,39 +128,55 @@ if uploaded_file is not None:
                 with c2:
                     st.download_button("DESCARGAR EXCEL (.XLSX)", output_xlsx.getvalue(), "S&T_PREP.xlsx", use_container_width=True)
                 
-                # BOTÓN DE CONEXIÓN AL MOTOR SMART
                 with c3:
-                    if st.button("🚀 ENVIAR A SMART ROUTING (SIN DUPLICADOS)", type="primary", use_container_width=True):
-                        # Aquí ocurre la magia: Limpiamos duplicados solo para el análisis logístico
+                    if st.button("🚀 ENVIAR A SMART ROUTING (DIRECCION MATCH)", type="primary", use_container_width=True):
+                        # Limpiamos duplicados para el análisis
                         st.session_state.df_analisis = df_final.drop_duplicates(subset=[col_folio]).copy()
-                        st.success("Datos procesados para Smart Routing. Desliza hacia abajo.")
+                        # Forzamos que se recalculen las recomendaciones eliminando la columna si ya existe
+                        if 'RECOMENDACION' in st.session_state.df_analisis.columns:
+                            st.session_state.df_analisis = st.session_state.df_analisis.drop(columns=['RECOMENDACION'])
+                        st.success("Datos listos. Revisa el módulo de abajo.")
 
     except Exception as e:
         st.error(f"Error S&T: {e}")
-else:
-    st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR ERP DATA...</div>", unsafe_allow_html=True)
 
-# --- BLOQUE 2: SMART ROUTING (CÓDIGO ORIGINAL 2 INTEGRADO) ---
+# --- BLOQUE 2: SMART ROUTING ---
 if "df_analisis" in st.session_state:
     st.markdown("---")
     st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
     
     d_flet, d_price = motor_logistico_central()
     p = st.session_state.df_analisis
-    
-    # Motor de recomendaciones sobre la tabla limpia
+
+    # --- MOTOR DE RECOMENDACIONES CORREGIDO ---
     if 'RECOMENDACION' not in p.columns:
         p.columns = [str(c).upper().strip() for c in p.columns]
-        col_id = 'FACTURA' if 'FACTURA' in p.columns else p.columns[0]
-        col_dir = next((c for c in p.columns if 'DIRECCION' in c or 'DIR' in c), None)
+        # Identificamos columna DIRECCION
+        col_dir = next((c for c in p.columns if 'DIRECCION' in c), None)
 
         def motor_prioridad(row):
-            addr = str(row[col_dir]).upper() if col_dir else ""
-            if any(loc in addr for loc in ["GDL", "GUADALAJARA", "ZAPOPAN"]): return "LOCAL"
+            if not col_dir: return "REVISIÓN MANUAL"
+            
+            # Limpiamos el texto de la dirección (quitamos acentos y pasamos a Mayúsculas)
+            raw_addr = str(row[col_dir])
+            addr = "".join(c for c in unicodedata.normalize('NFD', raw_addr) if unicodedata.category(c) != 'Mn').upper()
+            
+            # 1. Regla de Localidad Inmediata
+            locales = ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA", "TLAJOMULCO"]
+            if any(loc in addr for loc in locales):
+                return "LOCAL"
+            
+            # 2. Regla de Diccionario Centralizado
+            for keyword, fletera in d_flet.items():
+                # Normalizamos también la keyword del diccionario
+                key_norm = "".join(c for c in unicodedata.normalize('NFD', keyword) if unicodedata.category(c) != 'Mn').upper()
+                if key_norm in addr:
+                    return fletera
+            
             return "REVISIÓN MANUAL"
 
         p['RECOMENDACION'] = p.apply(motor_prioridad, axis=1)
-        p['COSTO'] = p.apply(lambda r: 0.0 if r['RECOMENDACION'] == "LOCAL" else 0.0, axis=1)
+        p['COSTO'] = p.apply(lambda r: d_price.get(next((k for k in d_flet if d_flet[k] == r['RECOMENDACION']), None), 0.0), axis=1)
         p['FECHA_HORA'] = datetime.now().strftime("%Y-%m-%d %H:%M")
         st.session_state.df_analisis = p
 
@@ -191,7 +193,7 @@ if "df_analisis" in st.session_state:
         key="editor_pro_v11"
     )
 
-    # SISTEMA DE SELLADO (TUS BOTONES Y LÓGICA)
+    # --- SISTEMA DE SELLADO ---
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:30px 0; opacity:0.3;'>", unsafe_allow_html=True)
     with st.expander(":material/settings: PANEL DE CALIBRACIÓN", expanded=True):
         col_x, col_y = st.columns(2)
@@ -207,7 +209,9 @@ if "df_analisis" in st.session_state:
     with st.container(border=True):
         pdfs = st.file_uploader("Subir Facturas PDF", type="pdf", accept_multiple_files=True)
         if pdfs and st.button("EJECUTAR ESTAMPADO DIGITAL"):
-            mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado[p_editado.columns[0]].astype(str)).to_dict()
+            # Usamos la primera columna (Factura) para el match
+            col_id_match = p_editado.columns[0]
+            mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado[col_id_match].astype(str)).to_dict()
             z_buf = io.BytesIO()
             with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
                 for pdf in pdfs:
@@ -215,6 +219,7 @@ if "df_analisis" in st.session_state:
                     if f_id:
                         zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ajuste_x, ajuste_y))
             st.download_button(":material/folder_zip: DESCARGAR ZIP SELLADO", z_buf.getvalue(), "Facturas_Digitales.zip", use_container_width=True)
+
 
 
 
