@@ -2733,34 +2733,35 @@ else:
                 else:
                     st.info("Esperando archivo de operación...", icon=":material/upload_file:")
     
-    # Convertimos tu enlace normal en un enlace de "Embed"
-    # Tu enlace original: http://googleusercontent.com/spotify.com/6
-    # El ID es: 195v6pT2tA890f5XmG8KzY
-    spotify_embed_url = "http://googleusercontent.com/spotify.com/7?utm_source=generator&theme=0"
+    # ── FOOTER FIJO CON SPOTIFY PLAYER ────────────────────────
+    st.markdown("""
+    <style>
+    .footer-player {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: #000;  /* negro puro minimal */
+        padding: 6px 0px 0px 0px;
+        display: flex;
+        justify-content: center;
+        z-index: 9999;
+    }
+    .footer-player iframe {
+        border-radius: 0px;   /* sin bordes redondos */
+    }
+    </style>
     
-    # ── FOOTER FIJO (REPRODUCTOR + BRANDING) ────────────────────────
-    st.markdown(f"""
-        <div class="footer">
-            <div style="margin-bottom: 12px; width: 100%;">
-                <iframe 
-                    src="{spotify_embed_url}" 
-                    width="100%" 
-                    height="80" 
-                    frameBorder="0" 
-                    allowfullscreen="" 
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                    style="border-radius:12px; border: none;"
-                    loading="lazy">
-                </iframe>
-            </div>
-            
-            <div style="line-height: 1.4;">
-                NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
-                <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
-                <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
-            </div>
-        </div>
+    <div class="footer-player">
+        <iframe style="border:0;" 
+            src="https://open.spotify.com/embed/playlist/37i9dQZF1DZ06evO2oVGJD"
+            width="100%" 
+            height="80" 
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+        </iframe>
+    </div>
     """, unsafe_allow_html=True)
+
 
 
 
