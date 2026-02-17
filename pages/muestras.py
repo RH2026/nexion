@@ -29,53 +29,40 @@ st.markdown(f"""
 GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
 REPO_OWNER = "RH2026"
 REPO_NAME = "nexion"
-FILE_PATH = "facturacion.csv"  # <--- ACTUALIZADO: Nuevo nombre del archivo
+FILE_PATH = "facturacion.csv"
 
-# --- 1. FUNCIONES DE DATOS Y GITHUB ---
-@st.cache_data(ttl=2) # Caché mínima para ver cambios al instante
-def obtener_matriz_github():
+# --- 1. FUNCIONES MAESTRAS ---
+@st.cache_data(ttl=2)
+def obtener_datos_github():
     url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main/{FILE_PATH}?nocache={int(time.time())}"
     try:
         m = pd.read_csv(url)
+        # Limpieza básica de columnas
         m.columns = [str(c).upper().strip() for c in m.columns]
         return m
-    except:
+    except Exception as e:
+        st.error(f"Error al leer GitHub: {e}")
         return pd.DataFrame()
 
-def guardar_en_github(df_nuevo):
+def guardar_en_github(df_final):
     if not GITHUB_TOKEN:
-        st.error("❌ Token de GitHub no configurado en Secrets.")
+        st.error("❌ Token de GitHub no configurado.")
         return
-    
-    df_actual = obtener_matriz_github()
-    
-    # Unir y asegurar que no haya duplicados por factura
-    if not df_actual.empty:
-        df_final = pd.concat([df_actual, df_nuevo]).drop_duplicates(subset=['FACTURA'], keep='last')
-    else:
-        df_final = df_nuevo
-
-    # Convertir a CSV plano para GitHub
     csv_content = df_final.to_csv(index=False)
-    
     api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-    
     res = requests.get(api_url, headers=headers)
     sha = res.json().get('sha') if res.status_code == 200 else None
-    
     payload = {
-        "message": f"Update Facturación {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        "message": f"Update Logística {datetime.now().strftime('%Y-%m-%d %H:%M')}",
         "content": base64.b64encode(csv_content.encode()).decode(),
         "sha": sha
     }
-    
-    subida = requests.put(api_url, json=payload, headers=headers)
-    if subida.status_code in [200, 201]:
-        st.success(f"✅ ¡{FILE_PATH} actualizado en GitHub!")
-        st.balloons()
+    res_put = requests.put(api_url, json=payload, headers=headers)
+    if res_put.status_code in [200, 201]:
+        st.success("✅ ¡Base de datos actualizada!")
     else:
-        st.error(f"❌ Error al subir: {subida.text}")
+        st.error(f"Error: {res_put.text}")
 
 def limpiar_texto(texto):
     if pd.isna(texto): return ""
@@ -83,7 +70,6 @@ def limpiar_texto(texto):
     texto = re.sub(r'[^A-Z0-9\s]', ' ', texto) 
     return " ".join(texto.split())
 
-# --- 2. FUNCIONES PDF ---
 def marcar_pdf_digital(pdf_file, texto_sello, x, y):
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter)
@@ -103,102 +89,120 @@ def marcar_pdf_digital(pdf_file, texto_sello, x, y):
     output.write(out_io)
     return out_io.getvalue()
 
-# --- 3. INTERFAZ ---
-st.title("🚀 NEXION HUB: CONTROL LOGÍSTICO")
-tab1, tab2 = st.tabs(["📥 CARGADOR RPA", "🧠 SMART ROUTING"])
-
-with tab1:
-    st.markdown(f"<p class='op-query-text'>PASO 1: SUBIR NUEVOS FOLIOS A GITHUB</p>", unsafe_allow_html=True)
-    up_file = st.file_uploader("Subir Excel del RPA", type=["xlsx", "csv"], label_visibility="collapsed")
+# --- 2. LOGICA DE NEGOCIO (SMART ROUTING) ---
+def ejecutar_routing(df):
+    # Buscamos columnas clave
+    col_dir = next((c for c in df.columns if 'DIRECCION' in c), None)
+    col_precio = next((c for c in df.columns if 'PRECIO' in c or 'CAJA' in c or 'COSTO' in c), None)
     
-    if up_file:
-        df_rpa = pd.read_excel(up_file) if up_file.name.endswith('.xlsx') else pd.read_csv(up_file)
-        df_rpa.columns = [str(c).strip().upper() for c in df_rpa.columns]
+    def motor(row):
+        # Si ya tiene una fletera, no la tocamos
+        if pd.notna(row.get('RECOMENDACION')) and str(row.get('RECOMENDACION')).strip() not in ["", "REVISAR"]:
+            return row['RECOMENDACION'], row.get('COSTO', 0.0)
         
-        # Identificar columna de factura
-        col_f = next((c for c in df_rpa.columns if any(x in c for x in ['FACTURA', 'DOCNUM', 'FOLIO'])), df_rpa.columns[0])
+        if not col_dir: return "ERROR DIR", 0.0
         
-        c1, c2 = st.columns(2)
-        df_rpa[col_f] = pd.to_numeric(df_rpa[col_f], errors='coerce')
-        inicio = c1.number_input("Desde Folio:", value=int(df_rpa[col_f].min() or 0))
-        fin = c2.number_input("Hasta Folio:", value=int(df_rpa[col_f].max() or 0))
+        dir_limpia = limpiar_texto(row[col_dir])
+        # Regla Local
+        if any(x in dir_limpia for x in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA", "TLAJOMULCO"]):
+            return "LOCAL", 0.0
         
-        df_filtrado = df_rpa[(df_rpa[col_f] >= inicio) & (df_rpa[col_f] <= fin)].copy()
+        # Tomamos el precio por caja que viene de la base
+        costo_val = pd.to_numeric(row.get(col_precio, 0.0), errors='coerce') if col_precio else 0.0
+        flet_val = row.get('TRANSPORTE', 'POR ASIGNAR')
         
-        df_filtrado.insert(0, "INCLUIR", True)
-        edited = st.data_editor(df_filtrado, hide_index=True, use_container_width=True)
-        
-        if st.button("💾 GUARDAR SELECCIÓN EN GITHUB"):
-            df_para_github = edited[edited["INCLUIR"] == True].drop(columns=["INCLUIR"])
-            df_para_github = df_para_github.rename(columns={col_f: "FACTURA"})
-            # Aseguramos que existan las columnas de salida para que el motor no truene
-            if 'RECOMENDACION' not in df_para_github.columns: df_para_github['RECOMENDACION'] = ""
-            if 'COSTO' not in df_para_github.columns: df_para_github['COSTO'] = 0.0
-            
-            guardar_en_github(df_para_github)
+        return flet_val, costo_val
 
-with tab2:
-    st.markdown(f"<p class='op-query-text'>PASO 2: ANÁLISIS DE FOLIOS NUEVOS</p>", unsafe_allow_html=True)
-    if st.button("🔄 EJECUTAR SMART ROUTING"):
-        matriz_db = obtener_matriz_github()
-        if not matriz_db.empty:
-            col_dir = next((c for c in matriz_db.columns if 'DIRECCION' in c), None)
-            col_precio_matriz = 'PRECIO POR CAJA' if 'PRECIO POR CAJA' in matriz_db.columns else 'COSTO'
-            
-            def motor(row):
-                # Si ya tiene una fletera asignada, no la recalculamos (mantenemos lo anterior)
-                if pd.notna(row.get('RECOMENDACION')) and str(row.get('RECOMENDACION')).strip() != "":
-                    return row['RECOMENDACION'], row.get('COSTO', 0.0)
+    df['RECOMENDACION'], df['COSTO'] = zip(*df.apply(motor, axis=1))
+    return df
 
-                if not col_dir: return "REVISAR DIR", 0.0
-                
-                dir_limpia = limpiar_texto(row[col_dir])
-                # Lógica de Local
-                if any(x in dir_limpia for x in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA"]):
-                    return "LOCAL", 0.0
-                
-                # Aquí puedes añadir más lógica de cruce de tarifas si tienes otra tabla
-                return "POR ASIGNAR", pd.to_numeric(row.get(col_precio_matriz, 0.0), errors='coerce')
+# --- 3. INTERFAZ STREAMLIT ---
+st.title("🚀 NEXION HUB: LOGÍSTICA CENTRALIZADA")
 
-            res = matriz_db.apply(motor, axis=1)
-            matriz_db['RECOMENDACION'] = [r[0] for r in res]
-            matriz_db['COSTO'] = [r[1] for r in res]
-            
-            st.session_state.df_analisis = matriz_db
-        else:
-            st.warning("No hay datos en GitHub para analizar.")
+# Botón global para refrescar datos de la nube
+if st.button("🔄 SINCRONIZAR CON GITHUB (LEER FACTURACION.CSV)"):
+    st.session_state.db_master = obtener_datos_github()
+    st.toast("Datos cargados", icon="☁️")
 
+if "db_master" in st.session_state:
+    df_m = st.session_state.db_master
+
+    # --- BLOQUE 1: S&T PREPARATION (FILTROS) ---
+    st.markdown(f"<p class='op-query-text'>FILTRADO DE FOLIOS PARA S&T DATA</p>", unsafe_allow_html=True)
+    
+    col_f = next((c for c in df_m.columns if any(x in c for x in ['FACTURA', 'FOLIO', 'DOCNUM'])), df_m.columns[0])
+    df_m[col_f] = pd.to_numeric(df_m[col_f], errors='coerce')
+    
+    c1, c2 = st.columns(2)
+    f_min = c1.number_input("Desde Folio:", value=int(df_m[col_f].min() or 0))
+    f_max = c2.number_input("Hasta Folio:", value=int(df_m[col_f].max() or 0))
+    
+    df_rango = df_m[(df_m[col_f] >= f_min) & (df_m[col_f] <= f_max)].copy()
+    df_rango.insert(0, "SELECCIONAR", True)
+    
+    st.markdown("### Selecciona los folios a procesar")
+    edit_st = st.data_editor(df_rango, hide_index=True, use_container_width=True)
+    
+    # --- BLOQUE 2: SMART ROUTING ---
+    if st.button("🚀 EJECUTAR SMART ROUTING & GENERAR ANALISIS", type="primary"):
+        df_para_ruta = edit_st[edit_st["SELECCIONAR"] == True].drop(columns=["SELECCIONAR"])
+        # Renombramos a FACTURA para consistencia
+        df_para_ruta = df_para_ruta.rename(columns={col_f: "FACTURA"})
+        
+        # Ejecutamos motor
+        st.session_state.df_analisis = ejecutar_routing(df_para_ruta)
+        st.success("Análisis generado correctamente.")
+
+    # --- BLOQUE 3: RESULTADOS Y SELLADO ---
     if "df_analisis" in st.session_state:
-        # Mostrar solo las columnas relevantes para tu logística
+        st.markdown("---")
+        st.markdown(f"<p class='op-query-text'>LOGISTICS INTELLIGENCE HUB (ANÁLISIS FINAL)</p>", unsafe_allow_html=True)
+        
         cols_log = ["FACTURA", "RECOMENDACION", "COSTO", "NOMBRE_CLIENTE", "DIRECCION", "DESTINO"]
         cols_finales = [c for c in cols_log if c in st.session_state.df_analisis.columns]
         
-        modo_edit = st.toggle("Habilitar Edición Manual")
+        modo_edit = st.toggle("Habilitar Edición Manual de Fletera/Tarifa")
+        
         p_editado = st.data_editor(
-            st.session_state.df_analisis[cols_finales], 
-            use_container_width=True, 
+            st.session_state.df_analisis[cols_finales],
+            use_container_width=True,
             hide_index=True,
-            disabled=not modo_edit
+            disabled=not modo_edit,
+            column_config={
+                "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f"),
+                "RECOMENDACION": st.column_config.TextColumn("FLETERA")
+            }
         )
         
-        if st.button("📌 FIJAR CAMBIOS Y ACTUALIZAR GITHUB"):
-            # Combinamos los cambios manuales de vuelta a la matriz principal
-            df_sync = st.session_state.df_analisis.copy()
-            for idx, row in p_editado.iterrows():
-                df_sync.loc[df_sync['FACTURA'] == row['FACTURA'], ['RECOMENDACION', 'COSTO']] = [row['RECOMENDACION'], row['COSTO']]
-            guardar_en_github(df_sync)
+        b1, b2 = st.columns(2)
+        with b1:
+            if st.button("📌 GUARDAR CAMBIOS EN GITHUB"):
+                # Sincronizamos los cambios manuales al master y subimos
+                df_sync = st.session_state.db_master.copy()
+                for _, fila in p_editado.iterrows():
+                    df_sync.loc[df_sync[col_f] == fila['FACTURA'], ['RECOMENDACION', 'COSTO']] = [fila['RECOMENDACION'], fila['COSTO']]
+                guardar_en_github(df_sync)
+        
+        with b2:
+            towrite = io.BytesIO()
+            p_editado.to_excel(towrite, index=False, engine='openpyxl')
+            st.download_button("📊 DESCARGAR EXCEL S&T", towrite.getvalue(), "ST_DATA_FINAL.xlsx")
 
-        with st.expander("🖨️ SELLADO DE PDFs"):
-            pdfs = st.file_uploader("Subir Facturas", type="pdf", accept_multiple_files=True)
-            ax = st.slider("X", 0, 600, 510); ay = st.slider("Y", 0, 800, 760)
-            if pdfs and st.button("EJECUTAR SELLADO"):
+        # --- SELLADO ---
+        with st.expander("🖨️ SISTEMA DE SELLADO DIGITAL"):
+            pdfs = st.file_uploader("Subir Facturas PDF", type="pdf", accept_multiple_files=True)
+            ax = st.slider("Posición X", 0, 600, 510); ay = st.slider("Posición Y", 0, 800, 760)
+            if pdfs and st.button("SELLAR DOCUMENTOS"):
                 mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["FACTURA"].astype(str)).to_dict()
                 z_io = io.BytesIO()
                 with zipfile.ZipFile(z_io, "a") as zf:
                     for pdf in pdfs:
                         f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
                         if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-                st.download_button("Descargar Sellados", z_io.getvalue(), "Sellado.zip")
+                st.download_button("Descargar ZIP Sellado", z_io.getvalue(), "Facturas_Selladas.zip")
+else:
+    st.info("💡 Haz clic en 'Sincronizar con GitHub' para cargar la facturación actual.")
+
 
 
 
