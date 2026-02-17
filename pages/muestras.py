@@ -22,7 +22,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. CARGA DE MATRIZ DESDE GITHUB (REFORZADA) ---
+# --- 1. CARGA DE MATRIZ DESDE GITHUB ---
 @st.cache_data
 def obtener_matriz_github():
     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv"
@@ -82,7 +82,9 @@ if uploaded_file is not None:
     try:
         df = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
-        col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower()), df.columns[0])
+        
+        # Identificar columna de Factura/Folio
+        col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower() or 'folio' in c.lower()), df.columns[0])
         
         col_left, col_right = st.columns([1, 2], gap="large")
         with col_left:
@@ -112,7 +114,6 @@ if uploaded_file is not None:
                 df_st = st.session_state.df_final_st
                 st.dataframe(df_st, use_container_width=True)
                 
-                # --- BOTONES DE DESCARGA S&T Y SMART ROUTING ---
                 sc1, sc2, sc3 = st.columns([1,1,2])
                 with sc1:
                     towrite = io.BytesIO()
@@ -123,6 +124,7 @@ if uploaded_file is not None:
                     if st.button("🚀 SMART ROUTING (CRUCE GITHUB)", type="primary"):
                         df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
                         matriz_db = obtener_matriz_github()
+                        
                         col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
                         col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
                         col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
@@ -143,8 +145,16 @@ if uploaded_file is not None:
                         res = df_log.apply(motor_v4, axis=1)
                         df_log['RECOMENDACION'] = [r[0] for r in res]
                         df_log['COSTO'] = [r[1] for r in res]
-                        df_log['FECHA_HORA'] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                        st.session_state.df_analisis = df_log
+                        
+                        # --- FILTRADO DE COLUMNAS SOLICITADAS ---
+                        # Renombrar columna de folio a "Factura" para cumplir tu lista
+                        df_log = df_log.rename(columns={col_folio: "Factura"})
+                        
+                        cols_deseadas = ["Factura", "RECOMENDACION", "COSTO", "Transporte", "Nombre_Cliente", "Nombre_Extran", "Quantity", "DIRECCION", "DESTINO"]
+                        # Solo dejamos las que existan en el dataframe
+                        cols_finales = [c for c in cols_deseadas if c in df_log.columns]
+                        
+                        st.session_state.df_analisis = df_log[cols_finales]
                         st.success("¡Motor sincronizado!")
                         st.rerun()
 
@@ -155,9 +165,11 @@ if "df_analisis" in st.session_state:
     st.markdown("---")
     st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
     
+    p = st.session_state.df_analisis
     modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
+    
     p_editado = st.data_editor(
-        st.session_state.df_analisis, use_container_width=True, hide_index=True,
+        p, use_container_width=True, hide_index=True,
         column_config={
             "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
             "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
@@ -165,7 +177,6 @@ if "df_analisis" in st.session_state:
         key="editor_final_github"
     )
 
-    # Botones de Acción Final
     ba1, ba2, ba3 = st.columns([1,1,2])
     with ba1:
         if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
@@ -182,16 +193,17 @@ if "df_analisis" in st.session_state:
             st.download_button("Descargar", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf")
         
         st.markdown("---")
-        pdfs = st.file_uploader("PDFs", type="pdf", accept_multiple_files=True)
-        if pdfs and st.button("SELLADO DIGITAL"):
-            col_id = p_editado.columns[0]
-            mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado[col_id].astype(str)).to_dict()
+        pdfs = st.file_uploader("Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+        if pdfs and st.button("EJECUTAR SELLADO DIGITAL"):
+            # Usamos "Factura" que es el nombre que fijamos arriba
+            mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
             z_io = io.BytesIO()
             with zipfile.ZipFile(z_io, "a") as zf:
                 for pdf in pdfs:
                     f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
                     if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-            st.download_button("ZIP", z_io.getvalue(), "Sellado.zip")
+            st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip")
+
 
 
 
