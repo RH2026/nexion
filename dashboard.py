@@ -2733,14 +2733,32 @@ else:
                 else:
                     st.info("Esperando archivo de operación...", icon=":material/upload_file:")
     
-    # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+    --- CONFIGURACIÓN DEL TRACK/PLAYLIST ---
+    # Tip: Puedes usar una playlist de 'Phonk' o 'Deep Focus' para el mood de logística
+    track_url = "https://open.spotify.com/embed/playlist/37i9dQZF1DX8Ueb9CidzhR?utm_source=generator&theme=0"
+    
+    # ── FOOTER FIJO CON REPRODUCTOR (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
-    <div class="footer">
-        NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
-        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
-        <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
-    </div>
+        <div class="footer">
+            <div style="margin-bottom: 10px; width: 100%;">
+                <iframe 
+                    style="border-radius:8px;" 
+                    src="{track_url}" 
+                    width="100%" 
+                    height="80" 
+                    frameBorder="0" 
+                    allowfullscreen="" 
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                    loading="lazy">
+                </iframe>
+            </div>
+            
+            NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
+            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
+            <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
+        </div>
     """, unsafe_allow_html=True)
+
 
 
 
