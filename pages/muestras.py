@@ -2183,21 +2183,11 @@ else:
                         # 3. Recargamos la app
                         st.rerun()
                 
-            # 5. HUB LOG
-            elif st.session_state.menu_main == "HUB LOG":
-                
-            Python
-            import os
-            import io
-            import zipfile
-            import pandas as pd
-            from datetime import datetime
-            from io import BytesIO
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import letter
-            from pypdf import PdfReader, PdfWriter
-            import streamlit as st
-            
+        # 5. HUB LOG
+        elif st.session_state.menu_main == "HUB LOG":               
+        
+        
+        
             # --- INICIO DEL MÓDULO UNIFICADO SMART ROUTING ---
             if st.session_state.menu_sub == "SMART ROUTING":
                 st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
@@ -2654,6 +2644,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
