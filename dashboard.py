@@ -720,11 +720,9 @@ else:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.write("Visualización de Volumen de Carga")
                     
-                # PESTAÑA 3: % PARTICIPACIÓN
+                # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_retrasos:
-                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    st.write("Visualización de Volumen de Carga")
-                    
+                                       
                     URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
                     
                     @st.cache_data
@@ -746,9 +744,7 @@ else:
                         df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
 
                         if not df_log_filtrado.empty:
-                            # --- CABECERA ---
-                            st.markdown(f"<h3>ANÁLISIS DE CARGA E INGENIERÍA LOGÍSTICA - {mes_sel}</h3>", unsafe_allow_html=True)
-                            
+                            # --- CABECERA ---                            
                             total_cajas_mes = df_log_filtrado['CAJAS'].sum()
                             df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
                             df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
@@ -2742,6 +2738,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
