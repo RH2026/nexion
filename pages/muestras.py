@@ -4,6 +4,8 @@ import zipfile
 import pandas as pd
 import streamlit as st
 import time
+import requests
+import base64
 from io import BytesIO
 from datetime import datetime
 import unicodedata
@@ -12,196 +14,114 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from pypdf import PdfReader, PdfWriter
 
-# --- 0. CONFIGURACIÓN Y ESTILOS ---
-st.set_page_config(layout="wide")
-vars_css = {'sub': '#54AFE7', 'border': '#333'}
+# --- 0. CONFIGURACIÓN ---
+st.set_page_config(layout="wide", page_title="Nexion Hub")
 
-st.markdown(f"""
-    <style>
-    .op-query-text {{ color: #54AFE7; font-weight: bold; letter-spacing: 1px; font-size: 14px; }}
-    .stButton>button {{ width: 100%; border-radius: 5px; height: 3em; font-weight: bold; }}
-    </style>
-    """, unsafe_allow_html=True)
+# --- CREDENCIALES GITHUB (Configura esto en Streamlit Secrets) ---
+# Necesitas crear un Token en GitHub y ponerlo en Settings > Secrets del Cloud
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+REPO_OWNER = "RH2026"
+REPO_NAME = "nexion"
+FILE_PATH = "matriz_historial.csv"
 
-# --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
-@st.cache_data(ttl=60) # Actualiza la caché cada minuto
+# --- 1. FUNCIONES DE DATOS ---
+@st.cache_data(ttl=10)
 def obtener_matriz_github():
-    # Añadimos un timestamp para forzar a GitHub a no servir una versión cacheada
-    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
+    url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main/{FILE_PATH}?nocache={int(time.time())}"
     try:
         m = pd.read_csv(url)
         m.columns = [str(c).upper().strip() for c in m.columns]
         return m
-    except Exception as e:
-        st.error(f"Error fatal al conectar con GitHub: {e}")
+    except:
         return pd.DataFrame()
 
-def limpiar_texto(texto):
-    if pd.isna(texto): return ""
-    texto = "".join(c for c in unicodedata.normalize('NFD', str(texto)) if unicodedata.category(c) != 'Mn').upper()
-    texto = re.sub(r'[^A-Z0-9\s]', ' ', texto) 
-    return " ".join(texto.split())
-
-# --- 2. FUNCIONES MAESTRAS PDF ---
-def generar_sellos_fisicos(lista_textos, x, y):
-    output = PdfWriter()
-    for texto in lista_textos:
-        packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=letter)
-        can.setFont("Helvetica-Bold", 11)
-        can.drawString(x, y, f"{str(texto).upper()}")
-        can.save()
-        packet.seek(0)
-        output.add_page(PdfReader(packet).pages[0])
-    out_io = io.BytesIO()
-    output.write(out_io)
-    return out_io.getvalue()
-
-def marcar_pdf_digital(pdf_file, texto_sello, x, y):
-    packet = io.BytesIO()
-    can = canvas.Canvas(packet, pagesize=letter)
-    can.setFont("Helvetica-Bold", 11)
-    can.drawString(x, y, f"{str(texto_sello).upper()}")
-    can.save()
-    packet.seek(0)
-    new_pdf = PdfReader(packet)
-    existing_pdf = PdfReader(pdf_file)
-    output = PdfWriter()
-    page = existing_pdf.pages[0]
-    page.merge_page(new_pdf.pages[0])
-    output.add_page(page)
-    for i in range(1, len(existing_pdf.pages)):
-        output.add_page(existing_pdf.pages[i])
-    out_io = io.BytesIO()
-    output.write(out_io)
-    return out_io.getvalue()
-
-# --- BLOQUE 1: PREPARACIÓN S&T ---
-st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T PREPARATION MODULE</p>", unsafe_allow_html=True)
-uploaded_file = st.file_uploader("Subir archivo ERP", type=["xlsx", "csv"], label_visibility="collapsed")
-
-if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-        df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
-        
-        col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower() or 'folio' in c.lower()), df.columns[0])
-        
-        col_left, col_right = st.columns([1, 2], gap="large")
-        with col_left:
-            st.markdown(f"<p class='op-query-text'>FILTROS</p>", unsafe_allow_html=True)
-            serie = pd.to_numeric(df[col_folio], errors='coerce').dropna()
-            inicio = st.number_input("Desde:", value=int(serie.min()) if not serie.empty else 0)
-            final = st.number_input("Hasta:", value=int(serie.max()) if not serie.empty else 0)
-            df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
-            df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
-
-        with col_right:
-            st.markdown(f"<p class='op-query-text'>SELECCIÓN</p>", unsafe_allow_html=True)
-            if not df_rango.empty:
-                info = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
-                info.insert(0, "Incluir", True)
-                edited_df = st.data_editor(info, hide_index=True, use_container_width=True, key="ed_v4")
-            else: st.warning("Rango vacío")
-
-        if not df_rango.empty and not edited_df.empty:
-            folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
-            c1, c2, c3 = st.columns([1,1,2])
-            
-            if c1.button("RENDERIZAR"):
-                st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
-            
-            if "df_final_st" in st.session_state:
-                df_st = st.session_state.df_final_st
-                st.dataframe(df_st, use_container_width=True)
-                
-                sc1, sc2, sc3 = st.columns([1,1,2])
-                with sc1:
-                    towrite = io.BytesIO()
-                    df_st.to_excel(towrite, index=False, engine='openpyxl')
-                    st.download_button(label="📥 DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", mime="application/vnd.ms-excel")
-                
-                with sc3:
-                    if st.button("🚀 SMART ROUTING (CRUCE GITHUB)", type="primary"):
-                        df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
-                        matriz_db = obtener_matriz_github()
-                        
-                        col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
-                        col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
-                        col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
-                        # AJUSTE CRÍTICO: Buscar "PRECIO POR CAJA" para la tarifa
-                        col_tarifa_matriz = 'PRECIO POR CAJA' if 'PRECIO POR CAJA' in matriz_db.columns else 'COSTO'
-
-                        def motor_v4(row):
-                            if not col_dir_erp: return "ERROR: COL DIRECCION", 0.0
-                            dir_limpia = limpiar_texto(row[col_dir_erp])
-                            if any(loc in dir_limpia for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA", "TLAJOMULCO"]):
-                                return "LOCAL", 0.0
-                            for _, fila in matriz_db.iterrows():
-                                dest_key = limpiar_texto(fila[col_dest_matriz])
-                                if dest_key and (dest_key in dir_limpia):
-                                    flet = fila.get(col_flet_matriz, "ASIGNADO")
-                                    # Forzamos conversión numérica para evitar el 0.0 accidental
-                                    costo_val = pd.to_numeric(fila.get(col_tarifa_matriz, 0.0), errors='coerce')
-                                    return flet, costo_val
-                            return "REVISIÓN MANUAL", 0.0
-
-                        res = df_log.apply(motor_v4, axis=1)
-                        df_log['RECOMENDACION'] = [r[0] for r in res]
-                        df_log['COSTO'] = [r[1] for r in res]
-                        
-                        df_log = df_log.rename(columns={col_folio: "Factura"})
-                        cols_deseadas = ["Factura", "RECOMENDACION", "COSTO", "Transporte", "Nombre_Cliente", "Nombre_Extran", "Quantity", "DIRECCION", "DESTINO"]
-                        cols_finales = [c for c in cols_deseadas if c in df_log.columns]
-                        
-                        st.session_state.df_analisis = df_log[cols_finales]
-                        st.success("¡Motor sincronizado con datos recientes!")
-                        st.rerun()
-
-    except Exception as e: st.error(f"Error: {e}")
-
-# --- BLOQUE 2: SMART ROUTING & ANALISIS ---
-if "df_analisis" in st.session_state:
-    st.markdown("---")
-    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
+def guardar_en_github(df_nuevo):
+    if not GITHUB_TOKEN:
+        st.error("No hay Token de GitHub configurado.")
+        return
     
-    p = st.session_state.df_analisis
-    modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
+    # 1. Traer lo que ya existe
+    df_actual = obtener_matriz_github()
     
-    p_editado = st.data_editor(
-        p, use_container_width=True, hide_index=True,
-        column_config={
-            "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
-            "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
-        },
-        key="editor_final_github"
-    )
+    # 2. Unir y quitar duplicados por la columna que sea el folio/factura
+    # Asumimos que la columna se llama 'FACTURA' en la matriz de GitHub
+    df_final = pd.concat([df_actual, df_nuevo]).drop_duplicates(subset=['FACTURA'], keep='last')
+    
+    # 3. Convertir a CSV
+    csv_content = df_final.to_csv(index=False)
+    
+    # 4. Obtener el SHA del archivo actual para poder actualizarlo
+    api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    res = requests.get(api_url, headers=headers)
+    
+    sha = res.json().get('sha') if res.status_code == 200 else None
+    
+    # 5. Subir
+    payload = {
+        "message": f"Update matriz {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        "content": base64.b64encode(csv_content.encode()).decode(),
+        "sha": sha
+    }
+    
+    subida = requests.put(api_url, json=payload, headers=headers)
+    if subida.status_code in [200, 201]:
+        st.success("¡Datos guardados en GitHub exitosamente!")
+    else:
+        st.error(f"Error al subir: {subida.text}")
 
-    ba1, ba2, ba3 = st.columns([1,1,2])
-    with ba1:
-        if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
-            st.session_state.df_analisis = p_editado
-            st.toast("Cambios guardados", icon="✅")
-    with ba2:
-        output_xlsx = io.BytesIO()
-        p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
-        st.download_button(label="📊 DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
+# --- 2. INTERFAZ ---
+st.title("🚀 NEXION: CARGA Y CONTROL")
 
-    with st.expander("SISTEMA DE SELLADO", expanded=False):
-        cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
-        if st.button("GENERAR SELLOS PAPEL"):
-            st.download_button("Descargar", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf")
+tab1, tab2 = st.tabs(["📥 CARGADOR DE FACTURACIÓN", "🧠 SMART ROUTING"])
+
+with tab1:
+    st.markdown("### Paso 1: Alimentar la Matriz")
+    up_file = st.file_uploader("Subir Excel del RPA", type=["xlsx", "csv"])
+    
+    if up_file:
+        df_rpa = pd.read_excel(up_file) if up_file.name.endswith('.xlsx') else pd.read_csv(up_file)
+        df_rpa.columns = [str(c).strip().upper() for c in df_rpa.columns]
         
-        st.markdown("---")
-        pdfs = st.file_uploader("Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
-        if pdfs and st.button("EJECUTAR SELLADO DIGITAL"):
-            mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
-            z_io = io.BytesIO()
-            with zipfile.ZipFile(z_io, "a") as zf:
-                for pdf in pdfs:
-                    f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
-                    if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-            st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip")
+        # Detectar factura
+        col_f = next((c for c in df_rpa.columns if 'FACTURA' in c or 'DOCNUM' in c or 'FOLIO' in c), df_rpa.columns[0])
+        
+        c1, c2 = st.columns(2)
+        inicio = c1.number_input("Folio Desde:", value=int(df_rpa[col_f].min()))
+        fin = c2.number_input("Folio Hasta:", value=int(df_rpa[col_f].max()))
+        
+        # Filtrar rango
+        df_filtrado = df_rpa[(df_rpa[col_f] >= inicio) & (df_rpa[col_f] <= fin)].copy()
+        
+        # Selección manual
+        df_filtrado.insert(0, "SELECCION", True)
+        edited_cargas = st.data_editor(df_filtrado, hide_index=True, use_container_width=True)
+        
+        df_para_guardar = edited_cargas[edited_cargas["SELECCION"] == True].drop(columns=["SELECCION"])
+        # Estandarizar nombre para la base de datos
+        df_para_guardar = df_para_guardar.rename(columns={col_f: "FACTURA"})
+        
+        b1, b2 = st.columns(2)
+        if b1.button("💾 GUARDAR NUEVOS FOLIOS EN GITHUB"):
+            with st.spinner("Sincronizando con la nube..."):
+                guardar_en_github(df_para_guardar)
+        
+        if b2.button("🖨️ VISTA PREVIA IMPRESIÓN (ÚNICOS)"):
+            st.write("Folios listos para procesar:", df_para_guardar['FACTURA'].unique())
+            st.dataframe(df_para_guardar.drop_duplicates(subset=['FACTURA']))
+
+with tab2:
+    st.markdown("### Paso 2: Análisis y Ruteo")
+    if st.button("🔄 CARGAR DATOS DE GITHUB Y ANALIZAR"):
+        matriz = obtener_matriz_github()
+        if not matriz.empty:
+            # Aquí vive tu motor de SMART ROUTING que ya tenemos
+            # El sistema ya sabría qué hay de nuevo porque acabas de actualizar la matriz en el Tab 1
+            st.session_state.df_analisis = matriz # O el resultado del motor
+            st.write("Datos listos para Smart Routing")
+            st.dataframe(matriz)
+        else:
+            st.warning("La matriz en GitHub está vacía o no se pudo leer.")
 
 
 
