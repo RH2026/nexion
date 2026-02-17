@@ -2733,34 +2733,38 @@ else:
                 else:
                     st.info("Esperando archivo de operación...", icon=":material/upload_file:")
     
-    # ── FOOTER FIJO CON SPOTIFY PLAYER ────────────────────────
+    # ── FOOTER FIJO SPOTIFY ULTRA MINI ────────────────────────
     st.markdown("""
     <style>
-    .footer-player {
+    .spotify-footer {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: #000;  /* negro puro minimal */
-        padding: 6px 0px 0px 0px;
-        display: flex;
-        justify-content: center;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 320px;          /* tamaño compacto */
+        background: transparent;
         z-index: 9999;
     }
-    .footer-player iframe {
-        border-radius: 0px;   /* sin bordes redondos */
+    
+    .spotify-footer iframe {
+        border-radius: 12px;   /* leve suavidad minimal */
     }
     </style>
     
-    <div class="footer-player">
-        <iframe style="border:0;" 
+    <div class="spotify-footer">
+        <iframe 
             src="https://open.spotify.com/embed/playlist/37i9dQZF1DZ06evO2oVGJD"
-            width="100%" 
+            width="320" 
             height="80" 
+            frameborder="0" 
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
         </iframe>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Espacio para que no tape contenido
+    st.markdown("<div style='height:100px;'></div>", unsafe_allow_html=True)
+
 
 
 
