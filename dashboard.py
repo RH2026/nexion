@@ -721,8 +721,8 @@ else:
                     st.write("Visualización de Volumen de Carga")
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
-                with tab_participación:
-                                       
+                with tab_participacion: # Asegúrate que arriba definiste: tab_kpis, tab_rastreo, tab_volumen, tab_participacion = st.tabs([...])
+                                        
                     URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
                     
                     @st.cache_data
@@ -744,7 +744,7 @@ else:
                         df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
 
                         if not df_log_filtrado.empty:
-                            # --- CABECERA ---                            
+                            # --- CABECERA ---                                           
                             total_cajas_mes = df_log_filtrado['CAJAS'].sum()
                             df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
                             df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
@@ -773,7 +773,8 @@ else:
                                 font=dict(family="Inter", size=11, color="#FFFFFF"),
                                 margin=dict(l=20, r=20, t=10, b=10), showlegend=False
                             )
-                            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+                            # Añadimos key única
+                            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_part_{mes_sel}")
     
                             # --- 5. TABLA DE AUDITORÍA ---
                             st.markdown("<p class='op-query-text' style='font-size:10px;'>AUDITORÍA DE DISTRIBUCIÓN LOGÍSTICA</p>", unsafe_allow_html=True)
@@ -787,7 +788,8 @@ else:
                                     "PORCENTAJE": st.column_config.NumberColumn("SHARE VALUE", format="%.2f%%")
                                 },
                                 use_container_width=True,
-                                hide_index=True
+                                hide_index=True,
+                                key=f"tabla_audit_{mes_sel}" # Key única
                             )
 
                             # --- 6. EXPANDER: DESGLOSE POR DESTINO CON MULTI-FILTRO ---
@@ -799,14 +801,14 @@ else:
                                     "Filtrar por uno o varios Carriers:", 
                                     options=lista_carriers,
                                     default=None,
-                                    placeholder="Selecciona paqueterías para comparar..."
+                                    placeholder="Selecciona paqueterías para comparar...",
+                                    key=f"multi_carrier_{mes_sel}" # Key única
                                 )
                                 
                                 # Aplicar filtro dinámico
                                 if carriers_seleccionados:
                                     df_dest_filtered = df_log_filtrado[df_log_filtrado['TRANSPORTE'].isin(carriers_seleccionados)].copy()
                                 else:
-                                    # Si no hay nada seleccionado, mostramos todos por defecto
                                     df_dest_filtered = df_log_filtrado.copy()
                                 
                                 # Agrupación para la tabla de rutas
@@ -825,7 +827,8 @@ else:
                                         "CAJAS": st.column_config.NumberColumn("UNITS", format="%d")
                                     },
                                     use_container_width=True,
-                                    hide_index=True
+                                    hide_index=True,
+                                    key=f"tabla_destinos_{mes_sel}" # Key única
                                 )
 
                         else:
@@ -2738,6 +2741,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
