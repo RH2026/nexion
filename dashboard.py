@@ -754,11 +754,11 @@ else:
                             c1, c2 = st.columns(2)
                             with c1:
                                 st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>VOLUMEN TOTAL (UNIT)</p>", unsafe_allow_html=True)
-                                st.markdown(f"<h2 style='text-align:center; color:#FFFFFF;'>{int(total_cajas_mes):,}</h2>", unsafe_allow_html=True)
+                                st.markdown(f"<h4 style='text-align:center; color:#FFFFFF;'>{int(total_cajas_mes):,}</h4>", unsafe_allow_html=True)
                             with c2:
                                 st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>CARRIER DOMINANTE</p>", unsafe_allow_html=True)
                                 lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
-                                st.markdown(f"<h2 style='text-align:center; color:#00FFAA;'>{lider_n}</h2>", unsafe_allow_html=True)
+                                st.markdown(f"<h4 style='text-align:center; color:#00FFAA;'>{lider_n}</h4>", unsafe_allow_html=True)
                             
                             # --- 4. GRÁFICO DE BARRAS ---
                             fig_bar = px.bar(
@@ -2741,6 +2741,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
