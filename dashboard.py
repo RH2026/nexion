@@ -721,7 +721,7 @@ else:
                     st.write("Visualización de Volumen de Carga")
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
-                with tab_% participación:
+                with tab_participación:
                                        
                     URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
                     
@@ -2738,6 +2738,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
