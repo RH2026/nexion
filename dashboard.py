@@ -2733,7 +2733,7 @@ else:
                 else:
                     st.info("Esperando archivo de operación...", icon=":material/upload_file:")
     
-    --- CONFIGURACIÓN DEL TRACK/PLAYLIST ---
+    #--- CONFIGURACIÓN DEL TRACK/PLAYLIST ---
     # Tip: Puedes usar una playlist de 'Phonk' o 'Deep Focus' para el mood de logística
     track_url = "https://open.spotify.com/embed/playlist/37i9dQZF1DX8Ueb9CidzhR?utm_source=generator&theme=0"
     
@@ -2758,6 +2758,7 @@ else:
             <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
