@@ -22,7 +22,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. CARGA DE MATRIZ DESDE GITHUB ---
+# --- 1. CARGA DE MATRIZ DESDE GITHUB (REFORZADA) ---
 @st.cache_data
 def obtener_matriz_github():
     url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv"
@@ -37,7 +37,7 @@ def obtener_matriz_github():
 def limpiar_texto(texto):
     if pd.isna(texto): return ""
     texto = "".join(c for c in unicodedata.normalize('NFD', str(texto)) if unicodedata.category(c) != 'Mn').upper()
-    texto = re.sub(r'[^A-Z0-9\s]', ' ', texto) # Corregido A-Z0-9
+    texto = re.sub(r'[^A-Z0-9\s]', ' ', texto) 
     return " ".join(texto.split())
 
 # --- 2. FUNCIONES MAESTRAS PDF ---
@@ -112,11 +112,17 @@ if uploaded_file is not None:
                 df_st = st.session_state.df_final_st
                 st.dataframe(df_st, use_container_width=True)
                 
-                with c3:
+                # --- BOTONES DE DESCARGA S&T Y SMART ROUTING ---
+                sc1, sc2, sc3 = st.columns([1,1,2])
+                with sc1:
+                    towrite = io.BytesIO()
+                    df_st.to_excel(towrite, index=False, engine='openpyxl')
+                    st.download_button(label="📥 DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", mime="application/vnd.ms-excel")
+                
+                with sc3:
                     if st.button("🚀 SMART ROUTING (CRUCE GITHUB)", type="primary"):
                         df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
                         matriz_db = obtener_matriz_github()
-                        
                         col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
                         col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
                         col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
@@ -138,25 +144,20 @@ if uploaded_file is not None:
                         df_log['RECOMENDACION'] = [r[0] for r in res]
                         df_log['COSTO'] = [r[1] for r in res]
                         df_log['FECHA_HORA'] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                        
                         st.session_state.df_analisis = df_log
-                        st.success("¡Motor sincronizado con GitHub!")
+                        st.success("¡Motor sincronizado!")
                         st.rerun()
 
     except Exception as e: st.error(f"Error: {e}")
 
-# --- BLOQUE 2: SMART ROUTING ---
+# --- BLOQUE 2: SMART ROUTING & ANALISIS ---
 if "df_analisis" in st.session_state:
     st.markdown("---")
     st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
     
-    # 1. Edición de datos
-    modo_edicion = st.toggle("MODO EDICIÓN (HABILITAR CAMBIOS MANUALES)")
-    
+    modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
     p_editado = st.data_editor(
-        st.session_state.df_analisis,
-        use_container_width=True,
-        hide_index=True,
+        st.session_state.df_analisis, use_container_width=True, hide_index=True,
         column_config={
             "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
             "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
@@ -164,35 +165,25 @@ if "df_analisis" in st.session_state:
         key="editor_final_github"
     )
 
-    # 2. Botones de Acción (Fijar y Descargar)
-    col_btn1, col_btn2, col_btn3 = st.columns([1,1,2])
-    
-    with col_btn1:
+    # Botones de Acción Final
+    ba1, ba2, ba3 = st.columns([1,1,2])
+    with ba1:
         if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
             st.session_state.df_analisis = p_editado
-            st.toast("Cambios fijados en memoria", icon="✅")
+            st.toast("Cambios guardados", icon="✅")
+    with ba2:
+        output_xlsx = io.BytesIO()
+        p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
+        st.download_button(label="📊 DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
 
-    with col_btn2:
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            p_editado.to_excel(writer, index=False, sheet_name='Analisis_Logistico')
-        st.download_button(
-            label="📊 DESCARGAR ANÁLISIS",
-            data=output.getvalue(),
-            file_name=f"Analisis_Ruteo_{datetime.now().strftime('%H%M%S')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
-
-    # 3. Sellado
-    with st.expander("SISTEMA DE SELLADO PDF", expanded=False):
-        cx, cy = st.columns(2); ax = cx.slider("Eje X", 0, 612, 510); ay = cy.slider("Eje Y", 0, 792, 760)
+    with st.expander("SISTEMA DE SELLADO", expanded=False):
+        cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
         if st.button("GENERAR SELLOS PAPEL"):
-            st.download_button("Descargar PDF de Sellos", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf")
+            st.download_button("Descargar", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf")
         
         st.markdown("---")
-        pdfs = st.file_uploader("Subir Facturas para Sellado Digital", type="pdf", accept_multiple_files=True)
-        if pdfs and st.button("EJECUTAR SELLADO DIGITAL"):
+        pdfs = st.file_uploader("PDFs", type="pdf", accept_multiple_files=True)
+        if pdfs and st.button("SELLADO DIGITAL"):
             col_id = p_editado.columns[0]
             mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado[col_id].astype(str)).to_dict()
             z_io = io.BytesIO()
@@ -200,55 +191,7 @@ if "df_analisis" in st.session_state:
                 for pdf in pdfs:
                     f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
                     if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-            st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            st.download_button("ZIP", z_io.getvalue(), "Sellado.zip")
 
 
 
