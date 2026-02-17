@@ -720,117 +720,6 @@ else:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.write("Visualización de Volumen de Carga")
                     
-                    URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
-                    
-                    @st.cache_data
-                    def load_data_logistica():
-                        try:
-                            df_l = pd.read_csv(URL_LOGISTICA, low_memory=False)
-                            df_l.columns = [c.replace('_x000D_', '').strip() for c in df_l.columns]
-                            if 'MES' in df_l.columns:
-                                df_l['MES'] = df_l['MES'].astype(str).str.upper().str.strip()
-                            df_l['CAJAS'] = pd.to_numeric(df_l['CAJAS'], errors='coerce').fillna(0)
-                            return df_l
-                        except Exception as e:
-                            st.error(f"Error de conexión: {e}")
-                            return None
-                    
-                    df_log = load_data_logistica()
-                    
-                    if df_log is not None:
-                        df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
-
-                        if not df_log_filtrado.empty:
-                            # --- CABECERA ---
-                            st.markdown(f"<h3>ANÁLISIS DE CARGA E INGENIERÍA LOGÍSTICA - {mes_sel}</h3>", unsafe_allow_html=True)
-                            
-                            total_cajas_mes = df_log_filtrado['CAJAS'].sum()
-                            df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
-                            df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
-                            df_part = df_part.sort_values(by='PORCENTAJE', ascending=True)
-                            
-                            # METRICAS
-                            c1, c2 = st.columns(2)
-                            with c1:
-                                st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>VOLUMEN TOTAL (UNIT)</p>", unsafe_allow_html=True)
-                                st.markdown(f"<h2 style='text-align:center; color:#FFFFFF;'>{int(total_cajas_mes):,}</h2>", unsafe_allow_html=True)
-                            with c2:
-                                st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>CARRIER DOMINANTE</p>", unsafe_allow_html=True)
-                                lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
-                                st.markdown(f"<h2 style='text-align:center; color:#00FFAA;'>{lider_n}</h2>", unsafe_allow_html=True)
-                            
-                            # --- 4. GRÁFICO DE BARRAS ---
-                            fig_bar = px.bar(
-                                df_part, x='PORCENTAJE', y='TRANSPORTE', orientation='h',
-                                text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
-                                template="plotly_dark", color='PORCENTAJE',
-                                color_continuous_scale=['#1a2432', '#00FFAA']
-                            )
-                            fig_bar.update_layout(
-                                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                xaxis_range=[0, df_part['PORCENTAJE'].max() * 1.2],
-                                font=dict(family="Inter", size=11, color="#FFFFFF"),
-                                margin=dict(l=20, r=20, t=10, b=10), showlegend=False
-                            )
-                            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
-    
-                            # --- 5. TABLA DE AUDITORÍA ---
-                            st.markdown("<p class='op-query-text' style='font-size:10px;'>AUDITORÍA DE DISTRIBUCIÓN LOGÍSTICA</p>", unsafe_allow_html=True)
-                            df_tabla = df_part.sort_values(by='PORCENTAJE', ascending=False)
-                            
-                            st.dataframe(
-                                df_tabla,
-                                column_config={
-                                    "TRANSPORTE": "CARRIER ID",
-                                    "CAJAS": st.column_config.NumberColumn("TOTAL UNITS", format="%d"),
-                                    "PORCENTAJE": st.column_config.NumberColumn("SHARE VALUE", format="%.2f%%")
-                                },
-                                use_container_width=True,
-                                hide_index=True
-                            )
-
-                            # --- 6. EXPANDER: DESGLOSE POR DESTINO CON MULTI-FILTRO ---
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            with st.expander("🌐 EXPLORADOR DE RUTAS Y DESTINOS"):
-                                # Filtro MULTIPLE por Carrier
-                                lista_carriers = sorted(df_log_filtrado['TRANSPORTE'].unique())
-                                carriers_seleccionados = st.multiselect(
-                                    "Filtrar por uno o varios Carriers:", 
-                                    options=lista_carriers,
-                                    default=None,
-                                    placeholder="Selecciona paqueterías para comparar..."
-                                )
-                                
-                                # Aplicar filtro dinámico
-                                if carriers_seleccionados:
-                                    df_dest_filtered = df_log_filtrado[df_log_filtrado['TRANSPORTE'].isin(carriers_seleccionados)].copy()
-                                else:
-                                    # Si no hay nada seleccionado, mostramos todos por defecto
-                                    df_dest_filtered = df_log_filtrado.copy()
-                                
-                                # Agrupación para la tabla de rutas
-                                df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO'])['CAJAS'].sum().reset_index()
-                                df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
-                                
-                                # Métrica rápida de lo seleccionado
-                                total_sel = df_dest_sum['CAJAS'].sum()
-                                st.markdown(f"<p style='color:#00FFAA; font-size:12px;'>Unidades en selección actual: {int(total_sel):,}</p>", unsafe_allow_html=True)
-
-                                st.dataframe(
-                                    df_dest_sum,
-                                    column_config={
-                                        "TRANSPORTE": "CARRIER",
-                                        "DESTINO": "CIUDAD / ESTADO",
-                                        "CAJAS": st.column_config.NumberColumn("UNITS", format="%d")
-                                    },
-                                    use_container_width=True,
-                                    hide_index=True
-                                )
-
-                        else:
-                            meses_disponibles = df_log['MES'].unique()
-                            st.warning(f"No hay datos para {mes_sel}. ")
-                            st.info(f"Meses detectados en el sistema: {list(meses_disponibles)}")
                 # PESTAÑA 3: % PARTICIPACIÓN
                 with tab_retrasos:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
@@ -2853,6 +2742,7 @@ else:
         <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
