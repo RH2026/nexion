@@ -124,120 +124,117 @@ if not df_actual.empty:
                 if subir_a_github(df_actual, sha_actual, f"Actualización Guía Folio {folio_a_editar}"):
                     st.success(f"¡Guía actualizada para el folio {folio_a_editar}!"); st.rerun()
 
-    # --- HISTORIAL Y REPORTES ESTILO EXCEL ---
+    # --- HISTORIAL Y REPORTES ---
     with st.expander("📊 VER REGISTROS Y REPORTES", expanded=False):
         
-        # Contenedor que vamos a imprimir
-        reporte_completo_html = ""
+        # 1. VISTA EN PANTALLA (Tabla limpia estilo Excel)
+        st.markdown("<h3 style='text-align: center;'>REPORTE GENERAL</h3>", unsafe_allow_html=True)
         
-        # 1. Preparación de Datos
-        df_vista = df_actual.copy()
-        df_vista["COSTO"] = pd.to_numeric(df_vista["COSTO"]).fillna(0)
-        df_vista["COSTO_GUIA"] = pd.to_numeric(df_vista["COSTO_GUIA"]).fillna(0)
+        df_display = df_actual.copy()
+        # Aseguramos que los costos sean numéricos para la vista y sumas
+        df_display["COSTO"] = pd.to_numeric(df_display["COSTO"]).fillna(0)
+        df_display["COSTO_GUIA"] = pd.to_numeric(df_display["COSTO_GUIA"]).fillna(0)
         
-        total_prod = df_vista["COSTO"].sum()
-        total_flete = df_vista["COSTO_GUIA"].sum()
+        # Mostramos la tabla en pantalla
+        st.dataframe(df_display, use_container_width=True)
+        
+        # Totales rápidos en pantalla
+        t_prod = df_display["COSTO"].sum()
+        t_flete = df_display["COSTO_GUIA"].sum()
+        st.markdown(f"**TOTAL PRODUCTO:** ${t_prod:,.2f} | **TOTAL FLETE:** ${t_flete:,.2f}")
 
-        # 2. Construcción de Filas del Reporte General
-        filas_general = ""
-        for _, row in df_vista.iterrows():
-            filas_general += f"""
+        st.divider()
+
+        # 2. GENERACIÓN DE HTML PARA IMPRESIÓN (Tu código de ejemplo adaptado)
+        # Filtramos solo lo que tiene cantidad > 0 para el reporte impreso
+        filas_html = ""
+        for _, r in df_display.iterrows():
+            # Aquí sacamos el detalle de productos sin ceros para el cuerpo del reporte
+            detalle_productos = ""
+            for p in precios.keys():
+                cant = r.get(p, 0)
+                if cant > 0:
+                    detalle_productos += f"• {cant} pza(s) {p}<br>"
+            
+            filas_html += f"""
             <tr>
-                <td style="border: 1px solid #ddd; padding: 5px;">{row['DESTINO']}</td>
-                <td style="border: 1px solid #ddd; padding: 5px;">{row['CONTACTO']}</td>
-                <td style="border: 1px solid #ddd; padding: 5px;">{row['SOLICITO']}</td>
-                <td style="border: 1px solid #ddd; padding: 5px;">{row['PAQUETERIA']}</td>
-                <td style="border: 1px solid #ddd; padding: 5px; text-align: center;">{row['CANTIDAD']}</td>
-                <td style="border: 1px solid #ddd; padding: 5px; text-align: right;">${row['COSTO']:,.2f}</td>
-                <td style="border: 1px solid #ddd; padding: 5px;">{row['PAQUETERIA_NOMBRE']}</td>
-                <td style="border: 1px solid #ddd; padding: 5px;">{row['NUMERO_GUIA']}</td>
-                <td style="border: 1px solid #ddd; padding: 5px; text-align: right;">${row['COSTO_GUIA']:,.2f}</td>
+                <td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td>
+                <td style='border:1px solid black;padding:8px;'>{r['NOMBRE DEL HOTEL']}<br><small>{r['DESTINO']}</small></td>
+                <td style='border:1px solid black;padding:8px;'>{detalle_productos}</td>
+                <td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO']:,.2f}</td>
+                <td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td>
             </tr>
             """
 
-        # 3. Construcción de Filas del Acumulado por Agente
-        resumen_agente = df_vista.groupby("SOLICITO").agg({"COSTO_GUIA": "sum", "COSTO": "sum"}).reset_index()
-        filas_agente = ""
-        for _, row in resumen_agente.iterrows():
-            total_agente = row['COSTO_GUIA'] + row['COSTO']
-            filas_agente += f"""
-            <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #eee;">{row['SOLICITO']}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$ {row['COSTO_GUIA']:,.2f}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$ {row['COSTO']:,.2f}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;"><b>$ {total_agente:,.2f}</b></td>
-            </tr>
-            """
-
-        # 4. El Reporte Final (Diseño igual a tu imagen)
-        reporte_final_html = f"""
-        <div id="printableArea" style="font-family: Arial, sans-serif; color: black; background-color: white; padding: 20px;">
-            <h4 style="text-align: center; margin-bottom: 20px;">REPORTE GENERAL</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+        form_pt_html = f"""
+        <html>
+        <head>
+            <style>
+                @page {{ size: auto; margin: 0mm; }}
+                @media print {{
+                    body {{ margin: 0; padding: 15mm; }}
+                    .no-print {{ display: none !important; }}
+                }}
+                body {{ font-family: sans-serif; color: black; background: white; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }}
+                th {{ background: #eee; border: 1px solid black; padding: 8px; text-align: left; }}
+                .signature-section {{ margin-top: 50px; display: flex; justify-content: space-between; text-align: center; font-size: 10px; }}
+                .sig-box {{ width: 30%; border-top: 1px solid black; padding-top: 5px; }}
+            </style>
+        </head>
+        <body>
+            <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:20px;">
+                <div>
+                    <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
+                    <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                </div>
+                <div style="text-align:right; font-size:12px;">
+                    <b>REPORTE GENERAL DE MUESTRAS</b><br>
+                    <b>FECHA:</b> {date.today()}
+                </div>
+            </div>
+            <table>
                 <thead>
-                    <tr style="background-color: #f9f9f9;">
-                        <th style="border: 1px solid #000; padding: 5px;">DESTINO</th>
-                        <th style="border: 1px solid #000; padding: 5px;">CONTACTO</th>
-                        <th style="border: 1px solid #000; padding: 5px;">SOLICITO</th>
-                        <th style="border: 1px solid #000; padding: 5px;">PAQUETERIA</th>
-                        <th style="border: 1px solid #000; padding: 5px;">CANT</th>
-                        <th style="border: 1px solid #000; padding: 5px;">COSTO</th>
-                        <th style="border: 1px solid #000; padding: 5px;">PAQ. NOMBRE</th>
-                        <th style="border: 1px solid #000; padding: 5px;">GUIA</th>
-                        <th style="border: 1px solid #000; padding: 5px;">FLETE</th>
+                    <tr>
+                        <th>FOLIO</th>
+                        <th>DESTINO / HOTEL</th>
+                        <th>DETALLE PRODUCTOS</th>
+                        <th>COSTO</th>
+                        <th>FLETE</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {filas_general}
+                    {filas_html}
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="5" style="text-align: right; padding: 10px;"><b>TOTALES:</b></td>
-                        <td style="text-align: right; border-top: 2px solid #000;"><b>$ {total_prod:,.2f}</b></td>
-                        <td colspan="2"></td>
-                        <td style="text-align: right; border-top: 2px solid #000;"><b>$ {total_flete:,.2f}</b></td>
-                    </tr>
-                </tfoot>
             </table>
-
-            <div style="margin-top: 50px;">
-                <h4 style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 5px;">ACUMULADO POR AGENTE</h4>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
-                    <tr style="text-align: left;">
-                        <th style="padding: 8px;">SOLICITANTE</th>
-                        <th style="padding: 8px; text-align: right;">FLETE</th>
-                        <th style="padding: 8px; text-align: right;">PRODUCTO</th>
-                        <th style="padding: 8px; text-align: right;">TOTAL</th>
-                    </tr>
-                    {filas_agente}
-                </table>
+            <div style="text-align:right; margin-top:10px; font-size:12px;">
+                <b>TOTAL PRODUCTOS: ${t_prod:,.2f}</b><br>
+                <b>TOTAL FLETES: ${t_flete:,.2f}</b>
             </div>
-        </div>
+            <div class="signature-section">
+                <div class="sig-box"><b>ENTREGÓ</b><br>Analista de Inventario</div>
+                <div class="sig-box"><b>AUTORIZACIÓN</b><br>Dir. Operaciones</div>
+                <div class="sig-box"><b>RECIBIÓ</b><br>Logística / Solicitante</div>
+            </div>
+        </body>
+        </html>
         """
 
-        # Mostrar el reporte en la app
-        st.markdown(reporte_final_html, unsafe_allow_html=True)
-
-        # Botones de Acción
-        col_btn1, col_btn2 = st.columns(2)
+        # 3. BOTONES DE ACCIÓN
+        c1, c2 = st.columns(2)
+        with c1:
+            # Botón de impresión usando components.html como en tu ejemplo
+            if st.button("🖨️ IMPRIMIR REPORTE PT", type="primary", use_container_width=True):
+                import streamlit.components.v1 as components
+                components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
         
-        with col_btn1:
-            if st.button("🖨️ IMPRIMIR REPORTE", use_container_width=True):
-                st.components.v1.html(f"""
-                    <script>
-                        var printContents = document.getElementById('printableArea').innerHTML;
-                        var originalContents = document.body.innerHTML;
-                        document.body.innerHTML = '<html><head><title>Reporte Nexión</title></head><body>' + printContents + '</body></html>';
-                        window.print();
-                        window.location.reload();
-                    </script>
-                """, height=0)
-
-        with col_btn2:
+        with c2:
+            # Botón de Excel
             output = BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_actual.to_excel(writer, index=False)
-            st.download_button("📥 DESCARGAR EXCEL", output.getvalue(), f"Matriz_{date.today()}.xlsx", use_container_width=True)
+            st.download_button("📥 DESCARGAR EXCEL", output.getvalue(), f"Matriz_Muestras_{date.today()}.xlsx", use_container_width=True)
+
 
 
 
