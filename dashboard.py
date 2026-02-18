@@ -2405,7 +2405,7 @@ else:
                         # Botones de sellado organizados
                         s1, s2 = st.columns(2)
                         with s1:
-                            if st.button("material/print: GENERAR SELLOS PAPEL", use_container_width=True):
+                            if st.button(":material/print: GENERAR SELLOS PAPEL", use_container_width=True):
                                 st.download_button(":material/picture_as_pdf: DESCARGAR PDF", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf", use_container_width=True)
                         
                         st.markdown("---")
@@ -2745,6 +2745,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
