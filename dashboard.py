@@ -462,7 +462,7 @@ else:
                         
                         # SEGUIMIENTO
                         with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                            for s in ["TRK", "GANTT", "QUEJAS"]:
+                            for s in ["ALERTAS", "GANTT", "QUEJAS"]:
                                 sub_label = f"» {s}" if st.session_state.menu_sub == s else s
                                 if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
                                     st.session_state.menu_main = "SEGUIMIENTO"
@@ -864,7 +864,7 @@ else:
             hoy_gdl = datetime.now(tz_gdl).date()
     
             # ── C. NAVEGACIÓN DE SUB-MENÚ TRK ──
-            if st.session_state.menu_sub == "TRK":
+            if st.session_state.menu_sub == "ALERTAS":
                 # 1. FILTROS DE CABECERA
                 with st.container():
                     st.write("")
@@ -2743,6 +2743,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
