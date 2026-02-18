@@ -726,6 +726,78 @@ else:
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.write("Visualización de Volumen de Carga")
+                    # --- 1. FUNCIÓN PARA CARGAR LA MATRIZ DE DASHBOARD (.CSV) ---
+                    @st.cache_data(ttl=60)
+                    def obtener_matriz_dashboard():
+                        url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?nocache={int(time.time())}"
+                        try:
+                            m = pd.read_csv(url)
+                            m.columns = [str(c).upper().strip() for c in m.columns]
+                            return m
+                        except:
+                            return pd.DataFrame()
+                    
+                    # --- 2. BLOQUE DE BÚSQUEDA ---
+                    st.markdown("---")
+                    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>CONSULTA DE EXPEDIENTES</p>", unsafe_allow_html=True)
+                    
+                    query = st.text_input("🔍 Buscar en Facturación Moreno:", placeholder="Factura, Cliente, Pedido...").strip().upper()
+                    
+                    if query:
+                        # Cargamos el Excel de facturación desde GitHub
+                        # Nota: Si lo guardamos como .xlsx en GitHub, necesitamos usar la URL 'raw' correcta
+                        url_fact = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/facturacion_moreno.xlsx?nocache={int(time.time())}"
+                        
+                        try:
+                            # Intentamos leer como Excel
+                            df_f = pd.read_excel(url_fact)
+                            df_f.columns = [str(c).strip() for c in df_f.columns]
+                            
+                            # Búsqueda universal
+                            mask = df_f.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
+                            resultados = df_f[mask]
+                    
+                            if not resultados.empty:
+                                st.markdown("### 📄 Información General")
+                                fila_principal = resultados.iloc[0]
+                                
+                                # Métricas rápidas
+                                c1, c2, c3, c4 = st.columns(4)
+                                c1.metric("Factura", fila_principal.get('Factura', 'N/A'))
+                                c2.metric("Cliente", str(fila_principal.get('Nombre_Cliente', 'N/A'))[:15])
+                                c3.metric("Total", f"${fila_principal.get('Total$', 0.0):,.2f}")
+                                c4.metric("Ciudad", fila_principal.get('Cuidad', 'N/A'))
+                    
+                                # Resumen de ubicación (Una sola línea)
+                                cols_resumen = ["Fecha_Conta", "Pedido", "Nombre_Cliente", "DIRECCION", "Cuidad", "CP"]
+                                st.table(resultados[[c for c in cols_resumen if c in resultados.columns]].head(1))
+                    
+                                # --- DETALLE DE PARTIDAS (Todas las líneas de la factura) ---
+                                st.markdown("### 📦 Detalle de Partidas (Códigos)")
+                                
+                                # Mostramos Quantity, Codigo, FrgnName de todas las filas encontradas
+                                cols_detalle = ["Codigo", "FrgnName", "Quantity", "UM"]
+                                df_detalle = resultados[[c for c in cols_detalle if c in resultados.columns]].copy()
+                                
+                                # Cruce con Matriz_Excel_Dashboard.csv para ver si hay Guía/Estatus
+                                matriz_dash = obtener_matriz_dashboard()
+                                if not matriz_dash.empty and 'FACTURA' in matriz_dash.columns:
+                                    fact_val = str(fila_principal.get('Factura', ''))
+                                    info_extra = matriz_dash[matriz_dash['FACTURA'].astype(str) == fact_val]
+                                    
+                                    if not info_extra.empty:
+                                        # Si tu matriz de dashboard tiene columna de guía, aquí la mostramos
+                                        guia = info_extra.iloc[0].get('GUIA', 'SIN GUÍA')
+                                        st.info(f"🚚 **Información Logística:** Guía: {guia} | Estatus: {info_extra.iloc[0].get('ESTATUS', 'N/A')}")
+                    
+                                st.dataframe(df_detalle, use_container_width=True, hide_index=True)
+                                
+                            else:
+                                st.warning("No se encontró ninguna coincidencia.")
+                                
+                        except Exception as e:
+                            st.error(f"Error al conectar con la base de datos: {e}")
+                
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_participacion: # Asegúrate que arriba definiste: tab_kpis, tab_rastreo, tab_volumen, tab_participacion = st.tabs([...])
@@ -3054,6 +3126,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
