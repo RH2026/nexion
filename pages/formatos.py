@@ -126,73 +126,122 @@ if not df_actual.empty:
 
     # --- HISTORIAL, REPORTE Y EXCEL ---
     with st.expander("📊 VER REGISTROS Y REPORTES", expanded=False):
-        tab1, tab2 = st.tabs(["📄 Tabla General", "📈 Reporte de Gastos"])
+        tab1, tab2 = st.tabs(["📄 Tabla General", "📈 Reporte de Gastos e Impresión"])
         
         with tab1:
             st.dataframe(df_actual, use_container_width=True)
         
         with tab2:
-            st.subheader("Resumen de Gastos por Solicitante")
+            st.subheader("💰 Resumen Consolidado por Solicitante")
             
-            # Aseguramos que el costo de guía sea numérico
+            # Aseguramos datos numéricos
             df_actual["COSTO_GUIA"] = pd.to_numeric(df_actual["COSTO_GUIA"]).fillna(0)
+            df_actual["COSTO"] = pd.to_numeric(df_actual["COSTO"]).fillna(0)
             
-            # Agrupamos por Solicitante
-            reporte = df_actual.groupby("SOLICITO").agg({
+            # Agrupamos para el resumen superior
+            reporte_sol = df_actual.groupby("SOLICITO").agg({
                 "FOLIO": "count",
                 "COSTO": "sum",
                 "COSTO_GUIA": "sum"
-            }).rename(columns={"FOLIO": "Total Muestras", "COSTO": "Costo Productos", "COSTO_GUIA": "Gasto Envío"})
+            }).rename(columns={"FOLIO": "Muestras", "COSTO": "Costo Prod.", "COSTO_GUIA": "Flete"})
             
-            reporte["Total Inversión"] = reporte["Costo Productos"] + reporte["Gasto Envío"]
-            
-            # Formato de dinero para la tabla
-            st.table(reporte.style.format("${:,.2f}", subset=["Costo Productos", "Gasto Envío", "Total Inversión"]))
+            reporte_sol["Total"] = reporte_sol["Costo Prod."] + reporte_sol["Flete"]
+            st.table(reporte_sol.style.format("${:,.2f}", subset=["Costo Prod.", "Flete", "Total"]))
             
             st.divider()
-            st.subheader("Detalle de Productos (Sin Ceros)")
             
-            # Buscador por Folio para "Imprimir" reporte individual
-            folio_sel = st.selectbox("Selecciona un Folio para ver detalle de impresión:", df_actual["FOLIO"].unique())
+            # --- SECCIÓN DE IMPRESIÓN DETALLADA ---
+            st.subheader("🖨️ Generador de Reporte Individual")
+            folio_sel = st.selectbox("Busca el Folio para imprimir detalle:", df_actual["FOLIO"].unique())
             
             if folio_sel:
                 datos_f = df_actual[df_actual["FOLIO"] == folio_sel].iloc[0]
                 
-                # Diseño tipo Reporte
-                st.markdown(f"""
-                <div style="border:1px solid #ddd; padding:20px; border-radius:10px; background-color: #f9f9f9;">
-                    <h2 style='text-align: center;'>REPORTE DE SALIDA - FOLIO {folio_sel}</h2>
-                    <p><b>Hotel:</b> {datos_f['NOMBRE DEL HOTEL']} | <b>Solicitó:</b> {datos_f['SOLICITO']}</p>
-                    <p><b>Fecha:</b> {datos_f['FECHA']} | <b>Destino:</b> {datos_f['DESTINO']}</p>
-                    <hr>
-                    <h4>Productos Enviados:</h4>
-                    <ul>
-                """, unsafe_allow_html=True)
-                
-                # Solo mostrar productos con cantidad > 0
+                # Construcción del HTML para el reporte (Sin ceros)
+                lista_productos_html = ""
                 for p in precios.keys():
                     cant = datos_f.get(p, 0)
                     if cant > 0:
-                        st.write(f"✅ {cant} pza(s) - {p}")
+                        lista_productos_html += f"<li><b>{cant} pza(s)</b> - {p}</li>"
                 
-                st.markdown(f"""
-                    </ul>
-                    <hr>
-                    <p><b>Costo Productos:</b> ${datos_f['COSTO']:,.2f}</p>
-                    <p><b>Paquetería:</b> {datos_f['PAQUETERIA_NOMBRE']} | <b>Guía:</b> {datos_f['NUMERO_GUIA']}</p>
-                    <p><b>Costo Envío:</b> ${datos_f['COSTO_GUIA']:,.2f}</p>
-                    <h3 style='color: #2e7d32;'>Gasto Total: ${float(datos_f['COSTO']) + float(datos_f['COSTO_GUIA']):,.2f}</h3>
+                total_folio = float(datos_f['COSTO']) + float(datos_f['COSTO_GUIA'])
+                
+                # El "Papel" del reporte
+                reporte_html = f"""
+                <div id="printableArea" style="border: 2px solid #000; padding: 30px; font-family: Arial, sans-serif; color: black; background-color: white;">
+                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px;">
+                        <h1 style="margin: 0;">NEXIÓN - REPORTE DE SALIDA</h1>
+                        <h3 style="margin: 5px;">FOLIO: {folio_sel}</h3>
+                    </div>
+                    
+                    <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+                        <div>
+                            <p><b>FECHA:</b> {datos_f['FECHA']}</p>
+                            <p><b>HOTEL:</b> {datos_f['NOMBRE DEL HOTEL']}</p>
+                            <p><b>DESTINO:</b> {datos_f['DESTINO']}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p><b>SOLICITANTE:</b> {datos_f['SOLICITO']}</p>
+                            <p><b>CONTACTO:</b> {datos_f['CONTACTO']}</p>
+                            <p><b>ENVÍO POR:</b> {datos_f['PAQUETERIA']}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; border: 1px solid #ccc; padding: 15px;">
+                        <h4 style="margin-top: 0; border-bottom: 1px solid #ccc;">DETALLE DE PRODUCTOS:</h4>
+                        <ul style="list-style-type: none; padding-left: 0;">
+                            {lista_productos_html}
+                        </ul>
+                    </div>
+                    
+                    <div style="margin-top: 20px; background-color: #f2f2f2; padding: 15px; border-radius: 5px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td><b>TOTAL COSTO PRODUCTOS:</b></td>
+                                <td style="text-align: right;">${float(datos_f['COSTO']):,.2f}</td>
+                            </tr>
+                            <tr>
+                                <td><b>COSTO DE FLETE ({datos_f['PAQUETERIA_NOMBRE']}):</b></td>
+                                <td style="text-align: right;">${float(datos_f['COSTO_GUIA']):,.2f}</td>
+                            </tr>
+                            <tr style="font-size: 1.2em; border-top: 2px solid #000;">
+                                <td><b>TOTAL GENERAL DEL ENVÍO:</b></td>
+                                <td style="text-align: right;"><b>${total_folio:,.2f}</b></td>
+                            </tr>
+                        </table>
+                        <p style="margin-top: 10px; font-size: 0.8em;"><b>GUÍA:</b> {datos_f['NUMERO_GUIA'] if datos_f['NUMERO_GUIA'] else 'PENDIENTE'}</p>
+                    </div>
+                    
+                    <div style="margin-top: 30px; text-align: center; font-style: italic;">
+                        <p>Nexión - Sistema de Control de Muestras 2026</p>
+                    </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
                 
-                st.info("💡 Para imprimir este reporte, presiona **Ctrl + P** en tu teclado.")
+                # Mostrar el reporte en pantalla
+                st.markdown(reporte_html, unsafe_allow_html=True)
+                
+                # Botón con truco para imprimir
+                st.write("")
+                if st.button("🖨️ ABRIR PANEL DE IMPRESIÓN", use_container_width=True):
+                    # Inyectamos JS para imprimir solo el área del reporte
+                    st.components.v1.html(f"""
+                        <script>
+                            var printContents = document.getElementById('printableArea').innerHTML;
+                            var originalContents = document.body.innerHTML;
+                            document.body.innerHTML = printContents;
+                            window.print();
+                            document.body.innerHTML = originalContents;
+                            window.location.reload();
+                        </script>
+                    """, height=0)
 
         st.write("---")
-        # Botón de descarga de siempre
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_actual.to_excel(writer, index=False)
         st.download_button("📥 DESCARGAR MATRIZ COMPLETA (EXCEL)", output.getvalue(), f"Matriz_{date.today()}.xlsx", use_container_width=True)
+
 
 
 
