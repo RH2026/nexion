@@ -2247,8 +2247,9 @@ else:
                 st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
                 
                 # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
-                @st.cache_data(ttl=60)
+                @st.cache_data(ttl=60) # Actualiza la caché cada minuto
                 def obtener_matriz_github():
+                    # Añadimos un timestamp para forzar a GitHub a no servir una versión cacheada
                     url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
                     try:
                         m = pd.read_csv(url)
@@ -2329,24 +2330,23 @@ else:
                         if not df_rango.empty and not edited_df.empty:
                             folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
                             
-                            # --- SECCIÓN DE RENDERIZADO ---
+                            # --- SECCIÓN DE BOTONES DE RENDER ---
                             st.markdown("---")
-                            if st.button("🚀 RENDERIZAR TABLA DE DATOS", use_container_width=True):
+                            if st.button("RENDERIZAR TABLA", use_container_width=True):
                                 st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
                             
                             if "df_final_st" in st.session_state:
                                 df_st = st.session_state.df_final_st
                                 st.dataframe(df_st, use_container_width=True)
                                 
-                                # --- BOTONES GRANDES (DESCARGAR Y SMART ROUTING) ---
                                 sc1, sc2 = st.columns(2)
                                 with sc1:
                                     towrite = io.BytesIO()
                                     df_st.to_excel(towrite, index=False, engine='openpyxl')
-                                    st.download_button(label="📥 DESCARGAR EXCEL S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
+                                    st.download_button(label="📥 DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
                                 
                                 with sc2:
-                                    if st.button("⚡ EJECUTAR SMART ROUTING", type="primary", use_container_width=True):
+                                    if st.button("🚀 SMART ROUTING (CRUCE GITHUB)", type="primary", use_container_width=True):
                                         df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
                                         matriz_db = obtener_matriz_github()
                                         
@@ -2377,6 +2377,7 @@ else:
                                         cols_finales = [c for c in cols_deseadas if c in df_log.columns]
                                         
                                         st.session_state.df_analisis = df_log[cols_finales]
+                                        st.success("¡Motor sincronizado con datos recientes!")
                                         st.rerun()
                 
                     except Exception as e: st.error(f"Error: {e}")
@@ -2387,7 +2388,7 @@ else:
                     st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
                     
                     p = st.session_state.df_analisis
-                    modo_edicion = st.toggle("🔓 HABILITAR EDICIÓN MANUAL DE TARIFAS Y FLETERAS")
+                    modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
                     
                     p_editado = st.data_editor(
                         p, use_container_width=True, hide_index=True,
@@ -2398,48 +2399,36 @@ else:
                         key="editor_final_github"
                     )
                 
-                    # BOTONES DE ACCIÓN DE ANÁLISIS
                     ba1, ba2 = st.columns(2)
                     with ba1:
-                        if st.button("📌 GUARDAR CAMBIOS", use_container_width=True):
+                        if st.button("📌 FIJAR CAMBIOS", use_container_width=True):
                             st.session_state.df_analisis = p_editado
                             st.toast("Cambios guardados", icon="✅")
                     with ba2:
                         output_xlsx = io.BytesIO()
                         p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
-                        st.download_button(label="📊 DESCARGAR ANÁLISIS FINAL", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
+                        st.download_button(label="📊 DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
                 
-                    # BLOQUE DE SELLADO
-                    with st.expander("🛠️ SISTEMA DE SELLADO Y MOTOR", expanded=False):
-                        # Sellado de papel
-                        st.markdown("### Sellado Papel")
-                        cx, cy = st.columns(2); ax = cx.slider("Eje X", 0, 612, 510); ay = cy.slider("Eje Y", 0, 792, 760)
+                    with st.expander("SISTEMA DE SELLADO", expanded=False):
+                        cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
                         
-                        pdf_sellos_bytes = generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay)
-                        st.download_button("📥 DESCARGAR SELLOS PARA IMPRIMIR", pdf_sellos_bytes, "Sellos.pdf", use_container_width=True)
+                        # Botones de sellado organizados
+                        s1, s2 = st.columns(2)
+                        with s1:
+                            if st.button("GENERAR SELLOS PAPEL", use_container_width=True):
+                                st.download_button("📥 DESCARGAR PDF", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf", use_container_width=True)
                         
                         st.markdown("---")
-                        # Sellado Digital
-                        st.markdown("### Sellado Digital")
-                        pdfs = st.file_uploader("Arrastra las Facturas en PDF", type="pdf", accept_multiple_files=True)
+                        pdfs = st.file_uploader("Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
                         if pdfs:
-                            if st.button("🎨 APLICAR SELLOS DIGITALES", use_container_width=True):
+                            if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
                                 mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
                                 z_io = io.BytesIO()
                                 with zipfile.ZipFile(z_io, "a") as zf:
                                     for pdf in pdfs:
                                         f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
                                         if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-                                st.download_button("📦 DESCARGAR PAQUETE ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
-                        
-                        st.markdown("---")
-                        # Editor de matriz (el que te faltaba)
-                        st.markdown("### Configuración del Motor")
-                        matriz_m = obtener_matriz_github()
-                        if not matriz_m.empty:
-                            matriz_edit = st.data_editor(matriz_m, num_rows="dynamic", use_container_width=True, key="matriz_editor_final")
-                            csv_data = matriz_edit.to_csv(index=False).encode('utf-8-sig')
-                            st.download_button("💾 EXPORTAR MATRIZ PARA GITHUB", csv_data, "matriz_historial.csv", "text/csv", use_container_width=True)
+                                st.download_button("📦 DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
 
     
             elif st.session_state.menu_sub == "DATA MANAGEMENT":
@@ -2766,6 +2755,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
