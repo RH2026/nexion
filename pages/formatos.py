@@ -5,14 +5,15 @@ import base64
 from datetime import date
 from io import BytesIO
 
-# --- CONFIGURACIÓN Y PRECIOS ---
-st.set_page_config(page_title="Captura de Muestras Nexión", layout="wide")
+# --- CONFIGURACIÓN ---
+st.set_page_config(page_title="Nexión - Muestras", layout="wide")
 
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
 GITHUB_PATH = "muestras.csv"
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
 
+# Diccionario de precios (Simplificado para el código)
 precios = {
     "Accesorios Ecologicos": 47.85, "Accesorios Lavarino": 47.85, "Dispensador Almond": 218.33,
     "Dispensador Biogena": 216.00, "Dispensador Cava": 230.58, "Dispensador Persa": 275.00,
@@ -23,127 +24,95 @@ precios = {
     "Soporte dob INOX": 679.00, "Soporte Ind INOX": 608.00
 }
 
-# --- FUNCIONES DE GITHUB ---
+# --- FUNCIONES ---
 def obtener_datos_github():
-    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    r = requests.get(url, headers=headers)
-    if r.status_code == 200:
-        content = r.json()
-        df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
-        return df, content['sha']
+    try:
+        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+        r = requests.get(url, headers=headers)
+        if r.status_code == 200:
+            content = r.json()
+            df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+            return df, content['sha']
+    except:
+        pass
     return pd.DataFrame(), None
 
-def actualizar_github(df_final, sha, mensaje):
+def subir_a_github(df, sha, msg):
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    csv_string = df_final.to_csv(index=False)
-    payload = {
-        "message": mensaje,
-        "content": base64.b64encode(csv_string.encode()).decode(),
-        "sha": sha
-    }
-    r_put = requests.put(url, json=payload, headers=headers)
-    return r_put.status_code == 200
+    csv_string = df.to_csv(index=False)
+    payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
+    return requests.put(url, json=payload, headers=headers).status_code == 200
 
-# --- LÓGICA DE FOLIO AUTOMÁTICO ---
+# --- LÓGICA DE FOLIO ---
 df_actual, sha_actual = obtener_datos_github()
+nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
 
-if not df_actual.empty and "FOLIO" in df_actual.columns:
-    try:
-        # Intentamos obtener el último número y sumamos 1
-        ultimo_folio = pd.to_numeric(df_actual["FOLIO"]).max()
-        nuevo_folio = int(ultimo_folio) + 1
-    except:
-        nuevo_folio = 1
-else:
-    nuevo_folio = 1
+# --- INTERFAZ ---
+st.title("📦 Captura de Muestras Nexión")
 
-# --- INTERFAZ DE USUARIO ---
-st.title("📋 Formulario de Muestras - Nexión")
-
-# Función para limpiar el formulario reiniciando el session_state
-def limpiar_formulario():
-    for key in st.session_state.keys():
-        if key.startswith("input_") or key in ["hotel", "destino", "contacto", "solicito"]:
-            st.session_state[key] = 0 if key.startswith("input_") else ""
-    st.rerun()
-
-with st.container():
+# Usamos un st.form para agrupar todo y permitir un botón de reset nativo
+with st.form("form_muestras", clear_on_submit=True):
     col1, col2, col3 = st.columns(3)
-    # Folio deshabilitado porque es automático
-    folio = col1.text_input("FOLIO (Automático)", value=str(nuevo_folio), disabled=True)
-    fecha = col1.date_input("FECHA", value=date.today())
-    hotel = col2.text_input("NOMBRE DEL HOTEL", key="hotel")
-    destino = col2.text_input("DESTINO (CIUDAD)", key="destino")
-    contacto = col3.text_input("CONTACTO", key="contacto")
-    solicito = col3.text_input("SOLICITÓ", key="solicito")
-    paqueteria = st.selectbox("FORMA DE ENVÍO", ["PAQUETERIA", "ENTREGA DIRECTA", "OTRO"])
+    f_folio = col1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
+    f_fecha = col1.date_input("FECHA", value=date.today())
+    f_hotel = col2.text_input("NOMBRE DEL HOTEL")
+    f_destino = col2.text_input("DESTINO")
+    f_contacto = col3.text_input("CONTACTO")
+    f_solicito = col3.text_input("SOLICITÓ")
+    f_paqueteria = st.selectbox("FORMA DE ENVÍO", ["PAQUETERIA", "ENTREGA DIRECTA", "OTRO"])
 
-st.divider()
+    st.divider()
+    
+    # SIMPLIFICACIÓN: Selección múltiple para no llenar la pantalla
+    st.subheader("Selección de Productos")
+    seleccionados = st.multiselect("¿Qué productos incluye esta muestra?", list(precios.keys()))
+    
+    cantidades = {}
+    if seleccionados:
+        cols = st.columns(3)
+        for i, p in enumerate(seleccionados):
+            with cols[i % 3]:
+                cantidades[p] = st.number_input(f"Cantidad: {p}", min_value=1, step=1)
+    
+    # Llenar con 0 los no seleccionados para la base de datos
+    for p in precios.keys():
+        if p not in cantidades:
+            cantidades[p] = 0
 
-st.subheader("Cantidades por Producto")
-cantidades = {}
-cols = st.columns(3)
-items = list(precios.keys())
+    enviar = st.form_submit_button("🚀 GUARDAR REGISTRO")
 
-for i, prod in enumerate(items):
-    with cols[i % 3]:
-        cantidades[prod] = st.number_input(f"{prod}", min_value=0, step=1, key=f"input_{prod}")
-
-# --- CÁLCULOS ---
-total_piezas = sum(cantidades.values())
-costo_total = sum(cantidades[p] * precios[p] for p in items)
-
-st.sidebar.header("Resumen del Pedido")
-st.sidebar.metric("Total Piezas", total_piezas)
-st.sidebar.metric("Costo Total", f"${costo_total:,.2f}")
-
-# --- ACCIONES ---
-st.write("### Acciones de Registro")
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    if st.button("🚀 GUARDAR EN MATRIZ"):
-        if not hotel:
-            st.error("Por favor escribe el Nombre del Hotel.")
-        else:
-            registro = {
-                "FOLIO": nuevo_folio, "FECHA": fecha.strftime("%Y-%m-%d"), 
-                "NOMBRE DEL HOTEL": hotel, "DESTINO": destino,
-                "CONTACTO": contacto, "SOLICITO": solicito, "PAQUETERIA": paqueteria,
-                "CANTIDAD": total_piezas, "COSTO": costo_total
-            }
-            registro.update(cantidades)
-            df_nuevo_registro = pd.DataFrame([registro])
-            
-            # Unimos con lo que ya existe en GitHub
-            df_final_acumulado = pd.concat([df_actual, df_nuevo_registro], ignore_index=True)
-            
-            with st.spinner("Actualizando Matriz..."):
-                if actualizar_github(df_final_acumulado, sha_actual, f"Registro Folio {nuevo_folio}"):
-                    st.success(f"✅ ¡Folio {nuevo_folio} guardado correctamente!")
-                    st.balloons()
-                else:
-                    st.error("Error al subir a GitHub.")
-
-with c2:
-    # DESCARGAR TODO EL ACUMULADO
-    if not df_actual.empty:
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_actual.to_excel(writer, index=False, sheet_name='Base_Completa')
+# --- PROCESAMIENTO ---
+if enviar:
+    if not f_hotel:
+        st.error("El nombre del hotel es obligatorio.")
+    else:
+        total_p = sum(cantidades.values())
+        total_c = sum(cantidades[p] * precios[p] for p in precios.keys())
         
-        st.download_button(
-            label="📥 DESCARGAR TODA LA MATRIZ (EXCEL)",
-            data=output.getvalue(),
-            file_name=f"Matriz_Muestras_{date.today()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        nuevo_reg = {
+            "FOLIO": nuevo_folio, "FECHA": f_fecha, "NOMBRE DEL HOTEL": f_hotel,
+            "DESTINO": f_destino, "CONTACTO": f_contacto, "SOLICITO": f_solicito,
+            "PAQUETERIA": f_paqueteria, "CANTIDAD": total_p, "COSTO": total_c
+        }
+        nuevo_reg.update(cantidades)
+        
+        df_final = pd.concat([df_actual, pd.DataFrame([nuevo_reg])], ignore_index=True)
+        
+        if subir_a_github(df_final, sha_actual, f"Folio {nuevo_folio}"):
+            st.success(f"¡Folio {nuevo_folio} guardado! Los campos se han limpiado.")
+            st.balloons()
+            st.rerun()
 
-with c3:
-    if st.button("🧹 LIMPIAR FORMULARIO"):
-        limpiar_formulario()
+# --- BOTÓN DE DESCARGA (Fuera del form) ---
+st.divider()
+if not df_actual.empty:
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_actual.to_excel(writer, index=False)
+    st.download_button("📥 DESCARGAR MATRIZ COMPLETA", output.getvalue(), "Matriz_Muestras.xlsx")
+
 
 
 
