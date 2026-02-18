@@ -2258,7 +2258,10 @@ else:
                         "CANTIDAD": st.column_config.TextColumn("CANTIDAD", width="small")
                     }
                 )
-            
+
+                # --- CAMPO DE COMENTARIOS DEBAJO DE LA TABLA (INTERFAZ) ---
+                coment_val = st.text_area(":material/chat: COMENTARIOS ADICIONALES", placeholder="Escribe aquí cualquier observación...", key="coment_in_pt")
+                
                 # --- HTML PARA IMPRESIÓN PT ---
                 filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
                 tabla_html = "".join([
