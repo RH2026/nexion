@@ -1957,7 +1957,20 @@ else:
                 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
                 
                 # --- INTERFAZ DE CAPTURA NUEVA ---
-                st.markdown(f'<h1 style="font-size: 16px;">Captura de Muestras Nexión</h1>', unsafe_allow_html=True)
+                st.markdown("""
+                    <style>
+                    .titulo-label {
+                        font-family: "Source Sans Pro", sans-serif;
+                        font-size: 14px !important; /* Tamaño pequeño como los labels */
+                        font-weight: 600 !important;
+                        color: rgb(250, 250, 250); /* Color casi blanco/gris claro */
+                        letter-spacing: 0.1rem; /* El secreto del espaciado */
+                        text-transform: uppercase;
+                        margin-bottom: -15px; /* Para que no quede muy separado de lo que sigue */
+                    }
+                    </style>
+                    <p class="titulo-label">Captura de Muestras Nexión</p>
+                """, unsafe_allow_html=True)
                 col1, col2, col3 = st.columns(3)
                 f_folio = col1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
                 f_fecha = col1.date_input("FECHA", value=date.today())
@@ -2983,6 +2996,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
