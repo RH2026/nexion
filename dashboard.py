@@ -160,9 +160,9 @@ div.stButton > button {{
 }}
 
 div.stButton > button:hover {{ 
-    background-color: #FF4B4B !important; 
+    background-color: #00A3A3 !important; 
     color: #ffffff !important; 
-    border-color: #FF4B4B !important; 
+    border-color: #00A3A3 !important; 
 }}
 
 
@@ -2743,6 +2743,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
