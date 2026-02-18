@@ -1961,12 +1961,15 @@ else:
                     <style>
                     .titulo-label {
                         font-family: "Source Sans Pro", sans-serif;
-                        font-size: 14px !important; /* Tamaño pequeño como los labels */
+                        font-size: 16px !important; 
                         font-weight: 600 !important;
-                        color: rgb(250, 250, 250); /* Color casi blanco/gris claro */
-                        letter-spacing: 0.1rem; /* El secreto del espaciado */
+                        color: rgb(250, 250, 250);
+                        letter-spacing: 0.1rem;
                         text-transform: uppercase;
-                        margin-bottom: -15px; /* Para que no quede muy separado de lo que sigue */
+                        /* AJUSTE DE ESPACIOS */
+                        margin-top: 20px !important;    /* Espacio arriba del título */
+                        margin-bottom: 25px !important; /* Espacio entre título y el primer input */
+                        display: block;                /* Asegura que el margen se aplique bien */
                     }
                     </style>
                     <p class="titulo-label">Captura de Muestras Nexión</p>
@@ -2996,6 +2999,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
