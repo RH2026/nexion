@@ -8,6 +8,7 @@ import unicodedata
 import requests
 from io import StringIO, BytesIO
 from datetime import datetime, date, timedelta
+import base64
 
 import pandas as pd
 import numpy as np  # Opcional, pero suele ir de la mano con pandas
@@ -2985,6 +2986,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
