@@ -1956,7 +1956,8 @@ else:
                 
                 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
                 
-                # --- INTERFAZ DE CAPTURA NUEVA ---                
+                # --- INTERFAZ DE CAPTURA NUEVA ---
+                st.markdown(f'<h1 style="font-size: 16px;">Captura de Muestras Nexión</h1>', unsafe_allow_html=True)
                 col1, col2, col3 = st.columns(3)
                 f_folio = col1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
                 f_fecha = col1.date_input("FECHA", value=date.today())
@@ -2982,6 +2983,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
