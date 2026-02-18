@@ -2336,7 +2336,7 @@ else:
                                     st.download_button(label=":material/download: DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
                                 
                                 with sc2:
-                                    if st.button(":material/hub: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
+                                    if st.button(":material/join_inner: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
                                         df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
                                         matriz_db = obtener_matriz_github()
                                         
@@ -2397,7 +2397,7 @@ else:
                     with ba2:
                         output_xlsx = io.BytesIO()
                         p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
-                        st.download_button(label="DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
+                        st.download_button(label=":material/download: DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
                 
                     with st.expander("SISTEMA DE SELLADO", expanded=False):
                         cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
@@ -2745,6 +2745,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
