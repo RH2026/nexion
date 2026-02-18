@@ -60,46 +60,53 @@ def subir_a_github(df, sha, msg):
     payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
     return requests.put(url, json=payload, headers=headers).status_code == 200
 
-# --- LÓGICA DE FOLIO ---
+# --- LÓGICA DE DATOS ---
 df_actual, sha_actual = obtener_datos_github()
 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
 
 # --- INTERFAZ ---
 st.title("📦 Captura de Muestras Nexión")
 
-with st.form("form_muestras", clear_on_submit=True):
-    col1, col2, col3 = st.columns(3)
-    f_folio = col1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
-    f_fecha = col1.date_input("FECHA", value=date.today())
-    f_hotel = col2.text_input("NOMBRE DEL HOTEL")
-    f_destino = col2.text_input("DESTINO")
-    f_contacto = col3.text_input("CONTACTO")
-    f_solicito = col3.text_input("SOLICITÓ")
-    f_paqueteria = st.selectbox("FORMA DE ENVÍO", ["PAQUETERIA", "ENTREGA DIRECTA", "OTRO"])
+# 1. Datos Generales (Fuera de form para reactividad inmediata si fuera necesaria)
+col1, col2, col3 = st.columns(3)
+f_folio = col1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
+f_fecha = col1.date_input("FECHA", value=date.today())
+f_hotel = col2.text_input("NOMBRE DEL HOTEL")
+f_destino = col2.text_input("DESTINO")
+f_contacto = col3.text_input("CONTACTO")
+f_solicito = col3.text_input("SOLICITÓ")
+f_paqueteria = st.selectbox("FORMA DE ENVÍO", ["PAQUETERIA", "ENTREGA DIRECTA", "OTRO"])
 
-    st.divider()
-    
-    st.subheader("Selección de Productos")
-    # Multiselect para elegir qué productos se enviarán
-    seleccionados = st.multiselect("Busca y selecciona los productos:", list(precios.keys()))
-    
-    cantidades_input = {}
-    if seleccionados:
-        st.write("Indica las cantidades:")
-        cols_q = st.columns(3)
-        for i, p in enumerate(seleccionados):
-            with cols_q[i % 3]:
-                cantidades_input[p] = st.number_input(f"{p}", min_value=1, step=1, key=f"q_{p}")
-    
-    enviar = st.form_submit_button("🚀 GUARDAR REGISTRO")
+st.divider()
 
-# --- PROCESAMIENTO ---
+# 2. Selección de Productos (FUERA del formulario para que muestre las cantidades al instante)
+st.subheader("Selección de Productos")
+seleccionados = st.multiselect("Busca y selecciona los productos:", list(precios.keys()))
+
+cantidades_input = {}
+if seleccionados:
+    st.info("Escribe las cantidades para cada producto seleccionado:")
+    cols_q = st.columns(3)
+    for i, p in enumerate(seleccionados):
+        with cols_q[i % 3]:
+            # Al estar fuera de un form, esto aparece en cuanto seleccionas en el multiselect
+            cantidades_input[p] = st.number_input(f"Cantidad: {p}", min_value=1, step=1, key=f"q_{p}")
+
+st.divider()
+
+# 3. Botones de Acción
+c_save, c_clear = st.columns([1, 4])
+
+with c_save:
+    enviar = st.button("🚀 GUARDAR REGISTRO", use_container_width=True)
+
 if enviar:
     if not f_hotel:
         st.error("Por favor, ingresa el nombre del hotel.")
+    elif not seleccionados:
+        st.error("Debes seleccionar al menos un producto.")
     else:
-        # Preparamos el registro con TODOS los productos en 0 por defecto
-        # Esto asegura que no se desordenen las columnas de tu CSV
+        # Preparamos el registro
         registro_completo = {
             "FOLIO": nuevo_folio,
             "FECHA": f_fecha.strftime("%Y-%m-%d"),
@@ -110,30 +117,28 @@ if enviar:
             "PAQUETERIA": f_paqueteria,
         }
         
-        # Calculamos totales solo de lo seleccionado
+        # Totales
         total_piezas = sum(cantidades_input.values())
         total_costo = sum(cantidades_input[p] * precios[p] for p in cantidades_input)
         
         registro_completo["CANTIDAD"] = total_piezas
         registro_completo["COSTO"] = total_costo
         
-        # Rellenamos las columnas de productos (si se seleccionó, su cantidad; si no, 0)
+        # Mapeo de columnas de productos (0 si no se eligió)
         for producto in precios.keys():
             registro_completo[producto] = cantidades_input.get(producto, 0)
         
-        # Crear DataFrame respetando el orden de tus columnas originales
         df_nuevo = pd.DataFrame([registro_completo])
-        
-        # Concatenar con la base actual
         df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
         
-        with st.spinner("Guardando en GitHub..."):
+        with st.spinner("Guardando en la matriz de GitHub..."):
             if subir_a_github(df_final, sha_actual, f"Registro Folio {nuevo_folio}"):
                 st.success(f"✅ ¡Folio {nuevo_folio} guardado exitosamente!")
                 st.balloons()
+                # Pequeña pausa para ver el éxito y recargar para limpiar todo
                 st.rerun()
             else:
-                st.error("Error al conectar con GitHub. Revisa el Token.")
+                st.error("Error al conectar con GitHub.")
 
 # --- SECCIÓN DE DESCARGA ---
 st.divider()
@@ -141,7 +146,7 @@ if not df_actual.empty:
     st.subheader("Reporte General")
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df_actual.to_excel(writer, index=False, sheet_name='Muestras')
+        df_actual.to_excel(writer, index=False)
     
     st.download_button(
         label="📥 DESCARGAR MATRIZ ACUMULADA (EXCEL)",
@@ -149,6 +154,7 @@ if not df_actual.empty:
         file_name=f"Matriz_Muestras_{date.today()}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
 
 
