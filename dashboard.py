@@ -471,8 +471,13 @@ else:
 
                         # REPORTES
                         with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                            for s in ["APQ", "OPS", "OTD"]:
+                            # Agregamos SAMPLES a la lista de opciones
+                            opciones_reportes = ["APQ", "OPS", "OTD", "SAMPLES"]
+                            
+                            for s in opciones_reportes:
+                                # Esto pone una flechita » para saber en qué página estás
                                 sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                                
                                 if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
                                     st.session_state.menu_main = "REPORTES"
                                     st.session_state.menu_sub = s
@@ -1902,7 +1907,9 @@ else:
                 # [Aquí va tu código o función para el reporte OTD]
                 st.bar_chart({"Entregas": [10, 20, 15, 30]})
 
-
+            elif st.session_state.menu_sub == "SAMPLES":
+                # AQUÍ PEGAS TODO EL CÓDIGO DE LAS MUESTRAS CHIC
+                st.markdown("### 📦 GESTIÓN DE MUESTRAS (SAMPLES)")
 
         
     
@@ -2743,6 +2750,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
