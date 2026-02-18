@@ -2322,7 +2322,7 @@ else:
                             
                             # --- SECCIÓN DE BOTONES DE RENDER ---
                             st.markdown("---")
-                            if st.button(":material/precision_manufacturing: RENDERIZAR TABLA", use_container_width=True):
+                            if st.button(":material/memory: RENDERIZAR TABLA", use_container_width=True):
                                 st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
                             
                             if "df_final_st" in st.session_state:
@@ -2333,7 +2333,7 @@ else:
                                 with sc1:
                                     towrite = io.BytesIO()
                                     df_st.to_excel(towrite, index=False, engine='openpyxl')
-                                    st.download_button(label="DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
+                                    st.download_button(label=":material/download: DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
                                 
                                 with sc2:
                                     if st.button("SMART ROUTING (CRUCE GITHUB)", type="primary", use_container_width=True):
@@ -2745,6 +2745,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
