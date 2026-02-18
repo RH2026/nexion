@@ -2259,7 +2259,8 @@ else:
                 def limpiar_texto(texto):
                     if pd.isna(texto): return ""
                     texto = "".join(c for c in unicodedata.normalize('NFD', str(texto)) if unicodedata.category(c) != 'Mn').upper()
-                    return " ".join(re.sub(r'[^A-Z0-9\s]', ' ', texto).split())
+                    texto = re.sub(r'[^A-Z0-9\s]', ' ', texto)
+                    return " ".join(texto.split())
                 
                 # --- 2. FUNCIONES PDF ---
                 def generar_sellos_fisicos(lista_textos, x, y):
@@ -2294,75 +2295,70 @@ else:
                     output.write(out_io)
                     return out_io.getvalue()
                 
-                # --- BLOQUE 1: S&T ---
-                st.markdown("<p class='op-query-text'>S&T PREPARATION MODULE</p>", unsafe_allow_html=True)
-                uploaded_file = st.file_uploader("Excel", type=["xlsx", "csv"], label_visibility="collapsed")
+                # --- BLOQUE 1: PREPARACIÓN S&T ---
+                st.markdown(f"<p class='op-query-text'>S&T PREPARATION MODULE</p>", unsafe_allow_html=True)
+                uploaded_file = st.file_uploader("Subir archivo ERP", type=["xlsx", "csv"], label_visibility="collapsed")
                 
-                if uploaded_file:
+                if uploaded_file is not None:
                     try:
                         df = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                         df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
                         col_folio = next((c for c in df.columns if any(x in c.lower() for x in ['factura', 'docnum', 'folio'])), df.columns[0])
-                        
-                        c1, c2 = st.columns([1, 2], gap="large")
-                        with c1:
+                
+                        c_l, c_r = st.columns([1, 2], gap="large")
+                        with c_l:
                             st.markdown("<p class='op-query-text' style='text-align:left !important;'>FILTROS</p>", unsafe_allow_html=True)
                             serie = pd.to_numeric(df[col_folio], errors='coerce').dropna()
                             inicio = st.number_input("Desde:", value=int(serie.min()) if not serie.empty else 0)
                             final = st.number_input("Hasta:", value=int(serie.max()) if not serie.empty else 0)
                             df_rango = df[(pd.to_numeric(df[col_folio], errors='coerce') >= inicio) & (pd.to_numeric(df[col_folio], errors='coerce') <= final)].copy()
                 
-                        with c2:
+                        with c_r:
                             st.markdown("<p class='op-query-text' style='text-align:left !important;'>SELECCIÓN</p>", unsafe_allow_html=True)
                             if not df_rango.empty:
                                 info = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
                                 info.insert(0, "Incluir", True)
-                                edited_df = st.data_editor(info, hide_index=True, use_container_width=True)
+                                edited_df = st.data_editor(info, hide_index=True, use_container_width=True, key="ed_v4")
                             else: st.warning("Rango vacío")
                 
                         if not df_rango.empty and not edited_df.empty:
                             folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
                             
-                            b1, b2 = st.columns(2)
-                            with b1:
-                                if st.button("RENDERIZAR", use_container_width=True):
-                                    st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
-                            with b2:
-                                if st.button("🔄 BORRAR", use_container_width=True):
-                                    for key in ["df_final_st", "df_analisis"]:
-                                        if key in st.session_state: del st.session_state[key]
-                                    st.rerun()
+                            # SOLO UN BOTÓN DE RENDERIZAR
+                            if st.button("RENDERIZAR", use_container_width=True):
+                                st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
                 
                             if "df_final_st" in st.session_state:
                                 st.dataframe(st.session_state.df_final_st, use_container_width=True)
                                 
+                                # BOTONES DE ACCIÓN (Descarga S&T y Smart Routing)
                                 sc1, sc2 = st.columns(2)
                                 with sc1:
                                     towrite = io.BytesIO()
-                                    st.session_state.df_final_st.to_excel(towrite, index=False)
-                                    st.download_button("📥 DESCARGAR S&T", towrite.getvalue(), "ST_DATA.xlsx", use_container_width=True)
+                                    st.session_state.df_final_st.to_excel(towrite, index=False, engine='openpyxl')
+                                    st.download_button(label="📥 DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
                                 with sc2:
-                                    if st.button("🚀 SMART ROUTING", type="primary", use_container_width=True):
+                                    if st.button("🚀 SMART ROUTING (CRUCE GITHUB)", type="primary", use_container_width=True):
                                         df_log = st.session_state.df_final_st.drop_duplicates(subset=[col_folio]).copy()
                                         matriz_db = obtener_matriz_github()
-                                        col_dir = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
+                                        col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
                                         
-                                        def motor(row):
-                                            if not col_dir: return "ERROR", 0.0
-                                            d = limpiar_texto(row[col_dir])
+                                        def motor_v4(row):
+                                            if not col_dir_erp: return "ERROR", 0.0
+                                            d = limpiar_texto(row[col_dir_erp])
                                             if any(x in d for x in ["GDL", "GUADALAJARA", "ZAPOPAN"]): return "LOCAL", 0.0
                                             for _, fila in matriz_db.iterrows():
                                                 if limpiar_texto(fila[0]) in d: return fila[1], pd.to_numeric(fila[2], errors='coerce')
                                             return "REVISIÓN MANUAL", 0.0
                 
-                                        res = df_log.apply(motor, axis=1)
+                                        res = df_log.apply(motor_v4, axis=1)
                                         df_log['RECOMENDACION'], df_log['COSTO'] = [r[0] for r in res], [r[1] for r in res]
                                         st.session_state.df_analisis = df_log.rename(columns={col_folio: "Factura"})
                                         st.rerun()
                 
                     except Exception as e: st.error(f"Error: {e}")
                 
-                # --- BLOQUE 2: LOGISTICS ---
+                # --- BLOQUE 2: SMART ROUTING ---
                 if "df_analisis" in st.session_state:
                     st.markdown("<p class='op-query-text'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
                     p_editado = st.data_editor(st.session_state.df_analisis, use_container_width=True, hide_index=True)
@@ -2377,17 +2373,16 @@ else:
                         p_editado.to_excel(out_x, index=False)
                         st.download_button("📊 DESCARGAR ANÁLISIS", out_x.getvalue(), "Analisis.xlsx", use_container_width=True)
                 
+                    # --- BLOQUE 3: SELLADO ---
                     with st.expander("SISTEMA DE SELLADO"):
                         cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
                         
-                        if st.button("GENERAR SELLOS PAPEL", use_container_width=True):
-                            st.session_state.pdf_sellos = generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay)
-                        
-                        if "pdf_sellos" in st.session_state:
-                            st.download_button("📥 DESCARGAR PDF", st.session_state.pdf_sellos, "Sellos.pdf", use_container_width=True)
+                        # Generación automática de bytes para que el download_button funcione directo
+                        pdf_sellos_bytes = generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay)
+                        st.download_button("📥 GENERAR Y DESCARGAR SELLOS PAPEL", pdf_sellos_bytes, "Sellos.pdf", use_container_width=True)
                         
                         st.markdown("---")
-                        pdfs = st.file_uploader("PDFs", type="pdf", accept_multiple_files=True, label_visibility="collapsed")
+                        pdfs = st.file_uploader("Subir PDFs para Sellado Digital", type="pdf", accept_multiple_files=True)
                         if pdfs and st.button("🎨 EJECUTAR SELLADO DIGITAL", use_container_width=True):
                             mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
                             z_io = io.BytesIO()
@@ -2722,6 +2717,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
