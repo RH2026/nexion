@@ -2322,7 +2322,7 @@ else:
                             
                             # --- SECCIÓN DE BOTONES DE RENDER ---
                             st.markdown("---")
-                            if st.button(":material/memory: RENDERIZAR TABLA", use_container_width=True):
+                            if st.button(":material/play_circle: RENDERIZAR TABLA", use_container_width=True):
                                 st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
                             
                             if "df_final_st" in st.session_state:
@@ -2336,7 +2336,7 @@ else:
                                     st.download_button(label=":material/download: DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
                                 
                                 with sc2:
-                                    if st.button("SMART ROUTING (CRUCE GITHUB)", type="primary", use_container_width=True):
+                                    if st.button(":material/hub: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
                                         df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
                                         matriz_db = obtener_matriz_github()
                                         
@@ -2406,10 +2406,10 @@ else:
                         s1, s2 = st.columns(2)
                         with s1:
                             if st.button("GENERAR SELLOS PAPEL", use_container_width=True):
-                                st.download_button("DESCARGAR PDF", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf", use_container_width=True)
+                                st.download_button(":material/picture_as_pdf: DESCARGAR PDF", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf", use_container_width=True)
                         
                         st.markdown("---")
-                        pdfs = st.file_uploader("Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+                        pdfs = st.file_uploader(":material/picture_as_pdf: Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
                         if pdfs:
                             if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
                                 mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
@@ -2418,7 +2418,7 @@ else:
                                     for pdf in pdfs:
                                         f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
                                         if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-                                st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
+                                st.download_button(":material/folder_zip: DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
 
     
             elif st.session_state.menu_sub == "DATA MANAGEMENT":
@@ -2745,6 +2745,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
