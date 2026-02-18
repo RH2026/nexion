@@ -2169,7 +2169,7 @@ else:
     
             # --- SUBSECCIÓN A: SALIDA DE PT ---
             if st.session_state.menu_sub == "SALIDA DE PT":
-                                
+                
                 # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
                 if 'folio_nexion' not in st.session_state:
                     tz_gdl = pytz.timezone('America/Mexico_City') 
@@ -2196,19 +2196,21 @@ else:
                     st.session_state.rows = pd.DataFrame([
                         {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
                     ] * 10)
-                                        
+                
                 # ── C. CUERPO DE ENTRADA (ESTRUCTURA CON ICONOS MATERIAL) ────────────────
                 with st.container(border=True):
                     h1, h2, h3 = st.columns(3)
                     f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in_pt")
                     t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in_pt")
                     fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
+                    
+                    # --- NUEVO CAMPO DE COMENTARIOS EN INTERFAZ ---
+                    coment_val = st.text_area(":material/chat: COMENTARIOS ADICIONALES", placeholder="Escribe aquí cualquier observación...", key="coment_in_pt")
                 
                 # ── NUEVA SECCIÓN: BÚSQUEDA AUXILIAR ──────────────────────────
                 with st.expander(":material/search: Buscar Codigo", expanded=False):
                     busqueda = st.text_input("Escribe el nombre del producto o código (ej. Cepillo, Gorra, Elemnts, Cava):").strip().upper()
                     if busqueda:
-                        # Filtramos en el inventario por código o descripción que contengan la palabra
                         resultados = df_inv[
                             df_inv['CODIGO'].astype(str).str.contains(busqueda, na=False) | 
                             df_inv['DESCRIPCION'].astype(str).str.upper().str.contains(busqueda, na=False)
@@ -2256,7 +2258,8 @@ else:
                         "CANTIDAD": st.column_config.TextColumn("CANTIDAD", width="small")
                     }
                 )
-                # --- HTML PARA IMPRESIÓN PT (BLINDAJE TOTAL DE MÁRGENES) ---
+            
+                # --- HTML PARA IMPRESIÓN PT ---
                 filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
                 tabla_html = "".join([
                     f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
@@ -2269,7 +2272,6 @@ else:
                 <html>
                 <head>
                     <style>
-                        /* El truco maestro: margen @page en 0 elimina los textos del navegador */
                         @page {{ 
                             size: auto;
                             margin: 0mm; 
@@ -2277,15 +2279,22 @@ else:
                         @media print {{
                             body {{ 
                                 margin: 0; 
-                                padding: 15mm; /* Esto crea el margen real de la hoja sin activar basura del navegador */
+                                padding: 15mm; 
                             }}
                             .no-print {{ display: none !important; }}
                         }}
                         body {{ font-family: sans-serif; color: black; background: white; }}
                         table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
                         th {{ background: #eee; border: 1px solid black; padding: 8px; text-align: left; }}
+                        .comments-section {{
+                            margin-top: 20px;
+                            font-size: 12px;
+                            border: 1px solid black;
+                            padding: 10px;
+                            min-height: 40px;
+                        }}
                         .signature-section {{
-                            margin-top: 80px;
+                            margin-top: 60px;
                             display: flex;
                             justify-content: space-between;
                             text-align: center;
@@ -2322,6 +2331,10 @@ else:
                                 {tabla_html}
                             </tbody>
                         </table>
+            
+                        <div class="comments-section">
+                            <b>COMENTARIOS:</b> {coment_val}
+                        </div>
                 
                         <div class="signature-section">
                             <div class="sig-box">
@@ -2341,7 +2354,7 @@ else:
                 </body>
                 </html>
                 """
-    
+                
                 st.markdown("<br>", unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
                 with c1:
@@ -2999,6 +3012,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
