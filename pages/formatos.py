@@ -150,97 +150,107 @@ if not df_actual.empty:
             
             st.divider()
             
-            # --- SECCIÓN DE IMPRESIÓN DETALLADA ---
-            st.subheader("🖨️ Generador de Reporte Individual")
-            folio_sel = st.selectbox("Busca el Folio para imprimir detalle:", df_actual["FOLIO"].unique())
+            # --- SECCIÓN DE IMPRESIÓN CON FORMATO JYPESA ---
+            st.subheader("🖨️ Generador de Formato de Entrega")
+            folio_sel = st.selectbox("Busca el Folio para imprimir formato formal:", df_actual["FOLIO"].unique())
             
             if folio_sel:
                 datos_f = df_actual[df_actual["FOLIO"] == folio_sel].iloc[0]
                 
-                # Construcción del HTML para el reporte (Sin ceros)
-                lista_productos_html = ""
+                # Generar filas de la tabla solo con productos > 0
+                filas_tabla = ""
                 for p in precios.keys():
                     cant = datos_f.get(p, 0)
                     if cant > 0:
-                        lista_productos_html += f"<li><b>{cant} pza(s)</b> - {p}</li>"
+                        filas_tabla += f"""
+                        <tr>
+                            <td style="border: 1px solid black; padding: 5px; text-align: center;">MUE-01</td>
+                            <td style="border: 1px solid black; padding: 5px;">{p}</td>
+                            <td style="border: 1px solid black; padding: 5px; text-align: center;">{cant}</td>
+                        </tr>
+                        """
                 
-                total_folio = float(datos_f['COSTO']) + float(datos_f['COSTO_GUIA'])
-                
-                # El "Papel" del reporte
-                reporte_html = f"""
-                <div id="printableArea" style="border: 2px solid #000; padding: 30px; font-family: Arial, sans-serif; color: black; background-color: white;">
-                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px;">
-                        <h1 style="margin: 0;">NEXIÓN - REPORTE DE SALIDA</h1>
-                        <h3 style="margin: 5px;">FOLIO: {folio_sel}</h3>
-                    </div>
+                # Diseño idéntico a la imagen de JYPESA
+                formato_jypesa = f"""
+                <div id="printableArea" style="padding: 40px; font-family: 'Helvetica', sans-serif; color: black; background-color: white; width: 800px; margin: auto;">
                     
-                    <div style="margin-top: 20px; display: flex; justify-content: space-between;">
-                        <div>
-                            <p><b>FECHA:</b> {datos_f['FECHA']}</p>
-                            <p><b>HOTEL:</b> {datos_f['NOMBRE DEL HOTEL']}</p>
-                            <p><b>DESTINO:</b> {datos_f['DESTINO']}</p>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="width: 30%;">
+                                <h2 style="margin: 0; font-weight: bold;">JYPESA</h2>
+                                <p style="font-size: 10px; margin: 0;">AUTOMATIZACIÓN DE PROCESOS</p>
+                            </td>
+                            <td style="text-align: right; font-size: 12px;">
+                                <b>FOLIO:</b> F-{datos_f['FECHA'].replace('-','')}-{folio_sel}<br>
+                                <b>FECHA:</b> {datos_f['FECHA']}
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <div style="text-align: center; margin-top: 20px; border-bottom: 2px solid black;">
+                        <h3 style="margin: 10px;">ENTREGA DE MATERIALES PT</h3>
+                    </div>
+
+                    <div style="margin-top: 15px; font-size: 12px;">
+                        <p><b>DESTINO / HOTEL:</b> {datos_f['NOMBRE DEL HOTEL']} | <b>SOLICITÓ:</b> {datos_f['SOLICITO']}</p>
+                        <p><b>DESTINO CIUDAD:</b> {datos_f['DESTINO']} | <b>PAQUETERÍA:</b> {datos_f['PAQUETERIA_NOMBRE']} ({datos_f['PAQUETERIA']})</p>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px;">
+                        <thead>
+                            <tr style="background-color: #f2f2f2;">
+                                <th style="border: 1px solid black; padding: 8px; width: 20%;">CÓDIGO</th>
+                                <th style="border: 1px solid black; padding: 8px; width: 60%;">DESCRIPCIÓN</th>
+                                <th style="border: 1px solid black; padding: 8px; width: 20%;">CANTIDAD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filas_tabla}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top: 30px; font-size: 12px;">
+                        <p><b>COSTO TOTAL PRODUCTOS:</b> ${float(datos_f['COSTO']):,.2f}</p>
+                        <p><b>COSTO FLETE:</b> ${float(datos_f['COSTO_GUIA']):,.2f}</p>
+                    </div>
+
+                    <div style="margin-top: 80px; display: flex; justify-content: space-between; text-align: center; font-size: 10px;">
+                        <div style="width: 30%;">
+                            <hr style="border: 0; border-top: 1px solid black;">
+                            <b>ENTREGÓ</b><br>Analista de Inventario
                         </div>
-                        <div style="text-align: right;">
-                            <p><b>SOLICITANTE:</b> {datos_f['SOLICITO']}</p>
-                            <p><b>CONTACTO:</b> {datos_f['CONTACTO']}</p>
-                            <p><b>ENVÍO POR:</b> {datos_f['PAQUETERIA']}</p>
+                        <div style="width: 30%;">
+                            <hr style="border: 0; border-top: 1px solid black;">
+                            <b>AUTORIZACIÓN</b><br>Dirección de Operaciones
                         </div>
-                    </div>
-                    
-                    <div style="margin-top: 20px; border: 1px solid #ccc; padding: 15px;">
-                        <h4 style="margin-top: 0; border-bottom: 1px solid #ccc;">DETALLE DE PRODUCTOS:</h4>
-                        <ul style="list-style-type: none; padding-left: 0;">
-                            {lista_productos_html}
-                        </ul>
-                    </div>
-                    
-                    <div style="margin-top: 20px; background-color: #f2f2f2; padding: 15px; border-radius: 5px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr>
-                                <td><b>TOTAL COSTO PRODUCTOS:</b></td>
-                                <td style="text-align: right;">${float(datos_f['COSTO']):,.2f}</td>
-                            </tr>
-                            <tr>
-                                <td><b>COSTO DE FLETE ({datos_f['PAQUETERIA_NOMBRE']}):</b></td>
-                                <td style="text-align: right;">${float(datos_f['COSTO_GUIA']):,.2f}</td>
-                            </tr>
-                            <tr style="font-size: 1.2em; border-top: 2px solid #000;">
-                                <td><b>TOTAL GENERAL DEL ENVÍO:</b></td>
-                                <td style="text-align: right;"><b>${total_folio:,.2f}</b></td>
-                            </tr>
-                        </table>
-                        <p style="margin-top: 10px; font-size: 0.8em;"><b>GUÍA:</b> {datos_f['NUMERO_GUIA'] if datos_f['NUMERO_GUIA'] else 'PENDIENTE'}</p>
-                    </div>
-                    
-                    <div style="margin-top: 30px; text-align: center; font-style: italic;">
-                        <p>Nexión - Sistema de Control de Muestras 2026</p>
+                        <div style="width: 30%;">
+                            <hr style="border: 0; border-top: 1px solid black;">
+                            <b>RECIBIÓ</b><br>{datos_f['SOLICITO']} / Área Solicitante
+                        </div>
                     </div>
                 </div>
                 """
                 
-                # Mostrar el reporte en pantalla
-                st.markdown(reporte_html, unsafe_allow_html=True)
+                # Mostrar en pantalla
+                st.markdown(formato_jypesa, unsafe_allow_html=True)
                 
-                # Botón con truco para imprimir
-                st.write("")
-                if st.button("🖨️ ABRIR PANEL DE IMPRESIÓN", use_container_width=True):
-                    # Inyectamos JS para imprimir solo el área del reporte
+                # Botón de impresión
+                if st.button("🖨️ IMPRIMIR FORMATO DE ENTREGA", use_container_width=True):
                     st.components.v1.html(f"""
                         <script>
                             var printContents = document.getElementById('printableArea').innerHTML;
                             var originalContents = document.body.innerHTML;
-                            document.body.innerHTML = printContents;
+                            document.body.innerHTML = '<html><head><title>Reporte</title></head><body>' + printContents + '</body></html>';
                             window.print();
-                            document.body.innerHTML = originalContents;
                             window.location.reload();
                         </script>
                     """, height=0)
-
         st.write("---")
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_actual.to_excel(writer, index=False)
         st.download_button("📥 DESCARGAR MATRIZ COMPLETA (EXCEL)", output.getvalue(), f"Matriz_{date.today()}.xlsx", use_container_width=True)
+
 
 
 
