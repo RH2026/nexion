@@ -2203,9 +2203,7 @@ else:
                     f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in_pt")
                     t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in_pt")
                     fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
-                    
-                    # --- NUEVO CAMPO DE COMENTARIOS EN INTERFAZ ---
-                    coment_val = st.text_area(":material/chat: COMENTARIOS ADICIONALES", placeholder="Escribe aquí cualquier observación...", key="coment_in_pt")
+                                        
                 
                 # ── NUEVA SECCIÓN: BÚSQUEDA AUXILIAR ──────────────────────────
                 with st.expander(":material/search: Buscar Codigo", expanded=False):
@@ -3015,6 +3013,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
