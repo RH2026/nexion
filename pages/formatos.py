@@ -124,14 +124,76 @@ if not df_actual.empty:
                 if subir_a_github(df_actual, sha_actual, f"Actualización Guía Folio {folio_a_editar}"):
                     st.success(f"¡Guía actualizada para el folio {folio_a_editar}!"); st.rerun()
 
-    # --- HISTORIAL Y EXCEL ---
-    with st.expander("📊 VER REGISTROS ACUMULADOS", expanded=False):
-        st.dataframe(df_actual, use_container_width=True)
+    # --- HISTORIAL, REPORTE Y EXCEL ---
+    with st.expander("📊 VER REGISTROS Y REPORTES", expanded=False):
+        tab1, tab2 = st.tabs(["📄 Tabla General", "📈 Reporte de Gastos"])
+        
+        with tab1:
+            st.dataframe(df_actual, use_container_width=True)
+        
+        with tab2:
+            st.subheader("Resumen de Gastos por Solicitante")
+            
+            # Aseguramos que el costo de guía sea numérico
+            df_actual["COSTO_GUIA"] = pd.to_numeric(df_actual["COSTO_GUIA"]).fillna(0)
+            
+            # Agrupamos por Solicitante
+            reporte = df_actual.groupby("SOLICITO").agg({
+                "FOLIO": "count",
+                "COSTO": "sum",
+                "COSTO_GUIA": "sum"
+            }).rename(columns={"FOLIO": "Total Muestras", "COSTO": "Costo Productos", "COSTO_GUIA": "Gasto Envío"})
+            
+            reporte["Total Inversión"] = reporte["Costo Productos"] + reporte["Gasto Envío"]
+            
+            # Formato de dinero para la tabla
+            st.table(reporte.style.format("${:,.2f}", subset=["Costo Productos", "Gasto Envío", "Total Inversión"]))
+            
+            st.divider()
+            st.subheader("Detalle de Productos (Sin Ceros)")
+            
+            # Buscador por Folio para "Imprimir" reporte individual
+            folio_sel = st.selectbox("Selecciona un Folio para ver detalle de impresión:", df_actual["FOLIO"].unique())
+            
+            if folio_sel:
+                datos_f = df_actual[df_actual["FOLIO"] == folio_sel].iloc[0]
+                
+                # Diseño tipo Reporte
+                st.markdown(f"""
+                <div style="border:1px solid #ddd; padding:20px; border-radius:10px; background-color: #f9f9f9;">
+                    <h2 style='text-align: center;'>REPORTE DE SALIDA - FOLIO {folio_sel}</h2>
+                    <p><b>Hotel:</b> {datos_f['NOMBRE DEL HOTEL']} | <b>Solicitó:</b> {datos_f['SOLICITO']}</p>
+                    <p><b>Fecha:</b> {datos_f['FECHA']} | <b>Destino:</b> {datos_f['DESTINO']}</p>
+                    <hr>
+                    <h4>Productos Enviados:</h4>
+                    <ul>
+                """, unsafe_allow_html=True)
+                
+                # Solo mostrar productos con cantidad > 0
+                for p in precios.keys():
+                    cant = datos_f.get(p, 0)
+                    if cant > 0:
+                        st.write(f"✅ {cant} pza(s) - {p}")
+                
+                st.markdown(f"""
+                    </ul>
+                    <hr>
+                    <p><b>Costo Productos:</b> ${datos_f['COSTO']:,.2f}</p>
+                    <p><b>Paquetería:</b> {datos_f['PAQUETERIA_NOMBRE']} | <b>Guía:</b> {datos_f['NUMERO_GUIA']}</p>
+                    <p><b>Costo Envío:</b> ${datos_f['COSTO_GUIA']:,.2f}</p>
+                    <h3 style='color: #2e7d32;'>Gasto Total: ${float(datos_f['COSTO']) + float(datos_f['COSTO_GUIA']):,.2f}</h3>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.info("💡 Para imprimir este reporte, presiona **Ctrl + P** en tu teclado.")
+
         st.write("---")
+        # Botón de descarga de siempre
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_actual.to_excel(writer, index=False)
         st.download_button("📥 DESCARGAR MATRIZ COMPLETA (EXCEL)", output.getvalue(), f"Matriz_{date.today()}.xlsx", use_container_width=True)
+
 
 
 
