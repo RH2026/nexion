@@ -2233,7 +2233,7 @@ else:
                 
         # 5. HUB LOG
         elif st.session_state.menu_main == "HUB LOG":
-            if st.session_state.menu_sub == "SMART ROUTING"               
+            if st.session_state.menu_sub == "SMART ROUTING":               
                 # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
                 @st.cache_data(ttl=60) # Actualiza la caché cada minuto
                 def obtener_matriz_github():
@@ -2743,6 +2743,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
