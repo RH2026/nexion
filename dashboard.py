@@ -2326,19 +2326,30 @@ else:
                         if not df_rango.empty and not edited_df.empty:
                             folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
                             
-                            # --- BOTONES SIMÉTRICOS ANCHO TOTAL ---
-                            btn_col1, btn_col2 = st.columns(2)
-                            with btn_col1:
+                            # --- FILA DE BOTONES: RENDERIZAR Y BORRAR (Anexo Imagen 2) ---
+                            b_r1, b_r2 = st.columns(2)
+                            with b_r1:
                                 if st.button("RENDERIZAR", use_container_width=True):
                                     st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
-                            with btn_col2:
-                                if st.button("BORRAR", use_container_width=True):
+                            with b_r2:
+                                if st.button("🔄 BORRAR", use_container_width=True):
                                     if "df_final_st" in st.session_state: del st.session_state.df_final_st
                                     st.rerun()
                 
                             if "df_final_st" in st.session_state:
                                 st.dataframe(st.session_state.df_final_st, use_container_width=True)
                                 
+                                # --- FILA DE BOTONES: IMPRIMIR Y BORRAR (Anexo Imagen 1) ---
+                                sc_p1, sc_p2 = st.columns(2)
+                                with sc_p1:
+                                    if st.button("📄 IMPRIMIR SALIDA PT", use_container_width=True):
+                                        st.toast("Generando salida...")
+                                with sc_p2:
+                                    if st.button("🔄 BORRAR", key="btn_borrar_2", use_container_width=True):
+                                         if "df_final_st" in st.session_state: del st.session_state.df_final_st
+                                         st.rerun()
+                
+                                # --- FILA DE BOTONES: DESCARGAR Y SMART ROUTING (Anexo Imagen 3) ---
                                 sc1, sc2 = st.columns(2)
                                 with sc1:
                                     towrite = io.BytesIO()
@@ -2365,7 +2376,7 @@ else:
                 
                     except Exception as e: st.error(f"Error: {e}")
                 
-                # --- BLOQUE 2: SMART ROUTING ---
+                # --- BLOQUE 2: SMART ROUTING (Anexo Imagen 4) ---
                 if "df_analisis" in st.session_state:
                     st.markdown("<p class='op-query-text'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
                     p_editado = st.data_editor(st.session_state.df_analisis, use_container_width=True, hide_index=True)
@@ -2380,20 +2391,27 @@ else:
                         p_editado.to_excel(out_x, index=False)
                         st.download_button("📊 DESCARGAR ANÁLISIS", out_x.getvalue(), "Analisis.xlsx", use_container_width=True)
                 
+                    # --- BLOQUE 3: SELLADO (Anexo Imagen 5) ---
                     with st.expander("SISTEMA DE SELLADO"):
                         cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
-                        if st.button("GENERAR SELLOS PAPEL", use_container_width=True):
-                            st.download_button("Descargar PDF", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf")
                         
-                        pdfs = st.file_uploader("PDFs", type="pdf", accept_multiple_files=True)
-                        if pdfs and st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
+                        # Botones de sellos en papel
+                        if st.button("GENERAR SELLOS PAPEL", use_container_width=True):
+                            st.session_state.pdf_sellos_bytes = generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay)
+                        
+                        if "pdf_sellos_bytes" in st.session_state:
+                            st.download_button("📥 DESCARGAR PDF", st.session_state.pdf_sellos_bytes, "Sellos.pdf", use_container_width=True)
+                        
+                        st.markdown("---")
+                        pdfs = st.file_uploader("Subir PDFs para Sellado Digital", type="pdf", accept_multiple_files=True)
+                        if pdfs and st.button("🎨 EJECUTAR SELLADO DIGITAL", use_container_width=True):
                             mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
                             z_io = io.BytesIO()
                             with zipfile.ZipFile(z_io, "a") as zf:
                                 for f in pdfs:
                                     fid = next((k for k in mapa.keys() if k in f.name.upper()), None)
                                     if fid: zf.writestr(f"SELLADO_{f.name}", marcar_pdf_digital(f, mapa[fid], ax, ay))
-                            st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
+                            st.download_button("📦 DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
 
     
             elif st.session_state.menu_sub == "DATA MANAGEMENT":
@@ -2720,6 +2738,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
