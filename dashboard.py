@@ -2233,16 +2233,6 @@ else:
                 
         # 5. HUB LOG
         elif st.session_state.menu_main == "HUB LOG":
-            # Librerías necesarias para el funcionamiento del HUB
-            import os
-            import io
-            import zipfile
-            import pandas as pd
-            from datetime import datetime as dt_class
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import letter
-            from pypdf import PdfReader, PdfWriter
-    
             if st.session_state.menu_sub == "SMART ROUTING":
                 st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB | XENOCODE CORE</p>", unsafe_allow_html=True)
                 
@@ -2343,10 +2333,10 @@ else:
                                 with sc1:
                                     towrite = io.BytesIO()
                                     df_st.to_excel(towrite, index=False, engine='openpyxl')
-                                    st.download_button(label="📥 DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
+                                    st.download_button(label="DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
                                 
                                 with sc2:
-                                    if st.button("🚀 SMART ROUTING (CRUCE GITHUB)", type="primary", use_container_width=True):
+                                    if st.button("SMART ROUTING (CRUCE GITHUB)", type="primary", use_container_width=True):
                                         df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
                                         matriz_db = obtener_matriz_github()
                                         
@@ -2407,7 +2397,7 @@ else:
                     with ba2:
                         output_xlsx = io.BytesIO()
                         p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
-                        st.download_button(label="📊 DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
+                        st.download_button(label="DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
                 
                     with st.expander("SISTEMA DE SELLADO", expanded=False):
                         cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
@@ -2416,7 +2406,7 @@ else:
                         s1, s2 = st.columns(2)
                         with s1:
                             if st.button("GENERAR SELLOS PAPEL", use_container_width=True):
-                                st.download_button("📥 DESCARGAR PDF", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf", use_container_width=True)
+                                st.download_button("DESCARGAR PDF", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf", use_container_width=True)
                         
                         st.markdown("---")
                         pdfs = st.file_uploader("Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
@@ -2428,7 +2418,7 @@ else:
                                     for pdf in pdfs:
                                         f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
                                         if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-                                st.download_button("📦 DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
+                                st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
 
     
             elif st.session_state.menu_sub == "DATA MANAGEMENT":
@@ -2755,6 +2745,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
