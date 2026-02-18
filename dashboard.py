@@ -1961,8 +1961,8 @@ else:
                     <style>
                     .titulo-label {
                         font-family: "Source Sans Pro", sans-serif;
-                        font-size: 16px !important; 
-                        font-weight: 600 !important;
+                        font-size: 14px !important; 
+                        font-weight: 500 !important;
                         color: rgb(250, 250, 250);
                         letter-spacing: 0.1rem;
                         text-transform: uppercase;
@@ -2999,6 +2999,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
