@@ -1909,9 +1909,7 @@ else:
                 st.bar_chart({"Entregas": [10, 20, 15, 30]})
 
             elif st.session_state.menu_sub == "SAMPLES":
-                # AQUÍ PEGAS TODO EL CÓDIGO DE LAS MUESTRAS CHIC
-                st.set_page_config(page_title="Nexión - Muestras", layout="wide")
-                
+                # AQUÍ PEGAS TODO EL CÓDIGO DE LAS MUESTRAS CHIC               
                 GITHUB_USER = "RH2026"
                 GITHUB_REPO = "nexion"
                 GITHUB_PATH = "muestras.csv"
@@ -1958,9 +1956,7 @@ else:
                 
                 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
                 
-                # --- INTERFAZ DE CAPTURA NUEVA ---
-                st.title("📦 Captura de Muestras Nexión")
-                
+                # --- INTERFAZ DE CAPTURA NUEVA ---                
                 col1, col2, col3 = st.columns(3)
                 f_folio = col1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
                 f_fecha = col1.date_input("FECHA", value=date.today())
@@ -2986,6 +2982,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
