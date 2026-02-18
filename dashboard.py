@@ -2505,9 +2505,9 @@ else:
         elif st.session_state.menu_main == "HUB LOG":
             if st.session_state.menu_sub == "SMART ROUTING":               
                 # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
-                @st.cache_data(ttl=60) # Actualiza la caché cada minuto
+                # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
+                @st.cache_data(ttl=60)
                 def obtener_matriz_github():
-                    # Añadimos un timestamp para forzar a GitHub a no servir una versión cacheada
                     url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
                     try:
                         m = pd.read_csv(url)
@@ -2517,6 +2517,35 @@ else:
                         st.error(f"Error fatal al conectar con GitHub: {e}")
                         return pd.DataFrame()
                 
+                # --- FUNCIÓN PARA GUARDAR EN GITHUB (SOBREESCRIBIR) ---
+                def guardar_en_github(df, filename="matriz_historial.csv"):
+                    try:
+                        token = st.secrets["GITHUB_TOKEN"]
+                        repo = "RH2026/nexion"
+                        url = f"https://api.github.com/repos/{repo}/contents/{filename}"
+                        
+                        # Convertir a CSV
+                        csv_content = df.to_csv(index=False).encode("utf-8-sig")
+                        content_base64 = base64.b64encode(csv_content).decode("utf-8")
+                        
+                        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+                        
+                        # Obtener SHA para poder sobreescribir
+                        res = requests.get(url, headers=headers)
+                        sha = res.json().get("sha") if res.status_code == 200 else None
+                        
+                        payload = {
+                            "message": f"Auto-update: {filename}",
+                            "content": content_base64,
+                            "branch": "main"
+                        }
+                        if sha: payload["sha"] = sha
+                        
+                        requests.put(url, headers=headers, json=payload)
+                        return True
+                    except:
+                        return False
+                
                 def limpiar_texto(texto):
                     if pd.isna(texto): return ""
                     texto = "".join(c for c in unicodedata.normalize('NFD', str(texto)) if unicodedata.category(c) != 'Mn').upper()
@@ -2525,6 +2554,9 @@ else:
                 
                 # --- 2. FUNCIONES MAESTRAS PDF ---
                 def generar_sellos_fisicos(lista_textos, x, y):
+                    from pypdf import PdfReader, PdfWriter
+                    from reportlab.pdfgen import canvas
+                    from reportlab.lib.pagesizes import letter
                     output = PdfWriter()
                     for texto in lista_textos:
                         packet = io.BytesIO()
@@ -2539,6 +2571,9 @@ else:
                     return out_io.getvalue()
                 
                 def marcar_pdf_digital(pdf_file, texto_sello, x, y):
+                    from pypdf import PdfReader, PdfWriter
+                    from reportlab.pdfgen import canvas
+                    from reportlab.lib.pagesizes import letter
                     packet = io.BytesIO()
                     can = canvas.Canvas(packet, pagesize=letter)
                     can.setFont("Helvetica-Bold", 11)
@@ -2563,7 +2598,20 @@ else:
                 
                 if uploaded_file is not None:
                     try:
-                        df = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+                        # Cargar el archivo original
+                        df_original = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+                        
+                        # --- GUARDADO INSTANTÁNEO EN GITHUB ---
+                        # Solo se ejecuta una vez por carga de archivo
+                        if f"last_uploaded_{uploaded_file.name}" not in st.session_state:
+                            if guardar_en_github(df_original, "matriz_historial.csv"):
+                                st.toast("Archivo original respaldado en GitHub", icon="☁️")
+                                st.session_state[f"last_uploaded_{uploaded_file.name}"] = True
+                            else:
+                                st.error("Error al respaldar en GitHub. Revisa el Token en Secrets.")
+                
+                        # Continuar con el proceso visual
+                        df = df_original.copy()
                         df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
                         
                         col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower() or 'folio' in c.lower()), df.columns[0])
@@ -2588,7 +2636,6 @@ else:
                         if not df_rango.empty and not edited_df.empty:
                             folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
                             
-                            # --- SECCIÓN DE BOTONES DE RENDER ---
                             st.markdown("---")
                             if st.button(":material/play_circle: RENDERIZAR TABLA", use_container_width=True):
                                 st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
@@ -2629,11 +2676,9 @@ else:
                                         res = df_log.apply(motor_v4, axis=1)
                                         df_log['RECOMENDACION'] = [r[0] for r in res]
                                         df_log['COSTO'] = [r[1] for r in res]
-                                        
                                         df_log = df_log.rename(columns={col_folio: "Factura"})
                                         cols_deseadas = ["Factura", "RECOMENDACION", "COSTO", "Transporte", "Nombre_Cliente", "Nombre_Extran", "Quantity", "DIRECCION", "DESTINO"]
                                         cols_finales = [c for c in cols_deseadas if c in df_log.columns]
-                                        
                                         st.session_state.df_analisis = df_log[cols_finales]
                                         st.success("¡Motor sincronizado con datos recientes!")
                                         st.rerun()
@@ -3013,6 +3058,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
