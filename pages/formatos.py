@@ -124,132 +124,121 @@ if not df_actual.empty:
                 if subir_a_github(df_actual, sha_actual, f"Actualización Guía Folio {folio_a_editar}"):
                     st.success(f"¡Guía actualizada para el folio {folio_a_editar}!"); st.rerun()
 
-    # --- HISTORIAL, REPORTE Y EXCEL ---
+    # --- HISTORIAL Y REPORTES ESTILO EXCEL ---
     with st.expander("📊 VER REGISTROS Y REPORTES", expanded=False):
-        tab1, tab2 = st.tabs(["📄 Tabla General", "📈 Reporte de Gastos e Impresión"])
         
-        with tab1:
-            st.dataframe(df_actual, use_container_width=True)
+        # Contenedor que vamos a imprimir
+        reporte_completo_html = ""
         
-        with tab2:
-            st.subheader("💰 Resumen Consolidado por Solicitante")
-            
-            # Aseguramos datos numéricos
-            df_actual["COSTO_GUIA"] = pd.to_numeric(df_actual["COSTO_GUIA"]).fillna(0)
-            df_actual["COSTO"] = pd.to_numeric(df_actual["COSTO"]).fillna(0)
-            
-            # Agrupamos para el resumen superior
-            reporte_sol = df_actual.groupby("SOLICITO").agg({
-                "FOLIO": "count",
-                "COSTO": "sum",
-                "COSTO_GUIA": "sum"
-            }).rename(columns={"FOLIO": "Muestras", "COSTO": "Costo Prod.", "COSTO_GUIA": "Flete"})
-            
-            reporte_sol["Total"] = reporte_sol["Costo Prod."] + reporte_sol["Flete"]
-            st.table(reporte_sol.style.format("${:,.2f}", subset=["Costo Prod.", "Flete", "Total"]))
-            
-            st.divider()
-            
-            # --- SECCIÓN DE IMPRESIÓN CON FORMATO JYPESA ---
-            st.subheader("🖨️ Generador de Formato de Entrega")
-            folio_sel = st.selectbox("Busca el Folio para imprimir formato formal:", df_actual["FOLIO"].unique())
-            
-            if folio_sel:
-                datos_f = df_actual[df_actual["FOLIO"] == folio_sel].iloc[0]
-                
-                # Generar filas de la tabla solo con productos > 0
-                filas_tabla = ""
-                for p in precios.keys():
-                    cant = datos_f.get(p, 0)
-                    if cant > 0:
-                        filas_tabla += f"""
-                        <tr>
-                            <td style="border: 1px solid black; padding: 5px; text-align: center;">MUE-01</td>
-                            <td style="border: 1px solid black; padding: 5px;">{p}</td>
-                            <td style="border: 1px solid black; padding: 5px; text-align: center;">{cant}</td>
-                        </tr>
-                        """
-                
-                # Diseño idéntico a la imagen de JYPESA
-                formato_jypesa = f"""
-                <div id="printableArea" style="padding: 40px; font-family: 'Helvetica', sans-serif; color: black; background-color: white; width: 800px; margin: auto;">
-                    
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="width: 30%;">
-                                <h2 style="margin: 0; font-weight: bold;">JYPESA</h2>
-                                <p style="font-size: 10px; margin: 0;">AUTOMATIZACIÓN DE PROCESOS</p>
-                            </td>
-                            <td style="text-align: right; font-size: 12px;">
-                                <b>FOLIO:</b> F-{datos_f['FECHA'].replace('-','')}-{folio_sel}<br>
-                                <b>FECHA:</b> {datos_f['FECHA']}
-                            </td>
-                        </tr>
-                    </table>
-                    
-                    <div style="text-align: center; margin-top: 20px; border-bottom: 2px solid black;">
-                        <h3 style="margin: 10px;">ENTREGA DE MATERIALES PT</h3>
-                    </div>
+        # 1. Preparación de Datos
+        df_vista = df_actual.copy()
+        df_vista["COSTO"] = pd.to_numeric(df_vista["COSTO"]).fillna(0)
+        df_vista["COSTO_GUIA"] = pd.to_numeric(df_vista["COSTO_GUIA"]).fillna(0)
+        
+        total_prod = df_vista["COSTO"].sum()
+        total_flete = df_vista["COSTO_GUIA"].sum()
 
-                    <div style="margin-top: 15px; font-size: 12px;">
-                        <p><b>DESTINO / HOTEL:</b> {datos_f['NOMBRE DEL HOTEL']} | <b>SOLICITÓ:</b> {datos_f['SOLICITO']}</p>
-                        <p><b>DESTINO CIUDAD:</b> {datos_f['DESTINO']} | <b>PAQUETERÍA:</b> {datos_f['PAQUETERIA_NOMBRE']} ({datos_f['PAQUETERIA']})</p>
-                    </div>
+        # 2. Construcción de Filas del Reporte General
+        filas_general = ""
+        for _, row in df_vista.iterrows():
+            filas_general += f"""
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 5px;">{row['DESTINO']}</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">{row['CONTACTO']}</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">{row['SOLICITO']}</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">{row['PAQUETERIA']}</td>
+                <td style="border: 1px solid #ddd; padding: 5px; text-align: center;">{row['CANTIDAD']}</td>
+                <td style="border: 1px solid #ddd; padding: 5px; text-align: right;">${row['COSTO']:,.2f}</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">{row['PAQUETERIA_NOMBRE']}</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">{row['NUMERO_GUIA']}</td>
+                <td style="border: 1px solid #ddd; padding: 5px; text-align: right;">${row['COSTO_GUIA']:,.2f}</td>
+            </tr>
+            """
 
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px;">
-                        <thead>
-                            <tr style="background-color: #f2f2f2;">
-                                <th style="border: 1px solid black; padding: 8px; width: 20%;">CÓDIGO</th>
-                                <th style="border: 1px solid black; padding: 8px; width: 60%;">DESCRIPCIÓN</th>
-                                <th style="border: 1px solid black; padding: 8px; width: 20%;">CANTIDAD</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filas_tabla}
-                        </tbody>
-                    </table>
+        # 3. Construcción de Filas del Acumulado por Agente
+        resumen_agente = df_vista.groupby("SOLICITO").agg({"COSTO_GUIA": "sum", "COSTO": "sum"}).reset_index()
+        filas_agente = ""
+        for _, row in resumen_agente.iterrows():
+            total_agente = row['COSTO_GUIA'] + row['COSTO']
+            filas_agente += f"""
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">{row['SOLICITO']}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$ {row['COSTO_GUIA']:,.2f}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$ {row['COSTO']:,.2f}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;"><b>$ {total_agente:,.2f}</b></td>
+            </tr>
+            """
 
-                    <div style="margin-top: 30px; font-size: 12px;">
-                        <p><b>COSTO TOTAL PRODUCTOS:</b> ${float(datos_f['COSTO']):,.2f}</p>
-                        <p><b>COSTO FLETE:</b> ${float(datos_f['COSTO_GUIA']):,.2f}</p>
-                    </div>
+        # 4. El Reporte Final (Diseño igual a tu imagen)
+        reporte_final_html = f"""
+        <div id="printableArea" style="font-family: Arial, sans-serif; color: black; background-color: white; padding: 20px;">
+            <h4 style="text-align: center; margin-bottom: 20px;">REPORTE GENERAL</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f9f9f9;">
+                        <th style="border: 1px solid #000; padding: 5px;">DESTINO</th>
+                        <th style="border: 1px solid #000; padding: 5px;">CONTACTO</th>
+                        <th style="border: 1px solid #000; padding: 5px;">SOLICITO</th>
+                        <th style="border: 1px solid #000; padding: 5px;">PAQUETERIA</th>
+                        <th style="border: 1px solid #000; padding: 5px;">CANT</th>
+                        <th style="border: 1px solid #000; padding: 5px;">COSTO</th>
+                        <th style="border: 1px solid #000; padding: 5px;">PAQ. NOMBRE</th>
+                        <th style="border: 1px solid #000; padding: 5px;">GUIA</th>
+                        <th style="border: 1px solid #000; padding: 5px;">FLETE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filas_general}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" style="text-align: right; padding: 10px;"><b>TOTALES:</b></td>
+                        <td style="text-align: right; border-top: 2px solid #000;"><b>$ {total_prod:,.2f}</b></td>
+                        <td colspan="2"></td>
+                        <td style="text-align: right; border-top: 2px solid #000;"><b>$ {total_flete:,.2f}</b></td>
+                    </tr>
+                </tfoot>
+            </table>
 
-                    <div style="margin-top: 80px; display: flex; justify-content: space-between; text-align: center; font-size: 10px;">
-                        <div style="width: 30%;">
-                            <hr style="border: 0; border-top: 1px solid black;">
-                            <b>ENTREGÓ</b><br>Analista de Inventario
-                        </div>
-                        <div style="width: 30%;">
-                            <hr style="border: 0; border-top: 1px solid black;">
-                            <b>AUTORIZACIÓN</b><br>Dirección de Operaciones
-                        </div>
-                        <div style="width: 30%;">
-                            <hr style="border: 0; border-top: 1px solid black;">
-                            <b>RECIBIÓ</b><br>{datos_f['SOLICITO']} / Área Solicitante
-                        </div>
-                    </div>
-                </div>
-                """
-                
-                # Mostrar en pantalla
-                st.markdown(formato_jypesa, unsafe_allow_html=True)
-                
-                # Botón de impresión
-                if st.button("🖨️ IMPRIMIR FORMATO DE ENTREGA", use_container_width=True):
-                    st.components.v1.html(f"""
-                        <script>
-                            var printContents = document.getElementById('printableArea').innerHTML;
-                            var originalContents = document.body.innerHTML;
-                            document.body.innerHTML = '<html><head><title>Reporte</title></head><body>' + printContents + '</body></html>';
-                            window.print();
-                            window.location.reload();
-                        </script>
-                    """, height=0)
-        st.write("---")
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_actual.to_excel(writer, index=False)
-        st.download_button("📥 DESCARGAR MATRIZ COMPLETA (EXCEL)", output.getvalue(), f"Matriz_{date.today()}.xlsx", use_container_width=True)
+            <div style="margin-top: 50px;">
+                <h4 style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 5px;">ACUMULADO POR AGENTE</h4>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
+                    <tr style="text-align: left;">
+                        <th style="padding: 8px;">SOLICITANTE</th>
+                        <th style="padding: 8px; text-align: right;">FLETE</th>
+                        <th style="padding: 8px; text-align: right;">PRODUCTO</th>
+                        <th style="padding: 8px; text-align: right;">TOTAL</th>
+                    </tr>
+                    {filas_agente}
+                </table>
+            </div>
+        </div>
+        """
+
+        # Mostrar el reporte en la app
+        st.markdown(reporte_final_html, unsafe_allow_html=True)
+
+        # Botones de Acción
+        col_btn1, col_btn2 = st.columns(2)
+        
+        with col_btn1:
+            if st.button("🖨️ IMPRIMIR REPORTE", use_container_width=True):
+                st.components.v1.html(f"""
+                    <script>
+                        var printContents = document.getElementById('printableArea').innerHTML;
+                        var originalContents = document.body.innerHTML;
+                        document.body.innerHTML = '<html><head><title>Reporte Nexión</title></head><body>' + printContents + '</body></html>';
+                        window.print();
+                        window.location.reload();
+                    </script>
+                """, height=0)
+
+        with col_btn2:
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df_actual.to_excel(writer, index=False)
+            st.download_button("📥 DESCARGAR EXCEL", output.getvalue(), f"Matriz_{date.today()}.xlsx", use_container_width=True)
+
 
 
 
