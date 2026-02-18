@@ -8,11 +8,9 @@ from io import BytesIO
 # --- CONFIGURACIÓN Y PRECIOS ---
 st.set_page_config(page_title="Captura de Muestras Nexión", layout="wide")
 
-# URL de tu archivo y datos de API
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
 GITHUB_PATH = "muestras.csv"
-# NOTA: El token debe manejarse como un "Secret" en Streamlit Cloud por seguridad
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
 
 precios = {
@@ -25,17 +23,61 @@ precios = {
     "Soporte dob INOX": 679.00, "Soporte Ind INOX": 608.00
 }
 
+# --- FUNCIONES DE GITHUB ---
+def obtener_datos_github():
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    r = requests.get(url, headers=headers)
+    if r.status_code == 200:
+        content = r.json()
+        df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+        return df, content['sha']
+    return pd.DataFrame(), None
+
+def actualizar_github(df_final, sha, mensaje):
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    csv_string = df_final.to_csv(index=False)
+    payload = {
+        "message": mensaje,
+        "content": base64.b64encode(csv_string.encode()).decode(),
+        "sha": sha
+    }
+    r_put = requests.put(url, json=payload, headers=headers)
+    return r_put.status_code == 200
+
+# --- LÓGICA DE FOLIO AUTOMÁTICO ---
+df_actual, sha_actual = obtener_datos_github()
+
+if not df_actual.empty and "FOLIO" in df_actual.columns:
+    try:
+        # Intentamos obtener el último número y sumamos 1
+        ultimo_folio = pd.to_numeric(df_actual["FOLIO"]).max()
+        nuevo_folio = int(ultimo_folio) + 1
+    except:
+        nuevo_folio = 1
+else:
+    nuevo_folio = 1
+
 # --- INTERFAZ DE USUARIO ---
 st.title("📋 Formulario de Muestras - Nexión")
 
+# Función para limpiar el formulario reiniciando el session_state
+def limpiar_formulario():
+    for key in st.session_state.keys():
+        if key.startswith("input_") or key in ["hotel", "destino", "contacto", "solicito"]:
+            st.session_state[key] = 0 if key.startswith("input_") else ""
+    st.rerun()
+
 with st.container():
     col1, col2, col3 = st.columns(3)
-    folio = col1.text_input("FOLIO")
+    # Folio deshabilitado porque es automático
+    folio = col1.text_input("FOLIO (Automático)", value=str(nuevo_folio), disabled=True)
     fecha = col1.date_input("FECHA", value=date.today())
-    hotel = col2.text_input("NOMBRE DEL HOTEL")
-    destino = col2.text_input("DESTINO (CIUDAD)")
-    contacto = col3.text_input("CONTACTO")
-    solicito = col3.text_input("SOLICITÓ")
+    hotel = col2.text_input("NOMBRE DEL HOTEL", key="hotel")
+    destino = col2.text_input("DESTINO (CIUDAD)", key="destino")
+    contacto = col3.text_input("CONTACTO", key="contacto")
+    solicito = col3.text_input("SOLICITÓ", key="solicito")
     paqueteria = st.selectbox("FORMA DE ENVÍO", ["PAQUETERIA", "ENTREGA DIRECTA", "OTRO"])
 
 st.divider()
@@ -53,63 +95,56 @@ for i, prod in enumerate(items):
 total_piezas = sum(cantidades.values())
 costo_total = sum(cantidades[p] * precios[p] for p in items)
 
-# Sidebar con resumen
 st.sidebar.header("Resumen del Pedido")
 st.sidebar.metric("Total Piezas", total_piezas)
 st.sidebar.metric("Costo Total", f"${costo_total:,.2f}")
 
-# --- LÓGICA DE GITHUB ---
-def actualizar_github(nueva_fila_df):
-    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    
-    # 1. Obtener el archivo actual y su SHA
-    r = requests.get(url, headers=headers)
-    if r.status_code == 200:
-        content = r.json()
-        csv_actual = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
-        sha = content['sha']
-        
-        # 2. Concatenar nueva fila
-        df_final = pd.concat([csv_actual, nueva_fila_df], ignore_index=True)
-        csv_string = df_final.to_csv(index=False)
-        
-        # 3. Subir de nuevo a GitHub
-        payload = {
-            "message": f"Nuevo registro folio: {folio}",
-            "content": base64.b64encode(csv_string.encode()).decode(),
-            "sha": sha
-        }
-        r_put = requests.put(url, json=payload, headers=headers)
-        return r_put.status_code == 200
-    return False
-
 # --- ACCIONES ---
-if st.button("🚀 GUARDAR EN MATRIZ Y GENERAR EXCEL"):
-    if not folio or not hotel:
-        st.error("Por favor llena el Folio y Nombre del Hotel.")
-    else:
-        # Preparar dataframe
-        registro = {
-            "FOLIO": folio, "FECHA": fecha, "NOMBRE DEL HOTEL": hotel, "DESTINO": destino,
-            "CONTACTO": contacto, "SOLICITO": solicito, "PAQUETERIA": paqueteria,
-            "CANTIDAD": total_piezas, "COSTO": costo_total
-        }
-        registro.update(cantidades)
-        df_nuevo = pd.DataFrame([registro])
+st.write("### Acciones de Registro")
+c1, c2, c3 = st.columns(3)
 
-        # Guardar en GitHub
-        with st.spinner("Subiendo a GitHub..."):
-            if actualizar_github(df_nuevo):
-                st.success("✅ ¡Guardado en la matriz de GitHub con éxito!")
-                
-                # Botón de descarga de Excel una vez guardado
-                output = BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_nuevo.to_excel(writer, index=False)
-                st.download_button("📥 Descargar este registro en Excel", output.getvalue(), f"Muestra_{folio}.xlsx")
-            else:
-                st.error("Hubo un error al conectar con GitHub. Revisa tu Token.")
+with c1:
+    if st.button("🚀 GUARDAR EN MATRIZ"):
+        if not hotel:
+            st.error("Por favor escribe el Nombre del Hotel.")
+        else:
+            registro = {
+                "FOLIO": nuevo_folio, "FECHA": fecha.strftime("%Y-%m-%d"), 
+                "NOMBRE DEL HOTEL": hotel, "DESTINO": destino,
+                "CONTACTO": contacto, "SOLICITO": solicito, "PAQUETERIA": paqueteria,
+                "CANTIDAD": total_piezas, "COSTO": costo_total
+            }
+            registro.update(cantidades)
+            df_nuevo_registro = pd.DataFrame([registro])
+            
+            # Unimos con lo que ya existe en GitHub
+            df_final_acumulado = pd.concat([df_actual, df_nuevo_registro], ignore_index=True)
+            
+            with st.spinner("Actualizando Matriz..."):
+                if actualizar_github(df_final_acumulado, sha_actual, f"Registro Folio {nuevo_folio}"):
+                    st.success(f"✅ ¡Folio {nuevo_folio} guardado correctamente!")
+                    st.balloons()
+                else:
+                    st.error("Error al subir a GitHub.")
+
+with c2:
+    # DESCARGAR TODO EL ACUMULADO
+    if not df_actual.empty:
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_actual.to_excel(writer, index=False, sheet_name='Base_Completa')
+        
+        st.download_button(
+            label="📥 DESCARGAR TODA LA MATRIZ (EXCEL)",
+            data=output.getvalue(),
+            file_name=f"Matriz_Muestras_{date.today()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+with c3:
+    if st.button("🧹 LIMPIAR FORMULARIO"):
+        limpiar_formulario()
+
 
 
 
