@@ -1,9 +1,9 @@
-FOLIO,FECHA,NOMBRE DEL HOTEL,DESTINO,CONTACTO,SOLICITO,PAQUETERIA,CANTIDAD,COSTO,Accesorios  Ecologicos,Accesorios Lavarino,Dispensador Almond ,Dispensador Biogena,Dispensador Cava,Dispensador Persa,Dispensador Botánicos L,Dispensador Dove,Dispensador Biogena 400ml,Kit Elements ,Kit Almond ,Kit Biogena,Kit Cava,Kit Persa,Kit Lavarino,Kit Botánicos,Llave Magnetica,Rack Dove,Rack JH  Color Blanco de 2 pzas,Rack JH  Color Blanco de 1 pzas,Soporte dob  INOX Cap lock,Soporte Ind  INOX Cap lock,Accesorios Ecologicos
-1,2026-02-18,CHON,CHON,CHO,CHO,PAQUETERIA,2,125.0,,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0.0
-2,2026-02-18,CHO,CHO,CHO,CHO,PAQUETERIA,3,825.0,,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0
-3,2026-02-18,CHO,CHO,CHO,CHO,PAQUETERIA,3,825.0,,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0
-4,2026-02-18,CHO,CHO,CHO,CHO,PAQUETERIA,3,825.0,,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0
-5,2026-02-18,CHE,CHE,CHE,CHE,PAQUETERIA,3,143.55,,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0
-6,2026-02-18,CHE,CHE,CHE,CHE,PAQUETERIA,3,143.55,,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0
-7,2026-02-18,CHE,CHE,CHE,CHE,PAQUETERIA,3,143.55,,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0
-8,2026-02-18,CHE,CHE,CHE,CHE,PAQUETERIA,3,143.55,,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0
+FOLIO,FECHA,NOMBRE DEL HOTEL,DESTINO,CONTACTO,SOLICITO,PAQUETERIA,CANTIDAD,COSTO,Accesorios  Ecologicos,Accesorios Lavarino,Dispensador Almond ,Dispensador Biogena,Dispensador Cava,Dispensador Persa,Dispensador Botánicos L,Dispensador Dove,Dispensador Biogena 400ml,Kit Elements ,Kit Almond ,Kit Biogena,Kit Cava,Kit Persa,Kit Lavarino,Kit Botánicos,Llave Magnetica,Rack Dove,Rack JH  Color Blanco de 2 pzas,Rack JH  Color Blanco de 1 pzas,Soporte dob  INOX Cap lock,Soporte Ind  INOX Cap lock,Accesorios Ecologicos,PAQUETERIA_NOMBRE,NUMERO_GUIA,COSTO_GUIA
+1,2026-02-18,CHON,CHON,CHO,CHO,PAQUETERIA,2,125.0,,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0.0,,,
+2,2026-02-18,CHO,CHO,CHO,CHO,PAQUETERIA,3,825.0,,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,,,
+3,2026-02-18,CHO,CHO,CHO,CHO,PAQUETERIA,3,825.0,,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,,,
+4,2026-02-18,CHO,CHO,CHO,CHO,PAQUETERIA,3,825.0,,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,,,
+5,2026-02-18,CHE,CHE,CHE,CHE,PAQUETERIA,3,143.55,,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,FEDEX,18258585,450.0
+6,2026-02-18,CHE,CHE,CHE,CHE,PAQUETERIA,3,143.55,,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,,,
+7,2026-02-18,CHE,CHE,CHE,CHE,PAQUETERIA,3,143.55,,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,,,
+8,2026-02-18,CHE,CHE,CHE,CHE,PAQUETERIA,3,143.55,,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0,,,
