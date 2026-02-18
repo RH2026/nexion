@@ -127,25 +127,19 @@ if not df_actual.empty:
     # --- HISTORIAL Y REPORTES ---
     with st.expander("📊 VER REGISTROS Y REPORTES", expanded=False):
         
-        # 1. VISTA EN PANTALLA (Con estilo CSS para el Hover Chic)
+        # 1. VISTA EN PANTALLA (Texto normal y Hover Chic)
         st.markdown("""
             <style>
+                /* Estilo hover para la tabla */
                 .stDataFrame div[data-testid="stTable"] table tr:hover {
-                    background-color: #f0f2f6 !important;
+                    background-color: #4a4a4a !important;
                     transition: 0.3s;
-                }
-                .report-header {
-                    text-align: center;
-                    font-weight: bold;
-                    padding: 10px;
-                    background-color: #f8f9fa;
-                    border-radius: 10px;
-                    margin-bottom: 20px;
                 }
             </style>
         """, unsafe_allow_html=True)
 
-        st.markdown("<div class='report-header'><h3>REPORTE GENERAL DE MUESTRAS</h3></div>", unsafe_allow_html=True)
+        # Texto normal como pediste
+        st.subheader("Reporte General de Muestras")
         
         df_display = df_actual.copy()
         df_display["COSTO"] = pd.to_numeric(df_display["COSTO"]).fillna(0)
@@ -154,14 +148,14 @@ if not df_actual.empty:
         # Mostramos la tabla principal
         st.dataframe(df_display, use_container_width=True)
         
-        # Totales en pantalla
+        # Totales rápidos en pantalla
         t_prod = df_display["COSTO"].sum()
         t_flete = df_display["COSTO_GUIA"].sum()
-        st.info(f"💰 **RESUMEN:** TOTAL PRODUCTOS: ${t_prod:,.2f} | TOTAL FLETES: ${t_flete:,.2f}")
+        st.markdown(f"**TOTAL PRODUCTO:** ${t_prod:,.2f} | **TOTAL FLETE:** ${t_flete:,.2f}")
 
         st.divider()
 
-        # 2. GENERACIÓN DE HTML PARA IMPRESIÓN (Con Fecha y Solicitante)
+        # 2. HTML PARA IMPRESIÓN (Igualito, sin cambios en la lógica)
         filas_html = ""
         for _, r in df_display.iterrows():
             detalle_productos = ""
@@ -249,6 +243,7 @@ if not df_actual.empty:
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_actual.to_excel(writer, index=False)
             st.download_button("📥 DESCARGAR EXCEL", output.getvalue(), f"Matriz_Muestras_{date.today()}.xlsx", use_container_width=True)
+
 
 
 
