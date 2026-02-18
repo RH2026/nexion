@@ -127,29 +127,43 @@ if not df_actual.empty:
     # --- HISTORIAL Y REPORTES ---
     with st.expander("📊 VER REGISTROS Y REPORTES", expanded=False):
         
-        # 1. VISTA EN PANTALLA (Tabla limpia estilo Excel)
-        st.markdown("<h3 style='text-align: center;'>REPORTE GENERAL</h3>", unsafe_allow_html=True)
+        # 1. VISTA EN PANTALLA (Con estilo CSS para el Hover Chic)
+        st.markdown("""
+            <style>
+                .stDataFrame div[data-testid="stTable"] table tr:hover {
+                    background-color: #f0f2f6 !important;
+                    transition: 0.3s;
+                }
+                .report-header {
+                    text-align: center;
+                    font-weight: bold;
+                    padding: 10px;
+                    background-color: #f8f9fa;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<div class='report-header'><h3>REPORTE GENERAL DE MUESTRAS</h3></div>", unsafe_allow_html=True)
         
         df_display = df_actual.copy()
-        # Aseguramos que los costos sean numéricos para la vista y sumas
         df_display["COSTO"] = pd.to_numeric(df_display["COSTO"]).fillna(0)
         df_display["COSTO_GUIA"] = pd.to_numeric(df_display["COSTO_GUIA"]).fillna(0)
         
-        # Mostramos la tabla en pantalla
+        # Mostramos la tabla principal
         st.dataframe(df_display, use_container_width=True)
         
-        # Totales rápidos en pantalla
+        # Totales en pantalla
         t_prod = df_display["COSTO"].sum()
         t_flete = df_display["COSTO_GUIA"].sum()
-        st.markdown(f"**TOTAL PRODUCTO:** ${t_prod:,.2f} | **TOTAL FLETE:** ${t_flete:,.2f}")
+        st.info(f"💰 **RESUMEN:** TOTAL PRODUCTOS: ${t_prod:,.2f} | TOTAL FLETES: ${t_flete:,.2f}")
 
         st.divider()
 
-        # 2. GENERACIÓN DE HTML PARA IMPRESIÓN (Tu código de ejemplo adaptado)
-        # Filtramos solo lo que tiene cantidad > 0 para el reporte impreso
+        # 2. GENERACIÓN DE HTML PARA IMPRESIÓN (Con Fecha y Solicitante)
         filas_html = ""
         for _, r in df_display.iterrows():
-            # Aquí sacamos el detalle de productos sin ceros para el cuerpo del reporte
             detalle_productos = ""
             for p in precios.keys():
                 cant = r.get(p, 0)
@@ -159,8 +173,9 @@ if not df_actual.empty:
             filas_html += f"""
             <tr>
                 <td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td>
+                <td style='border:1px solid black;padding:8px;'><b>{r['SOLICITO']}</b><br><small>{r['FECHA']}</small></td>
                 <td style='border:1px solid black;padding:8px;'>{r['NOMBRE DEL HOTEL']}<br><small>{r['DESTINO']}</small></td>
-                <td style='border:1px solid black;padding:8px;'>{detalle_productos}</td>
+                <td style='border:1px solid black;padding:8px; font-size: 10px;'>{detalle_productos}</td>
                 <td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO']:,.2f}</td>
                 <td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td>
             </tr>
@@ -189,14 +204,15 @@ if not df_actual.empty:
                     <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
                 </div>
                 <div style="text-align:right; font-size:12px;">
-                    <b>REPORTE GENERAL DE MUESTRAS</b><br>
-                    <b>FECHA:</b> {date.today()}
+                    <b>REPORTE DE SALIDA PT</b><br>
+                    <b>GENERADO:</b> {date.today().strftime('%d/%m/%Y')}
                 </div>
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>FOLIO</th>
+                        <th>SOLICITANTE / FECHA</th>
                         <th>DESTINO / HOTEL</th>
                         <th>DETALLE PRODUCTOS</th>
                         <th>COSTO</th>
@@ -207,14 +223,15 @@ if not df_actual.empty:
                     {filas_html}
                 </tbody>
             </table>
-            <div style="text-align:right; margin-top:10px; font-size:12px;">
+            <div style="text-align:right; margin-top:20px; font-size:13px; border-top: 1px solid black; padding-top:10px;">
                 <b>TOTAL PRODUCTOS: ${t_prod:,.2f}</b><br>
-                <b>TOTAL FLETES: ${t_flete:,.2f}</b>
+                <b>TOTAL FLETES: ${t_flete:,.2f}</b><br>
+                <h3 style="margin-top:5px;">INVERSIÓN TOTAL: ${(t_prod + t_flete):,.2f}</h3>
             </div>
             <div class="signature-section">
                 <div class="sig-box"><b>ENTREGÓ</b><br>Analista de Inventario</div>
                 <div class="sig-box"><b>AUTORIZACIÓN</b><br>Dir. Operaciones</div>
-                <div class="sig-box"><b>RECIBIÓ</b><br>Logística / Solicitante</div>
+                <div class="sig-box"><b>RECIBIÓ</b><br>Logística / Área Solicitante</div>
             </div>
         </body>
         </html>
@@ -223,17 +240,16 @@ if not df_actual.empty:
         # 3. BOTONES DE ACCIÓN
         c1, c2 = st.columns(2)
         with c1:
-            # Botón de impresión usando components.html como en tu ejemplo
             if st.button("🖨️ IMPRIMIR REPORTE PT", type="primary", use_container_width=True):
                 import streamlit.components.v1 as components
                 components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
         
         with c2:
-            # Botón de Excel
             output = BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_actual.to_excel(writer, index=False)
             st.download_button("📥 DESCARGAR EXCEL", output.getvalue(), f"Matriz_Muestras_{date.today()}.xlsx", use_container_width=True)
+
 
 
 
