@@ -67,21 +67,21 @@ nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.
 # --- INTERFAZ ---
 st.title("📦 Captura de Muestras Nexión")
 
-# 1. Datos Generales (Fuera de form para reactividad inmediata si fuera necesaria)
+# 1. Datos Generales
 col1, col2, col3 = st.columns(3)
 f_folio = col1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
 f_fecha = col1.date_input("FECHA", value=date.today())
-f_hotel = col2.text_input("NOMBRE DEL HOTEL")
-f_destino = col2.text_input("DESTINO")
-f_contacto = col3.text_input("CONTACTO")
-f_solicito = col3.text_input("SOLICITÓ")
-f_paqueteria = st.selectbox("FORMA DE ENVÍO", ["PAQUETERIA", "ENTREGA DIRECTA", "OTRO"])
+f_hotel = col2.text_input("NOMBRE DEL HOTEL", key="hotel")
+f_destino = col2.text_input("DESTINO", key="destino")
+f_contacto = col3.text_input("CONTACTO", key="contacto")
+f_solicito = col3.text_input("SOLICITÓ", key="solicito")
+f_paqueteria = st.selectbox("FORMA DE ENVÍO", ["PAQUETERIA", "ENTREGA DIRECTA", "OTRO"], key="envio")
 
 st.divider()
 
-# 2. Selección de Productos (FUERA del formulario para que muestre las cantidades al instante)
+# 2. Selección de Productos
 st.subheader("Selección de Productos")
-seleccionados = st.multiselect("Busca y selecciona los productos:", list(precios.keys()))
+seleccionados = st.multiselect("Busca y selecciona los productos:", list(precios.keys()), key="multiselect_prod")
 
 cantidades_input = {}
 if seleccionados:
@@ -89,18 +89,12 @@ if seleccionados:
     cols_q = st.columns(3)
     for i, p in enumerate(seleccionados):
         with cols_q[i % 3]:
-            # Al estar fuera de un form, esto aparece en cuanto seleccionas en el multiselect
             cantidades_input[p] = st.number_input(f"Cantidad: {p}", min_value=1, step=1, key=f"q_{p}")
 
 st.divider()
 
 # 3. Botones de Acción
-c_save, c_clear = st.columns([1, 4])
-
-with c_save:
-    enviar = st.button("🚀 GUARDAR REGISTRO", use_container_width=True)
-
-if enviar:
+if st.button("🚀 GUARDAR REGISTRO", use_container_width=True):
     if not f_hotel:
         st.error("Por favor, ingresa el nombre del hotel.")
     elif not seleccionados:
@@ -135,25 +129,30 @@ if enviar:
             if subir_a_github(df_final, sha_actual, f"Registro Folio {nuevo_folio}"):
                 st.success(f"✅ ¡Folio {nuevo_folio} guardado exitosamente!")
                 st.balloons()
-                # Pequeña pausa para ver el éxito y recargar para limpiar todo
+                # El rerun limpia automáticamente todos los campos al reiniciar la app
                 st.rerun()
             else:
                 st.error("Error al conectar con GitHub.")
 
-# --- SECCIÓN DE DESCARGA ---
+# --- SECCIÓN DE REPORTE Y DESCARGA ---
 st.divider()
 if not df_actual.empty:
-    st.subheader("Reporte General")
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df_actual.to_excel(writer, index=False)
-    
-    st.download_button(
-        label="📥 DESCARGAR MATRIZ ACUMULADA (EXCEL)",
-        data=output.getvalue(),
-        file_name=f"Matriz_Muestras_{date.today()}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    with st.expander("📊 VER REGISTROS ACUMULADOS", expanded=False):
+        st.dataframe(df_actual, use_container_width=True)
+        
+        st.write("---")
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_actual.to_excel(writer, index=False)
+        
+        st.download_button(
+            label="📥 DESCARGAR MATRIZ COMPLETA (EXCEL)",
+            data=output.getvalue(),
+            file_name=f"Matriz_Muestras_{date.today()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+
 
 
 
