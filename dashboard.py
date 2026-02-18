@@ -2322,7 +2322,7 @@ else:
                             
                             # --- SECCIÓN DE BOTONES DE RENDER ---
                             st.markdown("---")
-                            if st.button("RENDERIZAR TABLA", use_container_width=True):
+                            if st.button(":material/precision_manufacturing: RENDERIZAR TABLA", use_container_width=True):
                                 st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
                             
                             if "df_final_st" in st.session_state:
@@ -2745,6 +2745,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
