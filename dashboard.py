@@ -748,20 +748,17 @@ else:
                     # Espacio estético al final para que no se vea cortado el contenedor
                     st.markdown("<br>", unsafe_allow_html=True)
             
-            # --- SEPARADOR Y GRÁFICOS DE CARGA ACTIVA POR FLETERA ---
-            # 1. Ponemos la línea divisoria
-            st.markdown(f'<hr style="border: 0; height: 1px; background: {vars_css["border"]}; margin: 40px 0; opacity: 0.3;">', unsafe_allow_html=True)
-            
-            # 2. Usamos Markdown puro para el título con el icono (así Streamlit sí lo renderiza)
-            st.markdown(f"""
-                <div style="font-size: 14px; font-weight: 500; color: {vars_css['sub']}; letter-spacing: 2px; margin-bottom: 20px;">
-                    <span style="vertical-align: middle;">:material/local_shipping:</span> 
-                    <span style="vertical-align: middle; text-transform: uppercase;">Distribución de Carga Activa por Fletera</span>
+             #--- SEPARADOR Y GRÁFICOS DE CARGA ACTIVA POR FLETERA ------
+             st.markdown(f"""
+                <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
+
+                <div style="color:{vars_css['sub']}; font-size:14px; font-weight:500; letter-spacing:2px; margin-bottom:20px; text-transform:uppercase;">":material/local_shipping:
+
+                    Distribución de Carga Activa por Fletera"
+
                 </div>
+
             """, unsafe_allow_html=True)
-            
-            # 3. Un pequeño espacio extra si sientes que quedó muy pegado a las barras
-            st.markdown('<div style="margin-bottom:20px;"></div>', unsafe_allow_html=True)
             
             # Definimos los colores del estilo actual
             color_transito = "#38bdf8" # Azul claro
@@ -3158,6 +3155,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
