@@ -1098,7 +1098,7 @@ else:
                 
                 if not df_criticos.empty:
                     st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:{vars_css.get('sub', '#666')}; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES</p>""", unsafe_allow_html=True)
-                    with st.expander("Filtrar y analizar detalle de retrasos", expanded=False):
+                    with st.expander("Filtrar y analizar detalle de retrasos", expanded=True):
                         c1, c2 = st.columns(2)
                         with c1: 
                             sel_f = st.multiselect("TRANSPORTISTA:", sorted(df_criticos["FLETERA"].unique()), placeholder="TODOS")
@@ -3167,6 +3167,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
