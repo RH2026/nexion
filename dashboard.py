@@ -726,96 +726,152 @@ else:
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.write("Visualización de Volumen de Carga")
+                    # --- CONFIGURACIÓN DE ESTILO (CSS DE ALTO NIVEL) ---
+                    st.markdown("""
+                        <style>
+                        /* Fondo y tipografía general */
+                        .main { background-color: #f8f9fa; }
+                        
+                        /* Estilo para las tarjetas de métricas */
+                        [data-testid="stMetricValue"] {
+                            font-size: 1.8rem !important;
+                            color: #1E3A8A !important; /* Azul corporativo */
+                            font-weight: 700;
+                        }
+                        
+                        /* Contenedor personalizado tipo Card */
+                        .pro-card {
+                            background-color: white;
+                            padding: 25px;
+                            border-radius: 15px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                            margin-bottom: 20px;
+                            border-left: 5px solid #1E3A8A;
+                        }
+                        
+                        /* Títulos refinados */
+                        .pro-title {
+                            letter-spacing: -0.5px;
+                            color: #1f2937;
+                            font-weight: 800;
+                            margin-bottom: 20px;
+                        }
+                        
+                        /* Badge para estados */
+                        .status-badge {
+                            padding: 4px 12px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: bold;
+                            background-color: #e0e7ff;
+                            color: #3730a3;
+                        }
+                        </style>
+                    """, unsafe_allow_html=True)
+                    
                     # --- 1. FUNCIÓN PARA CARGAR LA MATRIZ DE DASHBOARD ---
                     @st.cache_data(ttl=60)
                     def obtener_matriz_dashboard():
                         url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?nocache={int(time.time())}"
                         try:
-                            # Leemos todo como texto para evitar que Python le ponga decimales a los números
                             m = pd.read_csv(url, dtype=str)
                             m.columns = [str(c).upper().strip() for c in m.columns]
                             return m
                         except:
                             return pd.DataFrame()
                     
-                    # --- 2. BLOQUE DE BÚSQUEDA PERSONALIZADO ---
-                    st.markdown("---")
-                    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>CONSULTA DE EXPEDIENTES V2</p>", unsafe_allow_html=True)
+                    # --- 2. ENCABEZADO Y BÚSQUEDA ---
+                    st.markdown("<h2 class='pro-title'>🚀 Sistema Inteligente de Consulta</h2>", unsafe_allow_html=True)
                     
-                    query = st.text_input("🔍 Buscar en Facturación Moreno:", placeholder="Factura, Cliente, Pedido...").strip().upper()
+                    # Barra de búsqueda con diseño limpio
+                    with st.container():
+                        col_search, col_info = st.columns([2, 1])
+                        with col_search:
+                            query = st.text_input("", placeholder="🔍 Ingrese Factura, Cliente o Pedido...", help="Búsqueda universal en tiempo real").strip().upper()
+                        with col_info:
+                            st.markdown(f"<p style='margin-top:25px; color:#6b7280; font-size:12px; text-align:right;'>CONSULTA DE EXPEDIENTES V2.5<br><b>Estado:</b> <span class='status-badge'>EN LÍNEA</span></p>", unsafe_allow_html=True)
                     
                     if query:
                         url_fact = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/facturacion_moreno.csv?nocache={int(time.time())}"
                         
                         try:
-                            # Cargamos facturación
                             df_f = pd.read_csv(url_fact, dtype=str)
                             df_f.columns = [str(c).strip() for c in df_f.columns]
                             
-                            # Filtro de búsqueda universal
                             mask = df_f.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
                             resultados = df_f[mask].copy()
                     
                             if not resultados.empty:
                                 fila_principal = resultados.iloc[0]
                                 
-                                # --- CRUCE POR NÚMERO DE PEDIDO ---
-                                # Limpiamos el pedido de la factura: quitamos comas y decimales (.0000)
+                                # --- LÓGICA DE CRUCE (Sin cambios) ---
                                 pedido_f = str(fila_principal.get('NÚMERO DE PEDIDO', '')).replace(',', '').split('.')[0].strip()
-                                
                                 matriz_dash = obtener_matriz_dashboard()
                                 guia_encontrada = "PENDIENTE"
                                 
                                 if not matriz_dash.empty and pedido_f != "" and pedido_f != "nan":
-                                    # Buscamos en la columna NÚMERO DE PEDIDO del Dashboard (que ya está en upper)
                                     col_link = 'NÚMERO DE PEDIDO'
                                     col_guia = 'NÚMERO DE GUÍA'
-                                    
                                     if col_link in matriz_dash.columns:
-                                        # Limpiamos también la columna del dashboard por seguridad
                                         dash_peds = matriz_dash[col_link].str.replace(',', '').str.split('.').str[0].str.strip()
                                         match = matriz_dash[dash_peds == pedido_f]
-                                        
                                         if not match.empty:
                                             guia_encontrada = str(match.iloc[0].get(col_guia, 'SIN GUÍA'))
                     
-                                # --- PARTE SUPERIOR (Métricas) ---
-                                st.markdown("### 📄 Información General")
+                                # --- RENDERIZADO PRO: MÉTRICAS EN TARJETAS ---
+                                st.markdown("---")
+                                
+                                # Fila 1: KPIs Principales
                                 c1, c2, c3, c4 = st.columns(4)
-                                c1.metric("Factura", fila_principal.get('NÚMERO DE PEDIDO', 'N/A'))
                                 
-                                # Lógica para nombre de cliente (Extranjero o local)
-                                nom_c = fila_principal.get('Nombre_Extran')
-                                if pd.isna(nom_c) or str(nom_c).upper() == 'NONE' or str(nom_c) == "":
-                                    nom_c = fila_principal.get('Nombre_Cliente', 'N/A')
+                                with c1:
+                                    st.metric("ID FACTURA", fila_principal.get('NÚMERO DE PEDIDO', 'N/A'))
                                 
-                                c2.metric("CLIENTE", str(nom_c)[:20])
-                                c3.metric("CIUDAD", fila_principal.get('Cuidad', 'N/A'))
-                                c4.metric("GUÍA", guia_encontrada)
+                                with c2:
+                                    nom_c = fila_principal.get('Nombre_Extran')
+                                    if pd.isna(nom_c) or str(nom_c).upper() == 'NONE' or str(nom_c) == "":
+                                        nom_c = fila_principal.get('Nombre_Cliente', 'N/A')
+                                    st.metric("CLIENTE", str(nom_c)[:18] + ".." if len(str(nom_c)) > 18 else str(nom_c))
+                                
+                                with c3:
+                                    st.metric("UBICACIÓN", fila_principal.get('Cuidad', 'N/A'))
+                                
+                                with c4:
+                                    # Color dinámico si tiene guía o no
+                                    st.metric("GUÍA ASIGNADA", guia_encontrada)
                     
-                                # --- TABLA RESUMEN (CORRECCIÓN DE COLUMNAS AQUÍ) ---
+                                # Fila 2: Detalles de Envío y Matriz
+                                st.markdown("<div class='pro-card'>", unsafe_allow_html=True)
+                                st.markdown("#### 📍 Información de Despacho")
+                                
                                 res_tab = resultados.head(1).copy()
                                 if 'Fecha_Conta' in res_tab.columns:
                                     res_tab['Fecha_Conta'] = pd.to_datetime(res_tab['Fecha_Conta']).dt.date
                                 
-                                # Estas son las 4 columnas que pediste específicamente
                                 cols_show = ["Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "DIRECCION"]
                                 st.table(res_tab[[c for c in cols_show if c in res_tab.columns]])
+                                st.markdown("</div>", unsafe_allow_html=True)
                     
-                                # --- TABLA DE PARTIDAS (CODIGO, CANTIDAD, UM) ---
-                                st.markdown("### 📦 Detalle de Partidas")
+                                # Fila 3: Detalle de Partidas con diseño moderno
+                                st.markdown("#### 📦 Detalle de Partidas")
                                 df_partidas = pd.DataFrame({
-                                    'CODIGO': resultados.get('Codigo', 'N/A'),
+                                    'SKU / CÓDIGO': resultados.get('Codigo', 'N/A'),
                                     'CANTIDAD': pd.to_numeric(resultados.get('Quantity', 0), errors='coerce').fillna(0).astype(int),
-                                    'UM': resultados.get('UM', 'N/A')
+                                    'U.M.': resultados.get('UM', 'N/A')
                                 })
-                                st.dataframe(df_partidas, use_container_width=True, hide_index=True)
+                                
+                                # Usamos st.dataframe con estilo mejorado
+                                st.dataframe(
+                                    df_partidas.style.set_properties(**{'background-color': '#ffffff', 'color': '#1f2937'}),
+                                    use_container_width=True, 
+                                    hide_index=True
+                                )
                                 
                             else:
-                                st.warning("No se encontró información con ese criterio.")
+                                st.info("💡 **Aviso:** No se encontraron expedientes que coincidan con su búsqueda.")
                                 
                         except Exception as e:
-                            st.error(f"Error en el proceso: {e}")
+                            st.error(f"Se ha detectado una anomalía en el proceso: {e}")
                 
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
@@ -3145,6 +3201,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
