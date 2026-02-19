@@ -17,6 +17,7 @@ import streamlit.components.v1 as components
 import altair as alt
 import plotly.graph_objects as go
 import plotly.express as px
+import math
 
 import pytz
 from github import Github
@@ -876,9 +877,10 @@ else:
                     promedio_dias = historial['DIAS_REALES'].mean()
                     total_viajes = len(historial)
                     
-                    # Formateamos el número para que se vea limpio
-                    # Si es entero (ej: 3.0), se verá como 3. Si tiene decimales, muestra 1.
-                    dias_str = f"{promedio_dias:.1f}" if promedio_dias % 1 != 0 else f"{int(promedio_dias)}"
+                    # --- LA MAGIA DEL REDONDEO ---
+                    # math.ceil() siempre redondea hacia el entero superior
+                    dias_redondeados = math.ceil(promedio_dias)
+                    dias_str = f"{dias_redondeados}"
                 
                     # Renderizado del Widget Premium
                     st.markdown(f"""
@@ -892,13 +894,12 @@ else:
                                 </div>
                                 <div class="kpi-value">{dias_str} <small>DÍAS</small></div>
                                 <div class="kpi-subtext">
-                                    Promedio obtenido de <b>{total_viajes}</b> envíos entregados con éxito
+                                    Promedio real de <b>{promedio_dias:.1f}</b> días redondeado hacia arriba <br>
+                                    Basado en <b>{total_viajes}</b> envíos entregados.
                                 </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-                else:
-                    st.info(f"Cielo, aún no tengo registros de 'Entrega Real' para **{destino_sel}** en mi matriz.")
                     
                 
                 # PESTAÑA 3: VOLUMEN
@@ -3235,6 +3236,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
