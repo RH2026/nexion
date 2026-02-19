@@ -841,7 +841,43 @@ else:
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
             with tab_rastreo:
                 st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
-                #AQUI
+                # --- BLOQUE: CALCULADOR DE TRÁNSITO CHINGÓN ---
+                st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
+                
+                # Contenedor de selección
+                c1, c2 = st.columns(2)
+                with c1:
+                    origen_sel = st.selectbox("ORIGEN", ["GUADALAJARA"], key="orig_calc")
+                with c2:
+                    # Asumiendo que 'df' es tu matriz de datos
+                    destinos_disponibles = sorted(df['DESTINO'].unique())
+                    destino_sel = st.selectbox("DESTINO", destinos_disponibles, key="dest_calc")
+                
+                # Lógica de cálculo (Promedio del historial)
+                historial_ruta = df[(df['ORIGEN'] == origen_sel) & (df['DESTINO'] == destino_sel)]
+                
+                if not historial_ruta.empty:
+                    promedio = historial_ruta['DIAS_TRANSITO'].mean()
+                    # Redondeamos a 1 decimal
+                    dias_display = f"{promedio:.1f}"
+                    
+                    # Renderizado del Widget "Chingón"
+                    st.markdown(f"""
+                        <div class="kpi-ruta-container">
+                            <div class="kpi-ruta-card">
+                                <span class="kpi-tag">HISTORIAL ACTIVO</span>
+                                <div class="kpi-route-flow">
+                                    <span class="city">{origen_sel}</span>
+                                    <span class="arrow">→</span>
+                                    <span class="city">{destino_sel}</span>
+                                </div>
+                                <div class="kpi-value">{dias_display} <small>DÍAS</small></div>
+                                <div class="kpi-subtext">Promedio basado en {len(historial_ruta)} envíos previos</div>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.warning("No hay datos suficientes para esta ruta, cielo.")
                     
                 
                 # PESTAÑA 3: VOLUMEN
@@ -3178,6 +3214,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
