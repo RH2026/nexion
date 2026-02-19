@@ -530,6 +530,9 @@ else:
                 except Exception as e:
                     st.error(f"Error al cargar datos: {e}")
                     return None
+            
+            df_raw = cargar_datos()
+            
             with st.expander("Detalle Operativo y consulta de estatus de envios", expanded=True):
                 # --- ESTILOS CSS ---
                 st.markdown(f"""
@@ -3320,6 +3323,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
