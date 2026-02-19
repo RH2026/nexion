@@ -782,7 +782,7 @@ else:
                                 # --- PARTE SUPERIOR (Métricas) ---
                                 st.markdown("### 📄 Información General")
                                 c1, c2, c3, c4 = st.columns(4)
-                                c1.metric("NÚMERO DE PEDIDO", fila_principal.get('Factura', 'N/A'))
+                                c1.metric("NÚMERO DE PEDIDO", fila_principal.get('NÚMERO DE PEDIDO', 'N/A'))
                                 
                                 # Lógica para nombre de cliente (Extranjero o local)
                                 nom_c = fila_principal.get('Nombre_Extran')
@@ -3147,6 +3147,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
