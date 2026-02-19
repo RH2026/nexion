@@ -533,7 +533,7 @@ else:
             
             df_raw = cargar_datos()
             
-            with st.expander("Detalle Operativo y consulta de estatus de envios", expanded=True):
+            with st.expander("Detalle Operativo y Consulta de estatus de envios", expanded=False):
                 # --- ESTILOS CSS ---
                 st.markdown(f"""
                     <style>
@@ -3088,6 +3088,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
