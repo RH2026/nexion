@@ -731,6 +731,7 @@ else:
                     def obtener_matriz_dashboard():
                         url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?nocache={int(time.time())}"
                         try:
+                            # Leemos todo como texto para evitar que Python le ponga decimales a los números
                             m = pd.read_csv(url, dtype=str)
                             m.columns = [str(c).upper().strip() for c in m.columns]
                             return m
@@ -747,60 +748,61 @@ else:
                         url_fact = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/facturacion_moreno.csv?nocache={int(time.time())}"
                         
                         try:
+                            # Cargamos facturación
                             df_f = pd.read_csv(url_fact, dtype=str)
                             df_f.columns = [str(c).strip() for c in df_f.columns]
                             
+                            # Filtro de búsqueda universal
                             mask = df_f.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
                             resultados = df_f[mask].copy()
                     
                             if not resultados.empty:
                                 fila_principal = resultados.iloc[0]
                                 
-                                # --- EL CUADRE MÁGICO PARA LA GUÍA ---
-                                # En 'facturacion_moreno.csv' la columna se llama 'Pedido'
-                                # En 'Matriz_Excel_Dashboard.csv' la columna se llama 'NÚMERO DE PEDIDO'
-                                id_busqueda = str(fila_principal.get('Pedido', '')).replace(',', '').split('.')[0].strip()
+                                # --- CRUCE POR NÚMERO DE PEDIDO ---
+                                # Limpiamos el pedido de la factura: quitamos comas y decimales (.0000)
+                                pedido_f = str(fila_principal.get('NÚMERO DE PEDIDO', '')).replace(',', '').split('.')[0].strip()
                                 
                                 matriz_dash = obtener_matriz_dashboard()
                                 guia_encontrada = "PENDIENTE"
                                 
-                                if not matriz_dash.empty and id_busqueda != "" and id_busqueda != "nan":
-                                    col_link_dash = 'NÚMERO DE PEDIDO'
-                                    col_guia_dash = 'NÚMERO DE GUÍA'
+                                if not matriz_dash.empty and pedido_f != "" and pedido_f != "nan":
+                                    # Buscamos en la columna NÚMERO DE PEDIDO del Dashboard (que ya está en upper)
+                                    col_link = 'NÚMERO DE PEDIDO'
+                                    col_guia = 'NÚMERO DE GUÍA'
                                     
-                                    if col_link_dash in matriz_dash.columns:
-                                        # Limpiamos la columna del Dashboard para que coincida perfectamente
-                                        dash_peds = matriz_dash[col_link_dash].str.replace(',', '').str.split('.').str[0].str.strip()
-                                        match = matriz_dash[dash_peds == id_busqueda]
+                                    if col_link in matriz_dash.columns:
+                                        # Limpiamos también la columna del dashboard por seguridad
+                                        dash_peds = matriz_dash[col_link].str.replace(',', '').str.split('.').str[0].str.strip()
+                                        match = matriz_dash[dash_peds == pedido_f]
                                         
                                         if not match.empty:
-                                            guia_encontrada = str(match.iloc[0].get(col_guia_dash, 'SIN GUÍA'))
+                                            guia_encontrada = str(match.iloc[0].get(col_guia, 'SIN GUÍA'))
                     
                                 # --- PARTE SUPERIOR (Métricas) ---
                                 st.markdown("### 📄 Información General")
                                 c1, c2, c3, c4 = st.columns(4)
+                                c1.metric("Factura", fila_principal.get('NÚMERO DE PEDIDO', 'N/A'))
                                 
-                                # Mostramos el Pedido como identificador principal
-                                c1.metric("PEDIDO", id_busqueda)
-                                
+                                # Lógica para nombre de cliente (Extranjero o local)
                                 nom_c = fila_principal.get('Nombre_Extran')
-                                if pd.isna(nom_c) or str(nom_c).upper() in ['NONE', 'NAN', '']:
+                                if pd.isna(nom_c) or str(nom_c).upper() == 'NONE' or str(nom_c) == "":
                                     nom_c = fila_principal.get('Nombre_Cliente', 'N/A')
                                 
                                 c2.metric("CLIENTE", str(nom_c)[:20])
                                 c3.metric("CIUDAD", fila_principal.get('Cuidad', 'N/A'))
                                 c4.metric("GUÍA", guia_encontrada)
                     
-                                # --- TABLA RESUMEN (Tus columnas solicitadas) ---
+                                # --- TABLA RESUMEN (CORRECCIÓN DE COLUMNAS AQUÍ) ---
                                 res_tab = resultados.head(1).copy()
                                 if 'Fecha_Conta' in res_tab.columns:
                                     res_tab['Fecha_Conta'] = pd.to_datetime(res_tab['Fecha_Conta']).dt.date
                                 
-                                # Estas son las 4 columnas que me pediste específicamente
+                                # Estas son las 4 columnas que pediste específicamente
                                 cols_show = ["Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "DIRECCION"]
                                 st.table(res_tab[[c for c in cols_show if c in res_tab.columns]])
                     
-                                # --- TABLA DE PARTIDAS ---
+                                # --- TABLA DE PARTIDAS (CODIGO, CANTIDAD, UM) ---
                                 st.markdown("### 📦 Detalle de Partidas")
                                 df_partidas = pd.DataFrame({
                                     'CODIGO': resultados.get('Codigo', 'N/A'),
@@ -810,10 +812,10 @@ else:
                                 st.dataframe(df_partidas, use_container_width=True, hide_index=True)
                                 
                             else:
-                                st.warning("No se encontró información.")
+                                st.warning("No se encontró información con ese criterio.")
                                 
                         except Exception as e:
-                            st.error(f"Error: {e}")
+                            st.error(f"Error en el proceso: {e}")
                 
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
@@ -3143,6 +3145,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
