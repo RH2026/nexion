@@ -727,13 +727,12 @@ else:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.write("Visualización de Volumen de Carga")
                     # --- 1. FUNCIÓN PARA CARGAR LA MATRIZ DE DASHBOARD (.CSV) ---
-                    # --- 1. FUNCIÓN PARA CARGAR LA MATRIZ DE DASHBOARD (.CSV) ---
                     @st.cache_data(ttl=60)
                     def obtener_matriz_dashboard():
                         url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?nocache={int(time.time())}"
                         try:
+                            # Cargamos el CSV y normalizamos columnas de inmediato
                             m = pd.read_csv(url)
-                            # Normalizamos: Mayúsculas y sin espacios en los nombres de columnas
                             m.columns = [str(c).upper().strip() for c in m.columns]
                             return m
                         except Exception as e:
@@ -752,45 +751,51 @@ else:
                             df_f = pd.read_excel(url_fact)
                             df_f.columns = [str(c).strip() for c in df_f.columns]
                             
-                            # Filtro de búsqueda universal en el Excel de facturación
                             mask = df_f.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
                             resultados = df_f[mask].copy()
                     
                             if not resultados.empty:
                                 fila_principal = resultados.iloc[0]
                                 
-                                # --- LÓGICA DE CRUCE CORREGIDA ---
-                                # Extraemos el pedido quitando decimales para que coincida con el CSV
+                                # --- LÓGICA DE CRUCE ULTRA-FLEXIBLE ---
+                                # Limpiamos el pedido actual (quitamos .0 y espacios)
                                 try:
-                                    pedido_val = str(int(float(fila_principal.get('Pedido', 0))))
+                                    raw_pedido = str(fila_principal.get('Pedido', ''))
+                                    pedido_limpio = str(int(float(raw_pedido))) if raw_pedido != '' else ""
                                 except:
-                                    pedido_val = str(fila_principal.get('Pedido', ''))
+                                    pedido_limpio = str(raw_pedido).strip()
                     
                                 matriz_dash = obtener_matriz_dashboard()
                                 guia_encontrada = "PENDIENTE"
                                 
-                                if not matriz_dash.empty:
-                                    # Definimos el nombre de la columna tal cual la normalizamos (MAYÚSCULAS)
-                                    col_pedido_dash = 'NÚMERO DE PEDIDO' 
-                                    col_guia_dash = 'NÚMERO DE GUÍA'
+                                if not matriz_dash.empty and pedido_limpio != "":
+                                    # Nombres de columnas según tu Dashboard
+                                    col_ped = 'NÚMERO DE PEDIDO'
+                                    col_gui = 'NÚMERO DE GUÍA'
                                     
-                                    if col_pedido_dash in matriz_dash.columns:
-                                        # BUSQUEDA: Comparamos el pedido del Excel con la columna del Dashboard
-                                        match_dash = matriz_dash[matriz_dash[col_pedido_dash].astype(str).str.contains(pedido_val, na=False)]
+                                    if col_ped in matriz_dash.columns:
+                                        # Convertimos la columna del dashboard a string y quitamos ".0" si existe
+                                        col_ped_str = matriz_dash[col_ped].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+                                        
+                                        # Buscamos el pedido limpio
+                                        match_dash = matriz_dash[col_ped_str == pedido_limpio]
                                         
                                         if not match_dash.empty:
-                                            # Extraemos la guía si existe
-                                            guia_encontrada = match_dash.iloc[0].get(col_guia_dash, 'SIN GUÍA')
-                    
+                                            guia_encontrada = str(match_dash.iloc[0].get(col_gui, 'SIN GUÍA'))
+                                
                                 # --- PARTE SUPERIOR (Métricas) ---
                                 st.markdown("### 📄 Información General")
                                 c1, c2, c3, c4 = st.columns(4)
                                 c1.metric("FACTURA", fila_principal.get('Factura', 'N/A'))
                                 c2.metric("NOMBRE EXTRAN", str(fila_principal.get('Nombre_Extran', 'N/A'))[:20])
                                 c3.metric("CIUDAD", fila_principal.get('Cuidad', 'N/A'))
-                                c4.metric("GUÍA", guia_encontrada)
+                                # Si la guía sigue pendiente, la ponemos en rojo sutil
+                                if guia_encontrada == "PENDIENTE":
+                                    c4.markdown(f"<p style='font-size:14px; margin-bottom:0;'>GUÍA</p><h2 style='color:gray;'>{guia_encontrada}</h2>", unsafe_allow_html=True)
+                                else:
+                                    c4.metric("GUÍA", guia_encontrada)
                     
-                                # --- DETALLE DE TABLA (Fechas y Pedido limpios) ---
+                                # --- TABLA RESUMEN ---
                                 if 'Fecha_Conta' in resultados.columns:
                                     resultados['Fecha_Conta'] = pd.to_datetime(resultados['Fecha_Conta']).dt.date
                                 
@@ -798,24 +803,22 @@ else:
                                     resultados['Pedido'] = resultados['Pedido'].apply(lambda x: str(int(float(x))) if pd.notnull(x) else "0")
                     
                                 cols_tabla_superior = ["Fecha_Conta", "Pedido", "Nombre_Cliente", "DIRECCION", "Cuidad", "CP"]
-                                cols_existentes = [c for c in cols_tabla_superior if c in resultados.columns]
-                                st.table(resultados[cols_existentes].head(1))
+                                st.table(resultados[[c for c in cols_tabla_superior if c in resultados.columns]].head(1))
                     
-                                # --- TABLA DE PARTIDAS (CODIGO, CANTIDAD, UM) ---
+                                # --- TABLA DE PARTIDAS ---
                                 st.markdown("### 📦 Detalle de Partidas")
-                                df_partidas = pd.DataFrame()
-                                df_partidas['CODIGO'] = resultados.get('Codigo', 'N/A')
-                                # Convertimos Quantity a entero para que se vea limpio
-                                df_partidas['CANTIDAD'] = pd.to_numeric(resultados.get('Quantity', 0), errors='coerce').fillna(0).astype(int)
-                                df_partidas['UM'] = resultados.get('UM', 'N/A')
-                                
+                                df_partidas = pd.DataFrame({
+                                    'CODIGO': resultados.get('Codigo', 'N/A'),
+                                    'CANTIDAD': pd.to_numeric(resultados.get('Quantity', 0), errors='coerce').fillna(0).astype(int),
+                                    'UM': resultados.get('UM', 'N/A')
+                                })
                                 st.dataframe(df_partidas, use_container_width=True, hide_index=True)
                                 
                             else:
                                 st.warning("No se encontró ninguna coincidencia.")
                                 
                         except Exception as e:
-                            st.error(f"Error en la búsqueda o cruce: {e}")
+                            st.error(f"Error en la búsqueda: {e}")
                 
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
@@ -3145,6 +3148,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
