@@ -353,6 +353,93 @@ button[kind="secondary"] {{
     line-height: 30px !important;
 }}
 
+/* --- WIDGET DE RUTA PREMIUM (Optimizado para f-string) --- */
+.kpi-ruta-container {{
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+    font-family: 'Inter', sans-serif;
+}}
+
+.kpi-ruta-card {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 12px !important;
+    padding: 30px !important;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+}}
+
+/* Línea de acento superior */
+.kpi-ruta-card::before {{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #00FFAA, #00A3A3);
+}}
+
+.kpi-tag {{
+    font-size: 10px !important;
+    letter-spacing: 3px;
+    color: #00FFAA;
+    font-weight: 700;
+    text-transform: uppercase;
+    opacity: 0.9;
+}}
+
+.kpi-route-flow {{
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}}
+
+.city {{
+    font-size: 16px !important;
+    font-weight: 600;
+    color: {vars_css['text']};
+    letter-spacing: 1px;
+}}
+
+.arrow {{
+    color: #00FFAA;
+    font-size: 24px;
+    font-weight: bold;
+}}
+
+.kpi-value {{
+    font-size: 48px !important;
+    font-weight: 900;
+    color: {vars_css['text']};
+    margin: 5px 0;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(0,255,170,0.2);
+}}
+
+.kpi-value small {{
+    font-size: 16px !important;
+    color: {vars_css['sub']};
+    letter-spacing: 2px;
+    font-weight: 400;
+}}
+
+.kpi-subtext {{
+    font-size: 11px !important;
+    color: {vars_css['sub']};
+    margin-top: 15px;
+    line-height: 1.4;
+}}
+
+.kpi-subtext b {{
+    color: #00FFAA;
+}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -3234,6 +3321,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
