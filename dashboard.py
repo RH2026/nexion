@@ -841,43 +841,64 @@ else:
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
             with tab_rastreo:
                 st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
-                # --- BLOQUE: CALCULADOR DE TRÁNSITO CHINGÓN ---
+                # =========================================================
+                # 1. PROCESAMIENTO DE DATOS (Asegurando que existan los días)
+                # =========================================================
+                # Convertimos columnas a fecha (usamos errores='coerce' por seguridad)
+                df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
+                df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
+                
+                # Calculamos los días de tránsito reales (Solo donde hay ambas fechas)
+                df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
+                
+                # =========================================================
+                # 2. SECCIÓN DEL CALCULADOR "CHINGÓN"
+                # =========================================================
                 st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
                 
-                # Contenedor de selección
-                c1, c2 = st.columns(2)
+                # Creamos columnas para el selector
+                c1, c2 = st.columns([1, 1])
+                
                 with c1:
-                    origen_sel = st.selectbox("ORIGEN", ["GUADALAJARA"], key="orig_calc")
+                    # Origen fijo GDL como me pediste, cielo
+                    st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
+                
                 with c2:
-                    # Asumiendo que 'df' es tu matriz de datos
-                    destinos_disponibles = sorted(df['DESTINO'].unique())
-                    destino_sel = st.selectbox("DESTINO", destinos_disponibles, key="dest_calc")
+                    # Extraemos destinos únicos sin valores nulos
+                    destinos_lista = sorted(df['DESTINO'].dropna().unique())
+                    destino_sel = st.selectbox("DESTINO FINAL", destinos_lista, key="calc_dest_v3")
                 
-                # Lógica de cálculo (Promedio del historial)
-                historial_ruta = df[(df['ORIGEN'] == origen_sel) & (df['DESTINO'] == destino_sel)]
+                # Lógica de cálculo basada en tu matriz
+                # Filtramos que el destino coincida y que tenga el cálculo de días hecho
+                historial = df[(df['DESTINO'] == destino_sel) & (df['DIAS_REALES'].notna())]
                 
-                if not historial_ruta.empty:
-                    promedio = historial_ruta['DIAS_TRANSITO'].mean()
-                    # Redondeamos a 1 decimal
-                    dias_display = f"{promedio:.1f}"
+                if not historial.empty:
+                    promedio_dias = historial['DIAS_REALES'].mean()
+                    total_viajes = len(historial)
                     
-                    # Renderizado del Widget "Chingón"
+                    # Formateamos el número para que se vea limpio
+                    # Si es entero (ej: 3.0), se verá como 3. Si tiene decimales, muestra 1.
+                    dias_str = f"{promedio_dias:.1f}" if promedio_dias % 1 != 0 else f"{int(promedio_dias)}"
+                
+                    # Renderizado del Widget Premium
                     st.markdown(f"""
                         <div class="kpi-ruta-container">
                             <div class="kpi-ruta-card">
-                                <span class="kpi-tag">HISTORIAL ACTIVO</span>
+                                <span class="kpi-tag">Métrica de Tránsito Real</span>
                                 <div class="kpi-route-flow">
-                                    <span class="city">{origen_sel}</span>
+                                    <span class="city">GDL</span>
                                     <span class="arrow">→</span>
                                     <span class="city">{destino_sel}</span>
                                 </div>
-                                <div class="kpi-value">{dias_display} <small>DÍAS</small></div>
-                                <div class="kpi-subtext">Promedio basado en {len(historial_ruta)} envíos previos</div>
+                                <div class="kpi-value">{dias_str} <small>DÍAS</small></div>
+                                <div class="kpi-subtext">
+                                    Promedio obtenido de <b>{total_viajes}</b> envíos entregados con éxito
+                                </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.warning("No hay datos suficientes para esta ruta, cielo.")
+                    st.info(f"Cielo, aún no tengo registros de 'Entrega Real' para **{destino_sel}** en mi matriz.")
                     
                 
                 # PESTAÑA 3: VOLUMEN
@@ -3214,6 +3235,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
