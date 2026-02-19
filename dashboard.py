@@ -745,13 +745,8 @@ else:
                     with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#a855f7")
                     with c5: render_kpi(retrasados, total_p, "Retraso", "#ff4b4b")
                 
-                    st.markdown("<br><br>", unsafe_allow_html=True)
-                    with st.expander("DETALLE OPERATIVO"):
-                        st.dataframe(
-                            df_mes.sort_values("FECHA DE ENVÍO", ascending=False),
-                            use_container_width=True,
-                            hide_index=True
-                        )
+                    # Espacio estético al final para que no se vea cortado el contenedor
+                    st.markdown("<br>", unsafe_allow_html=True)
     
                 # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
                 with tab_rastreo:
@@ -3323,6 +3318,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
