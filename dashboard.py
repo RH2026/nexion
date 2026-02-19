@@ -737,66 +737,72 @@ else:
                         except:
                             return pd.DataFrame()
                     
-                    # --- 2. BLOQUE DE BÚSQUEDA ---
+                    # --- 2. BLOQUE DE BÚSQUEDA PERSONALIZADO ---
                     st.markdown("---")
-                    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>CONSULTA DE EXPEDIENTES</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>CONSULTA DE EXPEDIENTES V2</p>", unsafe_allow_html=True)
                     
                     query = st.text_input("🔍 Buscar en Facturación Moreno:", placeholder="Factura, Cliente, Pedido...").strip().upper()
                     
                     if query:
-                        # Cargamos el Excel de facturación desde GitHub
-                        # Nota: Si lo guardamos como .xlsx en GitHub, necesitamos usar la URL 'raw' correcta
                         url_fact = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/facturacion_moreno.xlsx?nocache={int(time.time())}"
                         
                         try:
-                            # Intentamos leer como Excel
                             df_f = pd.read_excel(url_fact)
                             df_f.columns = [str(c).strip() for c in df_f.columns]
                             
-                            # Búsqueda universal
+                            # Filtro de búsqueda
                             mask = df_f.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
-                            resultados = df_f[mask]
+                            resultados = df_f[mask].copy()
                     
                             if not resultados.empty:
-                                st.markdown("### 📄 Información General")
                                 fila_principal = resultados.iloc[0]
                                 
-                                # Métricas rápidas
-                                c1, c2, c3, c4 = st.columns(4)
-                                c1.metric("Factura", fila_principal.get('Factura', 'N/A'))
-                                c2.metric("Cliente", str(fila_principal.get('Nombre_Cliente', 'N/A'))[:15])
-                                c3.metric("Total", f"${fila_principal.get('Total$', 0.0):,.2f}")
-                                c4.metric("Ciudad", fila_principal.get('Cuidad', 'N/A'))
-                    
-                                # Resumen de ubicación (Una sola línea)
-                                cols_resumen = ["Fecha_Conta", "Pedido", "Nombre_Cliente", "DIRECCION", "Cuidad", "CP"]
-                                st.table(resultados[[c for c in cols_resumen if c in resultados.columns]].head(1))
-                    
-                                # --- DETALLE DE PARTIDAS (Todas las líneas de la factura) ---
-                                st.markdown("### 📦 Detalle de Partidas (Códigos)")
-                                
-                                # Mostramos Quantity, Codigo, FrgnName de todas las filas encontradas
-                                cols_detalle = ["Codigo", "FrgnName", "Quantity", "UM"]
-                                df_detalle = resultados[[c for c in cols_detalle if c in resultados.columns]].copy()
-                                
-                                # Cruce con Matriz_Excel_Dashboard.csv para ver si hay Guía/Estatus
+                                # --- CRUCE CON DASHBOARD PARA LA GUÍA ---
                                 matriz_dash = obtener_matriz_dashboard()
+                                guia_encontrada = "PENDIENTE"
                                 if not matriz_dash.empty and 'FACTURA' in matriz_dash.columns:
-                                    fact_val = str(fila_principal.get('Factura', ''))
-                                    info_extra = matriz_dash[matriz_dash['FACTURA'].astype(str) == fact_val]
-                                    
-                                    if not info_extra.empty:
-                                        # Si tu matriz de dashboard tiene columna de guía, aquí la mostramos
-                                        guia = info_extra.iloc[0].get('GUIA', 'SIN GUÍA')
-                                        st.info(f"🚚 **Información Logística:** Guía: {guia} | Estatus: {info_extra.iloc[0].get('ESTATUS', 'N/A')}")
+                                    f_val = str(fila_principal.get('Factura', ''))
+                                    match_dash = matriz_dash[matriz_dash['FACTURA'].astype(str) == f_val]
+                                    if not match_dash.empty:
+                                        guia_encontrada = match_dash.iloc[0].get('GUIA', 'SIN GUÍA')
                     
-                                st.dataframe(df_detalle, use_container_width=True, hide_index=True)
+                                # --- PARTE SUPERIOR (Métricas Principales) ---
+                                st.markdown("### 📄 Información General")
+                                c1, c2, c3, c4 = st.columns(4)
+                                c1.metric("FACTURA", fila_principal.get('Factura', 'N/A'))
+                                c2.metric("NOMBRE EXTRAN", str(fila_principal.get('Nombre_Extran', 'N/A'))[:20])
+                                c3.metric("CIUDAD", fila_principal.get('Cuidad', 'N/A'))
+                                c4.metric("GUÍA", guia_encontrada)
+                    
+                                # --- DETALLE DE TABLA (Fechas y Pedido limpios) ---
+                                # Limpiamos Fecha: Solo el día (YYYY-MM-DD)
+                                if 'Fecha_Conta' in resultados.columns:
+                                    resultados['Fecha_Conta'] = pd.to_datetime(resultados['Fecha_Conta']).dt.date
+                                
+                                # Limpiamos Pedido: Sin decimales (187076)
+                                if 'Pedido' in resultados.columns:
+                                    resultados['Pedido'] = pd.to_numeric(resultados['Pedido'], errors='coerce').fillna(0).astype(int)
+                    
+                                cols_tabla_superior = ["Fecha_Conta", "Pedido", "Nombre_Cliente", "DIRECCION", "Cuidad", "CP"]
+                                st.table(resultados[cols_tabla_superior].head(1))
+                    
+                                # --- TABLA DE PARTIDAS (Solo CODIGO, QUANTITY, UM) ---
+                                st.markdown("### 📦 Detalle de Partidas")
+                                cols_partidas = ["Codigo", "Quantity", "UM"]
+                                
+                                # Aseguramos que solo salgan las columnas que pediste
+                                df_partidas = resultados[cols_partidas].copy()
+                                
+                                # Formateamos Quantity para que no tenga decimales si son piezas enteras
+                                df_partidas['Quantity'] = df_partidas['Quantity'].apply(lambda x: int(x) if x == x else 0)
+                                
+                                st.dataframe(df_partidas, use_container_width=True, hide_index=True)
                                 
                             else:
                                 st.warning("No se encontró ninguna coincidencia.")
                                 
                         except Exception as e:
-                            st.error(f"Error al conectar con la base de datos: {e}")
+                            st.error(f"Error al procesar la búsqueda: {e}")
                 
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
@@ -3126,6 +3132,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
