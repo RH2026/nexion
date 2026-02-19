@@ -224,6 +224,16 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
+/* --- NUEVO: Control de Placeholder (Escapado para f-string) --- */
+.stTextInput input::placeholder {{
+    font-size: 10px !important; 
+    color: {vars_css['sub']} !important; 
+    opacity: 0.7 !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+}}
+
+
 /* 6. FOOTER FIJO */
 .footer {{ 
     position: fixed; 
@@ -3168,6 +3178,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
