@@ -549,6 +549,9 @@ else:
                 with col_search:
                     busqueda_manual = st.text_input("", key="busqueda_logistica_vfinal", placeholder="🔍 Ingrese factura o guía para ver detalle...").strip()
                 
+                if busqueda_manual and df_timeline.empty:
+                    st.warning("No se encontró detalle para la búsqueda principal.")        
+                
                 # --- 2. LÓGICA DE FILTRADO ---
                 df_filtrado = df_raw.copy()
                 
@@ -618,8 +621,7 @@ else:
                 
                 st.dataframe(df_display, use_container_width=True, hide_index=True)
                 
-                if busqueda_manual and df_timeline.empty:
-                    st.warning("No se encontró detalle para la búsqueda principal.")           
+                   
             
             #INICIO DONITAS-------------------
             def render_kpi(valor, total, titulo, color):
@@ -3157,6 +3159,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
