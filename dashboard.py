@@ -877,12 +877,11 @@ else:
                     promedio_dias = historial['DIAS_REALES'].mean()
                     total_viajes = len(historial)
                     
-                    # --- LA MAGIA DEL REDONDEO ---
-                    # math.ceil() siempre redondea hacia el entero superior
+                    # Redondeo hacia arriba
                     dias_redondeados = math.ceil(promedio_dias)
                     dias_str = f"{dias_redondeados}"
                 
-                    # Renderizado del Widget Premium
+                    # Renderizado del Widget Premium (Sin el texto del promedio real)
                     st.markdown(f"""
                         <div class="kpi-ruta-container">
                             <div class="kpi-ruta-card">
@@ -894,8 +893,7 @@ else:
                                 </div>
                                 <div class="kpi-value">{dias_str} <small>DÍAS</small></div>
                                 <div class="kpi-subtext">
-                                    Promedio real de <b>{promedio_dias:.1f}</b> días redondeado hacia arriba <br>
-                                    Basado en <b>{total_viajes}</b> envíos entregados.
+                                    Basado en <b>{total_viajes}</b> envíos entregados con éxito a este destino
                                 </div>
                             </div>
                         </div>
@@ -3236,6 +3234,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
