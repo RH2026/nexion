@@ -547,7 +547,7 @@ else:
                 # --- 1. BLOQUE DE BÚSQUEDA GENERAL (PARA EL TIMELINE) ---
                 col_space1, col_search, col_space2 = st.columns([1, 2, 1])
                 with col_search:
-                    busqueda_manual = st.text_input("", key="busqueda_master", placeholder="🔍 Ingrese factura o guía para ver detalle...").strip()
+                    busqueda_manual = st.text_input("", key="busqueda_logistica_vfinal", placeholder="🔍 Ingrese factura o guía para ver detalle...").strip()
                 
                 # --- 2. LÓGICA DE FILTRADO ---
                 df_filtrado = df_raw.copy()
@@ -3318,6 +3318,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
