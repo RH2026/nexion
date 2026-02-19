@@ -751,15 +751,17 @@ else:
              #--- SEPARADOR Y GRÁFICOS DE CARGA ACTIVA POR FLETERA ------
              st.markdown(f"""
                 <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
-
-                <div style="color:{vars_css['sub']}; font-size:14px; font-weight:500; letter-spacing:2px; margin-bottom:20px; text-transform:uppercase;">":material/local_shipping:
-
-                    Distribución de Carga Activa por Fletera"
-
+                <div style="
+                    color: {vars_css['sub']}; 
+                    font-size: 14px; 
+                    font-weight: 500; 
+                    letter-spacing: 2px; 
+                    margin-bottom: 20px; 
+                    text-transform: uppercase;
+                ">
+                    Distribución de Carga Activa por Fletera
                 </div>
-
             """, unsafe_allow_html=True)
-            
             # Definimos los colores del estilo actual
             color_transito = "#38bdf8" # Azul claro
             color_retraso = "#ff4b4b"  # Rojo
@@ -3155,6 +3157,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
