@@ -782,7 +782,7 @@ else:
                                 # --- PARTE SUPERIOR (Métricas) ---
                                 st.markdown("### 📄 Información General")
                                 c1, c2, c3, c4 = st.columns(4)
-                                c1.metric("NÚMERO DE PEDIDO", fila_principal.get('NÚMERO DE PEDIDO', 'N/A'))
+                                c1.metric("Factura", fila_principal.get('NÚMERO DE PEDIDO', 'N/A'))
                                 
                                 # Lógica para nombre de cliente (Extranjero o local)
                                 nom_c = fila_principal.get('Nombre_Extran')
@@ -801,7 +801,7 @@ else:
                                 # Mostramos el pedido limpio en la tabla
                                 res_tab['NÚMERO DE PEDIDO'] = pedido_f
                                 
-                                cols_show = ["Fecha_Conta", "NÚMERO DE PEDIDO", "Nombre_Cliente", "DIRECCION", "Cuidad", "CP"]
+                                cols_show = ["Fecha_Conta", "Factura", "Cliente", "Direccion", "Cuidad", "CP"]
                                 st.table(res_tab[[c for c in cols_show if c in res_tab.columns]])
                     
                                 # --- TABLA DE PARTIDAS (CODIGO, CANTIDAD, UM) ---
@@ -3147,6 +3147,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
