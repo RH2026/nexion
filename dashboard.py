@@ -748,67 +748,68 @@ else:
                     # Espacio estético al final para que no se vea cortado el contenedor
                     st.markdown("<br>", unsafe_allow_html=True)
             
-            # --- GRÁFICOS DE CARGA ACTIVA POR FLETERA ---
-            with st.expander("Distribución de Carga Activa por Fletera", expanded=True):
-                # Definimos los colores del estilo actual
-                color_transito = "#38bdf8" # Azul claro
-                color_retraso = "#ff4b4b"  # Rojo
-                
-                # Creamos las dos columnas dentro del expander
-                col_graf1, col_graf2 = st.columns(2)
+            # --- SEPARADOR Y GRÁFICOS DE CARGA ACTIVA POR FLETERA ---
+            st.markdown(f"""
+                <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
+                <div style="color:{vars_css['sub']}; font-size:10px; font-weight:700; letter-spacing:2px; margin-bottom:20px; text-transform:uppercase;">
+                    📊 Distribución de Carga Activa por Fletera
+                </div>
+            """, unsafe_allow_html=True)
             
-                # --- COLUMNA 1: EN TRÁNSITO ---
-                with col_graf1:
-                    # Filtramos pedidos que NO tienen fecha de entrega y cuya promesa es a futuro o hoy
-                    # Usamos df_mes que ya definiste arriba para el mes seleccionado
-                    df_t = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] >= hoy_dt)].copy()
-                    df_t_count = df_t.groupby("FLETERA").size().reset_index(name="CANTIDAD")
-                    total_t_graf = df_t_count["CANTIDAD"].sum()
+            # Definimos los colores del estilo actual
+            color_transito = "#38bdf8" # Azul claro
+            color_retraso = "#ff4b4b"  # Rojo
             
-                    st.markdown(f"""
-                        <div style='background: linear-gradient(90deg, {color_transito}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_transito};'>
-                            <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En Movimiento</p>
-                            <h2 style='margin:0; color:white; font-size:28px;'>{total_t_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
-                        </div>
-                    """, unsafe_allow_html=True)
+            # Creamos las dos columnas directas en el contenedor
+            col_graf1, col_graf2 = st.columns(2)
             
-                    if not df_t_count.empty:
-                        h_t = len(df_t_count) * 35 + 50
-                        chart_t = alt.Chart(df_t_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_transito).encode(
-                            x=alt.X("CANTIDAD:Q", title=None, axis=None),
-                            y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
-                        )
-                        text_t = chart_t.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
-                        
-                        st.altair_chart((chart_t + text_t).properties(height=h_t).configure_view(strokeOpacity=0), use_container_width=True)
-                    else:
-                        st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin carga en tránsito</div>", unsafe_allow_html=True)
+            # --- COLUMNA 1: EN TRÁNSITO ---
+            with col_graf1:
+                df_t = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] >= hoy_dt)].copy()
+                df_t_count = df_t.groupby("FLETERA").size().reset_index(name="CANTIDAD")
+                total_t_graf = df_t_count["CANTIDAD"].sum()
             
-                # --- COLUMNA 2: RETRASADOS ---
-                with col_graf2:
-                    # Filtramos pedidos sin entrega cuya promesa ya venció
-                    df_r = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] < hoy_dt)].copy()
-                    df_r_count = df_r.groupby("FLETERA").size().reset_index(name="CANTIDAD")
-                    total_r_graf = df_r_count["CANTIDAD"].sum()
+                st.markdown(f"""
+                    <div style='background: linear-gradient(90deg, {color_transito}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_transito};'>
+                        <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En Movimiento</p>
+                        <h2 style='margin:0; color:white; font-size:28px;'>{total_t_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                    </div>
+                """, unsafe_allow_html=True)
             
-                    st.markdown(f"""
-                        <div style='background: linear-gradient(90deg, {color_retraso}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_retraso};'>
-                            <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 Alerta de Retraso</p>
-                            <h2 style='margin:0; color:white; font-size:28px;'>{total_r_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
-                        </div>
-                    """, unsafe_allow_html=True)
+                if not df_t_count.empty:
+                    h_t = len(df_t_count) * 35 + 50
+                    chart_t = alt.Chart(df_t_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_transito).encode(
+                        x=alt.X("CANTIDAD:Q", title=None, axis=None),
+                        y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
+                    )
+                    text_t = chart_t.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
+                    st.altair_chart((chart_t + text_t).properties(height=h_t).configure_view(strokeOpacity=0), use_container_width=True)
+                else:
+                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin carga en tránsito</div>", unsafe_allow_html=True)
             
-                    if not df_r_count.empty:
-                        h_r = len(df_r_count) * 35 + 50
-                        chart_r = alt.Chart(df_r_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_retraso).encode(
-                            x=alt.X("CANTIDAD:Q", title=None, axis=None),
-                            y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
-                        )
-                        text_r = chart_r.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
-                        
-                        st.altair_chart((chart_r + text_r).properties(height=h_r).configure_view(strokeOpacity=0), use_container_width=True)
-                    else:
-                        st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
+            # --- COLUMNA 2: RETRASADOS ---
+            with col_graf2:
+                df_r = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] < hoy_dt)].copy()
+                df_r_count = df_r.groupby("FLETERA").size().reset_index(name="CANTIDAD")
+                total_r_graf = df_r_count["CANTIDAD"].sum()
+            
+                st.markdown(f"""
+                    <div style='background: linear-gradient(90deg, {color_retraso}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_retraso};'>
+                        <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 Alerta de Retraso</p>
+                        <h2 style='margin:0; color:white; font-size:28px;'>{total_r_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+                if not df_r_count.empty:
+                    h_r = len(df_r_count) * 35 + 50
+                    chart_r = alt.Chart(df_r_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_retraso).encode(
+                        x=alt.X("CANTIDAD:Q", title=None, axis=None),
+                        y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
+                    )
+                    text_r = chart_r.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
+                    st.altair_chart((chart_r + text_r).properties(height=h_r).configure_view(strokeOpacity=0), use_container_width=True)
+                else:
+                    st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
                 
                 # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
                 with tab_rastreo:
@@ -3150,6 +3151,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
