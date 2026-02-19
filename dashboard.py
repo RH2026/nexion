@@ -184,16 +184,19 @@ div[data-baseweb="input"]:focus-within {{
     box-shadow: 0 0 0 1px #00A0A8 !important;
 }}
 
-/* Estilo del campo de texto real */
-.stTextInput input {{ 
-    background-color: transparent !important; /* Para que se vea el fondo del contenedor */
-    color: {vars_css['text']} !important; 
-    border: none !important; /* Quitamos el borde de aquí para que no choque */
-    box-shadow: none !important; 
-    height: 45px !important; 
-    text-align: center !important; 
-    letter-spacing: 2px; 
+/* --- ACTUALIZACIÓN SECCIÓN 5: Centrado Vertical --- */
+.stTextInput input {{
+    background-color: transparent !important;
+    color: {vars_css['text']} !important;
+    border: none !important;
+    box-shadow: none !important;
+    height: 45px !important;
+    text-align: center !important; /* Centrado horizontal */
+    line-height: 45px !important; /* CLAVE: Igualar al height para centrado vertical */
+    letter-spacing: 2px;
     outline: none !important;
+    display: flex !important;
+    align-items: center !important;
 }}
 
 /* Eliminamos cualquier borde extra que Streamlit ponga por defecto */
@@ -224,13 +227,14 @@ input[data-testid="stDateInputView"] {{
     color: {vars_css['text']} !important;
 }}
 
-/* --- NUEVO: Control de Placeholder (Escapado para f-string) --- */
+/* El placeholder ahora heredará el alineamiento del input */
 .stTextInput input::placeholder {{
-    font-size: 12px !important; 
+    font-size: 10px !important; 
     color: {vars_css['sub']} !important; 
     opacity: 0.7 !important;
     letter-spacing: 1px !important;
     text-transform: uppercase !important;
+    line-height: normal !important; /* Evita que choque con el line-height del padre */
 }}
 
 /* 6. FOOTER FIJO */
@@ -3176,6 +3180,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
