@@ -601,7 +601,7 @@ else:
                     st.markdown(timeline_html, unsafe_allow_html=True)
                 
                 # --- 4. FILTROS MANUALES POR COLUMNA (ABAJO) ---
-                st.markdown(f"<div style='color:{vars_css['sub']}; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>FILTROS DE TABLA GERENCIAL</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='color:{vars_css['sub']}; font-size:14px; font-weight:500; margin-bottom:10px; letter-spacing:1px;'>FILTROS DE TABLA</div>", unsafe_allow_html=True)
                 col_f1, col_f2, col_f3, col_f4 = st.columns(4)
                 
                 with col_f1:
@@ -3167,6 +3167,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
