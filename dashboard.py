@@ -731,7 +731,7 @@ else:
                     def obtener_matriz_dashboard():
                         url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?nocache={int(time.time())}"
                         try:
-                            # Leemos todo como texto para evitar que Python le ponga decimales a los números
+                            # Leemos todo como texto puro para evitar decimales automáticos
                             m = pd.read_csv(url, dtype=str)
                             m.columns = [str(c).upper().strip() for c in m.columns]
                             return m
@@ -748,48 +748,49 @@ else:
                         url_fact = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/facturacion_moreno.csv?nocache={int(time.time())}"
                         
                         try:
-                            # Cargamos facturación
+                            # Cargamos facturación como texto
                             df_f = pd.read_csv(url_fact, dtype=str)
                             df_f.columns = [str(c).strip() for c in df_f.columns]
                             
-                            # Filtro de búsqueda universal
+                            # Filtro universal en el archivo Moreno
                             mask = df_f.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
                             resultados = df_f[mask].copy()
                     
                             if not resultados.empty:
                                 fila_principal = resultados.iloc[0]
                                 
-                                # --- CRUCE POR NÚMERO DE PEDIDO ---
-                                # Limpiamos el pedido de la factura: quitamos comas y decimales (.0000)
-                                pedido_f = str(fila_principal.get('NÚMERO DE PEDIDO', '')).replace(',', '').split('.')[0].strip()
+                                # --- LÓGICA DE CRUCE: BUSCAMOS POR 'Factura' PERO USAMOS EL VALOR DEL PEDIDO ---
+                                # Limpiamos el valor de búsqueda (quitamos comas y decimales .0000 de la foto)
+                                target_val = str(fila_principal.get('Factura', '')).replace(',', '').split('.')[0].strip()
                                 
                                 matriz_dash = obtener_matriz_dashboard()
                                 guia_encontrada = "PENDIENTE"
                                 
-                                if not matriz_dash.empty and pedido_f != "" and pedido_f != "nan":
-                                    # Buscamos en la columna NÚMERO DE PEDIDO del Dashboard (que ya está en upper)
-                                    col_link = 'NÚMERO DE PEDIDO'
-                                    col_guia = 'NÚMERO DE GUÍA'
+                                if not matriz_dash.empty and target_val != "" and target_val != "nan":
+                                    # Definimos las columnas del Dashboard
+                                    col_link_dash = 'NÚMERO DE PEDIDO' # El resultado que buscamos cruzar
+                                    col_guia_dash = 'NÚMERO DE GUÍA'
                                     
-                                    if col_link in matriz_dash.columns:
-                                        # Limpiamos también la columna del dashboard por seguridad
-                                        dash_peds = matriz_dash[col_link].str.replace(',', '').str.split('.').str[0].str.strip()
-                                        match = matriz_dash[dash_peds == pedido_f]
+                                    if col_link_dash in matriz_dash.columns:
+                                        # Limpiamos también la columna del Dashboard para que el match sea perfecto
+                                        dash_clean = matriz_dash[col_link_dash].str.replace(',', '').str.split('.').str[0].str.strip()
+                                        match = matriz_dash[dash_clean == target_val]
                                         
                                         if not match.empty:
-                                            guia_encontrada = str(match.iloc[0].get(col_guia, 'SIN GUÍA'))
+                                            guia_encontrada = str(match.iloc[0].get(col_guia_dash, 'SIN GUÍA'))
                     
                                 # --- PARTE SUPERIOR (Métricas) ---
                                 st.markdown("### 📄 Información General")
                                 c1, c2, c3, c4 = st.columns(4)
-                                c1.metric("FACTURA", fila_principal.get('Factura', 'N/A'))
+                                # Mostramos el número limpio que usamos para buscar
+                                c1.metric("FACTURA", target_val)
                                 
-                                # Lógica para nombre de cliente (Extranjero o local)
-                                nom_c = fila_principal.get('Nombre_Extran')
-                                if pd.isna(nom_c) or str(nom_c).upper() == 'NONE' or str(nom_c) == "":
-                                    nom_c = fila_principal.get('Nombre_Cliente', 'N/A')
+                                # Limpieza inteligente del nombre (si es None, usamos el alternativo)
+                                nom_display = fila_principal.get('Nombre_Extran')
+                                if pd.isna(nom_display) or str(nom_display).upper() in ['NONE', '', 'NAN']:
+                                    nom_display = fila_principal.get('Nombre_Cliente', 'N/A')
                                 
-                                c2.metric("CLIENTE", str(nom_c)[:20])
+                                c2.metric("CLIENTE", str(nom_display)[:20])
                                 c3.metric("CIUDAD", fila_principal.get('Cuidad', 'N/A'))
                                 c4.metric("GUÍA", guia_encontrada)
                     
@@ -798,13 +799,14 @@ else:
                                 if 'Fecha_Conta' in res_tab.columns:
                                     res_tab['Fecha_Conta'] = pd.to_datetime(res_tab['Fecha_Conta']).dt.date
                                 
-                                # Mostramos el pedido limpio en la tabla
-                                res_tab['NÚMERO DE PEDIDO'] = pedido_f
-                                
-                                cols_show = ["Fecha_Conta", "NÚMERO DE PEDIDO", "Nombre_Cliente", "DIRECCION", "Cuidad", "CP"]
+                                # Aseguramos que la columna Pedido en la tabla se vea sin los ceros de más
+                                if 'Pedido' in res_tab.columns:
+                                    res_tab['Pedido'] = res_tab['Pedido'].str.split('.').str[0]
+                    
+                                cols_show = ["Fecha_Conta", "Pedido", "Nombre_Cliente", "DIRECCION", "Cuidad", "CP"]
                                 st.table(res_tab[[c for c in cols_show if c in res_tab.columns]])
                     
-                                # --- TABLA DE PARTIDAS (CODIGO, CANTIDAD, UM) ---
+                                # --- TABLA DE PARTIDAS ---
                                 st.markdown("### 📦 Detalle de Partidas")
                                 df_partidas = pd.DataFrame({
                                     'CODIGO': resultados.get('Codigo', 'N/A'),
@@ -817,7 +819,7 @@ else:
                                 st.warning("No se encontró información con ese criterio.")
                                 
                         except Exception as e:
-                            st.error(f"Error en el proceso: {e}")
+                            st.error(f"Error en la búsqueda: {e}")
                 
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
@@ -3147,6 +3149,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
