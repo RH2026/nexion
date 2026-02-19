@@ -748,8 +748,8 @@ else:
                     # Espacio estético al final para que no se vea cortado el contenedor
                     st.markdown("<br>", unsafe_allow_html=True)
             
-             #--- SEPARADOR Y GRÁFICOS DE CARGA ACTIVA POR FLETERA ------
-             st.markdown(f"""
+            #--- SEPARADOR Y GRÁFICOS DE CARGA ACTIVA POR FLETERA ------
+            st.markdown(f"""
                 <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
                 <div style="
                     color: {vars_css['sub']}; 
@@ -3157,6 +3157,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
