@@ -751,8 +751,8 @@ else:
             # --- SEPARADOR Y GRÁFICOS DE CARGA ACTIVA POR FLETERA ---
             st.markdown(f"""
                 <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
-                <div style="color:{vars_css['sub']}; font-size:10px; font-weight:700; letter-spacing:2px; margin-bottom:20px; text-transform:uppercase;">
-                    📊 Distribución de Carga Activa por Fletera
+                <div style="color:{vars_css['sub']}; font-size:14px; font-weight:500; letter-spacing:2px; margin-bottom:20px; text-transform:uppercase;">
+                    Distribución de Carga Activa por Fletera
                 </div>
             """, unsafe_allow_html=True)
             
@@ -3151,6 +3151,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
