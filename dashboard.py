@@ -753,7 +753,12 @@ else:
             st.markdown(f'<hr style="border: 0; height: 1px; background: {vars_css["border"]}; margin: 40px 0; opacity: 0.3;">', unsafe_allow_html=True)
             
             # 2. Usamos Markdown puro para el título con el icono (así Streamlit sí lo renderiza)
-            st.markdown(f"#### :material/local_shipping: DISTRIBUCIÓN DE CARGA ACTIVA POR FLETERA")
+            st.markdown(f"""
+                <div style="font-size: 14px; font-weight: 500; color: {vars_css['sub']}; letter-spacing: 2px; margin-bottom: 20px;">
+                    <span style="vertical-align: middle;">:material/local_shipping:</span> 
+                    <span style="vertical-align: middle; text-transform: uppercase;">Distribución de Carga Activa por Fletera</span>
+                </div>
+            """, unsafe_allow_html=True)
             
             # 3. Un pequeño espacio extra si sientes que quedó muy pegado a las barras
             st.markdown('<div style="margin-bottom:20px;"></div>', unsafe_allow_html=True)
@@ -3153,6 +3158,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
