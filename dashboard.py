@@ -226,7 +226,7 @@ input[data-testid="stDateInputView"] {{
 
 /* --- NUEVO: Control de Placeholder (Escapado para f-string) --- */
 .stTextInput input::placeholder {{
-    font-size: 10px !important; 
+    font-size: 12px !important; 
     color: {vars_css['sub']} !important; 
     opacity: 0.7 !important;
     letter-spacing: 1px !important;
@@ -3178,6 +3178,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
