@@ -544,13 +544,20 @@ else:
                 
                 st.markdown('<div class="op-query-text">CONSULTA DE ESTATUS LOGÍSTICO</div>', unsafe_allow_html=True)
                 
-                # --- 1. BLOQUE DE BÚSQUEDA GENERAL (PARA EL TIMELINE) ---
+                # --- 1. BLOQUE DE BÚSQUEDA GENERAL ---
                 col_space1, col_search, col_space2 = st.columns([1, 2, 1])
                 with col_search:
-                    busqueda_manual = st.text_input("", key="busqueda_logistica_vfinal", placeholder="🔍 Ingrese factura o guía para ver detalle...").strip()
-                
-                if busqueda_manual and df_timeline.empty:
-                    st.warning("No se encontró detalle para la búsqueda principal.")        
+                    busqueda_manual = st.text_input("", key="busqueda_logistica_vfinal", placeholder="🔍 Ingrese factura o guía...").strip()
+                    
+                    # --- LA SOLUCIÓN MÁGICA ---
+                    # Primero buscamos los datos para que df_timeline exista antes de preguntar por ella
+                    if busqueda_manual:
+                        # Aquí debe ir tu función o lógica que filtra los datos, por ejemplo:
+                        df_timeline = df_raw[df_raw['FACTURA'] == busqueda_manual] # O como lo tengas definido
+                        
+                        # Ahora que YA existe, ya podemos preguntar si está vacía sin que de error
+                        if df_timeline.empty:
+                            st.warning("No se encontró detalle para la búsqueda principal.")    
                 
                 # --- 2. LÓGICA DE FILTRADO ---
                 df_filtrado = df_raw.copy()
@@ -3159,6 +3166,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
