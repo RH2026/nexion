@@ -793,15 +793,13 @@ else:
                                 c3.metric("CIUDAD", fila_principal.get('Cuidad', 'N/A'))
                                 c4.metric("GUÍA", guia_encontrada)
                     
-                                # --- TABLA RESUMEN ---
+                                # --- TABLA RESUMEN (CORREGIDA CON TUS COLUMNAS) ---
                                 res_tab = resultados.head(1).copy()
                                 if 'Fecha_Conta' in res_tab.columns:
                                     res_tab['Fecha_Conta'] = pd.to_datetime(res_tab['Fecha_Conta']).dt.date
                                 
-                                # Mostramos el pedido limpio en la tabla
-                                res_tab['NÚMERO DE PEDIDO'] = pedido_f
-                                
-                                cols_show = ["Fecha_Conta", "Factura", "Cliente", "Direccion", "Cuidad", "CP"]
+                                # Definimos las columnas exactas que pediste
+                                cols_show = ["Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "DIRECCION"]
                                 st.table(res_tab[[c for c in cols_show if c in res_tab.columns]])
                     
                                 # --- TABLA DE PARTIDAS (CODIGO, CANTIDAD, UM) ---
@@ -3147,6 +3145,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
