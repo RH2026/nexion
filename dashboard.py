@@ -727,12 +727,12 @@ else:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     st.write("Visualización de Volumen de Carga")
                     # --- 1. FUNCIÓN PARA CARGAR LA MATRIZ DE DASHBOARD (.CSV) ---
-                    # --- 1. FUNCIÓN PARA CARGAR LA MATRIZ DE DASHBOARD (.CSV) ---
                     @st.cache_data(ttl=60)
                     def obtener_matriz_dashboard():
                         url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?nocache={int(time.time())}"
                         try:
                             m = pd.read_csv(url)
+                            # Normalizamos nombres de columnas: Mayúsculas y sin espacios
                             m.columns = [str(c).upper().strip() for c in m.columns]
                             return m
                         except:
@@ -749,26 +749,32 @@ else:
                         
                         try:
                             df_f = pd.read_excel(url_fact)
-                            # Limpieza profunda de nombres de columnas del Excel para evitar errores
                             df_f.columns = [str(c).strip() for c in df_f.columns]
                             
-                            # Filtro de búsqueda
+                            # Filtro de búsqueda universal
                             mask = df_f.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
                             resultados = df_f[mask].copy()
                     
                             if not resultados.empty:
                                 fila_principal = resultados.iloc[0]
                                 
-                                # --- CRUCE CON DASHBOARD PARA LA GUÍA ---
+                                # --- LÓGICA DE CRUCE ESPECÍFICA ---
+                                # 1. Obtenemos el número de pedido de la facturación (limpio)
+                                pedido_val = str(int(pd.to_numeric(fila_principal.get('Pedido', 0), errors='coerce')))
+                                
                                 matriz_dash = obtener_matriz_dashboard()
                                 guia_encontrada = "PENDIENTE"
-                                if not matriz_dash.empty and 'FACTURA' in matriz_dash.columns:
-                                    f_val = str(fila_principal.get('Factura', ''))
-                                    match_dash = matriz_dash[matriz_dash['FACTURA'].astype(str) == f_val]
-                                    if not match_dash.empty:
-                                        # Buscamos la columna de guía sin importar si está en mayúsculas
-                                        col_g = next((c for c in match_dash.columns if 'GUIA' in c), 'GUIA')
-                                        guia_encontrada = match_dash.iloc[0].get(col_g, 'SIN GUÍA')
+                                
+                                if not matriz_dash.empty:
+                                    # 2. Buscamos el Pedido en la columna 'NÚMERO DE PEDIDO' del Dashboard
+                                    # (Normalizamos a string para que el match sea exacto)
+                                    col_pedido_dash = 'NÚMERO DE PEDIDO' 
+                                    if col_pedido_dash in matriz_dash.columns:
+                                        match_dash = matriz_dash[matriz_dash[col_pedido_dash'].astype(str).str.contains(pedido_val, na=False)]
+                                        
+                                        if not match_dash.empty:
+                                            # 3. Traemos el valor de 'NÚMERO DE GUÍA'
+                                            guia_encontrada = match_dash.iloc[0].get('NÚMERO DE GUÍA', 'SIN GUÍA')
                     
                                 # --- PARTE SUPERIOR (Métricas Principales) ---
                                 st.markdown("### 📄 Información General")
@@ -778,25 +784,22 @@ else:
                                 c3.metric("CIUDAD", fila_principal.get('Cuidad', 'N/A'))
                                 c4.metric("GUÍA", guia_encontrada)
                     
-                                # --- DETALLE DE TABLA (Fechas y Pedido limpios) ---
+                                # --- DETALLE DE TABLA (Limpieza de Fechas y Pedido) ---
                                 if 'Fecha_Conta' in resultados.columns:
                                     resultados['Fecha_Conta'] = pd.to_datetime(resultados['Fecha_Conta']).dt.date
                                 
+                                # Formateamos Pedido para la tabla (sin comas ni decimales)
                                 if 'Pedido' in resultados.columns:
-                                    resultados['Pedido'] = pd.to_numeric(resultados['Pedido'], errors='coerce').fillna(0).astype(int).astype(str)
+                                    resultados['Pedido'] = resultados['Pedido'].apply(lambda x: str(int(float(x))) if pd.notnull(x) else "0")
                     
                                 cols_tabla_superior = ["Fecha_Conta", "Pedido", "Nombre_Cliente", "DIRECCION", "Cuidad", "CP"]
-                                # Filtramos solo las que existen para evitar errores
                                 cols_existentes = [c for c in cols_tabla_superior if c in resultados.columns]
                                 st.table(resultados[cols_existentes].head(1))
                     
                                 # --- TABLA DE PARTIDAS (CODIGO, CANTIDAD, UM) ---
                                 st.markdown("### 📦 Detalle de Partidas")
-                                
-                                # Mapeamos los nombres de tu Excel a los que queremos mostrar
-                                # Usamos 'get' por si acaso alguna columna viene con nombre distinto
                                 df_partidas = pd.DataFrame()
-                                df_partidas['CODIGO'] = resultados.get('Codigo', resultados.iloc[:, 0]) # Si no halla 'Codigo' usa la col 0
+                                df_partidas['CODIGO'] = resultados.get('Codigo', 'N/A')
                                 df_partidas['CANTIDAD'] = pd.to_numeric(resultados.get('Quantity', 0), errors='coerce').fillna(0).astype(int)
                                 df_partidas['UM'] = resultados.get('UM', 'N/A')
                                 
@@ -806,7 +809,7 @@ else:
                                 st.warning("No se encontró ninguna coincidencia.")
                                 
                         except Exception as e:
-                            st.error(f"Error al procesar la búsqueda: {e}")
+                            st.error(f"Error en la búsqueda o cruce: {e}")
                 
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
@@ -3136,6 +3139,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
