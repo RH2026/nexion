@@ -1020,12 +1020,17 @@ else:
                     # Formateo de fecha para que el usuario no vea horas
                     tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
                 
-                    # Configuración de columnas: OBLIGAMOS alineación a la IZQUIERDA
-                    config_columnas = {
-                        col: st.column_config.TextColumn(col, alignment="left") 
-                        for col in tabla_detalles.columns
-                    }
-                
+                    # Configuración de columnas corregida, amor
+                    config_columnas = {}
+                    for col in tabla_detalles.columns:
+                        config_columnas[col] = st.column_config.Column(
+                            col,
+                            width="medium",
+                            required=True
+                        )
+                    
+                    # El dataframe de Streamlit alinea el texto a la izquierda POR DEFECTO.
+                    # El error era intentar forzar 'alignment="left"' donde no existe.
                     st.dataframe(
                         tabla_detalles, 
                         use_container_width=True, 
@@ -3371,6 +3376,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
