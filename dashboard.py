@@ -2463,7 +2463,8 @@ else:
                         """
                 
                         # 3. BOTONES DE ACCIÓN
-                        c1, c2 = st.columns(2)
+                        c1, c2, c3 = st.columns(3) # Creamos las 3 columnas
+                        
                         with c1:
                             if st.button("🖨️ IMPRIMIR REPORTE PT", type="primary", use_container_width=True):
                                 import streamlit.components.v1 as components
@@ -2473,7 +2474,18 @@ else:
                             output = BytesIO()
                             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                                 df_actual.to_excel(writer, index=False)
-                            st.download_button("📥 DESCARGAR EXCEL", output.getvalue(), f"Matriz_Muestras_{date.today()}.xlsx", use_container_width=True)
+                            st.download_button(
+                                label="📥 DESCARGAR EXCEL", 
+                                data=output.getvalue(), 
+                                file_name=f"Matriz_Muestras_{date.today()}.xlsx", 
+                                use_container_width=True
+                            )
+                        
+                        with c3:
+                            if st.button("🔄 ACTUALIZAR DATOS", use_container_width=True):
+                                # Al presionar, Streamlit vuelve a ejecutar todo el script
+                                # asegurando que se cargue la versión más reciente de los datos.
+                                st.rerun()
         
     
         # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
@@ -3368,6 +3380,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
