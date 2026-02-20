@@ -232,6 +232,7 @@ with t1:
                     st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
         with c_adm2:
             st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
+            st.write("") # Esto añade una línea de espacio (aire)
             if st.button("🖨️ RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
                 prods_re = []
                 for p in precios.keys():
