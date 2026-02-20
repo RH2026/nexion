@@ -931,7 +931,6 @@ else:
                 # =========================================================
                 # 1. PROCESAMIENTO DE DATOS
                 # =========================================================
-                # Convertimos columnas a fecha y calculamos días reales (redondeo hacia arriba después)
                 df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
                 df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
                 df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
@@ -941,8 +940,7 @@ else:
                 # =========================================================
                 st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
                 
-                # --- LÓGICA DE USUARIO ---
-                # Obtenemos el nombre del usuario logueado, de lo contrario usamos "Cielo"
+                # Lógica de Usuario: sacamos el nombre del login
                 usuario_actual = st.session_state.get('username', 'Cielo')
                 
                 c1, c2 = st.columns([1, 1])
@@ -957,23 +955,31 @@ else:
                         key="busqueda_manual_v5"
                     )
                 
-                # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
-                # Si no hay búsqueda, mostramos el destino con el promedio más bajo de la matriz
+                # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO (AJUSTADA) ---
                 if not busqueda_manual:
-                    # Filtramos nulos para el cálculo del mínimo
+                    # Filtramos viajes con entrega real
                     df_validos = df[df['DIAS_REALES'].notna()]
-                    if not df_validos.empty:
-                        top_rapido = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
-                        busqueda_activa = top_rapido
-                        texto_mostrar = f"{top_rapido} (Ruta más veloz)"
+                    
+                    # Intentamos buscar primero destinos que tengan entregas de exactamente 2 días
+                    rutas_dos_dias = df_validos[df_validos['DIAS_REALES'] == 2]
+                    
+                    if not rutas_dos_dias.empty:
+                        # Si hay de 2 días, tomamos el primer destino que aparezca
+                        busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
+                        texto_mostrar = f"{busqueda_activa} (Ruta Veloz 2 Días)"
+                    elif not df_validos.empty:
+                        # Si no hay de 2, buscamos el más rápido que exista
+                        busqueda_activa = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
+                        texto_mostrar = f"{busqueda_activa} (Ruta más eficiente)"
                     else:
-                        busqueda_activa = ""
-                        texto_mostrar = "SIN DATOS"
+                        # Respaldo total para que NUNCA esté en cero
+                        busqueda_activa = "MÉXICO" 
+                        texto_mostrar = "CONSULTA DE RUTA"
                 else:
                     busqueda_activa = busqueda_manual
                     texto_mostrar = busqueda_manual.upper()
                 
-                # --- FILTRADO INTELIGENTE (DESTINO + DOMICILIO) ---
+                # --- FILTRADO INTELIGENTE ---
                 busqueda_aux = busqueda_activa.lower()
                 mask = (
                     df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
@@ -985,7 +991,7 @@ else:
                 if not historial.empty:
                     promedio_dias = historial['DIAS_REALES'].mean()
                     total_viajes = len(historial)
-                    # Regla de oro: Redondeo hacia arriba (1.1 -> 2)
+                    # Redondeo hacia arriba (siempre preventivo)
                     dias_redondeados = math.ceil(promedio_dias)
                 
                     # 1. Renderizado del Widget de Tránsito
@@ -1006,7 +1012,7 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
                 
-                    # 2. Renderizado de la Tabla Alineada a la Izquierda
+                    # 2. Renderizado de la Tabla (Formato Estándar)
                     st.markdown("#### 📋 Detalles de envíos encontrados")
                     
                     tabla_detalles = historial[[
@@ -1017,28 +1023,15 @@ else:
                         'FLETERA', 
                     ]].sort_values(by='FECHA DE ENVÍO', ascending=False)
                 
-                    # Formateo de fecha para que el usuario no vea horas
+                    # Formateo de fecha
                     tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
                 
-                    # Configuración de columnas corregida, amor
-                    config_columnas = {}
-                    for col in tabla_detalles.columns:
-                        config_columnas[col] = st.column_config.Column(
-                            col,
-                            width="medium",
-                            required=True
-                        )
-                    
-                    # El dataframe de Streamlit alinea el texto a la izquierda POR DEFECTO.
-                    # El error era intentar forzar 'alignment="left"' donde no existe.
                     st.dataframe(
                         tabla_detalles, 
                         use_container_width=True, 
-                        hide_index=True,
-                        column_config=config_columnas
+                        hide_index=True
                     )
                 else:
-                    # Mensaje personalizado con el nombre del usuario logueado
                     st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")
                     
                 
@@ -3376,6 +3369,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
