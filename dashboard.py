@@ -991,18 +991,16 @@ else:
                         
                         # Seleccionamos solo las columnas que le sirven al agente para no saturar
                         tabla_detalles = historial[[
+                            'NÚMERO DE PEDIDO',
                             'NOMBRE DEL CLIENTE', 
-                            'DESTINO', 
                             'DOMICILIO', 
                             'FECHA DE ENVÍO', 
-                            'FECHA DE ENTREGA REAL', 
-                            'DIAS_REALES'
+                            'FLETERA', 
                         ]].sort_values(by='FECHA DE ENVÍO', ascending=False) # Los más recientes primero
                 
                         # Formateamos las fechas para que se vean limpias (Día-Mes-Año)
                         tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
-                        tabla_detalles['FECHA DE ENTREGA REAL'] = tabla_detalles['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
-                
+                                        
                         # Mostramos la tabla con un estilo que combine
                         st.dataframe(
                             tabla_detalles, 
@@ -3350,6 +3348,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
