@@ -931,75 +931,68 @@ else:
                 # =========================================================
                 # 1. PROCESAMIENTO DE DATOS (Asegurando que existan los días)
                 # =========================================================
-                # Convertimos columnas a fecha (usamos errores='coerce' por seguridad)
                 df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
                 df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
-                
-                # Calculamos los días de tránsito reales (Solo donde hay ambas fechas)
                 df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
                 
                 # =========================================================
-                # 2. SECCIÓN DEL CALCULADOR "CHINGÓN"
+                # 2. SECCIÓN DEL CALCULADOR "CHINGÓN" CON BÚSQUEDA ABIERTA
                 # =========================================================
                 st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
                 
-                # Creamos columnas para el selector
                 c1, c2 = st.columns([1, 1])
                 
                 with c1:
-                    # Origen fijo GDL
                     st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
                 
                 with c2:
-                    # Filtro Inteligente: Extraemos destinos para sugerencias
-                    # Agregamos una opción vacía al inicio para que el agente pueda escribir
-                    destinos_lista = sorted(df['DESTINO'].dropna().unique())
-                    destino_sel = st.selectbox(
-                        "BUSCAR POR DESTINO, CP O COLONIA", 
-                        options=destinos_lista, 
-                        key="calc_dest_v3"
+                    # Cambiamos selectbox por text_input para que el agente escriba LO QUE SEA (CP, Calle, Ciudad)
+                    busqueda_manual = st.text_input(
+                        "BUSCAR POR DESTINO, CP O DOMICILIO", 
+                        placeholder="Ej: 63734, Litibu, Cancún...",
+                        key="busqueda_manual_v4"
                     )
                 
-                # --- LÓGICA DE FILTRADO INTELIGENTE (Mejorada para DOMICILIO) ---
-                # Usamos .str.lower() para que encuentre "nayarit" aunque en el excel diga "NAYARIT"
-                busqueda_aux = destino_sel.lower()
+                # --- LÓGICA DE FILTRADO TOTAL ---
+                if busqueda_manual:
+                    busqueda_aux = busqueda_manual.lower()
                 
-                mask = (
-                    df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
-                    df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
-                )
+                    # Ahora sí: buscamos el texto dentro de DESTINO o dentro de DOMICILIO
+                    mask = (
+                        df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
+                        df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
+                    )
                 
-                # Filtramos historial con la máscara y que tengan días calculados (entregas reales)
-                historial = df[mask & (df['DIAS_REALES'].notna())]
+                    historial = df[mask & (df['DIAS_REALES'].notna())]
                 
-                if not historial.empty:
-                    promedio_dias = historial['DIAS_REALES'].mean()
-                    total_viajes = len(historial)
-                    
-                    # Redondeo hacia arriba (Ceil) - Siempre a favor de la seguridad logística
-                    dias_redondeados = math.ceil(promedio_dias)
-                    dias_str = f"{dias_redondeados}"
+                    if not historial.empty:
+                        promedio_dias = historial['DIAS_REALES'].mean()
+                        total_viajes = len(historial)
+                        
+                        # Redondeo hacia arriba
+                        dias_redondeados = math.ceil(promedio_dias)
+                        dias_str = f"{dias_redondeados}"
                 
-                    # Renderizado del Widget Premium
-                    st.markdown(f"""
-                        <div class="kpi-ruta-container">
-                            <div class="kpi-ruta-card">
-                                <span class="kpi-tag">Paquetería Recomendada: TRES GUERRAS</span>
-                                <div class="kpi-route-flow">
-                                    <span class="city">GDL</span>
-                                    <span class="arrow">→</span>
-                                    <span class="city">{destino_sel.upper()}</span>
-                                </div>
-                                <div class="kpi-value">{dias_str} <small>DÍAS</small></div>
-                                <div class="kpi-subtext">
-                                    Basado en <b>{total_viajes}</b> envíos entregados con éxito en esta zona
+                        st.markdown(f"""
+                            <div class="kpi-ruta-container">
+                                <div class="kpi-ruta-card">
+                                    <span class="kpi-tag">Paquetería Recomendada: TRES GUERRAS</span>
+                                    <div class="kpi-route-flow">
+                                        <span class="city">GDL</span>
+                                        <span class="arrow">→</span>
+                                        <span class="city">{busqueda_manual.upper()}</span>
+                                    </div>
+                                    <div class="kpi-value">{dias_str} <small>DÍAS</small></div>
+                                    <div class="kpi-subtext">
+                                        Encontrado en historial de <b>{total_viajes}</b> envíos en esta zona
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.info(f"Cielo, no encontré entregas reales que coincidan con '**{busqueda_manual}**'.")
                 else:
-                    # Si no hay datos, le avisamos al agente de forma clara
-                    st.info(f"Cielo, no encontré registros de entrega real para **{destino_sel}**. Verifica que existan fechas de entrega en la matriz para esta zona.")
+                    st.write("Escribe un destino, colonia o CP para calcular.")
                     
                 
                 # PESTAÑA 3: VOLUMEN
@@ -3336,6 +3329,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
