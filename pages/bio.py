@@ -26,6 +26,9 @@ amenidades_list = ["ELEMENTS", "ALMON OLIVE", "BIOGENA", "CAVA", "LAVANDA BOTANI
 dispensadores_list = ["ELEMENTS", "ALMON OLIVE", "BIOGENA", "CAVA", "LAVANDA BOTANICUS", "LAVARIVO", "BOTANICUS", "PERSEA", "RAINFOREST", "DOVE", "ACCESORIOS EQ."]
 
 # --- FORMULARIO ---
+# Encabezado visual en la app
+st.markdown("<h1 style='text-align: center; color: #1E1E1E;'>JYPESA</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; margin-top: -20px;'>AUTOMATIZACIÓN DE PROCESOS</p>", unsafe_allow_html=True)
 st.title("📦 Orden de Envío")
 
 c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.2, 1])
@@ -115,16 +118,24 @@ f_comentarios = st.text_area("💬 COMENTARIOS", height=70)
 
 # --- LÓGICA DE IMPRESIÓN ---
 all_prods = seleccionados + especiales_data
-filas_html = "".join([f"<tr><td>{d['desc']}</td><td style='text-align:center'>{d['cod']}</td><td style='text-align:center'>{d['um']}</td><td style='text-align:center'>{d['cant']}</td></tr>" for d in all_prods])
+# Filas más anchas con padding de 12px
+filas_html = "".join([f"<tr><td style='padding: 12px;'>{d['desc']}</td><td style='text-align:center'>{d['cod']}</td><td style='text-align:center'>{d['um']}</td><td style='text-align:center'>{d['cant']}</td></tr>" for d in all_prods])
 
 html_impresion = f"""
-<div style="font-family:Arial; border:2px solid black; padding:20px; width:750px; height:950px; margin:auto; position:relative; box-sizing:border-box;">
+<div style="font-family:Arial; border:2px solid black; padding:20px; width:750px; height:980px; margin:auto; position:relative; box-sizing:border-box;">
+    
+    <div style="text-align: center; margin-bottom: 10px;">
+        <h1 style="margin: 0; font-size: 28px; letter-spacing: 2px;">JYPESA</h1>
+        <p style="margin: 0; font-size: 10px; font-weight: bold; border-top: 1px solid black; display: inline-block; padding-top: 2px;">AUTOMATIZACIÓN DE PROCESOS</p>
+    </div>
+
     <table style="width:100%; border-collapse:collapse; margin-bottom:5px;">
         <tr><td style="border:1px solid black;padding:5px"><b>FOLIO:</b> {f_folio}</td>
             <td style="border:1px solid black;padding:5px"><b>ENVÍO:</b> {f_paqueteria}</td>
             <td style="border:1px solid black;padding:5px"><b>ENTREGA:</b> {f_entrega}</td>
             <td style="border:1px solid black;padding:5px"><b>FECHA:</b> {f_fecha}</td></tr>
     </table>
+
     <div style="display:flex; gap:5px; margin-top:5px;">
         <div style="flex:1; border:1px solid black;">
             <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:12px;">REMITENTE</div>
@@ -139,20 +150,29 @@ html_impresion = f"""
             </div>
         </div>
     </div>
-    <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:11px;" border="1">
-        <tr style="background:#444; color:white;"><th>DESCRIPCIÓN</th><th>CÓDIGO</th><th>U.M.</th><th>CANT.</th></tr>
-        {filas_html if filas_html else '<tr><td colspan="4" style="text-align:center">Sin productos</td></tr>'}
+
+    <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:12px;" border="1">
+        <tr style="background:#444; color:white;">
+            <th style="padding: 10px;">DESCRIPCIÓN</th>
+            <th>CÓDIGO</th>
+            <th>U.M.</th>
+            <th>CANT.</th>
+        </tr>
+        {filas_html if filas_html else '<tr><td colspan="4" style="text-align:center; padding: 20px;">Sin productos seleccionados</td></tr>'}
     </table>
-    <div style="border:1px solid black; padding:5px; margin-top:5px; font-size:11px;"><b>COMENTARIOS:</b> {f_comentarios}</div>
+
+    <div style="border:1px solid black; padding:8px; margin-top:10px; font-size:11px; height: 60px;">
+        <b>COMENTARIOS:</b> {f_comentarios}
+    </div>
     
-    <div style="position:absolute; bottom:20px; left:20px; right:20px;">
-        <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:20px;">RECIBO DE CONFORMIDAD DEL CLIENTE</div>
+    <div style="position:absolute; bottom:30px; left:20px; right:20px;">
+        <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:25px;">RECIBO DE CONFORMIDAD DEL CLIENTE</div>
         <div style="display:flex; justify-content:space-between; text-align:center; font-size:10px;">
             <div style="width:30%;">__________________________<br>FECHA</div>
             <div style="width:35%;">__________________________<br>NOMBRE Y FIRMA</div>
             <div style="width:30%;">__________________________<br>SELLO</div>
         </div>
-        <div style="margin-top:20px; border-top:1px solid #ccc; padding-top:5px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold;">
+        <div style="margin-top:25px; border-top: 1.5px solid black; padding-top:5px; display:flex; justify-content:space-between; font-size:13px; font-weight:bold;">
             <span>JYPESA</span>
             <span>AUTOMATIZACIÓN DE PROCESOS</span>
         </div>
