@@ -928,7 +928,6 @@ else:
             
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
             with tab_rastreo:
-                st.markdown('<div class="spacer-m3"></div>', unsafe_allow_html=True)
                 # =========================================================
                 # 1. PROCESAMIENTO DE DATOS (Asegurando que existan los días)
                 # =========================================================
@@ -948,31 +947,42 @@ else:
                 c1, c2 = st.columns([1, 1])
                 
                 with c1:
-                    # Origen fijo GDL como me pediste, cielo
+                    # Origen fijo GDL
                     st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
                 
                 with c2:
-                    # Extraemos destinos únicos sin valores nulos
+                    # Filtro Inteligente: Extraemos destinos para sugerencias
+                    # Pero ahora el agente puede buscar por cualquier dato del DOMICILIO
                     destinos_lista = sorted(df['DESTINO'].dropna().unique())
-                    destino_sel = st.selectbox("DESTINO FINAL", destinos_lista, key="calc_dest_v3")
+                    destino_sel = st.selectbox(
+                        "BUSCAR POR DESTINO, CP O COLONIA", 
+                        options=destinos_lista, 
+                        key="calc_dest_v3"
+                    )
                 
-                # Lógica de cálculo basada en tu matriz
-                # Filtramos que el destino coincida y que tenga el cálculo de días hecho
-                historial = df[(df['DESTINO'] == destino_sel) & (df['DIAS_REALES'].notna())]
+                # --- LÓGICA DE FILTRADO INTELIGENTE (Mejorada) ---
+                # Buscamos coincidencias en DESTINO o en la columna DOMICILIO
+                mask = (
+                    df['DESTINO'].astype(str).str.contains(destino_sel, case=False, na=False) |
+                    df['DOMICILIO'].astype(str).str.contains(destino_sel, case=False, na=False)
+                )
+                
+                # Filtramos historial con la máscara y que tengan días calculados
+                historial = df[mask & (df['DIAS_REALES'].notna())]
                 
                 if not historial.empty:
                     promedio_dias = historial['DIAS_REALES'].mean()
                     total_viajes = len(historial)
                     
-                    # Redondeo hacia arriba
+                    # Redondeo hacia arriba (Ceil)
                     dias_redondeados = math.ceil(promedio_dias)
                     dias_str = f"{dias_redondeados}"
                 
-                    # Renderizado del Widget Premium (Sin el texto del promedio real)
+                    # Renderizado del Widget Premium
                     st.markdown(f"""
                         <div class="kpi-ruta-container">
                             <div class="kpi-ruta-card">
-                                <span class="kpi-tag">Métrica de Tránsito Real</span>
+                                <span class="kpi-tag">Paquetería Recomendada: TRES GUERRAS</span>
                                 <div class="kpi-route-flow">
                                     <span class="city">GDL</span>
                                     <span class="arrow">→</span>
@@ -980,11 +990,13 @@ else:
                                 </div>
                                 <div class="kpi-value">{dias_str} <small>DÍAS</small></div>
                                 <div class="kpi-subtext">
-                                    Basado en <b>{total_viajes}</b> envíos entregados con éxito a este destino
+                                    Basado en <b>{total_viajes}</b> envíos entregados con éxito en esta zona
                                 </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
+                else:
+                    st.info(f"Cielo, no encontré registros de entrega real para **{destino_sel}** en la columna de Destino o Domicilio.")
                     
                 
                 # PESTAÑA 3: VOLUMEN
@@ -3321,6 +3333,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
