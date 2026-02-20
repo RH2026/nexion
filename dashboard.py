@@ -385,7 +385,7 @@ button[kind="secondary"] {{
 }}
 
 .kpi-tag {{
-    font-size: 10px !important;
+    font-size: 16px !important;
     letter-spacing: 3px;
     color: #00FFAA;
     font-weight: 700;
@@ -431,7 +431,7 @@ button[kind="secondary"] {{
 }}
 
 .kpi-subtext {{
-    font-size: 14px !important;
+    font-size: 16px !important;
     color: {vars_css['sub']};
     margin-top: 15px;
     line-height: 1.4;
@@ -3333,6 +3333,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
