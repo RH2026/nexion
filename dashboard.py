@@ -927,18 +927,23 @@ else:
                             st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
             
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
-            with tab_rastreo:
+            with tab_rastreo: 
                 # =========================================================
                 # 1. PROCESAMIENTO DE DATOS
                 # =========================================================
+                # Convertimos columnas a fecha y calculamos días reales (redondeo hacia arriba después)
                 df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
                 df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
                 df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
                 
                 # =========================================================
-                # 2. SECCIÓN DEL CALCULADOR CON TABLA DE DETALLES
+                # 2. SECCIÓN DEL CALCULADOR "CHINGÓN"
                 # =========================================================
                 st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
+                
+                # --- LÓGICA DE USUARIO ---
+                # Obtenemos el nombre del usuario logueado, de lo contrario usamos "Cielo"
+                usuario_actual = st.session_state.get('username', 'Cielo')
                 
                 c1, c2 = st.columns([1, 1])
                 
@@ -952,66 +957,84 @@ else:
                         key="busqueda_manual_v5"
                     )
                 
-                if busqueda_manual:
-                    busqueda_aux = busqueda_manual.lower()
+                # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
+                # Si no hay búsqueda, mostramos el destino con el promedio más bajo de la matriz
+                if not busqueda_manual:
+                    # Filtramos nulos para el cálculo del mínimo
+                    df_validos = df[df['DIAS_REALES'].notna()]
+                    if not df_validos.empty:
+                        top_rapido = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
+                        busqueda_activa = top_rapido
+                        texto_mostrar = f"{top_rapido} (Ruta más veloz)"
+                    else:
+                        busqueda_activa = ""
+                        texto_mostrar = "SIN DATOS"
+                else:
+                    busqueda_activa = busqueda_manual
+                    texto_mostrar = busqueda_manual.upper()
                 
-                    # Filtro inteligente en DESTINO o DOMICILIO
-                    mask = (
-                        df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
-                        df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
-                    )
+                # --- FILTRADO INTELIGENTE (DESTINO + DOMICILIO) ---
+                busqueda_aux = busqueda_activa.lower()
+                mask = (
+                    df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
+                    df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
+                )
                 
-                    historial = df[mask & (df['DIAS_REALES'].notna())].copy()
+                historial = df[mask & (df['DIAS_REALES'].notna())].copy()
                 
-                    if not historial.empty:
-                        promedio_dias = historial['DIAS_REALES'].mean()
-                        total_viajes = len(historial)
-                        dias_redondeados = math.ceil(promedio_dias)
+                if not historial.empty:
+                    promedio_dias = historial['DIAS_REALES'].mean()
+                    total_viajes = len(historial)
+                    # Regla de oro: Redondeo hacia arriba (1.1 -> 2)
+                    dias_redondeados = math.ceil(promedio_dias)
                 
-                        # 1. Renderizado del Widget "Chingón"
-                        st.markdown(f"""
-                            <div class="kpi-ruta-container">
-                                <div class="kpi-ruta-card">
-                                    <span class="kpi-tag">Paquetería Recomendada: TRES GUERRAS</span>
-                                    <div class="kpi-route-flow">
-                                        <span class="city">GDL</span>
-                                        <span class="arrow">→</span>
-                                        <span class="city">{busqueda_manual.upper()}</span>
-                                    </div>
-                                    <div class="kpi-value">{dias_redondeados} <small>DÍAS</small></div>
-                                    <div class="kpi-subtext">
-                                        Basado en <b>{total_viajes}</b> envíos entregados con éxito
-                                    </div>
+                    # 1. Renderizado del Widget de Tránsito
+                    st.markdown(f"""
+                        <div class="kpi-ruta-container">
+                            <div class="kpi-ruta-card">
+                                <span class="kpi-tag">Paquetería Recomendada: TRES GUERRAS</span>
+                                <div class="kpi-route-flow">
+                                    <span class="city">GDL</span>
+                                    <span class="arrow">→</span>
+                                    <span class="city">{texto_mostrar}</span>
+                                </div>
+                                <div class="kpi-value">{dias_redondeados} <small>DÍAS</small></div>
+                                <div class="kpi-subtext">
+                                    Análisis basado en <b>{total_viajes}</b> entregas exitosas
                                 </div>
                             </div>
-                        """, unsafe_allow_html=True)
+                        </div>
+                    """, unsafe_allow_html=True)
                 
-                        # 2. Renderizado de la Tabla de Resultados
-                        st.markdown("#### 📋 Detalles de envíos encontrados")
-                        
-                        # Seleccionamos solo las columnas que le sirven al agente para no saturar
-                        tabla_detalles = historial[[
-                            'NÚMERO DE PEDIDO',
-                            'NOMBRE DEL CLIENTE', 
-                            'DOMICILIO', 
-                            'FECHA DE ENVÍO', 
-                            'FLETERA', 
-                        ]].sort_values(by='FECHA DE ENVÍO', ascending=False) # Los más recientes primero
+                    # 2. Renderizado de la Tabla Alineada a la Izquierda
+                    st.markdown("#### 📋 Detalles de envíos encontrados")
+                    
+                    tabla_detalles = historial[[
+                        'NÚMERO DE PEDIDO',
+                        'NOMBRE DEL CLIENTE', 
+                        'DOMICILIO', 
+                        'FECHA DE ENVÍO', 
+                        'FLETERA', 
+                    ]].sort_values(by='FECHA DE ENVÍO', ascending=False)
                 
-                        # Formateamos las fechas para que se vean limpias (Día-Mes-Año)
-                        tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
-                                        
-                        # Mostramos la tabla con un estilo que combine
-                        st.dataframe(
-                            tabla_detalles, 
-                            use_container_width=True, 
-                            hide_index=True
-                        )
-                        
-                    else:
-                        st.info(f"Cielo, no encontré entregas reales para: **{busqueda_manual}**")
+                    # Formateo de fecha para que el usuario no vea horas
+                    tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
+                
+                    # Configuración de columnas: OBLIGAMOS alineación a la IZQUIERDA
+                    config_columnas = {
+                        col: st.column_config.TextColumn(col, alignment="left") 
+                        for col in tabla_detalles.columns
+                    }
+                
+                    st.dataframe(
+                        tabla_detalles, 
+                        use_container_width=True, 
+                        hide_index=True,
+                        column_config=config_columnas
+                    )
                 else:
-                    st.write("Escribe un destino o CP para ver el análisis.")
+                    # Mensaje personalizado con el nombre del usuario logueado
+                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")
                     
                 
                 # PESTAÑA 3: VOLUMEN
@@ -3348,6 +3371,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
