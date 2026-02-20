@@ -48,7 +48,7 @@ def subir_a_github(df, sha, msg):
     payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
     return requests.put(url, json=payload, headers=headers).status_code == 200
 
-# --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
+# --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN INDIVIDUAL ---
 def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios):
     filas_prod = ""
     for p in productos:
@@ -105,7 +105,6 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicit
                 <div style="width:35%;">__________________________<br>NOMBRE Y FIRMA</div>
                 <div style="width:30%;">__________________________<br>SELLO DE RECIBIDO</div>
             </div>
-            <div style="text-align:right; font-size:8px; margin-top:10px; color:gray;">SISTEMA DE CONTROL DE MUESTRAS - JYPESA 2026</div>
         </div>
     </div>
     """
@@ -159,7 +158,6 @@ st.divider()
 # --- PRODUCTOS ---
 st.subheader("🛒 Selección de Productos")
 seleccionados = st.multiselect("Busca y selecciona productos:", list(precios.keys()))
-
 prods_actuales = []
 cants_dict = {p: 0 for p in precios.keys()}
 total_cantidad = 0
@@ -182,7 +180,7 @@ f_coment = st.text_area("💬 COMENTARIOS", height=70)
 col_b1, col_b2 = st.columns(2)
 if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
     if not f_h: st.error("Falta el hotel")
-    elif not prods_actuales: st.error("Selecciona al menos un producto con cantidad mayor a 0")
+    elif not prods_actuales: st.error("Selecciona al menos un producto")
     else:
         direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}"
         reg = {
@@ -193,22 +191,18 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
             "CANTIDAD_TOTAL": total_cantidad,
             "COSTO_TOTAL": round(total_costo_prods, 2)
         }
-        # Agregar cantidades individuales
-        for p, cant in cants_dict.items():
-            reg[p] = cant
-            
+        for p, cant in cants_dict.items(): reg[p] = cant
         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
-            st.success(f"¡Guardado! Cantidad: {total_cantidad} | Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
+            st.success(f"¡Guardado! Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
 
 if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
-    if not prods_actuales: st.warning("No hay productos para imprimir")
+    if not prods_actuales: st.warning("No hay productos")
     else:
         h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
         components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
 
 # --- PANEL DE ADMIN ---
-st.markdown("<br>", unsafe_allow_html=True)
 st.divider()
 st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
 t1, t2 = st.tabs(["📝 Gestionar Folios Existentes", "📊 Historial y Reportes"])
@@ -217,40 +211,62 @@ with t1:
     if not df_actual.empty:
         fol_edit = st.selectbox("Seleccionar Folio para Editar:", sorted(df_actual["FOLIO"].unique(), reverse=True))
         datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
-        
         c_adm1, c_adm2 = st.columns(2)
         with c_adm1:
             st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
             n_paq = st.text_input("Empresa de Paquetería", value=str(datos_fol["PAQUETERIA_NOMBRE"]))
             n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"]))
-            c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]) if pd.notnull(datos_fol["COSTO_GUIA"]) else 0.0)
-            
+            c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]))
             if st.button("✅ ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
                 idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq
-                df_actual.at[idx, "NUMERO_GUIA"] = n_gui
-                df_actual.at[idx, "COSTO_GUIA"] = c_gui
-                if subir_a_github(df_actual, sha_actual, f"Guía Folio {fol_edit}"):
+                df_actual.at[idx, "PAQUETERIA_NOMBRE"], df_actual.at[idx, "NUMERO_GUIA"], df_actual.at[idx, "COSTO_GUIA"] = n_paq, n_gui, c_gui
+                if subir_a_github(df_actual, sha_actual, f"Guía {fol_edit}"):
                     st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
-
         with c_adm2:
             st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
             if st.button("🖨️ RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
                 prods_re = []
                 for p in precios.keys():
-                    if p in datos_fol and datos_fol[p] > 0:
-                        prods_re.append({"desc": p, "cant": int(datos_fol[p])})
-                
-                h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], 
-                                             "Rigoberto Hernandez", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"],
-                                             "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN")
+                    if p in datos_fol and datos_fol[p] > 0: prods_re.append({"desc": p, "cant": int(datos_fol[p])})
+                h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "Rigoberto Hernandez", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN")
                 components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
 with t2:
     if not df_actual.empty:
         st.dataframe(df_actual, use_container_width=True)
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_actual.to_excel(writer, index=False, sheet_name='Matriz')
-        st.download_button(label="📥 DESCARGAR EXCEL COMPLETO", data=output.getvalue(), 
-                           file_name=f"Matriz_Muestras_{date.today()}.xlsx", use_container_width=True)
+        
+        # --- LÓGICA DE REPORTE GENERAL ---
+        t_prod = df_actual["COSTO_TOTAL"].sum()
+        t_flete = df_actual["COSTO_GUIA"].sum()
+        filas_html = ""
+        for _, r in df_actual.iterrows():
+            detalle_p = ""
+            for p in precios.keys():
+                cant = r.get(p, 0)
+                if cant > 0: detalle_p += f"• {int(cant)} pza(s) {p}<br>"
+            filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{r['SOLICITO']}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{r['NOMBRE DEL HOTEL']}<br><small>{r['DESTINO']}</small></td><td style='border:1px solid black;padding:8px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
+
+        form_pt_html = f"""
+        <html><head><style>@media print{{body{{padding:15mm;}} .no-print{{display:none;}}}} body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head>
+        <body>
+            <div style="display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;">
+                <div><h2>JYPESA</h2><p style="margin:0;font-size:10px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
+                <div style="text-align:right;"><b>REPORTE DE SALIDA PT</b><br>GENERADO: {date.today()}</div>
+            </div>
+            <table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>DETALLE</th><th>COSTO PROD.</th><th>FLETE</th></tr></thead>
+            <tbody>{filas_html}</tbody></table>
+            <div style="text-align:right;margin-top:20px;border-top:1px solid black;">
+                <p>TOTAL PRODUCTOS: ${t_prod:,.2f}</p><p>TOTAL FLETES: ${t_flete:,.2f}</p><h3>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3>
+            </div>
+        </body></html>"""
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            if st.button("🖨️ IMPRIMIR REPORTE PT", type="primary", use_container_width=True):
+                components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
+        with c2:
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
+            st.download_button("📥 DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_{date.today()}.xlsx", use_container_width=True)
+        with c3:
+            if st.button("🔄 ACTUALIZAR DATOS", use_container_width=True): st.rerun()
