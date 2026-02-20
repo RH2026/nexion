@@ -16,7 +16,7 @@ GITHUB_REPO = "nexion"
 GITHUB_PATH = "muestras.csv"
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
 
-# Diccionario de precios (Se mantiene intacto)
+# Diccionario de precios
 precios = {
     "SPF": 0.0,"Accesorios Ecologicos": 47.85, "Accesorios Lavarino": 47.85, "Dispensador Almond ": 218.33,
     "Dispensador Biogena": 216.00, "Dispensador Cava": 230.58, "Dispensador Persa": 275.00,
@@ -62,9 +62,6 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, solicitante, hot
 
     html = f"""
     <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; min-height:950px; margin:auto; position:relative; box-sizing:border-box; background: white; color: black;">
-        <style>
-            @media print {{ @page {{ size: letter; margin: 0; }} body {{ margin: 0; padding: 0; }} #printable-area {{ border: 2px solid black !important; width: 100% !important; height: 99vh !important; margin: 0 !important; padding: 20px !important; }} }}
-        </style>
         <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
             <h1 style="margin: 0; font-size: 28px; letter-spacing: 1px;">JYPESA</h1>
             <h2 style="margin: 0; font-size: 16px; text-decoration: underline;">ORDEN DE ENVÍO MUESTRAS</h2>
@@ -102,12 +99,13 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, solicitante, hot
             <b>COMENTARIOS:</b><br>{comentarios}
         </div>
         <div style="position:absolute; bottom:30px; left:20px; right:20px;">
-            <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:25px; border-bottom: 1px solid black; width: 100%; padding-bottom: 5px;">RECIBO DE CONFORMIDAD</div>
+            <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:25px; border-bottom: 1px solid black; width: 100%; padding-bottom: 5px;">RECIBO DE CONFORMIDAD DEL CLIENTE</div>
             <div style="display:flex; justify-content:space-between; text-align:center; font-size:10px;">
                 <div style="width:30%;">__________________________<br>FECHA RECIBO</div>
                 <div style="width:35%;">__________________________<br>NOMBRE Y FIRMA</div>
-                <div style="width:30%;">__________________________<br>SELLO</div>
+                <div style="width:30%;">__________________________<br>SELLO DE RECIBIDO</div>
             </div>
+            <div style="text-align:right; font-size:8px; margin-top:10px; color:gray;">SISTEMA DE CONTROL DE MUESTRAS - JYPESA 2026</div>
         </div>
     </div>
     """
@@ -115,33 +113,35 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, solicitante, hot
 
 # --- CARGA DE DATOS ---
 df_actual, sha_actual = obtener_datos_github()
-for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA"]:
-    if col not in df_actual.columns and not df_actual.empty:
-        df_actual[col] = ""
+if not df_actual.empty:
+    for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA"]:
+        if col not in df_actual.columns: df_actual[col] = ""
 
 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
 
 # --- INTERFAZ ---
-st.markdown("<h1 style='color: #1E1E1E; margin-bottom:0;'>JYPESA</h1>", unsafe_allow_html=True)
-st.markdown("<p style='font-weight: bold; color: gray;'>CAPTURA DE MUESTRAS NEXIÓN</p>", unsafe_allow_html=True)
+st.markdown("<h2 style='color: #1E1E1E; margin-bottom:0;'>JYPESA</h2>", unsafe_allow_html=True)
+st.markdown("<p style='font-size:12px; color: gray; margin-top:0;'>AUTOMATIZACIÓN DE PROCESOS</p>", unsafe_allow_html=True)
 
 # --- CAPTURA NUEVA ---
-c1, c2, c3, c4 = st.columns([1, 1.2, 1.2, 1])
-f_folio = c1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
-f_paq_sel = c2.selectbox("FORMA DE ENVÍO", ["Envio Pagado", "Envio por cobrar", "Entrega Personal"])
-f_ent_sel = c3.selectbox("TIPO DE ENTREGA", ["Domicilio", "Ocurre Oficina"])
-f_fecha_sel = c4.date_input("FECHA", date.today())
+with st.container():
+    c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
+    f_folio = c1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
+    f_paq_sel = c2.selectbox("FORMA DE ENVÍO", ["Envio Pagado", "Envio por cobrar", "Entrega Personal"])
+    f_ent_sel = c3.selectbox("TIPO DE ENTREGA", ["Domicilio", "Ocurre Oficina"])
+    f_fecha_sel = c4.date_input("FECHA", date.today())
 
-st.markdown("---")
+st.divider()
+
 col_rem, col_dest = st.columns(2)
 with col_rem:
-    st.markdown('<div style="background:black;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:3px;">REMITENTE</div>', unsafe_allow_html=True)
+    st.markdown('<div style="background:black;color:white;text-align:center;font-weight:bold;padding:5px;">REMITENTE</div>', unsafe_allow_html=True)
     st.text_input("Nombre", "Jabones y Productos Especializados", disabled=True)
     f_atn_rem = st.text_input("Atención", "Rigoberto Hernandez")
     f_soli = st.text_input("Solicitante / Agente", "JYPESA")
 
 with col_dest:
-    st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:3px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+    st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
     f_h = st.text_input("Hotel / Nombre")
     f_ca = st.text_input("Calle y Número")
     cd1, cd2 = st.columns(2)
@@ -152,82 +152,88 @@ with col_dest:
     f_es = cd4.text_input("Estado")
     f_con = st.text_input("Contacto Receptor")
 
-st.markdown("---")
+st.divider()
+
+# --- PRODUCTOS ---
 st.subheader("🛒 Selección de Productos")
-seleccionados = st.multiselect("Busca y selecciona:", list(precios.keys()))
+seleccionados = st.multiselect("Busca y selecciona productos:", list(precios.keys()))
+
 prods_actuales = []
-cants_dict = {}
+cants_dict = {p: 0 for p in precios.keys()} # Inicializar todo en 0
+
 if seleccionados:
     cols_q = st.columns(4)
     for i, p in enumerate(seleccionados):
         with cols_q[i % 4]:
+            # El valor se guarda directamente en cants_dict
             q = st.number_input(f"{p}", min_value=0, step=1, key=f"q_{p}")
             cants_dict[p] = q
-            if q > 0: prods_actuales.append({"desc": p, "cant": q})
+            if q > 0:
+                prods_actuales.append({"desc": p, "cant": q})
 
 f_coment = st.text_area("💬 COMENTARIOS", height=70)
 
+# --- BOTONES PRINCIPALES ---
 col_b1, col_b2 = st.columns(2)
 if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
     if not f_h: st.error("Falta el hotel")
-    elif not prods_actuales: st.error("Faltan productos")
+    elif not prods_actuales: st.error("Selecciona al menos un producto con cantidad mayor a 0")
     else:
-        # CONCATENACIÓN DE DIRECCIÓN COMPLETA PARA EL EXCEL
         direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}"
-        
         reg = {
-            "FOLIO": nuevo_folio, 
-            "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
-            "NOMBRE DEL HOTEL": f_h, 
-            "DESTINO": direccion_completa, # Dirección concatenada
-            "CONTACTO": f_con, 
-            "SOLICITO": f_soli, 
-            "PAQUETERIA": f_paq_sel,
-            "PAQUETERIA_NOMBRE": "",
-            "NUMERO_GUIA": "",
-            "COSTO_GUIA": 0
+            "FOLIO": nuevo_folio, "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
+            "NOMBRE DEL HOTEL": f_h, "DESTINO": direccion_completa,
+            "CONTACTO": f_con, "SOLICITO": f_soli, "PAQUETERIA": f_paq_sel,
+            "PAQUETERIA_NOMBRE": "", "NUMERO_GUIA": "", "COSTO_GUIA": 0.0
         }
-        for p in precios.keys(): reg[p] = cants_dict.get(p, 0)
+        # Agregar cantidades de cada producto
+        for p, cant in cants_dict.items():
+            reg[p] = cant
+            
         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
-            st.success("¡Guardado correctamente en la matriz!"); time.sleep(1.5); st.rerun()
+            st.success("¡Registro Guardado con éxito!"); time.sleep(1); st.rerun()
 
 if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
-    h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
-    components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
+    if not prods_actuales: st.warning("No hay productos para imprimir")
+    else:
+        h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
+        components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
 
 # --- PANEL DE ADMIN ---
-st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 st.divider()
 st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
 t1, t2 = st.tabs(["📝 Gestionar Folios Existentes", "📊 Historial y Reportes"])
 
 with t1:
     if not df_actual.empty:
-        fol_edit = st.selectbox("Seleccionar Folio:", sorted(df_actual["FOLIO"].unique(), reverse=True))
+        fol_edit = st.selectbox("Seleccionar Folio para Editar:", sorted(df_actual["FOLIO"].unique(), reverse=True))
         datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
         
-        c_edit1, c_edit2 = st.columns(2)
-        with c_edit1:
-            st.info(f"Actualizar envío - Folio {fol_edit}")
-            n_paq = st.text_input("Empresa de Paquetería", value=datos_fol["PAQUETERIA_NOMBRE"])
-            n_gui = st.text_input("Número de Guía", value=datos_fol["NUMERO_GUIA"])
-            c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]))
+        c_adm1, c_adm2 = st.columns(2)
+        with c_adm1:
+            st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
+            n_paq = st.text_input("Empresa de Paquetería", value=str(datos_fol["PAQUETERIA_NOMBRE"]))
+            n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"]))
+            # CORRECCIÓN: Captura de Costo
+            c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]) if pd.notnull(datos_fol["COSTO_GUIA"]) else 0.0)
             
-            if st.button("✅ ACTUALIZAR DATOS DE ENVÍO"):
+            if st.button("✅ ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
                 idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
                 df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq
                 df_actual.at[idx, "NUMERO_GUIA"] = n_gui
                 df_actual.at[idx, "COSTO_GUIA"] = c_gui
                 if subir_a_github(df_actual, sha_actual, f"Guía Folio {fol_edit}"):
-                    st.success("¡Datos actualizados!"); st.rerun()
+                    st.success("¡Datos actualizados en la nube!"); time.sleep(1); st.rerun()
 
-        with c_edit2:
-            st.warning("Re-impresión de Documento")
-            if st.button("🖨️ RE-GENERAR FORMATO E IMPRIMIR"):
+        with c_adm2:
+            st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
+            st.write(f"Destino: {datos_fol['DESTINO']}")
+            if st.button("🖨️ RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
                 prods_re = []
                 for p in precios.keys():
-                    if datos_fol.get(p, 0) > 0:
+                    if p in datos_fol and datos_fol[p] > 0:
                         prods_re.append({"desc": p, "cant": int(datos_fol[p])})
                 
                 h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], 
@@ -237,18 +243,10 @@ with t1:
 
 with t2:
     if not df_actual.empty:
-        st.write("### Matriz Completa de Muestras")
         st.dataframe(df_actual, use_container_width=True)
-        
-        # BOTÓN DE DESCARGA EXCEL
+        # DESCARGA
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_actual.to_excel(writer, index=False, sheet_name='Matriz_Nexión')
-        
-        st.download_button(
-            label="📥 DESCARGAR MATRIZ COMPLETA (EXCEL)",
-            data=output.getvalue(),
-            file_name=f"Matriz_Nexión_{date.today()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
+            df_actual.to_excel(writer, index=False, sheet_name='Matriz')
+        st.download_button(label="📥 DESCARGAR EXCEL COMPLETO", data=output.getvalue(), 
+                           file_name=f"Matriz_Muestras_{date.today()}.xlsx", use_container_width=True)
