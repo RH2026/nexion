@@ -929,14 +929,14 @@ else:
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
             with tab_rastreo:
                 # =========================================================
-                # 1. PROCESAMIENTO DE DATOS (Asegurando que existan los días)
+                # 1. PROCESAMIENTO DE DATOS
                 # =========================================================
                 df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
                 df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
                 df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
                 
                 # =========================================================
-                # 2. SECCIÓN DEL CALCULADOR "CHINGÓN" CON BÚSQUEDA ABIERTA
+                # 2. SECCIÓN DEL CALCULADOR CON TABLA DE DETALLES
                 # =========================================================
                 st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
                 
@@ -946,33 +946,29 @@ else:
                     st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
                 
                 with c2:
-                    # Cambiamos selectbox por text_input para que el agente escriba LO QUE SEA (CP, Calle, Ciudad)
                     busqueda_manual = st.text_input(
                         "BUSCAR POR DESTINO, CP O DOMICILIO", 
                         placeholder="Ej: 63734, Litibu, Cancún...",
-                        key="busqueda_manual_v4"
+                        key="busqueda_manual_v5"
                     )
                 
-                # --- LÓGICA DE FILTRADO TOTAL ---
                 if busqueda_manual:
                     busqueda_aux = busqueda_manual.lower()
                 
-                    # Ahora sí: buscamos el texto dentro de DESTINO o dentro de DOMICILIO
+                    # Filtro inteligente en DESTINO o DOMICILIO
                     mask = (
                         df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
                         df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
                     )
                 
-                    historial = df[mask & (df['DIAS_REALES'].notna())]
+                    historial = df[mask & (df['DIAS_REALES'].notna())].copy()
                 
                     if not historial.empty:
                         promedio_dias = historial['DIAS_REALES'].mean()
                         total_viajes = len(historial)
-                        
-                        # Redondeo hacia arriba
                         dias_redondeados = math.ceil(promedio_dias)
-                        dias_str = f"{dias_redondeados}"
                 
+                        # 1. Renderizado del Widget "Chingón"
                         st.markdown(f"""
                             <div class="kpi-ruta-container">
                                 <div class="kpi-ruta-card">
@@ -982,17 +978,42 @@ else:
                                         <span class="arrow">→</span>
                                         <span class="city">{busqueda_manual.upper()}</span>
                                     </div>
-                                    <div class="kpi-value">{dias_str} <small>DÍAS</small></div>
+                                    <div class="kpi-value">{dias_redondeados} <small>DÍAS</small></div>
                                     <div class="kpi-subtext">
-                                        Encontrado en historial de <b>{total_viajes}</b> envíos en esta zona
+                                        Basado en <b>{total_viajes}</b> envíos entregados con éxito
                                     </div>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
+                
+                        # 2. Renderizado de la Tabla de Resultados
+                        st.markdown("#### 📋 Detalles de envíos encontrados")
+                        
+                        # Seleccionamos solo las columnas que le sirven al agente para no saturar
+                        tabla_detalles = historial[[
+                            'NOMBRE DEL CLIENTE', 
+                            'DESTINO', 
+                            'DOMICILIO', 
+                            'FECHA DE ENVÍO', 
+                            'FECHA DE ENTREGA REAL', 
+                            'DIAS_REALES'
+                        ]].sort_values(by='FECHA DE ENVÍO', ascending=False) # Los más recientes primero
+                
+                        # Formateamos las fechas para que se vean limpias (Día-Mes-Año)
+                        tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
+                        tabla_detalles['FECHA DE ENTREGA REAL'] = tabla_detalles['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
+                
+                        # Mostramos la tabla con un estilo que combine
+                        st.dataframe(
+                            tabla_detalles, 
+                            use_container_width=True, 
+                            hide_index=True
+                        )
+                        
                     else:
-                        st.info(f"Cielo, no encontré entregas reales que coincidan con '**{busqueda_manual}**'.")
+                        st.info(f"Cielo, no encontré entregas reales para: **{busqueda_manual}**")
                 else:
-                    st.write("Escribe un destino, colonia o CP para calcular.")
+                    st.write("Escribe un destino o CP para ver el análisis.")
                     
                 
                 # PESTAÑA 3: VOLUMEN
@@ -3329,6 +3350,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
