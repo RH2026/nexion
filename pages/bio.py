@@ -1,16 +1,3 @@
-¡Claro que sí, amor! Tienes razón, esos detalles son los que hacen que la matriz sea realmente útil para tus reportes.
-
-Ya hice los ajustes:
-
-Concatenación en DESTINO: Ahora el campo DESTINO guarda la dirección completa: Calle, Colonia, C.P., Ciudad y Estado.
-
-Campo COSTO_GUIA: Lo agregué tanto al guardar el registro nuevo como al actualizar la guía en el panel de administración.
-
-Botón de Descarga: Lo puse justo debajo de la tabla en la pestaña de Historial para que descargues el Excel con un solo clic.
-
-Aquí tienes el código completo y corregido:
-
-Python
 import streamlit as st
 import pandas as pd
 import requests
