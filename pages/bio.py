@@ -8,7 +8,8 @@ import streamlit.components.v1 as components
 import time
 
 # --- CONFIGURACIÓN ---
-st.set_page_config(page_title="JYPESA Nexión Control", layout="centered")
+# Cambiado a "wide" para ocupar toda la pantalla
+st.set_page_config(page_title="JYPESA Nexión Control", layout="wide")
 
 # --- VARIABLES DE GITHUB ---
 GITHUB_USER = "RH2026"
@@ -59,9 +60,10 @@ nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.
 # --- ESTILOS CSS ---
 st.markdown("""
     <style>
-    .block-container { max-width: 1000px; padding-top: 2rem; }
     .titulo-label { font-size: 24px; font-weight: bold; color: #1E1E1E; margin-bottom: 0px; }
     .section-header { background: #444; color: white; padding: 5px; text-align: center; font-weight: bold; margin-bottom: 10px; border-radius: 3px; }
+    /* Ajuste para que los botones de acción se vean mejor */
+    .stButton > button { height: 3em; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -71,7 +73,7 @@ st.markdown("<p style='font-weight: bold; color: gray;'>CAPTURA DE MUESTRAS NEXI
 
 # --- DATOS GENERALES ---
 c1, c2, c3, c4 = st.columns([1, 1.2, 1.2, 1])
-f_folio_val = f_folio = c1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
+f_folio = c1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
 f_paqueteria = c2.selectbox("FORMA DE ENVÍO", ["Envio Pagado", "Envio por cobrar", "Entrega Personal"])
 f_entrega = c3.selectbox("TIPO DE ENTREGA", ["Domicilio", "Ocurre Oficina"])
 f_fecha = c4.date_input("FECHA", date.today())
@@ -104,7 +106,7 @@ with col_dest:
 
 st.markdown("---")
 
-# --- SELECCIÓN DE PRODUCTOS (Tu lógica original) ---
+# --- SELECCIÓN DE PRODUCTOS ---
 st.subheader("🛒 Selección de Productos")
 seleccionados = st.multiselect("Busca y selecciona los productos:", list(precios.keys()))
 
@@ -113,9 +115,9 @@ cantidades_input = {}
 
 if seleccionados:
     st.info("Escribe las cantidades:")
-    cols_q = st.columns(3)
+    cols_q = st.columns(4) # Un poco más ancho para aprovechar el wide
     for i, p in enumerate(seleccionados):
-        with cols_q[i % 3]:
+        with cols_q[i % 4]:
             cant = st.number_input(f"{p}", min_value=0, step=1, key=f"q_{p}")
             cantidades_input[p] = cant
             if cant > 0:
@@ -123,42 +125,11 @@ if seleccionados:
 
 f_comentarios = st.text_area("💬 COMENTARIOS ADICIONALES", height=70)
 
-# --- LÓGICA DE GUARDADO ---
-if st.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
-    if not f_hotel:
-        st.error("⚠️ Ingresa el nombre del hotel.")
-    elif not productos_para_imprimir:
-        st.error("⚠️ Selecciona al menos un producto con cantidad mayor a 0.")
-    else:
-        registro_completo = {
-            "FOLIO": nuevo_folio, 
-            "FECHA": f_fecha.strftime("%Y-%m-%d"),
-            "NOMBRE DEL HOTEL": f_hotel, 
-            "DESTINO": f"{f_ciudad}, {f_estado}",
-            "CONTACTO": f_contacto, 
-            "SOLICITO": f_solicitante, 
-            "PAQUETERIA": f_paqueteria,
-            "PAQUETERIA_NOMBRE": "", 
-            "NUMERO_GUIA": "", 
-            "COSTO_GUIA": 0
-        }
-        
-        total_piezas = sum(cantidades_input.values())
-        total_costo = sum(cantidades_input[p] * precios[p] for p in cantidades_input)
-        registro_completo["CANTIDAD"] = total_piezas
-        registro_completo["COSTO"] = total_costo
-        
-        for producto in precios.keys():
-            registro_completo[producto] = cantidades_input.get(producto, 0)
-        
-        df_final = pd.concat([df_actual, pd.DataFrame([registro_completo])], ignore_index=True)
-        
-        if subir_a_github(df_final, sha_actual, f"Folio {nuevo_folio}"):
-            st.success(f"✅ ¡Folio {nuevo_folio} guardado correctamente!")
-            time.sleep(1.5)
-            st.rerun()
+# --- BOTONES DE ACCIÓN PRINCIPAL (Guardar e Imprimir juntos) ---
+st.markdown("<br>", unsafe_allow_html=True)
+col_btn1, col_btn2 = st.columns(2)
 
-# --- DISEÑO DE IMPRESIÓN (El que corregimos antes) ---
+# Generación del HTML de impresión para el botón
 filas_html = "".join([f"<tr><td style='padding: 8px; border: 1px solid black;'>{d['desc']}</td><td style='text-align:center; border: 1px solid black;'>{d['cod']}</td><td style='text-align:center; border: 1px solid black;'>{d['um']}</td><td style='text-align:center; border: 1px solid black;'>{d['cant']}</td></tr>" for d in productos_para_imprimir])
 
 html_impresion = f"""
@@ -217,38 +188,67 @@ html_impresion = f"""
 </div>
 """
 
-# --- SECCIÓN DE EDICIÓN Y REPORTES (Abajo) ---
+# Botón de Guardar
+if col_btn1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
+    if not f_hotel:
+        st.error("⚠️ Ingresa el nombre del hotel.")
+    elif not productos_para_imprimir:
+        st.error("⚠️ Selecciona al menos un producto con cantidad mayor a 0.")
+    else:
+        registro_completo = {
+            "FOLIO": nuevo_folio, 
+            "FECHA": f_fecha.strftime("%Y-%m-%d"),
+            "NOMBRE DEL HOTEL": f_hotel, 
+            "DESTINO": f"{f_ciudad}, {f_estado}",
+            "CONTACTO": f_contacto, 
+            "SOLICITO": f_solicitante, 
+            "PAQUETERIA": f_paqueteria,
+            "PAQUETERIA_NOMBRE": "", 
+            "NUMERO_GUIA": "", 
+            "COSTO_GUIA": 0
+        }
+        total_piezas = sum(cantidades_input.values())
+        total_costo = sum(cantidades_input[p] * precios[p] for p in cantidades_input)
+        registro_completo["CANTIDAD"] = total_piezas
+        registro_completo["COSTO"] = total_costo
+        for producto in precios.keys():
+            registro_completo[producto] = cantidades_input.get(producto, 0)
+        df_final = pd.concat([df_actual, pd.DataFrame([registro_completo])], ignore_index=True)
+        if subir_a_github(df_final, sha_actual, f"Folio {nuevo_folio}"):
+            st.success(f"✅ ¡Folio {nuevo_folio} guardado correctamente!")
+            time.sleep(1.5)
+            st.rerun()
+
+# Botón de Imprimir (A la mano del usuario)
+if col_btn2.button("🖨️ IMPRIMIR ORDEN (FOLIO ACTUAL)", use_container_width=True):
+    components.html(f"<html><body>{html_impresion}<script>window.print();</script></body></html>", height=0)
+
+# --- SECCIÓN DE EDICIÓN Y REPORTES (Abajo para administración) ---
+st.markdown("<br><br>", unsafe_allow_html=True)
 st.divider()
-tab1, tab2 = st.tabs(["📝 Editar Guías", "📊 Historial y Reportes"])
+st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
+tab1, tab2 = st.tabs(["📝 Editar Guías de Envío", "📊 Historial de Muestras"])
 
 with tab1:
     if not df_actual.empty:
         st.write("Selecciona un folio para agregar datos de paquetería:")
-        folio_a_editar = st.selectbox("Seleccionar Folio:", df_actual["FOLIO"].unique())
+        folio_a_editar = st.selectbox("Seleccionar Folio para actualizar:", df_actual["FOLIO"].unique())
         col_g1, col_g2, col_g3 = st.columns(3)
         nombre_paq = col_g1.text_input("Paquetería")
         n_guia = col_g2.text_input("Número de Guía")
-        c_guia = col_g3.number_input("Costo Guía", min_value=0.0)
-        
-        if st.button("✅ ACTUALIZAR GUÍA"):
+        c_guia = col_g3.number_input("Costo Guía ($)", min_value=0.0)
+        if st.button("✅ ACTUALIZAR DATOS DE GUÍA"):
             idx = df_actual.index[df_actual['FOLIO'] == folio_a_editar].tolist()[0]
             df_actual.at[idx, "PAQUETERIA_NOMBRE"] = nombre_paq
             df_actual.at[idx, "NUMERO_GUIA"] = n_guia
             df_actual.at[idx, "COSTO_GUIA"] = c_guia
             if subir_a_github(df_actual, sha_actual, f"Guía Folio {folio_a_editar}"):
-                st.success("¡Datos actualizados!"); st.rerun()
+                st.success("¡Datos actualizados correctamente!"); st.rerun()
 
 with tab2:
     if not df_actual.empty:
         st.dataframe(df_actual, use_container_width=True)
-        c_down1, c_down2 = st.columns(2)
-        
-        # Botón Imprimir (El que pediste)
-        if c_down1.button("🖨️ IMPRIMIR ORDEN ACTUAL", use_container_width=True):
-            components.html(f"<html><body>{html_impresion}<script>window.print();</script></body></html>", height=0)
-            
-        # Descarga Excel
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_actual.to_excel(writer, index=False)
-        c_down2.download_button("📥 DESCARGAR EXCEL", data=output.getvalue(), file_name="Matriz_Nexión.xlsx", use_container_width=True)
+        st.download_button("📥 DESCARGAR MATRIZ COMPLETA (EXCEL)", data=output.getvalue(), file_name="Matriz_Nexión.xlsx", use_container_width=True)
