@@ -10,21 +10,20 @@ st.set_page_config(page_title="JYPESA Control", layout="centered")
 if 'folio_auto' not in st.session_state:
     st.session_state.folio_auto = datetime.now().strftime("%Y%m%d%H%M%S")
 
-# CSS para el estilo "chingón"
+# CSS para estilo y control de impresión
 st.markdown("""
     <style>
     .block-container { max-width: 1000px; padding-top: 2rem; }
     .header-tabla { background-color: #444; color: white; padding: 8px; text-align: center; font-weight: bold; border-radius: 5px 5px 0 0; margin-bottom: 10px; }
     .stCheckbox { margin-bottom: -15px; }
     .prod-label { font-size: 13px; font-weight: 500; padding-top: 5px; line-height: 1.2; }
-    /* Estilo para la tabla de códigos especiales */
     .especial-header { background-color: #222; color: white; padding: 5px; text-align: center; font-weight: bold; margin-top: 20px; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- LISTADO DE PRODUCTOS ---
-amenidades_kits = ["Kit Elements", "Kit Almond", "Kit Biogena", "Kit Cava", "Kit Persa", "Kit Lavarino", "Kit Botánicos", "Accesorios Ecologicos", "Accesorios Lavarino"]
-dispensadores_racks = ["Dispensador Almond", "Dispensador Biogena", "Dispensador Cava", "Dispensador Persa", "Dispensador Botánicos L", "Dispensador Dove", "Dispensador Biogena 400ml", "Llave Magnetica", "Rack Dove", "Rack JH Blanco 2 pzas", "Rack JH Blanco 1 pzas", "Soporte dob INOX", "Soporte Ind INOX"]
+amenidades_list = ["ELEMENTS", "ALMON OLIVE", "BIOGENA", "CAVA", "LAVANDA BOTANICUS", "LAVARIVO", "BOTANICUS", "PERSEA", "RAINFOREST", "DOVE", "ECOLOGICOS"]
+dispensadores_list = ["ELEMENTS", "ALMON OLIVE", "BIOGENA", "CAVA", "LAVANDA BOTANICUS", "LAVARIVO", "BOTANICUS", "PERSEA", "RAINFOREST", "DOVE", "ACCESORIOS EQ."]
 
 # --- FORMULARIO ---
 st.title("📦 Orden de Envío")
@@ -67,10 +66,10 @@ with col_dest:
 st.markdown("---")
 st.subheader("🛒 Selección de Catálogo")
 
-seleccionados = {}
+seleccionados = []
 col_prod1, col_prod2 = st.columns(2)
 
-def render_seccion(lista, columna, titulo):
+def render_cat(lista, columna, titulo, tipo):
     with columna:
         st.markdown(f'<div class="header-tabla">{titulo}</div>', unsafe_allow_html=True)
         h1, h2, h3 = st.columns([2.5, 1, 1.2])
@@ -80,45 +79,46 @@ def render_seccion(lista, columna, titulo):
         for p in lista:
             r1, r2, r3 = st.columns([2.5, 1, 1.2])
             r1.markdown(f"<div class='prod-label'>{p}</div>", unsafe_allow_html=True)
-            sel = r2.checkbox("", key=f"ch_{p}", label_visibility="collapsed")
-            cant = r3.number_input("", min_value=0, step=1, key=f"ca_{p}", label_visibility="collapsed", disabled=not sel)
-            if sel and cant > 0: seleccionados[p] = {"cant": cant, "um": "PZAS"}
+            sel = r2.checkbox("", key=f"ch_{tipo}_{p}", label_visibility="collapsed")
+            cant = r3.number_input("", min_value=0, step=1, key=f"ca_{tipo}_{p}", label_visibility="collapsed", disabled=not sel)
+            if sel and cant > 0:
+                seleccionados.append({"desc": f"{p} ({titulo})", "um": "PZAS", "cant": cant, "cod": "-"})
 
-render_seccion(amenidades_kits, col_prod1, "AMENIDADES Y KITS")
-render_seccion(dispensadores_racks, col_prod2, "DISPENSADORES Y RACKS")
+render_cat(amenidades_list, col_prod1, "AMENIDADES", "amen")
+render_cat(dispensadores_list, col_prod2, "DISPENSADORES", "disp")
 
-# --- SECCIÓN DE CÓDIGOS ESPECIALES ---
-st.markdown('<div class="especial-header">✨ PRODUCTOS ESPECIALES (FUERA DE CATÁLOGO)</div>', unsafe_allow_html=True)
-if 'rows_especiales' not in st.session_state:
-    st.session_state.rows_especiales = 3
+st.markdown('<div class="especial-header">✨ PRODUCTOS ESPECIALES / CÓDIGOS</div>', unsafe_allow_html=True)
+if 'rows_especiales' not in st.session_state: st.session_state.rows_especiales = 3
 
 especiales_data = []
-he1, he2, he3 = st.columns([1, 1, 3])
-he1.caption("CANTIDAD")
+he1, he2, he3, he4 = st.columns([0.8, 0.8, 1, 2.4])
+he1.caption("CANT.")
 he2.caption("U.M.")
-he3.caption("DESCRIPCIÓN DEL PRODUCTO")
+he3.caption("CÓDIGO")
+he4.caption("DESCRIPCIÓN")
 
 for i in range(st.session_state.rows_especiales):
-    re1, re2, re3 = st.columns([1, 1, 3])
-    esp_cant = re1.number_input("", min_value=0, step=1, key=f"esp_can_{i}", label_visibility="collapsed")
-    esp_um = re2.text_input("", placeholder="PZAS/CAJA", key=f"esp_um_{i}", label_visibility="collapsed")
-    esp_desc = re3.text_input("", placeholder="Nombre del producto especial...", key=f"esp_des_{i}", label_visibility="collapsed")
+    re1, re2, re3, re4 = st.columns([0.8, 0.8, 1, 2.4])
+    esp_cant = re1.number_input("", min_value=0, key=f"e_can_{i}", label_visibility="collapsed")
+    esp_um = re2.text_input("", placeholder="PZA", key=f"e_um_{i}", label_visibility="collapsed")
+    esp_cod = re3.text_input("", placeholder="CÓD.", key=f"e_cod_{i}", label_visibility="collapsed")
+    esp_desc = re4.text_input("", placeholder="Descripción...", key=f"e_des_{i}", label_visibility="collapsed")
     if esp_cant > 0 and esp_desc:
-        especiales_data.append({"cant": esp_cant, "um": esp_um.upper(), "desc": esp_desc.upper()})
+        especiales_data.append({"cant": esp_cant, "um": esp_um.upper(), "cod": esp_cod.upper(), "desc": esp_desc.upper()})
 
-if st.button("➕ Agregar más filas"):
+if st.button("➕ Más filas"):
     st.session_state.rows_especiales += 2
     st.rerun()
 
 st.markdown("---")
-f_comentarios = st.text_area("💬 COMENTARIOS / NOTAS", height=80, key="txt_coment")
+f_comentarios = st.text_area("💬 COMENTARIOS", height=70)
 
 # --- LÓGICA DE IMPRESIÓN ---
-filas_html = "".join([f"<tr><td>{p}</td><td style='text-align:center'>PZAS</td><td style='text-align:center'>{d['cant']}</td></tr>" for p, d in seleccionados.items()])
-filas_especiales_html = "".join([f"<tr><td>{d['desc']}</td><td style='text-align:center'>{d['um']}</td><td style='text-align:center'>{d['cant']}</td></tr>" for d in especiales_data])
+all_prods = seleccionados + especiales_data
+filas_html = "".join([f"<tr><td>{d['desc']}</td><td style='text-align:center'>{d['cod']}</td><td style='text-align:center'>{d['um']}</td><td style='text-align:center'>{d['cant']}</td></tr>" for d in all_prods])
 
 html_impresion = f"""
-<div style="font-family:Arial; border:1px solid black; padding:20px; width:750px; margin:auto;">
+<div style="font-family:Arial; border:2px solid black; padding:20px; width:750px; height:950px; margin:auto; position:relative; box-sizing:border-box;">
     <table style="width:100%; border-collapse:collapse; margin-bottom:5px;">
         <tr><td style="border:1px solid black;padding:5px"><b>FOLIO:</b> {f_folio}</td>
             <td style="border:1px solid black;padding:5px"><b>ENVÍO:</b> {f_paqueteria}</td>
@@ -140,18 +140,21 @@ html_impresion = f"""
         </div>
     </div>
     <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:11px;" border="1">
-        <tr style="background:#444; color:white;"><th>PRODUCTO / DESCRIPCIÓN</th><th>U.M.</th><th>CANTIDAD</th></tr>
-        {filas_html}
-        {filas_especiales_html}
-        {'' if (filas_html or filas_especiales_html) else '<tr><td colspan="3" style="text-align:center">No hay productos</td></tr>'}
+        <tr style="background:#444; color:white;"><th>DESCRIPCIÓN</th><th>CÓDIGO</th><th>U.M.</th><th>CANT.</th></tr>
+        {filas_html if filas_html else '<tr><td colspan="4" style="text-align:center">Sin productos</td></tr>'}
     </table>
     <div style="border:1px solid black; padding:5px; margin-top:5px; font-size:11px;"><b>COMENTARIOS:</b> {f_comentarios}</div>
-    <div style="margin-top:40px; text-align:center; font-size:10px;">
-        <p>RECIBO DE CONFORMIDAD DEL CLIENTE</p><br>
-        <div style="display:flex; justify-content:space-around;">
-            <div>__________________________<br>FECHA</div>
-            <div>__________________________<br>NOMBRE Y FIRMA</div>
-            <div>__________________________<br>SELLO</div>
+    
+    <div style="position:absolute; bottom:20px; left:20px; right:20px;">
+        <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:20px;">RECIBO DE CONFORMIDAD DEL CLIENTE</div>
+        <div style="display:flex; justify-content:space-between; text-align:center; font-size:10px;">
+            <div style="width:30%;">__________________________<br>FECHA</div>
+            <div style="width:35%;">__________________________<br>NOMBRE Y FIRMA</div>
+            <div style="width:30%;">__________________________<br>SELLO</div>
+        </div>
+        <div style="margin-top:20px; border-top:1px solid #ccc; padding-top:5px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold;">
+            <span>JYPESA</span>
+            <span>AUTOMATIZACIÓN DE PROCESOS</span>
         </div>
     </div>
 </div>
@@ -161,16 +164,14 @@ html_impresion = f"""
 st.markdown("<br>", unsafe_allow_html=True)
 b_col1, b_col2, b_col3 = st.columns(3)
 with b_col1:
-    if st.button("🚀 GUARDAR REGISTRO", type="primary", use_container_width=True):
-        if not f_hotel: st.warning("⚠️ Falta el hotel.")
-        else: st.success("✅ Guardado."); time.sleep(1.2); st.rerun()
-
+    if st.button("🚀 GUARDAR", type="primary", use_container_width=True):
+        if not f_hotel: st.warning("⚠️ Hotel vacío.")
+        else: st.success("✅ Guardado."); time.sleep(1); st.rerun()
 with b_col2:
-    if st.button("🖨️ IMPRIMIR REPORTE", use_container_width=True):
+    if st.button("🖨️ IMPRIMIR", use_container_width=True):
         components.html(f"<html><body>{html_impresion}<script>window.print();</script></body></html>", height=0)
-
 with b_col3:
-    if st.button("🔄 NUEVO REGISTRO", use_container_width=True):
+    if st.button("🔄 NUEVO", use_container_width=True):
         st.session_state.folio_auto = datetime.now().strftime("%Y%m%d%H%M%S")
         st.session_state.rows_especiales = 3
         st.rerun()
