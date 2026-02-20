@@ -21,9 +21,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- LISTADO DE PRODUCTOS ---
-amenidades_list = ["ELEMENTS", "ALMON OLIVE", "BIOGENA", "CAVA", "LAVANDA BOTANICUS", "LAVARIVO", "BOTANICUS", "PERSEA", "RAINFOREST", "DOVE", "ECOLOGICOS"]
-dispensadores_list = ["ELEMENTS", "ALMON OLIVE", "BIOGENA", "CAVA", "LAVANDA BOTANICUS", "LAVARIVO", "BOTANICUS", "PERSEA", "RAINFOREST", "DOVE", "ACCESORIOS EQ."]
+# --- LISTADO DE PRODUCTOS ACTUALIZADO ---
+amenidades_list = [
+    "Kit Elements", "Kit Almond", "Kit Biogena", "Kit Cava", 
+    "Kit Persa", "Kit Lavarino", "Kit Botánicos", 
+    "Accesorios Ecologicos", "Accesorios Lavarino"
+]
+
+dispensadores_list = [
+    "Dispensador Almond", "Dispensador Biogena", "Dispensador Cava", 
+    "Dispensador Persa", "Dispensador Botánicos L", "Dispensador Dove", 
+    "Dispensador Biogena 400ml", "Llave Magnetica", "Rack Dove", 
+    "Rack JH Color Blanco de 2 pzas", "Rack JH Color Blanco de 1 pzas", 
+    "Soporte dob INOX Cap lock", "Soporte Ind INOX Cap lock"
+]
 
 # --- FORMULARIO APP ---
 st.markdown("<h1 style='color: #1E1E1E;'>JYPESA</h1>", unsafe_allow_html=True)
@@ -84,10 +95,10 @@ def render_cat(lista, columna, titulo, tipo):
             sel = r2.checkbox("", key=f"ch_{tipo}_{p}", label_visibility="collapsed")
             cant = r3.number_input("", min_value=0, step=1, key=f"ca_{tipo}_{p}", label_visibility="collapsed", disabled=not sel)
             if sel and cant > 0:
-                seleccionados.append({"desc": f"{p} ({titulo})", "um": "PZAS", "cant": cant, "cod": "-"})
+                seleccionados.append({"desc": p, "um": "PZAS", "cant": cant, "cod": "-"})
 
-render_cat(amenidades_list, col_prod1, "AMENIDADES", "amen")
-render_cat(dispensadores_list, col_prod2, "DISPENSADORES", "disp")
+render_cat(amenidades_list, col_prod1, "KITS Y ACCESORIOS", "kits")
+render_cat(dispensadores_list, col_prod2, "DISPENSADORES Y RACKS", "disp")
 
 st.markdown('<div class="especial-header">✨ PRODUCTOS ESPECIALES / CÓDIGOS</div>', unsafe_allow_html=True)
 if 'rows_especiales' not in st.session_state: st.session_state.rows_especiales = 3
@@ -113,19 +124,20 @@ if st.button("➕ Más filas"):
     st.rerun()
 
 st.markdown("---")
-f_comentarios = st.text_area("💬 COMENTARIOS", height=70)
+f_comentarios = st.text_area("💬 COMENTARIOS ADICIONALES", height=70)
 
 # --- LÓGICA DE IMPRESIÓN ---
 all_prods = seleccionados + especiales_data
 filas_html = "".join([f"<tr><td style='padding: 15px;'>{d['desc']}</td><td style='text-align:center'>{d['cod']}</td><td style='text-align:center'>{d['um']}</td><td style='text-align:center'>{d['cant']}</td></tr>" for d in all_prods])
 
 html_impresion = f"""
-<div style="font-family:Arial; border:2px solid black; padding:20px; width:750px; height:980px; margin:auto; position:relative; box-sizing:border-box;">
+<div style="font-family:Arial; border:2px solid black; padding:20px; width:750px; height:1050px; margin:auto; position:relative; box-sizing:border-box;">
     
     <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 15px;">
         <h1 style="margin: 0; font-size: 32px; letter-spacing: 1px;">JYPESA</h1>
         <h2 style="margin: 0; font-size: 18px; text-decoration: underline;">ENVÍO DE MUESTRAS</h2>
-        <div style="width: 100px;"></div> </div>
+        <div style="width: 100px;"></div>
+    </div>
 
     <table style="width:100%; border-collapse:collapse; margin-bottom:5px;">
         <tr><td style="border:1px solid black;padding:5px"><b>FOLIO:</b> {f_folio}</td>
@@ -156,7 +168,7 @@ html_impresion = f"""
             <th>U.M.</th>
             <th>CANT.</th>
         </tr>
-        {filas_html if filas_html else '<tr><td colspan="4" style="text-align:center; padding: 40px;">Sin productos para envío de muestras</td></tr>'}
+        {filas_html if filas_html else '<tr><td colspan="4" style="text-align:center; padding: 40px;">Sin productos seleccionados</td></tr>'}
     </table>
 
     <div style="border:1px solid black; padding:10px; margin-top:15px; font-size:12px; height: 80px;">
@@ -183,14 +195,14 @@ html_impresion = f"""
 st.markdown("<br>", unsafe_allow_html=True)
 b_col1, b_col2, b_col3 = st.columns(3)
 with b_col1:
-    if st.button("🚀 GUARDAR", type="primary", use_container_width=True):
+    if st.button("🚀 GUARDAR REGISTRO", type="primary", use_container_width=True):
         if not f_hotel: st.warning("⚠️ Ingresa el hotel.")
         else: st.success("✅ Registro Guardado."); time.sleep(1); st.rerun()
 with b_col2:
-    if st.button("🖨️ IMPRIMIR", use_container_width=True):
+    if st.button("🖨️ IMPRIMIR REPORTE", use_container_width=True):
         components.html(f"<html><body>{html_impresion}<script>window.print();</script></body></html>", height=0)
 with b_col3:
-    if st.button("🔄 NUEVO", use_container_width=True):
+    if st.button("🔄 NUEVO REGISTRO", use_container_width=True):
         st.session_state.folio_auto = datetime.now().strftime("%Y%m%d%H%M%S")
         st.session_state.rows_especiales = 3
         st.rerun()
