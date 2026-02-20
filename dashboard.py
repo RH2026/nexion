@@ -388,7 +388,7 @@ button[kind="secondary"] {{
     font-size: 16px !important;
     letter-spacing: 3px;
     color: #00FFAA;
-    font-weight: 700;
+    font-weight: 500;
     text-transform: uppercase;
     opacity: 0.9;
 }}
@@ -3333,6 +3333,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
