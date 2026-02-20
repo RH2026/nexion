@@ -2316,21 +2316,39 @@ else:
                         st.error("Selecciona al menos un producto.")
                     else:
                         registro_completo = {
-                            "FOLIO": nuevo_folio, "FECHA": f_fecha.strftime("%Y-%m-%d"),
-                            "NOMBRE DEL HOTEL": f_hotel, "DESTINO": f_destino,
-                            "CONTACTO": f_contacto, "SOLICITO": f_solicito, "PAQUETERIA": f_paqueteria,
-                            "PAQUETERIA_NOMBRE": "", "NUMERO_GUIA": "", "COSTO_GUIA": 0
+                            "FOLIO": nuevo_folio, 
+                            "FECHA": f_fecha.strftime("%Y-%m-%d"),
+                            "NOMBRE DEL HOTEL": f_hotel, 
+                            "DESTINO": f_destino,
+                            "CONTACTO": f_contacto, 
+                            "SOLICITO": f_solicito, 
+                            "PAQUETERIA": f_paqueteria,
+                            "PAQUETERIA_NOMBRE": "", 
+                            "NUMERO_GUIA": "", 
+                            "COSTO_GUIA": 0
                         }
+                        
                         total_piezas = sum(cantidades_input.values())
                         total_costo = sum(cantidades_input[p] * precios[p] for p in cantidades_input)
+                        
                         registro_completo["CANTIDAD"] = total_piezas
                         registro_completo["COSTO"] = total_costo
+                        
                         for producto in precios.keys():
                             registro_completo[producto] = cantidades_input.get(producto, 0)
                         
                         df_final = pd.concat([df_actual, pd.DataFrame([registro_completo])], ignore_index=True)
+                        
                         if subir_a_github(df_final, sha_actual, f"Folio {nuevo_folio}"):
-                            st.success(f"¡Folio {nuevo_folio} guardado!"); st.balloons(); st.rerun()
+                            # Mostramos solo el mensaje de éxito
+                            st.success(f"✅ ¡Folio {nuevo_folio} guardado correctamente!")
+                            
+                            # Esperamos un segundo y medio para que el usuario vea el mensaje
+                            import time
+                            time.sleep(1.5)
+                            
+                            # Refrescamos para limpiar todos los campos
+                            st.rerun()
                 
                 # --- SECCIÓN DE EDICIÓN (DESPUÉS) ---
                 st.divider()
@@ -3380,6 +3398,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
