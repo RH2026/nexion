@@ -402,7 +402,7 @@ button[kind="secondary"] {{
 }}
 
 .city {{
-    font-size: 16px !important;
+    font-size: 20px !important;
     font-weight: 600;
     color: {vars_css['text']};
     letter-spacing: 1px;
@@ -410,12 +410,12 @@ button[kind="secondary"] {{
 
 .arrow {{
     color: #00FFAA;
-    font-size: 24px;
+    font-size: 34px;
     font-weight: bold;
 }}
 
 .kpi-value {{
-    font-size: 48px !important;
+    font-size: 38px !important;
     font-weight: 900;
     color: {vars_css['text']};
     margin: 5px 0;
@@ -431,7 +431,7 @@ button[kind="secondary"] {{
 }}
 
 .kpi-subtext {{
-    font-size: 11px !important;
+    font-size: 14px !important;
     color: {vars_css['sub']};
     margin-top: 15px;
     line-height: 1.4;
@@ -3333,6 +3333,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
