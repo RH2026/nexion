@@ -137,21 +137,21 @@ with col_rem:
     st.markdown('<div style="background:black;color:white;text-align:center;font-weight:bold;padding:5px;">REMITENTE</div>', unsafe_allow_html=True)
     st.text_input("Nombre", "Jabones y Productos Especializados", disabled=True)
     c_rem1, c_rem2 = st.columns([2, 1])
-    f_atn_rem = c_rem1.text_input("Atención", "Rigoberto Hernandez")
+    f_atn_rem = c_rem1.text_input("Atención", "Rigoberto Hernandez").upper()
     f_tel_rem = c_rem2.text_input("Teléfono", "3319753122")
-    f_soli = st.text_input("Solicitante / Agente", "JYPESA")
+    f_soli = st.text_input("Solicitante / Agente", "JYPESA").upper()
 
 with col_dest:
     st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
-    f_h = st.text_input("Hotel / Nombre")
-    f_ca = st.text_input("Calle y Número")
+    f_h = st.text_input("Hotel / Nombre").upper()
+    f_ca = st.text_input("Calle y Número").upper()
     cd1, cd2 = st.columns(2)
-    f_co = cd1.text_input("Colonia")
+    f_co = cd1.text_input("Colonia").upper()
     f_cp = cd2.text_input("C.P.")
     cd3, cd4 = st.columns(2)
-    f_ci = cd3.text_input("Ciudad")
-    f_es = cd4.text_input("Estado")
-    f_con = st.text_input("Contacto Receptor")
+    f_ci = cd3.text_input("Ciudad").upper()
+    f_es = cd4.text_input("Estado").upper()
+    f_con = st.text_input("Contacto Receptor").upper()
 
 st.divider()
 
@@ -174,7 +174,7 @@ if seleccionados:
                 total_cantidad += q
                 total_costo_prods += (q * precios[p])
 
-f_coment = st.text_area("💬 COMENTARIOS", height=70)
+f_coment = st.text_area("💬 COMENTARIOS", height=70).upper()
 
 # --- BOTONES PRINCIPALES ---
 col_b1, col_b2 = st.columns(2)
