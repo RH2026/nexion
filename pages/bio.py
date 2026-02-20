@@ -7,7 +7,7 @@ import time
 # --- CONFIGURACIÓN ---
 st.set_page_config(page_title="JYPESA Control", layout="centered")
 
-# Generar Folio Automático (Fecha y Hora sin decimales)
+# Generar Folio Automático
 if 'folio_auto' not in st.session_state:
     st.session_state.folio_auto = datetime.now().strftime("%Y%m%d%H%M%S")
 
@@ -37,25 +37,46 @@ dispensadores_racks = [
 # --- FORMULARIO ---
 st.title("📦 Orden de Envío")
 
-# Fila superior
-c1, c2, c3 = st.columns([1.2, 1.5, 1])
+# Fila superior de Configuración
+c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.2, 1])
 with c1: 
-    # Folio deshabilitado para que no se ponga nada manualmente
     f_folio = st.text_input("FOLIO (AUTO)", value=st.session_state.folio_auto, key="main_folio", disabled=True)
 with c2: 
-    # Cambio a selectbox para opciones fijas de envío
     f_paqueteria = st.selectbox(
         "FORMA DE ENVÍO", 
         ["Envio Pagado", "Envio por cobrar", "Entrega Personal"], 
         key="main_paq"
     )
-with c3: 
+with c3:
+    f_entrega = st.selectbox(
+        "TIPO DE ENTREGA",
+        ["Domicilio", "Ocurre Oficina"],
+        key="tipo_entrega"
+    )
+with c4: 
     f_fecha = st.date_input("FECHA", date.today(), key="main_date")
 
 st.markdown("---")
 
-col_izq, col_der = st.columns(2)
-with col_izq:
+# Intercambio de lugar: REMITENTE IZQUIERDA, DESTINATARIO DERECHA
+col_rem, col_dest = st.columns(2)
+
+with col_rem:
+    st.markdown('<div style="background:black;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:3px;">REMITENTE</div>', unsafe_allow_html=True)
+    st.text_input("Nombre", "Jabones y Productos Especializados", disabled=True)
+    st.text_input("Calle y Número", "C. Cernícalo 155", disabled=True)
+    cr1, cr2 = st.columns(2)
+    with cr1: st.text_input("Colonia/Del.", "La Aurora", disabled=True)
+    with cr2: st.text_input("C.P.", "44460", disabled=True)
+    cr3, cr4 = st.columns(2)
+    with cr3: st.text_input("Ciudad", "Guadalajara", disabled=True)
+    with cr4: st.text_input("Estado", "Jalisco", disabled=True)
+    cr5, cr6 = st.columns(2)
+    with cr5: f_contacto_rem = st.text_input("Atención", "Rigoberto Hernandez", key="rem_cont")
+    with cr6: f_tel_rem = st.text_input("Tel.", "3319753122", key="rem_tel")
+    f_solicitante = st.text_input("Solicitante / Agente", "JYPESA", key="rem_sol")
+
+with col_dest:
     st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:3px;">DESTINATARIO / NOMBRE DEL HOTEL</div>', unsafe_allow_html=True)
     f_hotel = st.text_input("Hotel", key="dest_hotel")
     f_calle = st.text_input("Calle, Número y Cruce", key="dest_calle")
@@ -68,21 +89,6 @@ with col_izq:
     ci5, ci6 = st.columns(2)
     with ci5: f_contacto = st.text_input("Contacto", key="dest_cont")
     with ci6: f_telefono = st.text_input("Teléfono", key="dest_tel")
-
-with col_der:
-    st.markdown('<div style="background:black;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:3px;">REMITENTE</div>', unsafe_allow_html=True)
-    st.text_input("Nombre", "Jabones y productos Especializados", disabled=True)
-    st.text_input("Calle y Número", "C. Cernícalo 155", disabled=True)
-    cr1, cr2 = st.columns(2)
-    with cr1: st.text_input("Colonia/Del.", "La Aurora", disabled=True)
-    with cr2: st.text_input("C.P.", "44460", disabled=True)
-    cr3, cr4 = st.columns(2)
-    with cr3: st.text_input("Ciudad", "Guadalajara", disabled=True)
-    with cr4: st.text_input("Estado", "Jalisco", disabled=True)
-    cr5, cr6 = st.columns(2)
-    with cr5: f_contacto_rem = st.text_input("Atención", "Rigoberto Hernandez", key="rem_cont")
-    with cr6: f_tel_rem = st.text_input("Tel.", "3319753122", key="rem_tel")
-    f_solicitante = st.text_input("Solicitante / Nombre de Agente", "JYPESA", key="rem_sol")
 
 st.markdown("---")
 st.subheader("🛒 Selección de Artículos")
@@ -118,19 +124,20 @@ html_impresion = f"""
     <table style="width:100%; border-collapse:collapse; margin-bottom:5px;">
         <tr><td style="border:1px solid black;padding:5px"><b>FOLIO:</b> {f_folio}</td>
             <td style="border:1px solid black;padding:5px"><b>ENVÍO:</b> {f_paqueteria}</td>
+            <td style="border:1px solid black;padding:5px"><b>ENTREGA:</b> {f_entrega}</td>
             <td style="border:1px solid black;padding:5px"><b>FECHA:</b> {f_fecha}</td></tr>
     </table>
     <div style="display:flex; gap:5px; margin-top:5px;">
         <div style="flex:1; border:1px solid black;">
-            <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:12px;">DESTINATARIO</div>
+            <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:12px;">REMITENTE</div>
             <div style="padding:5px; font-size:11px;">
-                <b>{f_hotel}</b><br>{f_calle}<br>Col: {f_colonia} C.P.: {f_cp}<br>{f_ciudad}, {f_estado}<br>ATN: {f_contacto} | TEL: {f_telefono}
+                <b>Jabones y Productos Especializados</b><br>C. Cernícalo 155, La Aurora C.P.: 44460<br>Guadalajara, Jalisco<br>ATN: {f_contacto_rem} | TEL: {f_tel_rem}<br>SOLICITÓ: {f_solicitante}
             </div>
         </div>
         <div style="flex:1; border:1px solid black;">
-            <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:12px;">REMITENTE</div>
+            <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:12px;">DESTINATARIO</div>
             <div style="padding:5px; font-size:11px;">
-                <b>Jabones y productos Especializados</b><br>C. Cernícalo 155, La Aurora C.P.: 44460<br>Guadalajara, Jalisco<br>ATN: {f_contacto_rem} | TEL: {f_tel_rem}<br>SOLICITÓ: {f_solicitante}
+                <b>{f_hotel}</b><br>{f_calle}<br>Col: {f_colonia} C.P.: {f_cp}<br>{f_ciudad}, {f_estado}<br>ATN: {f_contacto} | TEL: {f_telefono}
             </div>
         </div>
     </div>
@@ -156,7 +163,7 @@ b_col1, b_col2, b_col3 = st.columns(3)
 
 with b_col1:
     if st.button("🚀 GUARDAR REGISTRO", type="primary", use_container_width=True, key="btn_save"):
-        if not f_hotel: st.warning("⚠️ Ingresa el hotel.")
+        if not f_hotel: st.warning("⚠️ Ingresa el nombre del hotel.")
         else:
             st.success("✅ Guardado.")
             time.sleep(1.2)
