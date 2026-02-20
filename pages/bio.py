@@ -182,7 +182,6 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
     if not f_h: st.error("Falta el hotel")
     elif not prods_actuales: st.error("Selecciona al menos un producto")
     else:
-        # AQUÍ OBLIGAMOS A MAYÚSCULAS ANTES DE GUARDAR
         direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
         reg = {
             "FOLIO": nuevo_folio, "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
@@ -195,7 +194,7 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
         for p, cant in cants_dict.items(): reg[p] = cant
         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
-            st.success(f"¡Guardado en MAYÚSCULAS! Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
+            st.success(f"¡Guardado! Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
 
 if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
     if not prods_actuales: st.warning("No hay productos")
@@ -210,7 +209,13 @@ t1, t2 = st.tabs(["📝 Gestionar Folios Existentes", "📊 Historial y Reportes
 
 with t1:
     if not df_actual.empty:
-        fol_edit = st.selectbox("Seleccionar Folio para Editar:", sorted(df_actual["FOLIO"].unique(), reverse=True))
+        # LÓGICA PARA MOSTRAR FOLIO + NOMBRE DE HOTEL
+        df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
+        opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
+        
+        fol_sel_texto = st.selectbox("Seleccionar Folio para Editar:", opciones_folios)
+        fol_edit = int(fol_sel_texto.split(" - ")[0]) # Extraemos solo el número del folio
+        
         datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
         c_adm1, c_adm2 = st.columns(2)
         with c_adm1:
@@ -220,7 +225,6 @@ with t1:
             c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]))
             if st.button("✅ ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
                 idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                # También en el update obligamos mayúsculas
                 df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
                 df_actual.at[idx, "NUMERO_GUIA"] = n_gui.upper()
                 df_actual.at[idx, "COSTO_GUIA"] = c_gui
