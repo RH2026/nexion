@@ -39,9 +39,18 @@ st.title("📦 Orden de Envío")
 
 # Fila superior
 c1, c2, c3 = st.columns([1.2, 1.5, 1])
-with c1: f_folio = st.text_input("FOLIO (AUTO)", value=st.session_state.folio_auto, key="main_folio")
-with c2: f_paqueteria = st.text_input("PAQUETERÍA / FORMA DE ENVÍO", key="main_paq")
-with c3: f_fecha = st.date_input("FECHA", date.today(), key="main_date")
+with c1: 
+    # Folio deshabilitado para que no se ponga nada manualmente
+    f_folio = st.text_input("FOLIO (AUTO)", value=st.session_state.folio_auto, key="main_folio", disabled=True)
+with c2: 
+    # Cambio a selectbox para opciones fijas de envío
+    f_paqueteria = st.selectbox(
+        "FORMA DE ENVÍO", 
+        ["Envio Pagado", "Envio por cobrar", "Entrega Personal"], 
+        key="main_paq"
+    )
+with c3: 
+    f_fecha = st.date_input("FECHA", date.today(), key="main_date")
 
 st.markdown("---")
 
@@ -103,9 +112,9 @@ st.markdown("---")
 f_comentarios = st.text_area("💬 COMENTARIOS / NOTAS", height=80, key="txt_coment")
 
 # --- LÓGICA DE IMPRESIÓN ---
-filas_html = "".join([f"<tr><td>{p}</td><td>PZAS</td><td style='text-align:center'>{c}</td></tr>" for p, c in seleccionados.items()])
+filas_html = "".join([f"<tr><td>{p}</td><td style='text-align:center'>PZAS</td><td style='text-align:center'>{c}</td></tr>" for p, c in seleccionados.items()])
 html_impresion = f"""
-<div style="font-family:Arial; border:1px solid black; padding:20px; width:750px; margin:auto;">
+<div style="font-family:Arial; border:2px solid black; padding:20px; width:750px; margin:auto;">
     <table style="width:100%; border-collapse:collapse; margin-bottom:5px;">
         <tr><td style="border:1px solid black;padding:5px"><b>FOLIO:</b> {f_folio}</td>
             <td style="border:1px solid black;padding:5px"><b>ENVÍO:</b> {f_paqueteria}</td>
@@ -127,7 +136,7 @@ html_impresion = f"""
     </div>
     <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:11px;" border="1">
         <tr style="background:#444; color:white;"><th>PRODUCTO</th><th>U.M.</th><th>CANTIDAD</th></tr>
-        {filas_html if filas_html else '<tr><td colspan="3" style="text-align:center">Sin productos</td></tr>'}
+        {filas_html if filas_html else '<tr><td colspan="3" style="text-align:center">Sin productos seleccionados</td></tr>'}
     </table>
     <div style="border:1px solid black; padding:5px; margin-top:5px; font-size:11px;"><b>COMENTARIOS:</b> {f_comentarios}</div>
     <div style="margin-top:40px; text-align:center; font-size:10px;">
