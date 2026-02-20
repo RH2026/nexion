@@ -48,7 +48,7 @@ def subir_a_github(df, sha, msg):
     payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
     return requests.put(url, json=payload, headers=headers).status_code == 200
 
-# --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN INDIVIDUAL ---
+# --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
 def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios):
     filas_prod = ""
     for p in productos:
@@ -186,7 +186,7 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
         reg = {
             "FOLIO": nuevo_folio, "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
             "NOMBRE DEL HOTEL": f_h.upper(), "DESTINO": direccion_completa,
-            "CONTACTO": f_con.upper(), "SOLICITO": f_soli.upper(), "PAQUETERIA": f_paq_sel.upper(),
+            "CONTACTO": f_con.upper(), "SOLICITO": f_soli.upper() if f_soli else "JYPESA", "PAQUETERIA": f_paq_sel.upper(),
             "PAQUETERIA_NOMBRE": "", "NUMERO_GUIA": "", "COSTO_GUIA": 0.0,
             "CANTIDAD_TOTAL": total_cantidad,
             "COSTO_TOTAL": round(total_costo_prods, 2)
@@ -199,8 +199,24 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
 if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
     if not prods_actuales: st.warning("No hay productos")
     else:
-        h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
+        h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
         components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
+
+# --- NUEVA OPCIÓN DE BÚSQUEDA RÁPIDA (JUSTO DESPUÉS DE GUARDAR/IMPRIMIR) ---
+st.write("")
+with st.expander("🔍 BÚSQUEDA RÁPIDA DE GUÍAS (CONSULTA DE FOLIOS)", expanded=False):
+    if not df_actual.empty:
+        busqueda = st.text_input("Escribe el nombre del Hotel o Folio para filtrar:")
+        # Columnas solicitadas: Folio, Fecha, Hotel, Guía (y agregué Paquetería para contexto)
+        df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA"]].copy()
+        df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA"]
+        
+        if busqueda:
+            df_vista = df_vista[df_vista.astype(str).apply(lambda x: x.str.contains(busqueda, case=False)).any(axis=1)]
+        
+        st.dataframe(df_vista.sort_values(by="FOLIO", ascending=False), use_container_width=True, hide_index=True)
+    else:
+        st.info("No hay registros todavía.")
 
 # --- PANEL DE ADMIN ---
 st.divider()
@@ -209,12 +225,11 @@ t1, t2 = st.tabs(["📝 Gestionar Folios Existentes", "📊 Historial y Reportes
 
 with t1:
     if not df_actual.empty:
-        # LÓGICA PARA MOSTRAR FOLIO + NOMBRE DE HOTEL
         df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
         opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
         
         fol_sel_texto = st.selectbox("Seleccionar Folio para Editar:", opciones_folios)
-        fol_edit = int(fol_sel_texto.split(" - ")[0]) # Extraemos solo el número del folio
+        fol_edit = int(fol_sel_texto.split(" - ")[0])
         
         datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
         c_adm1, c_adm2 = st.columns(2)
@@ -232,7 +247,7 @@ with t1:
                     st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
         with c_adm2:
             st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
-            st.write("") # Esto añade una línea de espacio (aire)
+            st.write("")
             if st.button("🖨️ RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
                 prods_re = []
                 for p in precios.keys():
