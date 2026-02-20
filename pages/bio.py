@@ -10,7 +10,7 @@ st.set_page_config(page_title="JYPESA Control", layout="centered")
 if 'folio_auto' not in st.session_state:
     st.session_state.folio_auto = datetime.now().strftime("%Y%m%d%H%M%S")
 
-# CSS para estilo y control de impresión
+# CSS para estilo en pantalla
 st.markdown("""
     <style>
     .block-container { max-width: 1000px; padding-top: 2rem; }
@@ -126,65 +126,77 @@ if st.button("➕ Más filas"):
 st.markdown("---")
 f_comentarios = st.text_area("💬 COMENTARIOS ADICIONALES", height=70)
 
-# --- LÓGICA DE IMPRESIÓN ---
+# --- LÓGICA DE IMPRESIÓN CORREGIDA ---
 all_prods = seleccionados + especiales_data
-filas_html = "".join([f"<tr><td style='padding: 15px;'>{d['desc']}</td><td style='text-align:center'>{d['cod']}</td><td style='text-align:center'>{d['um']}</td><td style='text-align:center'>{d['cant']}</td></tr>" for d in all_prods])
+filas_html = "".join([f"<tr><td style='padding: 8px; border: 1px solid black;'>{d['desc']}</td><td style='text-align:center; border: 1px solid black;'>{d['cod']}</td><td style='text-align:center; border: 1px solid black;'>{d['um']}</td><td style='text-align:center; border: 1px solid black;'>{d['cant']}</td></tr>" for d in all_prods])
 
 html_impresion = f"""
-<div style="font-family:Arial; border:2px solid black; padding:20px; width:750px; height:1050px; margin:auto; position:relative; box-sizing:border-box;">
+<div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; min-height:950px; margin:auto; position:relative; box-sizing:border-box; background: white;">
     
-    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 15px;">
-        <h1 style="margin: 0; font-size: 32px; letter-spacing: 1px;">JYPESA</h1>
-        <h2 style="margin: 0; font-size: 18px; text-decoration: underline;">ENVÍO DE MUESTRAS</h2>
-        <div style="width: 100px;"></div>
+    <style>
+        @media print {{
+            @page {{ size: letter; margin: 0; }}
+            body {{ margin: 0; padding: 0; }}
+            #printable-area {{ border: 2px solid black !important; width: 100% !important; height: 99vh !important; margin: 0 !important; padding: 20px !important; }}
+        }}
+    </style>
+
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
+        <h1 style="margin: 0; font-size: 28px; letter-spacing: 1px;">JYPESA</h1>
+        <h2 style="margin: 0; font-size: 16px; text-decoration: underline;">ENVÍO DE MUESTRAS</h2>
+        <div style="width: 50px;"></div>
     </div>
 
-    <table style="width:100%; border-collapse:collapse; margin-bottom:5px;">
-        <tr><td style="border:1px solid black;padding:5px"><b>FOLIO:</b> {f_folio}</td>
-            <td style="border:1px solid black;padding:5px"><b>ENVÍO:</b> {f_paqueteria}</td>
-            <td style="border:1px solid black;padding:5px"><b>ENTREGA:</b> {f_entrega}</td>
-            <td style="border:1px solid black;padding:5px"><b>FECHA:</b> {f_fecha}</td></tr>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:5px; font-size: 11px;">
+        <tr><td style="border:1px solid black;padding:4px"><b>FOLIO:</b> {f_folio}</td>
+            <td style="border:1px solid black;padding:4px"><b>ENVÍO:</b> {f_paqueteria}</td>
+            <td style="border:1px solid black;padding:4px"><b>ENTREGA:</b> {f_entrega}</td>
+            <td style="border:1px solid black;padding:4px"><b>FECHA:</b> {f_fecha}</td></tr>
     </table>
 
     <div style="display:flex; gap:5px; margin-top:5px;">
         <div style="flex:1; border:1px solid black;">
-            <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:12px;">REMITENTE</div>
-            <div style="padding:5px; font-size:11px;">
+            <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:11px;">REMITENTE</div>
+            <div style="padding:4px; font-size:10px;">
                 <b>Jabones y Productos Especializados</b><br>C. Cernícalo 155, La Aurora C.P.: 44460<br>Guadalajara, Jalisco<br>ATN: {f_atencion_rem} | TEL: {f_tel_rem}<br>SOLICITÓ: {f_solicitante}
             </div>
         </div>
         <div style="flex:1; border:1px solid black;">
-            <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:12px;">DESTINATARIO</div>
-            <div style="padding:5px; font-size:11px;">
+            <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:11px;">DESTINATARIO</div>
+            <div style="padding:4px; font-size:10px;">
                 <b>{f_hotel}</b><br>{f_calle}<br>Col: {f_colonia} C.P.: {f_cp}<br>{f_ciudad}, {f_estado}<br>ATN: {f_contacto} | TEL: {f_telefono}
             </div>
         </div>
     </div>
 
-    <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;" border="1">
-        <tr style="background:#444; color:white;">
-            <th style="padding: 12px;">DESCRIPCIÓN DEL PRODUCTO</th>
-            <th>CÓDIGO</th>
-            <th>U.M.</th>
-            <th>CANT.</th>
-        </tr>
-        {filas_html if filas_html else '<tr><td colspan="4" style="text-align:center; padding: 40px;">Sin productos seleccionados</td></tr>'}
+    <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:11px;">
+        <thead>
+            <tr style="background:#444; color:white;">
+                <th style="padding: 8px; border: 1px solid black;">DESCRIPCIÓN DEL PRODUCTO</th>
+                <th style="border: 1px solid black;">CÓDIGO</th>
+                <th style="border: 1px solid black;">U.M.</th>
+                <th style="border: 1px solid black;">CANT.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {filas_html if filas_html else '<tr><td colspan="4" style="text-align:center; padding: 20px;">Sin productos seleccionados</td></tr>'}
+        </tbody>
     </table>
 
-    <div style="border:1px solid black; padding:10px; margin-top:15px; font-size:12px; height: 80px;">
+    <div style="border:1px solid black; padding:8px; margin-top:10px; font-size:11px; min-height: 50px;">
         <b>COMENTARIOS ADICIONALES:</b><br>{f_comentarios}
     </div>
     
-    <div style="position:absolute; bottom:40px; left:20px; right:20px;">
-        <div style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:35px; border-bottom: 1px solid black; display: inline-block; width: 100%; padding-bottom: 5px;">
+    <div style="position:absolute; bottom:30px; left:20px; right:20px;">
+        <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:25px; border-bottom: 1px solid black; display: inline-block; width: 100%; padding-bottom: 5px;">
             RECIBO DE CONFORMIDAD DEL CLIENTE
         </div>
-        <div style="display:flex; justify-content:space-between; text-align:center; font-size:11px; margin-top: 20px;">
+        <div style="display:flex; justify-content:space-between; text-align:center; font-size:10px; margin-top: 10px;">
             <div style="width:30%;">__________________________<br>FECHA DE RECIBO</div>
             <div style="width:35%;">__________________________<br>NOMBRE Y FIRMA</div>
             <div style="width:30%;">__________________________<br>SELLO DE RECIBIDO</div>
         </div>
-        <div style="margin-top:40px; border-top: 1px solid #444; padding-top:10px; text-align: right; font-size: 10px; color: #666;">
+        <div style="margin-top:25px; border-top: 1px solid #444; padding-top:5px; text-align: right; font-size: 9px; color: #666;">
             SISTEMA DE CONTROL DE MUESTRAS - JYPESA 2026
         </div>
     </div>
