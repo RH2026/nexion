@@ -1,3 +1,16 @@
+¡Claro que sí, amor! Tienes razón, esos detalles son los que hacen que la matriz sea realmente útil para tus reportes.
+
+Ya hice los ajustes:
+
+Concatenación en DESTINO: Ahora el campo DESTINO guarda la dirección completa: Calle, Colonia, C.P., Ciudad y Estado.
+
+Campo COSTO_GUIA: Lo agregué tanto al guardar el registro nuevo como al actualizar la guía en el panel de administración.
+
+Botón de Descarga: Lo puse justo debajo de la tabla en la pestaña de Historial para que descargues el Excel con un solo clic.
+
+Aquí tienes el código completo y corregido:
+
+Python
 import streamlit as st
 import pandas as pd
 import requests
@@ -172,12 +185,25 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
     if not f_h: st.error("Falta el hotel")
     elif not prods_actuales: st.error("Faltan productos")
     else:
-        reg = {"FOLIO": nuevo_folio, "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), "NOMBRE DEL HOTEL": f_h, 
-               "DESTINO": f"{f_ci}, {f_es}", "CONTACTO": f_con, "SOLICITO": f_soli, "PAQUETERIA": f_paq_sel}
+        # CONCATENACIÓN DE DIRECCIÓN COMPLETA PARA EL EXCEL
+        direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}"
+        
+        reg = {
+            "FOLIO": nuevo_folio, 
+            "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
+            "NOMBRE DEL HOTEL": f_h, 
+            "DESTINO": direccion_completa, # Dirección concatenada
+            "CONTACTO": f_con, 
+            "SOLICITO": f_soli, 
+            "PAQUETERIA": f_paq_sel,
+            "PAQUETERIA_NOMBRE": "",
+            "NUMERO_GUIA": "",
+            "COSTO_GUIA": 0
+        }
         for p in precios.keys(): reg[p] = cants_dict.get(p, 0)
         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
-            st.success("Guardado!"); time.sleep(1.5); st.rerun()
+            st.success("¡Guardado correctamente en la matriz!"); time.sleep(1.5); st.rerun()
 
 if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
     h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
@@ -186,39 +212,56 @@ if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
 # --- PANEL DE ADMIN ---
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.divider()
-st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN (RE-IMPRESIÓN Y GUÍAS)")
-t1, t2 = st.tabs(["📝 Gestionar Folios Existentes", "📊 Historial"])
+st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
+t1, t2 = st.tabs(["📝 Gestionar Folios Existentes", "📊 Historial y Reportes"])
 
 with t1:
     if not df_actual.empty:
-        fol_edit = st.selectbox("Seleccionar Folio para Re-imprimir o Editar:", sorted(df_actual["FOLIO"].unique(), reverse=True))
+        fol_edit = st.selectbox("Seleccionar Folio:", sorted(df_actual["FOLIO"].unique(), reverse=True))
         datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
         
         c_edit1, c_edit2 = st.columns(2)
         with c_edit1:
-            st.info(f"Datos de envío para Folio {fol_edit}")
-            n_paq = st.text_input("Paquetería", value=datos_fol["PAQUETERIA_NOMBRE"])
-            n_gui = st.text_input("Guía", value=datos_fol["NUMERO_GUIA"])
-            if st.button("✅ ACTUALIZAR GUÍA"):
+            st.info(f"Actualizar envío - Folio {fol_edit}")
+            n_paq = st.text_input("Empresa de Paquetería", value=datos_fol["PAQUETERIA_NOMBRE"])
+            n_gui = st.text_input("Número de Guía", value=datos_fol["NUMERO_GUIA"])
+            c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]))
+            
+            if st.button("✅ ACTUALIZAR DATOS DE ENVÍO"):
                 idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                df_actual.at[idx, "PAQUETERIA_NOMBRE"], df_actual.at[idx, "NUMERO_GUIA"] = n_paq, n_gui
+                df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq
+                df_actual.at[idx, "NUMERO_GUIA"] = n_gui
+                df_actual.at[idx, "COSTO_GUIA"] = c_gui
                 if subir_a_github(df_actual, sha_actual, f"Guía Folio {fol_edit}"):
-                    st.success("¡Actualizado!"); st.rerun()
+                    st.success("¡Datos actualizados!"); st.rerun()
 
         with c_edit2:
-            st.warning("Zona de Re-impresión")
+            st.warning("Re-impresión de Documento")
             if st.button("🖨️ RE-GENERAR FORMATO E IMPRIMIR"):
-                # Reconstruimos la lista de productos desde el dataframe
                 prods_re = []
                 for p in precios.keys():
                     if datos_fol.get(p, 0) > 0:
                         prods_re.append({"desc": p, "cant": int(datos_fol[p])})
                 
-                # Generamos HTML (Usamos datos del DF)
                 h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], 
                                              "Rigoberto Hernandez", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"],
                                              "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN")
                 components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
 with t2:
-    st.dataframe(df_actual, use_container_width=True)
+    if not df_actual.empty:
+        st.write("### Matriz Completa de Muestras")
+        st.dataframe(df_actual, use_container_width=True)
+        
+        # BOTÓN DE DESCARGA EXCEL
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_actual.to_excel(writer, index=False, sheet_name='Matriz_Nexión')
+        
+        st.download_button(
+            label="📥 DESCARGAR MATRIZ COMPLETA (EXCEL)",
+            data=output.getvalue(),
+            file_name=f"Matriz_Nexión_{date.today()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
