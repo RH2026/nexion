@@ -7,25 +7,29 @@ import time
 # --- CONFIGURACIÓN ---
 st.set_page_config(page_title="JYPESA Control", layout="wide")
 
-# CSS para que la tabla de entrada se vea impecable
+# CSS para compactar y dar estilo
 st.markdown("""
     <style>
-    .tabla-productos { width: 100%; border-collapse: collapse; font-family: sans-serif; }
-    .tabla-productos th { background-color: #444; color: white; padding: 8px; text-align: left; }
-    .tabla-productos td { border: 1px solid #ddd; padding: 4px; }
-    /* Compactar inputs de Streamlit */
-    div[data-testid="stHorizontalBlock"] { gap: 0rem; }
-    .stNumberInput input { padding: 2px !important; }
+    [data-testid="stHorizontalBlock"] { gap: 1rem; }
+    .stCheckbox { margin-bottom: -15px; }
+    .header-tabla { background-color: #444; color: white; padding: 5px; text-align: center; font-weight: bold; font-size: 14px; border-radius: 5px 5px 0 0; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- LISTA DE PRODUCTOS ---
-productos = [
-    "ELEMENTS", "ALMON OLIVE", "BIOGENA", "CAVA", "LAVANDA BOTANICUS", 
-    "LAVARIVO", "BOTANICUS", "PERSEA", "RAINFOREST", "DOVE", "ECOLOGICOS"
+# --- LISTADO DE PRODUCTOS ORGANIZADO ---
+amenidades_kits = [
+    "Kit Elements", "Kit Almond", "Kit Biogena", "Kit Cava", "Kit Persa", 
+    "Kit Lavarino", "Kit Botánicos", "Accesorios Ecologicos", "Accesorios Lavarino"
 ]
 
-# --- ENCABEZADO Y DATOS ---
+dispensadores_racks = [
+    "Dispensador Almond", "Dispensador Biogena", "Dispensador Cava", "Dispensador Persa", 
+    "Dispensador Botánicos L", "Dispensador Dove", "Dispensador Biogena 400ml",
+    "Llave Magnetica", "Rack Dove", "Rack JH Color Blanco de 2 pzas", 
+    "Rack JH Color Blanco de 1 pzas", "Soporte dob INOX Cap lock", "Soporte Ind INOX Cap lock"
+]
+
+# --- DATOS GENERALES ---
 c1, c2, c3 = st.columns([1, 2, 1])
 with c1: f_folio = st.text_input("FOLIO")
 with c2: f_paqueteria = st.text_input("PAQUETERIA / FORMA DE ENVIO")
@@ -34,7 +38,7 @@ with c3: f_fecha = st.date_input("FECHA", date.today())
 col_izq, col_der = st.columns(2)
 with col_izq:
     st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px">DESTINATARIO</div>', unsafe_allow_html=True)
-    f_hotel = st.text_input("Hotel")
+    f_hotel = st.text_input("Nombre del Hotel")
     f_calle = st.text_input("Calle y Número")
     c_i1, c_i2 = st.columns(2)
     with c_i1: f_contacto = st.text_input("Contacto")
@@ -48,74 +52,79 @@ with col_der:
 
 st.markdown("---")
 
-# --- DISEÑO COMPACTO DE PRODUCTOS (CHINGÓN) ---
-st.markdown("### 📦 SELECCIÓN DE PRODUCTOS (AMENIDADES)")
-
-# Creamos encabezados manuales para que parezca una tabla real
-h1, h2, h3 = st.columns([3, 1, 1])
-h1.markdown("**PRODUCTO**")
-h2.markdown("**¿INCLUIR?**")
-h3.markdown("**CANTIDAD**")
+# --- SECCIÓN DE PRODUCTOS EN DOS COLUMNAS ---
+st.markdown("### 📦 SELECCIÓN DE ARTÍCULOS")
 
 seleccionados = {}
 
-# Iteramos de forma compacta
-for p in productos:
-    row1, row2, row3 = st.columns([3, 1, 1])
-    with row1:
-        st.markdown(f"<div style='padding-top:5px'>{p}</div>", unsafe_allow_html=True)
-    with row2:
-        check = st.checkbox("Seleccionar", key=f"ch_{p}", label_visibility="collapsed")
-    with row3:
-        cant = st.number_input("Cant", min_value=0, step=1, key=f"ct_{p}", label_visibility="collapsed", disabled=not check)
+col_prod1, col_prod2 = st.columns(2)
+
+def generar_fila_producto(lista):
+    # Encabezado de la mini-tabla
+    h1, h2, h3 = st.columns([2.5, 1, 1])
+    h1.markdown("**PRODUCTO**")
+    h2.markdown("**SEL.**")
+    h3.markdown("**CANT.**")
     
-    if check and cant > 0:
-        seleccionados[p] = cant
+    for p in lista:
+        r1, r2, r3 = st.columns([2.5, 1, 1])
+        with r1: st.markdown(f"<div style='font-size:12px; padding-top:5px;'>{p}</div>", unsafe_allow_html=True)
+        with r2: sel = st.checkbox("", key=f"sel_{p}", label_visibility="collapsed")
+        with r3: cant = st.number_input("", min_value=0, step=1, key=f"can_{p}", label_visibility="collapsed", disabled=not sel)
+        if sel and cant > 0:
+            seleccionados[p] = cant
 
-f_comentarios = st.text_area("COMENTARIOS", height=70)
+with col_prod1:
+    st.markdown('<div class="header-tabla">AMENIDADES Y KITS</div>', unsafe_allow_html=True)
+    generar_fila_producto(amenidades_kits)
 
-# --- LÓGICA DE IMPRESIÓN ---
-filas_html = "".join([f"<tr><td>{p}</td><td>PZAS</td><td></td><td>{c}</td></tr>" for p, c in seleccionados.items()])
+with col_prod2:
+    st.markdown('<div class="header-tabla">DISPENSADORES Y SOPORTES</div>', unsafe_allow_html=True)
+    generar_fila_producto(dispensadores_racks)
+
+st.markdown("---")
+f_comentarios = st.text_area("COMENTARIOS / NOTAS ESPECIALES", height=70)
+
+# --- HTML PARA IMPRESIÓN ---
+filas_html = "".join([f"<tr><td>{p}</td><td>PZAS</td><td>{c}</td></tr>" for p, c in seleccionados.items()])
 html_impresion = f"""
-    <div style="font-family:Arial; border:2px solid black; padding:20px; width:750px;">
-        <h2 style="text-align:center; margin-top:0;">ORDEN DE ENVÍO</h2>
-        <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-            <tr><td style="border:1px solid black;padding:5px"><b>FOLIO:</b> {f_folio}</td>
-                <td style="border:1px solid black;padding:5px"><b>ENVÍO:</b> {f_paqueteria}</td>
-                <td style="border:1px solid black;padding:5px"><b>FECHA:</b> {f_fecha}</td></tr>
-        </table>
-        <div style="display:flex; gap:10px;">
-            <div style="flex:1; border:1px solid black;">
-                <div style="background:#b30000; color:white; padding:3px; text-align:center;">DESTINATARIO</div>
-                <div style="padding:5px; font-size:13px;"><b>{f_hotel}</b><br>{f_calle}<br>ATN: {f_contacto}<br>TEL: {f_telefono}</div>
-            </div>
-            <div style="flex:1; border:1px solid black;">
-                <div style="background:black; color:white; padding:3px; text-align:center;">REMITENTE</div>
-                <div style="padding:5px; font-size:13px;">Jabones y productos Especializados<br>C. Cernícalo 155, La Aurora<br>SOLICITÓ: {f_solicitante}</div>
-            </div>
+<div style="font-family:Arial; border:2px solid black; padding:15px; width:750px; margin:auto;">
+    <table style="width:100%; border-collapse:collapse;">
+        <tr><td style="border:1px solid black;padding:5px"><b>FOLIO:</b> {f_folio}</td>
+            <td style="border:1px solid black;padding:5px"><b>ENVÍO:</b> {f_paqueteria}</td>
+            <td style="border:1px solid black;padding:5px"><b>FECHA:</b> {f_fecha}</td></tr>
+    </table>
+    <div style="display:flex; margin-top:10px; gap:5px;">
+        <div style="flex:1; border:1px solid black;">
+            <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:12px;">DESTINATARIO</div>
+            <div style="padding:5px; font-size:11px;"><b>{f_hotel}</b><br>{f_calle}<br>ATN: {f_contacto} | TEL: {f_telefono}</div>
         </div>
-        <table style="width:100%; border-collapse:collapse; margin-top:15px; text-align:center;">
-            <tr style="background:#444; color:white;"><th>PRODUCTO</th><th>UM</th><th>CÓDIGO</th><th>CANTIDAD</th></tr>
-            {filas_html}
-        </table>
-        <div style="border:1px solid black; margin-top:10px; padding:10px; height:60px;"><b>COMENTARIOS:</b> {f_comentarios}</div>
-        <div style="margin-top:40px; text-align:center; font-size:12px;">RECIBO DE CONFORMIDAD DEL CLIENTE<br><br>____________________________________<br>NOMBRE Y FIRMA</div>
+        <div style="flex:1; border:1px solid black;">
+            <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:12px;">REMITENTE</div>
+            <div style="padding:5px; font-size:11px;">Jabones y productos Especializados<br>C. Cernícalo 155, La Aurora<br>SOLICITÓ: {f_solicitante}</div>
+        </div>
     </div>
+    <table style="width:100%; border-collapse:collapse; margin-top:10px; text-align:center; font-size:12px;">
+        <tr style="background:#444; color:white;"><th>PRODUCTO</th><th>U.M.</th><th>CANTIDAD</th></tr>
+        {filas_html}
+    </table>
+    <div style="border:1px solid black; margin-top:10px; padding:5px; font-size:11px;"><b>COMENTARIOS:</b> {f_comentarios}</div>
+    <div style="margin-top:30px; text-align:center; font-size:10px;">RECIBO DE CONFORMIDAD DEL CLIENTE<br><br>____________________________________<br>NOMBRE Y FIRMA</div>
+</div>
 """
 
 # --- BOTONES DE ACCIÓN ---
-st.markdown("---")
 b1, b2, b3 = st.columns(3)
-
 with b1:
     if st.button("🚀 GUARDAR REGISTRO", type="primary", use_container_width=True):
-        st.success("Guardado en sistema")
-        time.sleep(1)
-        st.rerun()
-
+        st.success("¡Registro guardado exitosamente!")
+        time.sleep(1.5); st.rerun()
 with b2:
     if st.button("🖨️ IMPRIMIR REPORTE", use_container_width=True):
         components.html(f"<html><body>{html_impresion}<script>window.print();</script></body></html>", height=0)
+with b3:
+    if st.button("🔄 NUEVO REGISTRO", use_container_width=True):
+        st.rerun()
 
 with b3:
     if st.button("🔄 NUEVO REGISTRO", use_container_width=True):
