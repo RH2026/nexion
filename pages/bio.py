@@ -49,7 +49,7 @@ def subir_a_github(df, sha, msg):
     return requests.put(url, json=payload, headers=headers).status_code == 200
 
 # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
-def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios):
+def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios):
     filas_prod = ""
     for p in productos:
         filas_prod += f"""
@@ -76,7 +76,7 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, solicitante, hot
             <div style="flex:1; border:1px solid black;">
                 <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:11px;">REMITENTE</div>
                 <div style="padding:4px; font-size:10px;">
-                    <b>Jabones y Productos Especializados</b><br>C. Cernícalo 155, La Aurora C.P.: 44460<br>ATN: {atn_rem}<br>SOLICITÓ: {solicitante}
+                    <b>Jabones y Productos Especializados</b><br>C. Cernícalo 155, La Aurora C.P.: 44460<br>ATN: {atn_rem}<br>TEL: {tel_rem}<br>SOLICITÓ: {solicitante}
                 </div>
             </div>
             <div style="flex:1; border:1px solid black;">
@@ -114,8 +114,8 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, solicitante, hot
 # --- CARGA DE DATOS ---
 df_actual, sha_actual = obtener_datos_github()
 if not df_actual.empty:
-    for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA"]:
-        if col not in df_actual.columns: df_actual[col] = ""
+    for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL"]:
+        if col not in df_actual.columns: df_actual[col] = 0.0
 
 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
 
@@ -137,7 +137,9 @@ col_rem, col_dest = st.columns(2)
 with col_rem:
     st.markdown('<div style="background:black;color:white;text-align:center;font-weight:bold;padding:5px;">REMITENTE</div>', unsafe_allow_html=True)
     st.text_input("Nombre", "Jabones y Productos Especializados", disabled=True)
-    f_atn_rem = st.text_input("Atención", "Rigoberto Hernandez")
+    c_rem1, c_rem2 = st.columns([2, 1])
+    f_atn_rem = c_rem1.text_input("Atención", "Rigoberto Hernandez")
+    f_tel_rem = c_rem2.text_input("Teléfono", "3319753122")
     f_soli = st.text_input("Solicitante / Agente", "JYPESA")
 
 with col_dest:
@@ -159,17 +161,20 @@ st.subheader("🛒 Selección de Productos")
 seleccionados = st.multiselect("Busca y selecciona productos:", list(precios.keys()))
 
 prods_actuales = []
-cants_dict = {p: 0 for p in precios.keys()} # Inicializar todo en 0
+cants_dict = {p: 0 for p in precios.keys()}
+total_cantidad = 0
+total_costo_prods = 0
 
 if seleccionados:
     cols_q = st.columns(4)
     for i, p in enumerate(seleccionados):
         with cols_q[i % 4]:
-            # El valor se guarda directamente en cants_dict
             q = st.number_input(f"{p}", min_value=0, step=1, key=f"q_{p}")
             cants_dict[p] = q
             if q > 0:
                 prods_actuales.append({"desc": p, "cant": q})
+                total_cantidad += q
+                total_costo_prods += (q * precios[p])
 
 f_coment = st.text_area("💬 COMENTARIOS", height=70)
 
@@ -184,20 +189,22 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
             "FOLIO": nuevo_folio, "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
             "NOMBRE DEL HOTEL": f_h, "DESTINO": direccion_completa,
             "CONTACTO": f_con, "SOLICITO": f_soli, "PAQUETERIA": f_paq_sel,
-            "PAQUETERIA_NOMBRE": "", "NUMERO_GUIA": "", "COSTO_GUIA": 0.0
+            "PAQUETERIA_NOMBRE": "", "NUMERO_GUIA": "", "COSTO_GUIA": 0.0,
+            "CANTIDAD_TOTAL": total_cantidad,
+            "COSTO_TOTAL": round(total_costo_prods, 2)
         }
-        # Agregar cantidades de cada producto
+        # Agregar cantidades individuales
         for p, cant in cants_dict.items():
             reg[p] = cant
             
         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
-            st.success("¡Registro Guardado con éxito!"); time.sleep(1); st.rerun()
+            st.success(f"¡Guardado! Cantidad: {total_cantidad} | Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
 
 if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
     if not prods_actuales: st.warning("No hay productos para imprimir")
     else:
-        h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
+        h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
         components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
 
 # --- PANEL DE ADMIN ---
@@ -216,7 +223,6 @@ with t1:
             st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
             n_paq = st.text_input("Empresa de Paquetería", value=str(datos_fol["PAQUETERIA_NOMBRE"]))
             n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"]))
-            # CORRECCIÓN: Captura de Costo
             c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]) if pd.notnull(datos_fol["COSTO_GUIA"]) else 0.0)
             
             if st.button("✅ ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
@@ -225,11 +231,10 @@ with t1:
                 df_actual.at[idx, "NUMERO_GUIA"] = n_gui
                 df_actual.at[idx, "COSTO_GUIA"] = c_gui
                 if subir_a_github(df_actual, sha_actual, f"Guía Folio {fol_edit}"):
-                    st.success("¡Datos actualizados en la nube!"); time.sleep(1); st.rerun()
+                    st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
 
         with c_adm2:
             st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
-            st.write(f"Destino: {datos_fol['DESTINO']}")
             if st.button("🖨️ RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
                 prods_re = []
                 for p in precios.keys():
@@ -237,14 +242,13 @@ with t1:
                         prods_re.append({"desc": p, "cant": int(datos_fol[p])})
                 
                 h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], 
-                                             "Rigoberto Hernandez", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"],
+                                             "Rigoberto Hernandez", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"],
                                              "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN")
                 components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
 with t2:
     if not df_actual.empty:
         st.dataframe(df_actual, use_container_width=True)
-        # DESCARGA
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_actual.to_excel(writer, index=False, sheet_name='Matriz')
