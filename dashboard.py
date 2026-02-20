@@ -415,7 +415,7 @@ button[kind="secondary"] {{
 }}
 
 .kpi-value {{
-    font-size: 38px !important;
+    font-size: 28px !important;
     font-weight: 900;
     color: {vars_css['text']};
     margin: 5px 0;
@@ -424,7 +424,7 @@ button[kind="secondary"] {{
 }}
 
 .kpi-value small {{
-    font-size: 16px !important;
+    font-size: 18px !important;
     color: {vars_css['sub']};
     letter-spacing: 2px;
     font-weight: 400;
@@ -3333,6 +3333,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
