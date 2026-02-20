@@ -2231,7 +2231,7 @@ else:
                 
                 # Diccionario de precios con los nombres EXACTOS
                 precios = {
-                    "Accesorios Ecologicos": 47.85, "Accesorios Lavarino": 47.85, "Dispensador Almond ": 218.33,
+                    "SPF": 0.0"Accesorios Ecologicos": 47.85, "Accesorios Lavarino": 47.85, "Dispensador Almond ": 218.33,
                     "Dispensador Biogena": 216.00, "Dispensador Cava": 230.58, "Dispensador Persa": 275.00,
                     "Dispensador Botánicos L": 274.17, "Dispensador Dove": 125.00, "Dispensador Biogena 400ml": 184.87,
                     "Kit Elements ": 29.34, "Kit Almond ": 33.83, "Kit Biogena": 48.95, "Kit Cava": 34.59,
@@ -3368,6 +3368,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
