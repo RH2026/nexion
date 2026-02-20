@@ -1,8 +1,3 @@
-¡Entiendo perfectamente, amor! Esa lista estaba ocupando demasiado espacio y se veía muy pesada. Para que se vea "chingón", vamos a usar tablas de HTML dentro de Streamlit. Esto nos permite tener casillas de verificación y campos de entrada en una cuadrícula compacta y elegante, igualito a tu formato de Excel.
-
-Aquí tienes el código con un diseño mucho más profesional, compacto y visualmente limpio:
-
-Python
 import streamlit as st
 import pandas as pd
 from datetime import date
