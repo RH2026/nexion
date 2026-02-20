@@ -139,7 +139,7 @@ with col_rem:
     c_rem1, c_rem2 = st.columns([2, 1])
     f_atn_rem = c_rem1.text_input("Atención", "RIGOBERTO HERNANDEZ")
     f_tel_rem = c_rem2.text_input("Teléfono", "3319753122")
-    f_soli = st.text_input("Solicitante / Agente", "JYPESA")
+    f_soli = st.text_input("Solicitante / Agente", placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS")
 
 with col_dest:
     st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
