@@ -1,10 +1,3 @@
-¡Entendido, amor! Ya hice esos toques finales para que quede impecable.
-
-Moví el encabezado de JYPESA a la izquierda, añadí la leyenda de ENVÍO DE MUESTRAS en el centro del encabezado (para que se note bien el propósito) y eliminé la duplicación de JYPESA que estaba en la línea final, dejando solo los espacios de firma limpios. También ensanché un poco más las celdas para que la hoja luzca perfecta.
-
-Aquí tienes la versión final:
-
-Python
 import streamlit as st
 import pandas as pd
 from datetime import date, datetime
