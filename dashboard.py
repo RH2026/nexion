@@ -938,8 +938,6 @@ else:
                 # =========================================================
                 # 2. SECCIÓN DEL CALCULADOR "CHINGÓN"
                 # =========================================================
-                st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
-                
                 # Lógica de Usuario: sacamos el nombre del login
                 usuario_actual = st.session_state.get('username', 'Cielo')
                 
@@ -966,7 +964,7 @@ else:
                     if not rutas_dos_dias.empty:
                         # Si hay de 2 días, tomamos el primer destino que aparezca
                         busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
-                        texto_mostrar = f"{busqueda_activa} (Ruta Veloz 2 Días)"
+                        texto_mostrar = f"{busqueda_activa}"
                     elif not df_validos.empty:
                         # Si no hay de 2, buscamos el más rápido que exista
                         busqueda_activa = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
@@ -1013,11 +1011,12 @@ else:
                     """, unsafe_allow_html=True)
                 
                     # 2. Renderizado de la Tabla (Formato Estándar)
-                    st.markdown("#### 📋 Detalles de envíos encontrados")
+                    st.markdown("#### Detalles de envíos encontrados")
                     
                     tabla_detalles = historial[[
                         'NÚMERO DE PEDIDO',
                         'NOMBRE DEL CLIENTE', 
+                        'DESTINO',
                         'DOMICILIO', 
                         'FECHA DE ENVÍO', 
                         'FLETERA', 
@@ -3369,6 +3368,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
