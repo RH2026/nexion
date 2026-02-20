@@ -952,7 +952,7 @@ else:
                 
                 with c2:
                     # Filtro Inteligente: Extraemos destinos para sugerencias
-                    # Pero ahora el agente puede buscar por cualquier dato del DOMICILIO
+                    # Agregamos una opción vacía al inicio para que el agente pueda escribir
                     destinos_lista = sorted(df['DESTINO'].dropna().unique())
                     destino_sel = st.selectbox(
                         "BUSCAR POR DESTINO, CP O COLONIA", 
@@ -960,21 +960,23 @@ else:
                         key="calc_dest_v3"
                     )
                 
-                # --- LÓGICA DE FILTRADO INTELIGENTE (Mejorada) ---
-                # Buscamos coincidencias en DESTINO o en la columna DOMICILIO
+                # --- LÓGICA DE FILTRADO INTELIGENTE (Mejorada para DOMICILIO) ---
+                # Usamos .str.lower() para que encuentre "nayarit" aunque en el excel diga "NAYARIT"
+                busqueda_aux = destino_sel.lower()
+                
                 mask = (
-                    df['DESTINO'].astype(str).str.contains(destino_sel, case=False, na=False) |
-                    df['DOMICILIO'].astype(str).str.contains(destino_sel, case=False, na=False)
+                    df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
+                    df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
                 )
                 
-                # Filtramos historial con la máscara y que tengan días calculados
+                # Filtramos historial con la máscara y que tengan días calculados (entregas reales)
                 historial = df[mask & (df['DIAS_REALES'].notna())]
                 
                 if not historial.empty:
                     promedio_dias = historial['DIAS_REALES'].mean()
                     total_viajes = len(historial)
                     
-                    # Redondeo hacia arriba (Ceil)
+                    # Redondeo hacia arriba (Ceil) - Siempre a favor de la seguridad logística
                     dias_redondeados = math.ceil(promedio_dias)
                     dias_str = f"{dias_redondeados}"
                 
@@ -986,7 +988,7 @@ else:
                                 <div class="kpi-route-flow">
                                     <span class="city">GDL</span>
                                     <span class="arrow">→</span>
-                                    <span class="city">{destino_sel}</span>
+                                    <span class="city">{destino_sel.upper()}</span>
                                 </div>
                                 <div class="kpi-value">{dias_str} <small>DÍAS</small></div>
                                 <div class="kpi-subtext">
@@ -996,7 +998,8 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.info(f"Cielo, no encontré registros de entrega real para **{destino_sel}** en la columna de Destino o Domicilio.")
+                    # Si no hay datos, le avisamos al agente de forma clara
+                    st.info(f"Cielo, no encontré registros de entrega real para **{destino_sel}**. Verifica que existan fechas de entrega en la matriz para esta zona.")
                     
                 
                 # PESTAÑA 3: VOLUMEN
@@ -3333,6 +3336,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
