@@ -54,7 +54,7 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicit
     for p in productos:
         filas_prod += f"""
         <tr>
-            <td style='padding: 8px; border: 1px solid black;'>{p['desc']}</td>
+            <td style='padding: 8px; border: 1px solid black;'>{str(p['desc']).upper()}</td>
             <td style='text-align:center; border: 1px solid black;'>-</td>
             <td style='text-align:center; border: 1px solid black;'>PZAS</td>
             <td style='text-align:center; border: 1px solid black;'>{p['cant']}</td>
@@ -68,21 +68,21 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicit
         </div>
         <table style="width:100%; border-collapse:collapse; margin-bottom:5px; font-size: 11px;">
             <tr><td style="border:1px solid black;padding:4px"><b>FOLIO:</b> {folio}</td>
-                <td style="border:1px solid black;padding:4px"><b>ENVÍO:</b> {paq}</td>
-                <td style="border:1px solid black;padding:4px"><b>ENTREGA:</b> {entrega}</td>
+                <td style="border:1px solid black;padding:4px"><b>ENVÍO:</b> {str(paq).upper()}</td>
+                <td style="border:1px solid black;padding:4px"><b>ENTREGA:</b> {str(entrega).upper()}</td>
                 <td style="border:1px solid black;padding:4px"><b>FECHA:</b> {fecha}</td></tr>
         </table>
         <div style="display:flex; gap:5px; margin-top:5px;">
             <div style="flex:1; border:1px solid black;">
                 <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:11px;">REMITENTE</div>
                 <div style="padding:4px; font-size:10px;">
-                    <b>Jabones y Productos Especializados</b><br>C. Cernícalo 155, La Aurora C.P.: 44460<br>ATN: {atn_rem}<br>TEL: {tel_rem}<br>SOLICITÓ: {solicitante}
+                    <b>JABONES Y PRODUCTOS ESPECIALIZADOS</b><br>C. Cernícalo 155, La Aurora C.P.: 44460<br>ATN: {str(atn_rem).upper()}<br>TEL: {tel_rem}<br>SOLICITÓ: {str(solicitante).upper()}
                 </div>
             </div>
             <div style="flex:1; border:1px solid black;">
                 <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:11px;">DESTINATARIO</div>
                 <div style="padding:4px; font-size:10px;">
-                    <b>{hotel}</b><br>{calle}<br>Col: {col} C.P.: {cp}<br>{ciudad}, {estado}<br>ATN: {contacto}
+                    <b>{str(hotel).upper()}</b><br>{str(calle).upper()}<br>Col: {str(col).upper()} C.P.: {cp}<br>{str(ciudad).upper()}, {str(estado).upper()}<br>ATN: {str(contacto).upper()}
                 </div>
             </div>
         </div>
@@ -96,7 +96,7 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicit
             {filas_prod}
         </table>
         <div style="border:1px solid black; padding:8px; margin-top:10px; font-size:11px; min-height: 50px;">
-            <b>COMENTARIOS:</b><br>{comentarios}
+            <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
         </div>
         <div style="position:absolute; bottom:30px; left:20px; right:20px;">
             <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:25px; border-bottom: 1px solid black; width: 100%; padding-bottom: 5px;">RECIBO DE CONFORMIDAD DEL CLIENTE</div>
@@ -135,23 +135,23 @@ st.divider()
 col_rem, col_dest = st.columns(2)
 with col_rem:
     st.markdown('<div style="background:black;color:white;text-align:center;font-weight:bold;padding:5px;">REMITENTE</div>', unsafe_allow_html=True)
-    st.text_input("Nombre", "Jabones y Productos Especializados", disabled=True)
+    st.text_input("Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
     c_rem1, c_rem2 = st.columns([2, 1])
-    f_atn_rem = c_rem1.text_input("Atención", "Rigoberto Hernandez").upper()
+    f_atn_rem = c_rem1.text_input("Atención", "RIGOBERTO HERNANDEZ")
     f_tel_rem = c_rem2.text_input("Teléfono", "3319753122")
-    f_soli = st.text_input("Solicitante / Agente", "JYPESA").upper()
+    f_soli = st.text_input("Solicitante / Agente", "JYPESA")
 
 with col_dest:
     st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
-    f_h = st.text_input("Hotel / Nombre").upper()
-    f_ca = st.text_input("Calle y Número").upper()
+    f_h = st.text_input("Hotel / Nombre")
+    f_ca = st.text_input("Calle y Número")
     cd1, cd2 = st.columns(2)
-    f_co = cd1.text_input("Colonia").upper()
+    f_co = cd1.text_input("Colonia")
     f_cp = cd2.text_input("C.P.")
     cd3, cd4 = st.columns(2)
-    f_ci = cd3.text_input("Ciudad").upper()
-    f_es = cd4.text_input("Estado").upper()
-    f_con = st.text_input("Contacto Receptor").upper()
+    f_ci = cd3.text_input("Ciudad")
+    f_es = cd4.text_input("Estado")
+    f_con = st.text_input("Contacto Receptor")
 
 st.divider()
 
@@ -174,7 +174,7 @@ if seleccionados:
                 total_cantidad += q
                 total_costo_prods += (q * precios[p])
 
-f_coment = st.text_area("💬 COMENTARIOS", height=70).upper()
+f_coment = st.text_area("💬 COMENTARIOS", height=70)
 
 # --- BOTONES PRINCIPALES ---
 col_b1, col_b2 = st.columns(2)
@@ -182,11 +182,12 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
     if not f_h: st.error("Falta el hotel")
     elif not prods_actuales: st.error("Selecciona al menos un producto")
     else:
-        direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}"
+        # AQUÍ OBLIGAMOS A MAYÚSCULAS ANTES DE GUARDAR
+        direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
         reg = {
             "FOLIO": nuevo_folio, "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
-            "NOMBRE DEL HOTEL": f_h, "DESTINO": direccion_completa,
-            "CONTACTO": f_con, "SOLICITO": f_soli, "PAQUETERIA": f_paq_sel,
+            "NOMBRE DEL HOTEL": f_h.upper(), "DESTINO": direccion_completa,
+            "CONTACTO": f_con.upper(), "SOLICITO": f_soli.upper(), "PAQUETERIA": f_paq_sel.upper(),
             "PAQUETERIA_NOMBRE": "", "NUMERO_GUIA": "", "COSTO_GUIA": 0.0,
             "CANTIDAD_TOTAL": total_cantidad,
             "COSTO_TOTAL": round(total_costo_prods, 2)
@@ -194,7 +195,7 @@ if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="
         for p, cant in cants_dict.items(): reg[p] = cant
         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
-            st.success(f"¡Guardado! Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
+            st.success(f"¡Guardado en MAYÚSCULAS! Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
 
 if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
     if not prods_actuales: st.warning("No hay productos")
@@ -219,7 +220,10 @@ with t1:
             c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]))
             if st.button("✅ ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
                 idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                df_actual.at[idx, "PAQUETERIA_NOMBRE"], df_actual.at[idx, "NUMERO_GUIA"], df_actual.at[idx, "COSTO_GUIA"] = n_paq, n_gui, c_gui
+                # También en el update obligamos mayúsculas
+                df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
+                df_actual.at[idx, "NUMERO_GUIA"] = n_gui.upper()
+                df_actual.at[idx, "COSTO_GUIA"] = c_gui
                 if subir_a_github(df_actual, sha_actual, f"Guía {fol_edit}"):
                     st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
         with c_adm2:
@@ -228,14 +232,12 @@ with t1:
                 prods_re = []
                 for p in precios.keys():
                     if p in datos_fol and datos_fol[p] > 0: prods_re.append({"desc": p, "cant": int(datos_fol[p])})
-                h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "Rigoberto Hernandez", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN")
+                h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN")
                 components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
 with t2:
     if not df_actual.empty:
         st.dataframe(df_actual, use_container_width=True)
-        
-        # --- LÓGICA DE REPORTE GENERAL ---
         t_prod = df_actual["COSTO_TOTAL"].sum()
         t_flete = df_actual["COSTO_GUIA"].sum()
         filas_html = ""
@@ -243,8 +245,8 @@ with t2:
             detalle_p = ""
             for p in precios.keys():
                 cant = r.get(p, 0)
-                if cant > 0: detalle_p += f"• {int(cant)} pza(s) {p}<br>"
-            filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{r['SOLICITO']}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{r['NOMBRE DEL HOTEL']}<br><small>{r['DESTINO']}</small></td><td style='border:1px solid black;padding:8px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
+                if cant > 0: detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
+            filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
 
         form_pt_html = f"""
         <html><head><style>@media print{{body{{padding:15mm;}} .no-print{{display:none;}}}} body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head>
