@@ -937,9 +937,7 @@ else:
                 
                 # =========================================================
                 # 2. SECCIÓN DEL CALCULADOR INTELIGENTE CON ANÁLISIS REAL
-                # =========================================================
-                st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
-                
+                # =========================================================                
                 usuario_actual = st.session_state.get('username', 'Cielo')
                 
                 c1, c2 = st.columns([1, 1])
@@ -3410,6 +3408,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
