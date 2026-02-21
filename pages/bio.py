@@ -155,25 +155,28 @@ with col_rem:
     c_rem1, c_rem2 = st.columns([2, 1])
     f_atn_rem = c_rem1.text_input("Atención", "RIGOBERTO HERNANDEZ")
     f_tel_rem = c_rem2.text_input("Teléfono", "3319753122")
-    f_soli = st.text_input("Solicitante / Agente", placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS").upper()
+    # Agregamos KEY para poder borrarlo
+    f_soli = st.text_input("Solicitante / Agente", placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS", key="txt_soli").upper()
 
 with col_dest:
     st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
-    f_h = st.text_input("Hotel / Nombre").upper()
-    f_ca = st.text_input("Calle y Número").upper()
+    # Agregamos KEYS a todos para la limpieza
+    f_h = st.text_input("Hotel / Nombre", key="txt_h").upper()
+    f_ca = st.text_input("Calle y Número", key="txt_ca").upper()
     cd1, cd2 = st.columns(2)
-    f_co = cd1.text_input("Colonia").upper()
-    f_cp = cd2.text_input("C.P.")
+    f_co = cd1.text_input("Colonia", key="txt_co").upper()
+    f_cp = cd2.text_input("C.P.", key="txt_cp")
     cd3, cd4 = st.columns(2)
-    f_ci = cd3.text_input("Ciudad").upper()
-    f_es = cd4.text_input("Estado").upper()
-    f_con = st.text_input("Contacto Receptor").upper()
+    f_ci = cd3.text_input("Ciudad", key="txt_ci").upper()
+    f_es = cd4.text_input("Estado", key="txt_es").upper()
+    f_con = st.text_input("Contacto Receptor", key="txt_con").upper()
 
 st.divider()
 
 # --- PRODUCTOS ---
 st.subheader("🛒 Selección de Productos")
-seleccionados = st.multiselect("Busca y selecciona productos:", list(precios.keys()))
+# Agregamos KEY al multiselect
+seleccionados = st.multiselect("Busca y selecciona productos:", list(precios.keys()), key="m_prod")
 prods_actuales = []
 cants_dict = {p: 0 for p in precios.keys()}
 total_cantidad = 0
@@ -190,10 +193,10 @@ if seleccionados:
                 total_cantidad += q
                 total_costo_prods += (q * precios[p])
 
-f_coment = st.text_area("💬 COMENTARIOS", height=70).upper()
+f_coment = st.text_area("💬 COMENTARIOS", height=70, key="txt_com").upper()
 
 # --- BOTONES PRINCIPALES ---
-col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) # Añadí espacio para el tercer botón
+col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5])
 
 if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
     if not f_h: st.error("Falta el hotel")
@@ -219,10 +222,13 @@ if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
         h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
         components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
 
+# FUNCIÓN PARA EL BOTÓN DE BORRADO (Limpia el estado de sesión)
 if col_b3.button("🧹 BORRAR", use_container_width=True):
+    for key in st.session_state.keys():
+        del st.session_state[key]
     st.rerun()
 
-# --- BÚSQUEDA RÁPIDA ---
+# --- BÚSQUEDA RÁPIDA (Sin cambios) ---
 st.write("")
 with st.expander("🔍 BÚSQUEDA RÁPIDA DE GUÍAS (CONSULTA DE FOLIOS)", expanded=False):
     if not df_actual.empty:
@@ -235,7 +241,7 @@ with st.expander("🔍 BÚSQUEDA RÁPIDA DE GUÍAS (CONSULTA DE FOLIOS)", expand
     else:
         st.info("No hay registros todavía.")
 
-# --- PANEL DE ADMIN ---
+# --- PANEL DE ADMIN (Sin cambios) ---
 st.divider()
 st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
 t1, t2 = st.tabs(["📝 Gestionar Folios Existentes", "📊 Historial y Reportes"])
@@ -250,8 +256,8 @@ with t1:
         c_adm1, c_adm2 = st.columns(2)
         with c_adm1:
             st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
-            n_paq = st.text_input("Empresa de Paquetería", value=str(datos_fol["PAQUETERIA_NOMBRE"])).upper()
-            n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"])).upper()
+            n_paq = st.text_input("Empresa de Paquetería", value=str(datos_fol["PAQUETERIA_NOMBRE"]), key="edit_paq").upper()
+            n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"]), key="edit_gui").upper()
             c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]))
             if st.button("✅ ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
                 idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
