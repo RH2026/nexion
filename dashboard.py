@@ -861,12 +861,12 @@ else:
                 with tab_kpis:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     c1, c2, c3, c4, c5 = st.columns(5)
-                    with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")
-                    with c2: render_kpi(entregados, total_p, "Entregados", "#00FFAA")
-                    with c3: render_kpi(total_t, total_p, "Tránsito", "#38bdf8")
-                    with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#a855f7")
-                    with c5: render_kpi(retrasados, total_p, "Retraso", "#ff4b4b")
-                
+                    with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")      # El Amarillo que te encantó
+                    with c2: render_kpi(entregados, total_p, "Entregados", "#1cc88a") # Verde Esmeralda (Éxito)
+                    with c3: render_kpi(total_t, total_p, "Tránsito", "#4e73df")    # Azul Real (Logística)
+                    with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#36b9cc")  # Turquesa (Precisión)
+                    with c5: render_kpi(retrasados, total_p, "Retraso", "#e74a3b")   # Rojo Coral (Alerta)
+                                    
                     # Espacio estético al final para que no se vea cortado el contenedor
                     st.markdown("<br>", unsafe_allow_html=True)
             
@@ -3423,6 +3423,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
