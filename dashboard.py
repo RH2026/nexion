@@ -2349,8 +2349,8 @@ else:
                 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
                 
                 # --- INTERFAZ ---
-                st.markdown("<h2 style='color: #1E1E1E; margin-bottom:0;'>JYPESA</h2>", unsafe_allow_html=True)
-                st.markdown("<p style='font-size:12px; color: gray; margin-top:0;'>AUTOMATIZACIÓN DE PROCESOS</p>", unsafe_allow_html=True)
+                #st.markdown("<h2 style='color: #1E1E1E; margin-bottom:0;'>JYPESA</h2>", unsafe_allow_html=True)
+                #st.markdown("<p style='font-size:12px; color: gray; margin-top:0;'>AUTOMATIZACIÓN DE PROCESOS</p>", unsafe_allow_html=True)
                 
                 # --- CAPTURA NUEVA ---
                 with st.container():
@@ -3415,6 +3415,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
