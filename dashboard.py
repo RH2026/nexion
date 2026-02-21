@@ -1319,6 +1319,7 @@ else:
                             "DESTINO": ["DESTINO", "CIUDAD"],
                             "FECHA DE ENVÍO": ["FECHA DE ENVÍO"],
                             "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA"],
+                            "FECHA DE ENTREGA REAL": ["FECHA DE ENTREGA REAL"],
                             "FLETERA": ["FLETERA"],
                             "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
                             "DIAS_TRANS": ["DIAS_TRANS"],
@@ -1334,6 +1335,7 @@ else:
                                 column_config={
                                     "FECHA DE ENVÍO": st.column_config.DateColumn("ENVÍO", format="DD/MM/YYYY"),
                                     "PROMESA DE ENTREGA": st.column_config.DateColumn("P. ENTREGA", format="DD/MM/YYYY"),
+                                    "FECHA DE ENTREGA REAL": st.column_config.DateColumn("F. ENTREGA", format="DD/MM/YYYY"),
                                     "DIAS_TRANS": st.column_config.ProgressColumn("DÍAS VIAJE", format="%d", min_value=0, max_value=15, color="orange"),
                                     "DIAS_ATRASO": st.column_config.ProgressColumn("RETRASO", format="%d DÍAS", min_value=0, max_value=15, color="red")
                                 }
@@ -3415,6 +3417,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
