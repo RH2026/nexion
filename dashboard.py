@@ -927,7 +927,7 @@ else:
                             st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
             
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
-            with tab_TIEMPOS DE TRÁNSITO: 
+            with tab_tiempos: 
                 # =========================================================
                 # 1. PROCESAMIENTO DE DATOS
                 # =========================================================
@@ -3410,6 +3410,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
