@@ -2373,6 +2373,7 @@ else:
                 col_rem, col_dest = st.columns(2)
                 with col_rem:
                     st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;">REMITENTE</div>', unsafe_allow_html=True)
+                    st.write("")
                     st.text_input("Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
                     c_rem1, c_rem2 = st.columns([2, 1])
                     f_atn_rem = c_rem1.text_input("Atención", "RIGOBERTO HERNANDEZ")
@@ -2381,6 +2382,7 @@ else:
                 
                 with col_dest:
                     st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+                    st.write("")
                     f_h = st.text_input("Hotel / Nombre").upper()
                     f_ca = st.text_input("Calle y Número").upper()
                     cd1, cd2 = st.columns(2)
@@ -3424,6 +3426,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
