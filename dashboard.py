@@ -1315,15 +1315,16 @@ else:
                 
                         columnas_deseadas = {
                             "NÚMERO DE PEDIDO": ["NÚMERO DE PEDIDO", "PEDIDO"],
+                            "FLETERA": ["FLETERA"],
+                            "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
+                            "DIAS_TRANS": ["DIAS_TRANS"],
+                            "DIAS_ATRASO": ["DIAS_ATRASO"]                            
                             "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
                             "DESTINO": ["DESTINO", "CIUDAD"],
                             "FECHA DE ENVÍO": ["FECHA DE ENVÍO"],
                             "PROMESA DE ENTREGA": ["PROMESA DE ENTREGA"],
                             "FECHA DE ENTREGA REAL": ["FECHA DE ENTREGA REAL"],
-                            "FLETERA": ["FLETERA"],
-                            "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
-                            "DIAS_TRANS": ["DIAS_TRANS"],
-                            "DIAS_ATRASO": ["DIAS_ATRASO"]
+                            
                         }
                         cols_finales = [next((c for c in p if c in df_viz.columns), None) for p in columnas_deseadas.values()]
                         cols_finales = [c for c in cols_finales if c is not None]
@@ -3417,6 +3418,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
