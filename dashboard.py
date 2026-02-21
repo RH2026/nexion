@@ -861,7 +861,7 @@ else:
                 with tab_kpis:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     c1, c2, c3, c4, c5 = st.columns(5)
-                    with c1: render_kpi(total_p, total_p, "Pedidos", "#ffffff")
+                    with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")
                     with c2: render_kpi(entregados, total_p, "Entregados", "#00FFAA")
                     with c3: render_kpi(total_t, total_p, "Tránsito", "#38bdf8")
                     with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#a855f7")
@@ -2380,7 +2380,7 @@ else:
                     f_soli = st.text_input("Solicitante / Agente", placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS").upper()
                 
                 with col_dest:
-                    st.markdown('<div style="background:#f6c23e;color:white;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
                     f_h = st.text_input("Hotel / Nombre").upper()
                     f_ca = st.text_input("Calle y Número").upper()
                     cd1, cd2 = st.columns(2)
@@ -3423,6 +3423,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
