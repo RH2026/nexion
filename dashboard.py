@@ -2460,7 +2460,7 @@ else:
                 # --- PANEL DE ADMIN ---
                 st.divider()
                 st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
-                t1, t2 = st.tabs(["📝 Gestionar Folios Existentes", "📊 Historial y Reportes"])
+                t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
                 
                 with t1:
                     if not df_actual.empty:
@@ -2472,6 +2472,7 @@ else:
                         c_adm1, c_adm2 = st.columns(2)
                         with c_adm1:
                             st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
+                            st.write("")
                             n_paq = st.text_input("Empresa de Paquetería", value=str(datos_fol["PAQUETERIA_NOMBRE"])).upper()
                             n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"])).upper()
                             c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]))
@@ -2510,7 +2511,7 @@ else:
                         <body>
                             <div style="display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;">
                                 <div><h2>JYPESA</h2><p style="margin:0;font-size:10px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
-                                <div style="text-align:right;"><b>REPORTE DE SALIDA PT</b><br>GENERADO: {date.today()}</div>
+                                <div style="text-align:right;"><b>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</b><br>GENERADO: {date.today()}</div>
                             </div>
                             <table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>DETALLE</th><th>COSTO PROD.</th><th>FLETE</th></tr></thead>
                             <tbody>{filas_html}</tbody></table>
@@ -2521,7 +2522,7 @@ else:
                 
                         c1, c2, c3 = st.columns(3)
                         with c1:
-                            if st.button("🖨️ IMPRIMIR REPORTE PT", type="primary", use_container_width=True):
+                            if st.button("🖨️ IMPRIMIR REPORTE", type="primary", use_container_width=True):
                                 components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
                         with c2:
                             output = BytesIO()
@@ -3423,6 +3424,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
