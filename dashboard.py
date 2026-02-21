@@ -840,7 +840,7 @@ else:
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 # Definimos los 4 nombres de las pestañas
-                tab_kpis, tab_rastreo, tab_volumen, tab_participacion = st.tabs([
+                tab_kpis, tab_tiempos, tab_volumen, tab_participacion = st.tabs([
                     "KPI´S", "TIEMPOS DE TRÁNSITO", "VOLUMEN", "DIST. CARGA"
                 ])
     
@@ -3410,6 +3410,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
