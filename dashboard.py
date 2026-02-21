@@ -938,7 +938,7 @@ else:
                 # =========================================================
                 # 2. SECCIÓN DEL CALCULADOR INTELIGENTE CON ANÁLISIS REAL
                 # =========================================================                
-                usuario_actual = st.session_state.get('username', 'Cielo')
+                usuario_actual = st.session_state.get('usuario_activo', 'Cielo')
                 
                 c1, c2 = st.columns([1, 1])
                 
@@ -3408,6 +3408,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
