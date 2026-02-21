@@ -16,15 +16,30 @@ GITHUB_REPO = "nexion"
 GITHUB_PATH = "muestras.csv"
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
 
-# Diccionario de precios
+# Diccionario de precios SINCRONIZADO con tu nueva matriz
 precios = {
-    "SPF": 0.0,"Accesorios Ecologicos": 47.85, "Accesorios Lavarino": 47.85, "Dispensador Almond ": 218.33,
-    "Dispensador Biogena": 216.00, "Dispensador Cava": 230.58, "Dispensador Persa": 275.00,
-    "Dispensador Botánicos L": 274.17, "Dispensador Dove": 125.00, "Dispensador Biogena 400ml": 184.87,
-    "Kit Elements ": 29.34, "Kit Almond ": 33.83, "Kit Biogena": 48.95, "Kit Cava": 34.59,
-    "Kit Persa": 58.02, "Kit Lavarino": 36.30, "Kit Botánicos": 29.34, "Llave Magnetica": 180.00,
-    "Rack Dove": 0.00, "Rack JH  Color Blanco de 2 pzas": 62.00, "Rack JH  Color Blanco de 1 pzas": 50.00,
-    "Soporte dob  INOX Cap lock": 679.00, "Soporte Ind  INOX Cap lock": 608.00
+    "SPF": 0.0,
+    "Accesorios Ecologicos": 47.85,
+    "Accesorios Lavarino": 47.85,
+    "Dispensador Almond": 218.33,
+    "Dispensador Biogena": 216.00,
+    "Dispensador Cava": 230.58,
+    "Dispensador Persea": 275.00,  # Corregido con 'e' según tu matriz
+    "Dispensador Botánicos": 274.17,
+    "Dispensador Dove": 125.00,
+    "Kit Elements": 29.34,
+    "Kit Almond": 33.83,
+    "Kit Biogena": 48.95,
+    "Kit Cava": 34.59,
+    "Kit Persa": 58.02,
+    "Kit Lavarino": 36.30,
+    "Kit Botánicos": 29.34,
+    "Llave Magnetica": 180.00,
+    "Rack Dove": 0.00,
+    "Rack JH  Color Blanco de 2 pzas": 62.00, # Doble espacio para match exacto
+    "Rack JH  Color Blanco de 1 pzas": 50.00, # Doble espacio para match exacto
+    "Soporte dob INOX Cap lock": 679.00,
+    "Soporte Ind INOX Cap lock": 608.00
 }
 
 # --- FUNCIONES GITHUB ---
