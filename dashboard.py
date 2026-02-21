@@ -841,7 +841,7 @@ else:
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 # Definimos los 4 nombres de las pestañas
                 tab_kpis, tab_rastreo, tab_volumen, tab_participacion = st.tabs([
-                    "KPI´S", "RASTREO", "VOLUMEN", "DIST. CARGA"
+                    "KPI´S", "TIEMPOS DE TRÁNSITO", "VOLUMEN", "DIST. CARGA"
                 ])
     
                 # PESTAÑA 1: KPI'S (Tus donitas)
@@ -927,7 +927,7 @@ else:
                             st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
             
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
-            with tab_rastreo: 
+            with tab_TIEMPOS DE TRÁNSITO: 
                 # =========================================================
                 # 1. PROCESAMIENTO DE DATOS
                 # =========================================================
@@ -1010,7 +1010,7 @@ else:
                     """, unsafe_allow_html=True)
                 
                     # 2. Tabla de Detalles
-                    st.markdown("#### 📋 Detalles de envíos encontrados")
+                    st.markdown("#### Detalles de envíos encontrados")
                     tabla_detalles = historial[[
                         'NÚMERO DE PEDIDO',
                         'NOMBRE DEL CLIENTE', 
@@ -3410,6 +3410,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
