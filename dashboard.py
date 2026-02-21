@@ -1318,7 +1318,7 @@ else:
                             "FLETERA": ["FLETERA"],
                             "NÚMERO DE GUÍA": ["NÚMERO DE GUÍA", "GUÍA"],
                             "DIAS_TRANS": ["DIAS_TRANS"],
-                            "DIAS_ATRASO": ["DIAS_ATRASO"]                            
+                            "DIAS_ATRASO": ["DIAS_ATRASO"],                            
                             "NOMBRE DEL CLIENTE": ["NOMBRE DEL CLIENTE", "CLIENTE"],
                             "DESTINO": ["DESTINO", "CIUDAD"],
                             "FECHA DE ENVÍO": ["FECHA DE ENVÍO"],
@@ -3418,6 +3418,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
