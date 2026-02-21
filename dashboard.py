@@ -936,9 +936,10 @@ else:
                 df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
                 
                 # =========================================================
-                # 2. SECCIÓN DEL CALCULADOR "CHINGÓN"
+                # 2. SECCIÓN DEL CALCULADOR INTELIGENTE CON ANÁLISIS REAL
                 # =========================================================
-                # Lógica de Usuario: sacamos el nombre del login
+                st.markdown("### 🗺️ ESTIMACIÓN DE LOGÍSTICA")
+                
                 usuario_actual = st.session_state.get('username', 'Cielo')
                 
                 c1, c2 = st.columns([1, 1])
@@ -950,34 +951,29 @@ else:
                     busqueda_manual = st.text_input(
                         "BUSCAR POR DESTINO, CP O DOMICILIO", 
                         placeholder="Ej: 63734, Litibu, Cancún...",
-                        key="busqueda_manual_v5"
+                        key="busqueda_manual_v6"
                     )
                 
-                # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO (AJUSTADA) ---
+                # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
                 if not busqueda_manual:
-                    # Filtramos viajes con entrega real
                     df_validos = df[df['DIAS_REALES'].notna()]
-                    
-                    # Intentamos buscar primero destinos que tengan entregas de exactamente 2 días
+                    # Buscamos rutas rápidas de 2 días para el ejemplo inicial
                     rutas_dos_dias = df_validos[df_validos['DIAS_REALES'] == 2]
                     
                     if not rutas_dos_dias.empty:
-                        # Si hay de 2 días, tomamos el primer destino que aparezca
                         busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
-                        texto_mostrar = f"{busqueda_activa}"
+                        texto_mostrar = f"{busqueda_activa} (Ruta Veloz 2 Días)"
                     elif not df_validos.empty:
-                        # Si no hay de 2, buscamos el más rápido que exista
                         busqueda_activa = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
-                        texto_mostrar = f"{busqueda_activa} (Ruta más eficiente)"
+                        texto_mostrar = f"{busqueda_activa} (Ruta sugerida)"
                     else:
-                        # Respaldo total para que NUNCA esté en cero
-                        busqueda_activa = "MÉXICO" 
+                        busqueda_activa = ""
                         texto_mostrar = "CONSULTA DE RUTA"
                 else:
                     busqueda_activa = busqueda_manual
                     texto_mostrar = busqueda_manual.upper()
                 
-                # --- FILTRADO INTELIGENTE ---
+                # --- FILTRADO Y ANÁLISIS DE FRECUENCIA ---
                 busqueda_aux = busqueda_activa.lower()
                 mask = (
                     df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
@@ -987,16 +983,19 @@ else:
                 historial = df[mask & (df['DIAS_REALES'].notna())].copy()
                 
                 if not historial.empty:
+                    # --- CÁLCULO DE LA FLETERA MÁS FRECUENTE ---
+                    # Sacamos la fletera que más se repite para este destino específico
+                    fletera_recomendada = historial['FLETERA'].value_counts().idxmax()
+                    
                     promedio_dias = historial['DIAS_REALES'].mean()
                     total_viajes = len(historial)
-                    # Redondeo hacia arriba (siempre preventivo)
                     dias_redondeados = math.ceil(promedio_dias)
                 
-                    # 1. Renderizado del Widget de Tránsito
+                    # 1. Renderizado del Widget Dinámico
                     st.markdown(f"""
                         <div class="kpi-ruta-container">
                             <div class="kpi-ruta-card">
-                                <span class="kpi-tag">Paquetería Recomendada: TRES GUERRAS</span>
+                                <span class="kpi-tag">Paquetería Recomendada: {fletera_recomendada}</span>
                                 <div class="kpi-route-flow">
                                     <span class="city">GDL</span>
                                     <span class="arrow">→</span>
@@ -1004,32 +1003,25 @@ else:
                                 </div>
                                 <div class="kpi-value">{dias_redondeados} <small>DÍAS</small></div>
                                 <div class="kpi-subtext">
-                                    Análisis basado en <b>{total_viajes}</b> entregas exitosas
+                                    La fletera más usada en <b>{total_viajes}</b> entregas exitosas a esta zona
                                 </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
                 
-                    # 2. Renderizado de la Tabla (Formato Estándar)
-                    st.markdown("#### Detalles de envíos encontrados")
-                    
+                    # 2. Tabla de Detalles
+                    st.markdown("#### 📋 Detalles de envíos encontrados")
                     tabla_detalles = historial[[
                         'NÚMERO DE PEDIDO',
                         'NOMBRE DEL CLIENTE', 
-                        'DESTINO',
                         'DOMICILIO', 
                         'FECHA DE ENVÍO', 
                         'FLETERA', 
                     ]].sort_values(by='FECHA DE ENVÍO', ascending=False)
                 
-                    # Formateo de fecha
                     tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
                 
-                    st.dataframe(
-                        tabla_detalles, 
-                        use_container_width=True, 
-                        hide_index=True
-                    )
+                    st.dataframe(tabla_detalles, use_container_width=True, hide_index=True)
                 else:
                     st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")
                     
@@ -3418,6 +3410,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
