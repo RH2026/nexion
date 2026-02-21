@@ -34,6 +34,7 @@ precios = {
     "Kit Persa": 58.02,
     "Kit Lavarino": 36.30,
     "Kit Botánicos": 29.34,
+    "Kit Rainforest": 30.34,
     "Llave Magnetica": 180.00,
     "Rack Dove": 0.00,
     "Rack JH  Color Blanco de 2 pzas": 62.00, # Doble espacio para match exacto
