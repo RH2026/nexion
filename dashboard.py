@@ -441,6 +441,19 @@ button[kind="secondary"] {{
     color: #00FFAA;
 }}
 
+/* CLASE PARA TÍTULOS DE SECCIÓN DE DATOS */
+.data-section-header {{
+    font-size: 13px !important;
+    letter-spacing: 3px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    color: {vars_css['sub']} !important;
+    margin-bottom: 15px !important;
+    margin-top: 25px !important;
+    border-left: 3px solid #00FFAA; /* Una pequeña línea de acento como tus cards */
+    padding-left: 10px !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -1009,7 +1022,8 @@ else:
                     """, unsafe_allow_html=True)
                 
                     # 2. Tabla de Detalles
-                    st.markdown("#### Detalles de envíos encontrados")
+                    # 2. Tabla de Detalles Gobernada por tu CSS
+                    st.markdown(f'<p class="data-section-header">Detalles de envíos encontrados</p>', unsafe_allow_html=True)
                     tabla_detalles = historial[[
                         'NÚMERO DE PEDIDO',
                         'NOMBRE DEL CLIENTE', 
@@ -3409,6 +3423,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
