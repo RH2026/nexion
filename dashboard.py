@@ -2240,7 +2240,7 @@ else:
                 
                 # Diccionario de precios SINCRONIZADO
                 precios = {
-                    "SPF": 0.0,
+                    "Envio Muestras Especiales": 0.0,
                     "Accesorios Ecologicos": 47.85,
                     "Accesorios Lavarino": 47.85,
                     "Dispensador Almond": 218.33,
@@ -3423,6 +3423,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
