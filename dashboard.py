@@ -928,6 +928,7 @@ else:
             
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
             with tab_tiempos: 
+                st.write("")  # Esto agrega un pequeño espacio hacia abajo
                 # =========================================================
                 # 1. PROCESAMIENTO DE DATOS
                 # =========================================================
@@ -3408,6 +3409,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
