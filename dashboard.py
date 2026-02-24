@@ -1049,7 +1049,7 @@ else:
                 # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_participacion: # Asegúrate que arriba definiste: tab_kpis, tab_rastreo, tab_volumen, tab_participacion = st.tabs([...])
                                         
-                    URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Costo_Logistico_Mensual.csv"
+                    URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
                     
                     @st.cache_data
                     def load_data_logistica():
@@ -3426,6 +3426,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
