@@ -9,6 +9,7 @@ import requests
 from io import StringIO, BytesIO
 from datetime import datetime, date, timedelta
 import base64
+import altair as alt
 
 import pandas as pd
 import numpy as np  # Opcional, pero suele ir de la mano con pandas
@@ -1101,20 +1102,36 @@ else:
                                 lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
                                 st.markdown(f"<h4 style='text-align:center; color:#00FFAA;'>{lider_n}</h4>", unsafe_allow_html=True)
                             
-                            # --- 4. GRÁFICO DE BARRAS ---
-                            fig_bar = px.bar(
-                                df_part, x='PORCENTAJE', y='TRANSPORTE', orientation='h',
-                                text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
-                                template="plotly_dark", color='PORCENTAJE',
-                                color_continuous_scale=['#1a2432', '#00FFAA']
+                            # --- 4. GRÁFICO DE BARRAS ALTAIR---
+                            # Configuramos una altura dinámica basada en la cantidad de transportes para que no se encimen
+                            altura_dinamica = max(300, len(df_part) * 25) 
+                            
+                            chart = alt.Chart(df_part).mark_bar(
+                                cornerRadiusTopRight=5,
+                                cornerRadiusBottomRight=5
+                            ).encode(
+                                x=alt.X('PORCENTAJE:Q', title='PORCENTAJE (%)', axis=alt.Axis(grid=False)),
+                                y=alt.Y('TRANSPORTE:N', title=None, sort='-x'), # Ordenado de mayor a menor
+                                color=alt.Color('PORCENTAJE:Q', 
+                                                scale=alt.Scale(range=['#1a2432', '#00FFAA']), 
+                                                legend=None),
+                                tooltip=['TRANSPORTE', alt.Tooltip('PORCENTAJE', format='.1f'), 'CAJAS']
+                            ).properties(
+                                height=altura_dinamica
                             )
-                            fig_bar.update_layout(
-                                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                xaxis_range=[0, df_part['PORCENTAJE'].max() * 1.2],
-                                font=dict(family="Inter", size=11, color="#FFFFFF"),
-                                margin=dict(l=20, r=20, t=10, b=10), showlegend=False
+                            
+                            # Añadimos las etiquetas de texto al final de las barras
+                            text = chart.mark_text(
+                                align='left',
+                                baseline='middle',
+                                dx=5,
+                                color='white'
+                            ).encode(
+                                text=alt.Text('PORCENTAJE:Q', format='.1f')
                             )
-                            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_part_{mes_sel}_{tipo_mov}")
+                            
+                            # Renderizamos el gráfico combinado
+                            st.altair_chart((chart + text).configure_view(strokeOpacity=0), use_container_width=True)
                 
                             # --- 5. TABLA DE AUDITORÍA ---
                             st.markdown("<p class='op-query-text' style='font-size:10px;'>AUDITORÍA DE DISTRIBUCIÓN LOGÍSTICA</p>", unsafe_allow_html=True)
@@ -3432,6 +3449,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
