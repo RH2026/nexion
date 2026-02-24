@@ -1067,10 +1067,10 @@ else:
                     
                     if df_log is not None:
                         # --- NUEVO FILTRO DE TIPO DE MOVIMIENTO ---
-                        st.markdown("<p class='op-query-text' style='font-size:12px;'>TIPO DE MOVIMIENTO</p>", unsafe_allow_html=True)
+                        st.markdown("<p class='op-query-text' style='font-size:12px;'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
                         tipo_mov = st.radio(
                             "Selecciona el flujo:",
-                            ["TODOS", "DESTINO", "REGRESO"],
+                            ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
                             horizontal=True,
                             key=f"tipo_mov_{mes_sel}"
                         )
@@ -1079,9 +1079,9 @@ else:
                         df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
                 
                         # Aplicamos segundo filtro: Búsqueda de texto en TRANSPORTE
-                        if tipo_mov == "DESTINO":
+                        if tipo_mov == "COBRO DESTINO":
                             df_log_filtrado = df_log_filtrado[df_log_filtrado['TRANSPORTE'].str.contains('DESTINO', case=False, na=False)]
-                        elif tipo_mov == "REGRESO":
+                        elif tipo_mov == "COBRO REGRESO":
                             df_log_filtrado = df_log_filtrado[df_log_filtrado['TRANSPORTE'].str.contains('REGRESO', case=False, na=False)]
                 
                         if not df_log_filtrado.empty:
@@ -3432,6 +3432,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
