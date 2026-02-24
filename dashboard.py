@@ -974,7 +974,7 @@ else:
                     
                     if not rutas_dos_dias.empty:
                         busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
-                        texto_mostrar = f"{busqueda_activa} (Ruta Veloz 2 Días)"
+                        texto_mostrar = f"{busqueda_activa}"
                     elif not df_validos.empty:
                         busqueda_activa = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
                         texto_mostrar = f"{busqueda_activa} (Ruta sugerida)"
@@ -3426,6 +3426,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
