@@ -2391,7 +2391,7 @@ else:
                     cd3, cd4 = st.columns(2)
                     f_ci = cd3.text_input("Ciudad").upper()
                     f_es = cd4.text_input("Estado").upper()
-                    f_con = st.text_input("Contacto Receptor").upper()
+                    f_con = st.text_input("Contacto Receptor", placeholder="NOMBRE Y RELEFONO DE QUIEN RECIBE").upper()
                 
                 st.divider()
                 
@@ -3426,6 +3426,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
