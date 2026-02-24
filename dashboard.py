@@ -28,7 +28,7 @@ from reportlab.lib.pagesizes import letter
 
 
 # 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="NEXION | Core", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
 
 # --- MOTOR DE INTELIGENCIA LOGÍSTICA (XENOCODE CORE) ---
 def d_local(dir_val):
@@ -3426,6 +3426,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
