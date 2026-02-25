@@ -640,7 +640,7 @@ else:
                 <div class="kpi-ruta-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <span class="kpi-tag">DETALLES DE OPERACIÓN</span>
-                        <span style="color:#f6c23e; font-weight:800; font-size:20px;">{d['NÚMERO DE PEDIDO']}</span>
+                        <span style="color:#1cc88a; font-weight:800; font-size:20px;">{d['NÚMERO DE PEDIDO']}</span>
                     </div>
                     <div class="kpi-route-flow">
                         <div class="city">GDL</div>
@@ -662,7 +662,7 @@ else:
                         <div>
                             <p class="data-section-header">TIEMPOS</p>
                             <p style="font-size:12px; margin:0;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
-                            <p style="font-size:12px; margin:0; color:#f6c23e;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                            <p style="font-size:12px; margin:0; color:#1cc88a;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
                         </div>
                         <div>
                             <p class="data-section-header">CARGA</p>
@@ -3492,6 +3492,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
