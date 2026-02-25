@@ -563,10 +563,19 @@ else:
             """, unsafe_allow_html=True)
     
         with c3:
-            # INPUT DE BÚSQUEDA - Lógica integrada
-            query = st.text_input("Buscar", placeholder="🔍 BUSCAR...", label_visibility="collapsed", key="main_search")
+            # Añadimos el parámetro value vinculado al session_state
+            if "main_search_val" not in st.session_state:
+                st.session_state.main_search_val = ""
+        
+            query = st.text_input(
+                "Buscar", 
+                placeholder="🔍 BUSCAR...", 
+                label_visibility="collapsed", 
+                key="main_search",
+                value=st.session_state.main_search_val # Vinculamos el valor
+            )
+            
             if query and df_matriz is not None:
-                # Buscamos por Guía o Pedido
                 res = df_matriz[
                     (df_matriz['NÚMERO DE GUÍA'].astype(str) == query) | 
                     (df_matriz['NÚMERO DE PEDIDO'].astype(str) == query)
@@ -674,15 +683,18 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # --- BOTÓN CORREGIDO ---
+        # --- BOTÓN DE CIERRE CORREGIDO ---
         if st.button("✖️ CERRAR CONSULTA", use_container_width=True):
+            # Limpiamos las banderas de búsqueda
             st.session_state.busqueda_activa = False
             st.session_state.resultado_busqueda = None
-            # Esta línea es la clave: borra el texto del buscador
-            st.session_state.main_search = "" 
+            
+            # En lugar de asignarlo directamente, usamos el método 'del' 
+            # para que Streamlit resetee el widget a su valor inicial
+            if "main_search" in st.session_state:
+                del st.session_state["main_search"]
+            
             st.rerun()
-        
-        st.stop()
 
     # Línea decorativa final
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
@@ -3495,6 +3507,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
