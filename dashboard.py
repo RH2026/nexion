@@ -519,12 +519,12 @@ elif not st.session_state.autenticado:
 
 # 3. ¿Todo listo? Mostrar NEXION CORE
 else:    
-    # ── HEADER CON 4 COLUMNAS (PESOS AJUSTADOS) ───────────────────────────────
+    # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
     header_zone = st.container()
     with header_zone:
-        # c1: Logo | c2: Título | c3: Búsqueda (Más pequeño) | c4: Popover (Más grande)
-        # Cambié los pesos de [2.5, 0.5] a [1.8, 1.2] para dar más aire al menú
-        c1, c2, c3, c4 = st.columns([1.5, 3.5, 1.8, 1.2], vertical_alignment="center")
+        # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
+        # Reduje c3 de 1.8 a 1.2 y aumenté c4 de 1.2 a 1.8 para un balance perfecto
+        c1, c2, c3, c4 = st.columns([1.5, 3.5, 1.2, 1.8], vertical_alignment="center")
         
         with c1:
             try:
@@ -548,11 +548,11 @@ else:
             """, unsafe_allow_html=True)
     
         with c3:
-            # INPUT DE BÚSQUEDA (COLUMNA REDUCIDA)
+            # INPUT DE BÚSQUEDA (MÁS PEQUEÑO)
             st.text_input("Buscar", placeholder="🔍 BUSCAR...", label_visibility="collapsed", key="main_search")
     
         with c4:
-            # BOTÓN POPOVER (COLUMNA AMPLIADA)
+            # BOTÓN POPOVER (CON MÁS ESPACIO)
             with st.popover("☰ NAVEGACIÓN", use_container_width=True):
                 st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
@@ -601,7 +601,7 @@ else:
                                 st.session_state.menu_sub = s
                                 st.rerun()
     
-    # Línea decorativa
+    # Línea decorativa final
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
@@ -3411,6 +3411,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
