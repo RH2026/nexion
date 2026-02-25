@@ -1102,52 +1102,35 @@ else:
                                 lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
                                 st.markdown(f"<h4 style='text-align:center; color:#00FFAA;'>{lider_n}</h4>", unsafe_allow_html=True)
                             
-                            # --- 4. GRÁFICO DE BARRAS ALTAIR---
-                            # Configuramos una altura dinámica basada en la cantidad de transportes para que no se encimen
-                            altura_dinamica = max(300, len(df_part) * 25) 
+                            # --- 4. GRÁFICO DE BARRAS (PLOTLY GO) ---
+                            # Calculamos altura para que no se amontonen (40px por cada barra)
+                            altura_ajustada = max(400, len(df_part) * 40)
                             
-                            chart = alt.Chart(df_part).mark_bar(
-                                cornerRadiusTopRight=5,
-                                cornerRadiusBottomRight=5
-                            ).encode(
-                                x=alt.X('PORCENTAJE:Q', title='PORCENTAJE (%)', axis=alt.Axis(grid=False)),
-                                y=alt.Y('TRANSPORTE:N', title=None, sort='-x'), # Ordenado de mayor a menor
-                                color=alt.Color('PORCENTAJE:Q', 
-                                                scale=alt.Scale(range=['#1a2432', '#00FFAA']), 
-                                                legend=None),
-                                tooltip=['TRANSPORTE', alt.Tooltip('PORCENTAJE', format='.1f'), 'CAJAS']
-                            ).properties(
-                                height=altura_dinamica
+                            fig_bar = go.Figure(go.Bar(
+                                x=df_part['PORCENTAJE'],
+                                y=df_part['TRANSPORTE'],
+                                orientation='h',
+                                marker=dict(
+                                    color=df_part['PORCENTAJE'],
+                                    colorscale=['#1a2432', '#00FFAA']
+                                ),
+                                text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
+                                textposition='outside',
+                                cliponaxis=False # Evita que el texto se corte
+                            ))
+                            
+                            fig_bar.update_layout(
+                                height=altura_ajustada, # Altura dinámica
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                font=dict(family="Inter", size=12, color="#FFFFFF"),
+                                margin=dict(l=250, r=50, t=20, b=20), # Margen izquierdo grande para los nombres largos
+                                xaxis=dict(showgrid=False, zeroline=False, showticklabels=True),
+                                yaxis=dict(showgrid=False, automargin=True),
+                                showlegend=False
                             )
                             
-                            # Añadimos las etiquetas de texto al final de las barras
-                            text = chart.mark_text(
-                                align='left',
-                                baseline='middle',
-                                dx=5,
-                                color='white'
-                            ).encode(
-                                text=alt.Text('PORCENTAJE:Q', format='.1f')
-                            )
-                            
-                            # Renderizamos el gráfico combinado
-                            st.altair_chart((chart + text).configure_view(strokeOpacity=0), use_container_width=True)
-                
-                            # --- 5. TABLA DE AUDITORÍA ---
-                            st.markdown("<p class='op-query-text' style='font-size:10px;'>AUDITORÍA DE DISTRIBUCIÓN LOGÍSTICA</p>", unsafe_allow_html=True)
-                            df_tabla = df_part.sort_values(by='PORCENTAJE', ascending=False)
-                            
-                            st.dataframe(
-                                df_tabla,
-                                column_config={
-                                    "TRANSPORTE": "CARRIER ID",
-                                    "CAJAS": st.column_config.NumberColumn("TOTAL UNITS", format="%d"),
-                                    "PORCENTAJE": st.column_config.NumberColumn("SHARE VALUE", format="%.2f%%")
-                                },
-                                use_container_width=True,
-                                hide_index=True,
-                                key=f"tabla_audit_{mes_sel}_{tipo_mov}"
-                            )
+                            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_part_{mes_sel}_{tipo_mov}")
                 
                             # --- 6. EXPANDER: DESGLOSE POR DESTINO ---
                             st.markdown("<br>", unsafe_allow_html=True)
@@ -3449,6 +3432,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
