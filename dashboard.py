@@ -524,7 +524,7 @@ else:
     with header_zone:
         # c1: Logo | c2: Título | c3: Búsqueda | c4: Popover
         # c3 y c4 ahora tienen exactamente el mismo tamaño (1.1)
-        c1, c2, c3, c4 = st.columns([1.5, 3.5, 1.1, 1.1], vertical_alignment="center")
+        c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
         
         with c1:
             try:
@@ -3412,6 +3412,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
