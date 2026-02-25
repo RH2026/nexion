@@ -524,7 +524,7 @@ else:
     with header_zone:
         # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
         # Reduje c3 de 1.8 a 1.2 y aumenté c4 de 1.2 a 1.8 para un balance perfecto
-        c1, c2, c3, c4 = st.columns([1.5, 3.5, 1.2, 1.2], vertical_alignment="center")
+        c1, c2, c3, c4 = st.columns([1.5, 3.5, 1.1, 1.1], vertical_alignment="center")
         
         with c1:
             try:
@@ -3411,6 +3411,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
