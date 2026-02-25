@@ -90,6 +90,8 @@ if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
     st.session_state.resultado_busqueda = None
+if "search_key_version" not in st.session_state:
+    st.session_state.search_key_version = 0
 
 # ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
 if "tema" not in st.session_state:
@@ -563,16 +565,14 @@ else:
             """, unsafe_allow_html=True)
     
         with c3:
-            # Añadimos el parámetro value vinculado al session_state
-            if "main_search_val" not in st.session_state:
-                st.session_state.main_search_val = ""
-        
+            # Generamos una key única basada en la versión actual
+            key_actual = f"main_search_v{st.session_state.search_key_version}"
+            
             query = st.text_input(
                 "Buscar", 
                 placeholder="🔍 BUSCAR...", 
                 label_visibility="collapsed", 
-                key="main_search",
-                value=st.session_state.main_search_val # Vinculamos el valor
+                key=key_actual
             )
             
             if query and df_matriz is not None:
@@ -683,16 +683,14 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # --- BOTÓN DE CIERRE CORREGIDO ---
         if st.button("✖️ CERRAR CONSULTA", use_container_width=True):
-            # Limpiamos las banderas de búsqueda
+            # 1. Apagamos la búsqueda
             st.session_state.busqueda_activa = False
             st.session_state.resultado_busqueda = None
             
-            # En lugar de asignarlo directamente, usamos el método 'del' 
-            # para que Streamlit resetee el widget a su valor inicial
-            if "main_search" in st.session_state:
-                del st.session_state["main_search"]
+            # 2. CAMBIAMOS LA VERSIÓN: Esto obliga a Streamlit a renderizar 
+            # un input vacío porque la 'key' anterior deja de existir.
+            st.session_state.search_key_version += 1
             
             st.rerun()
 
@@ -3507,6 +3505,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
