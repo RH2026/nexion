@@ -520,176 +520,176 @@ elif not st.session_state.autenticado:
 # 3. ¿Todo listo? Mostrar NEXION CORE
 else:    
     # 1. CARGA DE DATOS (Ponlo arriba de tu script)
-@st.cache_data
-def cargar_matriz_nexion():
-    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
-    try:
-        df = pd.read_csv(url)
-        df.columns = df.columns.str.strip()
-        return df
-    except:
-        return None
-
-df_matriz = cargar_matriz_nexion()
-
-# Inicializamos estados si no existen
-if "busqueda_activa" not in st.session_state:
-    st.session_state.busqueda_activa = False
-if "resultado_busqueda" not in st.session_state:
-    st.session_state.resultado_busqueda = None
-
-# ... (Tu código de Login y Splash se mantiene igual arriba) ...
-
-# 3. ¿Todo listo? Mostrar NEXION CORE
-else:    
-    # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
-    header_zone = st.container()
-    with header_zone:
-        # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
-        c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
-        
-        with c1:
-            try:
-                st.image(vars_css["logo"], width=180)
-            except:
-                st.write("**NEXION**")
+    @st.cache_data
+    def cargar_matriz_nexion():
+        url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+        try:
+            df = pd.read_csv(url)
+            df.columns = df.columns.str.strip()
+            return df
+        except:
+            return None
     
-        with c2:
-            # RUTA DINÁMICA
-            if st.session_state.menu_sub != "GENERAL":
-                ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
-            else:
-                ruta = st.session_state.menu_main
+    df_matriz = cargar_matriz_nexion()
+    
+    # Inicializamos estados si no existen
+    if "busqueda_activa" not in st.session_state:
+        st.session_state.busqueda_activa = False
+    if "resultado_busqueda" not in st.session_state:
+        st.session_state.resultado_busqueda = None
+    
+    # ... (Tu código de Login y Splash se mantiene igual arriba) ...
+    
+    # 3. ¿Todo listo? Mostrar NEXION CORE
+    else:    
+        # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
+        header_zone = st.container()
+        with header_zone:
+            # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
+            c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
             
+            with c1:
+                try:
+                    st.image(vars_css["logo"], width=180)
+                except:
+                    st.write("**NEXION**")
+        
+            with c2:
+                # RUTA DINÁMICA
+                if st.session_state.menu_sub != "GENERAL":
+                    ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
+                else:
+                    ruta = st.session_state.menu_main
+                
+                st.markdown(f"""
+                    <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
+                        <p style='font-size: 13px; letter-spacing: 8px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
+                            {ruta}
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+        
+            with c3:
+                # INPUT DE BÚSQUEDA - Lógica integrada
+                query = st.text_input("Buscar", placeholder="🔍 BUSCAR...", label_visibility="collapsed", key="main_search")
+                if query and df_matriz is not None:
+                    # Buscamos por Guía o Pedido
+                    res = df_matriz[
+                        (df_matriz['NÚMERO DE GUÍA'].astype(str) == query) | 
+                        (df_matriz['NÚMERO DE PEDIDO'].astype(str) == query)
+                    ]
+                    if not res.empty:
+                        st.session_state.busqueda_activa = True
+                        st.session_state.resultado_busqueda = res.iloc[0]
+                    else:
+                        st.toast("No se encontró registro", icon="🔍")
+        
+            with c4:
+                # BOTÓN POPOVER (CON MÁS ESPACIO)
+                with st.popover("☰ NAVEGACIÓN", use_container_width=True):
+                    st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
+                    
+                    usuario = st.session_state.get("usuario_activo", "")
+        
+                    # --- SECCIONES DASHBOARD / SEGUIMIENTO / REPORTES ---
+                    if usuario != "JMoreno":
+                        if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                            st.session_state.menu_main = "DASHBOARD"
+                            st.session_state.menu_sub = "GENERAL"
+                            st.session_state.busqueda_activa = False # Limpia búsqueda al navegar
+                            st.rerun()
+                        
+                        with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                            for s in ["ALERTAS", "GANTT", "QUEJAS"]:
+                                label = f"» {s}" if st.session_state.menu_sub == s else s
+                                if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                                    st.session_state.menu_main = "SEGUIMIENTO"
+                                    st.session_state.menu_sub = s
+                                    st.session_state.busqueda_activa = False
+                                    st.rerun()
+        
+                        with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                            for s in ["APQ", "OPS", "OTD", "SAMPLES"]:
+                                label = f"» {s}" if st.session_state.menu_sub == s else s
+                                if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+                                    st.session_state.menu_main = "REPORTES"
+                                    st.session_state.menu_sub = s
+                                    st.session_state.busqueda_activa = False
+                                    st.rerun()
+        
+                    # --- SECCIÓN FORMATOS ---
+                    with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                        formatos = ["SALIDA DE PT"] if usuario == "JMoreno" else ["SALIDA DE PT", "CONTRARRECIBOS"]
+                        for s in formatos:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+                                st.session_state.menu_main = "FORMATOS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+        
+                    # --- SECCIÓN HUB LOG ---
+                    if usuario != "JMoreno":
+                        with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                            for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
+                                label = f"» {s}" if st.session_state.menu_sub == s else s
+                                if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                                    st.session_state.menu_main = "HUB LOG"
+                                    st.session_state.menu_sub = s
+                                    st.session_state.busqueda_activa = False
+                                    st.rerun()
+        
+        # ── RENDERIZADO DE CONSULTA "PERRONA" ──────────────────────────────────────
+        if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
+            d = st.session_state.resultado_busqueda
             st.markdown(f"""
-                <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
-                    <p style='font-size: 13px; letter-spacing: 8px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
-                        {ruta}
-                    </p>
+                <div class="kpi-ruta-container">
+                    <div class="kpi-ruta-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <span class="kpi-tag">DETALLES DE OPERACIÓN</span>
+                            <span style="color:#00FFAA; font-weight:800; font-size:20px;">{d['NÚMERO DE PEDIDO']}</span>
+                        </div>
+                        <div class="kpi-route-flow">
+                            <div class="city">GDL</div>
+                            <div class="arrow">→</div>
+                            <div class="city">{d['DESTINO']}</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                            <div>
+                                <p class="data-section-header">CLIENTE</p>
+                                <p style="font-size:14px; margin:0;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
+                                <p style="font-size:11px; color:{vars_css['sub']}; opacity:0.8;">{d['DOMICILIO']}</p>
+                            </div>
+                            <div>
+                                <p class="data-section-header">LOGÍSTICA</p>
+                                <p style="font-size:12px; margin:0;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
+                                <p style="font-size:12px; margin:0;">FLETERA: <b>{d['FLETERA']}</b></p>
+                                <p style="font-size:12px; margin:0;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
+                            </div>
+                            <div>
+                                <p class="data-section-header">TIEMPOS</p>
+                                <p style="font-size:12px; margin:0;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
+                                <p style="font-size:12px; margin:0; color:#00FFAA;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                            </div>
+                            <div>
+                                <p class="data-section-header">CARGA</p>
+                                <p style="font-size:12px; margin:0;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
+                                <p style="font-size:11px; color:{vars_css['sub']};">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
+            
+            if st.button("✖️ CERRAR CONSULTA", use_container_width=True):
+                st.session_state.busqueda_activa = False
+                st.session_state.resultado_busqueda = None
+                st.rerun()
+            
+            st.stop() # Esto congela el resto de la app mientras ves la consulta
     
-        with c3:
-            # INPUT DE BÚSQUEDA - Lógica integrada
-            query = st.text_input("Buscar", placeholder="🔍 BUSCAR...", label_visibility="collapsed", key="main_search")
-            if query and df_matriz is not None:
-                # Buscamos por Guía o Pedido
-                res = df_matriz[
-                    (df_matriz['NÚMERO DE GUÍA'].astype(str) == query) | 
-                    (df_matriz['NÚMERO DE PEDIDO'].astype(str) == query)
-                ]
-                if not res.empty:
-                    st.session_state.busqueda_activa = True
-                    st.session_state.resultado_busqueda = res.iloc[0]
-                else:
-                    st.toast("No se encontró registro", icon="🔍")
-    
-        with c4:
-            # BOTÓN POPOVER (CON MÁS ESPACIO)
-            with st.popover("☰ NAVEGACIÓN", use_container_width=True):
-                st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
-                
-                usuario = st.session_state.get("usuario_activo", "")
-    
-                # --- SECCIONES DASHBOARD / SEGUIMIENTO / REPORTES ---
-                if usuario != "JMoreno":
-                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                        st.session_state.menu_main = "DASHBOARD"
-                        st.session_state.menu_sub = "GENERAL"
-                        st.session_state.busqueda_activa = False # Limpia búsqueda al navegar
-                        st.rerun()
-                    
-                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                        for s in ["ALERTAS", "GANTT", "QUEJAS"]:
-                            label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
-                                st.session_state.menu_main = "SEGUIMIENTO"
-                                st.session_state.menu_sub = s
-                                st.session_state.busqueda_activa = False
-                                st.rerun()
-    
-                    with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                        for s in ["APQ", "OPS", "OTD", "SAMPLES"]:
-                            label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
-                                st.session_state.menu_main = "REPORTES"
-                                st.session_state.menu_sub = s
-                                st.session_state.busqueda_activa = False
-                                st.rerun()
-    
-                # --- SECCIÓN FORMATOS ---
-                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    formatos = ["SALIDA DE PT"] if usuario == "JMoreno" else ["SALIDA DE PT", "CONTRARRECIBOS"]
-                    for s in formatos:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
-                            st.session_state.menu_main = "FORMATOS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
-    
-                # --- SECCIÓN HUB LOG ---
-                if usuario != "JMoreno":
-                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
-                            label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
-                                st.session_state.menu_main = "HUB LOG"
-                                st.session_state.menu_sub = s
-                                st.session_state.busqueda_activa = False
-                                st.rerun()
-    
-    # ── RENDERIZADO DE CONSULTA "PERRONA" ──────────────────────────────────────
-    if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
-        d = st.session_state.resultado_busqueda
-        st.markdown(f"""
-            <div class="kpi-ruta-container">
-                <div class="kpi-ruta-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <span class="kpi-tag">DETALLES DE OPERACIÓN</span>
-                        <span style="color:#00FFAA; font-weight:800; font-size:20px;">{d['NÚMERO DE PEDIDO']}</span>
-                    </div>
-                    <div class="kpi-route-flow">
-                        <div class="city">GDL</div>
-                        <div class="arrow">→</div>
-                        <div class="city">{d['DESTINO']}</div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
-                        <div>
-                            <p class="data-section-header">CLIENTE</p>
-                            <p style="font-size:14px; margin:0;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
-                            <p style="font-size:11px; color:{vars_css['sub']}; opacity:0.8;">{d['DOMICILIO']}</p>
-                        </div>
-                        <div>
-                            <p class="data-section-header">LOGÍSTICA</p>
-                            <p style="font-size:12px; margin:0;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
-                            <p style="font-size:12px; margin:0;">FLETERA: <b>{d['FLETERA']}</b></p>
-                            <p style="font-size:12px; margin:0;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
-                        </div>
-                        <div>
-                            <p class="data-section-header">TIEMPOS</p>
-                            <p style="font-size:12px; margin:0;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
-                            <p style="font-size:12px; margin:0; color:#00FFAA;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
-                        </div>
-                        <div>
-                            <p class="data-section-header">CARGA</p>
-                            <p style="font-size:12px; margin:0;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
-                            <p style="font-size:11px; color:{vars_css['sub']};">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        if st.button("✖️ CERRAR CONSULTA", use_container_width=True):
-            st.session_state.busqueda_activa = False
-            st.session_state.resultado_busqueda = None
-            st.rerun()
-        
-        st.stop() # Esto congela el resto de la app mientras ves la consulta
-
-    # Línea decorativa final
-    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
+        # Línea decorativa final
+        st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
     with main_container:
@@ -3498,6 +3498,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
