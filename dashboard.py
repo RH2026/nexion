@@ -519,21 +519,21 @@ elif not st.session_state.autenticado:
 
 # 3. ¿Todo listo? Mostrar NEXION CORE
 else:    
-    # ── HEADER CON 4 COLUMNAS INDEPENDIENTES ──────────────────────────────────
+    # ── HEADER CON 4 COLUMNAS (PESOS AJUSTADOS) ───────────────────────────────
     header_zone = st.container()
     with header_zone:
-        # c1: Logo | c2: Título | c3: Búsqueda | c4: Menú Popover
-        # Ajusté los pesos para que el título y la búsqueda tengan protagonismo
-        c1, c2, c3, c4 = st.columns([1.5, 3.5, 2.5, 0.5], vertical_alignment="center")
+        # c1: Logo | c2: Título | c3: Búsqueda (Más pequeño) | c4: Popover (Más grande)
+        # Cambié los pesos de [2.5, 0.5] a [1.8, 1.2] para dar más aire al menú
+        c1, c2, c3, c4 = st.columns([1.5, 3.5, 1.8, 1.2], vertical_alignment="center")
         
         with c1:
             try:
                 st.image(vars_css["logo"], width=180)
             except:
-                st.write("**NEXION**") # Fallback por si no carga el logo
+                st.write("**NEXION**")
     
         with c2:
-            # TEXTO DINÁMICO (DASHBOARD | SUBMENU)
+            # RUTA DINÁMICA
             if st.session_state.menu_sub != "GENERAL":
                 ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
             else:
@@ -548,17 +548,17 @@ else:
             """, unsafe_allow_html=True)
     
         with c3:
-            # INPUT DE BÚSQUEDA INDEPENDIENTE
+            # INPUT DE BÚSQUEDA (COLUMNA REDUCIDA)
             st.text_input("Buscar", placeholder="🔍 BUSCAR...", label_visibility="collapsed", key="main_search")
     
         with c4:
-            # BOTÓN POPOVER INDEPENDIENTE (Alineado a la derecha por naturaleza de la columna)
-            with st.popover("☰", use_container_width=True):
-                st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
+            # BOTÓN POPOVER (COLUMNA AMPLIADA)
+            with st.popover("☰ NAVEGACIÓN", use_container_width=True):
+                st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
                 usuario = st.session_state.get("usuario_activo", "")
     
-                # --- SECCIONES SEGÚN USUARIO ---
+                # --- SECCIONES DASHBOARD / SEGUIMIENTO / REPORTES ---
                 if usuario != "JMoreno":
                     if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                         st.session_state.menu_main = "DASHBOARD"
@@ -567,41 +567,42 @@ else:
                     
                     with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
                         for s in ["ALERTAS", "GANTT", "QUEJAS"]:
-                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
                                 st.session_state.menu_main = "SEGUIMIENTO"
                                 st.session_state.menu_sub = s
                                 st.rerun()
     
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                         for s in ["APQ", "OPS", "OTD", "SAMPLES"]:
-                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
                                 st.session_state.menu_main = "REPORTES"
                                 st.session_state.menu_sub = s
                                 st.rerun()
     
+                # --- SECCIÓN FORMATOS ---
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
                     formatos = ["SALIDA DE PT"] if usuario == "JMoreno" else ["SALIDA DE PT", "CONTRARRECIBOS"]
                     for s in formatos:
-                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
                             st.session_state.menu_main = "FORMATOS"
                             st.session_state.menu_sub = s
                             st.rerun()
     
+                # --- SECCIÓN HUB LOG ---
                 if usuario != "JMoreno":
                     with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
                         for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
-                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
                                 st.session_state.menu_main = "HUB LOG"
                                 st.session_state.menu_sub = s
                                 st.rerun()
     
-    # Línea divisoria final
+    # Línea decorativa
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
-    
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
     with main_container:
@@ -3410,6 +3411,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
