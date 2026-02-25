@@ -674,12 +674,15 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
+        # --- BOTÓN CORREGIDO ---
         if st.button("✖️ CERRAR CONSULTA", use_container_width=True):
             st.session_state.busqueda_activa = False
             st.session_state.resultado_busqueda = None
+            # Esta línea es la clave: borra el texto del buscador
+            st.session_state.main_search = "" 
             st.rerun()
         
-        st.stop() # Esto congela el resto de la app mientras ves la consulta
+        st.stop()
 
     # Línea decorativa final
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
@@ -3492,6 +3495,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
