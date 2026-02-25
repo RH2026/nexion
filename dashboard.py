@@ -519,111 +519,87 @@ elif not st.session_state.autenticado:
 
 # 3. ¿Todo listo? Mostrar NEXION CORE
 else:    
-    # ── HEADER REESTRUCTURADO (CON BÚSQUEDA + POPOVER BALANCEADO) ──────────────────────────
+    # ── HEADER CON 4 COLUMNAS INDEPENDIENTES ──────────────────────────────────
     header_zone = st.container()
     with header_zone:
-        # Usamos 4 columnas: Logo, Texto Central, Buscador/Menu y un margen de aire al final
-        c1, c2, c3, c4 = st.columns([1.5, 3.5, 2.2, 0.1], vertical_alignment="center")
+        # c1: Logo | c2: Título | c3: Búsqueda | c4: Menú Popover
+        # Ajusté los pesos para que el título y la búsqueda tengan protagonismo
+        c1, c2, c3, c4 = st.columns([1.5, 3.5, 2.5, 0.5], vertical_alignment="center")
         
         with c1:
             try:
-                # Solo mostramos el logo con el ancho definido
                 st.image(vars_css["logo"], width=180)
             except:
-                pass
+                st.write("**NEXION**") # Fallback por si no carga el logo
     
         with c2:
-            # INDICADOR GENERAL (CENTRADO DINÁMICO)
+            # TEXTO DINÁMICO (DASHBOARD | SUBMENU)
             if st.session_state.menu_sub != "GENERAL":
                 ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
             else:
                 ruta = st.session_state.menu_main
             
             st.markdown(f"""
-                <div style='display: flex; justify-content: center; align-items: center; width: 100%; margin: 20px 0;'>
-                    <p style='font-size: 13px; 
-                              letter-spacing: 8px; 
-                              color: {vars_css['sub']}; 
-                              margin: 0; 
-                              font-weight: 500; 
-                              text-transform: uppercase; 
-                              text-align: center;'>
+                <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
+                    <p style='font-size: 13px; letter-spacing: 8px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
                         {ruta}
                     </p>
                 </div>
             """, unsafe_allow_html=True)
     
         with c3:
-            # Sub-distribución para que el input y el botón respiren
-            # Agregamos una columna de espacio muy pequeña en medio [3, 0.2, 1]
-            col_search, col_space, col_popover = st.columns([3, 0.2, 1], vertical_alignment="center")
-            
-            with col_search:
-                st.text_input("Buscar", placeholder="🔍 BUSCAR...", label_visibility="collapsed", key="main_search")
+            # INPUT DE BÚSQUEDA INDEPENDIENTE
+            st.text_input("Buscar", placeholder="🔍 BUSCAR...", label_visibility="collapsed", key="main_search")
+    
+        with c4:
+            # BOTÓN POPOVER INDEPENDIENTE (Alineado a la derecha por naturaleza de la columna)
+            with st.popover("☰", use_container_width=True):
+                st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
                 
-            with col_popover:
-                # Quitamos el use_container_width para que el botón no se deforme
-                with st.popover("☰"):
-                    st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>NAVEGACIÓN</p>", unsafe_allow_html=True)
+                usuario = st.session_state.get("usuario_activo", "")
+    
+                # --- SECCIONES SEGÚN USUARIO ---
+                if usuario != "JMoreno":
+                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
+                        st.rerun()
                     
-                    # Identificamos quién está operando
-                    usuario = st.session_state.get("usuario_activo", "")
-    
-                    # --- SECCIONES RESTRINGIDAS (J Moreno NO las ve) ---
-                    if usuario != "JMoreno":
-                        # DASHBOARD
-                        if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                            st.session_state.menu_main = "DASHBOARD"
-                            st.session_state.menu_sub = "GENERAL"
-                            st.rerun()
-                        
-                        # SEGUIMIENTO
-                        with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                            for s in ["ALERTAS", "GANTT", "QUEJAS"]:
-                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                                if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
-                                    st.session_state.menu_main = "SEGUIMIENTO"
-                                    st.session_state.menu_sub = s
-                                    st.rerun()
-    
-                        # REPORTES
-                        with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                            opciones_reportes = ["APQ", "OPS", "OTD", "SAMPLES"]
-                            for s in opciones_reportes:
-                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                                if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
-                                    st.session_state.menu_main = "REPORTES"
-                                    st.session_state.menu_sub = s
-                                    st.rerun()
-    
-                    # --- SECCIÓN FORMATOS ---
-                    with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        if usuario == "JMoreno":
-                            formatos_visibles = ["SALIDA DE PT"]
-                        else:
-                            formatos_visibles = ["SALIDA DE PT", "CONTRARRECIBOS"]
-    
-                        for s in formatos_visibles:
+                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                        for s in ["ALERTAS", "GANTT", "QUEJAS"]:
                             sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
-                                st.session_state.menu_main = "FORMATOS"
+                            if st.button(sub_label, use_container_width=True, key=f"pop_sub_{s}"):
+                                st.session_state.menu_main = "SEGUIMIENTO"
                                 st.session_state.menu_sub = s
                                 st.rerun()
     
-                    # --- SECCIÓN HUB LOG ---
-                    if usuario != "JMoreno":
-                        with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                            for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
-                                sub_label = f"» {s}" if st.session_state.menu_sub == s else s
-                                if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
-                                    st.session_state.menu_main = "HUB LOG"
-                                    st.session_state.menu_sub = s
-                                    st.rerun()
+                    with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                        for s in ["APQ", "OPS", "OTD", "SAMPLES"]:
+                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(sub_label, use_container_width=True, key=f"pop_rep_{s}"):
+                                st.session_state.menu_main = "REPORTES"
+                                st.session_state.menu_sub = s
+                                st.rerun()
     
-        with c4:
-            # Columna de aire para que el botón no toque el borde de la pantalla
-            st.empty()
+                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                    formatos = ["SALIDA DE PT"] if usuario == "JMoreno" else ["SALIDA DE PT", "CONTRARRECIBOS"]
+                    for s in formatos:
+                        sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(sub_label, use_container_width=True, key=f"pop_for_{s}"):
+                            st.session_state.menu_main = "FORMATOS"
+                            st.session_state.menu_sub = s
+                            st.rerun()
     
+                if usuario != "JMoreno":
+                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
+                            sub_label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(sub_label, use_container_width=True, key=f"pop_hub_{s}"):
+                                st.session_state.menu_main = "HUB LOG"
+                                st.session_state.menu_sub = s
+                                st.rerun()
+    
+    # Línea divisoria final
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
@@ -3434,6 +3410,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
