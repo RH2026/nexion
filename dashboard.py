@@ -1072,6 +1072,7 @@ else:
                         tipo_mov = st.radio(
                             "Selecciona el flujo:",
                             ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
+                            index=2,
                             horizontal=True,
                             key=f"tipo_mov_{mes_sel}"
                         )
@@ -1112,7 +1113,7 @@ else:
                                 orientation='h',
                                 marker=dict(
                                     color=df_part['PORCENTAJE'],
-                                    colorscale=['#1a2432', '#00FFAA']
+                                    colorscale=['#1a2432', '#1cc88a']
                                 ),
                                 text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
                                 textposition='outside',
@@ -3432,6 +3433,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
