@@ -294,6 +294,58 @@ div[data-baseweb="tag"] svg {{
 }}
 
 /* Valor seleccionado – Selectbox */
+
+/* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
+
+/* 1. Altura y alineación de la caja principal */
+div[data-baseweb="select"] > div:first-child {{
+    height: 35px !important; 
+    min-height: 35px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+}}
+
+/* 2. Ajuste del texto interno y el cursor */
+div[data-baseweb="select"] div {{
+    font-size: 12px !important;
+    color: {vars_css['text']} !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+}}
+
+/* 3. El Menú Desplegable (La lista de opciones de tu foto) */
+div[data-baseweb="popover"] ul {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    padding: 0 !important;
+}}
+
+/* 4. Cada opción individual de la lista */
+div[data-baseweb="popover"] li {{
+    background-color: transparent !important;
+    color: {vars_css['text']} !important;
+    font-size: 11px !important;
+    padding: 8px 12px !important;
+    text-transform: uppercase !important;
+    transition: background 0.2s ease !important;
+}}
+
+/* 5. Hover en las opciones (Color Aqua para resaltar) */
+div[data-baseweb="popover"] li:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+}}
+
+/* 6. Quitar el resplandor azul de Streamlit al hacer click */
+div[data-baseweb="select"]:focus-within {{
+    border-color: #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+}}
+
 div[data-baseweb="select"] > div {{
     background-color: rgba(113, 128, 150, 0.15) !important;
     border: 1px solid #718096 !important;
@@ -3507,6 +3559,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
