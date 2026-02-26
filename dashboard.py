@@ -194,6 +194,7 @@ div.stButton > button:hover {{
 div[data-baseweb="input"] {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
+    height: 35px !important; /* <--- AGREGA ESTO (Ajusta el número a tu gusto) */
     border-radius: 4px !important;
     transition: all 0.3s ease-in-out !important;
 }}
@@ -210,7 +211,8 @@ div[data-baseweb="input"]:focus-within {{
     color: {vars_css['text']} !important; 
     border: none !important; /* Quitamos el borde de aquí para que no choque */
     box-shadow: none !important; 
-    height: 40px !important; 
+    height: 35px !important;
+    line-height: 35px !important; /* <--- PARA CENTRAR EL TEXTO VERTICALMENTE */
     text-align: center !important; 
     letter-spacing: 2px; 
     outline: none !important;
@@ -3505,6 +3507,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
