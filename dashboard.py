@@ -367,7 +367,7 @@ button[kind="secondary"] {{
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
 
-    height: 40px !important;
+    height: 35px !important;
     min-height: 32px !important;
     padding: 0 12px !important;
     font-size: 11px !important;
@@ -3507,6 +3507,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
