@@ -538,35 +538,38 @@ def login_screen():
     
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        # Usamos una clase personalizada para asegurar que el texto se vea bien en el centro
         st.markdown("<h3 style='text-align: center; margin-bottom: 30px;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
         
         with st.container():
             user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
             pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
             
-            # Espacio extra antes del botón
             st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
             
             if st.button("VERIFY IDENTITY"):
                 lista_usuarios = st.secrets.get("usuarios", {})
                 
+                # VALIDACIÓN EXITOSA
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
                     st.session_state.usuario_activo = user_input
                     
-                    # REDIRECCIÓN ESPECÍFICA
                     if user_input == "JMoreno":
                         st.session_state.menu_main = "FORMATOS"
                         st.session_state.menu_sub = "SALIDA DE PT"
                     else:
-                        # Forzamos que cualquier otro usuario entre a DASHBOARD
                         st.session_state.menu_main = "DASHBOARD"
                         st.session_state.menu_sub = "GENERAL"
                     
                     st.success(f"BIENVENIDO!, {user_input.upper()}")
                     time.sleep(1) 
                     st.rerun()
+                
+                # AQUÍ ESTÁ EL CAMBIO: Manejo del error
+                else:
+                    st.error("🚨 ERROR FATAL: ACCESS DENIED")
+                    st.toast("Credenciales incorrectas. Intenta de nuevo.", icon="🚫")
+
 # ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
 
 # 1. ¿Falta mostrar el Splash?
@@ -3591,6 +3594,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
