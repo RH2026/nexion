@@ -3236,7 +3236,12 @@ else:
 
     
             elif st.session_state.menu_sub == "DATA MANAGEMENT":
+                #1. Definir la zona horaria de Guadalajara
+                tz_gdl = pytz.timezone('America/Mexico_City')
+                
+                # ── ESTADO INICIAL ──
                 st.info("Estado de Servidores : Online | Nexion Core: Active")
+                
                 # ── ESTILO VISUAL PRO (CSS) ──
                 st.markdown("""
                     <style>
@@ -3256,12 +3261,12 @@ else:
                     }
                     </style>
                 """, unsafe_allow_html=True)
-                                   
+                
                 # ── CONFIGURACIÓN DE SEGURIDAD ──
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
                 NOMBRE_EXCLUSIVO = "Matriz_Excel_Dashboard.csv"
-    
+                
                 # ── DASHBOARD DE ESTADO RÁPIDO ──
                 c1, c2, c3 = st.columns(3)
                 with c1:
@@ -3271,9 +3276,9 @@ else:
                 with c3:
                     color_token = "#2ECC71" if TOKEN else "#E74C3C"
                     st.markdown(f'<div class="status-card"><p style="margin:0; font-size:10px;">TOKEN STATUS</p><p style="margin:0; color:{color_token}; font-weight:bold;">{"ACTIVO" if TOKEN else "ERROR"}</p></div>', unsafe_allow_html=True)
-    
+                
                 st.write("---")
-    
+                
                 # ── ÁREA DE CARGA EXCLUSIVA (GITHUB) ──
                 with st.container(border=True):
                     st.markdown("#### :material/security: Zona de Carga Crítica")
@@ -3296,8 +3301,10 @@ else:
                                 except:
                                     st.error("No se pudo generar la vista previa del CSV.")
                 
+                            # --- CORRECCIÓN: HORA REAL GDL PARA MENSAJE ---
+                            hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
                             commit_msg = st.text_input("Mensaje de Sincronización", 
-                                                     value=f"Update Master {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+                                                     value=f"Update Master {hora_actual_gdl}")
                 
                             if st.button(":material/cloud_sync: SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
                                 with st.status("Iniciando conexión con GitHub...", expanded=True) as status:
@@ -3332,7 +3339,11 @@ else:
                         commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
                         last_commit = commits[0]
                         
-                        st.write(f"**Última actualización:** {last_commit.commit.author.date.strftime('%d/%m/%Y %H:%M')}")
+                        # --- CORRECCIÓN: CONVERTIR UTC DE GITHUB A GDL ---
+                        fecha_utc = last_commit.commit.author.date.replace(tzinfo=pytz.utc)
+                        fecha_gdl = fecha_utc.astimezone(tz_gdl)
+                        
+                        st.write(f"**Última actualización:** {fecha_gdl.strftime('%d/%m/%Y %H:%M')}")
                         st.write(f"**Modificado por:** {last_commit.commit.author.name} :material/verified_user:")
                         st.write(f"**Nota:** {last_commit.commit.message}")
                         st.code(f"ID Registro: {last_commit.sha[:7]}", language="bash")
@@ -3559,6 +3570,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
