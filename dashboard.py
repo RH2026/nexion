@@ -210,7 +210,7 @@ div[data-baseweb="input"]:focus-within {{
     color: {vars_css['text']} !important; 
     border: none !important; /* Quitamos el borde de aquí para que no choque */
     box-shadow: none !important; 
-    height: 45px !important; 
+    height: 40px !important; 
     text-align: center !important; 
     letter-spacing: 2px; 
     outline: none !important;
@@ -3505,6 +3505,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
