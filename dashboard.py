@@ -2761,7 +2761,26 @@ else:
                         "CANTIDAD": st.column_config.TextColumn("CANTIDAD", width="small")
                     }
                 )
-
+                # 1. Definimos el estilo CSS
+                # Usamos el atributo 'key' para ser específicos (st-key-coment_in_pt)
+                custom_css = """
+                <style>
+                    div[data-testid="stTextArea"] > div:nth-child(2) {
+                        background-color: #506874; /* Cambia este color por el que quieras */
+                        border-radius: 10px;
+                    }
+                    
+                    /* Si quieres cambiar el color del texto escrito */
+                    textarea[id^="st-key-coment_in_pt"] {
+                        color: #31333F;
+                        background-color: #e0e0e0; /* Color del fondo interno */
+                    }
+                </style>
+                """
+                
+                # 2. Inyectamos el CSS
+                st.markdown(custom_css, unsafe_allow_html=True)
+                                
                 # --- CAMPO DE COMENTARIOS DEBAJO DE LA TABLA (INTERFAZ) ---
                 coment_val = st.text_area(":material/chat: COMENTARIOS ADICIONALES", placeholder="Escribe aquí cualquier observación...", key="coment_in_pt")
                 
@@ -3570,6 +3589,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
