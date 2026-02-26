@@ -2762,7 +2762,7 @@ else:
                     }
                 )
                 # Definimos el color que quieres (puedes cambiarlo aquí)
-                color_fondo = "#FFE4E1"  # Un rosa claro, por ejemplo
+                color_fondo = "#506874"  # Un rosa claro, por ejemplo
                 
                 st.markdown(f"""
                     <style>
@@ -3591,6 +3591,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
