@@ -567,9 +567,8 @@ def login_screen():
                 
                 # AQUÍ ESTÁ EL CAMBIO: Manejo del error
                 else:
-                    st.error("🚨 ERROR FATAL: ACCESS DENIED")
-                    st.toast("Credenciales incorrectas. Intenta de nuevo.", icon="🚫")
-
+                    st.error("ERROR: ACCESS DENIED")
+                    
 # ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
 
 # 1. ¿Falta mostrar el Splash?
@@ -3594,6 +3593,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
