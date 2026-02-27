@@ -630,35 +630,41 @@ else:
             
             query = st.text_input(
                 "Buscar", 
-                placeholder="🔍 BUSCAR...", 
+                placeholder="🔍 BUSCAR POR PEDIDO, GUÍA O CLIENTE...", 
                 label_visibility="collapsed", 
                 key=key_actual
             )
             
             if query and df_matriz is not None:
+                # BÚSQUEDA INTELIGENTE: Busca en Pedido, Guía, No. Cliente o Nombre
+                # Convertimos a string para evitar errores de tipo
                 res = df_matriz[
-                    (df_matriz['NÚMERO DE GUÍA'].astype(str) == query) | 
-                    (df_matriz['NÚMERO DE PEDIDO'].astype(str) == query)
+                    (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
+                    (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
+                    (df_matriz['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
+                    (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
                 ]
+                
                 if not res.empty:
                     st.session_state.busqueda_activa = True
-                    st.session_state.resultado_busqueda = res.iloc[0]
+                    # GUARDAMOS TODOS LOS RESULTADOS, no solo el primero
+                    st.session_state.resultado_busqueda = res
                 else:
-                    st.toast("No se encontró registro", icon="🔍")
+                    st.session_state.busqueda_activa = False
+                    st.toast("No se encontró ningún registro", icon="🔍")
     
         with c4:
-            # BOTÓN POPOVER (CON MÁS ESPACIO)
+            # BOTÓN POPOVER (CON MÁS ESPACIO) - Mantenemos tu lógica igual
             with st.popover("☰ NAVEGACIÓN", use_container_width=True):
                 st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
                 usuario = st.session_state.get("usuario_activo", "")
     
-                # --- SECCIONES DASHBOARD / SEGUIMIENTO / REPORTES ---
                 if usuario != "JMoreno":
                     if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                         st.session_state.menu_main = "DASHBOARD"
                         st.session_state.menu_sub = "GENERAL"
-                        st.session_state.busqueda_activa = False # Limpia búsqueda al navegar
+                        st.session_state.busqueda_activa = False
                         st.rerun()
                     
                     with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
@@ -679,7 +685,6 @@ else:
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
     
-                # --- SECCIÓN FORMATOS ---
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
                     formatos = ["SALIDA DE PT"] if usuario == "JMoreno" else ["SALIDA DE PT", "CONTRARRECIBOS"]
                     for s in formatos:
@@ -690,7 +695,6 @@ else:
                             st.session_state.busqueda_activa = False
                             st.rerun()
     
-                # --- SECCIÓN HUB LOG ---
                 if usuario != "JMoreno":
                     with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
                         for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
@@ -701,57 +705,60 @@ else:
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
     
-    # ── RENDERIZADO DE CONSULTA "PERRONA" ──────────────────────────────────────
+    # ── RENDERIZADO DE CONSULTA "PERRONA" (CON SOPORTE MULTI-RESULTADO) ──────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
-        d = st.session_state.resultado_busqueda
-        st.markdown(f"""
-            <div class="kpi-ruta-container">
-                <div class="kpi-ruta-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <span class="kpi-tag">DETALLES DE OPERACIÓN</span>
-                        <span style="color:#00FFAA; font-weight:800; font-size:20px;">{d['NÚMERO DE PEDIDO']}</span>
-                    </div>
-                    <div class="kpi-route-flow">
-                        <div class="city">GDL</div>
-                        <div class="arrow">→</div>
-                        <div class="city">{d['DESTINO']}</div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
-                        <div>
-                            <p class="data-section-header">CLIENTE</p>
-                            <p style="font-size:14px; margin:0;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
-                            <p style="font-size:11px; color:{vars_css['sub']}; opacity:0.8;">{d['DOMICILIO']}</p>
+        resultados = st.session_state.resultado_busqueda
+        
+        # Si hay muchos resultados, avisamos cuántos son
+        if len(resultados) > 1:
+            st.markdown(f"<p style='color:#00FFAA; font-size:12px; font-weight:bold;'>SISTEMA: SE ENCONTRARON {len(resultados)} COINCIDENCIAS</p>", unsafe_allow_html=True)
+
+        # ITEAMOS sobre cada fila encontrada
+        for index, d in resultados.iterrows():
+            st.markdown(f"""
+                <div class="kpi-ruta-container" style="margin-bottom: 20px;">
+                    <div class="kpi-ruta-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <span class="kpi-tag">DETALLES DE OPERACIÓN</span>
+                            <span style="color:#00FFAA; font-weight:800; font-size:20px;">{d['NÚMERO DE PEDIDO']}</span>
                         </div>
-                        <div>
-                            <p class="data-section-header">LOGÍSTICA</p>
-                            <p style="font-size:12px; margin:0;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
-                            <p style="font-size:12px; margin:0;">FLETERA: <b>{d['FLETERA']}</b></p>
-                            <p style="font-size:12px; margin:0;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
+                        <div class="kpi-route-flow">
+                            <div class="city">GDL</div>
+                            <div class="arrow">→</div>
+                            <div class="city">{d['DESTINO']}</div>
                         </div>
-                        <div>
-                            <p class="data-section-header">TIEMPOS</p>
-                            <p style="font-size:12px; margin:0;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
-                            <p style="font-size:12px; margin:0; color:#00FFAA;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
-                        </div>
-                        <div>
-                            <p class="data-section-header">CARGA</p>
-                            <p style="font-size:12px; margin:0;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
-                            <p style="font-size:11px; color:{vars_css['sub']};">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                            <div>
+                                <p class="data-section-header">CLIENTE</p>
+                                <p style="font-size:14px; margin:0;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
+                                <p style="font-size:11px; color:{vars_css['sub']}; opacity:0.8;">{d['DOMICILIO']}</p>
+                            </div>
+                            <div>
+                                <p class="data-section-header">LOGÍSTICA</p>
+                                <p style="font-size:12px; margin:0;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
+                                <p style="font-size:12px; margin:0;">FLETERA: <b>{d['FLETERA']}</b></p>
+                                <p style="font-size:12px; margin:0;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
+                            </div>
+                            <div>
+                                <p class="data-section-header">TIEMPOS</p>
+                                <p style="font-size:12px; margin:0;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
+                                <p style="font-size:12px; margin:0; color:#00FFAA;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                            </div>
+                            <div>
+                                <p class="data-section-header">CARGA</p>
+                                <p style="font-size:12px; margin:0;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
+                                <p style="font-size:11px; color:{vars_css['sub']};">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
+        # El botón de cerrar se queda al final de todos los resultados
         if st.button("✖️ CERRAR CONSULTA", use_container_width=True):
-            # 1. Apagamos la búsqueda
             st.session_state.busqueda_activa = False
             st.session_state.resultado_busqueda = None
-            
-            # 2. CAMBIAMOS LA VERSIÓN: Esto obliga a Streamlit a renderizar 
-            # un input vacío porque la 'key' anterior deja de existir.
             st.session_state.search_key_version += 1
-            
             st.rerun()
 
     # Línea decorativa final
@@ -3597,6 +3604,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
