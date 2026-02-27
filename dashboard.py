@@ -630,7 +630,7 @@ else:
             
             query = st.text_input(
                 "Buscar", 
-                placeholder="🔍 BUSCAR POR PEDIDO, GUÍA, CLIENTE O PRODUCTO...", 
+                placeholder="🔍 Buscar...", 
                 label_visibility="collapsed", 
                 key=key_actual
             )
@@ -3667,6 +3667,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
