@@ -625,41 +625,59 @@ else:
             """, unsafe_allow_html=True)
     
         with c3:
-            # Generamos una key única basada en la versión actual
+            # Generamos una key única basada en la versión actual para el input
             key_actual = f"main_search_v{st.session_state.search_key_version}"
             
             query = st.text_input(
                 "Buscar", 
-                placeholder="🔍 BUSCAR POR PEDIDO, GUÍA O CLIENTE...", 
+                placeholder="🔍 BUSCAR POR PEDIDO, GUÍA, CLIENTE O PRODUCTO...", 
                 label_visibility="collapsed", 
                 key=key_actual
             )
             
-            if query and df_matriz is not None:
-                # BÚSQUEDA INTELIGENTE: Busca en Pedido, Guía, No. Cliente o Nombre
-                # Convertimos a string para evitar errores de tipo
-                res = df_matriz[
-                    (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
-                    (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
-                    (df_matriz['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
-                    (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
-                ]
+            if query:
+                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz)
+                res_ops = pd.DataFrame()
+                if df_matriz is not None:
+                    res_ops = df_matriz[
+                        (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
+                        (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
+                        (df_matriz['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
+                        (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
+                    ]
                 
-                if not res.empty:
+                # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
+                res_inv = pd.DataFrame()
+                try:
+                    df_inv_temp = pd.read_csv("inventario.csv")
+                    res_inv = df_inv_temp[
+                        (df_inv_temp['CODIGO'].astype(str).str.contains(query, case=False, na=False)) |
+                        (df_inv_temp['DESCRIPCION'].astype(str).str.contains(query, case=False, na=False))
+                    ]
+                except Exception:
+                    # Si el archivo no existe o falla, no hacemos nada para no romper la app
+                    pass
+        
+                # Lógica de asignación de resultados
+                if not res_ops.empty:
                     st.session_state.busqueda_activa = True
-                    # GUARDAMOS TODOS LOS RESULTADOS, no solo el primero
-                    st.session_state.resultado_busqueda = res
+                    st.session_state.tipo_resultado = "OPERACION"
+                    st.session_state.resultado_busqueda = res_ops
+                elif not res_inv.empty:
+                    st.session_state.busqueda_activa = True
+                    st.session_state.tipo_resultado = "INVENTARIO"
+                    st.session_state.resultado_busqueda = res_inv
                 else:
                     st.session_state.busqueda_activa = False
                     st.toast("No se encontró ningún registro", icon="🔍")
-    
+        
         with c4:
-            # BOTÓN POPOVER (CON MÁS ESPACIO) - Mantenemos tu lógica igual
+            # --- BOTÓN POPOVER (TU NAVEGACIÓN ORIGINAL) ---
             with st.popover("☰ NAVEGACIÓN", use_container_width=True):
                 st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
                 usuario = st.session_state.get("usuario_activo", "")
-    
+        
                 if usuario != "JMoreno":
                     if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                         st.session_state.menu_main = "DASHBOARD"
@@ -675,7 +693,7 @@ else:
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
-    
+        
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                         for s in ["APQ", "OPS", "OTD", "SAMPLES"]:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -684,7 +702,7 @@ else:
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
-    
+        
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
                     formatos = ["SALIDA DE PT"] if usuario == "JMoreno" else ["SALIDA DE PT", "CONTRARRECIBOS"]
                     for s in formatos:
@@ -694,7 +712,7 @@ else:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             st.rerun()
-    
+        
                 if usuario != "JMoreno":
                     with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
                         for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
@@ -704,100 +722,112 @@ else:
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
-    
-    # ── RENDERIZADO DE CONSULTA "INTELIGENTE" ──────────────────────────────────────
-    if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
-        resultados = st.session_state.resultado_busqueda
-        total = len(resultados)
-        accent_color = "#1cc88a"
-
-        # --- BOTÓN CERRAR DISCRETO Y ARRIBA ---
-        col_espacio, col_cerrar = st.columns([0.85, 0.15])
-        with col_cerrar:
-            if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
-                st.session_state.busqueda_activa = False
-                st.session_state.resultado_busqueda = None
-                st.session_state.search_key_version += 1
-                st.rerun()
-
-        # CASO A: RESULTADO ÚNICO
-        if total == 1:
-            d = resultados.iloc[0]
-            st.markdown(f"""
-                <div class="kpi-ruta-container">
-                    <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(28,200,138,0.2); position: relative;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
-                            <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
-                        </div>
-                        <div class="kpi-route-flow">
-                            <div class="city" style="color: white; font-weight:bold;">GDL</div>
-                            <div class="arrow" style="color: {accent_color};">→</div>
-                            <div class="city" style="color: white; font-weight:bold;">{d['DESTINO']}</div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
-                            <div>
-                                <p class="data-section-header" style="color:{accent_color}; opacity:1; font-weight:800; letter-spacing:1px; margin-bottom:5px;">CLIENTE</p>
-                                <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
-                                <p style="font-size:11px; color:#E0E0E0; opacity:0.9;">{d['DOMICILIO']}</p>
-                            </div>
-                            <div>
-                                <p class="data-section-header" style="color:{accent_color}; opacity:1; font-weight:800; letter-spacing:1px; margin-bottom:5px;">LOGÍSTICA</p>
-                                <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
-                                <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d['FLETERA']}</b></p>
-                                <p style="font-size:12px; margin:0; color:white;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
-                            </div>
-                            <div>
-                                <p class="data-section-header" style="color:{accent_color}; opacity:1; font-weight:800; letter-spacing:1px; margin-bottom:5px;">TIEMPOS</p>
-                                <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
-                                <p style="font-size:12px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
-                            </div>
-                            <div>
-                                <p class="data-section-header" style="color:{accent_color}; opacity:1; font-weight:800; letter-spacing:1px; margin-bottom:5px;">CARGA</p>
-                                <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
-                                <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
+        
+        # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
+        if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
+            resultados = st.session_state.resultado_busqueda
+            total = len(resultados)
+            tipo = st.session_state.get("tipo_resultado", "OPERACION")
+            accent_color = "#1cc88a"
+            inv_color = "#36b9cc" # Color cyan para diferenciar inventario
+        
+            # Botón Cerrar discreto
+            col_espacio, col_cerrar = st.columns([0.85, 0.15])
+            with col_cerrar:
+                if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
+                    st.session_state.busqueda_activa = False
+                    st.session_state.resultado_busqueda = None
+                    st.session_state.search_key_version += 1
+                    st.rerun()
+        
+            # --- RENDER PARA INVENTARIO ---
+            if tipo == "INVENTARIO":
+                st.markdown(f"<p style='color:{inv_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>EXISTENCIAS EN INVENTARIO ({total})</p>", unsafe_allow_html=True)
+                for index, i in resultados.iterrows():
+                    st.markdown(f"""
+                        <div style="background: rgba(54,185,204,0.07); border-left: 4px solid {inv_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
+                            <span style="color:{inv_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CÓDIGO / SKU</span>
+                            <span style="font-size:16px; font-weight:bold; color:white;">{i['CODIGO']}</span>
+                            <div style="margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px;">
+                                <span style="font-size:13px; color:#E0E0E0;">{i['DESCRIPCION']}</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-
-        # CASO B: VARIOS RESULTADOS (Render Compacto con Estatus agregado)
-        else:
-            st.markdown(f"<p style='color:{accent_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
-            for index, d in resultados.iterrows():
-                # Validación de estatus para el render compacto
-                status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
-                
-                st.markdown(f"""
-                    <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {accent_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex: 1;">
-                                <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">PEDIDO</span>
-                                <span style="font-size:15px; font-weight:bold; color:white;">{d['NÚMERO DE PEDIDO']}</span>
-                            </div>
-                            <div style="flex: 2;">
-                                <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CLIENTE</span>
-                                <span style="font-size:13px; color:white; font-weight:600;">{d['NOMBRE DEL CLIENTE']}</span>
-                            </div>
-                            <div style="flex: 1; text-align: right;">
-                                <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">GUÍA</span>
-                                <span style="font-size:13px; color:#FFFFFF; font-weight:bold;">{d['NÚMERO DE GUÍA']}</span>
+                    """, unsafe_allow_html=True)
+        
+            # --- RENDER PARA OPERACIONES (Tus tarjetas originales) ---
+            else:
+                if total == 1:
+                    d = resultados.iloc[0]
+                    st.markdown(f"""
+                        <div class="kpi-ruta-container">
+                            <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(28,200,138,0.2); position: relative;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
+                                    <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
+                                </div>
+                                <div class="kpi-route-flow">
+                                    <div class="city" style="color: white; font-weight:bold;">GDL</div>
+                                    <div class="arrow" style="color: {accent_color};">→</div>
+                                    <div class="city" style="color: white; font-weight:bold;">{d['DESTINO']}</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                                    <div>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px;">CLIENTE</p>
+                                        <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
+                                        <p style="font-size:11px; color:#E0E0E0; opacity:0.9;">{d['DOMICILIO']}</p>
+                                    </div>
+                                    <div>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px;">LOGÍSTICA</p>
+                                        <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
+                                        <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d['FLETERA']}</b></p>
+                                    </div>
+                                    <div>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px;">TIEMPOS</p>
+                                        <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
+                                        <p style="font-size:12px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                                    </div>
+                                    <div>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px;">CARGA</p>
+                                        <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
+                                        <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
-                            <span style="font-size:11px; color:#FFFFFF;">📍 <b>{d['DESTINO']}</b></span>
-                            <span style="font-size:11px; color:#FFFFFF;">📅 ENVÍO: <b>{d['FECHA DE ENVÍO']}</b></span>
-                            <div style="text-align: right;">
-                                <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 {d['CANTIDAD DE CAJAS']} CJ | </span>
-                                <span style="font-size:10px; color:#FFFFFF; opacity:0.8; font-style: italic;">{status_text}</span>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"<p style='color:{accent_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
+                    for index, d in resultados.iterrows():
+                        status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
+                        st.markdown(f"""
+                            <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {accent_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="flex: 1;">
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">PEDIDO</span>
+                                        <span style="font-size:15px; font-weight:bold; color:white;">{d['NÚMERO DE PEDIDO']}</span>
+                                    </div>
+                                    <div style="flex: 2;">
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CLIENTE</span>
+                                        <span style="font-size:13px; color:white; font-weight:600;">{d['NOMBRE DEL CLIENTE']}</span>
+                                    </div>
+                                    <div style="flex: 1; text-align: right;">
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">GUÍA</span>
+                                        <span style="font-size:13px; color:#FFFFFF; font-weight:bold;">{d['NÚMERO DE GUÍA']}</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
+                                    <span style="font-size:11px; color:#FFFFFF;">📍 <b>{d['DESTINO']}</b></span>
+                                    <span style="font-size:11px; color:#FFFFFF;">📅 ENVÍO: <b>{d['FECHA DE ENVÍO']}</b></span>
+                                    <div style="text-align: right;">
+                                        <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 {d['CANTIDAD DE CAJAS']} CJ | </span>
+                                        <span style="font-size:10px; color:#FFFFFF; opacity:0.8; font-style: italic;">{status_text}</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-    # Línea decorativa final
-    st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
+        
+        # Línea decorativa final
+        st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
@@ -3639,6 +3669,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
