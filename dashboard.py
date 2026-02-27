@@ -709,20 +709,28 @@ else:
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
-        
-        # Color principal elegido
         accent_color = "#1cc88a"
-        
-        # CASO A: RESULTADO ÚNICO (Render Grande - Máximo Detalle)
+
+        # --- BOTÓN CERRAR DISCRETO Y ARRIBA ---
+        # Usamos columnas para mandarlo a la derecha y que sea pequeño
+        col_espacio, col_cerrar = st.columns([0.85, 0.15])
+        with col_cerrar:
+            if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
+                st.session_state.busqueda_activa = False
+                st.session_state.resultado_busqueda = None
+                st.session_state.search_key_version += 1
+                st.rerun()
+
+        # CASO A: RESULTADO ÚNICO
         if total == 1:
             d = resultados.iloc[0]
             st.markdown(f"""
                 <div class="kpi-ruta-container">
-                    <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(246,194,62,0.3);">
+                    <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(28,200,138,0.2); position: relative;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
-                        <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
-                    </div>
+                            <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
+                            <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
+                        </div>
                         <div class="kpi-route-flow">
                             <div class="city" style="color: white; font-weight:bold;">GDL</div>
                             <div class="arrow" style="color: {accent_color};">→</div>
@@ -755,10 +763,9 @@ else:
                 </div>
             """, unsafe_allow_html=True)
 
-        # CASO B: VARIOS RESULTADOS (Render Compacto - Lista Inteligente)
+        # CASO B: VARIOS RESULTADOS
         else:
             st.markdown(f"<p style='color:{accent_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
-            
             for index, d in resultados.iterrows():
                 st.markdown(f"""
                     <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {accent_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
@@ -783,14 +790,6 @@ else:
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
-
-        # Botón para limpiar siempre visible al final
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("✖️ CERRAR CONSULTA", use_container_width=True):
-            st.session_state.busqueda_activa = False
-            st.session_state.resultado_busqueda = None
-            st.session_state.search_key_version += 1
-            st.rerun()
 
     # Línea decorativa final
     st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; margin:5px 0 15px; opacity:0.2;'>", unsafe_allow_html=True)
@@ -3635,6 +3634,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
