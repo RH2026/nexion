@@ -27,6 +27,8 @@ from fpdf import FPDF
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 
+import google.generativeai as genai
+
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
@@ -3550,6 +3552,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
