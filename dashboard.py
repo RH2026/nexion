@@ -3460,16 +3460,15 @@ else:
             
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
-                # --- 1. CONFIGURACIÓN DE SEGURIDAD (SECRETS) ---
-                # --- 1. CONFIGURACIÓN DE SEGURIDAD ---
+                # --- 1. CONFIGURACIÓN ---
                 GITHUB_USER = "RH2026"
                 GITHUB_REPO = "nexion"
                 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
                 
-                # Configuración de Gemini
+                # Configurar API Key
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 
-                # --- 2. FUNCIÓN PARA LEER GITHUB ---
+                # --- 2. FUNCIÓN GITHUB ---
                 def leer_csv_github(nombre_archivo):
                     try:
                         url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{nombre_archivo}"
@@ -3485,7 +3484,6 @@ else:
                 
                 # --- 3. INTERFAZ ---
                 st.set_page_config(page_title="Nexion AI", page_icon="🤖")
-                
                 st.markdown("<h1 style='text-align: center; color: #4e73df;'>🤖 NEXION AI CENTRAL</h1>", unsafe_allow_html=True)
                 st.divider()
                 
@@ -3496,33 +3494,39 @@ else:
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
                 
-                # --- 4. EL CHAT (CON EL NOMBRE DE MODELO CORREGIDO) ---
-                if pregunta := st.chat_input("¿Qué quieres saber de tus matrices, amor?"):
+                # --- 4. CHAT ---
+                if pregunta := st.chat_input("Escribe tu duda aquí, amor..."):
                     st.session_state.messages.append({"role": "user", "content": pregunta})
                     with st.chat_message("user"):
                         st.markdown(pregunta)
                 
-                    with st.spinner("Consultando datos..."):
+                    with st.spinner("Buscando en tus matrices de JYPESA..."):
                         try:
-                            # Cargamos solo lo básico para probar
+                            # Seleccionamos el modelo flash que es el más compatible hoy
+                            # Probamos con el nombre que la API v1beta espera
+                            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                            
+                            # Carga rápida de contexto
                             df_inv = leer_csv_github("inventario.csv")
-                            
-                            contexto = "Eres la asistente de JYPESA. Responde a Rigoberto de forma amable."
+                            datos = "Contexto: Eres asistente de JYPESA."
                             if df_inv is not None:
-                                contexto += f"\nInventario actual: {df_inv.tail(5).to_string()}"
+                                datos += f"\nInventario: {df_inv.tail(3).to_string()}"
                 
-                            # USAMOS EL NOMBRE TÉCNICO COMPLETO PARA EVITAR EL 404
-                            model = genai.GenerativeModel('models/gemini-pro') 
-                            
-                            response = model.generate_content(f"{contexto}\n\nPregunta: {pregunta}")
+                            # Generar respuesta
+                            response = model.generate_content(f"{datos}\n\nPregunta: {pregunta}")
                             
                             with st.chat_message("assistant"):
                                 st.markdown(response.text)
                             st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
                         except Exception as e:
-                            # Si vuelve a fallar, nos dirá el error exacto aquí
-                            st.error(f"Lo siento amor, hubo este error: {str(e)}")
+                            # Si el 'gemini-1.5-flash-latest' falla, intentamos con el nombre simple
+                            try:
+                                model_alt = genai.GenerativeModel('gemini-1.5-flash')
+                                response = model_alt.generate_content(pregunta)
+                                st.markdown(response.text)
+                            except:
+                                st.error(f"Error técnico: {str(e)}")
                           
             
                
@@ -3537,6 +3541,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
