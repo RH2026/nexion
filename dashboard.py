@@ -3536,7 +3536,7 @@ else:
                 
                         except Exception as e:
                             st.error("Corazón, hubo un detalle con la conexión a Gemini. Revisa tu API Key.")
-                                st.divider()
+                          
             
                
     
@@ -3550,6 +3550,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
