@@ -711,7 +711,7 @@ else:
         total = len(resultados)
         
         # Color principal elegido
-        accent_color = "#2ECC71"
+        accent_color = "#AFFF00"
         
         # CASO A: RESULTADO ÚNICO (Render Grande - Máximo Detalle)
         if total == 1:
@@ -720,9 +720,9 @@ else:
                 <div class="kpi-ruta-container">
                     <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(246,194,62,0.3);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <span class="kpi-tag" style="color: {accent_color}; border: 1px solid {accent_color}; font-weight:800;">DETALLES DE OPERACIÓN</span>
-                            <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
-                        </div>
+                        <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
+                        <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
+                    </div>
                         <div class="kpi-route-flow">
                             <div class="city" style="color: white; font-weight:bold;">GDL</div>
                             <div class="arrow" style="color: {accent_color};">→</div>
@@ -3635,6 +3635,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
