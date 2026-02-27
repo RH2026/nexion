@@ -3460,17 +3460,18 @@ else:
             
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
-                # --- CONFIGURACIÓN DE GITHUB ---
+                # --- 1. CONFIGURACIÓN DE SEGURIDAD (SECRETS) ---
+                # Asegúrate de tener GITHUB_TOKEN y GEMINI_API_KEY en Streamlit Cloud
                 GITHUB_USER = "RH2026"
                 GITHUB_REPO = "nexion"
                 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
                 
-                # --- CONFIGURACIÓN DE GEMINI ---
+                # Configuración de Gemini
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-                model_ai = genai.GenerativeModel('gemini-1.5-flash')
                 
-                # --- FUNCIÓN PARA LEER ARCHIVOS DESDE GITHUB ---
+                # --- 2. FUNCIONES DE APOYO ---
                 def leer_csv_github(nombre_archivo):
+                    """Lee archivos CSV directamente desde tu repositorio de GitHub"""
                     try:
                         url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{nombre_archivo}"
                         headers = {"Authorization": f"token {GITHUB_TOKEN}"}
@@ -3479,62 +3480,78 @@ else:
                             content = r.json()
                             df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
                             return df
-                    except Exception as e:
+                    except Exception:
                         return None
                     return None
                 
-                # --- INTERFAZ DE LA APP ---
-                st.set_page_config(page_title="Nexion AI", page_icon="🤖")
+                # --- 3. INTERFAZ DE LA APP ---
+                st.set_page_config(page_title="Nexion AI", page_icon="🤖", layout="centered")
+                
+                # Estilo personalizado
+                st.markdown("""
+                    <style>
+                    .main { background-color: #f5f7f9; }
+                    .stTextInput > div > div > input { color: #4e73df; }
+                    </style>
+                    """, unsafe_allow_html=True)
                 
                 st.markdown("<h1 style='text-align: center; color: #4e73df;'>🤖 NEXION AI CENTRAL</h1>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align: center;'>Asistente inteligente para JYPESA</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center;'>Asistente inteligente de JYPESA para Rigoberto</p>", unsafe_allow_html=True)
                 st.divider()
                 
-                # Mensaje de bienvenida
+                # --- 4. LÓGICA DEL CHAT ---
+                # Inicializar historial de mensajes
                 if "messages" not in st.session_state:
                     st.session_state.messages = []
                 
-                # Mostrar historial de chat
+                # Botón para limpiar chat en la barra lateral
+                if st.sidebar.button("Limpiar historial de chat"):
+                    st.session_state.messages = []
+                    st.rerun()
+                
+                # Mostrar mensajes previos
                 for message in st.session_state.messages:
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
                 
-                # 1. Configuración al principio (asegúrate de que esté así)
-                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-                
-                # 2. El chat (Copia y pega esto sobre tu bloque anterior)
-                if pregunta := st.chat_input("¿Qué necesitas saber hoy?"):
+                # Input de usuario
+                if pregunta := st.chat_input("¿Qué quieres saber de tus matrices, amor?"):
+                    # Guardar y mostrar pregunta del usuario
                     st.session_state.messages.append({"role": "user", "content": pregunta})
                     with st.chat_message("user"):
                         st.markdown(pregunta)
                 
-                    with st.spinner("Analizando tus datos de JYPESA..."):
+                    # Respuesta de la IA
+                    with st.spinner("Consultando tus datos en GitHub..."):
                         try:
-                            # Cargamos solo lo necesario para no saturar
+                            # Cargamos las matrices principales para dar contexto
+                            # (He puesto las 5 que me pediste)
                             df_inv = leer_csv_github("inventario.csv")
                             df_mue = leer_csv_github("muestras.csv")
-                            
-                            # Crear un resumen de texto simple
-                            datos_texto = ""
-                            if df_inv is not None:
-                                datos_texto += f"Inventario actual (últimos registros):\n{df_inv.tail(5).to_string(index=False)}\n"
-                            if df_mue is not None:
-                                datos_texto += f"Muestras enviadas (últimos registros):\n{df_mue.tail(5).to_string(index=False)}\n"
+                            df_fact = leer_csv_github("facturacion_moreno.csv")
+                            df_hist = leer_csv_github("matriz_historial.csv")
+                            df_dash = leer_csv_github("Matriz_Excel_Dashboard.csv")
                 
-                            # LLAMADA DIRECTA A LA IA
-                            model = genai.GenerativeModel('gemini-1.5-flash')
-                            prompt = f"Eres la asistente de JYPESA. Rigoberto te pregunta: {pregunta}\n\nContexto de datos:\n{datos_texto}"
+                            # Construir el contexto para Gemini (últimos 10 registros de cada una para no saturar)
+                            contexto = "Eres la asistente virtual de JYPESA. Respondes a Rigoberto.\n"
+                            if df_inv is not None: contexto += f"\nINVENTARIO RECIENTE:\n{df_inv.tail(10).to_string(index=False)}"
+                            if df_mue is not None: contexto += f"\nMUESTRAS RECIENTES:\n{df_mue.tail(10).to_string(index=False)}"
+                            if df_fact is not None: contexto += f"\nFACTURACIÓN:\n{df_fact.tail(5).to_string(index=False)}"
                             
-                            response = model.generate_content(prompt)
-                            respuesta_ia = response.text
+                            # Llamada al modelo (gemini-pro para evitar el error 404)
+                            model = genai.GenerativeModel('gemini-pro')
+                            prompt_completo = f"{contexto}\n\nPregunta de Rigoberto: {pregunta}"
                             
+                            response = model.generate_content(prompt_completo)
+                            respuesta_texto = response.text
+                
+                            # Mostrar y guardar respuesta
                             with st.chat_message("assistant"):
-                                st.markdown(respuesta_ia)
-                            st.session_state.messages.append({"role": "assistant", "content": respuesta_ia})
+                                st.markdown(respuesta_texto)
+                            st.session_state.messages.append({"role": "assistant", "content": respuesta_texto})
                 
                         except Exception as e:
-                            # Esto nos dirá exactamente qué falla si vuelve a fallar
-                            st.error(f"Error técnico: {str(e)}")
+                            st.error(f"Error técnico, amor: {str(e)}")
                           
             
                
@@ -3549,6 +3566,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
