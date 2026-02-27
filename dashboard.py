@@ -729,9 +729,9 @@ else:
             total = len(resultados)
             tipo = st.session_state.get("tipo_resultado", "OPERACION")
             accent_color = "#1cc88a"
-            inv_color = "#36b9cc" # Color cyan para diferenciar inventario
+            inv_color = "#36b9cc"
         
-            # Botón Cerrar discreto
+            # Botón Cerrar
             col_espacio, col_cerrar = st.columns([0.85, 0.15])
             with col_cerrar:
                 if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
@@ -740,106 +740,94 @@ else:
                     st.session_state.search_key_version += 1
                     st.rerun()
         
-            # --- RENDER PARA INVENTARIO ---
-            if tipo == "INVENTARIO":
-                st.markdown(f"<p style='color:{inv_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>EXISTENCIAS EN INVENTARIO ({total})</p>", unsafe_allow_html=True)
-                for index, i in resultados.iterrows():
+            # --- CASO A: RESULTADO ÚNICO ---
+            if total == 1:
+                d = resultados.iloc[0]
+                
+                if tipo == "INVENTARIO":
+                    # Render único para Inventario
                     st.markdown(f"""
-                        <div style="background: rgba(54,185,204,0.07); border-left: 4px solid {inv_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
-                            <span style="color:{inv_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CÓDIGO / SKU</span>
-                            <span style="font-size:16px; font-weight:bold; color:white;">{i['CODIGO']}</span>
-                            <div style="margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px;">
-                                <span style="font-size:13px; color:#E0E0E0;">{i['DESCRIPCION']}</span>
+                        <div style="background: rgba(255,255,255,0.05); border-left: 5px solid {inv_color}; padding: 20px; border-radius: 5px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <span style="color: {inv_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE PRODUCTO</span>
+                                <span style="color:{inv_color}; font-weight:800; font-size:22px;">{d['CODIGO']}</span>
                             </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-        
-            # --- RENDER PARA OPERACIONES (Tus tarjetas originales) ---
-            else:
-                if total == 1:
-                    d = resultados.iloc[0]
-                    # Definimos el color según el tipo (Verde para OPS, Azul para INV)
-                    color_res = inv_color if tipo == "INVENTARIO" else accent_color
-                    titulo_res = "DETALLES DE PRODUCTO" if tipo == "INVENTARIO" else "DETALLES DE OPERACIÓN"
-                    
-                    st.markdown(f"""
-                        <div class="kpi-ruta-container">
-                            <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-left: 5px solid {color_res}; position: relative; padding: 20px;">
-                                
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                    <span style="color: {color_res}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">{titulo_res}</span>
-                                    <span style="color:{color_res}; font-weight:800; font-size:22px;">{d['CODIGO'] if tipo == "INVENTARIO" else d['NÚMERO DE PEDIDO']}</span>
-                                </div>
-                                
-                                {f'''
-                                <div class="kpi-route-flow" style="margin-bottom: 20px;">
-                                    <div class="city" style="color: white; font-weight:bold;">GDL</div>
-                                    <div class="arrow" style="color: {color_res};">→</div>
-                                    <div class="city" style="color: white; font-weight:bold;">{d['DESTINO']}</div>
-                                </div>
-                                ''' if tipo == "OPERACION" else ""}
-        
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
-                                    
-                                    {f'''
-                                    <div>
-                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">CLIENTE</p>
-                                        <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
-                                        <p style="font-size:11px; color:#E0E0E0; opacity:0.8;">{d['DOMICILIO']}</p>
-                                    </div>
-                                    <div>
-                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">LOGÍSTICA</p>
-                                        <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
-                                        <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d['FLETERA']}</b></p>
-                                        <p style="font-size:12px; margin:0; color:white;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
-                                    </div>
-                                    <div>
-                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">TIEMPOS</p>
-                                        <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
-                                        <p style="font-size:12px; margin:0; color:{color_res}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
-                                    </div>
-                                    <div>
-                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">CARGA</p>
-                                        <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
-                                        <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
-                                    </div>
-                                    ''' if tipo == "OPERACION" else f'''
-                                    <div style="grid-column: span 2;">
-                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">DESCRIPCIÓN</p>
-                                        <p style="font-size:16px; color:white; line-height:1.4;">{d['DESCRIPCION']}</p>
-                                    </div>
-                                    '''}
-                                </div>
-                            </div>
+                            <p style="color:{inv_color}; font-weight:800; font-size:10px; margin-bottom:5px;">DESCRIPCIÓN</p>
+                            <p style="font-size:16px; color:white;">{d['DESCRIPCION']}</p>
                         </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<p style='color:{accent_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
-                    for index, d in resultados.iterrows():
+                    # Render único para Operaciones (EL DE TU FOTO)
+                    st.markdown(f"""
+                        <div style="background: rgba(255,255,255,0.05); border-top: 2px solid {accent_color}; border-left: 5px solid {accent_color}; padding: 25px; border-radius: 5px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
+                                <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
+                            </div>
+                            
+                            <div style="text-align: center; margin-bottom: 30px; display: flex; justify-content: center; align-items: center; gap: 20px;">
+                                <span style="color: white; font-weight:bold; font-size:18px;">GDL</span>
+                                <span style="color: {accent_color}; font-size:24px;">→</span>
+                                <span style="color: white; font-weight:bold; font-size:18px;">{d['DESTINO']}</span>
+                            </div>
+        
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                                <div>
+                                    <p style="color:{accent_color}; font-weight:800; font-size:10px; border-left: 2px solid {accent_color}; padding-left: 8px; margin-bottom: 10px;">CLIENTE</p>
+                                    <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
+                                    <p style="font-size:11px; color:#E0E0E0; opacity:0.8;">{d['DOMICILIO']}</p>
+                                </div>
+                                <div>
+                                    <p style="color:{accent_color}; font-weight:800; font-size:10px; border-left: 2px solid {accent_color}; padding-left: 8px; margin-bottom: 10px;">LOGÍSTICA</p>
+                                    <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
+                                    <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d['FLETERA']}</b></p>
+                                    <p style="font-size:12px; margin:0; color:white;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
+                                </div>
+                                <div>
+                                    <p style="color:{accent_color}; font-weight:800; font-size:10px; border-left: 2px solid {accent_color}; padding-left: 8px; margin-bottom: 10px;">TIEMPOS</p>
+                                    <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
+                                    <p style="font-size:12px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                                </div>
+                                <div>
+                                    <p style="color:{accent_color}; font-weight:800; font-size:10px; border-left: 2px solid {accent_color}; padding-left: 8px; margin-bottom: 10px;">CARGA</p>
+                                    <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
+                                    <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+        
+            # --- CASO B: VARIOS RESULTADOS ---
+            else:
+                color_tema = inv_color if tipo == "INVENTARIO" else accent_color
+                st.markdown(f"<p style='color:{color_tema}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>COINCIDENCIAS ENCONTRADAS ({total})</p>", unsafe_allow_html=True)
+                
+                for index, d in resultados.iterrows():
+                    if tipo == "INVENTARIO":
+                        st.markdown(f"""
+                            <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {inv_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
+                                <span style="color:{inv_color}; font-size:9px; font-weight:900; display:block;">CÓDIGO</span>
+                                <span style="font-size:15px; font-weight:bold; color:white;">{d['CODIGO']}</span>
+                                <p style="font-size:12px; color:#E0E0E0; margin: 5px 0 0 0;">{d['DESCRIPCION']}</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    else:
                         status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
                         st.markdown(f"""
                             <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {accent_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <div style="flex: 1;">
-                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">PEDIDO</span>
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block;">PEDIDO</span>
                                         <span style="font-size:15px; font-weight:bold; color:white;">{d['NÚMERO DE PEDIDO']}</span>
                                     </div>
                                     <div style="flex: 2;">
-                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CLIENTE</span>
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block;">CLIENTE</span>
                                         <span style="font-size:13px; color:white; font-weight:600;">{d['NOMBRE DEL CLIENTE']}</span>
-                                    </div>
-                                    <div style="flex: 1; text-align: right;">
-                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">GUÍA</span>
-                                        <span style="font-size:13px; color:#FFFFFF; font-weight:bold;">{d['NÚMERO DE GUÍA']}</span>
                                     </div>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
                                     <span style="font-size:11px; color:#FFFFFF;">📍 <b>{d['DESTINO']}</b></span>
-                                    <span style="font-size:11px; color:#FFFFFF;">📅 ENVÍO: <b>{d['FECHA DE ENVÍO']}</b></span>
-                                    <div style="text-align: right;">
-                                        <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 {d['CANTIDAD DE CAJAS']} CJ | </span>
-                                        <span style="font-size:10px; color:#FFFFFF; opacity:0.8; font-style: italic;">{status_text}</span>
-                                    </div>
+                                    <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 {d['CANTIDAD DE CAJAS']} CJ | <i>{status_text}</i></span>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
@@ -3687,6 +3675,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
