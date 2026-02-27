@@ -712,7 +712,6 @@ else:
         accent_color = "#1cc88a"
 
         # --- BOTÓN CERRAR DISCRETO Y ARRIBA ---
-        # Usamos columnas para mandarlo a la derecha y que sea pequeño
         col_espacio, col_cerrar = st.columns([0.85, 0.15])
         with col_cerrar:
             if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
@@ -763,10 +762,13 @@ else:
                 </div>
             """, unsafe_allow_html=True)
 
-        # CASO B: VARIOS RESULTADOS
+        # CASO B: VARIOS RESULTADOS (Render Compacto con Estatus agregado)
         else:
             st.markdown(f"<p style='color:{accent_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
             for index, d in resultados.iterrows():
+                # Validación de estatus para el render compacto
+                status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
+                
                 st.markdown(f"""
                     <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {accent_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -786,7 +788,10 @@ else:
                         <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
                             <span style="font-size:11px; color:#FFFFFF;">📍 <b>{d['DESTINO']}</b></span>
                             <span style="font-size:11px; color:#FFFFFF;">📅 ENVÍO: <b>{d['FECHA DE ENVÍO']}</b></span>
-                            <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 CAJAS: {d['CANTIDAD DE CAJAS']}</span>
+                            <div style="text-align: right;">
+                                <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 {d['CANTIDAD DE CAJAS']} CJ | </span>
+                                <span style="font-size:10px; color:#FFFFFF; opacity:0.8; font-style: italic;">{status_text}</span>
+                            </div>
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -3634,6 +3639,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
