@@ -3499,36 +3499,42 @@ else:
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
                 
-                # Input del usuario
+                # 1. Configuración al principio (asegúrate de que esté así)
+                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+                
+                # 2. El chat (Copia y pega esto sobre tu bloque anterior)
                 if pregunta := st.chat_input("¿Qué necesitas saber hoy?"):
                     st.session_state.messages.append({"role": "user", "content": pregunta})
                     with st.chat_message("user"):
                         st.markdown(pregunta)
                 
-                    with st.spinner("Revisando tus matrices..."):
-                        # Cargamos los datos pero solo las últimas filas para no saturar a la IA
-                        df_inv = leer_csv_github("inventario.csv")
-                        df_mue = leer_csv_github("muestras.csv")
-                        df_fact = leer_csv_github("facturacion_moreno.csv")
-                        
-                        # Construimos un resumen breve
-                        contexto = "Eres la asistente de JYPESA. Aquí tienes un resumen de los datos:\n"
-                        if df_inv is not None: contexto += f"- Inventario (últimos): {df_inv.tail(10).to_dict()}\n"
-                        if df_mue is not None: contexto += f"- Muestras (últimos): {df_mue.tail(10).to_dict()}\n"
-                        if df_fact is not None: contexto += f"- Facturación (últimos): {df_fact.tail(10).to_dict()}\n"
-                
+                    with st.spinner("Analizando tus datos de JYPESA..."):
                         try:
-                            # Llamada a Gemini con un límite de respuesta
-                            model_ai = genai.GenerativeModel('gemini-1.5-flash')
-                            response = model_ai.generate_content(f"{contexto}\n\nPregunta: {pregunta}")
+                            # Cargamos solo lo necesario para no saturar
+                            df_inv = leer_csv_github("inventario.csv")
+                            df_mue = leer_csv_github("muestras.csv")
                             
+                            # Crear un resumen de texto simple
+                            datos_texto = ""
+                            if df_inv is not None:
+                                datos_texto += f"Inventario actual (últimos registros):\n{df_inv.tail(5).to_string(index=False)}\n"
+                            if df_mue is not None:
+                                datos_texto += f"Muestras enviadas (últimos registros):\n{df_mue.tail(5).to_string(index=False)}\n"
+                
+                            # LLAMADA DIRECTA A LA IA
+                            model = genai.GenerativeModel('gemini-1.5-flash')
+                            prompt = f"Eres la asistente de JYPESA. Rigoberto te pregunta: {pregunta}\n\nContexto de datos:\n{datos_texto}"
+                            
+                            response = model.generate_content(prompt)
                             respuesta_ia = response.text
                             
                             with st.chat_message("assistant"):
                                 st.markdown(respuesta_ia)
                             st.session_state.messages.append({"role": "assistant", "content": respuesta_ia})
+                
                         except Exception as e:
-                            st.error("Amor, Gemini no pudo responder. Intenta con una pregunta más corta.")
+                            # Esto nos dirá exactamente qué falla si vuelve a fallar
+                            st.error(f"Error técnico: {str(e)}")
                           
             
                
@@ -3543,6 +3549,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
