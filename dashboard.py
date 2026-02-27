@@ -711,7 +711,7 @@ else:
         total = len(resultados)
         
         # Color principal elegido
-        accent_color = "#f6c23e"
+        accent_color = "#2ECC71"
         
         # CASO A: RESULTADO ÚNICO (Render Grande - Máximo Detalle)
         if total == 1:
@@ -3635,6 +3635,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
