@@ -3457,136 +3457,87 @@ else:
                         st.info("Conectando con el servidor de seguridad de GitHub...")
             
             
-            elif st.session_state.menu_sub == "ORDER STAGING":
+            elif st.session_state.menu_sub == "ORDER STAGING":                
+                # --- CONFIGURACIÓN DE GITHUB ---
+                GITHUB_USER = "RH2026"
+                GITHUB_REPO = "nexion"
+                GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
                 
-                # Sección de instrucciones
-                with st.expander("Herramienta para preparar archivo para S&T, ¿Dudas para usar este modulo?", expanded=False):
-                    st.markdown(f"""
-                    <div style='font-size: 14px; color: {vars_css['sub']}; letter-spacing: 1px;'>
-                    1. <b>Cargar Archivo:</b> Sube tu archivo Excel (.xlsx) o CSV.<br>
-                    2. <b>Definir Rango:</b> Ingresa el número de folio inicial y final.<br>
-                    3. <b>Depurar Lista:</b> Desmarca la casilla de los folios que no necesites.<br>
-                    4. <b>Procesar:</b> Haz clic en 'RENDERIZAR TABLA'.<br>
-                    5. <b>Descargar:</b> Obtén tu nuevo archivo de Excel filtrado.
-                    </div>
-                    """, unsafe_allow_html=True)
+                # --- CONFIGURACIÓN DE GEMINI ---
+                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+                model_ai = genai.GenerativeModel('gemini-1.5-flash')
                 
-                # 1. ÁREA DE CARGA
-                uploaded_file = st.file_uploader("Subir archivo", type=["xlsx", "csv"], label_visibility="collapsed")
-                
-                if uploaded_file is not None:
-                    # Carga con detección automática de delimitador (coma, punto y coma o tab)
+                # --- FUNCIÓN PARA LEER ARCHIVOS DESDE GITHUB ---
+                def leer_csv_github(nombre_archivo):
                     try:
-                        if uploaded_file.name.endswith('.csv'):
-                            df = pd.read_csv(uploaded_file, sep=None, engine='python', encoding='utf-8-sig')
-                        else:
-                            df = pd.read_excel(uploaded_file)
-                        
-                        # --- LIMPIEZA AGRESIVA DE COLUMNAS ---
-                        # Eliminamos espacios en blanco, saltos de línea y tabulaciones de los nombres de columnas
-                        df.columns = [str(c).strip().replace('\n', '').replace('\t', '') for c in df.columns]
-                        
-                        # Buscamos coincidencias exactas ignorando mayúsculas
-                        col_folio = next((c for c in df.columns if c.lower() == 'factura'), None)
-                        col_transporte = next((c for c in df.columns if c.lower() == 'transporte'), None)
-            
-                        # Si no hay coincidencia exacta, buscamos la que contenga la palabra
-                        if not col_folio:
-                            col_folio = next((c for c in df.columns if 'factura' in c.lower()), df.columns[0])
-                        if not col_transporte:
-                            col_transporte = next((c for c in df.columns if 'transporte' in c.lower()), None)
-                        
-                        st.toast(f"DETECTADO -> Factura: {col_folio} | Transporte: {col_transporte}", icon="🔍")
-                    
-                        # --- PANEL DE CONTROL ---
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        col_left, col_right = st.columns([1, 2], gap="large")
-                    
-                        with col_left:
-                            st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>FILTROS DE RANGO</p>", unsafe_allow_html=True)
-                            
-                            # Conversión numérica segura
-                            serie_folios = pd.to_numeric(df[col_folio], errors='coerce').dropna()
-                            
-                            if not serie_folios.empty:
-                                f_min_val = int(serie_folios.min())
-                                f_max_val = int(serie_folios.max())
-                            else:
-                                f_min_val, f_max_val = 0, 0
-            
-                            inicio = st.number_input("Folio Inicial", value=f_min_val)
-                            final = st.number_input("Folio Final", value=f_max_val)
-                            
-                            # Filtrar asegurando comparación numérica
-                            df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
-                            df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
-                    
-                        with col_right:
-                            st.markdown(f"<p class='op-query-text' style='text-align:left !important;'>SELECCIÓN DE FOLIOS</p>", unsafe_allow_html=True)
-                            
-                            if not df_rango.empty:
-                                # Agrupamos para mostrar en el editor
-                                cols_to_show = [col_folio]
-                                if col_transporte: cols_to_show.append(col_transporte)
-                                
-                                info_folios = df_rango.drop_duplicates(subset=[col_folio])[cols_to_show]
-                                
-                                selector_df = info_folios.copy()
-                                selector_df.insert(0, "Incluir", True)
-                    
-                                edited_df = st.data_editor(
-                                    selector_df,
-                                    column_config={
-                                        "Incluir": st.column_config.CheckboxColumn("SEL", default=True),
-                                        col_folio: st.column_config.TextColumn("FACTURA", disabled=True),
-                                        col_transporte: st.column_config.TextColumn("TRANSPORTE", disabled=True) if col_transporte else "N/A"
-                                    },
-                                    hide_index=True,
-                                    height=300,
-                                    use_container_width=True,
-                                    key="editor_folio_master_v3"
-                                )
-                            else:
-                                st.warning("Sin datos en el rango seleccionado.")
-                                edited_df = pd.DataFrame()
-                    
-                        # --- ACCIONES ---
-                        st.markdown(f"<hr style='border-top:1px solid {vars_css['border']}; opacity:0.2;'>", unsafe_allow_html=True)
-                        
-                        if not edited_df.empty:
-                            folios_finales = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
-                            c1, c2 = st.columns(2)
-                            
-                            with c1:
-                                render_btn = st.button("RENDERIZAR TABLA")
-                            
-                            if render_btn:
-                                df_final = df_rango[df_rango[col_folio].isin(folios_finales)]
-                                
-                                if not df_final.empty:
-                                    st.markdown(f"<p style='font-size:10px; color:{vars_css['sub']}; letter-spacing:2px; text-align:center;'>VISTA PREVIA</p>", unsafe_allow_html=True)
-                                    st.dataframe(df_final, use_container_width=True)
-                                    
-                                    output = BytesIO()
-                                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                                        df_final.to_excel(writer, index=False)
-                                    
-                                    with c2:
-                                        st.download_button(
-                                            label="DESCARGAR EXCEL (.XLSX)",
-                                            data=output.getvalue(),
-                                            file_name=f"S&T_PREP_{datetime.now().strftime('%d%m%Y')}.xlsx",
-                                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                            use_container_width=True
-                                        )
+                        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{nombre_archivo}"
+                        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                        r = requests.get(url, headers=headers)
+                        if r.status_code == 200:
+                            content = r.json()
+                            df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                            return df
                     except Exception as e:
-                        st.error(f"Error al procesar el archivo: {e}")
-                        
-                else:
-                    st.markdown(f"<div style='text-align:center; padding:50px; color:{vars_css['sub']}; font-size:10px; letter-spacing:4px;'>WAITING FOR ERP DATA...</div>", unsafe_allow_html=True)
-
-
+                        return None
+                    return None
+                
+                # --- INTERFAZ DE LA APP ---
+                st.set_page_config(page_title="Nexion AI", page_icon="🤖")
+                
+                st.markdown("<h1 style='text-align: center; color: #4e73df;'>🤖 NEXION AI CENTRAL</h1>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center;'>Asistente inteligente para JYPESA</p>", unsafe_allow_html=True)
                 st.divider()
+                
+                # Mensaje de bienvenida
+                if "messages" not in st.session_state:
+                    st.session_state.messages = []
+                
+                # Mostrar historial de chat
+                for message in st.session_state.messages:
+                    with st.chat_message(message["role"]):
+                        st.markdown(message["content"])
+                
+                # Input del usuario
+                if pregunta := st.chat_input("¿Qué necesitas saber de tus matrices hoy?"):
+                    # Agregar pregunta del usuario al historial
+                    st.session_state.messages.append({"role": "user", "content": pregunta})
+                    with st.chat_message("user"):
+                        st.markdown(pregunta)
+                
+                    with st.spinner("Analizando tus datos de JYPESA..."):
+                        # 1. Cargamos las 5 matrices
+                        df_dash = leer_csv_github("Matriz_Excel_Dashboard.csv")
+                        df_fact = leer_csv_github("facturacion_moreno.csv")
+                        df_inv = leer_csv_github("inventario.csv")
+                        df_hist = leer_csv_github("matriz_historial.csv")
+                        df_mue = leer_csv_github("muestras.csv")
+                
+                        # 2. Construimos el contexto (solo enviamos info si el archivo existe)
+                        def preparar_contexto(df, nombre):
+                            return f"\nDATOS DE {nombre}:\n{df.tail(20).to_string(index=False)}" if df is not None else f"\n{nombre}: No disponible."
+                
+                        contexto_completo = "Eres la asistente virtual experta de la empresa JYPESA. Rigoberto te consulta datos clave."
+                        contexto_completo += preparar_contexto(df_inv, "INVENTARIO")
+                        contexto_completo += preparar_contexto(df_mue, "MUESTRAS")
+                        contexto_completo += preparar_contexto(df_fact, "FACTURACIÓN MORENO")
+                        contexto_completo += preparar_contexto(df_hist, "HISTORIAL")
+                        contexto_completo += preparar_contexto(df_dash, "DASHBOARD")
+                
+                        try:
+                            # 3. Respuesta de Gemini
+                            prompt_final = f"{contexto_completo}\n\nPregunta actual de Rigoberto: {pregunta}"
+                            response = model_ai.generate_content(prompt_final)
+                            respuesta_ia = response.text
+                
+                            # Agregar respuesta al historial
+                            with st.chat_message("assistant"):
+                                st.markdown(respuesta_ia)
+                            st.session_state.messages.append({"role": "assistant", "content": respuesta_ia})
+                
+                        except Exception as e:
+                            st.error("Corazón, hubo un detalle con la conexión a Gemini. Revisa tu API Key.")
+                                st.divider()
+            
                 # ── MÓDULO REPARADOR DE COSTOS ──
                 # --- EXPANDER DE INSTRUCCIONES ---
                 with st.expander("Reparador de Costos Logísticos ¿Dudas para usar este módulo?", icon=":material/help:"):
@@ -3676,6 +3627,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
