@@ -710,40 +710,43 @@ else:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
         
+        # Color principal elegido
+        accent_color = "#f6c23e"
+        
         # CASO A: RESULTADO ÚNICO (Render Grande - Máximo Detalle)
         if total == 1:
             d = resultados.iloc[0]
             st.markdown(f"""
                 <div class="kpi-ruta-container">
-                    <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0,255,170,0.2);">
+                    <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(246,194,62,0.3);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <span class="kpi-tag" style="color: #00FFAA; border: 1px solid #00FFAA;">DETALLES DE OPERACIÓN</span>
-                            <span style="color:#00FFAA; font-weight:800; font-size:20px;">{d['NÚMERO DE PEDIDO']}</span>
+                            <span class="kpi-tag" style="color: {accent_color}; border: 1px solid {accent_color}; font-weight:800;">DETALLES DE OPERACIÓN</span>
+                            <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
                         </div>
                         <div class="kpi-route-flow">
-                            <div class="city" style="color: white;">GDL</div>
-                            <div class="arrow" style="color: #00FFAA;">→</div>
-                            <div class="city" style="color: white;">{d['DESTINO']}</div>
+                            <div class="city" style="color: white; font-weight:bold;">GDL</div>
+                            <div class="arrow" style="color: {accent_color};">→</div>
+                            <div class="city" style="color: white; font-weight:bold;">{d['DESTINO']}</div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
                             <div>
-                                <p class="data-section-header" style="color:#00FFAA; opacity:1; font-weight:700;">CLIENTE</p>
+                                <p class="data-section-header" style="color:{accent_color}; opacity:1; font-weight:800; letter-spacing:1px; margin-bottom:5px;">CLIENTE</p>
                                 <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
                                 <p style="font-size:11px; color:#E0E0E0; opacity:0.9;">{d['DOMICILIO']}</p>
                             </div>
                             <div>
-                                <p class="data-section-header" style="color:#00FFAA; opacity:1; font-weight:700;">LOGÍSTICA</p>
+                                <p class="data-section-header" style="color:{accent_color}; opacity:1; font-weight:800; letter-spacing:1px; margin-bottom:5px;">LOGÍSTICA</p>
                                 <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
                                 <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d['FLETERA']}</b></p>
                                 <p style="font-size:12px; margin:0; color:white;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
                             </div>
                             <div>
-                                <p class="data-section-header" style="color:#00FFAA; opacity:1; font-weight:700;">TIEMPOS</p>
+                                <p class="data-section-header" style="color:{accent_color}; opacity:1; font-weight:800; letter-spacing:1px; margin-bottom:5px;">TIEMPOS</p>
                                 <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
-                                <p style="font-size:12px; margin:0; color:#00FFAA; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                                <p style="font-size:12px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
                             </div>
                             <div>
-                                <p class="data-section-header" style="color:#00FFAA; opacity:1; font-weight:700;">CARGA</p>
+                                <p class="data-section-header" style="color:{accent_color}; opacity:1; font-weight:800; letter-spacing:1px; margin-bottom:5px;">CARGA</p>
                                 <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
                                 <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
                             </div>
@@ -754,29 +757,29 @@ else:
 
         # CASO B: VARIOS RESULTADOS (Render Compacto - Lista Inteligente)
         else:
-            st.markdown(f"<p style='color:#00FFAA; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:{accent_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
             
             for index, d in resultados.iterrows():
                 st.markdown(f"""
-                    <div style="background: rgba(255,255,255,0.07); border-left: 4px solid #00FFAA; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
+                    <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {accent_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1;">
-                                <span style="color:#00FFAA; font-size:9px; font-weight:800; display:block; letter-spacing:1px;">PEDIDO</span>
+                                <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">PEDIDO</span>
                                 <span style="font-size:15px; font-weight:bold; color:white;">{d['NÚMERO DE PEDIDO']}</span>
                             </div>
                             <div style="flex: 2;">
-                                <span style="color:#00FFAA; font-size:9px; font-weight:800; display:block; letter-spacing:1px;">CLIENTE</span>
-                                <span style="font-size:13px; color:white; font-weight:500;">{d['NOMBRE DEL CLIENTE']}</span>
+                                <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CLIENTE</span>
+                                <span style="font-size:13px; color:white; font-weight:600;">{d['NOMBRE DEL CLIENTE']}</span>
                             </div>
                             <div style="flex: 1; text-align: right;">
-                                <span style="color:#00FFAA; font-size:9px; font-weight:800; display:block; letter-spacing:1px;">GUÍA</span>
+                                <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">GUÍA</span>
                                 <span style="font-size:13px; color:#FFFFFF; font-weight:bold;">{d['NÚMERO DE GUÍA']}</span>
                             </div>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
-                            <span style="font-size:11px; color:#FFFFFF; opacity:0.9;">📍 <b>{d['DESTINO']}</b></span>
-                            <span style="font-size:11px; color:#FFFFFF; opacity:0.9;">📅 ENVÍO: <b>{d['FECHA DE ENVÍO']}</b></span>
-                            <span style="font-size:11px; color:#00FFAA; font-weight:900;">📦 CAJAS: {d['CANTIDAD DE CAJAS']}</span>
+                            <span style="font-size:11px; color:#FFFFFF;">📍 <b>{d['DESTINO']}</b></span>
+                            <span style="font-size:11px; color:#FFFFFF;">📅 ENVÍO: <b>{d['FECHA DE ENVÍO']}</b></span>
+                            <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 CAJAS: {d['CANTIDAD DE CAJAS']}</span>
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -3632,6 +3635,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
