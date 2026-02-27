@@ -533,20 +533,24 @@ button[kind="secondary"] {{
 
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
 def login_screen():
-    # Ajustamos las proporciones a [3, 2, 3] para que la columna central sea más angosta
+    # Ajustamos las proporciones para la columna central
     _, col, _ = st.columns([2, 2, 2]) 
     
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center; margin-bottom: 30px;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
         
-        with st.container():
+        # Creamos el formulario. El 'clear_on_submit' puede ser False.
+        with st.form("login_form", clear_on_submit=False):
             user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
             pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
             
             st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
             
-            if st.button("VERIFY IDENTITY"):
+            # Cambiamos st.button por st.form_submit_button
+            submit_button = st.form_submit_button("VERIFY IDENTITY", use_container_width=True)
+            
+            if submit_button:
                 lista_usuarios = st.secrets.get("usuarios", {})
                 
                 # VALIDACIÓN EXITOSA
@@ -565,9 +569,9 @@ def login_screen():
                     time.sleep(1) 
                     st.rerun()
                 
-                # AQUÍ ESTÁ EL CAMBIO: Manejo del error
+                # MANEJO DEL ERROR
                 else:
-                    st.error("ERROR: ACCESS DENIED")
+                    st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
                     
 # ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
 
@@ -3593,6 +3597,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
