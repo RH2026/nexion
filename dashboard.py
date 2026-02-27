@@ -2440,7 +2440,6 @@ else:
                 st.bar_chart({"Entregas": [10, 20, 15, 30]})
 
             elif st.session_state.menu_sub == "SAMPLES":
-                # AQUÍ PEGAS TODO EL CÓDIGO DE LAS MUESTRAS CHIC               
                 # --- VARIABLES DE GITHUB ---
                 GITHUB_USER = "RH2026"
                 GITHUB_REPO = "nexion"
@@ -2496,7 +2495,7 @@ else:
                     return requests.put(url, json=payload, headers=headers).status_code == 200
                 
                 # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
-                def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios):
+                def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago):
                     filas_prod = ""
                     for p in productos:
                         filas_prod += f"""
@@ -2511,7 +2510,10 @@ else:
                     <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; min-height:950px; margin:auto; position:relative; box-sizing:border-box; background: white; color: black;">
                         <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
                             <h1 style="margin: 0; font-size: 28px; letter-spacing: 1px;">JYPESA</h1>
-                            <h2 style="margin: 0; font-size: 16px; text-decoration: underline;">ORDEN DE ENVÍO MUESTRAS</h2>
+                            <div style="text-align:right">
+                                <h2 style="margin: 0; font-size: 16px; text-decoration: underline;">ORDEN DE ENVÍO MUESTRAS</h2>
+                                <p style="margin:0; font-size:12px;"><b>{paq_nombre} - {tipo_pago}</b></p>
+                            </div>
                         </div>
                         <table style="width:100%; border-collapse:collapse; margin-bottom:5px; font-size: 11px;">
                             <tr><td style="border:1px solid black;padding:4px"><b>FOLIO:</b> {folio}</td>
@@ -2566,11 +2568,16 @@ else:
                 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
                 
                 # --- INTERFAZ ---
-                #st.markdown("<h2 style='color: #1E1E1E; margin-bottom:0;'>JYPESA</h2>", unsafe_allow_html=True)
-                #st.markdown("<p style='font-size:12px; color: gray; margin-top:0;'>AUTOMATIZACIÓN DE PROCESOS</p>", unsafe_allow_html=True)
                 
                 # --- CAPTURA NUEVA ---
                 with st.container():
+                    # NUEVOS INPUTS SOLICITADOS
+                    cp1, cp2 = st.columns(2)
+                    f_paq_nombre = cp1.selectbox("NOMBRE DE PAQUETERÍA", ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"])
+                    f_tipo_pago = cp2.selectbox("MODALIDAD DE PAGO", ["CREDITO", "COBRO DESTINO"])
+                    
+                    st.write("") # Espaciador
+                    
                     c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
                     f_folio = c1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
                     f_paq_sel = c2.selectbox("FORMA DE ENVÍO", ["Envio Pagado", "Envio por cobrar", "Entrega Personal"])
@@ -2626,7 +2633,7 @@ else:
                 f_coment = st.text_area("💬 COMENTARIOS", height=70).upper()
                 
                 # --- BOTONES PRINCIPALES ---
-                col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) # Añadí espacio para el tercer botón
+                col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
                 
                 if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
                     if not f_h: st.error("Falta el hotel")
@@ -2649,7 +2656,8 @@ else:
                 if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
                     if not prods_actuales: st.warning("No hay productos")
                     else:
-                        h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment)
+                        # Se pasan los nuevos campos a la función de impresión
+                        h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment, f_paq_nombre, f_tipo_pago)
                         components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
                 
                 if col_b3.button("🧹 BORRAR", use_container_width=True):
@@ -2684,9 +2692,9 @@ else:
                         with c_adm1:
                             st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
                             st.write("")
-                            n_paq = st.text_input("Empresa de Paquetería", value=str(datos_fol["PAQUETERIA_NOMBRE"])).upper()
-                            n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"])).upper()
-                            c_gui = st.number_input("Costo de Guía ($)", value=float(datos_fol["COSTO_GUIA"]))
+                            n_paq = st.text_input("Empresa de Paquetería", key="edit_paq", value=str(datos_fol["PAQUETERIA_NOMBRE"])).upper()
+                            n_gui = st.text_input("Número de Guía", key="edit_guia", value=str(datos_fol["NUMERO_GUIA"])).upper()
+                            c_gui = st.number_input("Costo de Guía ($)", key="edit_costo", value=float(datos_fol["COSTO_GUIA"]))
                             if st.button("✅ ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
                                 idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
                                 df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
@@ -2701,7 +2709,8 @@ else:
                                 prods_re = []
                                 for p in precios.keys():
                                     if p in datos_fol and datos_fol[p] > 0: prods_re.append({"desc": p, "cant": int(datos_fol[p])})
-                                h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN")
+                                # En re-impresión usamos valores genéricos o vacíos para los nuevos campos si no se guardaron
+                                h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN", "S/P", "S/D")
                                 components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
                 
                 with t2:
@@ -3667,6 +3676,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
