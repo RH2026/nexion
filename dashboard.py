@@ -758,39 +758,57 @@ else:
             else:
                 if total == 1:
                     d = resultados.iloc[0]
+                    # Definimos el color según el tipo (Verde para OPS, Azul para INV)
+                    color_res = inv_color if tipo == "INVENTARIO" else accent_color
+                    titulo_res = "DETALLES DE PRODUCTO" if tipo == "INVENTARIO" else "DETALLES DE OPERACIÓN"
+                    
                     st.markdown(f"""
                         <div class="kpi-ruta-container">
-                            <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(28,200,138,0.2); position: relative;">
+                            <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-left: 5px solid {color_res}; position: relative; padding: 20px;">
+                                
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                    <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
-                                    <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
+                                    <span style="color: {color_res}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">{titulo_res}</span>
+                                    <span style="color:{color_res}; font-weight:800; font-size:22px;">{d['CODIGO'] if tipo == "INVENTARIO" else d['NÚMERO DE PEDIDO']}</span>
                                 </div>
-                                <div class="kpi-route-flow">
+                                
+                                {f'''
+                                <div class="kpi-route-flow" style="margin-bottom: 20px;">
                                     <div class="city" style="color: white; font-weight:bold;">GDL</div>
-                                    <div class="arrow" style="color: {accent_color};">→</div>
+                                    <div class="arrow" style="color: {color_res};">→</div>
                                     <div class="city" style="color: white; font-weight:bold;">{d['DESTINO']}</div>
                                 </div>
+                                ''' if tipo == "OPERACION" else ""}
+        
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                                    
+                                    {f'''
                                     <div>
-                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px;">CLIENTE</p>
+                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">CLIENTE</p>
                                         <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
-                                        <p style="font-size:11px; color:#E0E0E0; opacity:0.9;">{d['DOMICILIO']}</p>
+                                        <p style="font-size:11px; color:#E0E0E0; opacity:0.8;">{d['DOMICILIO']}</p>
                                     </div>
                                     <div>
-                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px;">LOGÍSTICA</p>
+                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">LOGÍSTICA</p>
                                         <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
                                         <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d['FLETERA']}</b></p>
+                                        <p style="font-size:12px; margin:0; color:white;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
                                     </div>
                                     <div>
-                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px;">TIEMPOS</p>
+                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">TIEMPOS</p>
                                         <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
-                                        <p style="font-size:12px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                                        <p style="font-size:12px; margin:0; color:{color_res}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
                                     </div>
                                     <div>
-                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px;">CARGA</p>
+                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">CARGA</p>
                                         <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
                                         <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
                                     </div>
+                                    ''' if tipo == "OPERACION" else f'''
+                                    <div style="grid-column: span 2;">
+                                        <p style="color:{color_res}; font-weight:800; font-size:10px; margin-bottom:5px; letter-spacing:1px; opacity:0.9;">DESCRIPCIÓN</p>
+                                        <p style="font-size:16px; color:white; line-height:1.4;">{d['DESCRIPCION']}</p>
+                                    </div>
+                                    '''}
                                 </div>
                             </div>
                         </div>
@@ -3669,6 +3687,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
