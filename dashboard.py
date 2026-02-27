@@ -3500,44 +3500,35 @@ else:
                         st.markdown(message["content"])
                 
                 # Input del usuario
-                if pregunta := st.chat_input("¿Qué necesitas saber de tus matrices hoy?"):
-                    # Agregar pregunta del usuario al historial
+                if pregunta := st.chat_input("¿Qué necesitas saber hoy?"):
                     st.session_state.messages.append({"role": "user", "content": pregunta})
                     with st.chat_message("user"):
                         st.markdown(pregunta)
                 
-                    with st.spinner("Analizando tus datos de JYPESA..."):
-                        # 1. Cargamos las 5 matrices
-                        df_dash = leer_csv_github("Matriz_Excel_Dashboard.csv")
-                        df_fact = leer_csv_github("facturacion_moreno.csv")
+                    with st.spinner("Revisando tus matrices..."):
+                        # Cargamos los datos pero solo las últimas filas para no saturar a la IA
                         df_inv = leer_csv_github("inventario.csv")
-                        df_hist = leer_csv_github("matriz_historial.csv")
                         df_mue = leer_csv_github("muestras.csv")
-                
-                        # 2. Construimos el contexto (solo enviamos info si el archivo existe)
-                        def preparar_contexto(df, nombre):
-                            return f"\nDATOS DE {nombre}:\n{df.tail(20).to_string(index=False)}" if df is not None else f"\n{nombre}: No disponible."
-                
-                        contexto_completo = "Eres la asistente virtual experta de la empresa JYPESA. Rigoberto te consulta datos clave."
-                        contexto_completo += preparar_contexto(df_inv, "INVENTARIO")
-                        contexto_completo += preparar_contexto(df_mue, "MUESTRAS")
-                        contexto_completo += preparar_contexto(df_fact, "FACTURACIÓN MORENO")
-                        contexto_completo += preparar_contexto(df_hist, "HISTORIAL")
-                        contexto_completo += preparar_contexto(df_dash, "DASHBOARD")
+                        df_fact = leer_csv_github("facturacion_moreno.csv")
+                        
+                        # Construimos un resumen breve
+                        contexto = "Eres la asistente de JYPESA. Aquí tienes un resumen de los datos:\n"
+                        if df_inv is not None: contexto += f"- Inventario (últimos): {df_inv.tail(10).to_dict()}\n"
+                        if df_mue is not None: contexto += f"- Muestras (últimos): {df_mue.tail(10).to_dict()}\n"
+                        if df_fact is not None: contexto += f"- Facturación (últimos): {df_fact.tail(10).to_dict()}\n"
                 
                         try:
-                            # 3. Respuesta de Gemini
-                            prompt_final = f"{contexto_completo}\n\nPregunta actual de Rigoberto: {pregunta}"
-                            response = model_ai.generate_content(prompt_final)
+                            # Llamada a Gemini con un límite de respuesta
+                            model_ai = genai.GenerativeModel('gemini-1.5-flash')
+                            response = model_ai.generate_content(f"{contexto}\n\nPregunta: {pregunta}")
+                            
                             respuesta_ia = response.text
-                
-                            # Agregar respuesta al historial
+                            
                             with st.chat_message("assistant"):
                                 st.markdown(respuesta_ia)
                             st.session_state.messages.append({"role": "assistant", "content": respuesta_ia})
-                
                         except Exception as e:
-                            st.error("Corazón, hubo un detalle con la conexión a Gemini. Revisa tu API Key.")
+                            st.error("Amor, Gemini no pudo responder. Intenta con una pregunta más corta.")
                           
             
                
@@ -3552,6 +3543,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
