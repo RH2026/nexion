@@ -705,18 +705,16 @@ else:
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
     
-    # ── RENDERIZADO DE CONSULTA "PERRONA" (CON SOPORTE MULTI-RESULTADO) ──────────
+    # ── RENDERIZADO DE CONSULTA "INTELIGENTE" ──────────────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
+        total = len(resultados)
         
-        # Si hay muchos resultados, avisamos cuántos son
-        if len(resultados) > 1:
-            st.markdown(f"<p style='color:#00FFAA; font-size:12px; font-weight:bold;'>SISTEMA: SE ENCONTRARON {len(resultados)} COINCIDENCIAS</p>", unsafe_allow_html=True)
-
-        # ITEAMOS sobre cada fila encontrada
-        for index, d in resultados.iterrows():
+        # CASO A: RESULTADO ÚNICO (Render Grande)
+        if total == 1:
+            d = resultados.iloc[0]
             st.markdown(f"""
-                <div class="kpi-ruta-container" style="margin-bottom: 20px;">
+                <div class="kpi-ruta-container">
                     <div class="kpi-ruta-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                             <span class="kpi-tag">DETALLES DE OPERACIÓN</span>
@@ -753,8 +751,38 @@ else:
                     </div>
                 </div>
             """, unsafe_allow_html=True)
-        
-        # El botón de cerrar se queda al final de todos los resultados
+
+        # CASO B: VARIOS RESULTADOS (Render Compacto)
+        else:
+            st.markdown(f"<p style='color:#00FFAA; font-size:14px; font-weight:800; margin-bottom:10px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
+            
+            for index, d in resultados.iterrows():
+                # Card pequeña y horizontal
+                st.markdown(f"""
+                    <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #00FFAA; padding: 10px 15px; margin-bottom: 8px; border-radius: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <span style="color:#64748b; font-size:10px; font-weight:700; display:block; letter-spacing:1px;">PEDIDO</span>
+                                <span style="font-size:15px; font-weight:bold; color:white;">{d['NÚMERO DE PEDIDO']}</span>
+                            </div>
+                            <div style="flex: 2;">
+                                <span style="color:#64748b; font-size:10px; font-weight:700; display:block; letter-spacing:1px;">CLIENTE</span>
+                                <span style="font-size:13px; color:white;">{d['NOMBRE DEL CLIENTE']}</span>
+                            </div>
+                            <div style="flex: 1; text-align: right;">
+                                <span style="color:#64748b; font-size:10px; font-weight:700; display:block; letter-spacing:1px;">GUÍA</span>
+                                <span style="font-size:13px; color:#00FFAA;">{d['NÚMERO DE GUÍA']}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 5px;">
+                            <span style="font-size:11px; color:#64748b;">📍 {d['DESTINO']}</span>
+                            <span style="font-size:11px; color:#64748b;">📅 ENVÍO: {d['FECHA DE ENVÍO']}</span>
+                            <span style="font-size:11px; color:#00FFAA; font-weight:bold;">📦 CAJAS: {d['CANTIDAD DE CAJAS']}</span>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+        # Botón para limpiar siempre visible al final
         if st.button("✖️ CERRAR CONSULTA", use_container_width=True):
             st.session_state.busqueda_activa = False
             st.session_state.resultado_busqueda = None
@@ -3604,6 +3632,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
