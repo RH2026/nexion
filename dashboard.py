@@ -3461,7 +3461,7 @@ else:
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
                 # --- 1. CONFIGURACIÓN DE SEGURIDAD (SECRETS) ---
-                # Asegúrate de tener GITHUB_TOKEN y GEMINI_API_KEY en Streamlit Cloud
+                # --- 1. CONFIGURACIÓN DE SEGURIDAD ---
                 GITHUB_USER = "RH2026"
                 GITHUB_REPO = "nexion"
                 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
@@ -3469,9 +3469,8 @@ else:
                 # Configuración de Gemini
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 
-                # --- 2. FUNCIONES DE APOYO ---
+                # --- 2. FUNCIÓN PARA LEER GITHUB ---
                 def leer_csv_github(nombre_archivo):
-                    """Lee archivos CSV directamente desde tu repositorio de GitHub"""
                     try:
                         url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{nombre_archivo}"
                         headers = {"Authorization": f"token {GITHUB_TOKEN}"}
@@ -3480,76 +3479,50 @@ else:
                             content = r.json()
                             df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
                             return df
-                    except Exception:
+                    except:
                         return None
                     return None
                 
-                
-                # Estilo personalizado
-                st.markdown("""
-                    <style>
-                    .main { background-color: #f5f7f9; }
-                    .stTextInput > div > div > input { color: #4e73df; }
-                    </style>
-                    """, unsafe_allow_html=True)
+                # --- 3. INTERFAZ ---
+                st.set_page_config(page_title="Nexion AI", page_icon="🤖")
                 
                 st.markdown("<h1 style='text-align: center; color: #4e73df;'>🤖 NEXION AI CENTRAL</h1>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align: center;'>Asistente inteligente de JYPESA para Rigoberto</p>", unsafe_allow_html=True)
                 st.divider()
                 
-                # --- 4. LÓGICA DEL CHAT ---
-                # Inicializar historial de mensajes
                 if "messages" not in st.session_state:
                     st.session_state.messages = []
                 
-                # Botón para limpiar chat en la barra lateral
-                if st.sidebar.button("Limpiar historial de chat"):
-                    st.session_state.messages = []
-                    st.rerun()
-                
-                # Mostrar mensajes previos
                 for message in st.session_state.messages:
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
                 
-                # Input de usuario
+                # --- 4. EL CHAT (CON EL NOMBRE DE MODELO CORREGIDO) ---
                 if pregunta := st.chat_input("¿Qué quieres saber de tus matrices, amor?"):
-                    # Guardar y mostrar pregunta del usuario
                     st.session_state.messages.append({"role": "user", "content": pregunta})
                     with st.chat_message("user"):
                         st.markdown(pregunta)
                 
-                    # Respuesta de la IA
-                    with st.spinner("Consultando tus datos en GitHub..."):
+                    with st.spinner("Consultando datos..."):
                         try:
-                            # Cargamos las matrices principales para dar contexto
-                            # (He puesto las 5 que me pediste)
+                            # Cargamos solo lo básico para probar
                             df_inv = leer_csv_github("inventario.csv")
-                            df_mue = leer_csv_github("muestras.csv")
-                            df_fact = leer_csv_github("facturacion_moreno.csv")
-                            df_hist = leer_csv_github("matriz_historial.csv")
-                            df_dash = leer_csv_github("Matriz_Excel_Dashboard.csv")
-                
-                            # Construir el contexto para Gemini (últimos 10 registros de cada una para no saturar)
-                            contexto = "Eres la asistente virtual de JYPESA. Respondes a Rigoberto.\n"
-                            if df_inv is not None: contexto += f"\nINVENTARIO RECIENTE:\n{df_inv.tail(10).to_string(index=False)}"
-                            if df_mue is not None: contexto += f"\nMUESTRAS RECIENTES:\n{df_mue.tail(10).to_string(index=False)}"
-                            if df_fact is not None: contexto += f"\nFACTURACIÓN:\n{df_fact.tail(5).to_string(index=False)}"
                             
-                            # Llamada al modelo (gemini-pro para evitar el error 404)
-                            model = genai.GenerativeModel('gemini-pro')
-                            prompt_completo = f"{contexto}\n\nPregunta de Rigoberto: {pregunta}"
-                            
-                            response = model.generate_content(prompt_completo)
-                            respuesta_texto = response.text
+                            contexto = "Eres la asistente de JYPESA. Responde a Rigoberto de forma amable."
+                            if df_inv is not None:
+                                contexto += f"\nInventario actual: {df_inv.tail(5).to_string()}"
                 
-                            # Mostrar y guardar respuesta
+                            # USAMOS EL NOMBRE TÉCNICO COMPLETO PARA EVITAR EL 404
+                            model = genai.GenerativeModel('models/gemini-pro') 
+                            
+                            response = model.generate_content(f"{contexto}\n\nPregunta: {pregunta}")
+                            
                             with st.chat_message("assistant"):
-                                st.markdown(respuesta_texto)
-                            st.session_state.messages.append({"role": "assistant", "content": respuesta_texto})
+                                st.markdown(response.text)
+                            st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
                         except Exception as e:
-                            st.error(f"Error técnico, amor: {str(e)}")
+                            # Si vuelve a fallar, nos dirá el error exacto aquí
+                            st.error(f"Lo siento amor, hubo este error: {str(e)}")
                           
             
                
@@ -3564,6 +3537,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
