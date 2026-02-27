@@ -3484,8 +3484,6 @@ else:
                         return None
                     return None
                 
-                # --- 3. INTERFAZ DE LA APP ---
-                st.set_page_config(page_title="Nexion AI", page_icon="🤖", layout="centered")
                 
                 # Estilo personalizado
                 st.markdown("""
@@ -3566,6 +3564,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
