@@ -3489,45 +3489,45 @@ else:
                     with st.chat_message("user"): st.markdown(pregunta)
                 
                     with st.spinner("Analizando tus 5 matrices de JYPESA..."):
-                    try:
-                        # 1. Detectar el modelo disponible (como ya nos funcionó)
-                        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                        model_name = available_models[0]
-                        model = genai.GenerativeModel(model_name)
-                        
-                        # 2. CARGAR LAS 5 MATRICES
-                        df_dash = leer_csv_github("Matriz_Excel_Dashboard.csv")
-                        df_fact = leer_csv_github("facturacion_moreno.csv")
-                        df_inv = leer_csv_github("inventario.csv")
-                        df_hist = leer_csv_github("matriz_historial.csv")
-                        df_mue = leer_csv_github("muestras.csv")
-            
-                        # 3. CONSTRUIR EL "CEREBRO" CON LOS DATOS
-                        # Le pasamos los últimos 10-15 registros de cada una para que tenga contexto fresco
-                        contexto = "Eres la asistente experta de JYPESA. Aquí tienes los datos actuales para responder a Rigoberto:\n\n"
-                        
-                        if df_inv is not None:
-                            contexto += f"--- INVENTARIO (Stock actual) ---\n{df_inv.tail(15).to_string(index=False)}\n\n"
-                        if df_mue is not None:
-                            contexto += f"--- ÚLTIMAS MUESTRAS ENVIADAS ---\n{df_mue.tail(15).to_string(index=False)}\n\n"
-                        if df_fact is not None:
-                            contexto += f"--- FACTURACIÓN MORENO ---\n{df_fact.tail(10).to_string(index=False)}\n\n"
-                        if df_hist is not None:
-                            contexto += f"--- HISTORIAL GENERAL ---\n{df_hist.tail(10).to_string(index=False)}\n\n"
-                        if df_dash is not None:
-                            contexto += f"--- DASHBOARD/RESUMEN ---\n{df_dash.tail(5).to_string(index=False)}\n\n"
-            
-                        # 4. GENERAR RESPUESTA INTEGRADA
-                        prompt_final = f"{contexto}Pregunta de Rigoberto: {pregunta}\n\nInstrucción: Analiza la información de las matrices anteriores para dar una respuesta exacta."
-                        
-                        response = model.generate_content(prompt_final)
-                        
-                        with st.chat_message("assistant"):
-                            st.markdown(response.text)
-                        st.session_state.messages.append({"role": "assistant", "content": response.text})
-            
-                    except Exception as e:
-                        st.error(f"Ay amor, algo falló al analizar todo: {str(e)}")
+                        try:
+                            # 1. Detectar el modelo disponible (como ya nos funcionó)
+                            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                            model_name = available_models[0]
+                            model = genai.GenerativeModel(model_name)
+                            
+                            # 2. CARGAR LAS 5 MATRICES
+                            df_dash = leer_csv_github("Matriz_Excel_Dashboard.csv")
+                            df_fact = leer_csv_github("facturacion_moreno.csv")
+                            df_inv = leer_csv_github("inventario.csv")
+                            df_hist = leer_csv_github("matriz_historial.csv")
+                            df_mue = leer_csv_github("muestras.csv")
+                
+                            # 3. CONSTRUIR EL "CEREBRO" CON LOS DATOS
+                            # Le pasamos los últimos 10-15 registros de cada una para que tenga contexto fresco
+                            contexto = "Eres la asistente experta de JYPESA. Aquí tienes los datos actuales para responder a Rigoberto:\n\n"
+                            
+                            if df_inv is not None:
+                                contexto += f"--- INVENTARIO (Stock actual) ---\n{df_inv.tail(15).to_string(index=False)}\n\n"
+                            if df_mue is not None:
+                                contexto += f"--- ÚLTIMAS MUESTRAS ENVIADAS ---\n{df_mue.tail(15).to_string(index=False)}\n\n"
+                            if df_fact is not None:
+                                contexto += f"--- FACTURACIÓN MORENO ---\n{df_fact.tail(10).to_string(index=False)}\n\n"
+                            if df_hist is not None:
+                                contexto += f"--- HISTORIAL GENERAL ---\n{df_hist.tail(10).to_string(index=False)}\n\n"
+                            if df_dash is not None:
+                                contexto += f"--- DASHBOARD/RESUMEN ---\n{df_dash.tail(5).to_string(index=False)}\n\n"
+                
+                            # 4. GENERAR RESPUESTA INTEGRADA
+                            prompt_final = f"{contexto}Pregunta de Rigoberto: {pregunta}\n\nInstrucción: Analiza la información de las matrices anteriores para dar una respuesta exacta."
+                            
+                            response = model.generate_content(prompt_final)
+                            
+                            with st.chat_message("assistant"):
+                                st.markdown(response.text)
+                            st.session_state.messages.append({"role": "assistant", "content": response.text})
+                
+                        except Exception as e:
+                            st.error(f"Ay amor, algo falló al analizar todo: {str(e)}")
                           
             
                
@@ -3542,6 +3542,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
