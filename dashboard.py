@@ -3488,51 +3488,61 @@ else:
                     st.session_state.messages.append({"role": "user", "content": pregunta})
                     with st.chat_message("user"): st.markdown(pregunta)
                 
-                    with st.spinner("Analizando profundamente todas tus matrices..."):
+                    with st.spinner("Análisis en curso, espera por favor..."):
                         try:
-                            # 1. Detectar modelo (mantenemos lo que ya funciona)
+                            # 1. Detectar modelo
                             available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                             model = genai.GenerativeModel(available_models[0])
                             
-                            # 2. CARGAR MATRICES
-                            df_dash = leer_csv_github("Matriz_Excel_Dashboard.csv")
-                            df_fact = leer_csv_github("facturacion_moreno.csv")
-                            df_inv = leer_csv_github("inventario.csv")
-                            df_hist = leer_csv_github("matriz_historial.csv")
-                            df_mue = leer_csv_github("muestras.csv")
+                            # 2. CARGAR MATRICES COMPLETAS
+                            matrices = {
+                                "Dashboard": leer_csv_github("Matriz_Excel_Dashboard.csv"),
+                                "Facturación": leer_csv_github("facturacion_moreno.csv"),
+                                "Inventario": leer_csv_github("inventario.csv"),
+                                "Historial": leer_csv_github("matriz_historial.csv"),
+                                "Muestras": leer_csv_github("muestras.csv")
+                            }
                 
-                            # 3. CREAR UN RESUMEN INTELIGENTE (Para que analice cientos de filas sin morir)
-                            def compactar_datos(df, nombre):
+                            # 3. PYTHON HACE EL TRABAJO DURO (Resumen Estadístico)
+                            resumen_para_ia = "RESUMEN EJECUTIVO DE JYPESA (Basado en miles de filas):\n"
+                            
+                            for nombre, df in matrices.items():
                                 if df is not None:
-                                    # Agarramos las últimas 100 filas en lugar de 10
-                                    recientes = df.tail(100).to_string(index=False)
-                                    # Sacamos una lista de las columnas que tiene para que la IA sepa qué puede preguntar
-                                    columnas = ", ".join(df.columns.tolist())
-                                    return f"--- {nombre} ---\nColumnas disponibles: {columnas}\nÚltimos datos:\n{recientes}\n"
-                                return f"--- {nombre} --- (No disponible)\n"
+                                    resumen_para_ia += f"\n--- MATRIZ {nombre.upper()} ---\n"
+                                    resumen_para_ia += f"- Total de registros analizados: {len(df)}\n"
+                                    resumen_para_ia += f"- Columnas detectadas: {', '.join(df.columns.tolist())}\n"
+                                    
+                                    # Si hay datos numéricos, sacamos sumas automáticas
+                                    nums = df.select_dtypes(include=['number']).columns.tolist()
+                                    if nums:
+                                        resumen_para_ia += f"- Estadísticas clave: {df[nums].sum().to_dict()}\n"
+                                    
+                                    # Le damos una 'probadita' de las últimas 5 filas para que vea el formato
+                                    resumen_para_ia += f"- Ejemplo de datos recientes:\n{df.tail(5).to_string(index=False)}\n"
+                                else:
+                                    resumen_para_ia += f"\n--- MATRIZ {nombre.upper()} --- (Archivo no encontrado)\n"
                 
-                            contexto_profundo = "Eres la asistente analítica de JYPESA. Rigoberto necesita datos precisos.\n"
-                            contexto_profundo += compactar_datos(df_inv, "INVENTARIO")
-                            contexto_profundo += compactar_datos(df_mue, "MUESTRAS")
-                            contexto_profundo += compactar_datos(df_fact, "FACTURACIÓN")
-                            contexto_profundo += compactar_datos(df_hist, "HISTORIAL")
-                            contexto_profundo += compactar_datos(df_dash, "DASHBOARD")
-                
-                            # 4. PROMPT DE ANÁLISIS
-                            instruccion = f"""
-                            Basado en los datos de arriba, responde la pregunta de Rigoberto.
-                            IMPORTANTE: Si la pregunta requiere contar o sumar cosas, usa todos los datos proporcionados.
-                            Pregunta: {pregunta}
+                            # 4. PROMPT HÍBRIDO (Datos + Conocimiento General)
+                            prompt_final = f"""
+                            Contexto de la empresa JYPESA:
+                            {resumen_para_ia}
+                            
+                            Instrucciones para la IA:
+                            1. Si la pregunta es sobre las matrices, usa el resumen anterior para dar una respuesta exacta basada en el análisis de Python.
+                            2. Si la pregunta NO es sobre las matrices, responde usando tu conocimiento general de forma amable y servicial.
+                            3. Rigoberto es tu jefe, trátalo con respeto.
+                            
+                            Pregunta de Rigoberto: {pregunta}
                             """
                             
-                            response = model.generate_content(contexto_profundo + instruccion)
+                            response = model.generate_content(prompt_final)
                             
                             with st.chat_message("assistant"):
                                 st.markdown(response.text)
                             st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
                         except Exception as e:
-                            st.error(f"Lo siento amor, error en el análisis: {str(e)}")
+                            st.error(f"Lo siento amor, falló el procesamiento masivo: {str(e)}")
                               
             
                
@@ -3547,6 +3557,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
