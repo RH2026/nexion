@@ -3461,72 +3461,63 @@ else:
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
                 # --- 1. CONFIGURACIÓN ---
-                GITHUB_USER = "RH2026"
-                GITHUB_REPO = "nexion"
-                GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-                
-                # Configurar API Key
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 
-                # --- 2. FUNCIÓN GITHUB ---
                 def leer_csv_github(nombre_archivo):
                     try:
-                        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{nombre_archivo}"
-                        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                        url = f"https://api.github.com/repos/RH2026/nexion/contents/{nombre_archivo}"
+                        headers = {"Authorization": f"token {st.secrets['GITHUB_TOKEN']}"}
                         r = requests.get(url, headers=headers)
                         if r.status_code == 200:
                             content = r.json()
                             df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
                             return df
-                    except:
-                        return None
+                    except: return None
                     return None
                 
-                # --- 3. INTERFAZ ---
-                st.set_page_config(page_title="Nexion AI", page_icon="🤖")
-                st.markdown("<h1 style='text-align: center; color: #4e73df;'>🤖 NEXION AI CENTRAL</h1>", unsafe_allow_html=True)
-                st.divider()
+                # --- 2. INTERFAZ ---
+                st.title("🤖 Nexion AI")
                 
                 if "messages" not in st.session_state:
                     st.session_state.messages = []
                 
-                for message in st.session_state.messages:
-                    with st.chat_message(message["role"]):
-                        st.markdown(message["content"])
+                for m in st.session_state.messages:
+                    with st.chat_message(m["role"]): st.markdown(m["content"])
                 
-                # --- 4. CHAT ---
-                if pregunta := st.chat_input("Escribe tu duda aquí, amor..."):
+                # --- 3. LÓGICA DEL CHAT (VERSION REFORZADA) ---
+                if pregunta := st.chat_input("¿Qué necesitas, amor?"):
                     st.session_state.messages.append({"role": "user", "content": pregunta})
-                    with st.chat_message("user"):
-                        st.markdown(pregunta)
+                    with st.chat_message("user"): st.markdown(pregunta)
                 
-                    with st.spinner("Buscando en tus matrices de JYPESA..."):
+                    with st.spinner("Conectando..."):
                         try:
-                            # Seleccionamos el modelo flash que es el más compatible hoy
-                            # Probamos con el nombre que la API v1beta espera
-                            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                            # ESTA ES LA CLAVE: Buscamos el modelo que SI funcione en tu cuenta
+                            modelos_encontrados = []
+                            for m in genai.list_models():
+                                if 'generateContent' in m.supported_generation_methods:
+                                    modelos_encontrados.append(m.name)
                             
-                            # Carga rápida de contexto
-                            df_inv = leer_csv_github("inventario.csv")
-                            datos = "Contexto: Eres asistente de JYPESA."
-                            if df_inv is not None:
-                                datos += f"\nInventario: {df_inv.tail(3).to_string()}"
-                
-                            # Generar respuesta
-                            response = model.generate_content(f"{datos}\n\nPregunta: {pregunta}")
-                            
-                            with st.chat_message("assistant"):
-                                st.markdown(response.text)
-                            st.session_state.messages.append({"role": "assistant", "content": response.text})
+                            if not modelos_encontrados:
+                                st.error("No encontré modelos en tu cuenta. ¿Tu API Key es nueva?")
+                            else:
+                                # Usamos el primero de la lista (el que Google prefiera)
+                                modelo_final = modelos_encontrados[0]
+                                model = genai.GenerativeModel(modelo_final)
+                                
+                                # Contexto ultra-ligero
+                                df_inv = leer_csv_github("inventario.csv")
+                                ctx = "Eres asistente de JYPESA."
+                                if df_inv is not None:
+                                    ctx += f" Inventario actual: {df_inv.tail(2).to_string()}"
+                                
+                                response = model.generate_content(f"{ctx}\nPregunta: {pregunta}")
+                                
+                                with st.chat_message("assistant"):
+                                    st.markdown(response.text)
+                                st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
                         except Exception as e:
-                            # Si el 'gemini-1.5-flash-latest' falla, intentamos con el nombre simple
-                            try:
-                                model_alt = genai.GenerativeModel('gemini-1.5-flash')
-                                response = model_alt.generate_content(pregunta)
-                                st.markdown(response.text)
-                            except:
-                                st.error(f"Error técnico: {str(e)}")
+                            st.error(f"Error técnico: {str(e)}")
                           
             
                
@@ -3541,6 +3532,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
