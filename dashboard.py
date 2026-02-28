@@ -3460,7 +3460,7 @@ else:
             
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
-                # --- 1. CONFIGURACIÓN ---
+                # --- 1. CONFIGURACIÓN DE PODER ---
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 
                 def leer_csv_github(nombre_archivo):
@@ -3471,66 +3471,87 @@ else:
                         if r.status_code == 200:
                             content = r.json()
                             df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                            # Limpieza Pro: Quitamos espacios en blanco en nombres de columnas
+                            df.columns = df.columns.str.strip()
                             return df
                     except: return None
                     return None
                 
-                # --- 2. INTERFAZ ---               
+                # --- 2. INTERFAZ TIPO DASHBOARD ---
+                st.title("🚀 NEXION AI: INTELIGENCIA TOTAL")
+                st.sidebar.header("Configuración de Análisis")
                 
                 if "messages" not in st.session_state:
                     st.session_state.messages = []
                 
+                # --- 3. PROCESAMIENTO ANALÍTICO (EL TRABAJO DURO) ---
+                def generar_auditoria_completa():
+                    matrices = {
+                        "Dashboard": "Matriz_Excel_Dashboard.csv",
+                        "Facturación": "facturacion_moreno.csv",
+                        "Inventario": "inventario.csv",
+                        "Historial": "matriz_historial.csv",
+                        "Muestras": "muestras.csv"
+                    }
+                    
+                    reporte_master = "--- REPORTE ANALÍTICO ESTRUCTURADO PARA JYPESA ---\n"
+                    
+                    for nombre, archivo in matrices.items():
+                        df = leer_csv_github(archivo)
+                        if df is not None:
+                            reporte_master += f"\n📊 MATRIZ: {nombre.upper()} ({len(df)} filas detectadas)\n"
+                            
+                            # Analizamos cada columna de forma inteligente
+                            for col in df.columns:
+                                # Si es numérica (Precios, Cantidades, Stock)
+                                if pd.api.types.is_numeric_dtype(df[col]):
+                                    suma = df[col].sum()
+                                    promedio = df[col].mean()
+                                    reporte_master += f"  > [Numérica] '{col}': Total Sumado={suma:,.2f} | Promedio={promedio:,.2f}\n"
+                                
+                                # Si es categoría (Clientes, Destinos, Productos, Vendedores)
+                                else:
+                                    # Sacamos los 10 valores que más se repiten (Frecuencia real)
+                                    top_10 = df[col].value_counts().head(10).to_dict()
+                                    reporte_master += f"  > [Categoría] '{col}': Top 10 Frecuencias={top_10}\n"
+                            
+                            # Agregamos una 'foto' de los últimos 5 movimientos para contexto narrativo
+                            reporte_master += f"  > Últimos movimientos:\n{df.tail(5).to_string(index=False)}\n"
+                        else:
+                            reporte_master += f"\n❌ MATRIZ: {nombre.upper()} (No se pudo conectar)\n"
+                            
+                    return reporte_master
+                
+                # --- 4. LÓGICA DEL CHAT INTELIGENTE ---
                 for m in st.session_state.messages:
                     with st.chat_message(m["role"]): st.markdown(m["content"])
                 
-                # --- 3. LÓGICA DEL CHAT (VERSION REFORZADA) ---
-                if pregunta := st.chat_input("¿Qué necesitas, amor?"):
+                if pregunta := st.chat_input("Hazme una pregunta compleja sobre JYPESA o cualquier tema..."):
                     st.session_state.messages.append({"role": "user", "content": pregunta})
                     with st.chat_message("user"): st.markdown(pregunta)
                 
-                    with st.spinner("Análisis en curso, espera por favor..."):
+                    with st.spinner("Analizando miles de registros y cruzando información..."):
                         try:
-                            # 1. Detectar modelo
-                            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                            model = genai.GenerativeModel(available_models[0])
+                            # Detectar el mejor modelo disponible
+                            modelos = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                            model = genai.GenerativeModel(modelos[0])
                             
-                            # 2. CARGAR MATRICES COMPLETAS
-                            matrices = {
-                                "Dashboard": leer_csv_github("Matriz_Excel_Dashboard.csv"),
-                                "Facturación": leer_csv_github("facturacion_moreno.csv"),
-                                "Inventario": leer_csv_github("inventario.csv"),
-                                "Historial": leer_csv_github("matriz_historial.csv"),
-                                "Muestras": leer_csv_github("muestras.csv")
-                            }
-                
-                            # 3. PYTHON HACE EL TRABAJO DURO (Resumen Estadístico)
-                            resumen_para_ia = "RESUMEN EJECUTIVO DE JYPESA (Basado en miles de filas):\n"
+                            # Obtenemos la auditoría de Python
+                            contexto_data = generar_auditoria_completa()
                             
-                            for nombre, df in matrices.items():
-                                if df is not None:
-                                    resumen_para_ia += f"\n--- MATRIZ {nombre.upper()} ---\n"
-                                    resumen_para_ia += f"- Total de registros analizados: {len(df)}\n"
-                                    resumen_para_ia += f"- Columnas detectadas: {', '.join(df.columns.tolist())}\n"
-                                    
-                                    # Si hay datos numéricos, sacamos sumas automáticas
-                                    nums = df.select_dtypes(include=['number']).columns.tolist()
-                                    if nums:
-                                        resumen_para_ia += f"- Estadísticas clave: {df[nums].sum().to_dict()}\n"
-                                    
-                                    # Le damos una 'probadita' de las últimas 5 filas para que vea el formato
-                                    resumen_para_ia += f"- Ejemplo de datos recientes:\n{df.tail(5).to_string(index=False)}\n"
-                                else:
-                                    resumen_para_ia += f"\n--- MATRIZ {nombre.upper()} --- (Archivo no encontrado)\n"
-                
-                            # 4. PROMPT HÍBRIDO (Datos + Conocimiento General)
+                            # Prompt de "Super Asistente"
                             prompt_final = f"""
-                            Contexto de la empresa JYPESA:
-                            {resumen_para_ia}
+                            ESTE ES EL REPORTE DE DATOS REAL DE JYPESA:
+                            {contexto_data}
                             
-                            Instrucciones para la IA:
-                            1. Si la pregunta es sobre las matrices, usa el resumen anterior para dar una respuesta exacta basada en el análisis de Python.
-                            2. Si la pregunta NO es sobre las matrices, responde usando tu conocimiento general de forma amable y servicial.
-                            3. Rigoberto es tu jefe, trátalo con respeto.
+                            ERES UNA IA DE ELITE Y ANALISTA SENIOR.
+                            Instrucciones:
+                            1. Rigoberto te hará preguntas. Si la respuesta está en los datos de arriba, sé EXACTO.
+                               Ejemplo: "Tienes 45 envíos a Mazatlán según la matriz de Muestras".
+                            2. Si la pregunta es sobre estrategia, usa los datos para aconsejar.
+                               Ejemplo: "Veo que el producto X tiene poco stock pero muchas muestras, ¡surte pronto!".
+                            3. Si la pregunta es CUALQUIER OTRA COSA (cultura, ciencia, ocio), responde con excelencia.
+                            4. Tu tono es profesional, inteligente y directo.
                             
                             Pregunta de Rigoberto: {pregunta}
                             """
@@ -3542,8 +3563,8 @@ else:
                             st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
                         except Exception as e:
-                            st.error(f"Lo siento amor, falló el procesamiento masivo: {str(e)}")
-                              
+                            st.error(f"Error en el Cerebro Central, amor: {str(e)}")
+                                              
             
                
     
@@ -3557,6 +3578,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
