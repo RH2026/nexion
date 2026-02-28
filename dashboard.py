@@ -3488,47 +3488,52 @@ else:
                     st.session_state.messages.append({"role": "user", "content": pregunta})
                     with st.chat_message("user"): st.markdown(pregunta)
                 
-                    with st.spinner("Analizando tus 5 matrices de JYPESA..."):
+                    with st.spinner("Analizando profundamente todas tus matrices..."):
                         try:
-                            # 1. Detectar el modelo disponible (como ya nos funcionó)
+                            # 1. Detectar modelo (mantenemos lo que ya funciona)
                             available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                            model_name = available_models[0]
-                            model = genai.GenerativeModel(model_name)
+                            model = genai.GenerativeModel(available_models[0])
                             
-                            # 2. CARGAR LAS 5 MATRICES
+                            # 2. CARGAR MATRICES
                             df_dash = leer_csv_github("Matriz_Excel_Dashboard.csv")
                             df_fact = leer_csv_github("facturacion_moreno.csv")
                             df_inv = leer_csv_github("inventario.csv")
                             df_hist = leer_csv_github("matriz_historial.csv")
                             df_mue = leer_csv_github("muestras.csv")
                 
-                            # 3. CONSTRUIR EL "CEREBRO" CON LOS DATOS
-                            # Le pasamos los últimos 10-15 registros de cada una para que tenga contexto fresco
-                            contexto = "Eres la asistente experta de JYPESA. Aquí tienes los datos actuales para responder a Rigoberto:\n\n"
-                            
-                            if df_inv is not None:
-                                contexto += f"--- INVENTARIO (Stock actual) ---\n{df_inv.tail(15).to_string(index=False)}\n\n"
-                            if df_mue is not None:
-                                contexto += f"--- ÚLTIMAS MUESTRAS ENVIADAS ---\n{df_mue.tail(15).to_string(index=False)}\n\n"
-                            if df_fact is not None:
-                                contexto += f"--- FACTURACIÓN MORENO ---\n{df_fact.tail(10).to_string(index=False)}\n\n"
-                            if df_hist is not None:
-                                contexto += f"--- HISTORIAL GENERAL ---\n{df_hist.tail(10).to_string(index=False)}\n\n"
-                            if df_dash is not None:
-                                contexto += f"--- DASHBOARD/RESUMEN ---\n{df_dash.tail(5).to_string(index=False)}\n\n"
+                            # 3. CREAR UN RESUMEN INTELIGENTE (Para que analice cientos de filas sin morir)
+                            def compactar_datos(df, nombre):
+                                if df is not None:
+                                    # Agarramos las últimas 100 filas en lugar de 10
+                                    recientes = df.tail(100).to_string(index=False)
+                                    # Sacamos una lista de las columnas que tiene para que la IA sepa qué puede preguntar
+                                    columnas = ", ".join(df.columns.tolist())
+                                    return f"--- {nombre} ---\nColumnas disponibles: {columnas}\nÚltimos datos:\n{recientes}\n"
+                                return f"--- {nombre} --- (No disponible)\n"
                 
-                            # 4. GENERAR RESPUESTA INTEGRADA
-                            prompt_final = f"{contexto}Pregunta de Rigoberto: {pregunta}\n\nInstrucción: Analiza la información de las matrices anteriores para dar una respuesta exacta."
+                            contexto_profundo = "Eres la asistente analítica de JYPESA. Rigoberto necesita datos precisos.\n"
+                            contexto_profundo += compactar_datos(df_inv, "INVENTARIO")
+                            contexto_profundo += compactar_datos(df_mue, "MUESTRAS")
+                            contexto_profundo += compactar_datos(df_fact, "FACTURACIÓN")
+                            contexto_profundo += compactar_datos(df_hist, "HISTORIAL")
+                            contexto_profundo += compactar_datos(df_dash, "DASHBOARD")
+                
+                            # 4. PROMPT DE ANÁLISIS
+                            instruccion = f"""
+                            Basado en los datos de arriba, responde la pregunta de Rigoberto.
+                            IMPORTANTE: Si la pregunta requiere contar o sumar cosas, usa todos los datos proporcionados.
+                            Pregunta: {pregunta}
+                            """
                             
-                            response = model.generate_content(prompt_final)
+                            response = model.generate_content(contexto_profundo + instruccion)
                             
                             with st.chat_message("assistant"):
                                 st.markdown(response.text)
                             st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
                         except Exception as e:
-                            st.error(f"Ay amor, algo falló al analizar todo: {str(e)}")
-                          
+                            st.error(f"Lo siento amor, error en el análisis: {str(e)}")
+                              
             
                
     
@@ -3542,6 +3547,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
