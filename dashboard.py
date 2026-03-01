@@ -2671,9 +2671,9 @@ else:
                     
                     c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
                     # Usamos str(nuevo_folio) como lo tienes en tu lógica
-                    f_folio = c1.text_input(":material/tag: FOLIO", value=str(nuevo_folio), disabled=True)
+                    f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=str(nuevo_folio), disabled=True)
                     f_paq_sel = c2.selectbox(
-                        ":material/conveyor: FORMA DE ENVÍO", 
+                        ":material/local_shipping: FORMA DE ENVÍO", 
                         ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
                     )
                     f_ent_sel = c3.selectbox(
@@ -3696,6 +3696,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
