@@ -598,11 +598,11 @@ def login_screen():
                 # --- DENTRO DE LOGIN_SCREEN ---
                 # Diccionario para convertir Operator ID en Nombre Real
                 nombres_reales = {
-                    "RIGOBERTO": "Rigoberto Hernández",
-                    "AGomez": "Alita Gomez",
-                    "JMoreno": "J. Moreno",
-                    "Cynthia": "Cynthia",
-                    "Brenda": "Brenda",
+                    "Rigoberto": "Rigoberto Hernández",
+                    "AGomez": "Ale Gomez",
+                    "JMoreno": "Jesus Moreno",
+                    "Cynthia": "Cynthia Ornelas",
+                    "Brenda": "Brenda Pizano",
                     "Fialko": "Fialko"
                 }
                 
@@ -742,7 +742,7 @@ else:
                     </div>
                 """, unsafe_allow_html=True)
                 
-                st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#f0f0f0; font-size:10px; font-weight:500; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
                 # 2. BOTONES DE NAVEGACIÓN (Restricciones específicas aplicadas)
                 
@@ -3661,6 +3661,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
