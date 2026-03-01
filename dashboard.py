@@ -555,17 +555,14 @@ def login_screen():
             if submit_button:
                 lista_usuarios = st.secrets.get("usuarios", {})
                 
-                # VALIDACIÓN EXITOSA
+                # VALIDACIÓN EXITOSA               
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
                     st.session_state.usuario_activo = user_input
                     
-                    if user_input == "JMoreno":
-                        st.session_state.menu_main = "FORMATOS"
-                        st.session_state.menu_sub = "SALIDA DE PT"
-                    else:
-                        st.session_state.menu_main = "DASHBOARD"
-                        st.session_state.menu_sub = "GENERAL"
+                    # Todos inician en el DASHBOARD GENERAL
+                    st.session_state.menu_main = "DASHBOARD"
+                    st.session_state.menu_sub = "GENERAL"
                     
                     st.success(f"BIENVENIDO!, {user_input.upper()}")
                     time.sleep(1) 
@@ -677,35 +674,36 @@ else:
             with st.popover("☰ NAVEGACIÓN", use_container_width=True):
                 st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
-                usuario = st.session_state.get("usuario_activo", "")
-        
-                if usuario != "JMoreno":
-                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                        st.session_state.menu_main = "DASHBOARD"
-                        st.session_state.menu_sub = "GENERAL"
-                        st.session_state.busqueda_activa = False
-                        st.rerun()
-                    
-                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                        for s in ["ALERTAS", "GANTT", "QUEJAS"]:
-                            label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
-                                st.session_state.menu_main = "SEGUIMIENTO"
-                                st.session_state.menu_sub = s
-                                st.session_state.busqueda_activa = False
-                                st.rerun()
-        
-                    with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                        for s in ["APQ", "OPS", "OTD", "SAMPLES"]:
-                            label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
-                                st.session_state.menu_main = "REPORTES"
-                                st.session_state.menu_sub = s
-                                st.session_state.busqueda_activa = False
-                                st.rerun()
-        
+                # Botón DASHBOARD (Visible para todos)
+                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                    st.session_state.menu_main = "DASHBOARD"
+                    st.session_state.menu_sub = "GENERAL"
+                    st.session_state.busqueda_activa = False
+                    st.rerun()
+                
+                # SEGUIMIENTO (Incluye GANTT para todos)
+                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                    for s in ["ALERTAS", "GANTT", "QUEJAS"]:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                            st.session_state.menu_main = "SEGUIMIENTO"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            st.rerun()
+            
+                # REPORTES (Acceso total a APQ, OPS, OTD)
+                with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                    for s in ["APQ", "OPS", "OTD", "SAMPLES"]:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+                            st.session_state.menu_main = "REPORTES"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            st.rerun()
+            
+                # FORMATOS (Acceso a todas las opciones)
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    formatos = ["SALIDA DE PT"] if usuario == "JMoreno" else ["SALIDA DE PT", "CONTRARRECIBOS"]
+                    formatos = ["SALIDA DE PT", "CONTRARRECIBOS"]
                     for s in formatos:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -713,17 +711,16 @@ else:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             st.rerun()
-        
-                if usuario != "JMoreno":
-                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
-                            label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
-                                st.session_state.menu_main = "HUB LOG"
-                                st.session_state.menu_sub = s
-                                st.session_state.busqueda_activa = False
-                                st.rerun()
-        
+            
+                # HUB LOG (Visible para todos)
+                with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                    for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                            st.session_state.menu_main = "HUB LOG"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            st.rerun()
         # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
         if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
             resultados = st.session_state.resultado_busqueda
@@ -3578,6 +3575,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
