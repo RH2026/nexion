@@ -726,21 +726,7 @@ else:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-                # 3. SECCIÓN DE CIERRE DE SESIÓN
-                # 3. SECCIÓN DE CIERRE DE SESIÓN
-                st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
-                
-                # Inyectamos un estilo pequeño solo para el botón de logout
-                st.markdown("""
-                    <style>
-                    .stButton>button[kind="primary"] {
-                        font-size: 8px !important;
-                        letter-spacing: 2px;
-                        font-family: monospace;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
-                
+                # 3. SECCIÓN DE CIERRE DE SESIÓN                
                 if st.button("TERMINAR SESIÓN / LOGOUT", use_container_width=True, type="primary"):
                     # Limpiamos el estado de autenticación
                     st.session_state.autenticado = False
@@ -3603,6 +3589,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
