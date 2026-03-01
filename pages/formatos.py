@@ -68,58 +68,58 @@ def generar_proforma_html(datos_rem, datos_dest, items, info_envio):
             </tfoot>
         </table>
         <div style="margin-top: 30px; font-size: 0.75em; border: 1px solid #eee; padding: 10px; background: #fafafa;">
-            <p style="margin:0;"><b>Declaration:</b> These commodities, technology or software were exported in accordance with the export administration regulations. Diversion contrary to law is prohibited. The values declared are for customs purposes only.</p>
+            <p style="margin:0;"><b>Declaration:</b> These commodities, technology or software were exported in accordance with the export administration regulations.</p>
         </div>
     </div>
     """
 
-# --- INTERFAZ DE CAPTURA CON TU ESTILO ---
+# --- INTERFAZ DE CAPTURA ---
 st.title("📄 Generador de Proforma Internacional")
 
 with st.form("proforma_form"):
-    # Fila superior de configuración
-    c1, c2, c3 = st.columns([1, 1, 1])
-    f_folio = c1.text_input("FOLIO / INVOICE #", "PRO-2026-001")
-    f_fecha = c2.date_input("FECHA DE ENVÍO", date.today())
-    f_currency = c3.selectbox("MONEDA", ["USD (Dólares)", "MXN (Pesos)"])
+    # Configuración General
+    c_top1, c_top2, c_top3 = st.columns([1, 1, 1])
+    f_folio = c_top1.text_input("FOLIO / INVOICE #", "PRO-2026-001")
+    f_fecha = c_top2.date_input("FECHA DE ENVÍO", date.today())
+    f_currency = c_top3.selectbox("MONEDA", ["USD (Dólares)", "MXN (Pesos)"])
 
     st.write("")
 
-    # --- SECCIÓN REMITENTE (Azul) ---
-    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">REMITENTE</div>', unsafe_allow_html=True)
-    with st.container():
+    # --- LAYOUT DE DOS COLUMNAS (REMITENTE | DESTINATARIO) ---
+    col_izq, col_der = st.columns(2)
+
+    with col_izq:
+        st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">REMITENTE</div>', unsafe_allow_html=True)
         st.text_input("NOMBRE", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
-        r1, r2 = st.columns([2, 1])
+        r1, r2 = st.columns([1.5, 1])
         rem_atn = r1.text_input("ATENCIÓN", "RIGOBERTO HERNANDEZ")
         rem_tel = r2.text_input("TELÉFONO", "3319753122")
-        rem_sol = st.text_input("SOLICITANTE / AGENTE", placeholder="NOMBRE DE QUIEN SOLICITA").upper()
+        rem_sol = st.text_input("SOLICITANTE / AGENTE", placeholder="QUIEN SOLICITA").upper()
 
-    st.write("")
-
-    # --- SECCIÓN DESTINATARIO (Amarillo) ---
-    st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
-    with st.container():
+    with col_der:
+        st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
         dest_nom = st.text_input("HOTEL / NOMBRE").upper()
         dest_calle = st.text_input("CALLE Y NÚMERO").upper()
-        d1, d2 = st.columns(2)
+        d1, d2 = st.columns([1, 1])
         dest_col = d1.text_input("COLONIA").upper()
         dest_cp = d2.text_input("C.P.")
         d3, d4 = st.columns(2)
         dest_ciudad = d3.text_input("CIUDAD").upper()
         dest_estado = d4.text_input("ESTADO").upper()
-        dest_contacto = st.text_input("CONTACTO RECEPTOR", placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE").upper()
+        dest_contacto = st.text_input("CONTACTO RECEPTOR", placeholder="QUIEN RECIBE").upper()
 
     st.divider()
 
-    # --- PRODUCTOS ---
+    # --- PRODUCTOS CON SELECCIÓN DE CANTIDAD ---
     st.markdown("### 📦 PRODUCTOS")
     seleccion = st.multiselect("Selecciona los productos:", list(productos_proforma.keys()))
     
     items_capturados = []
     if seleccion:
-        cols = st.columns(4)
+        cols_p = st.columns(4)
         for i, prod in enumerate(seleccion):
-            with cols[i % 4]:
+            with cols_p[i % 4]:
+                # Aquí regresamos la funcionalidad de poner cantidad
                 cant = st.number_input(f"{prod}", min_value=1, step=1, key=f"q_{prod}")
                 info = productos_proforma[prod]
                 items_capturados.append({
@@ -139,8 +139,9 @@ if enviar:
         
         proforma_html = generar_proforma_html(rem_info, dest_info, items_capturados, {"folio": f_folio, "fecha": f_fecha})
         
-        st.success("¡Documento listo!")
+        st.success("¡Proforma lista para imprimir!")
         components.html(f"<html><body>{proforma_html}<script>window.print();</script></body></html>", height=0)
+
 
 
 
