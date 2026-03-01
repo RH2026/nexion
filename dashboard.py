@@ -3234,9 +3234,7 @@ else:
                         # 3. Recargamos la app
                         st.rerun()
                         
-            # --- SUBSECCIÓN C: PROFORMA ---
-            elif st.session_state.menu_sub == "PROFORMA":  
-
+         
 
                 
         # 5. HUB LOG
@@ -3703,6 +3701,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
