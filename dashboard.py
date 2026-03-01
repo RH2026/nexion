@@ -3138,7 +3138,7 @@ else:
                             st.session_state.lista_contrarecibos.append(nuevo_item)
                             st.toast(f"Código {f_cod_c} agregado", icon="✅")
                         else:
-                            st.error("Vida, falta el código.")
+                            st.error("Ingresa al menos un código.")
 
                 # ── C. VISTA PREVIA DE LO CAPTURADO ──
                 if st.session_state.lista_contrarecibos:
@@ -3836,6 +3836,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
