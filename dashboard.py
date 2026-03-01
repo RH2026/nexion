@@ -676,7 +676,7 @@ else:
                 usuario = st.session_state.get("usuario_activo", "GUEST")
                 st.markdown(f"""
                     <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid {vars_css['text']};'>
-                        <p style='color:#FFFFFF; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
+                        <p style='color:#f6c23e; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
                         <p style='color:{vars_css['text']}; font-size:14px; font-weight:600; margin:0;'>{usuario.upper()}</p>
                     </div>
                 """, unsafe_allow_html=True)
@@ -727,14 +727,28 @@ else:
                             st.rerun()
         
                 # 3. SECCIÓN DE CIERRE DE SESIÓN
+                # 3. SECCIÓN DE CIERRE DE SESIÓN
                 st.markdown("<hr style='margin: 15px 0; opacity: 0.1;'>", unsafe_allow_html=True)
-                if st.button("LOGOUT / TERMINAR SESIÓN", use_container_width=True, type="primary"):
+                
+                # Inyectamos un estilo pequeño solo para el botón de logout
+                st.markdown("""
+                    <style>
+                    .stButton>button[kind="primary"] {
+                        font-size: 10px !important;
+                        letter-spacing: 2px;
+                        font-family: monospace;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                
+                if st.button("TERMINAR SESIÓN / LOGOUT", use_container_width=True, type="primary"):
                     # Limpiamos el estado de autenticación
                     st.session_state.autenticado = False
                     st.session_state.usuario_activo = None
-                    # Opcional: reiniciar también el splash si quieres que vuelva a cargar todo
+                    # Reiniciar el splash para una carga limpia
                     st.session_state.splash_completado = False 
                     st.rerun()
+                    
         # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
         if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
             resultados = st.session_state.resultado_busqueda
@@ -3589,6 +3603,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
