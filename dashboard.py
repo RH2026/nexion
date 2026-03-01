@@ -1169,11 +1169,11 @@ else:
                             margin-bottom: 20px; 
                             text-transform: uppercase;
                         ">
-                            Distribución de Carga Activa por Fletera
+                            Distribución de Carga actual
                         </div>
                     """, unsafe_allow_html=True)
                     # Definimos los colores del estilo actual
-                    color_transito = "#4e73df" # Azul claro
+                    color_transito = "#36b9cc" # Azul claro
                     color_retraso = "#B22222"  # Rojo
                     
                     # Creamos las dos columnas directas en el contenedor
@@ -1187,7 +1187,7 @@ else:
                     
                         st.markdown(f"""
                             <div style='background: linear-gradient(90deg, {color_transito}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_transito};'>
-                                <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En Movimiento</p>
+                                <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En tránsito en tiempo</p>
                                 <h2 style='margin:0; color:white; font-size:28px;'>{total_t_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
                             </div>
                         """, unsafe_allow_html=True)
@@ -1211,7 +1211,7 @@ else:
                     
                         st.markdown(f"""
                             <div style='background: linear-gradient(90deg, {color_retraso}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_retraso};'>
-                                <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 Alerta de Retraso</p>
+                                <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 En tránsito con Retraso</p>
                                 <h2 style='margin:0; color:white; font-size:28px;'>{total_r_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
                             </div>
                         """, unsafe_allow_html=True)
@@ -3661,6 +3661,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
