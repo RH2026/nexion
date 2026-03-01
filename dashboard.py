@@ -1153,7 +1153,7 @@ else:
                     with c2: render_kpi(entregados, total_p, "Entregados", "#1cc88a") # Verde Esmeralda (Éxito)
                     with c3: render_kpi(total_t, total_p, "Tránsito", "#4e73df")    # Azul Real (Logística)
                     with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#36b9cc")  # Turquesa (Precisión)
-                    with c5: render_kpi(retrasados, total_p, "Retraso", "#e74a3b")   # Rojo Coral (Alerta)
+                    with c5: render_kpi(retrasados, total_p, "Retraso", "#B22222")   # Rojo Coral (Alerta)
                                     
                     # Espacio estético al final para que no se vea cortado el contenedor
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -3661,6 +3661,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
