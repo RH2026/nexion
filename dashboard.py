@@ -711,73 +711,73 @@ else:
             # --- BOTÓN POPOVER (NAVEGACIÓN + PERFIL) ---
             with st.popover("☰ NAVEGACIÓN", use_container_width=True):
     
-            # 1. IDENTIFICACIÓN DE USUARIO
-            usuario = st.session_state.get("usuario_activo", "GUEST")
-            # Definimos si el usuario es Rigoberto para dar acceso total
-            es_admin = (usuario.upper() == "RIGOBERTO") 
-        
-            st.markdown(f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid {vars_css['text']};'>
-                    <p style='color:#f6c23e; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
-                    <p style='color:{vars_css['text']}; font-size:14px; font-weight:600; margin:0;'>{usuario.upper()}</p>
-                </div>
-            """, unsafe_allow_html=True)
+                # 1. IDENTIFICACIÓN DE USUARIO
+                usuario = st.session_state.get("usuario_activo", "GUEST")
+                # Definimos si el usuario es Rigoberto para dar acceso total
+                es_admin = (usuario.upper() == "RIGOBERTO") 
             
-            st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
-            
-            # 2. BOTONES DE NAVEGACIÓN (Con restricciones aplicadas)
-            
-            # DASHBOARD: Solo para ti
-            if es_admin:
-                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.session_state.menu_sub = "GENERAL"
-                    st.session_state.busqueda_activa = False
-                    st.rerun()
-            
-            # SEGUIMIENTO: Filtramos GANTT y QUEJAS para los demás
-            with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"] if es_admin else ["ALERTAS"]
-                for s in opciones_seg:
-                    label = f"» {s}" if st.session_state.menu_sub == s else s
-                    if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
-                        st.session_state.menu_main = "SEGUIMIENTO"
-                        st.session_state.menu_sub = s
+                st.markdown(f"""
+                    <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid {vars_css['text']};'>
+                        <p style='color:#f6c23e; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
+                        <p style='color:{vars_css['text']}; font-size:14px; font-weight:600; margin:0;'>{usuario.upper()}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
+                
+                # 2. BOTONES DE NAVEGACIÓN (Con restricciones aplicadas)
+                
+                # DASHBOARD: Solo para ti
+                if es_admin:
+                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
                         st.session_state.busqueda_activa = False
                         st.rerun()
-        
-            # REPORTES: Filtramos APQ, OPS, OTD para los demás
-            with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                opciones_rep = ["APQ", "OPS", "OTD", "SAMPLES"] if es_admin else ["SAMPLES"]
-                for s in opciones_rep:
-                    label = f"» {s}" if st.session_state.menu_sub == s else s
-                    if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
-                        st.session_state.menu_main = "REPORTES"
-                        st.session_state.menu_sub = s
-                        st.session_state.busqueda_activa = False
-                        st.rerun()
-        
-            # FORMATOS: Solo dejamos SALIDA DE PT para externos
-            with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS"] if es_admin else ["SALIDA DE PT"]
-                for s in opciones_for:
-                    label = f"» {s}" if st.session_state.menu_sub == s else s
-                    if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
-                        st.session_state.menu_main = "FORMATOS"
-                        st.session_state.menu_sub = s
-                        st.session_state.busqueda_activa = False
-                        st.rerun()
-        
-            # HUB LOG: Solo para ti
-            if es_admin:
-                with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                    for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
+                
+                # SEGUIMIENTO: Filtramos GANTT y QUEJAS para los demás
+                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                    opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"] if es_admin else ["ALERTAS"]
+                    for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
-                            st.session_state.menu_main = "HUB LOG"
+                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                            st.session_state.menu_main = "SEGUIMIENTO"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             st.rerun()
+            
+                # REPORTES: Filtramos APQ, OPS, OTD para los demás
+                with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                    opciones_rep = ["APQ", "OPS", "OTD", "SAMPLES"] if es_admin else ["SAMPLES"]
+                    for s in opciones_rep:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+                            st.session_state.menu_main = "REPORTES"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            st.rerun()
+            
+                # FORMATOS: Solo dejamos SALIDA DE PT para externos
+                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                    opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS"] if es_admin else ["SALIDA DE PT"]
+                    for s in opciones_for:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+                            st.session_state.menu_main = "FORMATOS"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            st.rerun()
+            
+                # HUB LOG: Solo para ti
+                if es_admin:
+                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                                st.session_state.menu_main = "HUB LOG"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
 
     # 3. SECCIÓN DE CIERRE DE SESIÓN
     if st.button("TERMINAR SESIÓN / LOGOUT", use_container_width=True, type="primary"):
@@ -3641,6 +3641,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
