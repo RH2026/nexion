@@ -767,11 +767,15 @@ else:
         
                 # 3. SECCIÓN DE CIERRE DE SESIÓN                
                 if st.button("TERMINAR SESIÓN / LOGOUT", use_container_width=True, type="primary"):
-                    # Limpiamos el estado de autenticación
+                    # 1. Limpiamos TODO el session_state de un golpe
+                    for key in list(st.session_state.keys()):
+                        del st.session_state[key]
+                    
+                    # 2. Forzamos el re-inicio de los valores básicos para evitar errores de lectura
                     st.session_state.autenticado = False
-                    st.session_state.usuario_activo = None
-                    # Reiniciar el splash para una carga limpia
-                    st.session_state.splash_completado = False 
+                    st.session_state.splash_completado = False
+                    
+                    # 3. El Rerun ahora encontrará el estado vacío y obligará a pasar por Login
                     st.rerun()
                     
         # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
@@ -3628,6 +3632,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
