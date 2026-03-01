@@ -2717,7 +2717,7 @@ else:
                     f_cp = cd2.text_input(":material/mailbox: C.P.")
                     
                     cd3, cd4 = st.columns(2)
-                    f_ci = cd3.text_input(":material/city: Ciudad").upper()
+                    f_ci = cd3.text_input(":material/location_city: Ciudad").upper()
                     f_es = cd4.text_input(":material/public: Estado").upper()
                     f_con = st.text_input(
                         ":material/contact_phone: Contacto Receptor", 
@@ -3696,6 +3696,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
