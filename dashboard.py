@@ -3115,7 +3115,7 @@ else:
                     st.session_state.lista_contrarecibos = []
 
                 # ── B. INTERFAZ DE CAPTURA ESTILO ELITE ──
-                st.subheader(":material/receipt_long: Generador de Contrarrecibos")
+                st.write("")
                 
                 with st.container(border=True):
                     c_h1, c_h2, c_h3 = st.columns([1, 1, 1])
@@ -3836,6 +3836,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
