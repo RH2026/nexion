@@ -3312,12 +3312,10 @@ else:
                 if 'folio_num' not in st.session_state:
                     st.session_state.folio_num = int(datetime.now().strftime("%m%d%H%M"))
                 
-                # --- INTERFAZ DE CAPTURA ---
-                st.title(":material/description: Generador de Proforma Internacional")
-                
+                                
                 # SECCIÓN DE DATOS DE ENVÍO
                 c_env1, c_env2, c_env3 = st.columns([1, 1, 1])
-                f_folio = c_env1.text_input(":material/tag: FOLIO / INVOICE #", value=f"PRO-{st.session_state.folio_num}")
+                f_folio = c_env1.text_input(":material/confirmation_number: FOLIO / INVOICE #", value=f"PRO-{st.session_state.folio_num}")
                 f_fecha = c_env2.date_input(":material/calendar_today: FECHA DE ENVÍO", date.today())
                 f_guia = c_env3.text_input(":material/local_shipping: NÚMERO DE GUÍA FEDEX", placeholder="0000 0000 0000")
                 
@@ -3340,7 +3338,7 @@ else:
                     dest_pais = dp1.text_input(":material/public: PAÍS DESTINO").upper()
                     dest_estado = dp2.text_input(":material/map: ESTADO / PROVINCIA").upper()
                     dp3, dp4 = st.columns(2)
-                    dest_ciudad = dp3.text_input(":material/city: CIUDAD").upper()
+                    dest_ciudad = dp3.text_input(":material/location_city: CIUDAD").upper()
                     dest_tax = dp4.text_input(":material/receipt_long: TAX ID / RFC / RUC").upper()
                     dp5, dp6 = st.columns(2)
                     dest_contacto = dp5.text_input(":material/contact_phone: TEL. CONTACTO")
@@ -3854,6 +3852,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
