@@ -799,8 +799,8 @@ else:
                             st.rerun()
             
                 # 3. SECCIÓN DE CIERRE DE SESIÓN
-                st.markdown("<hr style='margin: 15px 0; opacity: 0.1;'>", unsafe_allow_html=True)
-                if st.button("TERMINAR SESIÓN / LOGOUT", use_container_width=True, type="primary"):
+                st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+                if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                     for key in list(st.session_state.keys()):
                         del st.session_state[key]
                     st.session_state.autenticado = False
@@ -3661,6 +3661,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
