@@ -558,9 +558,8 @@ def login_screen():
                 # VALIDACIÓN EXITOSA               
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
-                    st.session_state.usuario_activo = user_input
+                    st.session_state.usuario_activo = user_input # Aquí guardamos quién entró
                     
-                    # Todos inician en el DASHBOARD GENERAL
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     
@@ -674,16 +673,24 @@ else:
             with st.popover("☰ NAVEGACIÓN", use_container_width=True):
                 st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
-                # Botón DASHBOARD (Visible para todos)
+                usuario = st.session_state.get("usuario_activo", "")
+                es_admin = (usuario == "Rigoberto") # Solo tú tienes el poder total
+            
+                # --- DASHBOARD ---
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
                     st.rerun()
                 
-                # SEGUIMIENTO (Incluye GANTT para todos)
+                # --- SEGUIMIENTO ---
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                    for s in ["ALERTAS", "GANTT", "QUEJAS"]:
+                    opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
+                    # Si no eres tú, quitamos GANTT y QUEJAS
+                    if not es_admin:
+                        opciones_seg = [opt for opt in opciones_seg if opt not in ["GANTT", "QUEJAS"]]
+                        
+                    for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
                             st.session_state.menu_main = "SEGUIMIENTO"
@@ -691,9 +698,14 @@ else:
                             st.session_state.busqueda_activa = False
                             st.rerun()
             
-                # REPORTES (Acceso total a APQ, OPS, OTD)
+                # --- REPORTES ---
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                    for s in ["APQ", "OPS", "OTD", "SAMPLES"]:
+                    opciones_rep = ["APQ", "OPS", "OTD", "SAMPLES"]
+                    # Si no eres tú, quitamos los reportes maestros
+                    if not es_admin:
+                        opciones_rep = [opt for opt in opciones_rep if opt not in ["APQ", "OPS", "OTD"]]
+                        
+                    for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
                             st.session_state.menu_main = "REPORTES"
@@ -701,7 +713,7 @@ else:
                             st.session_state.busqueda_activa = False
                             st.rerun()
             
-                # FORMATOS (Acceso a todas las opciones)
+                # --- FORMATOS ---
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
                     formatos = ["SALIDA DE PT", "CONTRARRECIBOS"]
                     for s in formatos:
@@ -712,7 +724,7 @@ else:
                             st.session_state.busqueda_activa = False
                             st.rerun()
             
-                # HUB LOG (Visible para todos)
+                # --- HUB LOG ---
                 with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
                     for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -3575,6 +3587,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
