@@ -94,7 +94,7 @@ st.write("")
 col_izq, col_der = st.columns(2)
 
 with col_izq:
-    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">:material/upload: REMITENTE</div>', unsafe_allow_html=True)
+    st.markdown('<div style="background:#2ecc71;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">REMITENTE</div>', unsafe_allow_html=True)
     st.text_input(":material/corporate_fare: NOMBRE", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
     r1, r2 = st.columns([1.5, 1])
     rem_atn = r1.text_input(":material/person: ATENCIÓN", "RIGOBERTO HERNANDEZ")
@@ -102,7 +102,7 @@ with col_izq:
     rem_sol = st.text_input(":material/badge: SOLICITANTE / AGENTE").upper()
 
 with col_der:
-    st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">:material/download: DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+    st.markdown('<div style="background:#34495e;color:black;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
     dest_nom = st.text_input(":material/hotel: HOTEL / NOMBRE").upper()
     dest_calle = st.text_input(":material/location_on: CALLE Y NÚMERO").upper()
     dp1, dp2 = st.columns(2)
@@ -155,6 +155,7 @@ if st.button(":material/print: GENERAR E IMPRIMIR FACTURA", use_container_width=
 # Botón Borrar como el que me pediste
 if st.button(":material/refresh: BORRAR TODO", use_container_width=True):
     st.rerun()
+
 
 
 
