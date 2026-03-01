@@ -533,14 +533,14 @@ button[kind="secondary"] {{
 
 /* 1. Achicar el texto de los botones dentro del Popover */
 div[data-baseweb="popover"] button {{
-    font-size: 12px !important;
+    font-size: 13px !important;
     letter-spacing: 1px !important;
     text-transform: uppercase !important;
 }}
 
 /* 2. Achicar el texto de los Expanders dentro del Popover (Navegación) */
 div[data-baseweb="popover"] .st-expanderHeader p {{
-    font-size: 12px !important;
+    font-size: 13px !important;
     letter-spacing: 1.5px !important;
     font-weight: 600 !important;
 }}
@@ -548,13 +548,13 @@ div[data-baseweb="popover"] .st-expanderHeader p {{
 /* 3. Achicar cualquier texto simple (p, span) dentro del Popover */
 div[data-baseweb="popover"] p, 
 div[data-baseweb="popover"] span {{
-    font-size: 10px !important;
+    font-size: 13px !important;
     letter-spacing: 1px !important;
 }}
 
 /* 4. El botón de Logout (tipo Primary) lo hacemos aún más discreto */
 div[data-baseweb="popover"] button[kind="primary"] {{
-    font-size: 10px !important;
+    font-size: 13px !important;
     height: 26px !important;
     min-height: 26px !important;
     line-height: 26px !important;
@@ -3628,6 +3628,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
