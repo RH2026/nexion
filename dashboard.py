@@ -3107,38 +3107,51 @@ else:
                 now_gdl = datetime.now(tz_gdl)
                 
                 # ── A. INICIALIZACIÓN DE ESTADO ──
-                # Usamos una sub-llave para rastrear versiones y forzar el refresco del widget
                 if 'reset_counter' not in st.session_state:
                     st.session_state.reset_counter = 0
-    
-                if 'rows_contrarecibo' not in st.session_state:
-                    st.session_state.rows_contrarecibo = pd.DataFrame([
-                        {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""} 
-                    ] * 10)
+
+                # Lista para almacenar los registros capturados en la sesión
+                if 'lista_contrarecibos' not in st.session_state:
+                    st.session_state.lista_contrarecibos = []
+
+                # ── B. INTERFAZ DE CAPTURA ESTILO ELITE ──
+                st.subheader(":material/receipt_long: Generador de Contrarrecibos")
                 
-                # ── B. ENCABEZADO Y CONTROLES ──
                 with st.container(border=True):
-                    col_h1, col_h2 = st.columns([2, 1])
-                    with col_h2:
-                        hora_reporte = st.text_input("HORA", value=now_gdl.strftime('%I:%M %p').lower(), key="h_contra_val")
-                
-                # ── C. EDITOR DE DATOS ──
-                # Al añadir el counter a la key, Streamlit destruye y recrea el widget al limpiar
-                df_edit_c = st.data_editor(
-                    st.session_state.rows_contrarecibo, 
-                    num_rows="dynamic", 
-                    use_container_width=True,
-                    key=f"editor_contrarecibo_{st.session_state.reset_counter}",
-                    column_config={
-                        "FECHA": st.column_config.TextColumn("FECHA"),
-                        "CODIGO": st.column_config.TextColumn("CÓDIGO"),
-                        "PAQUETERIA": st.column_config.TextColumn("PAQUETERÍA"),
-                        "CANTIDAD": st.column_config.TextColumn("CANTIDAD")
-                    }
-                )
-                
-                # ── D. RENDERIZADO PARA IMPRESIÓN ──
-                filas_c = df_edit_c[df_edit_c["CODIGO"] != ""]
+                    c_h1, c_h2, c_h3 = st.columns([1, 1, 1])
+                    f_fecha_c = c_h1.date_input(":material/calendar_today: FECHA", date.today())
+                    f_hora_c = c_h2.text_input(":material/schedule: HORA", value=now_gdl.strftime('%I:%M %p').lower())
+                    f_paq_c = c_h3.selectbox(":material/local_shipping: PAQUETERÍA", ["FEDEX", "PAQMEX", "TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "TINY PACK"])
+
+                    c_d1, c_d2 = st.columns([2, 1])
+                    f_cod_c = c_d1.text_input(":material/barcode: CÓDIGO / FACTURA", placeholder="Escribe el código y presiona Enter")
+                    f_cant_c = c_d2.number_input(":material/format_list_numbered: CANTIDAD", min_value=1, value=1)
+                    
+                    if st.button(":material/add: AGREGAR A LA LISTA", use_container_width=True):
+                        if f_cod_c:
+                            nuevo_item = {
+                                "FECHA": f_fecha_c.strftime('%d/%m/%Y'),
+                                "CODIGO": f_cod_c.upper(),
+                                "PAQUETERIA": f_paq_c,
+                                "CANTIDAD": str(f_cant_c)
+                            }
+                            st.session_state.lista_contrarecibos.append(nuevo_item)
+                            st.toast(f"Código {f_cod_c} agregado", icon="✅")
+                        else:
+                            st.error("Vida, falta el código.")
+
+                # ── C. VISTA PREVIA DE LO CAPTURADO ──
+                if st.session_state.lista_contrarecibos:
+                    st.write("### :material/list_alt: Registros para Impresión")
+                    df_preview = pd.DataFrame(st.session_state.lista_contrarecibos)
+                    st.dataframe(df_preview, use_container_width=True)
+                    
+                    if st.button(":material/delete: LIMPIAR LISTA", type="secondary"):
+                        st.session_state.lista_contrarecibos = []
+                        st.rerun()
+
+                # ── D. RENDERIZADO PARA IMPRESIÓN (MANTENIENDO TU FORMATO) ──
+                filas_c_data = st.session_state.lista_contrarecibos
                 tabla_c_html = "".join([
                     f"<tr>"
                     f"<td style='border-bottom:1px solid black;padding:8px;'>{r['FECHA']}</td>"
@@ -3146,34 +3159,23 @@ else:
                     f"<td style='border-bottom:1px solid black;padding:8px;'>{r['PAQUETERIA']}</td>"
                     f"<td style='border-bottom:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td>"
                     f"</tr>"
-                    for _, r in filas_c.iterrows()
+                    for r in filas_c_data
                 ])
                 
-                espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * (12 - len(filas_c)))
+                # Rellenar espacios vacíos para que la hoja no se vea mocha
+                num_filas = len(filas_c_data)
+                espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * max(0, 12 - num_filas))
                 
-                # ── ESTRUCTURA HTML CON CSS PARA QUITAR HEADERS/FOOTERS DEL NAVEGADOR ──
                 form_c_html = f"""
                 <html>
                 <head>
                     <style>
                         @media print {{
-                            @page {{ 
-                                size: auto;   
-                                margin: 0;  /* Esto elimina encabezados y pies de página del navegador */
-                            }}
-                            body {{ 
-                                margin: 0; 
-                                padding: 10mm; /* El margen visual lo damos con padding para que no se corten los textos */
-                            }}
+                            @page {{ size: auto; margin: 0; }}
+                            body {{ margin: 0; padding: 10mm; }}
                             header, footer {{ display: none !important; }}
                         }}
-                        
-                        body {{ 
-                            font-family: Arial, sans-serif; 
-                            background: white; 
-                            color: black; 
-                        }}
-                        
+                        body {{ font-family: Arial, sans-serif; background: white; color: black; }}
                         .print-box {{ padding: 20px; }}
                         table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
                         th, td {{ border-bottom: 1px solid black; padding: 8px; text-align: left; }}
@@ -3187,13 +3189,11 @@ else:
                                 <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
                             </div>
                             <div style="text-align:right;">
-                                <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{hora_reporte}</span>
+                                <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{f_hora_c}</span>
                                 <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
                             </div>
                         </div>
-                        
                         <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
-                        
                         <table>
                             <thead>
                                 <tr style="font-size:12px; border-bottom: 2px solid black;">
@@ -3205,7 +3205,6 @@ else:
                                 {espacios}
                             </tbody>
                         </table>
-                        
                         <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
                             <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
                             <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
@@ -3214,25 +3213,14 @@ else:
                 </body>
                 </html>
                 """
-    
-                # ── E. ACCIONES ──
+
+                # ── E. ACCIONES DE IMPRESIÓN ──
                 st.write("---")
-                c_b1, c_b2 = st.columns(2)
-                
-                with c_b1:
-                    if st.button(":material/print: IMPRIMIR CONTRARECIBO", type="primary", use_container_width=True, key="btn_p_c"):
+                if st.button(":material/print: IMPRIMIR REPORTE DE CONTRARECIBOS", type="primary", use_container_width=True):
+                    if not st.session_state.lista_contrarecibos:
+                        st.warning("Agrega al menos un código antes de imprimir.")
+                    else:
                         components.html(f"<html><body>{form_c_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-                
-                with c_b2:
-                    if st.button(":material/refresh: BORRAR", use_container_width=True, key="btn_r_c"):
-                        # 1. Limpiamos el DataFrame en el estado
-                        st.session_state.rows_contrarecibo = pd.DataFrame([
-                            {"FECHA": now_gdl.strftime('%d/%m/%Y'), "CODIGO": "", "PAQUETERIA": "", "CANTIDAD": ""}
-                        ] * 10)
-                        # 2. Aumentamos el contador para forzar el cambio de KEY del editor
-                        st.session_state.reset_counter += 1
-                        # 3. Recargamos la app
-                        st.rerun()
 
             # --- SUBSECCIÓN C: PROFORMA ---
             elif st.session_state.menu_sub == "PROFORMA": # <-- Alineado con 'elif ... == "CONTRARRECIBOS"'
@@ -3848,6 +3836,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
