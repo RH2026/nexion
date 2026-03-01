@@ -3233,8 +3233,16 @@ else:
                         st.session_state.reset_counter += 1
                         # 3. Recargamos la app
                         st.rerun()
+
+            # --- SUBSECCIÓN C: PROFORMA ---
+            elif st.session_state.menu_sub == "PROFORMA": # <-- Alineado con 'elif ... == "CONTRARRECIBOS"'
+                st.subheader(":material/language: Factura Proforma Internacional")
+                
+                # Aquí va tu código de captura (el de los bloques verde y morado)
+                # Asegúrate de que todo lo que pegues aquí tenga 16 espacios (4 niveles) a la izquierda
+                st.info("Módulo de Captura Internacional NEXION")
                         
-         
+                 
 
                 
         # 5. HUB LOG
@@ -3701,6 +3709,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
