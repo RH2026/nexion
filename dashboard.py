@@ -529,6 +529,45 @@ button[kind="secondary"] {{
     padding-left: 10px !important;
 }}
 
+/* ───────── REFINAMIENTO GENERAL DEL POPOVER ───────── */
+
+/* 1. Achicar el texto de los botones dentro del Popover */
+div[data-baseweb="popover"] button {{
+    font-size: 10px !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+}}
+
+/* 2. Achicar el texto de los Expanders dentro del Popover (Navegación) */
+div[data-baseweb="popover"] .st-expanderHeader p {{
+    font-size: 10px !important;
+    letter-spacing: 1.5px !important;
+    font-weight: 600 !important;
+}}
+
+/* 3. Achicar cualquier texto simple (p, span) dentro del Popover */
+div[data-baseweb="popover"] p, 
+div[data-baseweb="popover"] span {{
+    font-size: 9px !important;
+    letter-spacing: 1px !important;
+}}
+
+/* 4. El botón de Logout (tipo Primary) lo hacemos aún más discreto */
+div[data-baseweb="popover"] button[kind="primary"] {{
+    font-size: 9px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    line-height: 26px !important;
+    background-color: transparent !important;
+    border: 1px solid #ff4b4b !important; /* Un rojo sutil para identificar salida */
+    color: #ff4b4b !important;
+}}
+
+div[data-baseweb="popover"] button[kind="primary"]:hover {{
+    background-color: #ff4b4b !important;
+    color: white !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -3589,6 +3628,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
