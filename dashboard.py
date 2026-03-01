@@ -2755,7 +2755,7 @@ else:
                 # --- BOTONES PRINCIPALES ---
                 col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
                 
-                if col_b1.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
+                if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
                     if not f_h: st.error("Falta el hotel")
                     elif not prods_actuales: st.error("Selecciona al menos un producto")
                     else:
@@ -2773,14 +2773,14 @@ else:
                         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
                             st.success(f"¡Guardado! Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
                 
-                if col_b2.button("🖨️ IMPRIMIR ESTE FOLIO", use_container_width=True):
+                if col_b2.button(":material/print: IMPRIMIR ESTE FOLIO", use_container_width=True):
                     if not prods_actuales: st.warning("No hay productos")
                     else:
                         # Se pasan los nuevos campos a la función de impresión
                         h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment, f_paq_nombre, f_tipo_pago)
                         components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
                 
-                if col_b3.button("🧹 BORRAR", use_container_width=True):
+                if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
                     st.rerun()
                 
                 # --- BÚSQUEDA RÁPIDA ---
@@ -2815,7 +2815,7 @@ else:
                             n_paq = st.text_input("Empresa de Paquetería", key="edit_paq", value=str(datos_fol["PAQUETERIA_NOMBRE"])).upper()
                             n_gui = st.text_input("Número de Guía", key="edit_guia", value=str(datos_fol["NUMERO_GUIA"])).upper()
                             c_gui = st.number_input("Costo de Guía ($)", key="edit_costo", value=float(datos_fol["COSTO_GUIA"]))
-                            if st.button("✅ ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
+                            if st.button(":material/update: ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
                                 idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
                                 df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
                                 df_actual.at[idx, "NUMERO_GUIA"] = n_gui.upper()
@@ -2825,7 +2825,7 @@ else:
                         with c_adm2:
                             st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
                             st.write("")
-                            if st.button("🖨️ RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
+                            if st.button(":material/print: RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
                                 prods_re = []
                                 for p in precios.keys():
                                     if p in datos_fol and datos_fol[p] > 0: prods_re.append({"desc": p, "cant": int(datos_fol[p])})
@@ -2862,14 +2862,14 @@ else:
                 
                         c1, c2, c3 = st.columns(3)
                         with c1:
-                            if st.button("🖨️ IMPRIMIR REPORTE", type="primary", use_container_width=True):
+                            if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
                                 components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
                         with c2:
                             output = BytesIO()
                             with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
-                            st.download_button("📥 DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_{date.today()}.xlsx", use_container_width=True)
+                            st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_{date.today()}.xlsx", use_container_width=True)
                         with c3:
-                            if st.button("🔄 ACTUALIZAR DATOS", use_container_width=True): st.rerun()
+                            if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
         
     
         # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
@@ -3696,6 +3696,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
