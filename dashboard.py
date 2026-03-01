@@ -742,7 +742,7 @@ else:
                     </div>
                 """, unsafe_allow_html=True)
                 
-                st.markdown("<p style='color:#f0f0f0; font-size:8px; font-weight:500; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#f0f0f0; font-size:6px; font-weight:400; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
                 # 2. BOTONES DE NAVEGACIÓN (Restricciones específicas aplicadas)
                 
@@ -3661,6 +3661,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
