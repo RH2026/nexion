@@ -676,7 +676,7 @@ else:
                 usuario = st.session_state.get("usuario_activo", "GUEST")
                 st.markdown(f"""
                     <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid {vars_css['text']};'>
-                        <p style='color:#64748b; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
+                        <p style='color:#FFFFFF; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
                         <p style='color:{vars_css['text']}; font-size:14px; font-weight:600; margin:0;'>{usuario.upper()}</p>
                     </div>
                 """, unsafe_allow_html=True)
@@ -3589,6 +3589,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
