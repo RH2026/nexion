@@ -1,248 +1,175 @@
 import streamlit as st
-import pandas as pd
-import requests
-import base64
+import streamlit.components.v1 as components
 from datetime import date
-from io import BytesIO
 
-# --- CONFIGURACIÓN ---
-st.set_page_config(page_title="Nexión - Muestras", layout="wide")
-
-GITHUB_USER = "RH2026"
-GITHUB_REPO = "nexion"
-GITHUB_PATH = "muestras.csv"
-GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
-
-# Diccionario de precios con los nombres EXACTOS
-precios = {
-    "Accesorios Ecologicos": 47.85, "Accesorios Lavarino": 47.85, "Dispensador Almond ": 218.33,
-    "Dispensador Biogena": 216.00, "Dispensador Cava": 230.58, "Dispensador Persa": 275.00,
-    "Dispensador Botánicos L": 274.17, "Dispensador Dove": 125.00, "Dispensador Biogena 400ml": 184.87,
-    "Kit Elements ": 29.34, "Kit Almond ": 33.83, "Kit Biogena": 48.95, "Kit Cava": 34.59,
-    "Kit Persa": 58.02, "Kit Lavarino": 36.30, "Kit Botánicos": 29.34, "Llave Magnetica": 180.00,
-    "Rack Dove": 0.00, "Rack JH  Color Blanco de 2 pzas": 62.00, "Rack JH  Color Blanco de 1 pzas": 50.00,
-    "Soporte dob  INOX Cap lock": 679.00, "Soporte Ind  INOX Cap lock": 608.00
+# --- CONFIGURACIÓN DE PRODUCTOS BILINGÜES ---
+# Diccionario: "Nombre en Español": ("English Name", "Harmonized Code (HS)", "Precio Unitario USD")
+productos_proforma = {
+    "Accesorios Ecologicos": ("Ecological Accessories", "3401.11", 2.50),
+    "Dispensador Almond": ("Almond Dispenser", "3924.90", 11.50),
+    "Kit Biogena": ("Biogena Amenities Kit", "3401.11", 3.20),
+    "Jabón de Tocador 40g": ("Toilet Soap 40g", "3401.11", 0.45),
+    "Shampoo Botánicos 30ml": ("Botanical Shampoo 30ml", "3305.10", 0.60),
+    "Soporte Inoxidable": ("Stainless Steel Holder", "7324.90", 35.00)
 }
 
-def obtener_datos_github():
-    try:
-        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
-        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-        r = requests.get(url, headers=headers)
-        if r.status_code == 200:
-            content = r.json()
-            df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
-            return df, content['sha']
-    except:
-        pass
-    return pd.DataFrame(), None
+def generar_proforma_html(datos_rem, datos_dest, items, info_envio):
+    filas_html = ""
+    subtotal = 0
+    for item in items:
+        total_item = item['cant'] * item['precio']
+        subtotal += total_item
+        filas_html += f"""
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">{item['desc_es']}<br><i style="font-size:0.8em; color:#555;">{item['desc_en']}</i></td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{item['hs']}</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{item['cant']}</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${item['precio']:.2f}</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${total_item:.2f}</td>
+        </tr>"""
 
-def subir_a_github(df, sha, msg):
-    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    csv_string = df.to_csv(index=False)
-    payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
-    return requests.put(url, json=payload, headers=headers).status_code == 200
+    html = f"""
+    <div style="font-family: 'Helvetica', Arial, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: auto; background: white;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px;">
+            <div>
+                <h1 style="margin:0; color:#003399;">PROFORMA INVOICE</h1>
+                <p style="margin:0;">FACTURA PROFORMA</p>
+            </div>
+            <div style="text-align: right;">
+                <p style="margin:0;"><b>Date / Fecha:</b> {info_envio['fecha']}</p>
+                <p style="margin:0;"><b>Invoice #:</b> {info_envio['folio']}</p>
+            </div>
+        </div>
 
-# --- LÓGICA DE DATOS ---
-df_actual, sha_actual = obtener_datos_github()
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div style="border: 1px solid #ccc; padding: 10px;">
+                <b style="font-size: 0.9em; color: #666;">SHIPPER / REMITENTE</b>
+                <p style="margin:5px 0; font-size: 0.9em;">
+                    <b>{datos_rem['empresa']}</b><br>
+                    {datos_rem['direccion']}<br>
+                    {datos_rem['ciudad']}, {datos_rem['pais']}<br>
+                    TEL: {datos_rem['tel']}
+                </p>
+            </div>
+            <div style="border: 1px solid #ccc; padding: 10px;">
+                <b style="font-size: 0.9em; color: #666;">CONSIGNEE / DESTINATARIO</b>
+                <p style="margin:5px 0; font-size: 0.9em;">
+                    <b>{datos_dest['nombre']}</b><br>
+                    {datos_dest['calle']}<br>
+                    {datos_dest['ciudad']}, {datos_dest['pais']}<br>
+                    TEL: {datos_dest['tel']}
+                </p>
+            </div>
+        </div>
 
-# Asegurar que las columnas de guía existan en el DF si no vienen en el CSV
-for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA"]:
-    if col not in df_actual.columns and not df_actual.empty:
-        df_actual[col] = ""
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em;">
+            <thead>
+                <tr style="background: #f2f2f2;">
+                    <th style="border: 1px solid #ddd; padding: 8px;">Description / Descripción</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">HS Code</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Qty</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Unit USD</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Total USD</th>
+                </tr>
+            </thead>
+            <tbody>
+                {filas_html}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" style="text-align:right; padding: 10px;"><b>TOTAL VALUE USD:</b></td>
+                    <td style="border: 1px solid #ddd; padding: 10px; text-align:right; background: #eee;"><b>${subtotal:.2f}</b></td>
+                </tr>
+            </tfoot>
+        </table>
 
-nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
+        <div style="margin-top: 30px; font-size: 0.75em; border: 1px solid #eee; padding: 10px; background: #fafafa;">
+            <p style="margin:0;"><b>Declaration:</b> These commodities, technology or software were exported in accordance with the export administration regulations. Diversion contrary to law is prohibited. The values declared are for customs purposes only.</p>
+            <p style="margin:5px 0 0 0;"><b>Declaración:</b> Estas mercancías se exportan de acuerdo con las regulaciones de administración. Los valores declarados son únicamente para fines aduanales.</p>
+        </div>
 
-# --- INTERFAZ DE CAPTURA NUEVA ---
-st.title("📦 Captura de Muestras Nexión")
+        <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+            <div style="width: 200px; border-top: 1px solid #000; text-align:center; font-size: 0.8em;">
+                Signature / Firma Remitente
+            </div>
+            <div style="text-align: right; font-size: 0.8em; color: #999;">
+                Generated by NEXION Logistics OS
+            </div>
+        </div>
+    </div>
+    """
+    return html
 
-col1, col2, col3 = st.columns(3)
-f_folio = col1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
-f_fecha = col1.date_input("FECHA", value=date.today())
-f_hotel = col2.text_input("NOMBRE DEL HOTEL", key="hotel")
-f_destino = col2.text_input("DESTINO", key="destino")
-f_contacto = col3.text_input("CONTACTO", key="contacto")
-f_solicito = col3.text_input("SOLICITÓ", key="solicito")
-f_paqueteria = st.selectbox("FORMA DE ENVÍO", ["PAQUETERIA", "ENTREGA DIRECTA", "OTRO"], key="envio")
+# --- INTERFAZ DE CAPTURA ---
+st.title("📄 Generador de Proforma Internacional")
 
-st.divider()
-st.subheader("Selección de Productos")
-seleccionados = st.multiselect("Busca y selecciona los productos:", list(precios.keys()), key="multiselect_prod")
+with st.expander("🏢 DATOS DEL REMITENTE", expanded=False):
+    rem_empresa = st.text_input("Empresa", "JABONES Y PRODUCTOS ESPECIALIZADOS")
+    rem_dir = st.text_input("Dirección", "C. Cernícalo 155, La Aurora")
+    rem_cty = st.text_input("Ciudad/Estado/CP", "Guadalajara, Jalisco, 44460")
+    rem_tel = st.text_input("Teléfono Rem", "3319753122")
 
-cantidades_input = {}
-if seleccionados:
-    st.info("Escribe las cantidades:")
-    cols_q = st.columns(3)
-    for i, p in enumerate(seleccionados):
-        with cols_q[i % 3]:
-            cantidades_input[p] = st.number_input(f"Cantidad: {p}", min_value=1, step=1, key=f"q_{p}")
+with st.form("proforma_form"):
+    c1, c2, c3 = st.columns([1, 1, 1])
+    f_folio = c1.text_input("Folio / Invoice #", "PRO-2026-001")
+    f_fecha = c2.date_input("Fecha de Envío", date.today())
+    f_currency = c3.selectbox("Moneda", ["USD (Dólares)", "MXN (Pesos)"])
 
-if st.button("🚀 GUARDAR REGISTRO NUEVO", use_container_width=True):
-    if not f_hotel:
-        st.error("Ingresa el nombre del hotel.")
-    elif not seleccionados:
-        st.error("Selecciona al menos un producto.")
+    st.markdown("### 🏨 DATOS DEL DESTINATARIO")
+    d1, d2 = st.columns(2)
+    dest_nom = d1.text_input("Nombre / Hotel")
+    dest_calle = d2.text_input("Calle y Número")
+    d3, d4, d5 = st.columns(3)
+    dest_ciudad = d3.text_input("Ciudad/Estado")
+    dest_cp = d4.text_input("Zip Code / CP")
+    dest_pais = d5.text_input("Country / País", "USA")
+    dest_tel = st.text_input("Teléfono Contacto")
+
+    st.markdown("### 📦 PRODUCTOS")
+    seleccion = st.multiselect("Selecciona los productos para exportar:", list(productos_proforma.keys()))
+    
+    items_capturados = []
+    if seleccion:
+        cols = st.columns(2)
+        for i, prod in enumerate(seleccion):
+            with cols[i % 2]:
+                cant = st.number_input(f"Cantidad: {prod}", min_value=1, step=1, key=f"q_{prod}")
+                info = productos_proforma[prod]
+                items_capturados.append({
+                    "desc_es": prod,
+                    "desc_en": info[0],
+                    "hs": info[1],
+                    "cant": cant,
+                    "precio": info[2]
+                })
+
+    enviar = st.form_submit_button("🖨️ GENERAR Y PREVISUALIZAR")
+
+if enviar:
+    if not dest_nom or not items_capturados:
+        st.error("Amor, faltan datos del hotel o no has seleccionado productos.")
     else:
-        registro_completo = {
-            "FOLIO": nuevo_folio, "FECHA": f_fecha.strftime("%Y-%m-%d"),
-            "NOMBRE DEL HOTEL": f_hotel, "DESTINO": f_destino,
-            "CONTACTO": f_contacto, "SOLICITO": f_solicito, "PAQUETERIA": f_paqueteria,
-            "PAQUETERIA_NOMBRE": "", "NUMERO_GUIA": "", "COSTO_GUIA": 0
-        }
-        total_piezas = sum(cantidades_input.values())
-        total_costo = sum(cantidades_input[p] * precios[p] for p in cantidades_input)
-        registro_completo["CANTIDAD"] = total_piezas
-        registro_completo["COSTO"] = total_costo
-        for producto in precios.keys():
-            registro_completo[producto] = cantidades_input.get(producto, 0)
+        rem = {"empresa": rem_empresa, "direccion": rem_dir, "ciudad": rem_cty, "pais": "MEXICO", "tel": rem_tel}
+        dest = {"nombre": dest_nom, "calle": dest_calle, "ciudad": f"{dest_ciudad} {dest_cp}", "pais": dest_pais, "tel": dest_tel}
+        envio = {"folio": f_folio, "fecha": f_fecha}
         
-        df_final = pd.concat([df_actual, pd.DataFrame([registro_completo])], ignore_index=True)
-        if subir_a_github(df_final, sha_actual, f"Folio {nuevo_folio}"):
-            st.success(f"¡Folio {nuevo_folio} guardado!"); st.balloons(); st.rerun()
+        proforma_html = generar_proforma_html(rem, dest, items_capturados, envio)
+        
+        st.success("¡Proforma generada con éxito!")
+        # Mostramos una previsualización
+        st.markdown("---")
+        components.html(f"""
+            <html>
+                <body style="background: #f0f2f6;">
+                    {proforma_html}
+                    <script>
+                        // Al cargar, abre el diálogo de impresión automáticamente
+                        window.print();
+                    </script>
+                </body>
+            </html>
+        """, height=800, scrolling=True)
 
-# --- SECCIÓN DE EDICIÓN (DESPUÉS) ---
-st.divider()
-if not df_actual.empty:
-    with st.expander("📝 AGREGAR DATOS DE ENVÍO / GUÍA (POST-CAPTURA)", expanded=False):
-        st.write("Selecciona un folio existente para agregar los datos de la paquetería:")
-        folio_a_editar = st.selectbox("Seleccionar Folio:", df_actual["FOLIO"].unique())
-        
-        col_g1, col_g2, col_g3 = st.columns(3)
-        nombre_paq = col_g1.text_input("Nombre Paquetería (Ej. FedEx, DHL)")
-        n_guia = col_g2.text_input("Número de Guía")
-        c_guia = col_g3.number_input("Costo de la Guía", min_value=0.0, step=0.1)
-        
-        if st.button("✅ ACTUALIZAR DATOS DE ENVÍO"):
-            # Localizar el índice del folio y actualizar solo esas columnas
-            idx = df_actual.index[df_actual['FOLIO'] == folio_a_editar].tolist()[0]
-            df_actual.at[idx, "PAQUETERIA_NOMBRE"] = nombre_paq
-            df_actual.at[idx, "NUMERO_GUIA"] = n_guia
-            df_actual.at[idx, "COSTO_GUIA"] = c_guia
-            
-            with st.spinner("Actualizando guía en GitHub..."):
-                if subir_a_github(df_actual, sha_actual, f"Actualización Guía Folio {folio_a_editar}"):
-                    st.success(f"¡Guía actualizada para el folio {folio_a_editar}!"); st.rerun()
-
-    # --- HISTORIAL Y REPORTES ---
-    with st.expander("📊 VER REGISTROS Y REPORTES", expanded=False):
-        
-        # 1. VISTA EN PANTALLA (Texto normal y Hover Chic)
-        st.markdown("""
-            <style>
-                /* Estilo hover para la tabla */
-                .stDataFrame div[data-testid="stTable"] table tr:hover {
-                    background-color: #4a4a4a !important;
-                    transition: 0.3s;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-
-        # Texto normal como pediste
-        st.subheader("Reporte General de Muestras")
-        
-        df_display = df_actual.copy()
-        df_display["COSTO"] = pd.to_numeric(df_display["COSTO"]).fillna(0)
-        df_display["COSTO_GUIA"] = pd.to_numeric(df_display["COSTO_GUIA"]).fillna(0)
-        
-        # Mostramos la tabla principal
-        st.dataframe(df_display, use_container_width=True)
-        
-        # Totales rápidos en pantalla
-        t_prod = df_display["COSTO"].sum()
-        t_flete = df_display["COSTO_GUIA"].sum()
-        st.markdown(f"**TOTAL PRODUCTO:** ${t_prod:,.2f} | **TOTAL FLETE:** ${t_flete:,.2f}")
-
-        st.divider()
-
-        # 2. HTML PARA IMPRESIÓN (Igualito, sin cambios en la lógica)
-        filas_html = ""
-        for _, r in df_display.iterrows():
-            detalle_productos = ""
-            for p in precios.keys():
-                cant = r.get(p, 0)
-                if cant > 0:
-                    detalle_productos += f"• {cant} pza(s) {p}<br>"
-            
-            filas_html += f"""
-            <tr>
-                <td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td>
-                <td style='border:1px solid black;padding:8px;'><b>{r['SOLICITO']}</b><br><small>{r['FECHA']}</small></td>
-                <td style='border:1px solid black;padding:8px;'>{r['NOMBRE DEL HOTEL']}<br><small>{r['DESTINO']}</small></td>
-                <td style='border:1px solid black;padding:8px; font-size: 10px;'>{detalle_productos}</td>
-                <td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO']:,.2f}</td>
-                <td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td>
-            </tr>
-            """
-
-        form_pt_html = f"""
-        <html>
-        <head>
-            <style>
-                @page {{ size: auto; margin: 0mm; }}
-                @media print {{
-                    body {{ margin: 0; padding: 15mm; }}
-                    .no-print {{ display: none !important; }}
-                }}
-                body {{ font-family: sans-serif; color: black; background: white; }}
-                table {{ width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }}
-                th {{ background: #eee; border: 1px solid black; padding: 8px; text-align: left; }}
-                .signature-section {{ margin-top: 50px; display: flex; justify-content: space-between; text-align: center; font-size: 10px; }}
-                .sig-box {{ width: 30%; border-top: 1px solid black; padding-top: 5px; }}
-            </style>
-        </head>
-        <body>
-            <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:20px;">
-                <div>
-                    <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
-                    <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
-                </div>
-                <div style="text-align:right; font-size:12px;">
-                    <b>REPORTE DE SALIDA PT</b><br>
-                    <b>GENERADO:</b> {date.today().strftime('%d/%m/%Y')}
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>FOLIO</th>
-                        <th>SOLICITANTE / FECHA</th>
-                        <th>DESTINO / HOTEL</th>
-                        <th>DETALLE PRODUCTOS</th>
-                        <th>COSTO</th>
-                        <th>FLETE</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filas_html}
-                </tbody>
-            </table>
-            <div style="text-align:right; margin-top:20px; font-size:13px; border-top: 1px solid black; padding-top:10px;">
-                <b>TOTAL PRODUCTOS: ${t_prod:,.2f}</b><br>
-                <b>TOTAL FLETES: ${t_flete:,.2f}</b><br>
-                <h3 style="margin-top:5px;">INVERSIÓN TOTAL: ${(t_prod + t_flete):,.2f}</h3>
-            </div>
-            <div class="signature-section">
-                <div class="sig-box"><b>ENTREGÓ</b><br>Analista de Inventario</div>
-                <div class="sig-box"><b>AUTORIZACIÓN</b><br>Dir. Operaciones</div>
-                <div class="sig-box"><b>RECIBIÓ</b><br>Logística / Área Solicitante</div>
-            </div>
-        </body>
-        </html>
-        """
-
-        # 3. BOTONES DE ACCIÓN
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("🖨️ IMPRIMIR REPORTE PT", type="primary", use_container_width=True):
-                import streamlit.components.v1 as components
-                components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
-        
-        with c2:
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_actual.to_excel(writer, index=False)
-            st.download_button("📥 DESCARGAR EXCEL", output.getvalue(), f"Matriz_Muestras_{date.today()}.xlsx", use_container_width=True)
 
 
 
