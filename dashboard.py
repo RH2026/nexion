@@ -3323,7 +3323,7 @@ else:
                 col_izq, col_der = st.columns(2)
                 
                 with col_izq:
-                    st.markdown('<div style="background:#2ecc71;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">REMITENTE</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">REMITENTE</div>', unsafe_allow_html=True)
                     st.text_input(":material/corporate_fare: NOMBRE", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
                     r1, r2 = st.columns([1.5, 1])
                     rem_atn = r1.text_input(":material/person: ATENCIÓN", "RIGOBERTO HERNANDEZ")
@@ -3852,6 +3852,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
