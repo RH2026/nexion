@@ -725,18 +725,18 @@ else:
                 
                 st.markdown("<p style='color:#64748b; font-size:10px; font-weight:700; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
-                # 2. BOTONES DE NAVEGACIÓN (Con restricciones aplicadas)
+                # 2. BOTONES DE NAVEGACIÓN (Restricciones específicas aplicadas)
                 
-                # DASHBOARD: Solo para ti
-                if es_admin:
-                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                        st.session_state.menu_main = "DASHBOARD"
-                        st.session_state.menu_sub = "GENERAL"
-                        st.session_state.busqueda_activa = False
-                        st.rerun()
+                # DASHBOARD: Ahora visible para todos
+                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                    st.session_state.menu_main = "DASHBOARD"
+                    st.session_state.menu_sub = "GENERAL"
+                    st.session_state.busqueda_activa = False
+                    st.rerun()
                 
                 # SEGUIMIENTO: Filtramos GANTT y QUEJAS para los demás
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                    # Solo tú ves Gantt y Quejas
                     opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"] if es_admin else ["ALERTAS"]
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -748,6 +748,7 @@ else:
             
                 # REPORTES: Filtramos APQ, OPS, OTD para los demás
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                    # Solo tú ves APQ, OPS y OTD
                     opciones_rep = ["APQ", "OPS", "OTD", "SAMPLES"] if es_admin else ["SAMPLES"]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -757,9 +758,9 @@ else:
                             st.session_state.busqueda_activa = False
                             st.rerun()
             
-                # FORMATOS: Solo dejamos SALIDA DE PT para externos
+                # FORMATOS: Ahora todos ven SALIDA DE PT y CONTRARRECIBOS
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS"] if es_admin else ["SALIDA DE PT"]
+                    opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS"]
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -768,18 +769,18 @@ else:
                             st.session_state.busqueda_activa = False
                             st.rerun()
             
-                # HUB LOG: Solo para ti
-                if es_admin:
-                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
-                            label = f"» {s}" if st.session_state.menu_sub == s else s
-                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
-                                st.session_state.menu_main = "HUB LOG"
-                                st.session_state.menu_sub = s
-                                st.session_state.busqueda_activa = False
-                                st.rerun()
-
+                # HUB LOG: Ahora visible para todos
+                with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                    for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                            st.session_state.menu_main = "HUB LOG"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            st.rerun()
+            
                 # 3. SECCIÓN DE CIERRE DE SESIÓN
+                st.markdown("<hr style='margin: 15px 0; opacity: 0.1;'>", unsafe_allow_html=True)
                 if st.button("TERMINAR SESIÓN / LOGOUT", use_container_width=True, type="primary"):
                     for key in list(st.session_state.keys()):
                         del st.session_state[key]
@@ -3641,6 +3642,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
