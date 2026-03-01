@@ -779,13 +779,17 @@ else:
             
                 # FORMATOS: Ahora todos ven SALIDA DE PT y CONTRARRECIBOS
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS"]
+                    opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS", "PROFORMA"]
+                    
                     for s in opciones_for:
+                        # Estilo tradicional con la flecha indicadora cuando está seleccionado
                         label = f"» {s}" if st.session_state.menu_sub == s else s
+                        
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
                             st.session_state.menu_main = "FORMATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
+                            # Aseguramos que la navegación sea limpia al cambiar de sección
                             st.rerun()
             
                 # HUB LOG: Ahora visible para todos
@@ -3229,6 +3233,11 @@ else:
                         st.session_state.reset_counter += 1
                         # 3. Recargamos la app
                         st.rerun()
+                        
+            # --- SUBSECCIÓN C: PROFORMA ---
+            elif st.session_state.menu_sub == "PROFORMA":  
+
+
                 
         # 5. HUB LOG
         elif st.session_state.menu_main == "HUB LOG":
@@ -3694,6 +3703,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
