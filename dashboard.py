@@ -3381,11 +3381,7 @@ else:
                         st.success("¡Documento generado con éxito!")
                         components.html(f"<html><body>{proforma_html}<script>window.print();</script></body></html>", height=0)
                 
-                # Botón Borrar como el que me pediste
-                if st.button(":material/refresh: BORRAR TODO", use_container_width=True):
-                    st.rerun()
                         
-                 
 
                 
         # 5. HUB LOG
@@ -3852,6 +3848,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
