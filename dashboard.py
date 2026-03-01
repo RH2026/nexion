@@ -2687,8 +2687,7 @@ else:
                 col_rem, col_dest = st.columns(2)
                 with col_rem:
                     st.markdown(
-                        '<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">'
-                        ':material/upload: REMITENTE</div>', 
+                        '<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">REMITENTE</div>', 
                         unsafe_allow_html=True
                     )
                     st.write("")
@@ -2704,8 +2703,7 @@ else:
                 
                 with col_dest:
                     st.markdown(
-                        '<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">'
-                        ':material/download: DESTINATARIO / HOTEL</div>', 
+                        '<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO / HOTEL</div>', 
                         unsafe_allow_html=True
                     )
                     st.write("")
@@ -3696,6 +3694,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
