@@ -2656,49 +2656,84 @@ else:
                 
                 # --- CAPTURA NUEVA ---
                 with st.container():
-                    # NUEVOS INPUTS SOLICITADOS
+                    # NUEVOS INPUTS SOLICITADOS CON ICONOS MATERIAL
                     cp1, cp2 = st.columns(2)
-                    f_paq_nombre = cp1.selectbox("NOMBRE DE PAQUETERÍA", ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"])
-                    f_tipo_pago = cp2.selectbox("MODALIDAD DE PAGO", ["CREDITO", "COBRO DESTINO"])
+                    f_paq_nombre = cp1.selectbox(
+                        ":material/local_shipping: NOMBRE DE PAQUETERÍA", 
+                        ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"]
+                    )
+                    f_tipo_pago = cp2.selectbox(
+                        ":material/payments: MODALIDAD DE PAGO", 
+                        ["CREDITO", "COBRO DESTINO"]
+                    )
                     
                     st.write("") # Espaciador
                     
                     c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
-                    f_folio = c1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
-                    f_paq_sel = c2.selectbox("FORMA DE ENVÍO", ["Envio Pagado", "Envio por cobrar", "Entrega Personal"])
-                    f_ent_sel = c3.selectbox("TIPO DE ENTREGA", ["Domicilio", "Ocurre Oficina"])
-                    f_fecha_sel = c4.date_input("FECHA", date.today())
+                    # Usamos str(nuevo_folio) como lo tienes en tu lógica
+                    f_folio = c1.text_input(":material/tag: FOLIO", value=str(nuevo_folio), disabled=True)
+                    f_paq_sel = c2.selectbox(
+                        ":material/conveyor: FORMA DE ENVÍO", 
+                        ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
+                    )
+                    f_ent_sel = c3.selectbox(
+                        ":material/home_pin: TIPO DE ENTREGA", 
+                        ["Domicilio", "Ocurre Oficina"]
+                    )
+                    f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
                 
                 st.divider()
                 
                 col_rem, col_dest = st.columns(2)
                 with col_rem:
-                    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;">REMITENTE</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        '<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">'
+                        ':material/upload: REMITENTE</div>', 
+                        unsafe_allow_html=True
+                    )
                     st.write("")
-                    st.text_input("Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
+                    st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
+                    
                     c_rem1, c_rem2 = st.columns([2, 1])
-                    f_atn_rem = c_rem1.text_input("Atención", "RIGOBERTO HERNANDEZ")
-                    f_tel_rem = c_rem2.text_input("Teléfono", "3319753122")
-                    f_soli = st.text_input("Solicitante / Agente", placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS").upper()
+                    f_atn_rem = c_rem1.text_input(":material/person: Atención", "RIGOBERTO HERNANDEZ")
+                    f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
+                    f_soli = st.text_input(
+                        ":material/badge: Solicitante / Agente", 
+                        placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS"
+                    ).upper()
                 
                 with col_dest:
-                    st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        '<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">'
+                        ':material/download: DESTINATARIO / HOTEL</div>', 
+                        unsafe_allow_html=True
+                    )
                     st.write("")
-                    f_h = st.text_input("Hotel / Nombre").upper()
-                    f_ca = st.text_input("Calle y Número").upper()
+                    f_h = st.text_input(":material/hotel: Hotel / Nombre").upper()
+                    f_ca = st.text_input(":material/location_on: Calle y Número").upper()
+                    
                     cd1, cd2 = st.columns(2)
-                    f_co = cd1.text_input("Colonia").upper()
-                    f_cp = cd2.text_input("C.P.")
+                    f_co = cd1.text_input(":material/map: Colonia").upper()
+                    f_cp = cd2.text_input(":material/mailbox: C.P.")
+                    
                     cd3, cd4 = st.columns(2)
-                    f_ci = cd3.text_input("Ciudad").upper()
-                    f_es = cd4.text_input("Estado").upper()
-                    f_con = st.text_input("Contacto Receptor", placeholder="NOMBRE Y RELEFONO DE QUIEN RECIBE").upper()
+                    f_ci = cd3.text_input(":material/city: Ciudad").upper()
+                    f_es = cd4.text_input(":material/public: Estado").upper()
+                    f_con = st.text_input(
+                        ":material/contact_phone: Contacto Receptor", 
+                        placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE"
+                    ).upper()
                 
                 st.divider()
                 
                 # --- PRODUCTOS ---
-                st.subheader("🛒 Selección de Productos")
-                seleccionados = st.multiselect("Busca y selecciona productos:", list(precios.keys()))
+                st.subheader(":material/shopping_cart: Selección de Productos")
+                # Aquí uso el multiselect con icono como querías
+                seleccionados = st.multiselect(
+                    ":material/search: Busca y selecciona productos:", 
+                    list(precios.keys())
+                )
+                
                 prods_actuales = []
                 cants_dict = {p: 0 for p in precios.keys()}
                 total_cantidad = 0
@@ -3661,6 +3696,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
