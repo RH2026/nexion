@@ -82,42 +82,42 @@ if 'folio_num' not in st.session_state:
     st.session_state.folio_num = int(datetime.now().strftime("%m%d%H%M"))
 
 # --- INTERFAZ DE CAPTURA ---
-st.title("📄 Generador de Proforma Internacional")
+st.title(":material/description: Generador de Proforma Internacional")
 
-# SECCIÓN DE DATOS DE ENVÍO (CAPTURA DIRECTA)
+# SECCIÓN DE DATOS DE ENVÍO
 c_env1, c_env2, c_env3 = st.columns([1, 1, 1])
-f_folio = c_env1.text_input("FOLIO / INVOICE #", value=f"PRO-{st.session_state.folio_num}")
-f_fecha = c_env2.date_input("FECHA DE ENVÍO", date.today())
-f_guia = c_env3.text_input("NÚMERO DE GUÍA FEDEX", placeholder="0000 0000 0000")
+f_folio = c_env1.text_input(":material/tag: FOLIO / INVOICE #", value=f"PRO-{st.session_state.folio_num}")
+f_fecha = c_env2.date_input(":material/calendar_today: FECHA DE ENVÍO", date.today())
+f_guia = c_env3.text_input(":material/local_shipping: NÚMERO DE GUÍA FEDEX", placeholder="0000 0000 0000")
 
 st.write("")
 col_izq, col_der = st.columns(2)
 
 with col_izq:
-    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">REMITENTE</div>', unsafe_allow_html=True)
-    st.text_input("NOMBRE", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
+    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">:material/upload: REMITENTE</div>', unsafe_allow_html=True)
+    st.text_input(":material/corporate_fare: NOMBRE", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
     r1, r2 = st.columns([1.5, 1])
-    rem_atn = r1.text_input("ATENCIÓN", "RIGOBERTO HERNANDEZ")
-    rem_tel = r2.text_input("TELÉFONO", "3319753122")
-    rem_sol = st.text_input("SOLICITANTE / AGENTE").upper()
+    rem_atn = r1.text_input(":material/person: ATENCIÓN", "RIGOBERTO HERNANDEZ")
+    rem_tel = r2.text_input(":material/call: TELÉFONO", "3319753122")
+    rem_sol = st.text_input(":material/badge: SOLICITANTE / AGENTE").upper()
 
 with col_der:
-    st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
-    dest_nom = st.text_input("HOTEL / NOMBRE").upper()
-    dest_calle = st.text_input("CALLE Y NÚMERO").upper()
+    st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">:material/download: DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+    dest_nom = st.text_input(":material/hotel: HOTEL / NOMBRE").upper()
+    dest_calle = st.text_input(":material/location_on: CALLE Y NÚMERO").upper()
     dp1, dp2 = st.columns(2)
-    dest_pais = dp1.text_input("PAÍS DESTINO").upper()
-    dest_estado = dp2.text_input("ESTADO / PROVINCIA").upper()
+    dest_pais = dp1.text_input(":material/public: PAÍS DESTINO").upper()
+    dest_estado = dp2.text_input(":material/map: ESTADO / PROVINCIA").upper()
     dp3, dp4 = st.columns(2)
-    dest_ciudad = dp3.text_input("CIUDAD").upper()
-    dest_tax = dp4.text_input("TAX ID / RFC / RUC").upper()
+    dest_ciudad = dp3.text_input(":material/city: CIUDAD").upper()
+    dest_tax = dp4.text_input(":material/receipt_long: TAX ID / RFC / RUC").upper()
     dp5, dp6 = st.columns(2)
-    dest_contacto = dp5.text_input("TEL. CONTACTO")
-    dest_cp = dp6.text_input("C.P. / ZIP CODE")
+    dest_contacto = dp5.text_input(":material/contact_phone: TEL. CONTACTO")
+    dest_cp = dp6.text_input(":material/mailbox: C.P. / ZIP CODE")
 
 st.divider()
-st.markdown("### 📦 PRODUCTOS Y VALORES (CAPTURA DIRECTA)")
-seleccion = st.multiselect("Busca productos:", list(productos_proforma.keys()))
+st.markdown("### :material/inventory_2: PRODUCTOS Y VALORES")
+seleccion = st.multiselect(":material/search: Busca productos:", list(productos_proforma.keys()))
 
 items_capturados = []
 if seleccion:
@@ -131,12 +131,11 @@ if seleccion:
 
 st.write("")
 
-# Botón de impresión independiente
-if st.button("🖨️ GENERAR E IMPRIMIR FACTURA", use_container_width=True, type="primary"):
+# Botón de impresión con icono de Material
+if st.button(":material/print: GENERAR E IMPRIMIR FACTURA", use_container_width=True, type="primary"):
     if not dest_nom or not items_capturados:
         st.error("Vida, faltan datos del hotel o productos.")
     else:
-        # Se envía 'rem_atn' a la función para que aparezca en la impresión
         rem_info = {
             "empresa": "JABONES Y PRODUCTOS ESPECIALIZADOS", 
             "direccion": "C. Cernícalo 155, La Aurora", 
@@ -152,6 +151,11 @@ if st.button("🖨️ GENERAR E IMPRIMIR FACTURA", use_container_width=True, typ
         st.session_state.folio_num += 1
         st.success("¡Documento generado con éxito!")
         components.html(f"<html><body>{proforma_html}<script>window.print();</script></body></html>", height=0)
+
+# Botón Borrar como el que me pediste
+if st.button(":material/refresh: BORRAR TODO", use_container_width=True):
+    st.rerun()
+
 
 
 
