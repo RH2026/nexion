@@ -779,13 +779,13 @@ else:
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
 
-    # 3. SECCIÓN DE CIERRE DE SESIÓN
-    if st.button("TERMINAR SESIÓN / LOGOUT", use_container_width=True, type="primary"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.session_state.autenticado = False
-        st.session_state.splash_completado = False
-        st.rerun()
+                # 3. SECCIÓN DE CIERRE DE SESIÓN
+                if st.button("TERMINAR SESIÓN / LOGOUT", use_container_width=True, type="primary"):
+                    for key in list(st.session_state.keys()):
+                        del st.session_state[key]
+                    st.session_state.autenticado = False
+                    st.session_state.splash_completado = False
+                    st.rerun()
                     
         # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
         if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
@@ -3641,6 +3641,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
