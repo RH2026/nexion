@@ -1173,8 +1173,8 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
                     # Definimos los colores del estilo actual
-                    color_transito = "#38bdf8" # Azul claro
-                    color_retraso = "#ff4b4b"  # Rojo
+                    color_transito = "#4e73df" # Azul claro
+                    color_retraso = "#B22222"  # Rojo
                     
                     # Creamos las dos columnas directas en el contenedor
                     col_graf1, col_graf2 = st.columns(2)
@@ -3661,6 +3661,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
