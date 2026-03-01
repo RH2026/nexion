@@ -595,14 +595,30 @@ def login_screen():
                 lista_usuarios = st.secrets.get("usuarios", {})
                 
                 # VALIDACIÓN EXITOSA               
+                # --- DENTRO DE LOGIN_SCREEN ---
+                # Diccionario para convertir Operator ID en Nombre Real
+                nombres_reales = {
+                    "RIGOBERTO": "Rigoberto Hernández",
+                    "AGomez": "Alita Gomez",
+                    "JMoreno": "J. Moreno",
+                    "Cynthia": "Cynthia",
+                    "Brenda": "Brenda",
+                    "Fialko": "Fialko"
+                }
+                
+                # VALIDACIÓN EXITOSA
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
-                    st.session_state.usuario_activo = user_input # Aquí guardamos quién entró
+                    st.session_state.usuario_activo = user_input
+                    
+                    # Buscamos el nombre completo; si no está, usamos el Operator ID
+                    nombre_completo = nombres_reales.get(user_input, user_input)
+                    st.session_state.nombre_completo = nombre_completo 
                     
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     
-                    st.success(f"BIENVENIDO!, {user_input.upper()}")
+                    st.success(f"¡BIENVENIDA!, {nombre_completo.upper()}") # Bienvenida personalizada
                     time.sleep(1) 
                     st.rerun()
                 
@@ -716,10 +732,13 @@ else:
                 # Definimos si el usuario es Rigoberto para dar acceso total
                 es_admin = (usuario.upper() == "RIGOBERTO") 
             
+                # 1. IDENTIFICACIÓN DE USUARIO (USANDO NOMBRE COMPLETO)
+                nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
+                
                 st.markdown(f"""
                     <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid {vars_css['text']};'>
                         <p style='color:#f6c23e; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
-                        <p style='color:{vars_css['text']}; font-size:14px; font-weight:600; margin:0;'>{usuario.upper()}</p>
+                        <p style='color:{vars_css['text']}; font-size:14px; font-weight:600; margin:0;'>{nombre_display.upper()}</p>
                     </div>
                 """, unsafe_allow_html=True)
                 
@@ -3642,6 +3661,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
