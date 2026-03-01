@@ -2,26 +2,38 @@ import streamlit as st
 import streamlit.components.v1 as components
 from datetime import date, datetime
 
-# --- CONFIGURACIÓN DE PÁGINA (WIDE) ---
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="NEXION - Proforma Elite")
 
-# --- ESTILOS CSS PARA MATCH CON TU DASHBOARD ---
+# --- CSS AVANZADO PARA INPUTS CON LÍNEA DE COLOR (ESTILO FEDEX/DHL) ---
 st.markdown(f"""
     <style>
-        /* Estilo general de los contenedores de captura */
-        .block-container {{ padding-top: 2rem; }}
-        
-        /* Encabezados de bloques estilo NEXION */
+        /* Fondo del dashboard */
+        .stApp {{
+            background-color: #1a2432;
+        }}
+
+        /* Contenedores de bloques */
+        .nexion-block {{
+            background-color: #242e3e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #2d3a4f;
+        }}
+
+        /* Títulos de los bloques */
         .header-remitente {{
             background: #4e73df;
             color: white;
             text-align: center;
             font-weight: 800;
             padding: 10px;
-            border-radius: 4px 4px 0 0;
+            border-radius: 4px;
             letter-spacing: 2px;
             text-transform: uppercase;
             font-size: 14px;
+            margin-bottom: 20px;
         }}
         
         .header-destinatario {{
@@ -30,32 +42,53 @@ st.markdown(f"""
             text-align: center;
             font-weight: 800;
             padding: 10px;
-            border-radius: 4px 4px 0 0;
+            border-radius: 4px;
             letter-spacing: 2px;
             text-transform: uppercase;
             font-size: 14px;
+            margin-bottom: 20px;
         }}
 
-        /* Estilo para los inputs de Streamlit para que no rompan la estética */
-        .stTextInput>div>div>input, .stSelectbox>div>div {{
-            background-color: #1a2432 !important;
+        /* ESTILO DE INPUTS: Sin bordes, solo línea inferior */
+        .stTextInput>div>div>input, .stSelectbox>div>div, .stNumberInput>div>div>input {{
+            background-color: transparent !important;
             color: white !important;
-            border: 1px solid #2d3a4f !important;
+            border: none !important;
+            border-bottom: 2px solid #2d3a4f !important; /* Línea gris por defecto */
+            border-radius: 0px !important;
+            padding-left: 0px !important;
+            transition: all 0.3s ease-in-out;
+            font-size: 16px !important;
+        }}
+
+        /* Línea de color al hacer foco (Capturar) */
+        .stTextInput>div>div>input:focus {{
+            border-bottom: 2px solid #00FFAA !important; /* Tu verde neón de NEXION */
+            box-shadow: none !important;
+        }}
+
+        /* Etiquetas (Títulos de los campos) */
+        .stTextInput label, .stSelectbox label, .stNumberInput label {{
+            color: #94a3b8 !important;
+            font-size: 11px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+            font-weight: 600 !important;
         }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURACIÓN DE PRODUCTOS Y GEOGRAFÍA ---
-productos_proforma = {
+# --- PRODUCTOS Y GEOGRAFÍA ---
+productos_proforma = {{
     "Accesorios Ecologicos": ("Ecological Accessories", "3401.11", 2.50),
     "Dispensador Almond": ("Almond Dispenser", "3924.90", 11.50),
     "Kit Biogena": ("Biogena Amenities Kit", "3401.11", 3.20),
     "Jabón de Tocador 40g": ("Toilet Soap 40g", "3401.11", 0.45),
     "Shampoo Botánicos 30ml": ("Botanical Shampoo 30ml", "3305.10", 0.60),
     "Soporte Inoxidable": ("Stainless Steel Holder", "7324.90", 35.00)
-}
+}}
 
-paises_estados = {
+paises_estados = {{
     "USA": ["California", "Texas", "Florida", "New York", "Illinois", "Georgia", "Other"],
     "CANADA": ["Ontario", "Quebec", "British Columbia", "Alberta", "Manitoba", "Other"],
     "COSTA RICA": ["San José", "Alajuela", "Cartago", "Heredia", "Guanacaste", "Puntarenas", "Limón"],
@@ -65,7 +98,7 @@ paises_estados = {
     "REPUBLICA DOMINICANA": ["Santo Domingo", "Santiago", "La Altagracia", "Puerto Plata", "Other"],
     "ECUADOR": ["Pichincha", "Guayas", "Azuay", "Manabí", "El Oro", "Tungurahua", "Other"],
     "HONDURAS": ["Francisco Morazán", "Cortés", "Atlántida", "Choluteca", "El Paraíso", "Other"]
-}
+}}
 
 def generar_proforma_html(datos_rem, datos_dest, items, info_envio):
     filas_html = ""
@@ -75,11 +108,11 @@ def generar_proforma_html(datos_rem, datos_dest, items, info_envio):
         subtotal += total_item
         filas_html += f"""
         <tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">{item['desc_es']}<br><i style="font-size:0.8em; color:#555;">{item['desc_en']}</i></td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{item['hs']}</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{item['cant']}</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${item['precio']:.2f}</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${total_item:.2f}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{item['desc_es']}}<br><i style="font-size:0.8em; color:#555;">{{item['desc_en']}}</i></td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{{item['hs']}}</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{{item['cant']}}</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${{item['precio']:.2f}}</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${{total_item:.2f}}</td>
         </tr>"""
 
     return f"""
@@ -90,41 +123,34 @@ def generar_proforma_html(datos_rem, datos_dest, items, info_envio):
                 <p style="margin:0; letter-spacing: 1px;">FACTURA PROFORMA</p>
             </div>
             <div style="text-align: right;">
-                <p style="margin:0;"><b>Date / Fecha:</b> {info_envio['fecha']}</p>
-                <p style="margin:0;"><b>Invoice #:</b> {info_envio['folio']}</p>
-                <p style="margin:0; font-size: 0.8em; color: #4e73df;"><b>Tracking:</b> {info_envio['guia']}</p>
+                <p style="margin:0;"><b>Date / Fecha:</b> {{info_envio['fecha']}}</p>
+                <p style="margin:0;"><b>Invoice #:</b> {{info_envio['folio']}}</p>
+                <p style="margin:0; font-size: 0.8em; color: #4e73df;"><b>Tracking:</b> {{info_envio['guia']}}</p>
             </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-            <div style="border: 1.5px solid #4e73df; border-radius: 4px; overflow: hidden;">
-                <div style="background:#4e73df; color:white; padding:5px; text-align:center; font-weight:bold; font-size:10px;">SHIPPER / REMITENTE</div>
-                <div style="padding:10px; font-size: 0.85em;">
-                    <b>{datos_rem['empresa']}</b><br>{datos_rem['direccion']}<br>{datos_rem['ciudad']}, {datos_rem['pais']}<br>TEL: {datos_rem['tel']}
-                </div>
+            <div style="border: 1px solid #ccc; padding: 10px;">
+                <b style="font-size: 0.8em; color: #666;">SHIPPER / REMITENTE</b>
+                <p style="margin:5px 0; font-size: 0.85em;"><b>{{datos_rem['empresa']}}</b><br>{{datos_rem['direccion']}}<br>{{datos_rem['ciudad']}}, {{datos_rem['pais']}}<br>TEL: {{datos_rem['tel']}}</p>
             </div>
-            <div style="border: 1.5px solid #f6c23e; border-radius: 4px; overflow: hidden;">
-                <div style="background:#f6c23e; color:black; padding:5px; text-align:center; font-weight:bold; font-size:10px;">CONSIGNEE / DESTINATARIO</div>
-                <div style="padding:10px; font-size: 0.85em;">
-                    <b>{datos_dest['nombre']}</b><br>{datos_dest['calle']}<br>{datos_dest['ciudad']}, {datos_dest['estado']} <b>CP: {datos_dest['cp']}</b><br>{datos_dest['pais']}<br><b>TAX ID:</b> {datos_dest['tax_id']}<br>TEL: {datos_dest['tel']}
-                </div>
+            <div style="border: 1px solid #ccc; padding: 10px;">
+                <b style="font-size: 0.8em; color: #666;">CONSIGNEE / DESTINATARIO</b>
+                <p style="margin:5px 0; font-size: 0.85em;"><b>{{datos_dest['nombre']}}</b><br>{{datos_dest['calle']}}<br>{{datos_dest['ciudad']}}, {{datos_dest['estado']}} <b>CP: {{datos_dest['cp']}}</b><br>{{datos_dest['pais']}}<br><b>TAX ID:</b> {{datos_dest['tax_id']}}<br>TEL: {{datos_dest['tel']}}</p>
             </div>
         </div>
         <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em;">
             <thead><tr style="background: #f2f2f2;"><th style="border: 1px solid #ddd; padding: 8px;">Description</th><th style="border: 1px solid #ddd; padding: 8px;">HS Code</th><th style="border: 1px solid #ddd; padding: 8px;">Qty</th><th style="border: 1px solid #ddd; padding: 8px;">Unit USD</th><th style="border: 1px solid #ddd; padding: 8px;">Total USD</th></tr></thead>
-            <tbody>{filas_html}</tbody>
-            <tfoot><tr><td colspan="4" style="text-align:right; padding: 10px;"><b>TOTAL VALUE USD:</b></td><td style="border: 1px solid #ddd; padding: 10px; text-align:right; background: #eee;"><b>${subtotal:.2f}</b></td></tr></tfoot>
+            <tbody>{{filas_html}}</tbody>
+            <tfoot><tr><td colspan="4" style="text-align:right; padding: 10px;"><b>TOTAL VALUE USD:</b></td><td style="border: 1px solid #ddd; padding: 10px; text-align:right; background: #eee;"><b>${{subtotal:.2f}}</b></td></tr></tfoot>
         </table>
-        <div style="margin-top: 20px; font-size: 0.7em; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
-            <p><i>Declaration: The values declared are for customs purposes only. No commercial value.</i></p>
-        </div>
     </div>
     """
 
-# --- LÓGICA DE FOLIO ---
+# --- FOLIO ---
 if 'folio_num' not in st.session_state:
     st.session_state.folio_num = int(datetime.now().strftime("%m%d%H%M"))
 
-# --- INTERFAZ DE CAPTURA ---
+# --- INTERFAZ ---
 st.title("📄 Generador de Proforma Internacional")
 
 with st.form("proforma_form"):
@@ -184,8 +210,9 @@ if enviar:
         proforma_html = generar_proforma_html(rem_info, dest_info, items_capturados, {"folio": f_folio, "fecha": f_fecha, "guia": f_guia})
         
         st.session_state.folio_num += 1
-        st.success("¡Formato Elite generado!")
+        st.success("¡Formato Elite con línea de acento generado!")
         components.html(f"<html><body>{proforma_html}<script>window.print();</script></body></html>", height=0)
+
 
 
 
