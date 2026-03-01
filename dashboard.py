@@ -737,12 +737,12 @@ else:
                 
                 st.markdown(f"""
                     <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid {vars_css['text']};'>
-                        <p style='color:#f6c23e; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
-                        <p style='color:{vars_css['text']}; font-size:14px; font-weight:600; margin:0;'>{nombre_display.upper()}</p>
+                        <p style='color:#f6c23e; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
+                        <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                st.markdown("<p style='color:#f0f0f0; font-size:10px; font-weight:500; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color:#f0f0f0; font-size:8px; font-weight:500; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
                 # 2. BOTONES DE NAVEGACIÓN (Restricciones específicas aplicadas)
                 
@@ -3661,6 +3661,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
