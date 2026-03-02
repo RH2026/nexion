@@ -29,6 +29,51 @@ from reportlab.lib.pagesizes import letter
 
 import google.generativeai as genai
 
+def procesar_busqueda_global():
+    """Función para centralizar la lógica de búsqueda en Nexion"""
+    # 1. Recuperar el valor del widget usando la key dinámica
+    key = f"main_search_v{st.session_state.search_key_version}"
+    query = st.session_state.get(key, "").strip()
+    
+    if query:
+        # --- BÚSQUEDA EN OPERACIONES ---
+        res_ops = pd.DataFrame()
+        if 'df_matriz' in globals() and df_matriz is not None:
+            res_ops = df_matriz[
+                (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
+                (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
+                (df_matriz['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
+                (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
+            ]
+        
+        # --- BÚSQUEDA EN INVENTARIO ---
+        res_inv = pd.DataFrame()
+        try:
+            df_inv_temp = pd.read_csv("inventario.csv")
+            res_inv = df_inv_temp[
+                (df_inv_temp['CODIGO'].astype(str).str.contains(query, case=False, na=False)) |
+                (df_inv_temp['DESCRIPCION'].astype(str).str.contains(query, case=False, na=False))
+            ]
+        except:
+            pass
+
+        # --- ASIGNACIÓN DE RESULTADOS ---
+        if not res_ops.empty:
+            st.session_state.busqueda_activa = True
+            st.session_state.tipo_resultado = "OPERACION"
+            st.session_state.resultado_busqueda = res_ops
+        elif not res_inv.empty:
+            st.session_state.busqueda_activa = True
+            st.session_state.tipo_resultado = "INVENTARIO"
+            st.session_state.resultado_busqueda = res_inv
+        else:
+            st.session_state.busqueda_activa = False
+            st.toast("No se encontró ningún registro", icon="🔍")
+    else:
+        # Limpiar si el buscador está vacío
+        st.session_state.busqueda_activa = False
+        st.session_state.resultado_busqueda = None
+
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
@@ -650,10 +695,10 @@ elif not st.session_state.autenticado:
 
 # 3. ¿Todo listo? Mostrar NEXION CORE
 else:
-    # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
+    # ── MODO NEXION CORE (AUTENTICADO) ──
     header_zone = st.container()
     with header_zone:
-        # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
+        # c1: Logo | c2: Título | c3: Búsqueda | c4: Menú
         c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
         
         with c1:
@@ -663,7 +708,7 @@ else:
                 st.write("**NEXION**")
     
         with c2:
-            # RUTA DINÁMICA
+            # Lógica de la ruta dinámica
             if st.session_state.menu_sub != "GENERAL":
                 ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
             else:
@@ -678,50 +723,15 @@ else:
             """, unsafe_allow_html=True)
     
         with c3:
-            # Generamos una key única basada en la versión actual para el input
+            # Input de búsqueda con Callback
             key_actual = f"main_search_v{st.session_state.search_key_version}"
-            
-            query = st.text_input(
+            st.text_input(
                 "Buscar", 
                 placeholder="🔍 Buscar...", 
                 label_visibility="collapsed", 
-                key=key_actual
+                key=key_actual,
+                on_change=procesar_busqueda_global # Llama a la función del Bloque 1
             )
-            
-            if query:
-                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz)
-                res_ops = pd.DataFrame()
-                if df_matriz is not None:
-                    res_ops = df_matriz[
-                        (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
-                        (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
-                        (df_matriz['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
-                        (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
-                    ]
-                
-                # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
-                res_inv = pd.DataFrame()
-                try:
-                    df_inv_temp = pd.read_csv("inventario.csv")
-                    res_inv = df_inv_temp[
-                        (df_inv_temp['CODIGO'].astype(str).str.contains(query, case=False, na=False)) |
-                        (df_inv_temp['DESCRIPCION'].astype(str).str.contains(query, case=False, na=False))
-                    ]
-                except Exception:
-                    pass
-        
-                # Lógica de asignación de resultados
-                if not res_ops.empty:
-                    st.session_state.busqueda_activa = True
-                    st.session_state.tipo_resultado = "OPERACION"
-                    st.session_state.resultado_busqueda = res_ops
-                elif not res_inv.empty:
-                    st.session_state.busqueda_activa = True
-                    st.session_state.tipo_resultado = "INVENTARIO"
-                    st.session_state.resultado_busqueda = res_inv
-                else:
-                    st.session_state.busqueda_activa = False
-                    st.toast("No se encontró ningún registro", icon="🔍")
         
         with c4:
             # --- BOTÓN POPOVER (NAVEGACIÓN + PERFIL) ---
@@ -3837,6 +3847,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
