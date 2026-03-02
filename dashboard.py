@@ -649,16 +649,14 @@ elif not st.session_state.autenticado:
     login_screen()
 
 # 3. ¿Todo listo? Mostrar NEXION CORE
-# --- 1. FUNCIÓN DE BÚSQUEDA (Ponla antes del bloque del Header) ---
+# --- 1. FUNCIÓN DE BÚSQUEDA (Debe estar fuera de cualquier IF/ELSE) ---
 def procesar_busqueda_global():
-    # Obtenemos la key actual del session_state
     key = f"main_search_v{st.session_state.search_key_version}"
     query = st.session_state.get(key, "").strip()
     
     if query:
-        # Búsqueda en Operaciones
         res_ops = pd.DataFrame()
-        if df_matriz is not None:
+        if 'df_matriz' in globals() and df_matriz is not None:
             res_ops = df_matriz[
                 (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
                 (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
@@ -666,7 +664,6 @@ def procesar_busqueda_global():
                 (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
             ]
         
-        # Búsqueda en Inventario
         res_inv = pd.DataFrame()
         try:
             df_inv_temp = pd.read_csv("inventario.csv")
@@ -677,7 +674,6 @@ def procesar_busqueda_global():
         except:
             pass
 
-        # Asignación de resultados al state global
         if not res_ops.empty:
             st.session_state.busqueda_activa = True
             st.session_state.tipo_resultado = "OPERACION"
@@ -690,14 +686,20 @@ def procesar_busqueda_global():
             st.session_state.busqueda_activa = False
             st.toast("No se encontró ningún registro", icon="🔍")
     else:
-        # Si el buscador está vacío, limpiamos el estado
         st.session_state.busqueda_activa = False
         st.session_state.resultado_busqueda = None
 
-# --- 2. BLOQUE NEXION CORE (El que me pasaste corregido) ---
+# --- 2. ESTRUCTURA LÓGICA DE NEXION (Revisa la alineación aquí) ---
+
+# Revisa que este 'elif' esté alineado con el 'if' previo de tu código
+elif not st.session_state.autenticado:
+    login_screen()
+
+# Este es el bloque que te daba error. Asegúrate de que esté alineado con el 'elif' de arriba
 else:
     header_zone = st.container()
     with header_zone:
+        # Definimos columnas
         c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
         
         with c1:
@@ -721,15 +723,13 @@ else:
             """, unsafe_allow_html=True)
     
         with c3:
-            # Aquí está el truco: usamos 'on_change' para que se ejecute la función de arriba
             key_actual = f"main_search_v{st.session_state.search_key_version}"
-            
             st.text_input(
                 "Buscar", 
                 placeholder="🔍 Buscar...", 
                 label_visibility="collapsed", 
                 key=key_actual,
-                on_change=procesar_busqueda_global  # <--- SE ACTIVA AL DAR ENTER
+                on_change=procesar_busqueda_global
             )
         
         with c4:
@@ -3846,6 +3846,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
