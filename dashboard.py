@@ -648,23 +648,22 @@ if not st.session_state.splash_completado:
 elif not st.session_state.autenticado:
     login_screen()
 
-# 1. GENERAR EL TOKEN ANTICACHÉ
-# Usamos el tiempo actual para que la URL sea única en cada ejecución
+# --- CONFIGURACIÓN DE DATOS FRESCOS ---
+# Generamos el token de tiempo para evitar el caché de GitHub
 t = int(time.time())
-url_matriz = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
 
-# 2. CARGA DE DATOS (Se recomienda envolver en una función con TTL)
-@st.cache_data(ttl=60) # Refresca automáticamente cada 60 segundos si hay cambios
-def cargar_matriz(url):
+@st.cache_data(ttl=60)  # Se actualiza cada 60 segundos
+def load_data(url_csv):
     try:
-        return pd.read_csv(url)
+        return pd.read_csv(url_csv)
     except Exception as e:
-        st.error(f"Error al cargar la matriz: {e}")
+        st.error(f"Error al cargar matriz desde GitHub: {e}")
         return None
 
-df_matriz = cargar_matriz(url_matriz)
+# Cargamos el DataFrame antes del bloque del header
+df_matriz = load_data(url)
 
-# --- INICIO DE TU BLOQUE DE INTERFAZ ---
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
     header_zone = st.container()
@@ -680,10 +679,13 @@ else:
     
         with c2:
             # RUTA DINÁMICA
-            if st.session_state.menu_sub != "GENERAL":
-                ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
+            menu_main = st.session_state.get('menu_main', 'INICIO')
+            menu_sub = st.session_state.get('menu_sub', 'GENERAL')
+            
+            if menu_sub != "GENERAL":
+                ruta = f"{menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {menu_sub}"
             else:
-                ruta = st.session_state.menu_main
+                ruta = menu_main
             
             st.markdown(f"""
                 <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
@@ -695,7 +697,8 @@ else:
     
         with c3:
             # Generamos una key única basada en la versión actual para el input
-            key_actual = f"main_search_v{st.session_state.search_key_version}"
+            version_busqueda = st.session_state.get('search_key_version', 1)
+            key_actual = f"main_search_v{version_busqueda}"
             
             query = st.text_input(
                 "Buscar", 
@@ -705,7 +708,7 @@ else:
             )
             
             if query:
-                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz cargado de GitHub)
+                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz)
                 res_ops = pd.DataFrame()
                 if df_matriz is not None:
                     res_ops = df_matriz[
@@ -715,11 +718,10 @@ else:
                         (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
                     ]
                 
-                # 2. BÚSQUEDA EN INVENTARIO (Local o GitHub)
+                # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
                 res_inv = pd.DataFrame()
                 try:
-                    # Si el inventario también está en GitHub, te sugiero usar la misma técnica de la URL con ?v={t}
-                    df_inv_temp = pd.read_csv("inventario.csv") 
+                    df_inv_temp = pd.read_csv("inventario.csv")
                     res_inv = df_inv_temp[
                         (df_inv_temp['CODIGO'].astype(str).str.contains(query, case=False, na=False)) |
                         (df_inv_temp['DESCRIPCION'].astype(str).str.contains(query, case=False, na=False))
@@ -3854,6 +3856,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
