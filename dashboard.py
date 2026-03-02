@@ -648,7 +648,23 @@ if not st.session_state.splash_completado:
 elif not st.session_state.autenticado:
     login_screen()
 
-# 3. ¿Todo listo? Mostrar NEXION CORE
+# 1. GENERAR EL TOKEN ANTICACHÉ
+# Usamos el tiempo actual para que la URL sea única en cada ejecución
+t = int(time.time())
+url_matriz = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+
+# 2. CARGA DE DATOS (Se recomienda envolver en una función con TTL)
+@st.cache_data(ttl=60) # Refresca automáticamente cada 60 segundos si hay cambios
+def cargar_matriz(url):
+    try:
+        return pd.read_csv(url)
+    except Exception as e:
+        st.error(f"Error al cargar la matriz: {e}")
+        return None
+
+df_matriz = cargar_matriz(url_matriz)
+
+# --- INICIO DE TU BLOQUE DE INTERFAZ ---
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
     header_zone = st.container()
@@ -689,7 +705,7 @@ else:
             )
             
             if query:
-                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz)
+                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz cargado de GitHub)
                 res_ops = pd.DataFrame()
                 if df_matriz is not None:
                     res_ops = df_matriz[
@@ -699,10 +715,11 @@ else:
                         (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
                     ]
                 
-                # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
+                # 2. BÚSQUEDA EN INVENTARIO (Local o GitHub)
                 res_inv = pd.DataFrame()
                 try:
-                    df_inv_temp = pd.read_csv("inventario.csv")
+                    # Si el inventario también está en GitHub, te sugiero usar la misma técnica de la URL con ?v={t}
+                    df_inv_temp = pd.read_csv("inventario.csv") 
                     res_inv = df_inv_temp[
                         (df_inv_temp['CODIGO'].astype(str).str.contains(query, case=False, na=False)) |
                         (df_inv_temp['DESCRIPCION'].astype(str).str.contains(query, case=False, na=False))
@@ -3837,6 +3854,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
