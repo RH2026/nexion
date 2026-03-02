@@ -1722,7 +1722,7 @@ else:
                         if guardar_en_github(df_guardar):
                             st.session_state.df_tareas = df_guardar
                             st.rerun()
-                
+                    
                 
                 
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
@@ -3854,6 +3854,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
