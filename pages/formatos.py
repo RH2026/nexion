@@ -182,86 +182,97 @@ if st.button(":material/print: IMPRIMIR FORMATO REPLICA IDENTICO", type="primary
     formato = generar_html_exacto()
     components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
 
-def generar_excel_identico(encabezado, productos, dictamen):
+# --- A. MOTOR DE EXCEL (REPLICA DEL FORMATO OFICIAL) ---
+def generar_excel_identico(enc, productos, dictamen):
     output = io.BytesIO()
+    # Usamos xlsxwriter para el diseño de celdas combinadas y colores
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
     worksheet = workbook.add_worksheet("Formato Calidad")
     
-    # --- CONFIGURACIÓN DE FORMATOS ---
-    header_fmt = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#D9D9D9', 'font_size': 9})
-    title_fmt = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'font_size': 12})
-    input_fmt = workbook.add_format({'font_color': 'blue', 'italic': True, 'bold': True, 'align': 'center', 'border': 1, 'font_size': 10})
-    normal_fmt = workbook.add_format({'border': 1, 'align': 'left', 'font_size': 9})
-    border_fmt = workbook.add_format({'border': 1})
+    # FORMATOS DE CELDA
+    title_fmt = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 2, 'font_size': 12})
+    header_gray = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#D9D9D9', 'font_size': 8})
+    input_blue = workbook.add_format({'font_color': 'blue', 'italic': True, 'bold': True, 'align': 'center', 'border': 1, 'font_size': 10})
+    border_std = workbook.add_format({'border': 1, 'font_size': 9, 'align': 'center'})
+    
+    # Ajuste de columnas
+    worksheet.set_column('A:L', 12)
 
-    # Ajuste de columnas para que se vea igual al Excel original
-    worksheet.set_column('A:K', 12)
-
-    # --- ENCABEZADO (FILAS 1-5) ---
+    # REPLICA DE ENCABEZADO (FILAS 1-4)
     worksheet.merge_range('A1:B2', 'JYPESA', title_fmt)
     worksheet.merge_range('C1:L2', 'Formato de control de rehabilitación, reproceso y retrabajo de producto', title_fmt)
     
-    worksheet.write('A3', 'Clave:', header_fmt)
-    worksheet.write('B3', 'F03-PNO-AC-21', border_fmt)
-    worksheet.write('C3', 'Versión:', header_fmt)
-    worksheet.write('D3', '3', border_fmt)
-    worksheet.merge_range('E3:F3', 'Fecha de publicación:', header_fmt)
-    worksheet.merge_range('G3:H3', '14-Ene-25', border_fmt)
-    worksheet.merge_range('I3:L3', 'Sustituye a: F03-PNO-AC-21 V02', border_fmt)
+    worksheet.write('A3', 'Clave:', header_gray)
+    worksheet.write('B3', 'F03-PNO-AC-21', border_std)
+    worksheet.write('C3', 'Versión:', header_gray)
+    worksheet.write('D3', '3', border_std)
+    worksheet.merge_range('E3:F3', 'Fecha de publicación:', header_gray)
+    worksheet.merge_range('G3:H3', '14-Ene-25', border_std)
+    worksheet.merge_range('I3:L3', 'Sustituye a: F03-PNO-AC-21 V02', border_std)
 
-    # --- FILA DE INPUTS AMARILLOS (MAPEADO A TU IMAGEN) ---
-    worksheet.write('A4', 'Solicita Calidad:', header_fmt)
-    worksheet.write('B4', encabezado['sol'], input_fmt)
-    worksheet.write('C4', 'No Desviación:', header_fmt)
-    worksheet.write('D4', encabezado['des'], input_fmt)
-    worksheet.write('E4', 'No Retrabajo:', header_fmt)
-    worksheet.write('F4', encabezado['ret'], input_fmt)
-    worksheet.write('G4', 'No Cliente:', header_fmt)
-    worksheet.write('H4', encabezado['cli'], input_fmt)
-    worksheet.merge_range('I4:J4', 'Nombre Comercial:', header_fmt)
-    worksheet.merge_range('K4:L4', encabezado['nom'], input_fmt)
+    # FILA DE CAPTURA
+    worksheet.write('A4', 'Solicita:', header_gray)
+    worksheet.write('B4', enc['sol'], input_blue)
+    worksheet.write('C4', 'Desviación:', header_gray)
+    worksheet.write('D4', enc['des'], input_blue)
+    worksheet.write('E4', 'Retrabajo:', header_gray)
+    worksheet.write('F4', enc['ret'], input_blue)
+    worksheet.write('G4', 'Cliente:', header_gray)
+    worksheet.write('H4', enc['cli'], input_blue)
+    worksheet.merge_range('I4:J4', 'Comercial:', header_gray)
+    worksheet.merge_range('K4:L4', enc['nom'], input_blue)
 
-    # --- TABLA DE PRODUCTOS ---
-    worksheet.merge_range('A6:L6', 'DETALLE DE PRODUCTOS', header_fmt)
-    cols = ['FECHA', 'No FACTURA', 'No PARTE', 'FABRICACIÓN', 'LOTE', 'CANTIDAD', 'DESCRIPCIÓN']
-    for i, col in enumerate(cols):
-        worksheet.write(6, i, col, header_fmt)
+    # TABLA DE PRODUCTOS (ENCABEZADOS)
+    headers = ['FECHA', 'No FACTURA', 'No PARTE', 'FABRICACIÓN', 'LOTE', 'CANTIDAD', 'DESCRIPCIÓN']
+    for i, h in enumerate(headers):
+        worksheet.write(6, i, h, header_gray)
 
+    # DATOS DE PRODUCTOS
     row = 7
     for p in productos:
         if p['No de factura'] or p['Descripcion']:
             f_fecha = p['FECHA'].strftime('%d/%m/%Y') if p['FECHA'] else ""
-            worksheet.write(row, 0, f_fecha, normal_fmt)
-            worksheet.write(row, 1, p['No de factura'], normal_fmt)
-            worksheet.write(row, 2, p['No de parte'], normal_fmt)
-            worksheet.write(row, 3, p['Orden fabricacion'], normal_fmt)
-            worksheet.write(row, 4, p['Lote'], normal_fmt)
-            worksheet.write(row, 5, p['Cantidad'], normal_fmt)
-            worksheet.merge_range(row, 6, row, 11, p['Descripcion'], normal_fmt)
+            worksheet.write(row, 0, f_fecha, border_std)
+            worksheet.write(row, 1, p['No de factura'], border_std)
+            worksheet.write(row, 2, p['No de parte'], border_std)
+            worksheet.write(row, 3, p['Orden fabricacion'], border_std)
+            worksheet.write(row, 4, p['Lote'], border_std)
+            worksheet.write(row, 5, p['Cantidad'], border_std)
+            worksheet.merge_range(row, 6, row, 11, p['Descripcion'], border_std)
             row += 1
 
-    # --- SECCIÓN FINAL: DICTAMEN Y FIRMAS ---
-    worksheet.merge_range(row + 1, 0, row + 2, 1, 'DICTAMEN:', header_fmt)
-    worksheet.merge_range(row + 1, 2, row + 2, 11, dictamen['dic'], input_fmt)
+    # DICTAMEN FINAL
+    worksheet.merge_range(row + 2, 0, row + 2, 2, 'DICTAMEN FINAL:', header_gray)
+    worksheet.merge_range(row + 2, 3, row + 2, 11, dictamen['dic'], input_blue)
 
     workbook.close()
     return output.getvalue()
 
-# --- BOTÓN EN TU INTERFAZ ---
+# --- B. INTERFAZ Y BOTÓN DE DESCARGA ---
 st.divider()
-excel_data = generar_excel_identico(
-    {"sol": solicita, "des": desviacion, "ret": retrabajo, "cli": cliente, "nom": nom_com},
-    df_edit.to_dict('records'),
-    {"dic": dictamen_final}
-)
+try:
+    # Generamos el archivo usando tus variables capturadas (f_...)
+    excel_file = generar_excel_identico(
+        {
+            "sol": f_solicita, "des": f_desviacion, 
+            "ret": f_retrabajo, "cli": f_cliente, "nom": f_nom_com
+        },
+        df_edit.to_dict('records'),
+        {"dic": f_dictamen}
+    )
 
-st.download_button(
-    label=":material/download: DESCARGAR REPLICA EXCEL",
-    data=excel_data,
-    file_name=f"Calidad_{nom_com}_{datetime.now().strftime('%d%m%Y')}.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    use_container_width=True
-)
+    st.download_button(
+        label=":material/file_download: DESCARGAR RÉPLICA EXCEL OFICIAL",
+        data=excel_file,
+        file_name=f"CALIDAD_JYPESA_{f_nom_com}_{datetime.now().strftime('%d%m%Y')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+        type="secondary",
+        key="btn_descarga_final_nexion"
+    )
+except Exception as e:
+    st.info("Captura los datos del formulario para habilitar la descarga en Excel.")
+
 
 
 
