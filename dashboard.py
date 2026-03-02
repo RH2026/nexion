@@ -649,98 +649,100 @@ elif not st.session_state.autenticado:
     login_screen()
 
 # --- CONFIGURACIÓN DE DATOS FRESCOS ---
+import time
+
 # Generamos el token de tiempo para evitar el caché de GitHub
 t = int(time.time())
-url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+url_matriz_github = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
 
-@st.cache_data(ttl=60)  # Se actualiza cada 60 segundos
+@st.cache_data(ttl=60)
 def load_data(url_csv):
     try:
+        # Forzamos la lectura con el parámetro v={t} para saltar el caché
         return pd.read_csv(url_csv)
     except Exception as e:
         st.error(f"Error al cargar matriz desde GitHub: {e}")
         return None
 
-# Cargamos el DataFrame antes del bloque del header
-df_matriz = load_data(url)
+# Cargamos el DataFrame (df_matriz) antes de la interfaz
+df_matriz = load_data(url_matriz_github)
 
-else:
-    # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
-    header_zone = st.container()
-    with header_zone:
-        # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
-        c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
+# ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
+header_zone = st.container()
+with header_zone:
+    # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
+    c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
+    
+    with c1:
+        try:
+            st.image(vars_css["logo"], width=180)
+        except:
+            st.write("**NEXION**")
+
+    with c2:
+        # RUTA DINÁMICA
+        menu_main = st.session_state.get('menu_main', 'INICIO')
+        menu_sub = st.session_state.get('menu_sub', 'GENERAL')
         
-        with c1:
+        if menu_sub != "GENERAL":
+            ruta = f"{menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {menu_sub}"
+        else:
+            ruta = menu_main
+        
+        st.markdown(f"""
+            <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
+                <p style='font-size: 13px; letter-spacing: 8px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
+                    {ruta}
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        # Generamos una key única basada en la versión actual para el input
+        version_busqueda = st.session_state.get('search_key_version', 1)
+        key_actual = f"main_search_v{version_busqueda}"
+        
+        query = st.text_input(
+            "Buscar", 
+            placeholder="🔍 Buscar...", 
+            label_visibility="collapsed", 
+            key=key_actual
+        )
+        
+        if query:
+            # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz ya cargado arriba)
+            res_ops = pd.DataFrame()
+            if df_matriz is not None:
+                res_ops = df_matriz[
+                    (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
+                    (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
+                    (df_matriz['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
+                    (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
+                ]
+            
+            # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
+            res_inv = pd.DataFrame()
             try:
-                st.image(vars_css["logo"], width=180)
-            except:
-                st.write("**NEXION**")
-    
-        with c2:
-            # RUTA DINÁMICA
-            menu_main = st.session_state.get('menu_main', 'INICIO')
-            menu_sub = st.session_state.get('menu_sub', 'GENERAL')
-            
-            if menu_sub != "GENERAL":
-                ruta = f"{menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {menu_sub}"
+                df_inv_temp = pd.read_csv("inventario.csv")
+                res_inv = df_inv_temp[
+                    (df_inv_temp['CODIGO'].astype(str).str.contains(query, case=False, na=False)) |
+                    (df_inv_temp['DESCRIPCION'].astype(str).str.contains(query, case=False, na=False))
+                ]
+            except Exception:
+                pass
+
+            # Lógica de asignación de resultados
+            if not res_ops.empty:
+                st.session_state.busqueda_activa = True
+                st.session_state.tipo_resultado = "OPERACION"
+                st.session_state.resultado_busqueda = res_ops
+            elif not res_inv.empty:
+                st.session_state.busqueda_activa = True
+                st.session_state.tipo_resultado = "INVENTARIO"
+                st.session_state.resultado_busqueda = res_inv
             else:
-                ruta = menu_main
-            
-            st.markdown(f"""
-                <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
-                    <p style='font-size: 13px; letter-spacing: 8px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
-                        {ruta}
-                    </p>
-                </div>
-            """, unsafe_allow_html=True)
-    
-        with c3:
-            # Generamos una key única basada en la versión actual para el input
-            version_busqueda = st.session_state.get('search_key_version', 1)
-            key_actual = f"main_search_v{version_busqueda}"
-            
-            query = st.text_input(
-                "Buscar", 
-                placeholder="🔍 Buscar...", 
-                label_visibility="collapsed", 
-                key=key_actual
-            )
-            
-            if query:
-                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz)
-                res_ops = pd.DataFrame()
-                if df_matriz is not None:
-                    res_ops = df_matriz[
-                        (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
-                        (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
-                        (df_matriz['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
-                        (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
-                    ]
-                
-                # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
-                res_inv = pd.DataFrame()
-                try:
-                    df_inv_temp = pd.read_csv("inventario.csv")
-                    res_inv = df_inv_temp[
-                        (df_inv_temp['CODIGO'].astype(str).str.contains(query, case=False, na=False)) |
-                        (df_inv_temp['DESCRIPCION'].astype(str).str.contains(query, case=False, na=False))
-                    ]
-                except Exception:
-                    pass
-        
-                # Lógica de asignación de resultados
-                if not res_ops.empty:
-                    st.session_state.busqueda_activa = True
-                    st.session_state.tipo_resultado = "OPERACION"
-                    st.session_state.resultado_busqueda = res_ops
-                elif not res_inv.empty:
-                    st.session_state.busqueda_activa = True
-                    st.session_state.tipo_resultado = "INVENTARIO"
-                    st.session_state.resultado_busqueda = res_inv
-                else:
-                    st.session_state.busqueda_activa = False
-                    st.toast("No se encontró ningún registro", icon="🔍")
+                st.session_state.busqueda_activa = False
+                st.toast("No se encontró ningún registro", icon="🔍")
         
         with c4:
             # --- BOTÓN POPOVER (NAVEGACIÓN + PERFIL) ---
@@ -3856,6 +3858,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
