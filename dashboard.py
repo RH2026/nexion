@@ -1682,6 +1682,43 @@ else:
                    
             
             elif st.session_state.menu_sub == "GANTT":
+                # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
+                with st.expander(":material/edit_note: Abrir editor de tareas", expanded=False):
+                    st.subheader("EDITOR DE TAREAS")
+                    df_editor = df_master.copy()
+                    for col in ["USUARIO","IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
+                        df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+                    
+                    df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
+                    
+                    df_editado = st.data_editor(
+                        df_editor,
+                        hide_index=True,
+                        use_container_width=True,
+                        num_rows="dynamic",
+                        column_config={
+                            "USUARIO": st.column_config.TextColumn("Responsable"),
+                            "FECHA": st.column_config.DateColumn("Inicio"),
+                            "FECHA_FIN": st.column_config.DateColumn("Fin"),
+                            "IMPORTANCIA": st.column_config.SelectboxColumn("Prioridad", options=["Urgente","Alta","Media","Baja"]),
+                            "PROGRESO": st.column_config.NumberColumn("Progreso %", min_value=0, max_value=100, step=5),
+                            "PROGRESO_VIEW": st.column_config.ProgressColumn("Avance", min_value=0, max_value=100),
+                            "TAREA": st.column_config.TextColumn("Tarea"),
+                            "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
+                            "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
+                            "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
+                            "GRUPO": st.column_config.TextColumn("Grupo"),
+                        }
+                    )
+                
+                if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
+                    df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
+                    if guardar_en_github(df_guardar):
+                        st.session_state.df_tareas = df_guardar
+                        st.rerun()
+                
+                
+                
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
                 FILE_PATH = "tareas.csv"
@@ -3845,6 +3882,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
