@@ -1717,11 +1717,11 @@ else:
                         }
                     )
                 
-                if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
-                    df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
-                    if guardar_en_github(df_guardar):
-                        st.session_state.df_tareas = df_guardar
-                        st.rerun()
+                    if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
+                        df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
+                        if guardar_en_github(df_guardar):
+                            st.session_state.df_tareas = df_guardar
+                            st.rerun()
                 
                 
                 
@@ -3854,6 +3854,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
