@@ -689,14 +689,22 @@ else:
             )
             
             if query:
-                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz)
+                # ── FUERZA LECTURA DE DATOS MÁS RECIENTES (MATRIZ) ──
+                url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+                try:
+                    # Cargamos directamente de la URL para evitar datos viejos en caché
+                    df_matriz_fresco = pd.read_csv(url_raw)
+                except Exception:
+                    df_matriz_fresco = df_matriz # Si falla, vuelve al anterior por seguridad
+
+                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz_fresco)
                 res_ops = pd.DataFrame()
-                if df_matriz is not None:
-                    res_ops = df_matriz[
-                        (df_matriz['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
-                        (df_matriz['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
-                        (df_matriz['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
-                        (df_matriz['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
+                if df_matriz_fresco is not None:
+                    res_ops = df_matriz_fresco[
+                        (df_matriz_fresco['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
+                        (df_matriz_fresco['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
+                        (df_matriz_fresco['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
+                        (df_matriz_fresco['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
                     ]
                 
                 # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
@@ -3837,6 +3845,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
