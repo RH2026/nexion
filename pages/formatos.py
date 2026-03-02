@@ -1,8 +1,3 @@
-¡Entendido perfectamente, amor! Para que quede idéntico a la imagen oficial de calidad de JYPESA, necesitamos ajustar la estructura de las tablas, añadir las secciones de "Seguimiento a la desviación", los campos de "Gasto" y "Hrs", y sobre todo, habilitar la parte de los checkbox para Retrabajo/Rehabilitación/Reproceso.
-
-Aquí tienes el código con el motor de impresión corregido al 100% para que sea una réplica exacta del formato de Excel:
-
-Python
 import streamlit as st
 import pandas as pd
 from datetime import date, datetime
@@ -203,6 +198,7 @@ def generar_html_exacto():
 if st.button("IMPRIMIR FORMATO REPLICA", type="primary", use_container_width=True):
     formato = generar_html_exacto()
     components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+
 
 
 
