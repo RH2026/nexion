@@ -1682,6 +1682,12 @@ else:
                    
             
             elif st.session_state.menu_sub == "GANTT":
+                # ── GESTIÓN DE ESTADO ──────────────────────────────────────────────────────
+                if "df_tareas" not in st.session_state:
+                    st.session_state.df_tareas = cargar_datos_seguro()
+                
+                df_master = st.session_state.df_tareas.copy()
+                
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
                 with st.expander(":material/edit_note: Abrir editor de tareas", expanded=False):
                     st.subheader("EDITOR DE TAREAS")
@@ -3882,6 +3888,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
