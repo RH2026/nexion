@@ -3133,7 +3133,7 @@ else:
                     c_h1, c_h2, c_h3 = st.columns([1, 1, 1])
                     f_fecha_c = c_h1.date_input(":material/calendar_today: FECHA", date.today())
                     f_hora_c = c_h2.text_input(":material/schedule: HORA", value=now_gdl.strftime('%I:%M %p').lower())
-                    f_paq_c = c_h3.selectbox(":material/local_shipping: PAQUETERÍA", ["FEDEX", "PAQMEX", "TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "TINY PACK"])
+                    f_paq_c = c_h3.selectbox(":material/local_shipping: PAQUETERÍA", ["FEDEX", "PAQMEX", "TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES","FLETES DE REGRESO", "TINY PACK"])
 
                     c_d1, c_d2 = st.columns([2, 1])
                     f_cod_c = c_d1.text_input(":material/barcode: CÓDIGO / FACTURA", placeholder="Escribe el código y presiona Enter")
@@ -3848,6 +3848,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
