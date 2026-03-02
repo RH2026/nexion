@@ -1731,7 +1731,7 @@ else:
                 
                 def cargar_datos_seguro():
                     columnas = [
-                        "FECHA","FECHA_FIN","IMPORTANCIA","TAREA","ULTIMO ACCION",
+                        "USUARIO","FECHA","FECHA_FIN","IMPORTANCIA","TAREA","ULTIMO ACCION",
                         "PROGRESO","DEPENDENCIAS","TIPO","GRUPO"
                     ]
                     hoy = obtener_fecha_mexico()
@@ -1897,7 +1897,7 @@ else:
                 with st.expander(":material/edit_note: Abrir editor de tareas", expanded=False):
                     st.subheader("EDITOR DE TAREAS")
                     df_editor = df_master.copy()
-                    for col in ["IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
+                    for col in ["USUARIO","IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
                         df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
                     
                     df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
@@ -1908,6 +1908,7 @@ else:
                         use_container_width=True,
                         num_rows="dynamic",
                         column_config={
+                            "USUARIO": st.column_config.TextColumn("Responsable"),
                             "FECHA": st.column_config.DateColumn("Inicio"),
                             "FECHA_FIN": st.column_config.DateColumn("Fin"),
                             "IMPORTANCIA": st.column_config.SelectboxColumn("Prioridad", options=["Urgente","Alta","Media","Baja"]),
@@ -3836,6 +3837,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
