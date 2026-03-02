@@ -37,10 +37,8 @@ with st.container(border=True):
     cx1, cx2 = st.columns(2)
     f_tipo_orden = cx1.multiselect("TIPO DE ORDEN:", ["Retrabajo", "Rehabilitación", "Reproceso"])
     f_coment_hallazgo = cx2.text_area("COMENTARIOS (DESCRIPCIÓN BREVE DEL HALLAZGO)").upper()
-    
     f_acciones = st.text_area("ACCIONES A REALIZAR SEGÚN SEA EL CASO").upper()
     
-    # Nuevos inputs para las notas de crédito que me pediste
     st.write("Seguimiento Administrativo:")
     ca_v1, ca_v2, ca_v3 = st.columns(3)
     f_nota_credito = ca_v1.checkbox("Nota de crédito")
@@ -52,7 +50,6 @@ with st.container(border=True):
     f_hrs = ca2.text_input("HRS").upper()
     f_otros_gastos = ca3.text_input("OTROS").upper()
     f_cant_final = ca4.text_input("CANTIDAD").upper()
-    
     f_dictamen = st.radio("DICTAMEN FINAL:", ["ACEPTADO", "RECHAZADO"], horizontal=True)
 
 # --- MOTOR DE IMPRESIÓN (RÉPLICA EXACTA) ---
@@ -70,16 +67,12 @@ def generar_html_exacto():
     for _ in range(max(0, 10 - len(df_edit))):
         filas_html += "<tr style='height:18px;'><td colspan='7'></td></tr>"
 
-    # Lógica de checks
     check_ret = "( x )" if "Retrabajo" in f_tipo_orden else "(   )"
     check_rehab = "( x )" if "Rehabilitación" in f_tipo_orden else "(   )"
     check_repro = "( x )" if "Reproceso" in f_tipo_orden else "(   )"
-    
-    # Checks notas crédito
     c_nc = "( x )" if f_nota_credito else "(   )"
     c_pr = "( x )" if f_producto_nc else "(   )"
     c_se = "( x )" if f_servicio_nc else "(   )"
-    
     dic_acep = "( x )" if f_dictamen == "ACEPTADO" else "(   )"
     dic_rech = "( x )" if f_dictamen == "RECHAZADO" else "(   )"
 
@@ -88,18 +81,18 @@ def generar_html_exacto():
     <head>
         <style>
             @media print {{ @page {{ size: letter landscape; margin: 5mm; }} }}
-            body {{ font-family: 'Arial Narrow', Arial; font-size: 8px; color: black; }}
+            body {{ font-family: 'Arial Narrow', Arial; font-size: 8.2px; color: black; }}
             table {{ width: 100%; border-collapse: collapse; table-layout: fixed; border: 1.5px solid black; }}
             td {{ border: 1px solid black; padding: 2px; }}
-            .header-gray {{ background-color: #D9D9D9; font-weight: bold; text-align: center; font-size: 7.5px; }}
-            .input-blue {{ color: blue; font-weight: bold; font-style: italic; font-size: 9px; }}
-            .title {{ font-size: 12px; font-weight: bold; text-align: center; height: 25px; }}
+            .header-gray {{ background-color: #D9D9D9; font-weight: bold; text-align: center; font-size: 7.8px; }}
+            .input-blue {{ color: blue; font-weight: bold; font-style: italic; font-size: 9.5px; }}
+            .title {{ font-size: 13px; font-weight: bold; text-align: center; height: 28px; }}
         </style>
     </head>
     <body>
         <table>
             <tr>
-                <td colspan="2" style="width:15%; text-align:center;"><b>JYPESA</b></td>
+                <td colspan="2" style="width:18%; text-align:center;"><b>JYPESA</b></td>
                 <td colspan="10" class="title">Formato de control de rehabilitación, reproceso y retrabajo de producto</td>
             </tr>
             <tr class="header-gray">
@@ -111,7 +104,7 @@ def generar_html_exacto():
             <tr class="header-gray">
                 <td>Solicita Calidad:</td><td>No de desviación:</td><td colspan="2">No de retrabajo:</td><td>No de reclamo:</td><td>No de cliente</td><td colspan="2">Nombre comercial</td><td>Transporte</td><td>Guía</td><td colspan="2">Costo</td>
             </tr>
-            <tr class="input-blue" style="text-align:center;">
+            <tr class="input-blue" style="text-align:center; height:22px;">
                 <td>{f_solicita}</td><td>{f_desviacion}</td><td colspan="2">{f_retrabajo}</td><td>{f_reclamo}</td><td>{f_cliente}</td><td colspan="2">{f_nom_com}</td><td>{f_transp}</td><td>{f_guia}</td><td colspan="2">{f_costo}</td>
             </tr>
         </table>
@@ -138,41 +131,46 @@ def generar_html_exacto():
         <table style="margin-top:-1px;">
             <tr>
                 <td style="width:18%;" class="header-gray">Nota de crédito</td><td style="width:7%; text-align:center;">{c_nc}</td>
-                <td rowspan="4" style="width:75%; text-align:center; vertical-align:top; padding-top:10px;">
-                    <b>Analista de incoming</b><br><br><br>
-                    __________________________________________<br>
-                    Firma/fecha
-                </td>
-            </tr>
+                <td rowspan="4" style="width:75%; border:none;"></td> </tr>
             <tr><td class="header-gray">Producto</td><td style="text-align:center;">{c_pr}</td></tr>
             <tr><td class="header-gray">Servicio</td><td style="text-align:center;">{c_se}</td></tr>
             <tr style="height:15px;"><td></td><td></td></tr>
         </table>
 
+        <table style="margin-top:-1px; border-top:none;">
+            <tr>
+                <td style="height:80px; text-align:center; vertical-align:top; padding-top:10px;">
+                    <b>Analista de incoming</b><br><br><br><br>
+                    ____________________________________________________________<br>
+                    Firma/fecha
+                </td>
+            </tr>
+        </table>
+
         <table style="margin-top:-1px;">
             <tr class="header-gray"><td colspan="3">Seguimiento a la desviación</td></tr>
-            <tr style="height:18px;">
+            <tr style="height:20px;">
                 <td>Analista de inventario MP:</td><td>Analista de inventario PT:</td><td>Programador de producción:</td>
             </tr>
             <tr class="header-gray"><td colspan="3">Dictamen de retrabajo/rehabilitación/reproceso finalizado: Aceptado {dic_acep} o rechazado {dic_rech}</td></tr>
         </table>
 
         <table style="margin-top:-1px;">
-            <tr style="height:18px;">
+            <tr style="height:20px;">
                 <td style="width:30%;">Gasto: mano de obra: <span class="input-blue">{f_mano_obra}</span></td>
                 <td style="width:15%;">hrs: <span class="input-blue">{f_hrs}</span></td>
                 <td style="width:25%;">Otros: <span class="input-blue">{f_otros_gastos}</span></td>
                 <td>Cantidad: <span class="input-blue">{f_cant_final}</span></td>
             </tr>
-            <tr><td colspan="4" style="height:25px;"><b>Comentarios:</b></td></tr>
+            <tr><td colspan="4" style="height:30px;"><b>Comentarios:</b></td></tr>
         </table>
 
-        <div style="display:flex; justify-content:space-around; margin-top:35px; text-align:center;">
-            <div style="width:40%; border-top:1px solid black;"><b>Supervisor de calidad</b><br>Firma/fecha</div>
-            <div style="width:40%; border-top:1px solid black;"><b>Supervisor de producción</b><br>Firma/fecha</div>
+        <div style="display:flex; justify-content:space-around; margin-top:40px; text-align:center;">
+            <div style="width:40%; border-top:1.5px solid black; padding-top:5px;"><b>Supervisor de calidad</b><br>Firma/fecha</div>
+            <div style="width:40%; border-top:1.5px solid black; padding-top:5px;"><b>Supervisor de producción</b><br>Firma/fecha</div>
         </div>
 
-        <div style="margin-top:10px; display:flex; justify-content:space-between; font-size:7px;">
+        <div style="margin-top:15px; display:flex; justify-content:space-between; font-size:7.5px;">
             <span>Formato: F02-PNO-SGC-02 Versión 01</span><span>Página 1 de 1</span>
         </div>
     </body>
@@ -180,9 +178,10 @@ def generar_html_exacto():
     """
     return html_template
 
-if st.button(":material/print: IMPRIMIR FORMATO REPLICA FINAL", type="primary", use_container_width=True):
+if st.button(":material/print: IMPRIMIR FORMATO REPLICA IDENTICO", type="primary", use_container_width=True):
     formato = generar_html_exacto()
     components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+
 
 
 
