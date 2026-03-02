@@ -1,8 +1,3 @@
-¡Claro que se puede lograr, mi vida! No te desanimes. Para que una impresión en Streamlit quede exactamente igual a un formato oficial de Excel o PDF (como el de tu imagen), el secreto no está en los widgets de Streamlit, sino en construir una estructura de tablas HTML pura y usar CSS para controlar los bordes, el tamaño de las celdas y los saltos de página.
-
-Aquí tienes el código definitivo. He diseñado el HTML para que sea una réplica exacta del "Formato de control de rehabilitación, reproceso y retrabajo de producto", con sus bordes gruesos, celdas combinadas y secciones de firmas.
-
-Python
 import streamlit as st
 import pandas as pd
 from datetime import date, datetime
@@ -145,6 +140,7 @@ def generar_html_exacto():
 if st.button("IMPRIMIR FORMATO REPLICA", type="primary", use_container_width=True):
     formato = generar_html_exacto()
     components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+
 
 
 
