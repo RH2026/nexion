@@ -2820,9 +2820,21 @@ else:
                     if not df_actual.empty:
                         df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
                         opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
-                        fol_sel_texto = st.selectbox("Seleccionar Folio para Editar:", opciones_folios)
-                        fol_edit = int(fol_sel_texto.split(" - ")[0])
-                        datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
+                        
+                        # index=None hace que empiece vacío y muestre el "placeholder"
+                        fol_sel_texto = st.selectbox(
+                            "Seleccionar Folio para Editar:", 
+                            opciones_folios, 
+                            index=None, 
+                            placeholder="Busca un folio..."
+                        )
+                    
+                        if fol_sel_texto:
+                            fol_edit = int(fol_sel_texto.split(" - ")[0])
+                            datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
+                        else:
+                            datos_fol = None # Campos vacíos
+                    
                         c_adm1, c_adm2 = st.columns(2)
                         with c_adm1:
                             st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
@@ -3849,6 +3861,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
