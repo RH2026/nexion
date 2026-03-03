@@ -2821,7 +2821,7 @@ else:
                         df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
                         opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
                         
-                        # index=None hace que empiece vacío y muestre el "placeholder"
+                        # Usamos index=None para que empiece vacío
                         fol_sel_texto = st.selectbox(
                             "Seleccionar Folio para Editar:", 
                             opciones_folios, 
@@ -2829,13 +2829,25 @@ else:
                             placeholder="Busca un folio..."
                         )
                     
+                        # Solo si el usuario seleccionó algo en el selectbox
                         if fol_sel_texto:
                             fol_edit = int(fol_sel_texto.split(" - ")[0])
                             datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
+                            
+                            # El título azul ahora vive dentro de este IF
+                            st.markdown(
+                                f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">'
+                                f'Actualizar envío - Folio {fol_edit}</div>', 
+                                unsafe_allow_html=True
+                            )
+                            
+                            c_adm1, c_adm2 = st.columns(2)
+                            # Aquí van tus campos de edición...
+                            
                         else:
-                            datos_fol = None # Campos vacíos
-                    
-                        c_adm1, c_adm2 = st.columns(2)
+                            # Esto se muestra cuando NO se ha seleccionado nada (Campos vacíos)
+                            st.info("Por favor, selecciona un folio para comenzar a editar.")
+                            # Si prefieres que no salga nada, simplemente deja este 'else' vacío o quítalo
                         with c_adm1:
                             st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
                             st.write("")
@@ -3861,6 +3873,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
