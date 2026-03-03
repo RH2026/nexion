@@ -849,7 +849,7 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
         
-            else:
+            else: 
                 if total == 1:
                     d = resultados.iloc[0]
                     st.markdown(f"""
@@ -868,6 +868,7 @@ else:
                                     <div>
                                         <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CLIENTE</p>
                                         <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
+                                        <p style="font-size:11px; color:#E0E0E0; margin-bottom:2px;">ID: {d['NO CLIENTE']}</p>
                                         <p style="font-size:11px; color:#E0E0E0; opacity:0.9;">{d['DOMICILIO']}</p>
                                     </div>
                                     <div>
@@ -902,7 +903,7 @@ else:
                                         <span style="font-size:15px; font-weight:bold; color:white;">{d['NÚMERO DE PEDIDO']}</span>
                                     </div>
                                     <div style="flex: 2;">
-                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CLIENTE</span>
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CLIENTE ({d['NO CLIENTE']})</span>
                                         <span style="font-size:13px; color:white; font-weight:600;">{d['NOMBRE DEL CLIENTE']}</span>
                                     </div>
                                     <div style="flex: 1; text-align: right;">
@@ -3848,6 +3849,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
