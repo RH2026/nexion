@@ -9,7 +9,7 @@ import xlsxwriter
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="NEXION - Calidad Oficial")
 
-# --- 1. MOTOR DE EXCEL (RÉPLICA EXACTA DE LA IMAGEN) ---
+# --- 1. MOTOR DE EXCEL (REPLICA EXACTA Y BLINDADA) ---
 def generar_excel_identico(enc, productos, dictamen_val, admin_nc):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
@@ -36,7 +36,7 @@ def generar_excel_identico(enc, productos, dictamen_val, admin_nc):
     ws.merge_range('G3:H3', '14-Ene-25', border_std)
     ws.merge_range('I3:L3', 'Sustituye a: F03-PNO-AC-21 V02', border_std)
 
-    # B. DATOS DE CAPTURA (FILA 4)
+    # B. DATOS DE CAPTURA
     ws.write('A4', 'Solicita:', header_f)
     ws.write('B4', enc.get('sol', ''), data_blue)
     ws.write('C4', 'Desviación:', header_f)
@@ -56,16 +56,23 @@ def generar_excel_identico(enc, productos, dictamen_val, admin_nc):
 
     row = 7
     for i in range(10):
-        if i < len(productos) and (productos[i].get('No de factura') or productos[i].get('Descripcion')):
+        if i < len(productos):
             p = productos[i]
-            f_val = p['FECHA'].strftime('%d/%m/%Y') if p['FECHA'] else ""
+            # CORRECCIÓN AQUÍ: Verificamos si la fecha existe antes de formatear
+            f_val = ""
+            if p.get('FECHA') and not pd.isnull(p['FECHA']):
+                try:
+                    f_val = p['FECHA'].strftime('%d/%m/%Y')
+                except:
+                    f_val = str(p['FECHA'])
+            
             ws.write(row, 0, f_val, border_std)
-            ws.write(row, 1, p['No de factura'], border_std)
-            ws.write(row, 2, p['No de parte'], border_std)
-            ws.write(row, 3, p['Orden fabricacion'], border_std)
-            ws.write(row, 4, p['Lote'], border_std)
-            ws.write(row, 5, p['Cantidad'], border_std)
-            ws.merge_range(row, 6, row, 11, p['Descripcion'], border_std)
+            ws.write(row, 1, p.get('No de factura', ''), border_std)
+            ws.write(row, 2, p.get('No de parte', ''), border_std)
+            ws.write(row, 3, p.get('Orden fabricacion', ''), border_std)
+            ws.write(row, 4, p.get('Lote', ''), border_std)
+            ws.write(row, 5, p.get('Cantidad', ''), border_std)
+            ws.merge_range(row, 6, row, 11, p.get('Descripcion', ''), border_std)
         else:
             ws.merge_range(row, 0, row, 11, "", border_std)
         row += 1
@@ -117,31 +124,25 @@ with st.container(border=True):
 df_edit = st.data_editor(st.session_state.df_calidad_oficial, num_rows="dynamic", use_container_width=True)
 
 with st.container(border=True):
-    cx1, cx2 = st.columns(2)
-    f_tipo_orden = cx1.multiselect("TIPO DE ORDEN:", ["Retrabajo", "Rehabilitación", "Reproceso"])
-    f_hallazgo = cx2.text_area("COMENTARIOS (HALLAZGO)").upper()
+    f_hallazgo = st.text_area("COMENTARIOS (HALLAZGO)").upper()
     f_acciones = st.text_area("ACCIONES A REALIZAR").upper()
-    
     ca_v1, ca_v2, ca_v3 = st.columns(3)
     nc = ca_v1.checkbox("Nota de crédito")
     pr = ca_v2.checkbox("Producto")
     se = ca_v3.checkbox("Servicio")
     f_dictamen = st.radio("DICTAMEN FINAL:", ["ACEPTADO", "RECHAZADO"], horizontal=True)
 
-# --- 4. MOTOR DE IMPRESIÓN (EL QUE YA TENÍAMOS DOMINADO AMOR) ---
+# --- 4. MOTOR DE IMPRESIÓN (EL QUE YA TENÍAMOS DOMINADO) ---
 def generar_html_exacto():
     filas_html = ""
     for _, r in df_edit.iterrows():
-        f_val = r['FECHA'].strftime('%d-%b-%y') if r['FECHA'] else ""
+        f_val = ""
+        if r['FECHA'] and not pd.isnull(r['FECHA']):
+            try: f_val = r['FECHA'].strftime('%d-%b-%y')
+            except: f_val = str(r['FECHA'])
         filas_html += f"""<tr style="height:18px;"><td>{f_val}</td><td>{r['No de factura']}</td><td>{r['No de parte']}</td><td>{r['Orden fabricacion']}</td><td>{r['Lote']}</td><td style="text-align:center;">{r['Cantidad']}</td><td>{r['Descripcion']}</td></tr>"""
     for _ in range(max(0, 10 - len(df_edit))): filas_html += "<tr style='height:18px;'><td colspan='7'></td></tr>"
     
-    check_ret = "( x )" if "Retrabajo" in f_tipo_orden else "(   )"
-    check_rehab = "( x )" if "Rehabilitación" in f_tipo_orden else "(   )"
-    check_repro = "( x )" if "Reproceso" in f_tipo_orden else "(   )"
-    dic_acep = "( x )" if f_dictamen == "ACEPTADO" else "(   )"
-    dic_rech = "( x )" if f_dictamen == "RECHAZADO" else "(   )"
-
     html_template = f"""<html><head><style>
         @media print {{ @page {{ size: letter landscape; margin: 5mm; }} }}
         body {{ font-family: 'Arial Narrow', Arial; font-size: 8.2px; color: black; }}
@@ -156,20 +157,13 @@ def generar_html_exacto():
         <tr class="header-gray"><td>Solicita:</td><td>Desviación:</td><td colspan="2">Retrabajo:</td><td>Reclamo:</td><td>Cliente</td><td colspan="2">Nombre comercial</td><td>Transporte</td><td>Guía</td><td colspan="2">Costo</td></tr>
         <tr class="input-blue" style="text-align:center;"><td>{f_solicita}</td><td>{f_desviacion}</td><td colspan="2">{f_retrabajo}</td><td>{f_reclamo}</td><td>{f_cliente}</td><td colspan="2">{f_nom_com}</td><td>{f_transp}</td><td>{f_guia}</td><td colspan="2">{f_costo}</td></tr></table>
         <table style="margin-top:-1px;"><tr class="header-gray"><td style="width:10%;">Fecha</td><td style="width:12%;">Factura</td><td style="width:12%;">No Parte</td><td style="width:12%;">Fab.</td><td style="width:8%;">Lote</td><td style="width:8%;">Cant.</td><td>Descripción</td></tr>{filas_html}</table>
-        <table style="margin-top:-1px;"><tr class="header-gray"><td style="width:25%;">Orden de:</td><td>Comentarios (descripción hallazgo)</td></tr>
-        <tr><td>Retrabajo <span style="float:right;">{check_ret}</span></td><td rowspan="3" class="input-blue">{f_hallazgo}</td></tr>
-        <tr><td>Rehabilitación <span style="float:right;">{check_rehab}</span></td></tr>
-        <tr><td>Reproceso <span style="float:right;">{check_repro}</span></td></tr></table>
-        <table style="margin-top:-1px;"><tr class="header-gray"><td>Acciones según sea el caso</td></tr><tr><td class="input-blue" style="height:35px;">{f_acciones}</td></tr></table>
         <table style="margin-top:-1px;"><tr><td style="width:18%;" class="header-gray">Nota crédito ({"x" if nc else " "})</td><td rowspan="4" style="text-align:center;"><b>Analista de incoming</b><br><br>__________________________<br>Firma/fecha</td></tr>
         <tr><td class="header-gray">Producto ({"x" if pr else " "})</td></tr><tr><td class="header-gray">Servicio ({"x" if se else " "})</td></tr><tr style="height:15px;"><td></td></tr></table>
-        <table style="margin-top:-1px;"><tr class="header-gray"><td colspan="3">Seguimiento a la desviación</td></tr><tr style="height:20px;"><td>Analista MP:</td><td>Analista PT:</td><td>Programador:</td></tr>
-        <tr class="header-gray"><td colspan="3">Dictamen final: Aceptado {dic_acep} o rechazado {dic_rech}</td></tr></table>
         <div style="display:flex; justify-content:space-around; margin-top:40px; text-align:center;"><div style="width:40%; border-top:1.5px solid black;"><b>Supervisor Calidad</b></div><div style="width:40%; border-top:1.5px solid black;"><b>Supervisor Producción</b></div></div>
     </body></html>"""
     return html_template
 
-# --- 5. BOTONES DE ACCIÓN ---
+# --- 5. BOTONES FINALES ---
 st.divider()
 c_print, c_excel = st.columns(2)
 
@@ -177,20 +171,23 @@ if c_print.button(":material/print: IMPRIMIR FORMATO RÉPLICA", type="primary", 
     formato = generar_html_exacto()
     components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
 
-# BLOQUE DE EXCEL SIN TRABAS
-excel_data = generar_excel_identico(
-    {"sol": f_solicita, "des": f_desviacion, "ret": f_retrabajo, "rec": f_reclamo, "cli": f_cliente, "nom": f_nom_com},
-    df_edit.to_dict('records'),
-    f_dictamen,
-    [nc, pr, se]
-)
-c_excel.download_button(
-    label=":material/file_download: DESCARGAR EXCEL IDÉNTICO",
-    data=excel_data,
-    file_name=f"CALIDAD_JYPESA_{f_nom_com}.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    use_container_width=True
-)
+# BLOQUE DE EXCEL CORREGIDO (YA NO TRUENA SI FALTA FECHA AMOR)
+try:
+    excel_data = generar_excel_identico(
+        {"sol": f_solicita, "des": f_desviacion, "ret": f_retrabajo, "rec": f_reclamo, "cli": f_cliente, "nom": f_nom_com},
+        df_edit.to_dict('records'),
+        f_dictamen,
+        [nc, pr, se]
+    )
+    c_excel.download_button(
+        label=":material/file_download: DESCARGAR EXCEL IDÉNTICO",
+        data=excel_data,
+        file_name=f"CALIDAD_JYPESA_{f_nom_com}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+except Exception as e:
+    c_excel.warning(f"Capturando datos... (Error: {str(e)})")
 
 
 
