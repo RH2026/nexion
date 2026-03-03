@@ -9,8 +9,8 @@ import xlsxwriter
 # --- CONFIGURACIÓN ---
 st.set_page_config(layout="wide", page_title="NEXION - Calidad Oficial")
 
-# --- 1. MOTOR DE EXCEL (RÉPLICA EXACTA SEGÚN IMAGEN) ---
-def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
+# --- 1. MOTOR DE EXCEL (RÉPLICA EXACTA DE TU IMAGEN) ---
+def generar_excel_identico(enc, productos, dictamen_val, admin_nc):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
     ws = workbook.add_worksheet("Formato Calidad")
@@ -24,7 +24,7 @@ def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
 
     ws.set_column('A:L', 10)
 
-    # A. ENCABEZADO SUPERIOR
+    # ENCABEZADO SUPERIOR
     ws.merge_range('A1:B2', 'JYPESA', title_f)
     ws.merge_range('C1:L2', 'Formato de control de rehabilitación, reproceso y retrabajo de producto', title_f)
     
@@ -36,7 +36,7 @@ def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
     ws.merge_range('G3:H3', '14-Ene-25', border_std)
     ws.merge_range('I3:L3', 'Sustituye a: F03-PNO-AC-21 V02', border_std)
 
-    # B. DATOS DE CAPTURA
+    # DATOS DE CAPTURA
     ws.write('A4', 'Solicita:', header_f)
     ws.write('B4', enc.get('sol', ''), data_blue)
     ws.write('C4', 'Desviación:', header_f)
@@ -49,7 +49,7 @@ def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
     ws.write('J4', enc.get('cli', ''), data_blue)
     ws.merge_range('K4:L4', enc.get('nom', ''), data_blue)
 
-    # C. TABLA DE PRODUCTOS (SIEMPRE 10 FILAS)
+    # TABLA DE PRODUCTOS (10 FILAS FIJAS)
     row = 6
     headers = ['FECHA', 'No FACTURA', 'No PARTE', 'FAB.', 'LOTE', 'CANT.', 'DESCRIPCIÓN']
     for i, h in enumerate(headers): ws.write(row, i, h, header_f)
@@ -70,7 +70,7 @@ def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
             ws.merge_range(row, 0, row, 11, "", border_std)
         row += 1
 
-    # D. BLOQUE ANALISTA E INCOMING (IGUAL A LA IMAGEN)
+    # BLOQUE ADMINISTRATIVO Y ANALISTA (IDÉNTICO A LA IMAGEN)
     ws.write(row, 0, 'Nota de crédito', header_f)
     ws.write(row, 1, '( x )' if admin_nc[0] else '(  )', border_std)
     ws.merge_range(row, 2, row+3, 11, 'Analista de incoming\n\n\n__________________________\nFirma/fecha', firma_f)
@@ -78,17 +78,27 @@ def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
     ws.write(row+1, 1, '( x )' if admin_nc[1] else '(  )', border_std)
     ws.write(row+2, 0, 'Servicio', header_f)
     ws.write(row+2, 1, '( x )' if admin_nc[2] else '(  )', border_std)
+    ws.write(row+3, 0, '', border_std)
+    ws.write(row+3, 1, '', border_std)
+
+    # SEGUIMIENTO Y DICTAMEN
+    row += 4
+    ws.merge_range(row, 0, row, 11, 'Seguimiento a la desviación', header_f)
+    ws.merge_range(row+1, 0, row+1, 3, 'Analista de inventario MP:', border_std)
+    ws.merge_range(row+1, 4, row+1, 7, 'Analista de inventario PT:', border_std)
+    ws.merge_range(row+1, 8, row+1, 11, 'Programador de producción:', border_std)
+    ws.merge_range(row+2, 0, row+2, 11, f'Dictamen finalizado: Aceptado ({"x" if dictamen_val=="ACEPTADO" else " "}) o rechazado ({"x" if dictamen_val=="RECHAZADO" else " "})', header_f)
 
     workbook.close()
     return output.getvalue()
 
-# --- ESTADO DE LA TABLA ---
+# --- 2. ESTADO DE LA TABLA ---
 if 'df_calidad_oficial' not in st.session_state:
     st.session_state.df_calidad_oficial = pd.DataFrame(
         [{"FECHA": None, "No de factura": "", "No de parte": "", "Orden fabricacion": "", "Lote": "", "Cantidad": "", "Descripcion": ""}] * 10
     )
 
-# --- CAPTURA ---
+# --- 3. CAPTURA DE DATOS ---
 st.title(":material/rebase_edit: Control de Calidad JYPESA")
 with st.container(border=True):
     c1, c2, c3, c4, c5 = st.columns(5)
@@ -107,31 +117,59 @@ with st.container(border=True):
 df_edit = st.data_editor(st.session_state.df_calidad_oficial, num_rows="dynamic", use_container_width=True)
 
 with st.container(border=True):
+    f_hallazgo = st.text_area("COMENTARIOS (HALLAZGO)").upper()
+    f_acciones = st.text_area("ACCIONES A REALIZAR").upper()
     ca_v1, ca_v2, ca_v3 = st.columns(3)
     nc = ca_v1.checkbox("Nota de crédito")
     pr = ca_v2.checkbox("Producto")
     se = ca_v3.checkbox("Servicio")
     f_dictamen = st.radio("DICTAMEN FINAL:", ["ACEPTADO", "RECHAZADO"], horizontal=True)
 
-# --- BOTONES DE IMPRESIÓN Y EXCEL ---
+# --- 4. MOTOR DE IMPRESIÓN (HTML IDÉNTICO A LA IMAGEN) ---
+def generar_html_exacto():
+    filas_html = ""
+    for _, r in df_edit.iterrows():
+        f_val = r['FECHA'].strftime('%d-%b-%y') if r['FECHA'] else ""
+        filas_html += f"""<tr style="height:18px;"><td>{f_val}</td><td>{r['No de factura']}</td><td>{r['No de parte']}</td><td>{r['Orden fabricacion']}</td><td>{r['Lote']}</td><td style="text-align:center;">{r['Cantidad']}</td><td>{r['Descripcion']}</td></tr>"""
+    for _ in range(max(0, 10 - len(df_edit))): filas_html += "<tr style='height:18px;'><td colspan='7'></td></tr>"
+    
+    html_template = f"""<html><head><style>
+        @media print {{ @page {{ size: letter landscape; margin: 5mm; }} }}
+        body {{ font-family: 'Arial Narrow', Arial; font-size: 8.2px; color: black; }}
+        table {{ width: 100%; border-collapse: collapse; border: 1.5px solid black; }}
+        td {{ border: 1px solid black; padding: 2px; }}
+        .header-gray {{ background-color: #D9D9D9; font-weight: bold; text-align: center; }}
+        .input-blue {{ color: blue; font-weight: bold; font-style: italic; font-size: 9.5px; }}
+        .title {{ font-size: 13px; font-weight: bold; text-align: center; height: 28px; }}
+    </style></head><body>
+        <table><tr><td colspan="2" style="text-align:center;"><b>JYPESA</b></td><td colspan="10" class="title">Formato de control de rehabilitación, reproceso y retrabajo de producto</td></tr>
+        <tr class="header-gray"><td>Clave: F03-PNO-AC-21</td><td>Versión: 3</td><td colspan="3">Publicación: 14-Ene-25</td><td colspan="4">Sustituye a: F03-PNO-AC-21 V02</td></tr>
+        <tr class="header-gray"><td>Solicita:</td><td>Desviación:</td><td colspan="2">Retrabajo:</td><td>Reclamo:</td><td>Cliente</td><td colspan="2">Nombre comercial</td><td>Transporte</td><td>Guía</td><td colspan="2">Costo</td></tr>
+        <tr class="input-blue" style="text-align:center;"><td>{f_solicita}</td><td>{f_desviacion}</td><td colspan="2">{f_retrabajo}</td><td>{f_reclamo}</td><td>{f_cliente}</td><td colspan="2">{f_nom_com}</td><td>{f_transp}</td><td>{f_guia}</td><td colspan="2">{f_costo}</td></tr></table>
+        <table style="margin-top:-1px;"><tr class="header-gray"><td style="width:10%;">Fecha</td><td style="width:12%;">Factura</td><td style="width:12%;">No Parte</td><td style="width:12%;">Fab.</td><td style="width:8%;">Lote</td><td style="width:8%;">Cant.</td><td>Descripción</td></tr>{filas_html}</table>
+        <table style="margin-top:-1px;"><tr><td style="width:18%;" class="header-gray">Nota crédito ({"x" if nc else " "})</td><td rowspan="4" style="text-align:center;"><b>Analista de incoming</b><br><br>__________________________<br>Firma/fecha</td></tr>
+        <tr><td class="header-gray">Producto ({"x" if pr else " "})</td></tr><tr><td class="header-gray">Servicio ({"x" if se else " "})</td></tr><tr style="height:15px;"><td></td></tr></table>
+        <div style="display:flex; justify-content:space-around; margin-top:40px; text-align:center;"><div style="width:40%; border-top:1.5px solid black;"><b>Supervisor Calidad</b></div><div style="width:40%; border-top:1.5px solid black;"><b>Supervisor Producción</b></div></div>
+    </body></html>"""
+    return html_template
+
+# --- 5. BOTONES FINALES ---
 st.divider()
-col_p, col_e = st.columns(2)
+c_print, c_excel = st.columns(2)
 
-# 1. IMPRESIÓN (EL QUE YA TENÍAMOS DOMINADO AMOR)
-if col_p.button(":material/print: IMPRIMIR FORMATO RÉPLICA", type="primary", use_container_width=True):
-    # Aquí va tu función generar_html_exacto() que ya tenemos configurada
-    st.info("Abriendo ventana de impresión...")
+if c_print.button(":material/print: IMPRIMIR FORMATO RÉPLICA", type="primary", use_container_width=True):
+    formato = generar_html_exacto()
+    components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
 
-# 2. EXCEL (IDENTICO A LA IMAGEN)
+# El Excel se genera AQUÍ para que siempre tenga los datos frescos mi vida
 try:
     excel_file = generar_excel_identico(
         {"sol": f_solicita, "des": f_desviacion, "ret": f_retrabajo, "rec": f_reclamo, "cli": f_cliente, "nom": f_nom_com},
         df_edit.to_dict('records'),
         f_dictamen,
-        [], # tipo_orden
         [nc, pr, se]
     )
-    col_e.download_button(
+    c_excel.download_button(
         label=":material/file_download: DESCARGAR EXCEL IDÉNTICO",
         data=excel_file,
         file_name=f"CALIDAD_JYPESA_{f_nom_com}.xlsx",
@@ -139,7 +177,7 @@ try:
         use_container_width=True
     )
 except:
-    col_e.warning("Esperando datos...")
+    c_excel.warning("Capturando datos...")
 
 
 
