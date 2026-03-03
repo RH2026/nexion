@@ -55,7 +55,7 @@ def generar_excel_identico(enc, productos, dictamen_val):
     row = 7
     for p in productos:
         if p['No de factura'] or p['Descripcion']:
-            f_dt = p['FECHA'].strftime('%d/%m/%Y') if p['FECHA'] else ""
+            f_dt = p['FECHA'].strftime('%d/%m/%Y') if isinstance(p['FECHA'], (date, datetime)) else ""
             ws.write(row, 0, f_dt, border_std)
             ws.write(row, 1, p['No de factura'], border_std)
             ws.write(row, 2, p['No de parte'], border_std)
@@ -121,7 +121,7 @@ with st.container(border=True):
 def generar_html_exacto():
     filas_html = ""
     for _, r in df_edit.iterrows():
-        f_val = r['FECHA'].strftime('%d-%b-%y') if r['FECHA'] else ""
+        f_val = r['FECHA'].strftime('%d-%b-%y') if isinstance(r['FECHA'], (date, datetime)) else ""
         filas_html += f"""
         <tr style="height:18px;">
             <td>{f_val}</td><td>{r['No de factura']}</td><td>{r['No de parte']}</td>
@@ -174,40 +174,37 @@ def generar_html_exacto():
     </body></html>"""
     return html_template
 
-# --- BOTONES ---
-if st.button(":material/print: IMPRIMIR FORMATO REPLICA IDENTICO", type="primary", use_container_width=True):
-    formato = generar_html_exacto()
-    components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+# --- BOTONES DE ACCIÓN ---
+col1, col2 = st.columns(2)
 
-st.write("") 
-st.markdown("---") 
+with col1:
+    if st.button(":material/print: IMPRIMIR FORMATO REPLICA IDENTICO", type="primary", use_container_width=True):
+        formato = generar_html_exacto()
+        components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
 
-# --- DESCARGA EXCEL (CON MOTOR INCLUIDO) ---
-def preparar_descarga():
+with col2:
+    # Lógica de Excel integrada directamente en el botón para evitar retrasos de carga
     try:
-        # Llamamos al motor con los datos capturados
-        excel_file = generar_excel_identico(
+        data_excel = generar_excel_identico(
             {"sol": f_solicita, "des": f_desviacion, "ret": f_retrabajo, "cli": f_cliente, "nom": f_nom_com},
             df_edit.to_dict('records'),
             f_dictamen
         )
-        return excel_file
-    except:
-        return None
+        st.download_button(
+            label=":material/file_download: DESCARGAR RÉPLICA EXCEL OFICIAL",
+            data=data_excel,
+            file_name=f"CALIDAD_JYPESA_{f_nom_com}_{datetime.now().strftime('%d%m%Y')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            key="btn_excel_nexion_final"
+        )
+    except Exception as e:
+        # Si algo falta, mostramos un aviso discreto en lugar de un error gigante
+        st.button("DESCARGAR RÉPLICA EXCEL (RELLENA LOS CAMPOS)", disabled=True, use_container_width=True)
 
-archivo_excel = preparar_descarga()
+st.write("") 
+st.markdown("---")
 
-if archivo_excel:
-    st.download_button(
-        label=":material/file_download: DESCARGAR RÉPLICA EXCEL OFICIAL",
-        data=archivo_excel,
-        file_name=f"CALIDAD_JYPESA_{f_nom_com}_{datetime.now().strftime('%d%m%Y')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True,
-        key="btn_excel_nexion_fixed"
-    )
-else:
-    st.warning("Completa los campos amarillos para habilitar la descarga.")
 
 
 
