@@ -10,52 +10,55 @@ import xlsxwriter
 st.set_page_config(layout="wide", page_title="NEXION - Calidad Oficial")
 
 # --- 1. MOTOR DE EXCEL (RÉPLICA EXACTA DE LA IMAGEN) ---
-def generar_excel_identico(enc, productos, dictamen_val):
+def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
     ws = workbook.add_worksheet("Formato Calidad")
     
-    # FORMATOS
-    title_fmt = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 2, 'font_size': 12})
-    header_gray = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#D9D9D9', 'font_size': 8})
-    input_blue = workbook.add_format({'font_color': 'blue', 'italic': True, 'bold': True, 'align': 'center', 'border': 1, 'font_size': 10})
+    # FORMATOS DE CELDA
+    title_f = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 2, 'font_size': 12})
+    header_f = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#D9D9D9', 'font_size': 8})
+    data_blue = workbook.add_format({'font_color': 'blue', 'italic': True, 'bold': True, 'align': 'center', 'border': 1, 'font_size': 10})
     border_std = workbook.add_format({'border': 1, 'font_size': 9, 'align': 'center'})
-    
-    ws.set_column('A:L', 12)
+    firma_f = workbook.add_format({'align': 'center', 'valign': 'top', 'border': 1, 'font_size': 9})
 
-    # ENCABEZADO OFICIAL
-    ws.merge_range('A1:B2', 'JYPESA', title_fmt)
-    ws.merge_range('C1:L2', 'Formato de control de rehabilitación, reproceso y retrabajo de producto', title_fmt)
+    ws.set_column('A:L', 10)
+
+    # A. ENCABEZADO SUPERIOR
+    ws.merge_range('A1:B2', 'JYPESA', title_f)
+    ws.merge_range('C1:L2', 'Formato de control de rehabilitación, reproceso y retrabajo de producto', title_f)
     
-    ws.write('A3', 'Clave:', header_gray)
+    ws.write('A3', 'Clave:', header_f)
     ws.write('B3', 'F03-PNO-AC-21', border_std)
-    ws.write('C3', 'Versión:', header_gray)
+    ws.write('C3', 'Versión:', header_f)
     ws.write('D3', '3', border_std)
-    ws.merge_range('E3:F3', 'Fecha de publicación:', header_gray)
+    ws.merge_range('E3:F3', 'Fecha de publicación:', header_f)
     ws.merge_range('G3:H3', '14-Ene-25', border_std)
     ws.merge_range('I3:L3', 'Sustituye a: F03-PNO-AC-21 V02', border_std)
 
-    # CAPTURA MANUAL (FILA AMARILLA)
-    ws.write('A4', 'Solicita:', header_gray)
-    ws.write('B4', enc['sol'], input_blue)
-    ws.write('C4', 'Desviación:', header_gray)
-    ws.write('D4', enc['des'], input_blue)
-    ws.write('E4', 'Retrabajo:', header_gray)
-    ws.write('F4', enc['ret'], input_blue)
-    ws.write('G4', 'Cliente:', header_gray)
-    ws.write('H4', enc['cli'], input_blue)
-    ws.merge_range('I4:J4', 'Comercial:', header_gray)
-    ws.merge_range('K4:L4', enc['nom'], input_blue)
+    # B. DATOS DE CAPTURA (FILA 4)
+    ws.write('A4', 'Solicita:', header_f)
+    ws.write('B4', enc['sol'], data_blue)
+    ws.write('C4', 'Desviación:', header_f)
+    ws.write('D4', enc['des'], data_blue)
+    ws.merge_range('E4:F4', 'Retrabajo/Reclamo:', header_f)
+    ws.write('G4', enc['ret'], data_blue)
+    ws.write('H4', 'Cliente:', header_f)
+    ws.write('I4', enc['cli'], data_blue)
+    ws.write('J4', 'Comercial:', header_f)
+    ws.merge_range('K4:L4', enc['nom'], data_blue)
 
-    # PRODUCTOS
-    headers = ['FECHA', 'No FACTURA', 'No PARTE', 'FABRICACIÓN', 'LOTE', 'CANTIDAD', 'DESCRIPCIÓN']
-    for i, h in enumerate(headers):
-        ws.write(6, i, h, header_gray)
+    # C. TABLA DE PRODUCTOS
+    ws.merge_range('A6:L6', 'DETALLE DE PRODUCTOS', header_f)
+    cols = ['FECHA', 'No FACTURA', 'No PARTE', 'FABRICACIÓN', 'LOTE', 'CANTIDAD', 'DESCRIPCIÓN']
+    for i, h in enumerate(cols):
+        ws.write(6, i, h, header_f)
 
     row = 7
-    for p in productos:
-        if p['No de factura'] or p['Descripcion']:
-            f_dt = p['FECHA'].strftime('%d/%m/%Y') if isinstance(p['FECHA'], (date, datetime)) else ""
+    for i in range(10): # Siempre 10 filas como en tu imagen
+        if i < len(productos) and (productos[i]['No de factura'] or productos[i]['Descripcion']):
+            p = productos[i]
+            f_dt = p['FECHA'].strftime('%d/%m/%Y') if p['FECHA'] else ""
             ws.write(row, 0, f_dt, border_std)
             ws.write(row, 1, p['No de factura'], border_std)
             ws.write(row, 2, p['No de parte'], border_std)
@@ -63,11 +66,52 @@ def generar_excel_identico(enc, productos, dictamen_val):
             ws.write(row, 4, p['Lote'], border_std)
             ws.write(row, 5, p['Cantidad'], border_std)
             ws.merge_range(row, 6, row, 11, p['Descripcion'], border_std)
-            row += 1
+        else:
+            ws.merge_range(row, 0, row, 11, "", border_std)
+        row += 1
 
-    # DICTAMEN FINAL
-    ws.merge_range(row + 2, 0, row + 2, 2, 'DICTAMEN FINAL:', header_gray)
-    ws.merge_range(row + 2, 3, row + 2, 11, dictamen_val, input_blue)
+    # D. ORDEN DE Y COMENTARIOS (RÉPLICA EXACTA)
+    ws.merge_range(row, 0, row, 2, 'Orden de:', header_f)
+    ws.merge_range(row, 3, row, 11, 'Comentarios (descripción breve del hallazgo)', header_f)
+    
+    ws.write(row+1, 0, 'Retrabajo', border_std)
+    ws.write(row+1, 1, '( x )' if 'Retrabajo' in tipo_orden else '(  )', border_std)
+    ws.merge_range(row+1, 3, row+3, 11, enc['hallazgo'], data_blue)
+    
+    ws.write(row+2, 0, 'Rehabilitación', border_std)
+    ws.write(row+2, 1, '( x )' if 'Rehabilitación' in tipo_orden else '(  )', border_std)
+    
+    ws.write(row+3, 0, 'Reproceso', border_std)
+    ws.write(row+3, 1, '( x )' if 'Reproceso' in tipo_orden else '(  )', border_std)
+    
+    # E. ACCIONES
+    row += 4
+    ws.merge_range(row, 0, row, 11, 'Acciones a realizar según sea el caso Retrabajo/Rehabilitación/Reproceso', header_f)
+    ws.merge_range(row+1, 0, row+2, 11, enc['acc'], data_blue)
+    
+    # F. BLOQUE ANALISTA E INCOMING (LA CLAVE)
+    row += 3
+    ws.write(row, 0, 'Nota de crédito', header_f)
+    ws.write(row, 1, '( x )' if admin_nc[0] else '(  )', border_std)
+    ws.merge_range(row, 2, row+3, 11, 'Analista de incoming\n\n\n__________________________\nFirma/fecha', firma_f)
+    
+    ws.write(row+1, 0, 'Producto', header_f)
+    ws.write(row+1, 1, '( x )' if admin_nc[1] else '(  )', border_std)
+    
+    ws.write(row+2, 0, 'Servicio', header_f)
+    ws.write(row+2, 1, '( x )' if admin_nc[2] else '(  )', border_std)
+    ws.write(row+3, 0, '', border_std)
+    ws.write(row+3, 1, '', border_std)
+
+    # G. SEGUIMIENTO
+    row += 4
+    ws.merge_range(row, 0, row, 11, 'Seguimiento a la desviación', header_f)
+    ws.merge_range(row+1, 0, row+1, 3, 'Analista de inventario MP:', border_std)
+    ws.merge_range(row+1, 4, row+1, 7, 'Analista de inventario PT:', border_std)
+    ws.merge_range(row+1, 8, row+1, 11, 'Programador de producción:', border_std)
+    
+    # H. DICTAMEN FINAL
+    ws.merge_range(row+2, 0, row+2, 11, f'Dictamen finalizado: Aceptado ({"x" if dictamen_val=="ACEPTADO" else " "}) o rechazado ({"x" if dictamen_val=="RECHAZADO" else " "})', header_f)
 
     workbook.close()
     return output.getvalue()
@@ -79,7 +123,7 @@ if 'df_calidad_oficial' not in st.session_state:
     )
 
 # --- CAPTURA DE DATOS ---
-st.title(":material/rebase_edit: Control de Rehabilitación y Reproceso")
+st.title(":material/rebase_edit: Control de Calidad NEXION")
 with st.container(border=True):
     c1, c2, c3, c4, c5 = st.columns(5)
     f_solicita = c1.text_input("SOLICITA CALIDAD").upper()
@@ -94,116 +138,42 @@ with st.container(border=True):
     f_guia = c8.text_input("GUÍA").upper()
     f_costo = c9.text_input("COSTO").upper()
 
-st.write("### :material/grid_view: Detalle de Productos")
-df_edit = st.data_editor(st.session_state.df_calidad_oficial, num_rows="dynamic", use_container_width=True,
-                         column_config={"FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY")})
+df_edit = st.data_editor(st.session_state.df_calidad_oficial, num_rows="dynamic", use_container_width=True)
 
 with st.container(border=True):
     cx1, cx2 = st.columns(2)
     f_tipo_orden = cx1.multiselect("TIPO DE ORDEN:", ["Retrabajo", "Rehabilitación", "Reproceso"])
-    f_coment_hallazgo = cx2.text_area("COMENTARIOS (DESCRIPCIÓN BREVE DEL HALLAZGO)").upper()
-    f_acciones = st.text_area("ACCIONES A REALIZAR SEGÚN SEA EL CASO").upper()
+    f_hallazgo = cx2.text_area("COMENTARIOS (HALLAZGO)").upper()
+    f_acciones = st.text_area("ACCIONES A REALIZAR").upper()
     
     st.write("Seguimiento Administrativo:")
     ca_v1, ca_v2, ca_v3 = st.columns(3)
-    f_nota_credito = ca_v1.checkbox("Nota de crédito")
-    f_producto_nc = ca_v2.checkbox("Producto")
-    f_servicio_nc = ca_v3.checkbox("Servicio")
-
-    ca1, ca2, ca3, ca4 = st.columns(4)
-    f_mano_obra = ca1.text_input("GASTO: MANO DE OBRA").upper()
-    f_hrs = ca2.text_input("HRS").upper()
-    f_otros_gastos = ca3.text_input("OTROS").upper()
-    f_cant_final = ca4.text_input("CANTIDAD").upper()
+    nc = ca_v1.checkbox("Nota de crédito")
+    pr = ca_v2.checkbox("Producto")
+    se = ca_v3.checkbox("Servicio")
     f_dictamen = st.radio("DICTAMEN FINAL:", ["ACEPTADO", "RECHAZADO"], horizontal=True)
 
-# --- MOTOR DE IMPRESIÓN (HTML) ---
-def generar_html_exacto():
-    filas_html = ""
-    for _, r in df_edit.iterrows():
-        f_val = r['FECHA'].strftime('%d-%b-%y') if isinstance(r['FECHA'], (date, datetime)) else ""
-        filas_html += f"""
-        <tr style="height:18px;">
-            <td>{f_val}</td><td>{r['No de factura']}</td><td>{r['No de parte']}</td>
-            <td>{r['Orden fabricacion']}</td><td>{r['Lote']}</td>
-            <td style="text-align:center;">{r['Cantidad']}</td><td>{r['Descripcion']}</td>
-        </tr>"""
-    for _ in range(max(0, 10 - len(df_edit))):
-        filas_html += "<tr style='height:18px;'><td colspan='7'></td></tr>"
+# --- BOTÓN DESCARGA ---
+st.divider()
+try:
+    archivo_excel = generar_excel_identico(
+        {"sol": f_solicita, "des": f_desviacion, "ret": f_retrabajo, "cli": f_cliente, "nom": f_nom_com, "hallazgo": f_hallazgo, "acc": f_acciones},
+        df_edit.to_dict('records'),
+        f_dictamen,
+        f_tipo_orden,
+        [nc, pr, se]
+    )
 
-    check_ret = "( x )" if "Retrabajo" in f_tipo_orden else "(   )"
-    check_rehab = "( x )" if "Rehabilitación" in f_tipo_orden else "(   )"
-    check_repro = "( x )" if "Reproceso" in f_tipo_orden else "(   )"
-    c_nc = "( x )" if f_nota_credito else "(   )"
-    c_pr = "( x )" if f_producto_nc else "(   )"
-    c_se = "( x )" if f_servicio_nc else "(   )"
-    dic_acep = "( x )" if f_dictamen == "ACEPTADO" else "(   )"
-    dic_rech = "( x )" if f_dictamen == "RECHAZADO" else "(   )"
+    st.download_button(
+        label=":material/file_download: DESCARGAR RÉPLICA EXCEL IDÉNTICA",
+        data=archivo_excel,
+        file_name=f"CALIDAD_JYPESA_{f_nom_com}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+except Exception as e:
+    st.warning("Completa los datos para habilitar el Excel oficial.")
 
-    html_template = f"""
-    <html>
-    <head><style>
-        @media print {{ @page {{ size: letter landscape; margin: 5mm; }} }}
-        body {{ font-family: 'Arial Narrow', Arial; font-size: 8.2px; color: black; }}
-        table {{ width: 100%; border-collapse: collapse; table-layout: fixed; border: 1.5px solid black; }}
-        td {{ border: 1px solid black; padding: 2px; }}
-        .header-gray {{ background-color: #D9D9D9; font-weight: bold; text-align: center; font-size: 7.8px; }}
-        .input-blue {{ color: blue; font-weight: bold; font-style: italic; font-size: 9.5px; }}
-        .title {{ font-size: 13px; font-weight: bold; text-align: center; height: 28px; }}
-    </style></head>
-    <body>
-        <table>
-            <tr><td colspan="2" style="text-align:center;"><b>JYPESA</b></td><td colspan="10" class="title">Formato de control de rehabilitación, reproceso y retrabajo de producto</td></tr>
-            <tr class="header-gray"><td>Clave:</td><td>Versión:</td><td colspan="3">Fecha publicación:</td><td colspan="3">Próxima revisión:</td><td colspan="4">Sustituye a:</td></tr>
-            <tr style="text-align:center;"><td>F03-PNO-AC-21</td><td>3</td><td colspan="3">14-Ene-25</td><td colspan="3">14-Ene-28</td><td colspan="4">F03-PNO-AC-21 V02</td></tr>
-            <tr class="header-gray"><td>Solicita:</td><td>Desviación:</td><td colspan="2">Retrabajo:</td><td>Reclamo:</td><td>Cliente</td><td colspan="2">Nombre comercial</td><td>Transporte</td><td>Guía</td><td colspan="2">Costo</td></tr>
-            <tr class="input-blue" style="text-align:center;"><td>{f_solicita}</td><td>{f_desviacion}</td><td colspan="2">{f_retrabajo}</td><td>{f_reclamo}</td><td>{f_cliente}</td><td colspan="2">{f_nom_com}</td><td>{f_transp}</td><td>{f_guia}</td><td colspan="2">{f_costo}</td></tr>
-        </table>
-        <table style="margin-top:-1px;"><tr class="header-gray"><td style="width:10%;">Fecha</td><td style="width:12%;">Factura</td><td style="width:12%;">No Parte</td><td style="width:12%;">Fab.</td><td style="width:8%;">Lote</td><td style="width:8%;">Cant.</td><td>Descripción</td></tr>{filas_html}</table>
-        <table style="margin-top:-1px;"><tr class="header-gray"><td style="width:25%;">Orden de:</td><td>Comentarios (descripción hallazgo)</td></tr>
-        <tr><td>Retrabajo <span style="float:right;">{check_ret}</span></td><td rowspan="3" class="input-blue">{f_coment_hallazgo}</td></tr>
-        <tr><td>Rehabilitación <span style="float:right;">{check_rehab}</span></td></tr>
-        <tr><td>Reproceso <span style="float:right;">{check_repro}</span></td></tr></table>
-        <table style="margin-top:-1px;"><tr class="header-gray"><td>Acciones según sea el caso</td></tr><tr><td class="input-blue" style="height:35px;">{f_acciones}</td></tr></table>
-        <table style="margin-top:-1px;"><tr><td style="width:18%;" class="header-gray">Nota crédito</td><td style="width:7%; text-align:center;">{c_nc}</td><td rowspan="4" style="text-align:center;"><b>Analista de incoming</b><br><br>__________________________<br>Firma/fecha</td></tr>
-        <tr><td class="header-gray">Producto</td><td style="text-align:center;">{c_pr}</td></tr><tr><td class="header-gray">Servicio</td><td style="text-align:center;">{c_se}</td></tr><tr style="height:15px;"><td></td><td></td></tr></table>
-        <table style="margin-top:-1px;"><tr class="header-gray"><td colspan="3">Seguimiento a la desviación</td></tr><tr style="height:20px;"><td>Analista MP:</td><td>Analista PT:</td><td>Programador:</td></tr>
-        <tr class="header-gray"><td colspan="3">Dictamen final: Aceptado {dic_acep} o rechazado {dic_rech}</td></tr></table>
-        <table style="margin-top:-1px;"><tr style="height:20px;"><td>Mano obra: <span class="input-blue">{f_mano_obra}</span></td><td>hrs: <span class="input-blue">{f_hrs}</span></td><td>Otros: <span class="input-blue">{f_otros_gastos}</span></td><td>Cantidad: <span class="input-blue">{f_cant_final}</span></td></tr></table>
-        <div style="display:flex; justify-content:space-around; margin-top:40px; text-align:center;"><div style="width:40%; border-top:1.5px solid black;"><b>Supervisor Calidad</b></div><div style="width:40%; border-top:1.5px solid black;"><b>Supervisor Producción</b></div></div>
-    </body></html>"""
-    return html_template
-
-# --- BOTONES DE ACCIÓN ---
-col1, col2 = st.columns(2)
-
-with col1:
-    if st.button(":material/print: IMPRIMIR FORMATO REPLICA IDENTICO", type="primary", use_container_width=True):
-        formato = generar_html_exacto()
-        components.html(f"<html><body>{formato}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
-
-with col2:
-    # Lógica de Excel integrada directamente en el botón para evitar retrasos de carga
-    try:
-        data_excel = generar_excel_identico(
-            {"sol": f_solicita, "des": f_desviacion, "ret": f_retrabajo, "cli": f_cliente, "nom": f_nom_com},
-            df_edit.to_dict('records'),
-            f_dictamen
-        )
-        st.download_button(
-            label=":material/file_download: DESCARGAR RÉPLICA EXCEL OFICIAL",
-            data=data_excel,
-            file_name=f"CALIDAD_JYPESA_{f_nom_com}_{datetime.now().strftime('%d%m%Y')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-            key="btn_excel_nexion_final"
-        )
-    except Exception as e:
-        # Si algo falta, mostramos un aviso discreto en lugar de un error gigante
-        st.button("DESCARGAR RÉPLICA EXCEL (RELLENA LOS CAMPOS)", disabled=True, use_container_width=True)
-
-st.write("") 
-st.markdown("---")
 
 
 
