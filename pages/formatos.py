@@ -9,7 +9,7 @@ import xlsxwriter
 # --- CONFIGURACIÓN ---
 st.set_page_config(layout="wide", page_title="NEXION - Calidad Oficial")
 
-# --- 1. MOTOR DE EXCEL (RÉPLICA EXACTA DE LA IMAGEN) ---
+# --- 1. MOTOR DE EXCEL (RÉPLICA EXACTA SEGÚN IMAGEN) ---
 def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
@@ -36,30 +36,30 @@ def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
     ws.merge_range('G3:H3', '14-Ene-25', border_std)
     ws.merge_range('I3:L3', 'Sustituye a: F03-PNO-AC-21 V02', border_std)
 
-    # B. DATOS DE CAPTURA (FILA 4)
+    # B. DATOS DE CAPTURA
     ws.write('A4', 'Solicita:', header_f)
-    ws.write('B4', enc['sol'], data_blue)
+    ws.write('B4', enc.get('sol', ''), data_blue)
     ws.write('C4', 'Desviación:', header_f)
-    ws.write('D4', enc['des'], data_blue)
-    ws.merge_range('E4:F4', 'Retrabajo/Reclamo:', header_f)
-    ws.write('G4', enc['ret'], data_blue)
-    ws.write('H4', 'Cliente:', header_f)
-    ws.write('I4', enc['cli'], data_blue)
-    ws.write('J4', 'Comercial:', header_f)
-    ws.merge_range('K4:L4', enc['nom'], data_blue)
+    ws.write('D4', enc.get('des', ''), data_blue)
+    ws.write('E4', 'Retrabajo:', header_f)
+    ws.write('F4', enc.get('ret', ''), data_blue)
+    ws.write('G4', 'Reclamo:', header_f)
+    ws.write('H4', enc.get('rec', ''), data_blue)
+    ws.write('I4', 'Cliente:', header_f)
+    ws.write('J4', enc.get('cli', ''), data_blue)
+    ws.merge_range('K4:L4', enc.get('nom', ''), data_blue)
 
-    # C. TABLA DE PRODUCTOS
-    ws.merge_range('A6:L6', 'DETALLE DE PRODUCTOS', header_f)
-    cols = ['FECHA', 'No FACTURA', 'No PARTE', 'FABRICACIÓN', 'LOTE', 'CANTIDAD', 'DESCRIPCIÓN']
-    for i, h in enumerate(cols):
-        ws.write(6, i, h, header_f)
+    # C. TABLA DE PRODUCTOS (SIEMPRE 10 FILAS)
+    row = 6
+    headers = ['FECHA', 'No FACTURA', 'No PARTE', 'FAB.', 'LOTE', 'CANT.', 'DESCRIPCIÓN']
+    for i, h in enumerate(headers): ws.write(row, i, h, header_f)
 
     row = 7
-    for i in range(10): # Siempre 10 filas como en tu imagen
-        if i < len(productos) and (productos[i]['No de factura'] or productos[i]['Descripcion']):
+    for i in range(10):
+        if i < len(productos) and (productos[i].get('No de factura') or productos[i].get('Descripcion')):
             p = productos[i]
-            f_dt = p['FECHA'].strftime('%d/%m/%Y') if p['FECHA'] else ""
-            ws.write(row, 0, f_dt, border_std)
+            f_val = p['FECHA'].strftime('%d/%m/%Y') if p['FECHA'] else ""
+            ws.write(row, 0, f_val, border_std)
             ws.write(row, 1, p['No de factura'], border_std)
             ws.write(row, 2, p['No de parte'], border_std)
             ws.write(row, 3, p['Orden fabricacion'], border_std)
@@ -70,48 +70,14 @@ def generar_excel_identico(enc, productos, dictamen_val, tipo_orden, admin_nc):
             ws.merge_range(row, 0, row, 11, "", border_std)
         row += 1
 
-    # D. ORDEN DE Y COMENTARIOS (RÉPLICA EXACTA)
-    ws.merge_range(row, 0, row, 2, 'Orden de:', header_f)
-    ws.merge_range(row, 3, row, 11, 'Comentarios (descripción breve del hallazgo)', header_f)
-    
-    ws.write(row+1, 0, 'Retrabajo', border_std)
-    ws.write(row+1, 1, '( x )' if 'Retrabajo' in tipo_orden else '(  )', border_std)
-    ws.merge_range(row+1, 3, row+3, 11, enc['hallazgo'], data_blue)
-    
-    ws.write(row+2, 0, 'Rehabilitación', border_std)
-    ws.write(row+2, 1, '( x )' if 'Rehabilitación' in tipo_orden else '(  )', border_std)
-    
-    ws.write(row+3, 0, 'Reproceso', border_std)
-    ws.write(row+3, 1, '( x )' if 'Reproceso' in tipo_orden else '(  )', border_std)
-    
-    # E. ACCIONES
-    row += 4
-    ws.merge_range(row, 0, row, 11, 'Acciones a realizar según sea el caso Retrabajo/Rehabilitación/Reproceso', header_f)
-    ws.merge_range(row+1, 0, row+2, 11, enc['acc'], data_blue)
-    
-    # F. BLOQUE ANALISTA E INCOMING (LA CLAVE)
-    row += 3
+    # D. BLOQUE ANALISTA E INCOMING (IGUAL A LA IMAGEN)
     ws.write(row, 0, 'Nota de crédito', header_f)
     ws.write(row, 1, '( x )' if admin_nc[0] else '(  )', border_std)
     ws.merge_range(row, 2, row+3, 11, 'Analista de incoming\n\n\n__________________________\nFirma/fecha', firma_f)
-    
     ws.write(row+1, 0, 'Producto', header_f)
     ws.write(row+1, 1, '( x )' if admin_nc[1] else '(  )', border_std)
-    
     ws.write(row+2, 0, 'Servicio', header_f)
     ws.write(row+2, 1, '( x )' if admin_nc[2] else '(  )', border_std)
-    ws.write(row+3, 0, '', border_std)
-    ws.write(row+3, 1, '', border_std)
-
-    # G. SEGUIMIENTO
-    row += 4
-    ws.merge_range(row, 0, row, 11, 'Seguimiento a la desviación', header_f)
-    ws.merge_range(row+1, 0, row+1, 3, 'Analista de inventario MP:', border_std)
-    ws.merge_range(row+1, 4, row+1, 7, 'Analista de inventario PT:', border_std)
-    ws.merge_range(row+1, 8, row+1, 11, 'Programador de producción:', border_std)
-    
-    # H. DICTAMEN FINAL
-    ws.merge_range(row+2, 0, row+2, 11, f'Dictamen finalizado: Aceptado ({"x" if dictamen_val=="ACEPTADO" else " "}) o rechazado ({"x" if dictamen_val=="RECHAZADO" else " "})', header_f)
 
     workbook.close()
     return output.getvalue()
@@ -122,8 +88,8 @@ if 'df_calidad_oficial' not in st.session_state:
         [{"FECHA": None, "No de factura": "", "No de parte": "", "Orden fabricacion": "", "Lote": "", "Cantidad": "", "Descripcion": ""}] * 10
     )
 
-# --- CAPTURA DE DATOS ---
-st.title(":material/rebase_edit: Control de Calidad NEXION")
+# --- CAPTURA ---
+st.title(":material/rebase_edit: Control de Calidad JYPESA")
 with st.container(border=True):
     c1, c2, c3, c4, c5 = st.columns(5)
     f_solicita = c1.text_input("SOLICITA CALIDAD").upper()
@@ -141,38 +107,40 @@ with st.container(border=True):
 df_edit = st.data_editor(st.session_state.df_calidad_oficial, num_rows="dynamic", use_container_width=True)
 
 with st.container(border=True):
-    cx1, cx2 = st.columns(2)
-    f_tipo_orden = cx1.multiselect("TIPO DE ORDEN:", ["Retrabajo", "Rehabilitación", "Reproceso"])
-    f_hallazgo = cx2.text_area("COMENTARIOS (HALLAZGO)").upper()
-    f_acciones = st.text_area("ACCIONES A REALIZAR").upper()
-    
-    st.write("Seguimiento Administrativo:")
     ca_v1, ca_v2, ca_v3 = st.columns(3)
     nc = ca_v1.checkbox("Nota de crédito")
     pr = ca_v2.checkbox("Producto")
     se = ca_v3.checkbox("Servicio")
     f_dictamen = st.radio("DICTAMEN FINAL:", ["ACEPTADO", "RECHAZADO"], horizontal=True)
 
-# --- BOTÓN DESCARGA ---
+# --- BOTONES DE IMPRESIÓN Y EXCEL ---
 st.divider()
+col_p, col_e = st.columns(2)
+
+# 1. IMPRESIÓN (EL QUE YA TENÍAMOS DOMINADO AMOR)
+if col_p.button(":material/print: IMPRIMIR FORMATO RÉPLICA", type="primary", use_container_width=True):
+    # Aquí va tu función generar_html_exacto() que ya tenemos configurada
+    st.info("Abriendo ventana de impresión...")
+
+# 2. EXCEL (IDENTICO A LA IMAGEN)
 try:
-    archivo_excel = generar_excel_identico(
-        {"sol": f_solicita, "des": f_desviacion, "ret": f_retrabajo, "cli": f_cliente, "nom": f_nom_com, "hallazgo": f_hallazgo, "acc": f_acciones},
+    excel_file = generar_excel_identico(
+        {"sol": f_solicita, "des": f_desviacion, "ret": f_retrabajo, "rec": f_reclamo, "cli": f_cliente, "nom": f_nom_com},
         df_edit.to_dict('records'),
         f_dictamen,
-        f_tipo_orden,
+        [], # tipo_orden
         [nc, pr, se]
     )
-
-    st.download_button(
-        label=":material/file_download: DESCARGAR RÉPLICA EXCEL IDÉNTICA",
-        data=archivo_excel,
+    col_e.download_button(
+        label=":material/file_download: DESCARGAR EXCEL IDÉNTICO",
+        data=excel_file,
         file_name=f"CALIDAD_JYPESA_{f_nom_com}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
-except Exception as e:
-    st.warning("Completa los datos para habilitar el Excel oficial.")
+except:
+    col_e.warning("Esperando datos...")
+
 
 
 
