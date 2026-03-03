@@ -2812,6 +2812,7 @@ else:
                         st.info("No hay registros todavía.")
                 
                 # --- PANEL DE ADMIN ---
+                #--- PANEL DE ADMIN ---
                 st.divider()
                 st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
                 t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
@@ -2829,48 +2830,49 @@ else:
                             placeholder="Busca un folio..."
                         )
                     
-                        # Solo si el usuario seleccionó algo en el selectbox
+                        # Solo si el usuario seleccionó algo en el selectbox, mostramos el resto
                         if fol_sel_texto:
                             fol_edit = int(fol_sel_texto.split(" - ")[0])
                             datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
                             
-                            # El título azul ahora vive dentro de este IF
-                            st.markdown(
-                                f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">'
-                                f'Actualizar envío - Folio {fol_edit}</div>', 
-                                unsafe_allow_html=True
-                            )
-                            
                             c_adm1, c_adm2 = st.columns(2)
-                            # Aquí van tus campos de edición...
                             
+                            with c_adm1:
+                                st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
+                                st.write("")
+                                n_paq = st.text_input("Empresa de Paquetería", key="edit_paq", value=str(datos_fol["PAQUETERIA_NOMBRE"])).upper()
+                                n_gui = st.text_input("Número de Guía", key="edit_guia", value=str(datos_fol["NUMERO_GUIA"])).upper()
+                                c_gui = st.number_input("Costo de Guía ($)", key="edit_costo", value=float(datos_fol["COSTO_GUIA"]))
+                                
+                                if st.button(":material/update: ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
+                                    idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
+                                    df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
+                                    df_actual.at[idx, "NUMERO_GUIA"] = n_gui.upper()
+                                    df_actual.at[idx, "COSTO_GUIA"] = c_gui
+                                    if subir_a_github(df_actual, sha_actual, f"Guía {fol_edit}"):
+                                        st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
+                            
+                            with c_adm2:
+                                st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
+                                st.write("")
+                                if st.button(":material/print: RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
+                                    prods_re = []
+                                    for p in precios.keys():
+                                        if p in datos_fol and datos_fol[p] > 0: 
+                                            prods_re.append({"desc": p, "cant": int(datos_fol[p])})
+                                    
+                                    # Generación del HTML para impresión
+                                    h_re = generar_html_impresion(
+                                        fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], 
+                                        "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], 
+                                        datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], 
+                                        "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN", "S/P", "S/D"
+                                    )
+                                    components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
+                        
                         else:
-                            # Esto se muestra cuando NO se ha seleccionado nada (Campos vacíos)
+                            # Mensaje amigable cuando no hay selección
                             st.info("Por favor, selecciona un folio para comenzar a editar.")
-                            # Si prefieres que no salga nada, simplemente deja este 'else' vacío o quítalo
-                        with c_adm1:
-                            st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
-                            st.write("")
-                            n_paq = st.text_input("Empresa de Paquetería", key="edit_paq", value=str(datos_fol["PAQUETERIA_NOMBRE"])).upper()
-                            n_gui = st.text_input("Número de Guía", key="edit_guia", value=str(datos_fol["NUMERO_GUIA"])).upper()
-                            c_gui = st.number_input("Costo de Guía ($)", key="edit_costo", value=float(datos_fol["COSTO_GUIA"]))
-                            if st.button(":material/update: ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
-                                idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                                df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
-                                df_actual.at[idx, "NUMERO_GUIA"] = n_gui.upper()
-                                df_actual.at[idx, "COSTO_GUIA"] = c_gui
-                                if subir_a_github(df_actual, sha_actual, f"Guía {fol_edit}"):
-                                    st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
-                        with c_adm2:
-                            st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
-                            st.write("")
-                            if st.button(":material/print: RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
-                                prods_re = []
-                                for p in precios.keys():
-                                    if p in datos_fol and datos_fol[p] > 0: prods_re.append({"desc": p, "cant": int(datos_fol[p])})
-                                # En re-impresión usamos valores genéricos o vacíos para los nuevos campos si no se guardaron
-                                h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN", "S/P", "S/D")
-                                components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
                 
                 with t2:
                     if not df_actual.empty:
@@ -3873,6 +3875,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
