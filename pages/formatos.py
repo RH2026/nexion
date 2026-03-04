@@ -2,15 +2,15 @@ import streamlit as st
 import pandas as pd
 import unicodedata
 
-# 1. CONFIGURACIÓN DE PÁGINA Y ESTILO ONYX
+# 1. CONFIGURACIÓN Y ESTILO ONYX
 st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
 
-# Estilo personalizado para el color Onyx Black-Blue
 st.markdown("""
     <style>
     .main { background-color: #0B1014; }
     .stMetric { background-color: #162129; padding: 15px; border-radius: 10px; border: 1px solid #243441; }
-    div[data-testid="stMetricValue"] { color: #A4B9C8; }
+    div[data-testid="stMetricValue"] { color: #A4B9C8; font-weight: bold; }
+    div[data-testid="stMetricLabel"] { color: #5F7E97; }
     .stDataFrame { border: 1px solid #243441; }
     </style>
     """, unsafe_allow_html=True)
@@ -20,7 +20,7 @@ def limpiar_columnas(txt):
     texto = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
     return texto.strip().upper()
 
-# 2. CARGA Y LIMPIEZA
+# 2. CARGA Y PROCESAMIENTO
 try:
     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
     df_2025 = pd.read_csv('Historial2025.csv')
@@ -28,83 +28,94 @@ try:
     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
     df_2025.columns = [limpiar_columnas(c) for c in df_2025.columns]
 
-    # Cálculos base
-    df_2025_ref = df_2025[['MES', 'COSTO DE LA GUIA']].rename(columns={'COSTO DE LA GUIA': 'GUIA_2025'})
-    df_final = pd.merge(df_actual, df_2025_ref, on='MES', how='left')
+    # --- FILTRO CRÍTICO: SOLO COBRO REGRESO PARA GASTOS ---
+    # Creamos una copia para cálculos financieros donde omitimos Cobro Destino
+    df_gastos = df_actual[df_actual['CLASE DE ENTREGA'].str.contains('REGRESO', na=False, case=False)].copy()
     
+    # Vinculamos con Historial 2025
+    df_2025_ref = df_2025[['MES', 'COSTO DE LA GUIA']].rename(columns={'COSTO DE LA GUIA': 'GUIA_2025'})
+    df_final = pd.merge(df_gastos, df_2025_ref, on='MES', how='left')
+
+    # --- CÁLCULOS FINANCIEROS ---
     df_final['COSTOS ADICIONALES'] = df_final.get('COSTOS ADICIONALES', 0).fillna(0)
+    df_final['VALUACION'] = df_final.get('VALUACION', 0).fillna(0)
+    
+    # Costo Flete Real (Solo Cobro Regreso)
     df_final['COSTO DE FLETE'] = df_final['COSTO DE LA GUIA'] + df_final['COSTOS ADICIONALES']
+    
+    # Indicadores
     df_final['COSTO LOGISTICO'] = (df_final['COSTO DE FLETE'] / df_final['FACTURACION']) * 100
     df_final['COSTO POR CAJA'] = df_final['COSTO DE FLETE'] / df_final['CAJAS']
+    
+    # Incrementos (Costo Flete Actual + Valuación de Incidencias vs 2025)
+    df_final['INCREMENTO_VI'] = (df_final['COSTO DE FLETE'] + df_final['VALUACION']) - df_final['GUIA_2025']
     df_final['% INCREMENTO VS 2025'] = ((df_final['COSTO DE FLETE'] - df_final['GUIA_2025']) / df_final['GUIA_2025']) * 100
 
-    # 3. FILTROS EN EL CUERPO (NO SIDEBAR)
-    st.title("🌌 NEXION LOGISTICS DASHBOARD")
+    # 3. INTERFAZ DE FILTROS (IN-BODY)
+    st.title("🌌 NEXION LOGISTICS | JYPESA")
+    st.subheader("Filtros de Análisis")
     
-    col_f1, col_f2, col_f3 = st.columns([1, 1, 2])
-    with col_f1:
-        meses = ["TODOS"] + sorted(df_final['MES'].unique().tolist())
-        mes_sel = st.selectbox("📅 Selecciona Mes:", meses)
-    with col_f2:
-        fleteras = ["TODAS"] + sorted(df_final['FLETERA'].unique().tolist())
-        flet_sel = st.selectbox("🚛 Selecciona Fletera:", fleteras)
-    with col_f3:
-        search = st.text_input("🔍 Buscar Cliente/Factura:", "")
+    c_f1, c_f2, c_f3 = st.columns([1, 1, 2])
+    with c_f1:
+        mes_sel = st.selectbox("📅 Mes:", ["TODOS"] + sorted(df_final['MES'].unique().tolist()))
+    with c_f2:
+        flet_sel = st.selectbox("🚛 Fletera:", ["TODAS"] + sorted(df_final['FLETERA'].unique().tolist()))
+    with c_f3:
+        search = st.text_input("🔍 Buscar Cliente/Guía:", "")
 
     # Aplicar Filtros
     df_filtered = df_final.copy()
-    if mes_sel != "TODOS":
-        df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
-    if flet_sel != "TODAS":
-        df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
+    if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
+    if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
     if search:
-        df_filtered = df_filtered[df_filtered.astype(str).apply(lambda x: x.str.contains(search, case=False)).any(axis=1)]
+        mask = df_filtered.astype(str).apply(lambda x: x.str.contains(search, case=False)).any(axis=1)
+        df_filtered = df_filtered[mask]
 
-    # 4. RENDERIZADO DE MÉTRICAS (TARJETAS)
+    # 4. RENDERIZADO DE MÉTRICAS (LO QUE NECESITAS VER)
     st.markdown("---")
-    m1, m2, m3, m4, m5 = st.columns(5)
+    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
     
-    with m1:
-        st.metric("COSTO FLETE", f"${df_filtered['COSTO DE FLETE'].sum():,.2f}")
-    with m2:
-        st.metric("FACTURACIÓN", f"${df_filtered['FACTURACION'].sum():,.2f}")
-    with m3:
-        st.metric("CAJAS ENVIADAS", f"{df_filtered['CAJAS'].sum():,.0f}")
-    with m4:
-        st.metric("COSTO LOGÍSTICO", f"{df_filtered['COSTO LOGISTICO'].mean():,.2f}%")
-    with m5:
-        st.metric("COSTO POR CAJA", f"${df_filtered['COSTO POR CAJA'].mean():,.2f}")
-
-    # 5. TABLA PRINCIPAL CON DISEÑO PROFESIONAL
-    st.markdown("### 📊 Detalle Operativo")
+    with kpi1:
+        total_flete = df_filtered['COSTO DE FLETE'].sum()
+        st.metric("COSTO FLETE (REGRESO)", f"${total_flete:,.2f}")
     
-    # Formateo y Estilo
-    styled_df = df_filtered.style.format({
-        'COSTO DE LA GUIA': '${:,.2f}',
-        'COSTO DE FLETE': '${:,.2f}',
-        'FACTURACION': '${:,.2f}',
-        'COSTO LOGISTICO': '{:.2f}%',
-        '% INCREMENTO VS 2025': '{:.2f}%'
-    }).background_gradient(cmap='Blues', subset=['COSTO LOGISTICO']) # Degradado en el costo logístico
-
-    st.dataframe(styled_df, use_container_width=True, height=500)
-
-    # 6. INCIDENCIAS E INCREMENTO
-    st.markdown("---")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.subheader("⚠️ Valuación Incidencias")
-        total_inc = df_filtered['VALUACION'].sum()
-        st.info(f"Monto total en incidencias para este periodo: **${total_inc:,.2f}**")
+    with kpi2:
+        inc_vi = df_filtered['INCREMENTO_VI'].sum()
+        st.metric("INCREMENTO + VI", f"${inc_vi:,.2f}", delta=f"{df_filtered['% INCREMENTO VS 2025'].mean():.1f}% vs 2025")
         
-    with col_b:
-        st.subheader("📈 Incremento + VI")
-        # Calculamos el Incremento sumando la Valuación de Incidencias
-        incremento_total = (df_filtered['COSTO DE FLETE'].sum() + total_inc) - df_filtered['GUIA_2025'].sum()
-        st.success(f"Diferencia real vs 2025: **${incremento_total:,.2f}**")
+    with kpi3:
+        total_incidencias = df_filtered['VALUACION'].sum()
+        # Calculamos % de incidencias basado en conteo
+        num_inc = len(df_filtered[df_filtered['VALUACION'] > 0])
+        st.metric("VALUACIÓN INCIDENCIAS", f"${total_incidencias:,.2f}", f"{num_inc} reportes")
+        
+    with kpi4:
+        c_log = df_filtered['COSTO LOGISTICO'].mean()
+        st.metric("% COSTO LOGÍSTICO", f"{c_log:.2f}%")
+
+    # 5. TABLA PRINCIPAL
+    st.markdown("### 📊 Detalle de Operaciones (Filtrado)")
+    
+    st.dataframe(
+        df_filtered.style.format({
+            'COSTO DE LA GUIA': '${:,.2f}',
+            'COSTO DE FLETE': '${:,.2f}',
+            'FACTURACION': '${:,.2f}',
+            'VALUACION': '${:,.2f}',
+            'COSTO LOGISTICO': '{:.2f}%',
+            '% INCREMENTO VS 2025': '{:.2f}%'
+        }).background_gradient(cmap='YlOrRd', subset=['COSTO LOGISTICO']), 
+        use_container_width=True, height=400
+    )
+
+    # 6. RESUMEN DE INCIDENCIAS
+    if total_incidencias > 0:
+        st.warning(f"🚨 Atención: Se han detectado {num_inc} incidencias que suman ${total_incidencias:,.2f} en pérdidas.")
 
 except Exception as e:
-    st.error(f"Falta un archivo o columna, amor: {e}")
+    st.error(f"¡Algo anda mal con las columnas, amor! Error: {e}")
+    st.info("Revisa que la columna 'CLASE DE ENTREGA' tenga los valores 'COBRO REGRESO'.")
+
 
 
 
