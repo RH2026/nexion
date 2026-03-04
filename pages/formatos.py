@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import unicodedata
 
-# 1. CONFIGURACIÓN Y ESTILO ONYX (EL RENDER CHINGÓN)
+# 1. CONFIGURACIÓN Y ESTILO ONYX
 st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
 
 st.markdown("""
@@ -28,66 +28,60 @@ try:
     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
     df_2025.columns = [limpiar_columnas(c) for c in df_2025.columns]
 
-    # FILTRO SOLO COBRO REGRESO (Desde FORMA DE ENVIO)
+    # FILTRO SOLO COBRO REGRESO
     df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
     
-    # Cálculos por fila para la tabla
+    # Pre-procesamiento de datos 2026
     df_gastos['COSTOS ADICIONALES'] = df_gastos.get('COSTOS ADICIONALES', 0).fillna(0)
     df_gastos['VALUACION'] = df_gastos.get('VALUACION', 0).fillna(0)
     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
-    
-    # Vinculamos con Historial 2025 (Solo para tener la referencia visual en la tabla)
-    df_2025_ref = df_2025[['MES', 'COSTO DE LA GUIA']].rename(columns={'COSTO DE LA GUIA': 'GUIA_2025'})
-    df_final = pd.merge(df_gastos, df_2025_ref, on='MES', how='left')
-    
-    # Columnas calculadas para la tabla
-    df_final['COSTO LOGISTICO'] = (df_final['COSTO DE FLETE'] / df_final['FACTURACION']) * 100
-    df_final['COSTO POR CAJA'] = df_final['COSTO DE FLETE'] / df_final['CAJAS']
 
     # 3. INTERFAZ DE FILTROS
     st.title("🌌 NEXION LOGISTICS | JYPESA")
     
     c_f1, c_f2, c_f3 = st.columns([1, 1, 2])
     with c_f1:
-        mes_sel = st.selectbox("📅 Mes:", ["TODOS"] + sorted(df_final['MES'].unique().tolist()))
+        mes_sel = st.selectbox("📅 Mes:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
     with c_f2:
-        flet_sel = st.selectbox("🚛 Fletera:", ["TODAS"] + sorted(df_final['FLETERA'].unique().tolist()))
+        flet_sel = st.selectbox("🚛 Fletera:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
     with c_f3:
-        search = st.text_input("🔍 Buscar Cliente/Factura:", "")
+        search = st.text_input("🔍 Buscar:", "")
 
-    # Aplicar Filtros
-    df_filtered = df_final.copy()
-    if mes_sel != "TODOS": 
-        df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
-    if flet_sel != "TODAS": 
-        df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
+    # Aplicar Filtros a la matriz 2026
+    df_filtered = df_gastos.copy()
+    if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
+    if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
     if search:
         mask = df_filtered.astype(str).apply(lambda x: x.str.contains(search, case=False)).any(axis=1)
         df_filtered = df_filtered[mask]
 
-    # 4. CÁLCULOS GLOBALES PRECISOS (CORRECCIÓN DE PORCENTAJES)
+    # 4. CÁLCULOS GLOBALES (LA CORRECCIÓN CLAVE)
+    # Totales 2026
     total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
     total_fact = df_filtered['FACTURACION'].sum()
     total_cajas = df_filtered['CAJAS'].sum()
     total_valuacion = df_filtered['VALUACION'].sum()
+
+    # Totales 2025 (Cruce inteligente)
+    # Obtenemos los meses que están en el filtro actual
+    meses_activos = df_filtered['MES'].unique()
+    # Filtramos la matriz de 2025 por esos mismos meses y sumamos sus guías
+    total_flete_2025 = df_2025[df_2025['MES'].isin(meses_activos)]['COSTO DE LA GUIA'].sum()
     
-    # LÓGICA PARA EL HISTÓRICO 2025:
-    # Obtenemos los meses que están apareciendo en el filtro actual
-    meses_en_pantalla = df_filtered['MES'].unique()
-    # Sumamos el costo de guía de 2025 solo para esos meses
-    total_flete_2025 = df_2025[df_2025['MES'].isin(meses_en_pantalla)]['COSTO DE LA GUIA'].sum()
-    
-    # Resultados del Análisis
-    costo_logistico_real = (total_flete_2026 / total_fact * 100) if total_fact > 0 else 0
+    # KPIs Logísticos
+    costo_logistico_real = (total_flete_2026 / total_fact) * 100 if total_fact > 0 else 0
     costo_por_caja_real = (total_flete_2026 / total_cajas) if total_cajas > 0 else 0
     
-    # Incremento + VI
-    incremento_vi = (total_flete_2026 + total_valuacion) - total_flete_2025
-    
-    # % DE INCREMENTO VS 2025
-    perc_incremento_2025 = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
+    # INCREMENTO % VS 2025 (Ejemplo: de 100 a 120 = 20%)
+    if total_flete_2025 > 0:
+        perc_incremento_vs_2025 = ((total_flete_2026 - total_flete_2025) / total_flete_2025) * 100
+    else:
+        perc_incremento_vs_2025 = 0
 
-    # 5. RENDERIZADO DE LOS 8 RESULTADOS (KPIs)
+    # INCREMENTO + VI (Monto monetario de la diferencia incluyendo incidencias)
+    incremento_vi_monto = (total_flete_2026 + total_valuacion) - total_flete_2025
+
+    # 5. RENDERIZADO DE KPIs
     st.markdown("---")
     k1, k2, k3, k4 = st.columns(4)
     with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}")
@@ -99,25 +93,27 @@ try:
     with k5: st.metric("COSTO POR CAJA", f"${costo_por_caja_real:,.2f}")
     with k6: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion:,.2f}")
     with k7:
-        # % de Incidencias: (Facturas con incidencia / Total facturas)
-        num_inc = (df_filtered['VALUACION'] > 0).sum()
-        perc_inc = (num_inc / len(df_filtered) * 100) if len(df_filtered) > 0 else 0
+        perc_inc = ((df_filtered['VALUACION'] > 0).sum() / len(df_filtered) * 100) if len(df_filtered) > 0 else 0
         st.metric("% DE INCIDENCIAS", f"{perc_inc:.1f}%")
     with k8:
-        # Mostramos el Incremento monetario y el porcentaje como delta
-        st.metric("INCREMENTO + VI", f"${incremento_vi:,.2f}", delta=f"{perc_incremento_2025:.1f}% vs 2025")
+        # Aquí mostramos el monto de incremento y el % como delta
+        st.metric("INCREMENTO + VI", f"${incremento_vi_monto:,.2f}", delta=f"{perc_incremento_2025:.2f}% VS 2025")
 
     # 6. TABLA DETALLADA
     st.markdown("---")
-    st.subheader("📊 Detalle de Matriz Nexion")
-    st.dataframe(df_filtered.style.format({
+    # Cálculos para la tabla
+    df_final_table = pd.merge(df_filtered, df_2025[['MES', 'COSTO DE LA GUIA']].rename(columns={'COSTO DE LA GUIA': 'GUIA_2025'}), on='MES', how='left')
+    df_final_table['COSTO LOGISTICO'] = (df_final_table['COSTO DE FLETE'] / df_final_table['FACTURACION']) * 100
+    
+    st.dataframe(df_final_table.style.format({
         'COSTO DE LA GUIA': '${:,.2f}', 'COSTO DE FLETE': '${:,.2f}',
         'FACTURACION': '${:,.2f}', 'VALUACION': '${:,.2f}',
-        'COSTO LOGISTICO': '{:.2f}%', 'COSTO POR CAJA': '${:,.2f}'
-    }), use_container_width=True, height=450)
+        'COSTO LOGISTICO': '{:.2f}%', 'GUIA_2025': '${:,.2f}'
+    }), use_container_width=True)
 
 except Exception as e:
     st.error(f"Error: {e}")
+
 
 
 
