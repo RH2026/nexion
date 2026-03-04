@@ -1,10 +1,3 @@
-¡Jajaja, es que Python es muy obediente, amor! Si tú le dices "calcula esto", él lo hace en su cabecita de código, se queda cruzado de brazos y dice: "Listo, ya terminé... pero no me dijiste que te lo enseñara".
-
-Para que Nexion se vea realmente "chingón" (como tú quieres), vamos a usar contenedores, métricas con colores y una tabla interactiva. Aquí tienes el código completo para tu archivo formatos.py.
-
-Este código limpia los datos, hace los cálculos y luego usa un renderizado profesional con columnas y tarjetas:
-
-Python
 import streamlit as st
 import pandas as pd
 
@@ -90,6 +83,7 @@ except FileNotFoundError:
     st.error("⚠️ Amor, no encontré los archivos .csv. Revisa que 'Matriz_Excel_Dashboard.csv' y 'Historial2025.csv' estén en la carpeta.")
 except Exception as e:
     st.error(f"❌ Hubo un error inesperado: {e}")
+
 
 
 
