@@ -22,7 +22,7 @@ st.markdown("""
         justify-content: center;
     }
     div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 2.2rem; }
-    div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
+    div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.8rem; font-weight: bold; }
     h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #FFCC00; padding-bottom: 10px; }
     h3 { color: #FFCC00; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
     
@@ -37,30 +37,50 @@ st.markdown("""
     }
     .highlight { color: #FFCC00; font-weight: bold; }
 
-    /* ESTILO DE IMPRESIÓN NIVEL INGENIERÍA/CONTADURÍA */
+    /* --- DISEÑO DE IMPRESIÓN PROFESIONAL (INGENIERÍA/CONTADURÍA) --- */
     @media print {
-        @page { size: landscape; margin: 1cm; }
+        @page { size: portrait; margin: 1.5cm; }
         .main, .stApp { background-color: white !important; color: black !important; }
-        header, [data-testid="stSidebar"], .stSelectbox, .stButton, .no-print, iframe { display: none !important; }
+        header, [data-testid="stSidebar"], .stSelectbox, .stButton, .no-print, iframe, hr { display: none !important; }
         
+        /* Ajuste de métricas para papel */
         [data-testid="stMetric"] { 
             background-color: white !important; 
             border: 1px solid #000 !important;
-            border-left: 10px solid #FFCC00 !important;
+            border-left: 12px solid #FFCC00 !important;
             box-shadow: none !important;
-            min-height: 100px !important;
+            min-height: 80px !important;
+            margin-bottom: 10px !important;
         }
-        div[data-testid="stMetricValue"] { color: black !important; font-family: 'Courier New', monospace !important; font-size: 1.8rem !important; }
-        div[data-testid="stMetricLabel"] { color: #333 !important; font-weight: bold !important; }
+        div[data-testid="stMetricValue"] { color: black !important; font-family: "Courier New", monospace !important; font-size: 1.5rem !important; }
+        div[data-testid="stMetricLabel"] { color: #333 !important; font-size: 0.7rem !important; }
         
+        /* Recuadro de análisis formal */
         .analysis-box { 
-            background-color: #f2f2f2 !important; 
+            background-color: #f9f9f9 !important; 
             color: black !important; 
-            border: 2px solid black !important;
-            font-family: serif !important;
+            border: 2px solid #000 !important;
+            font-family: "Times New Roman", serif !important;
+            font-size: 1rem !important;
+            padding: 15px !important;
         }
-        h1 { color: black !important; border-bottom: 3px solid black !important; }
-        .highlight { color: black !important; text-decoration: underline; }
+        h1 { color: black !important; border-bottom: 4px solid black !important; font-size: 1.8rem !important; }
+        h3 { color: black !important; margin-top: 20px !important; font-size: 1.2rem !important; }
+        .highlight { color: black !important; text-decoration: underline; font-weight: bold; }
+
+        /* Matriz de Datos para Impresión */
+        .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .print-table th, .print-table td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        .print-table th { background-color: #eee; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -155,31 +175,46 @@ try:
     html_final = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
     st.markdown(html_final, unsafe_allow_html=True)
 
-    # 7. BOTÓN DE IMPRESIÓN PRO (AL FINAL)
+    # --- 7. MATRIZ TÉCNICA (SOLO PARA IMPRESIÓN) ---
+    st.markdown(f"""
+    <div style="display:none;" class="visible-print">
+        <h3>📄 MATRIZ DE RESUMEN TÉCNICO</h3>
+        <table class="print-table">
+            <tr><th>INDICADOR</th><th>VALOR ACTUAL (2026)</th><th>REFERENCIA (2025)</th><th>VARIACIÓN</th></tr>
+            <tr><td>Gasto en Flete</td><td>${total_flete_2026:,.2f}</td><td>${total_flete_2025:,.2f}</td><td>{((total_flete_2026-total_flete_2025)/total_flete_2025*100):.2f}%</td></tr>
+            <tr><td>Volumen (Cajas)</td><td>{total_cajas_2026:,.0f}</td><td>{total_cajas_2025:,.0f}</td><td>{var_volumen:.2f}%</td></tr>
+            <tr><td>Costo por Caja</td><td>${costo_caja_2026:,.2f}</td><td>${costo_caja_2025:,.2f}</td><td>{var_costo_caja:.2f}%</td></tr>
+            <tr><td>Ratio Logístico</td><td>{costo_log_real:.2f}%</td><td>Target: 7.50%</td><td>{diferencia_target:+.2f}%</td></tr>
+        </table>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 8. BOTÓN DE IMPRESIÓN PRO
     st.markdown("---")
-    # Usamos un componente de HTML/JS para forzar la impresión
     components.html("""
         <style>
             .print-btn {
                 background-color: #FFCC00;
                 color: #0B1014;
                 border: none;
-                padding: 12px 24px;
+                padding: 15px 30px;
                 font-family: 'Arial Black', sans-serif;
-                font-size: 14px;
-                border-radius: 5px;
+                font-size: 16px;
+                border-radius: 8px;
                 cursor: pointer;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.4);
                 width: 100%;
                 text-transform: uppercase;
+                transition: 0.3s;
             }
-            .print-btn:hover { background-color: #E6B800; }
+            .print-btn:hover { background-color: #E6B800; transform: translateY(-2px); }
         </style>
-        <button class="print-btn" onclick="window.parent.print()">🖨️ Generar Reporte de Ingeniería (Imprimir)</button>
-    """, height=60)
+        <button class="print-btn" onclick="window.parent.print()">🖨️ GENERAR REPORTE EJECUTIVO (IMPRIMIR)</button>
+    """, height=80)
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
