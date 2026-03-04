@@ -2229,12 +2229,15 @@ else:
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
                 st.markdown("""
                     <style>
+                    /* Fondo de la aplicación */
                     .main { background-color: #0B1014; }
+                
+                    /* Estilo de las TARJETAS (Metrics) con borde azul frío */
                     [data-testid="stMetric"] { 
-                        background-color: #162129; 
+                        background-color: #1A252F; /* Gris azulado profundo para las tarjetas */
                         padding: 25px; 
                         border-radius: 12px; 
-                        border-left: 5px solid #FFCC00; 
+                        border-left: 5px solid #A4B9C8; /* Línea izquierda en azul frío claro */
                         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
                         min-height: 160px !important;
                         max-height: 160px !important;
@@ -2242,21 +2245,38 @@ else:
                         flex-direction: column;
                         justify-content: center;
                     }
-                    div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 2.2rem; }
-                    div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
-                    h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #FFCC00; padding-bottom: 10px; }
-                    h3 { color: #FFCC00; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
+                
+                    /* Color y tamaño del VALOR (Número grande) */
+                    div[data-testid="stMetricValue"] { 
+                        color: #FFFFFF; /* Blanco para que resalte */
+                        font-weight: 900; 
+                        font-size: 2.2rem; 
+                    }
+                
+                    /* Color y tamaño de la ETIQUETA (Texto arriba del número) */
+                    div[data-testid="stMetricLabel"] { 
+                        color: #A4B9C8; /* Azul frío claro para la etiqueta */
+                        letter-spacing: 1.5px; 
+                        text-transform: uppercase; 
+                        font-size: 0.85rem; 
+                        font-weight: bold; 
+                    }
+                
+                    /* Títulos H1 y H3 con acentos de color fríos */
+                    h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #A4B9C8; padding-bottom: 10px; }
+                    h3 { color: #A4B9C8; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
                     
+                    /* Cuadro de ANÁLISIS DINÁMICO (fuente 0.95rem y colores Onyx) */
                     .analysis-box {
-                        background-color: #162129;
+                        background-color: #1A252F; /* Fondo de la tarjeta */
                         padding: 25px;
                         border-radius: 12px;
                         border: 1px solid #243441;
-                        color: #A4B9C8;
+                        color: #A4B9C8; /* Color de letra en azul frío */
                         line-height: 1.8;
-                        font-size: 1.2rem;
+                        font-size: 0.95rem; /* Tamaño de letra compactado */
                     }
-                    .highlight { color: #FFCC00; font-weight: bold; }
+                    .highlight { color: #FFFFFF; font-weight: bold; } /* Resaltado en blanco */
                     </style>
                     """, unsafe_allow_html=True)
                 
@@ -3808,6 +3828,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
