@@ -2344,7 +2344,7 @@ else:
                     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
                     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
                     
-                    html_analisis = f'<div class="analysis-box" style="font-size: 0.85rem; line-height: 1.4; padding: 20px;"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
+                    html_analisis = f'<div class="analysis-box" style="font-size: 0.95rem; line-height: 1.5; padding: 20px;"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
                     st.markdown(html_analisis, unsafe_allow_html=True)
                     
                     # 7. LÓGICA DE REPORTE PARA IMPRESIÓN (EL DISEÑO CHINGÓN)
@@ -3808,6 +3808,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
