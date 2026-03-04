@@ -4,18 +4,40 @@ import unicodedata
 import streamlit.components.v1 as components
 from datetime import datetime
 
-# 1. CONFIGURACIÓN Y ESTILO EN PANTALLA
+# 1. CONFIGURACIÓN Y ESTILO (ONYX DHL)
 st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
 
 st.markdown("""
     <style>
     .main { background-color: #0B1014; }
+    /* TARJETAS CON ALTURA FIJA PARA QUE NO SE VEAN PARA LA CHINGADA */
     [data-testid="stMetric"] { 
-        background-color: #162129; padding: 25px; border-radius: 12px; border-left: 5px solid #FFCC00; 
+        background-color: #162129; 
+        padding: 25px; 
+        border-radius: 12px; 
+        border-left: 5px solid #FFCC00; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        min-height: 160px !important;
+        max-height: 160px !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
-    div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; }
-    div[data-testid="stMetricLabel"] { color: #FFCC00; font-weight: bold; }
-    .analysis-box { background-color: #162129; padding: 25px; border-radius: 12px; color: #A4B9C8; }
+    div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 2.2rem; }
+    div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
+    h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #FFCC00; padding-bottom: 10px; }
+    h3 { color: #FFCC00; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
+    
+    .analysis-box {
+        background-color: #162129;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #243441;
+        color: #A4B9C8;
+        line-height: 1.8;
+        font-size: 1.2rem;
+    }
+    .highlight { color: #FFCC00; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -29,7 +51,7 @@ def limpiar_dinero(col):
         return pd.to_numeric(col.str.replace('$', '').str.replace(',', '').str.strip(), errors='coerce').fillna(0)
     return col.fillna(0)
 
-# 2. CARGA Y PROCESAMIENTO (LOGICA ORIGINAL SIN TOCAR)
+# 2. CARGA Y PROCESAMIENTO
 try:
     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
     df_2025 = pd.read_csv('Historial2025.csv')
@@ -48,17 +70,17 @@ try:
     df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
 
-    # 3. INTERFAZ Y FILTROS
+    # 3. INTERFAZ
     st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
     c_f1, c_f2 = st.columns(2)
-    with c_f1: mes_sel = st.selectbox("📅 MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
-    with c_f2: flet_sel = st.selectbox("🚛 FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
+    with c_f1: mes_sel = st.selectbox("📅 FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
+    with c_f2: flet_sel = st.selectbox("🚛 FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
 
     df_filtered = df_gastos.copy()
     if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
     if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
 
-    # 4. CÁLCULOS ORIGINALES (PRESERVADOS TODOS)
+    # 4. CÁLCULOS
     total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
     total_fact_2026 = df_filtered['FACTURACION'].sum()
     total_cajas_2026 = df_filtered['CAJAS'].sum()
@@ -79,7 +101,7 @@ try:
     pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
     inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
 
-    # 5. RENDERIZADO EN PANTALLA
+    # 5. RENDERIZADO DE KPIs (8 TARJETAS)
     st.markdown("### 📊 RESUMEN EJECUTIVO DE RENDIMIENTO")
     k1, k2, k3, k4 = st.columns(4)
     with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{((total_flete_2026-total_flete_2025)/total_flete_2025*100):.1f}% vs 2025" if total_flete_2025 > 0 else "0%", delta_color="inverse")
@@ -95,67 +117,65 @@ try:
     with k7: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
     with k8: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
 
-    # 6. COMPONENTE HTML PARA IMPRESIÓN (LAS 8 TARJETAS TÉCNICAS)
+    # 6. ANÁLISIS DINÁMICO (REGRESA A PANTALLA)
+    st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
+    
+    html_analisis = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
+    st.markdown(html_analisis, unsafe_allow_html=True)
 
-    reporte_tecnico_html = f"""
+    # 7. LÓGICA DE IMPRESIÓN (BOTÓN Y ESTRUCTURA OCULTA)
+    # Generamos el HTML técnico pero el componente se mantiene con altura mínima
+    reporte_impresion = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <style>
-            @media print {{ .no-print {{ display: none !important; }} }}
-            body {{ font-family: 'Courier New', monospace; background: white; color: black; padding: 10px; }}
-            .header {{ border-bottom: 4px solid black; margin-bottom: 20px; padding-bottom: 10px; }}
-            .grid-container {{ display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }}
-            .card {{ border: 1px solid black; padding: 10px; position: relative; }}
-            .card-label {{ font-size: 10px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-bottom: 5px; display: block; }}
-            .card-value {{ font-size: 18px; font-weight: bold; display: block; }}
-            .card-delta {{ font-size: 10px; color: #333; margin-top: 5px; display: block; font-style: italic; }}
-            .analysis-section {{ border: 2px solid black; padding: 15px; background: #f9f9f9; font-size: 13px; line-height: 1.6; }}
-            .footer {{ margin-top: 40px; border-top: 1px dashed black; padding-top: 10px; font-size: 10px; }}
-            .print-button {{ background: #FFCC00; color: black; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 20px; }}
+            body {{ font-family: 'Courier New', monospace; color: black; background: white; padding: 20px; visibility: hidden; }}
+            .printable {{ visibility: visible; position: absolute; left: 0; top: 0; width: 100%; }}
+            .h-print {{ border-bottom: 4px solid black; margin-bottom: 20px; }}
+            .grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }}
+            .card-p {{ border: 1px solid black; padding: 10px; }}
+            .label-p {{ font-size: 10px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; display: block; }}
+            .val-p {{ font-size: 16px; font-weight: bold; display: block; margin-top: 5px; }}
+            .analysis-p {{ border: 2px solid black; padding: 15px; background: #f0f0f0; font-size: 12px; }}
+            @media print {{ @page {{ size: landscape; }} }}
         </style>
     </head>
     <body>
-        <div class="header">
-            <div style="font-size: 20px; font-weight: bold;">NEXION JYPESA | REPORTE TÉCNICO LOGÍSTICO</div>
-            <div style="font-size: 12px;">EMISIÓN: {datetime.now().strftime('%Y-%m-%d %H:%M')} | MES: {mes_sel} | FLETERA: {flet_sel}</div>
+        <div class="printable">
+            <div class="h-print">
+                <h2 style="margin:0;">REPORTE TÉCNICO LOGÍSTICO | NEXION JYPESA</h2>
+                <p style="font-size:11px;">FECHA: {datetime.now().strftime('%Y-%m-%d')} | MES: {mes_sel} | FLETERA: {flet_sel}</p>
+            </div>
+            <div class="grid">
+                <div class="card-p"><span class="label-p">Costo Flete</span><span class="val-p">${total_flete_2026:,.2f}</span></div>
+                <div class="card-p"><span class="label-p">Facturación</span><span class="val-p">${total_fact_2026:,.2f}</span></div>
+                <div class="card-p"><span class="label-p">Cajas Totales</span><span class="val-p">{total_cajas_2026:,.0f}</span></div>
+                <div class="card-p"><span class="label-p">Costo Logístico</span><span class="val-p">{costo_log_real:.2f}%</span></div>
+                <div class="card-p"><span class="label-p">Costo x Caja</span><span class="val-p">${costo_caja_2026:,.2f}</span></div>
+                <div class="card-p"><span class="label-p">Valuación Inc.</span><span class="val-p">${total_valuacion_2026:,.2f}</span></div>
+                <div class="card-p"><span class="label-p">% Incidencias</span><span class="val-p">{pct_inc:.1f}%</span></div>
+                <div class="card-p"><span class="label-p">Incremento + VI</span><span class="val-p">${inc_vi_monto:,.2f}</span></div>
+            </div>
+            <div class="analysis-p">
+                <strong>DICTAMEN TÉCNICO:</strong> La operación se encuentra {status_target} del target (7.5%). 
+                Costo logístico real: {costo_log_real:.2f}%. Variación unitaria: {var_costo_caja:+.1f}%.
+            </div>
         </div>
-
-        <div class="grid-container">
-            <div class="card"><span class="card-label">Costo de Flete</span><span class="card-value">${total_flete_2026:,.2f}</span><span class="card-delta">Var: {((total_flete_2026-total_flete_2025)/total_flete_2025*100 if total_flete_2025>0 else 0):.1f}% vs 2025</span></div>
-            <div class="card"><span class="card-label">Facturación</span><span class="card-value">${total_fact_2026:,.2f}</span></div>
-            <div class="card"><span class="card-label">Cajas Enviadas</span><span class="card-value">{total_cajas_2026:,.0f}</span><span class="card-delta">Vol: {var_volumen:.1f}%</span></div>
-            <div class="card"><span class="card-label">Costo Logístico</span><span class="card-value">{costo_log_real:.2f}%</span><span class="card-delta">Delta: {diferencia_target:+.2f}% vs Target</span></div>
-            
-            <div class="card"><span class="card-label">Costo por Caja</span><span class="card-value">${costo_caja_2026:,.2f}</span><span class="card-delta">Var: {var_costo_caja:.1f}% vs 2025</span></div>
-            <div class="card"><span class="card-label">Valuación Incidencias</span><span class="card-value">${total_valuacion_2026:,.2f}</span></div>
-            <div class="card"><span class="card-label">% de Incidencias</span><span class="card-value">{pct_inc:.1f}%</span></div>
-            <div class="card"><span class="card-label">Incremento + VI</span><span class="card-value">${inc_vi_monto:,.2f}</span></div>
-        </div>
-
-        <div class="analysis-section">
-            <strong>DICTAMEN TÉCNICO:</strong><br>
-            La operación se registra actualmente <strong>{status_target}</strong> del target logístico (7.5%), 
-            presentando un costo real del {costo_log_real:.2f}% sobre facturación. 
-            El rendimiento unitario se clasifica como <strong>{status_eficiencia}</strong> con una variación del {var_costo_caja:+.1f}% en el costo por caja.
-        </div>
-
-        <div class="footer">
-            ESTE DOCUMENTO ES UNA REPRESENTACIÓN TÉCNICA DE DATOS PARA AUDITORÍA INTERNA. NEXION LOGISTICS SYSTEM.
-        </div>
-
-        <button class="no-print print-button" onclick="window.print()">🖨️ Generar Reporte de Ingeniería (Imprimir)</button>
     </body>
     </html>
     """
 
     st.markdown("---")
-    components.html(reporte_tecnico_html, height=550, scrolling=True)
+    # Botón único que dispara la impresión del reporte oculto
+    if st.button("🖨️ GENERAR REPORTE TÉCNICO PARA IMPRESIÓN"):
+        components.html(f"{reporte_impresion}<script>window.print();</script>", height=0)
 
 except Exception as e:
     st.error(f"¡Atención, amor! Detalle en el código: {e}")
+
 
 
 
