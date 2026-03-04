@@ -2225,19 +2225,16 @@ else:
                 # Ejemplo: st.dataframe(df_apq)
     
             elif st.session_state.menu_sub == "OPS":
-                
-                # --- 1. MOTOR DE DATOS NIVEL ELITE ---
+                # --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
                 st.markdown("""
                 <style>
-                /* Fondo de la aplicación */
                 .main { background-color: #0B1014; }
                 
-                /* Estilo de las TARJETAS (Metrics) con borde azul frío */
                 [data-testid="stMetric"] { 
-                    background-color: #1A252F; /* Gris azulado profundo para las tarjetas */
+                    background-color: #1A252F; 
                     padding: 25px; 
                     border-radius: 12px; 
-                    border-left: 5px solid #A4B9C8; /* Línea izquierda en azul frío claro */
+                    border-left: 5px solid #A4B9C8; 
                     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
                     min-height: 160px !important;
                     max-height: 160px !important;
@@ -2246,37 +2243,22 @@ else:
                     justify-content: center;
                 }
                 
-                /* Color y tamaño del VALOR (Número grande) */
-                div[data-testid="stMetricValue"] { 
-                    color: #FFFFFF; /* Blanco para que resalte */
-                    font-weight: 900; 
-                    font-size: 1.5rem; 
-                }
+                div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 1.8rem; }
+                div[data-testid="stMetricLabel"] { color: #A4B9C8; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
                 
-                /* Color y tamaño de la ETIQUETA (Texto arriba del número) */
-                div[data-testid="stMetricLabel"] { 
-                    color: #A4B9C8; /* Azul frío claro para la etiqueta */
-                    letter-spacing: 1.5px; 
-                    text-transform: uppercase; 
-                    font-size: 0.85rem; 
-                    font-weight: bold; 
-                }
-                
-                /* Títulos H1 y H3 con acentos de color fríos */
                 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #A4B9C8; padding-bottom: 10px; }
                 h3 { color: #A4B9C8; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
                 
-                /* Cuadro de ANÁLISIS DINÁMICO (fuente 0.95rem y colores Onyx) */
                 .analysis-box {
-                    background-color: #1A252F; /* Fondo de la tarjeta */
+                    background-color: #1A252F;
                     padding: 25px;
                     border-radius: 12px;
                     border: 1px solid #243441;
-                    color: #A4B9C8; /* Color de letra en azul frío */
+                    color: #A4B9C8;
                     line-height: 1.8;
-                    font-size: 0.95rem; /* Tamaño de letra compactado */
+                    font-size: 0.95rem;
                 }
-                .highlight { color: #FFFFFF; font-weight: bold; } /* Resaltado en blanco */
+                .highlight { color: #FFFFFF; font-weight: bold; }
                 </style>
                 """, unsafe_allow_html=True)
                 
@@ -2310,6 +2292,7 @@ else:
                     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos.get('COSTOS ADICIONALES', 0)
                 
                     # 3. INTERFAZ
+                    st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
                     c_f1, c_f2 = st.columns(2)
                     with c_f1: mes_sel = st.selectbox(":material/calendar_month: FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
                     with c_f2: flet_sel = st.selectbox(":material/local_shipping: FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
@@ -2318,7 +2301,7 @@ else:
                     if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
                     if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
                 
-                    # 4. CÁLCULOS GLOBALES
+                    # 4. CÁLCULOS (LÓGICA FUNCIONAL INTEGRADA)
                     total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
                     total_fact_2026 = df_filtered['FACTURACION'].sum()
                     total_cajas_2026 = df_filtered['CAJAS'].sum()
@@ -2329,21 +2312,23 @@ else:
                     total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum()
                     total_cajas_2025 = df_2025_filtrado['CAJAS'].sum()
                 
-                    # Cálculos de variaciones y métricas faltantes
-                    var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
                     costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
                     costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
+                    
                     var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
                     var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
-                    costo_log_real = (total_flete_2026 / total_fact_2026 * 100) if total_fact_2026 > 0 else 0
+                    var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
                     
-                    # KPIs adicionales para evitar errores de definición
-                    target_logistico = 7.5
-                    diferencia_target = costo_log_real - target_logistico
-                    pct_inc = (total_valuacion_2026 / total_fact_2026 * 100) if total_fact_2026 > 0 else 0
-                    inc_vi_monto = total_valuacion_2026 + (total_flete_2026 if var_flete_total > 0 else 0)
+                    costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
+                    diferencia_target = costo_log_real - 7.5
+                    
+                    # Lógica de incidencias del primer código
+                    num_inc = (df_filtered['VALUACION'] > 0).sum()
+                    pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
+                    inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
                 
                     # 5. RENDERIZADO DE KPIs (PANTALLA)
+                    st.markdown("### 📊 RESUMEN EJECUTIVO DE RENDIMIENTO")
                     k1, k2, k3, k4 = st.columns(4)
                     with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
                     with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
@@ -2362,9 +2347,9 @@ else:
                     st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
                     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
                     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
-                
+                    
                     html_analisis = f'''
-                    <div class="analysis-box" style="font-size: 0.95rem; line-height: 1.5; padding: 20px;">
+                    <div class="analysis-box">
                         <b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br>
                         <b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.
                     </div>'''
@@ -3829,6 +3814,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
