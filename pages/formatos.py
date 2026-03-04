@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import unicodedata
+import streamlit.components.v1 as components
 
 # 1. CONFIGURACIÓN Y ESTILO "NEXION PRO + PRINT"
 st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
@@ -40,7 +41,7 @@ st.markdown("""
     @media print {
         @page { size: landscape; margin: 1cm; }
         .main, .stApp { background-color: white !important; color: black !important; }
-        header, [data-testid="stSidebar"], .stSelectbox, .stButton, .no-print { display: none !important; }
+        header, [data-testid="stSidebar"], .stSelectbox, .stButton, .no-print, iframe { display: none !important; }
         
         [data-testid="stMetric"] { 
             background-color: white !important; 
@@ -96,18 +97,9 @@ try:
     df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
 
-    # 3. INTERFAZ Y BOTÓN DE IMPRESIÓN
-    col_title, col_print = st.columns([4, 1])
-    with col_title:
-        st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
+    # 3. INTERFAZ (TÍTULO Y FILTROS)
+    st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
     
-    with col_print:
-        st.markdown('<div class="no-print" style="padding-top: 25px;">', unsafe_allow_html=True)
-        if st.button("🖨️ IMPRIMIR REPORTE"):
-            st.markdown('<script>window.print();</script>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # FILTROS
     c_f1, c_f2 = st.columns(2)
     with c_f1:
         mes_sel = st.selectbox("📅 FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
@@ -161,11 +153,34 @@ try:
     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
     
     html_final = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
-    
     st.markdown(html_final, unsafe_allow_html=True)
+
+    # 7. BOTÓN DE IMPRESIÓN PRO (AL FINAL)
+    st.markdown("---")
+    # Usamos un componente de HTML/JS para forzar la impresión
+    components.html("""
+        <style>
+            .print-btn {
+                background-color: #FFCC00;
+                color: #0B1014;
+                border: none;
+                padding: 12px 24px;
+                font-family: 'Arial Black', sans-serif;
+                font-size: 14px;
+                border-radius: 5px;
+                cursor: pointer;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                width: 100%;
+                text-transform: uppercase;
+            }
+            .print-btn:hover { background-color: #E6B800; }
+        </style>
+        <button class="print-btn" onclick="window.parent.print()">🖨️ Generar Reporte de Ingeniería (Imprimir)</button>
+    """, height=60)
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
