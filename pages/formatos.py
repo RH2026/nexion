@@ -24,6 +24,7 @@ st.markdown("""
     div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
     h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #FFCC00; padding-bottom: 10px; }
     h3 { color: #FFCC00; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
+    
     .analysis-box {
         background-color: #162129;
         padding: 25px;
@@ -35,26 +36,30 @@ st.markdown("""
     }
     .highlight { color: #FFCC00; font-weight: bold; }
 
-    /* ESTILO PARA IMPRESIÓN (MAGIA PURA) */
+    /* ESTILO DE IMPRESIÓN NIVEL INGENIERÍA/CONTADURÍA */
     @media print {
+        @page { size: landscape; margin: 1cm; }
         .main, .stApp { background-color: white !important; color: black !important; }
+        header, [data-testid="stSidebar"], .stSelectbox, .stButton, .no-print { display: none !important; }
+        
         [data-testid="stMetric"] { 
-            background-color: #f8f9fa !important; 
-            border: 1px solid #ddd !important;
-            border-left: 8px solid #FFCC00 !important;
+            background-color: white !important; 
+            border: 1px solid #000 !important;
+            border-left: 10px solid #FFCC00 !important;
             box-shadow: none !important;
-            color: black !important;
+            min-height: 100px !important;
         }
-        div[data-testid="stMetricValue"] { color: black !important; }
-        div[data-testid="stMetricLabel"] { color: #b38f00 !important; }
-        h1, h3 { color: black !important; border-bottom: 2px solid #FFCC00 !important; }
+        div[data-testid="stMetricValue"] { color: black !important; font-family: 'Courier New', monospace !important; font-size: 1.8rem !important; }
+        div[data-testid="stMetricLabel"] { color: #333 !important; font-weight: bold !important; }
+        
         .analysis-box { 
-            background-color: #f8f9fa !important; 
+            background-color: #f2f2f2 !important; 
             color: black !important; 
-            border: 1px solid #ccc !important; 
+            border: 2px solid black !important;
+            font-family: serif !important;
         }
-        .highlight { color: #b38f00 !important; }
-        .stSelectbox, .stButton, header { display: none !important; } /* Oculta filtros al imprimir */
+        h1 { color: black !important; border-bottom: 3px solid black !important; }
+        .highlight { color: black !important; text-decoration: underline; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -91,9 +96,18 @@ try:
     df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
 
-    # 3. INTERFAZ DE FILTROS
-    st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
+    # 3. INTERFAZ Y BOTÓN DE IMPRESIÓN
+    col_title, col_print = st.columns([4, 1])
+    with col_title:
+        st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
     
+    with col_print:
+        st.markdown('<div class="no-print" style="padding-top: 25px;">', unsafe_allow_html=True)
+        if st.button("🖨️ IMPRIMIR REPORTE"):
+            st.markdown('<script>window.print();</script>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # FILTROS
     c_f1, c_f2 = st.columns(2)
     with c_f1:
         mes_sel = st.selectbox("📅 FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
@@ -152,6 +166,7 @@ try:
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
