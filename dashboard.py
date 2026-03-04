@@ -2225,7 +2225,7 @@ else:
                 # Ejemplo: st.dataframe(df_apq)
     
             elif st.session_state.menu_sub == "OPS":
-                st.subheader("Eficiencia Operativa (OPS)")
+                
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
                 st.markdown("""
                     <style>
@@ -3828,6 +3828,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
