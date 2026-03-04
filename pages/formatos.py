@@ -1,10 +1,3 @@
-¡Entendido perfectamente, vida! Lo que necesitas es mantener tu diseño Onyx DHL espectacular para trabajar en la pantalla, pero que al momento de imprimir se transforme en un reporte sobrio de Contaduría/Ingeniería, y lo más importante: un botón real que lance la impresión sin complicaciones.
-
-He añadido un componente de JavaScript para el botón de impresión y he ajustado el CSS para que la hoja salga impecable, con tipografía técnica y sin gastar tinta innecesaria.
-
-Aquí tienes el código completo con el Botón de Impresión Pro:
-
-Python
 import streamlit as st
 import pandas as pd
 import unicodedata
@@ -173,6 +166,7 @@ try:
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
