@@ -3,64 +3,20 @@ import pandas as pd
 import unicodedata
 import streamlit.components.v1 as components
 
-# 1. CONFIGURACIÓN Y ESTILO "NEXION PRO + PRINT"
+# 1. CONFIGURACIÓN
 st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
 
+# Estilo solo para la pantalla
 st.markdown("""
     <style>
-    /* ESTILO EN PANTALLA (ONYX DHL) */
     .main { background-color: #0B1014; }
     [data-testid="stMetric"] { 
-        background-color: #162129; 
-        padding: 25px; 
-        border-radius: 12px; 
-        border-left: 5px solid #FFCC00; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        min-height: 160px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        background-color: #162129; padding: 25px; border-radius: 12px; border-left: 5px solid #FFCC00; 
     }
-    div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 2.2rem; }
-    div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
-    h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #FFCC00; padding-bottom: 10px; }
-    h3 { color: #FFCC00; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
-    
+    div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; }
+    div[data-testid="stMetricLabel"] { color: #FFCC00; font-weight: bold; }
     .analysis-box {
-        background-color: #162129;
-        padding: 25px;
-        border-radius: 12px;
-        border: 1px solid #243441;
-        color: #A4B9C8;
-        line-height: 1.8;
-        font-size: 1.2rem;
-    }
-    .highlight { color: #FFCC00; font-weight: bold; }
-
-    /* ESTILO DE IMPRESIÓN NIVEL INGENIERÍA/CONTADURÍA */
-    @media print {
-        @page { size: landscape; margin: 1cm; }
-        .main, .stApp { background-color: white !important; color: black !important; }
-        header, [data-testid="stSidebar"], .stSelectbox, .stButton, .no-print, iframe { display: none !important; }
-        
-        [data-testid="stMetric"] { 
-            background-color: white !important; 
-            border: 1px solid #000 !important;
-            border-left: 10px solid #FFCC00 !important;
-            box-shadow: none !important;
-            min-height: 100px !important;
-        }
-        div[data-testid="stMetricValue"] { color: black !important; font-family: 'Courier New', monospace !important; font-size: 1.8rem !important; }
-        div[data-testid="stMetricLabel"] { color: #333 !important; font-weight: bold !important; }
-        
-        .analysis-box { 
-            background-color: #f2f2f2 !important; 
-            color: black !important; 
-            border: 2px solid black !important;
-            font-family: serif !important;
-        }
-        h1 { color: black !important; border-bottom: 3px solid black !important; }
-        .highlight { color: black !important; text-decoration: underline; }
+        background-color: #162129; padding: 25px; border-radius: 12px; border: 1px solid #243441; color: #A4B9C8;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -75,7 +31,7 @@ def limpiar_dinero(col):
         return pd.to_numeric(col.str.replace('$', '').str.replace(',', '').str.strip(), errors='coerce').fillna(0)
     return col.fillna(0)
 
-# 2. CARGA Y PROCESAMIENTO
+# 2. CARGA Y PROCESAMIENTO (Tu lógica original)
 try:
     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
     df_2025 = pd.read_csv('Historial2025.csv')
@@ -83,13 +39,10 @@ try:
     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
     df_2025.columns = [limpiar_columnas(c) for c in df_2025.columns]
 
-    columnas_dinero_2026 = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES']
-    for col in columnas_dinero_2026:
-        if col in df_actual.columns:
-            df_actual[col] = limpiar_dinero(df_actual[col])
-            
-    if 'COSTO DE LA GUIA' in df_2025.columns:
-        df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
+    columnas_dinero = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES']
+    for col in columnas_dinero:
+        if col in df_actual.columns: df_actual[col] = limpiar_dinero(df_actual[col])
+    if 'COSTO DE LA GUIA' in df_2025.columns: df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
 
     df_actual['MES'] = df_actual['MES'].astype(str).str.strip().str.upper()
     df_2025['MES'] = df_2025['MES'].astype(str).str.strip().str.upper()
@@ -97,20 +50,17 @@ try:
     df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
 
-    # 3. INTERFAZ (TÍTULO Y FILTROS)
+    # 3. INTERFAZ
     st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
-    
     c_f1, c_f2 = st.columns(2)
-    with c_f1:
-        mes_sel = st.selectbox("📅 FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
-    with c_f2:
-        flet_sel = st.selectbox("🚛 FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
+    with c_f1: mes_sel = st.selectbox("📅 MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
+    with c_f2: flet_sel = st.selectbox("🚛 FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
 
     df_filtered = df_gastos.copy()
     if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
     if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
 
-    # 4. CÁLCULOS GLOBALES
+    # 4. CÁLCULOS
     total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
     total_fact_2026 = df_filtered['FACTURACION'].sum()
     total_cajas_2026 = df_filtered['CAJAS'].sum()
@@ -126,60 +76,90 @@ try:
     var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
     var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
     costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
-
-    # 5. RENDERIZADO DE KPIs
-    st.markdown("### 📊 RESUMEN EJECUTIVO DE RENDIMIENTO")
-    k1, k2, k3, k4 = st.columns(4)
-    with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{((total_flete_2026-total_flete_2025)/total_flete_2025*100):.1f}% vs 2025" if total_flete_2025 > 0 else "0%", delta_color="inverse")
-    with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
-    with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="off")
-    with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{(costo_log_real-7.5):+.2f}% vs Target 7.5%", delta_color="inverse")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    k5, k6, k7, k8 = st.columns(4)
-    with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
-    with k6: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
-    with k7:
-        num_inc = (df_filtered['VALUACION'] > 0).sum()
-        st.metric("% DE INCIDENCIAS", f"{(num_inc/len(df_filtered)*100):.1f}%" if len(df_filtered)>0 else "0%")
-    with k8:
-        inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
-        st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
-
-    # 6. ANÁLISIS DINÁMICO
-    st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
-    status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
-    status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
     
-    html_final = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
-    st.markdown(html_final, unsafe_allow_html=True)
+    # 5. RENDERIZADO PANTALLA
+    st.markdown("### 📊 RESUMEN EJECUTIVO")
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}")
+    k2.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
+    k3.metric("CAJAS", f"{total_cajas_2026:,.0f}")
+    k4.metric("COSTO LOG.", f"{costo_log_real:.2f}%")
 
-    # 7. BOTÓN DE IMPRESIÓN PRO (AL FINAL)
-    st.markdown("---")
-    # Usamos un componente de HTML/JS para forzar la impresión
-    components.html("""
+    status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
+    html_analisis = f'<div class="analysis-box">Operación <b>{status_target}</b> del target (7.5%).</div>'
+    st.markdown(html_analisis, unsafe_allow_html=True)
+
+    # 6. GENERACIÓN DEL REPORTE TÉCNICO (HTML COMPONENT)
+    # Aquí construimos el diseño "Super Técnico" para papel
+    reporte_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
         <style>
-            .print-btn {
-                background-color: #FFCC00;
-                color: #0B1014;
-                border: none;
-                padding: 12px 24px;
-                font-family: 'Arial Black', sans-serif;
-                font-size: 14px;
-                border-radius: 5px;
-                cursor: pointer;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-                width: 100%;
-                text-transform: uppercase;
-            }
-            .print-btn:hover { background-color: #E6B800; }
+            body {{ font-family: 'Courier New', Courier, monospace; color: black; background: white; padding: 0; }}
+            .report-header {{ border-bottom: 3px solid black; padding-bottom: 10px; margin-bottom: 20px; }}
+            .report-title {{ font-size: 22px; font-weight: bold; }}
+            .tech-table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+            .tech-table th, .tech-table td {{ border: 1px solid black; padding: 10px; text-align: left; font-size: 12px; }}
+            .tech-table th {{ background-color: #eeeeee; text-transform: uppercase; }}
+            .kpi-grid {{ display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; border: 1px solid black; margin-bottom: 20px; }}
+            .kpi-box {{ border: 0.5px solid black; padding: 10px; }}
+            .kpi-label {{ font-size: 10px; font-weight: bold; display: block; margin-bottom: 5px; }}
+            .kpi-value {{ font-size: 16px; font-weight: bold; }}
+            .stamp {{ border: 2px solid black; padding: 10px; width: fit-content; margin-top: 30px; font-weight: bold; text-transform: uppercase; }}
+            @media print {{ .no-print {{ display: none; }} }}
         </style>
-        <button class="print-btn" onclick="window.parent.print()">🖨️ Generar Reporte de Ingeniería (Imprimir)</button>
-    """, height=60)
+    </head>
+    <body>
+        <div class="report-header">
+            <div class="report-title">NEXION JYPESA - REPORTE DE INGENIERÍA LOGÍSTICA</div>
+            <div style="font-size: 12px;">EJERCICIO FISCAL 2026 | FILTRO: {mes_sel} / {flet_sel}</div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-box"><span class="kpi-label">COSTO FLETE NETO</span><span class="kpi-value">${total_flete_2026:,.2f}</span></div>
+            <div class="kpi-box"><span class="kpi-label">BASE FACTURACIÓN</span><span class="kpi-value">${total_fact_2026:,.2f}</span></div>
+            <div class="kpi-box"><span class="kpi-label">TOTAL UNIDADES (CAJAS)</span><span class="kpi-value">{total_cajas_2026:,.0f}</span></div>
+            <div class="kpi-box"><span class="kpi-label">RATIO LOGÍSTICO</span><span class="kpi-value">{costo_log_real:.2f}%</span></div>
+        </div>
+
+        <table class="tech-table">
+            <thead>
+                <tr>
+                    <th>INDICADOR TÉCNICO</th>
+                    <th>VALOR ACTUAL (2026)</th>
+                    <th>REFERENCIA (2025)</th>
+                    <th>VARIACIÓN Δ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>COSTO POR UNIDAD DESPACHADA</td><td>${costo_caja_2026:,.2f}</td><td>${costo_caja_2025:,.2f}</td><td>{var_costo_caja:+.2f}%</td></tr>
+                <tr><td>VOLUMEN TOTAL DE CARGA</td><td>{total_cajas_2026:,.0f}</td><td>{total_cajas_2025:,.0f}</td><td>{var_volumen:+.2f}%</td></tr>
+                <tr><td>VALUACIÓN DE INCIDENCIAS</td><td>${total_valuacion_2026:,.2f}</td><td>N/A</td><td>-</td></tr>
+                <tr><td>EFICIENCIA VS VENTAS</td><td>{costo_log_real:.2f}%</td><td>TARGET: 7.5%</td><td>{costo_log_real - 7.5:+.2f}%</td></tr>
+            </tbody>
+        </table>
+
+        <div class="stamp">ESTATUS OPERATIVO: {status_target}</div>
+
+        <div style="margin-top: 50px; border-top: 1px dashed black; width: 250px; font-size: 10px; text-align: center; padding-top: 5px;">
+            FIRMA DE VALIDACIÓN TÉCNICA
+        </div>
+
+        <button class="no-print" onclick="window.print()" style="margin-top: 30px; padding: 15px 30px; background: #FFCC00; border: none; font-weight: bold; cursor: pointer; width: 100%;">
+            🖨️ CONFIRMAR E IMPRIMIR REPORTE TÉCNICO
+        </button>
+    </body>
+    </html>
+    """
+
+    st.markdown("---")
+    # El componente HTML renderiza el reporte de forma independiente
+    components.html(reporte_html, height=600, scrolling=True)
 
 except Exception as e:
-    st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+    st.error(f"Error: {e}")
+
 
 
 
