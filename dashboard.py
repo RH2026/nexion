@@ -2250,7 +2250,7 @@ else:
                     div[data-testid="stMetricValue"] { 
                         color: #FFFFFF; /* Blanco para que resalte */
                         font-weight: 900; 
-                        font-size: 2.2rem; 
+                        font-size: 1.5rem; 
                     }
                 
                     /* Color y tamaño de la ETIQUETA (Texto arriba del número) */
@@ -3828,6 +3828,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
