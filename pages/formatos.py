@@ -187,13 +187,22 @@ try:
     costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
     diferencia_target = costo_log_real - 7.5
 
-    # 5. RENDERIZADO WEB (KPIs)
-    st.markdown("### 📊 RESUMEN EJECUTIVO")
+    # --- FILA 1: KPIs PRIMARIOS ---
+    st.markdown("### 📊 RESUMEN OPERATIVO")
     k1, k2, k3, k4 = st.columns(4)
     with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}")
     with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
-    with k3: st.metric("CAJAS", f"{total_cajas_2026:,.0f}")
-    with k4: st.metric("LOGÍSTICO %", f"{costo_log_real:.2f}%")
+    with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}")
+    with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%")
+    
+    st.markdown("<br>", unsafe_allow_html=True) # Espacio entre filas
+    
+    # --- FILA 2: KPIs DE EFICIENCIA (LAS OTRAS 4) ---
+    k5, k6, k7, k8 = st.columns(4) # ¡IMPORTANTE: Usar k5 a k8!
+    with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}")
+    with k6: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
+    with k7: st.metric("% DE INCIDENCIAS", f"{( (df_filtered['VALUACION']>0).sum()/len(df_filtered)*100 if len(df_filtered)>0 else 0):.1f}%")
+    with k8: st.metric("INCREMENTO + VI", f"${(total_flete_2026 + total_valuacion_2026) - total_flete_2025:,.2f}")
 
     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
@@ -273,6 +282,7 @@ try:
 
 except Exception as e:
     st.error(f"Hubo un error en el procesamiento: {e}")
+
 
 
 
