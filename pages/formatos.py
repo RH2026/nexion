@@ -118,19 +118,25 @@ try:
         inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
         st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
 
-    # 6. ANÁLISIS DINÁMICO (RENDERIZADO FORZADO EN UNA LÍNEA)
+    # 6. ANÁLISIS DINÁMICO (VERSIÓN INTELIGENTE AMOR)
     st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
     num_inc_val = (df_filtered['VALUACION'] > 0).sum()
     
-    # Aquí está el truco amor, todo el HTML en una sola cadena para que Streamlit no se pierda
-    html_final = f'<div class="analysis-box">Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación. <br><br><b>Eficiencia de Gasto:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación de envíos. <br><br><b>Impacto de Incidencias:</b> Se han registrado <span class="highlight">{num_inc_val} eventos</span> que representan una pérdida de <span class="highlight">${total_valuacion_2026:,.2f}</span>. Si logramos mitigar estas incidencias, el incremento real vs 2025 se reduciría a <span class="highlight">${(total_flete_2026 - total_flete_2025):,.2f}</span>.</div>'
+    # Lógica para que el texto suene congruente
+    if num_inc_val > 0:
+        texto_incidencias = f"<b>Impacto de Incidencias:</b> Se han registrado <span class='highlight'>{num_inc_val} eventos</span> que representan una pérdida de <span class='highlight'>${total_valuacion_2026:,.2f}</span>. Si logramos mitigar estas incidencias, el incremento real vs 2025 se reduciría a <span class='highlight'>${(total_flete_2026 - total_flete_2025):,.2f}</span>."
+    else:
+        texto_incidencias = f"<b>Impacto de Incidencias:</b> 🎉 ¡Excelente, amor! <span class='highlight'>No se registraron incidencias</span> en este periodo. La operación está limpia y el ahorro de <span class='highlight'>${abs(total_flete_2026 - total_flete_2025):,.2f}</span> vs 2025 es 100% neto."
+
+    html_final = f'<div class="analysis-box">Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación. <br><br><b>Eficiencia de Gasto:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación de envíos. <br><br>{texto_incidencias}</div>'
     
     st.markdown(html_final, unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
