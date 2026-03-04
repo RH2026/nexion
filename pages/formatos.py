@@ -4,7 +4,7 @@ import unicodedata
 import streamlit.components.v1 as components
 from datetime import datetime
 
-# 1. CONFIGURACIÓN Y ESTILO (ONYX DHL) - ¡TU DISEÑO ORIGINAL!
+# 1. CONFIGURACIÓN Y ESTILO (ONYX DHL)
 st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
 
 st.markdown("""
@@ -92,18 +92,21 @@ try:
 
     costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
     costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
+    
     var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
     var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
+    var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
+    
     costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
     diferencia_target = costo_log_real - 7.5
     num_inc = (df_filtered['VALUACION'] > 0).sum()
     pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
     inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
 
-    # 5. RENDERIZADO DE KPIs (8 TARJETAS ORIGINALES)
+    # 5. RENDERIZADO DE KPIs (PANTALLA)
     st.markdown("### 📊 RESUMEN EJECUTIVO DE RENDIMIENTO")
     k1, k2, k3, k4 = st.columns(4)
-    with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{((total_flete_2026-total_flete_2025)/total_flete_2025*100):.1f}% vs 2025" if total_flete_2025 > 0 else "0%", delta_color="inverse")
+    with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
     with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
     with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="off")
     with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
@@ -116,7 +119,7 @@ try:
     with k7: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
     with k8: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
 
-    # 6. ANÁLISIS DINÁMICO (TU BLOQUE ORIGINAL)
+    # 6. ANÁLISIS DINÁMICO
     st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
@@ -124,46 +127,113 @@ try:
     html_analisis = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
     st.markdown(html_analisis, unsafe_allow_html=True)
 
-    # 7. LÓGICA DE IMPRESIÓN (SOLO ESTO SE AJUSTÓ PARA LOS MÁRGENES)
-    reporte_impresion = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            @page {{ size: landscape; margin: 2cm; }}
-            body {{ font-family: sans-serif; padding: 20px; }}
-            .grid-print {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }}
-            .card-p {{ border: 1px solid black; padding: 10px; text-align: center; }}
-        </style>
-    </head>
-    <body>
-        <h2 style="border-bottom: 2px solid black;">REPORTE LOGÍSTICO - {datetime.now().strftime('%d/%m/%Y')}</h2>
-        <p>MES: {mes_sel} | FLETERA: {flet_sel}</p>
-        <div class="grid-print">
-            <div class="card-p"><b>COSTO FLETE</b><br>${total_flete_2026:,.2f}</div>
-            <div class="card-p"><b>FACTURACIÓN</b><br>${total_fact_2026:,.2f}</div>
-            <div class="card-p"><b>CAJAS</b><br>{total_cajas_2026:,.0f}</div>
-            <div class="card-p"><b>LOGÍSTICO</b><br>{costo_log_real:.2f}%</div>
-            <div class="card-p"><b>COSTO X CAJA</b><br>${costo_caja_2026:,.2f}</div>
-            <div class="card-p"><b>VALUACIÓN</b><br>${total_valuacion_2026:,.2f}</div>
-            <div class="card-p"><b>% INCID.</b><br>{pct_inc:.1f}%</div>
-            <div class="card-p"><b>INC + VI</b><br>${inc_vi_monto:,.2f}</div>
-        </div>
-        <div style="border: 1px solid black; padding: 15px; background: #f0f0f0;">
-            <strong>DICTAMEN:</strong> Operación {status_target} del target. 
-            Eficiencia: {status_eficiencia} ({var_costo_caja:+.1f}%).
-        </div>
-    </body>
-    </html>
-    """
+    # 7. LÓGICA DE REPORTE PARA IMPRESIÓN (EL DISEÑO CHINGÓN)
+    def generar_reporte_grafico():
+        estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
+        pct_cumplimiento = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
+        
+        # Colores para deltas en impresión
+        c_flete = "red" if var_flete_total > 0 else "green"
+        c_caja = "red" if var_costo_caja > 0 else "green"
 
-    st.markdown("---")
-    if st.button("🖨️ GENERAR REPORTE PARA IMPRESIÓN"):
-        # El height=1 hace que no estorbe visualmente pero que el navegador lo dispare
-        components.html(f"{reporte_impresion}<script>window.print();</script>", height=1)
+        html_content = f"""
+        <div id="printable-report" style="font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff; max-width: 900px; margin: auto; border: 1px solid #eee;">
+            <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
+                <tr>
+                    <td style="width: 50%;">
+                        <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">JYPESA</h1>
+                        <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">División de Ingeniería Logística | 2026</p>
+                    </td>
+                    <td style="width: 50%; text-align: right; font-size: 11px;">
+                        <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper()}-2026<br>
+                        <b>FECHA:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br>
+                        <span style="border: 2px solid #000; padding: 3px 8px; display: inline-block; margin-top: 5px; font-weight: bold;">{estatus_rep}</span>
+                    </td>
+                </tr>
+            </table>
+
+            <h2 style="text-align: center; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; text-decoration: underline;">Análisis Operativo Mensual: {mes_sel}</h2>
+
+            <div style="margin-bottom: 40px;">
+                <p style="font-size: 12px; font-weight: bold; margin-bottom: 10px;">RENDIMIENTO VS META (TARGET 7.5%):</p>
+                <div style="width: 100%; border: 2px solid #000; height: 35px; position: relative; background: #f0f0f0;">
+                    <div style="width: {pct_cumplimiento}%; background: #444; height: 100%;"></div>
+                    <div style="position: absolute; top: 8px; left: 10px; color: #fff; font-weight: bold; font-size: 14px;">ACTUAL: {costo_log_real:.2f}%</div>
+                    <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold; font-size: 14px;">OBJETIVO: 7.50%</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 20px; margin-bottom: 40px;">
+                <div style="flex: 1; border: 1px solid #000; padding: 10px;">
+                    <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">ESTRUCTURA DE COSTOS</p>
+                    <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                        <tr><td>Gasto Flete:</td><td style="text-align: right; color:{c_flete}"><b>${total_flete_2026:,.2f}</b> ({var_flete_total:+.1f}%)</td></tr>
+                        <tr><td>Incidencias:</td><td style="text-align: right;"><b>${total_valuacion_2026:,.2f}</b></td></tr>
+                        <tr style="border-top: 1px solid #000;"><td><b>Total Op:</b></td><td style="text-align: right;"><b>${(total_flete_2026 + total_valuacion_2026):,.2f}</b></td></tr>
+                    </table>
+                </div>
+                <div style="flex: 1; border: 1px solid #000; padding: 10px;">
+                    <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA UNITARIA</p>
+                    <div style="text-align: center; padding-top: 5px;">
+                        <span style="font-size: 26px; font-weight: bold;">${costo_caja_2026:.2f}</span><br>
+                        <span style="font-size: 10px;">Costo por Caja</span><br>
+                        <span style="font-size: 11px; color:{c_caja}; font-weight:bold;">Var: {var_costo_caja:+.1f}% vs 2025</span>
+                    </div>
+                </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 50px;">
+                <thead>
+                    <tr style="background: #eee; border: 1px solid #000;">
+                        <th style="padding: 12px; text-align: left; border: 1px solid #000;">MÉTRICA DE OPERACIÓN</th>
+                        <th style="padding: 12px; text-align: center; border: 1px solid #000;">VALOR ACTUAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding: 10px; border: 1px solid #000;">Ventas Totales Brutas (Facturación)</td><td style="padding: 10px; border: 1px solid #000; text-align: center; font-weight:bold;">${total_fact_2026:,.2f}</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #000;">Volumen de Despacho (Unidades)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{int(total_cajas_2026):,.0f} Cajas</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #000;">Variación Volumen vs 2025</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{var_volumen:+.1f}%</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #000;">Impacto Económico Neto (INCR + VI)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${inc_vi_monto:,.2f}</td></tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
+                <div style="width: 45%;">
+                    <div style="border-top: 2px solid #000; padding-top: 10px;">
+                        <b>HERNANPHY (RIGOBERTO)</b><br>Gerente de Logística JYPESA
+                    </div>
+                </div>
+                <div style="width: 45%;">
+                    <div style="border-top: 2px solid #000; padding-top: 10px;">
+                        <b>VALIDACIÓN NEXION</b><br>Ingeniería de Procesos
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        return html_content
+
+    st.write("---")
+    if st.button(":material/print: GENERAR REPORTE GRÁFICO PARA IMPRESIÓN", type="primary", use_container_width=True):
+        reporte_html = generar_reporte_grafico()
+        
+        components.html(f"""
+            <script>
+                var win = window.open('', '', 'height=1100,width=950');
+                win.document.write('<html><head><title>Reporte_Tecnico_{mes_sel}</title></head><body>');
+                win.document.write(`{reporte_html}`);
+                win.document.write('</body></html>');
+                win.document.close();
+                win.onload = function() {{
+                    win.print();
+                    win.close();
+                }};
+            </script>
+        """, height=0)
 
 except Exception as e:
-    st.error(f"¡Atención, amor! Detalle: {e}")
+    st.error(f"¡Atención, amor! Detalle en el código: {e}")
+
 
 
 
