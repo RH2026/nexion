@@ -30,29 +30,27 @@ try:
 
     # --- FILTRO CRÍTICO: SOLO COBRO REGRESO DESDE "FORMA DE ENVIO" ---
     # Nota: Usamos FORMA DE ENVIO (sin acento por la limpieza)
-    df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('COBRO REGRESO', na=False, case=False)].copy()
+    # Si la columna se llama "FORMA DE ENVÍO" en Excel, aquí ya es "FORMA DE ENVIO"
+    df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
     
     # Vinculamos con Historial 2025 por MES
     df_2025_ref = df_2025[['MES', 'COSTO DE LA GUIA']].rename(columns={'COSTO DE LA GUIA': 'GUIA_2025'})
     df_final = pd.merge(df_gastos, df_2025_ref, on='MES', how='left')
 
-    # --- CÁLCULOS DE LOS RESULTADOS QUE PEDISTE ---
+    # --- CÁLCULOS DE LOS RESULTADOS ---
     df_final['COSTOS ADICIONALES'] = df_final.get('COSTOS ADICIONALES', 0).fillna(0)
     df_final['VALUACION'] = df_final.get('VALUACION', 0).fillna(0)
     
     # 1. COSTO DE FLETE
     df_final['COSTO DE FLETE'] = df_final['COSTO DE LA GUIA'] + df_final['COSTOS ADICIONALES']
-    
-    # 2. COSTO LOGÍSTICO
+    # 2. FACTURACIÓN (Ya viene en la matriz)
+    # 3. COSTO LOGÍSTICO
     df_final['COSTO LOGISTICO'] = (df_final['COSTO DE FLETE'] / df_final['FACTURACION']) * 100
-    
-    # 3. COSTO POR CAJA
+    # 4. COSTO POR CAJA
     df_final['COSTO POR CAJA'] = df_final['COSTO DE FLETE'] / df_final['CAJAS']
-    
-    # 4. INCREMENTO + VI (Costo Flete + Valuación Incidencias vs Guía 2025)
+    # 5. INCREMENTO + VI
     df_final['INCREMENTO_VI'] = (df_final['COSTO DE FLETE'] + df_final['VALUACION']) - df_final['GUIA_2025']
-    
-    # 5. % DE INCREMENTO VS 2025
+    # 6. % DE INCREMENTO VS 2025
     df_final['% INCREMENTO VS 2025'] = ((df_final['COSTO DE FLETE'] - df_final['GUIA_2025']) / df_final['GUIA_2025']) * 100
 
     # 3. INTERFAZ DE FILTROS
@@ -78,26 +76,18 @@ try:
     # 4. RENDERIZADO DE RESULTADOS (KPIs)
     st.markdown("---")
     
-    # Fila 1 de Métricas
     k1, k2, k3, k4 = st.columns(4)
-    with k1:
-        st.metric("COSTO DE FLETE", f"${df_filtered['COSTO DE FLETE'].sum():,.2f}")
-    with k2:
-        st.metric("FACTURACIÓN", f"${df_filtered['FACTURACION'].sum():,.2f}")
-    with k3:
-        st.metric("CAJAS ENVIADAS", f"{df_filtered['CAJAS'].sum():,.0f}")
-    with k4:
-        st.metric("COSTO LOGÍSTICO", f"{df_filtered['COSTO LOGISTICO'].mean():,.2f}%")
+    with k1: st.metric("COSTO DE FLETE", f"${df_filtered['COSTO DE FLETE'].sum():,.2f}")
+    with k2: st.metric("FACTURACIÓN", f"${df_filtered['FACTURACION'].sum():,.2f}")
+    with k3: st.metric("CAJAS ENVIADAS", f"{df_filtered['CAJAS'].sum():,.0f}")
+    with k4: st.metric("COSTO LOGÍSTICO", f"{df_filtered['COSTO LOGISTICO'].mean():,.2f}%")
 
-    # Fila 2 de Métricas
     k5, k6, k7, k8 = st.columns(4)
-    with k5:
-        st.metric("COSTO POR CAJA", f"${df_filtered['COSTO POR CAJA'].mean():,.2f}")
-    with k6:
+    with k5: st.metric("COSTO POR CAJA", f"${df_filtered['COSTO POR CAJA'].mean():,.2f}")
+    with k6: 
         val_inc = df_filtered['VALUACION'].sum()
         st.metric("VALUACIÓN INCIDENCIAS", f"${val_inc:,.2f}")
     with k7:
-        # % de Incidencias: (Envíos con valuación > 0 / Total de envíos) * 100
         total_envios = len(df_filtered)
         envios_con_inc = (df_filtered['VALUACION'] > 0).sum()
         perc_inc = (envios_con_inc / total_envios * 100) if total_envios > 0 else 0
@@ -107,26 +97,27 @@ try:
         avg_perc_25 = df_filtered['% INCREMENTO VS 2025'].mean()
         st.metric("INCREMENTO + VI", f"${inc_total:,.2f}", delta=f"{avg_perc_25:.1f}% vs 2025")
 
-    # 5. TABLA DETALLADA
+    # 5. TABLA DETALLADA (SIN MATPLOTLIB)
     st.markdown("---")
     st.subheader("📊 Detalle de Matriz Nexion")
     
-    st.dataframe(
-        df_filtered.style.format({
-            'COSTO DE LA GUIA': '${:,.2f}',
-            'COSTO DE FLETE': '${:,.2f}',
-            'FACTURACION': '${:,.2f}',
-            'VALUACION': '${:,.2f}',
-            'COSTO LOGISTICO': '{:.2f}%',
-            'COSTO POR CAJA': '${:,.2f}',
-            '% INCREMENTO VS 2025': '{:.2f}%'
-        }).background_gradient(cmap='Blues', subset=['COSTO LOGISTICO']), 
-        use_container_width=True, height=450
-    )
+    # Quitamos background_gradient para evitar el error y usamos estilos básicos de pandas
+    df_style = df_filtered.style.format({
+        'COSTO DE LA GUIA': '${:,.2f}',
+        'COSTO DE FLETE': '${:,.2f}',
+        'FACTURACION': '${:,.2f}',
+        'VALUACION': '${:,.2f}',
+        'COSTO LOGISTICO': '{:.2f}%',
+        'COSTO POR CAJA': '${:,.2f}',
+        '% INCREMENTO VS 2025': '{:.2f}%'
+    })
+    
+    st.dataframe(df_style, use_container_width=True, height=450)
 
 except Exception as e:
     st.error(f"¡Atención, amor! Revisa las columnas de tus archivos. Error: {e}")
-    st.info("Asegúrate que la columna se llame 'FORMA DE ENVÍO' en tu Excel.")
+    st.info("Asegúrate de que la columna se llame 'FORMA DE ENVÍO' en tu Excel y que 'FACTURACIÓN' esté presente.")
+
 
 
 
