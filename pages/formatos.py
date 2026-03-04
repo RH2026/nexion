@@ -8,13 +8,17 @@ st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
 st.markdown("""
     <style>
     .main { background-color: #0B1014; }
-    /* Estilo de métricas con acento en amarillo DHL */
-    .stMetric { 
+    /* Estilo de métricas con acento en amarillo DHL y altura fija */
+    [data-testid="stMetric"] { 
         background-color: #162129; 
         padding: 25px; 
         border-radius: 12px; 
         border-left: 5px solid #FFCC00; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        min-height: 160px; /* Esto hace que todas tengan la misma altura amor */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 2.2rem; }
     div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
@@ -118,6 +122,7 @@ try:
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
