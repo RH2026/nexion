@@ -2328,7 +2328,7 @@ else:
                     inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
                 
                     # 5. RENDERIZADO DE KPIs (PANTALLA)
-                    st.markdown("### 📊 RESUMEN EJECUTIVO DE RENDIMIENTO")
+                    st.markdown("### RESUMEN DE RENDIMIENTO")
                     k1, k2, k3, k4 = st.columns(4)
                     with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
                     with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
@@ -2344,7 +2344,7 @@ else:
                     with k8: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
                 
                     # 6. ANÁLISIS DINÁMICO
-                    st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
+                    st.markdown("### ANÁLISIS DINÁMICO DE OPERACIÓN")
                     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
                     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
                     
@@ -3814,6 +3814,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
