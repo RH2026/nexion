@@ -133,13 +133,14 @@ try:
         inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
         st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
 
-    # 6. ANÁLISIS DINÁMICO CHINGÓN
+    # 6. ANÁLISIS DINÁMICO CHINGÓN (BLOQUE CORREGIDO)
     st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
     
     # Lógica del análisis
     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
     status_eficiencia = "más eficiente" if var_costo_caja <= 0 else "menos eficiente"
     
+    # Guardamos el diseño en una variable
     analisis_texto = f"""
     <div class="analysis-box">
         Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), 
@@ -149,16 +150,19 @@ try:
         respecto al año pasado. Esto indica que hoy somos <span class="highlight">{status_eficiencia}</span> 
         en la consolidación de envíos. <br><br>
         
-        <b>Impacto de Incidencias:</b> Se han registrado <span class="highlight">{num_inc} eventos</span> 
+        <b>Impacto de Incidencias:</b> Se han registrado <span class="highlight">{(df_filtered['VALUACION'] > 0).sum()} eventos</span> 
         que representan una pérdida de <span class="highlight">${total_valuacion_2026:,.2f}</span>. 
         Si logramos mitigar estas incidencias, el incremento real vs 2025 se reduciría a 
         <span class="highlight">${(total_flete_2026 - total_flete_2025):,.2f}</span>.
     </div>
     """
+    
+    # ¡ESTA ES LA LÍNEA CLAVE AMOR! Debe llevar el unsafe_allow_html=True
     st.markdown(analisis_texto, unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
