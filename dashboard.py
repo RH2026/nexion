@@ -2290,10 +2290,10 @@ else:
                     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
                 
                     # 3. INTERFAZ
-                    st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
+                    
                     c_f1, c_f2 = st.columns(2)
-                    with c_f1: mes_sel = st.selectbox("📅 FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
-                    with c_f2: flet_sel = st.selectbox("🚛 FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
+                    with c_f1: mes_sel = st.selectbox(":material/calendar_month: FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
+                    with c_f2: flet_sel = st.selectbox(":material/local_shipping: FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
                 
                     df_filtered = df_gastos.copy()
                     if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
@@ -3808,6 +3808,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
