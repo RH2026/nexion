@@ -10,7 +10,7 @@ st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
 st.markdown("""
     <style>
     .main { background-color: #0B1014; }
-    /* TARJETAS CON ALTURA FIJA PARA QUE NO SE VEAN PARA LA CHINGADA */
+    /* TARJETAS CON ALTURA FIJA */
     [data-testid="stMetric"] { 
         background-color: #162129; 
         padding: 25px; 
@@ -125,29 +125,76 @@ try:
     html_analisis = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
     st.markdown(html_analisis, unsafe_allow_html=True)
 
-    # 7. LÓGICA DE IMPRESIÓN (BOTÓN Y ESTRUCTURA OCULTA)
-    # Generamos el HTML técnico pero el componente se mantiene con altura mínima
+    # 7. LÓGICA DE IMPRESIÓN (MEJORADA CON MÁRGENES Y FORMATO HOJA)
     reporte_impresion = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <style>
-            body {{ font-family: 'Courier New', monospace; color: black; background: white; padding: 20px; visibility: hidden; }}
-            .printable {{ visibility: visible; position: absolute; left: 0; top: 0; width: 100%; }}
-            .h-print {{ border-bottom: 4px solid black; margin-bottom: 20px; }}
-            .grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }}
-            .card-p {{ border: 1px solid black; padding: 10px; }}
-            .label-p {{ font-size: 10px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; display: block; }}
-            .val-p {{ font-size: 16px; font-weight: bold; display: block; margin-top: 5px; }}
-            .analysis-p {{ border: 2px solid black; padding: 15px; background: #f0f0f0; font-size: 12px; }}
-            @media print {{ @page {{ size: landscape; }} }}
+            @page {{ 
+                size: landscape; 
+                margin: 1cm; 
+            }}
+            body {{ 
+                font-family: 'Arial', sans-serif; 
+                color: black; 
+                background: white; 
+                padding: 0; 
+                margin: 0;
+            }}
+            .printable {{ 
+                width: 100%; 
+            }}
+            .h-print {{ 
+                border-bottom: 3px solid #000; 
+                margin-bottom: 20px; 
+                padding-bottom: 10px;
+            }}
+            .grid {{ 
+                display: grid; 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 15px; 
+                margin-bottom: 25px; 
+            }}
+            .card-p {{ 
+                border: 1px solid #000; 
+                padding: 12px; 
+                text-align: center;
+            }}
+            .label-p {{ 
+                font-size: 10px; 
+                font-weight: bold; 
+                text-transform: uppercase; 
+                color: #333;
+                display: block; 
+                margin-bottom: 5px;
+                border-bottom: 1px solid #eee;
+            }}
+            .val-p {{ 
+                font-size: 18px; 
+                font-weight: bold; 
+                display: block; 
+            }}
+            .analysis-p {{ 
+                border: 1px solid #000; 
+                padding: 20px; 
+                background: #f9f9f9; 
+                font-size: 13px; 
+                line-height: 1.5;
+            }}
+            .footer-p {{
+                margin-top: 20px;
+                font-size: 9px;
+                text-align: right;
+                color: #666;
+            }}
         </style>
     </head>
     <body>
         <div class="printable">
             <div class="h-print">
                 <h2 style="margin:0;">REPORTE TÉCNICO LOGÍSTICO | NEXION JYPESA</h2>
-                <p style="font-size:11px;">FECHA: {datetime.now().strftime('%Y-%m-%d')} | MES: {mes_sel} | FLETERA: {flet_sel}</p>
+                <p style="font-size:12px; margin:5px 0;">GENERADO: {datetime.now().strftime('%Y-%m-%d %H:%M')} | FILTRO MES: {mes_sel} | FLETERA: {flet_sel}</p>
             </div>
             <div class="grid">
                 <div class="card-p"><span class="label-p">Costo Flete</span><span class="val-p">${total_flete_2026:,.2f}</span></div>
@@ -160,21 +207,26 @@ try:
                 <div class="card-p"><span class="label-p">Incremento + VI</span><span class="val-p">${inc_vi_monto:,.2f}</span></div>
             </div>
             <div class="analysis-p">
-                <strong>DICTAMEN TÉCNICO:</strong> La operación se encuentra {status_target} del target (7.5%). 
-                Costo logístico real: {costo_log_real:.2f}%. Variación unitaria: {var_costo_caja:+.1f}%.
+                <strong>DICTAMEN TÉCNICO DE OPERACIÓN:</strong><br><br>
+                Se informa que la operación logística de JYPESA se encuentra actualmente <b>{status_target}</b> del target establecido (7.5%). 
+                El costo logístico real impacta en un <b>{costo_log_real:.2f}%</b> sobre la facturación. 
+                En términos de eficiencia unitaria, el costo por caja presenta una variación del <b>{var_costo_caja:+.1f}%</b> respecto al ejercicio 2025, 
+                lo que define la operación actual como <b>{status_eficiencia}</b>.
             </div>
+            <div class="footer-p">Documento generado automáticamente por Sistema Nexion Logistics.</div>
         </div>
     </body>
     </html>
     """
 
     st.markdown("---")
-    # Botón único que dispara la impresión del reporte oculto
     if st.button("🖨️ GENERAR REPORTE TÉCNICO PARA IMPRESIÓN"):
-        components.html(f"{reporte_impresion}<script>window.print();</script>", height=0)
+        # He subido el height para que el navegador "vea" el contenido antes de imprimir
+        components.html(f"{reporte_impresion}<script>window.onload = function() {{ window.print(); }}</script>", height=1)
 
 except Exception as e:
     st.error(f"¡Atención, amor! Detalle en el código: {e}")
+
 
 
 
