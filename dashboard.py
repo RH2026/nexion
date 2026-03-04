@@ -2227,313 +2227,163 @@ else:
             elif st.session_state.menu_sub == "OPS":
                 st.subheader("Eficiencia Operativa (OPS)")
                 # --- 1. MOTOR DE DATOS NIVEL ELITE ---
-                # --- 1. MOTOR DE DATOS ---
-                @st.cache_data
-                def cargar_datos_maestros():
-                    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/analisis2026.csv"
-                    try:
-                        df = pd.read_csv(url, encoding="latin-1", sep=None, engine='python')
-                        df.columns = [str(c).strip().upper() for c in df.columns]
-                        
-                        def fcol(k): 
-                            exacta = next((c for c in df.columns if k == c), None)
-                            return exacta if exacta else next((c for c in df.columns if k in c), None)
-                
-                        mapeo = {
-                            'MES': fcol('MES'), 'FLETE': fcol('COSTO DE FLETE'), 
-                            'FACT': fcol('FACTURACIÓN') or fcol('FACTURACI'),
-                            'CAJAS': fcol('CAJAS ENVIADAS'), 'LOGI': fcol('COSTO LOGÍSTICO') or fcol('LOGI'), 
-                            'META': fcol('META INDICADOR') or fcol('META'),
-                            'CC26': fcol('COSTO POR CAJA') if fcol('COSTO POR CAJA') and '2024' not in fcol('COSTO POR CAJA') else None,
-                            'VAL_INC': fcol('VALUACION'), 'POR_INC': fcol('PORCENTAJE DE INCIDENCIAS') or fcol('% DE INC'),
-                            'INCR': fcol('INCREMENTO + VI') or fcol('INCREMENTO'), 
-                            'VS24': fcol('% DE INCREMENTO'), 'CC24': fcol('COSTO POR CAJA 2025') or fcol('2024')
-                        }
-                
-                        df = df.dropna(subset=[mapeo['MES']])
-                        df = df[df[mapeo['MES']].astype(str).str.contains('Unnamed|TOTAL', case=False) == False]
-                        
-                        def clean(v):
-                            if pd.isna(v) or v == '': return 0.0
-                            s = str(v).replace('$', '').replace(',', '').replace('%', '').replace('(', '-').replace(')', '').strip()
-                            try: return float(s)
-                            except: return 0.0
-                
-                        df_std = pd.DataFrame()
-                        df_std['MES'] = df[mapeo['MES']]
-                        for key, orig in mapeo.items():
-                            if key != 'MES':
-                                df_std[key] = df[orig].apply(clean) if orig else 0.0
-                        return df_std
-                    except Exception as e:
-                        st.error(f"Error cargando datos: {e}")
-                        return None
-                
-                # --- 2. CSS DISEÑO (SIN ICONOS, SIN FONDOS, SIN BORDES LATERALES) ---
                 st.markdown("""
                     <style>
-                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
-                    
-                    html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #050505; color: white; }
-                    
-                    .main-title { font-weight: 900; font-size: 2.5rem; letter-spacing: -1.5px; color: #fff; margin-bottom: 0px; }
-                    .sub-title { color: #888; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
-                
-                    /* Tarjetas Superiores */
-                    .metric-card {
-                        background: rgba(255, 255, 255, 0.03);
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        padding: 22px;
-                        border-radius: 12px;
-                        margin-bottom: 15px;
-                        min-height: 150px;
+                    .main { background-color: #0B1014; }
+                    [data-testid="stMetric"] { 
+                        background-color: #162129; 
+                        padding: 25px; 
+                        border-radius: 12px; 
+                        border-left: 5px solid #FFCC00; 
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                        min-height: 160px !important;
+                        max-height: 160px !important;
                         display: flex;
                         flex-direction: column;
-                        justify-content: space-between;
+                        justify-content: center;
                     }
-                    .label { color: #BBB; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
-                    .value { color: #fff; font-size: 2.1rem; font-weight: 700; margin: 8px 0; }
-                    .meta-ind { font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; }
-                
-                    /* Bloques de Análisis (LIMPIOS: SIN FONDO, SIN BORDE LATERAL) */
-                    .section-box {
-                        background: transparent;
-                        border-radius: 12px;
+                    div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 2.2rem; }
+                    div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
+                    h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #FFCC00; padding-bottom: 10px; }
+                    h3 { color: #FFCC00; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
+                    
+                    .analysis-box {
+                        background-color: #162129;
                         padding: 25px;
-                        margin-top: 20px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 12px;
+                        border: 1px solid #243441;
+                        color: #A4B9C8;
+                        line-height: 1.8;
+                        font-size: 1.2rem;
                     }
-                    
-                    .section-title { font-size: 1rem; margin-top: 0; margin-bottom: 15px; font-weight: 700; text-transform: uppercase; }
+                    .highlight { color: #FFCC00; font-weight: bold; }
                     </style>
-                """, unsafe_allow_html=True)
-                
-                # --- 3. LÓGICA Y RENDER ---
-                df_a = cargar_datos_maestros()
-                
-                if df_a is not None:
-                    st.markdown("<div class='main-title'></div>", unsafe_allow_html=True)
-                    col_sel, _ = st.columns([1, 3])
-                    with col_sel:
-                        mes_sel = st.selectbox("", df_a["MES"].unique(), label_visibility="collapsed")
-                    
-                    st.markdown(f"<div class='sub-title'>DATA RADIOGRAPHY // PERIODO: {mes_sel}</div>", unsafe_allow_html=True)
-                
-                    df_m = df_a[df_a["MES"] == mes_sel].iloc[0]
-                
-                    # --- GRID 9 TARJETAS ---
-                    c1, c2, c3 = st.columns(3)
-                    eficiencia = df_m['META'] - df_m['LOGI']
-                    col_log = "#10b981" if eficiencia >= 0 else "#fb7185"
-                    
-                    with c1:
-                        st.markdown(f"<div class='metric-card'><div class='label'>Costo Logístico</div><div class='value' style='color:{col_log}'>{df_m['LOGI']:.2f}%</div><div class='meta-ind'>Meta Indicador: {df_m['META']}%</div></div>", unsafe_allow_html=True)
-                    with c2:
-                        st.markdown(f"<div class='metric-card'><div class='label'>Incremento + VI</div><div class='value'>${df_m['INCR']:,.0f}</div><div class='meta-ind'>Impacto Financiero Real</div></div>", unsafe_allow_html=True)
-                    with c3:
-                        st.markdown(f"<div class='metric-card'><div class='label'>% Incr vs 2024</div><div class='value' style='color:#f472b6'>{df_m['VS24']:.1f}%</div><div class='meta-ind'>Variación vs Anterior</div></div>", unsafe_allow_html=True)
-                
-                    c4, c5, c6 = st.columns(3)
-                    with c4:
-                        # Ajuste: Texto "Target 2026" y valor fijo "$59.00"
-                        st.markdown(f"<div class='metric-card'><div class='label'>Costo por Caja</div><div class='value'>${df_m['CC26']:.2f}</div><div class='meta-ind'>Target 2026: $59.00</div></div>", unsafe_allow_html=True)
-                    with c5:
-                        st.markdown(f"<div class='metric-card'><div class='label'>Valuación Incidencias</div><div class='value' style='color:#eab308'>${df_m['VAL_INC']:,.0f}</div><div class='meta-ind'>Pérdida Estimada Operativa</div></div>", unsafe_allow_html=True)
-                    with c6:
-                        st.markdown(f"<div class='metric-card'><div class='label'>% de Incidencias</div><div class='value'>{df_m['POR_INC']:.2f}%</div><div class='meta-ind'>Calidad en Procesos</div></div>", unsafe_allow_html=True)
-                
-                    c7, c8, c9 = st.columns(3)
-                    with c7:
-                        st.markdown(f"<div class='metric-card'><div class='label'>Facturación</div><div class='value'>${df_m['FACT']:,.0f}</div><div class='meta-ind'>Ingreso Bruto Mensual</div></div>", unsafe_allow_html=True)
-                    with c8:
-                        st.markdown(f"<div class='metric-card'><div class='label'>Cajas Enviadas</div><div class='value'>{int(df_m['CAJAS']):,.0f}</div><div class='meta-ind'>Volumen de Despacho</div></div>", unsafe_allow_html=True)
-                    with c9:
-                        st.markdown(f"<div class='metric-card'><div class='label'>Costo de Flete</div><div class='value'>${df_m['FLETE']:,.0f}</div><div class='meta-ind'>Inversión Logística Directa</div></div>", unsafe_allow_html=True)
-                
-                    # --- BLOQUES DE ANÁLISIS ---
-                    st.markdown(f"""
-                    <div class='section-box'>
-                        <div class='section-title' style='color:#10b981;'>Metodología de Cálculo para {mes_sel}:</div>
-                        <p style='color:#E0E0E0; font-size:0.95rem; font-family:monospace;'>
-                        • <b>Logístico:</b> (${df_m['FLETE']:,.2f} / ${df_m['FACT']:,.2f}) = <b>{df_m['LOGI']:.2f}%</b><br>
-                        • <b>C/Caja:</b> ${df_m['FLETE']:,.2f} / {int(df_m['CAJAS'])} cajas = <b>${df_m['CC26']:.2f}</b><br>
-                        • <b>Impacto:</b> (Ahorro Incidencias) - (Variación Tarifaria vs 2024 * Cajas) = <b>${df_m['INCR']:,.2f}</b>
-                        </p>
-                    </div>
                     """, unsafe_allow_html=True)
                 
-                    col_inf1, col_inf2 = st.columns(2)
-                    with col_inf1:
-                        st.markdown(f"""<div class='section-box'>
-                            <div class='section-title' style='color:#38bdf8;'>DEEP DIVE</div>
-                            <p style='color:#CCC; font-size:0.9rem;'>
-                            Durante el mes de <b>{mes_sel}</b>, la operación gestionó un flujo de <b>{int(df_m['CAJAS']):,.0f}</b> paquetes. 
-                            El rendimiento financiero muestra una facturación de <b>${df_m['FACT']:,.2f}</b> con un costo unitario por caja de <b>${df_m['CC26']:.2f}</b>.
-                            </p>
-                        </div>""", unsafe_allow_html=True)
+                def limpiar_columnas(txt):
+                    if not isinstance(txt, str): return txt
+                    texto = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
+                    return texto.strip().upper()
                 
-                    with col_inf2:
-                        estatus = "EFICIENCIA" if eficiencia >= 0 else "DESVIACIÓN"
-                        st.markdown(f"""<div class='section-box'>
-                            <div class='section-title' style='color:#f472b6;'>RADIOGRAFÍA</div>
-                            <p style='color:#CCC; font-size:0.9rem;'>
-                            Estado: <b style='color:#fff;'>{estatus} OPERATIVA</b><br>
-                            La desviación respecto a la meta es de <b>{abs(eficiencia):.2f}%</b>. <br>
-                            Cada $1,000 MXN facturados están consumiendo <b>${(df_m['LOGI']/100)*1000:.2f}</b> de presupuesto logístico.
-                            </p>
-                        </div>""", unsafe_allow_html=True)
+                def limpiar_dinero(col):
+                    if col.dtype == object:
+                        return pd.to_numeric(col.str.replace('$', '').str.replace(',', '').str.strip(), errors='coerce').fillna(0)
+                    return col.fillna(0)
                 
-                    # Botón de Descarga PDF al final
-                    # --- TABLA DE DATOS FINAL (CON NOMBRES REALES Y CONTRAÍDA) ---
+                # 2. CARGA Y PROCESAMIENTO
+                try:
+                    df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
+                    df_2025 = pd.read_csv('Historial2025.csv')
+                
+                    df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
+                    df_2025.columns = [limpiar_columnas(c) for c in df_2025.columns]
+                
+                    columnas_dinero = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES']
+                    for col in columnas_dinero:
+                        if col in df_actual.columns: df_actual[col] = limpiar_dinero(df_actual[col])
+                    if 'COSTO DE LA GUIA' in df_2025.columns: df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
+                
+                    df_actual['MES'] = df_actual['MES'].astype(str).str.strip().str.upper()
+                    df_2025['MES'] = df_2025['MES'].astype(str).str.strip().str.upper()
+                
+                    df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
+                    df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
+                
+                    # 3. INTERFAZ
+                    st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
+                    c_f1, c_f2 = st.columns(2)
+                    with c_f1: mes_sel = st.selectbox("📅 FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
+                    with c_f2: flet_sel = st.selectbox("🚛 FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
+                
+                    df_filtered = df_gastos.copy()
+                    if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
+                    if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
+                
+                    # 4. CÁLCULOS
+                    total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
+                    total_fact_2026 = df_filtered['FACTURACION'].sum()
+                    total_cajas_2026 = df_filtered['CAJAS'].sum()
+                    total_valuacion_2026 = df_filtered['VALUACION'].sum()
+                
+                    meses_activos = df_filtered['MES'].unique()
+                    df_2025_filtrado = df_2025[df_2025['MES'].isin(meses_activos)]
+                    total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum()
+                    total_cajas_2025 = df_2025_filtrado['CAJAS'].sum()
+                
+                    costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
+                    costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
+                    var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
+                    var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
+                    costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
+                    diferencia_target = costo_log_real - 7.5
+                    num_inc = (df_filtered['VALUACION'] > 0).sum()
+                    pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
+                    inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
+                
+                    # 5. RENDERIZADO DE KPIs (8 TARJETAS ORIGINALES)
+                    st.markdown("### 📊 RESUMEN EJECUTIVO DE RENDIMIENTO")
+                    k1, k2, k3, k4 = st.columns(4)
+                    with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{((total_flete_2026-total_flete_2025)/total_flete_2025*100):.1f}% vs 2025" if total_flete_2025 > 0 else "0%", delta_color="inverse")
+                    with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
+                    with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="off")
+                    with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
+                
                     st.markdown("<br>", unsafe_allow_html=True)
-                    with st.expander("Ver dataset completo", expanded=False):
-                        # Creamos una copia para no afectar la lógica de los cálculos superiores
-                        df_visual = df_a.copy()
-                        
-                        # Renombramos las columnas a los nombres reales solicitados
-                        df_visual = df_visual.rename(columns={
-                            'MES': 'MES',
-                            'FLETE': 'COSTO DE FLETE',
-                            'FACT': 'FACTURACIÓN',
-                            'CAJAS': 'CAJAS ENVIADAS',
-                            'LOGI': 'COSTO LOGISTICO',
-                            'CC26': 'COSTO POR CAJA',
-                            'META': 'META INDICADOR',
-                            'VAL_INC': 'VALUACION INCIDENCIAS',
-                            'POR_INC': '% DE INCIDENCIAS',
-                            'INCR': 'INCREMENTO + VI',
-                            'VS24': '% DE INCREMENTO VS 2025',
-                            'CC24': 'COSTO POR CAJA 2025'
-                        })
-                        
-                        # Mostramos la tabla con un estilo limpio
-                        st.dataframe(
-                            df_visual, 
-                            use_container_width=True, 
-                            hide_index=True,
-                            column_config={
-                                "COSTO DE FLETE": st.column_config.NumberColumn(format="$%.2f"),
-                                "FACTURACIÓN": st.column_config.NumberColumn(format="$%.2f"),
-                                "COSTO LOGISTICO": st.column_config.NumberColumn(format="%.2f%%"),
-                                "COSTO POR CAJA": st.column_config.NumberColumn(format="$%.2f"),
-                                "INCREMENTO + VI": st.column_config.NumberColumn(format="$%.2f"),
-                                "% DE INCREMENTO VS 2025": st.column_config.NumberColumn(format="%.2f%%")
-                            }
-                        )
-                                
-                # --- LÓGICA DEL REPORTE PARA IMPRESIÓN ---        
-                def generar_reporte_impresion(df_m, mes_sel):
-                    estatus_rep = "DENTRO DE PARÁMETROS" if (df_m['META'] - df_m['LOGI']) >= 0 else "FUERA DE PARÁMETROS"
+                
+                    k5, k6, k7, k8 = st.columns(4)
+                    with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
+                    with k6: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
+                    with k7: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
+                    with k8: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
+                
+                    # 6. ANÁLISIS DINÁMICO (TU BLOQUE ORIGINAL)
+                    st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
+                    status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
+                    status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
                     
-                    # Cálculo para la barra de progreso (invertido porque menor logístico es mejor)
-                    pct_cumplimiento = max(0, min(100, (df_m['META'] / df_m['LOGI']) * 100)) if df_m['LOGI'] > 0 else 0
+                    html_analisis = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
+                    st.markdown(html_analisis, unsafe_allow_html=True)
                 
-                    html_content = f"""
-                    <div id="printable-report" style="font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff; max-width: 800px; margin: auto; border: 1px solid #eee;">
-                        
-                        <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
-                            <tr>
-                                <td style="width: 50%;">
-                                    <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">JYPESA</h1>
-                                    <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">División de Ingeniería Logística | 2026</p>
-                                </td>
-                                <td style="width: 50%; text-align: right; font-size: 11px;">
-                                    <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper()}-2026<br>
-                                    <b>FECHA:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br>
-                                    <span style="border: 1px solid #000; padding: 2px 5px; display: inline-block; margin-top: 5px; font-weight: bold;">{estatus_rep}</span>
-                                </td>
-                            </tr>
-                        </table>
-                
-                        <h2 style="text-align: center; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; text-decoration: underline;">Análisis Operativo Mensual: {mes_sel}</h2>
-                
-                        <div style="margin-bottom: 40px;">
-                            <p style="font-size: 12px; font-weight: bold; margin-bottom: 10px;">RENDIMIENTO VS META (COSTO LOGÍSTICO):</p>
-                            <div style="width: 100%; border: 2px solid #000; height: 30px; position: relative; background: #f0f0f0;">
-                                <div style="width: {pct_cumplimiento}%; background: #444; height: 100%;"></div>
-                                <div style="position: absolute; top: 5px; left: 10px; color: #fff; font-weight: bold; font-size: 14px;">{df_m['LOGI']:.2f}%</div>
-                                <div style="position: absolute; top: 5px; right: 10px; color: #000; font-weight: bold; font-size: 14px;">META: {df_m['META']}%</div>
-                            </div>
+                    # 7. LÓGICA DE IMPRESIÓN (SOLO ESTO SE AJUSTÓ PARA LOS MÁRGENES)
+                    reporte_impresion = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            @page {{ size: landscape; margin: 2cm; }}
+                            body {{ font-family: sans-serif; padding: 20px; }}
+                            .grid-print {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }}
+                            .card-p {{ border: 1px solid black; padding: 10px; text-align: center; }}
+                        </style>
+                    </head>
+                    <body>
+                        <h2 style="border-bottom: 2px solid black;">REPORTE LOGÍSTICO - {datetime.now().strftime('%d/%m/%Y')}</h2>
+                        <p>MES: {mes_sel} | FLETERA: {flet_sel}</p>
+                        <div class="grid-print">
+                            <div class="card-p"><b>COSTO FLETE</b><br>${total_flete_2026:,.2f}</div>
+                            <div class="card-p"><b>FACTURACIÓN</b><br>${total_fact_2026:,.2f}</div>
+                            <div class="card-p"><b>CAJAS</b><br>{total_cajas_2026:,.0f}</div>
+                            <div class="card-p"><b>LOGÍSTICO</b><br>{costo_log_real:.2f}%</div>
+                            <div class="card-p"><b>COSTO X CAJA</b><br>${costo_caja_2026:,.2f}</div>
+                            <div class="card-p"><b>VALUACIÓN</b><br>${total_valuacion_2026:,.2f}</div>
+                            <div class="card-p"><b>% INCID.</b><br>{pct_inc:.1f}%</div>
+                            <div class="card-p"><b>INC + VI</b><br>${inc_vi_monto:,.2f}</div>
                         </div>
-                
-                        <div style="display: flex; gap: 20px; margin-bottom: 40px;">
-                            <div style="flex: 1; border: 1px solid #000; padding: 10px;">
-                                <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">ESTRUCTURA DE COSTOS</p>
-                                <table style="width: 100%; font-size: 11px;">
-                                    <tr><td>Fletes:</td><td style="text-align: right;"><b>${df_m['FLETE']:,.0f}</b></td></tr>
-                                    <tr><td>Incidencias:</td><td style="text-align: right;"><b>${df_m['VAL_INC']:,.0f}</b></td></tr>
-                                    <tr style="border-top: 1px solid #000;"><td>Total Op:</td><td style="text-align: right;"><b>${(df_m['FLETE'] + df_m['VAL_INC']):,.0f}</b></td></tr>
-                                </table>
-                            </div>
-                            <div style="flex: 1; border: 1px solid #000; padding: 10px;">
-                                <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA UNITARIA</p>
-                                <div style="text-align: center; padding-top: 5px;">
-                                    <span style="font-size: 24px; font-weight: bold;">${df_m['CC26']:.2f}</span><br>
-                                    <span style="font-size: 10px;">Costo por Caja</span>
-                                </div>
-                            </div>
+                        <div style="border: 1px solid black; padding: 15px; background: #f0f0f0;">
+                            <strong>DICTAMEN:</strong> Operación {status_target} del target. 
+                            Eficiencia: {status_eficiencia} ({var_costo_caja:+.1f}%).
                         </div>
-                
-                        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 50px;">
-                            <thead>
-                                <tr style="background: #eee; border: 1px solid #000;">
-                                    <th style="padding: 12px; text-align: left; border: 1px solid #000;">MÉTRICA DE OPERACIÓN</th>
-                                    <th style="padding: 12px; text-align: center; border: 1px solid #000;">VALOR ACTUAL</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td style="padding: 10px; border: 1px solid #000;">Ventas Totales Brutas (Facturación)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${df_m['FACT']:,.2f}</td></tr>
-                                <tr><td style="padding: 10px; border: 1px solid #000;">Volumen de Despacho (Unidades)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{int(df_m['CAJAS']):,.0f} Cajas</td></tr>
-                                <tr><td style="padding: 10px; border: 1px solid #000;">Variación vs Histórico (2024)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{df_m['VS24']:.1f}%</td></tr>
-                                <tr><td style="padding: 10px; border: 1px solid #000;">Impacto Económico Neto (INCR)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${df_m['INCR']:,.2f}</td></tr>
-                            </tbody>
-                        </table>
-                
-                        <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
-                            <div style="width: 45%;">
-                                <div style="border-top: 2px solid #000; padding-top: 10px;">
-                                    <b>RIGOBERTO HERNANDEZ</b><br>Coordinación Logística JYPESA
-                                </div>
-                            </div>
-                            <div style="width: 45%;">
-                                <div style="border-top: 2px solid #000; padding-top: 10px;">
-                                    <b>CONTROL DE CALIDAD</b><br>Validación de Datos Nexion
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top: 30px; text-align: center; font-size: 9px; color: #666; font-style: italic;">
-                            Este documento es una representación técnica oficial generada por el sistema NEXION 2026.
-                        </div>
-                    </div>
+                    </body>
+                    </html>
                     """
-                    return html_content
                 
-                # --- INTERFAZ SIN BOTÓN DE EXCEL Y SIN CEROS ---
-                st.markdown("""
-                <style>
-                /* Vacuna contra ceros verdes */
-                iframe[data-testid="stHtml"] { display: none !important; }
-                </style>
-                """, unsafe_allow_html=True)
+                    st.markdown("---")
+                    if st.button("🖨️ GENERAR REPORTE PARA IMPRESIÓN"):
+                        # El height=1 hace que no estorbe visualmente pero que el navegador lo dispare
+                        components.html(f"{reporte_impresion}<script>window.print();</script>", height=1)
                 
-                st.write("---")
-                if st.button(":material/print: GENERAR REPORTE GRÁFICO PARA IMPRESIÓN", type="primary", use_container_width=True):
-                    reporte_html = generar_reporte_impresion(df_m, mes_sel)
-                    
-                    st.components.v1.html(f"""
-                        <script>
-                            var win = window.open('', '', 'height=1100,width=950');
-                            win.document.write('<html><head><title>Reporte_Tecnico_{mes_sel}</title></head><body>');
-                            win.document.write(`{reporte_html}`);
-                            win.document.write('</body></html>');
-                            win.document.close();
-                            win.onload = function() {{
-                                win.print();
-                                win.close();
-                            }};
-                        </script>
-                    """, height=0)
+                except Exception as e:
+                    st.error(f"¡Atención, amor! Detalle: {e}")
                             
             
             elif st.session_state.menu_sub == "OTD":
@@ -3889,6 +3739,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
