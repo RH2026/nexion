@@ -2319,7 +2319,7 @@ else:
                     if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
                     if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
                 
-                    # 4. CÁLCULOS
+                    # 4. CÁLCULOS GLOBALES
                     total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
                     total_fact_2026 = df_filtered['FACTURACION'].sum()
                     total_cajas_2026 = df_filtered['CAJAS'].sum()
@@ -2332,16 +2332,9 @@ else:
                 
                     costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
                     costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
-                    
                     var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
                     var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
-                    var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
-                    
                     costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
-                    diferencia_target = costo_log_real - 7.5
-                    num_inc = (df_filtered['VALUACION'] > 0).sum()
-                    pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
-                    inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
                 
                     # 5. RENDERIZADO DE KPIs (PANTALLA)
                     
@@ -3828,6 +3821,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
