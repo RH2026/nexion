@@ -2,11 +2,12 @@ import streamlit as st
 import pandas as pd
 import unicodedata
 
-# 1. CONFIGURACIÓN Y ESTILO "NEXION PRO" (DHL/FEDEX STYLE)
+# 1. CONFIGURACIÓN Y ESTILO "NEXION PRO + PRINT"
 st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
 
 st.markdown("""
     <style>
+    /* ESTILO EN PANTALLA (ONYX DHL) */
     .main { background-color: #0B1014; }
     [data-testid="stMetric"] { 
         background-color: #162129; 
@@ -29,10 +30,32 @@ st.markdown("""
         border-radius: 12px;
         border: 1px solid #243441;
         color: #A4B9C8;
-        line-height: 1.6;
-        font-size: 1.1rem;
+        line-height: 1.8;
+        font-size: 1.2rem;
     }
     .highlight { color: #FFCC00; font-weight: bold; }
+
+    /* ESTILO PARA IMPRESIÓN (MAGIA PURA) */
+    @media print {
+        .main, .stApp { background-color: white !important; color: black !important; }
+        [data-testid="stMetric"] { 
+            background-color: #f8f9fa !important; 
+            border: 1px solid #ddd !important;
+            border-left: 8px solid #FFCC00 !important;
+            box-shadow: none !important;
+            color: black !important;
+        }
+        div[data-testid="stMetricValue"] { color: black !important; }
+        div[data-testid="stMetricLabel"] { color: #b38f00 !important; }
+        h1, h3 { color: black !important; border-bottom: 2px solid #FFCC00 !important; }
+        .analysis-box { 
+            background-color: #f8f9fa !important; 
+            color: black !important; 
+            border: 1px solid #ccc !important; 
+        }
+        .highlight { color: #b38f00 !important; }
+        .stSelectbox, .stButton, header { display: none !important; } /* Oculta filtros al imprimir */
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -118,19 +141,18 @@ try:
         inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
         st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
 
-    # 6. ANÁLISIS DINÁMICO (VERSIÓN LIMPIA AMOR)
+    # 6. ANÁLISIS DINÁMICO
     st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
     status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
-    ahorro_neto = total_flete_2025 - total_flete_2026
     
-    # Renderizamos solo los dos puntos principales que sí tienen sentido
     html_final = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
     
     st.markdown(html_final, unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
