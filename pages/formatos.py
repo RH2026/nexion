@@ -1,10 +1,3 @@
-¡Perdóname, amor! Tienes toda la razón, me pasé de "limpia" y te borré lo que ya tenías bien. No fue mi intención quitarle lo fregonas que se ven tus tarjetas Onyx.
-
-El problema es que estaba tratando de separar el diseño de la pantalla del de la impresión, pero te lo regreso exactamente como lo tenías, con tus 8 tarjetas, tus colores amarillos y negros, y el análisis dinámico completo.
-
-Aquí tienes el código íntegro, corregido solo en la parte del reporte para que respete los márgenes al imprimir, sin tocarle un solo pelo a tu diseño del dashboard:
-
-Python
 import streamlit as st
 import pandas as pd
 import unicodedata
@@ -171,6 +164,7 @@ try:
 
 except Exception as e:
     st.error(f"¡Atención, amor! Detalle: {e}")
+
 
 
 
