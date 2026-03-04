@@ -72,40 +72,55 @@ try:
         mask = df_filtered.astype(str).apply(lambda x: x.str.contains(search, case=False)).any(axis=1)
         df_filtered = df_filtered[mask]
 
-    # 4. CÁLCULOS GLOBALES (SIN ERRORES DE RESTA)
+    # 4. CÁLCULOS GLOBALES PRECISOS
     total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
     total_fact_2026 = df_filtered['FACTURACION'].sum()
     total_cajas_2026 = df_filtered['CAJAS'].sum()
     total_valuacion_2026 = df_filtered['VALUACION'].sum()
 
+    # --- DATOS HISTÓRICOS 2025 (MESES SELECCIONADOS) ---
     meses_activos = df_filtered['MES'].unique()
-    total_flete_2025 = df_2025[df_2025['MES'].isin(meses_activos)]['COSTO DE LA GUIA'].sum()
+    df_2025_filtrado = df_2025[df_2025['MES'].isin(meses_activos)]
     
-    # KPIs Logísticos
-    costo_log_real = (total_flete_2026 / total_fact_2026 * 100) if total_fact_2026 > 0 else 0
-    costo_caja_real = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
-    
-    # % de Incremento (Comparativa Real)
-    perc_inc_final = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
-    monto_inc_vi = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
+    total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum()
+    total_cajas_2025 = df_2025_filtrado['CAJAS'].sum() # <--- IMPORTANTE
 
-    # 5. RENDERIZADO DE KPIs
+    # --- MÉTRICAS DE EFICIENCIA ---
+    costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
+    costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
+    
+    # Variación del costo por caja (La verdad de la eficiencia)
+    var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
+    
+    # Variación de volumen (Para explicar por qué bajó el gasto)
+    var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
+
+    # 5. RENDERIZADO DE KPIs (CON LA VERDAD COMPLETA)
     st.markdown("---")
     k1, k2, k3, k4 = st.columns(4)
-    with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}")
-    with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
-    with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}")
-    with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%")
+    with k1: 
+        st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", 
+                  delta=f"{((total_flete_2026 - total_flete_2025)/total_flete_2025*100):.1f}% vs 2025", delta_color="inverse")
+    with k2: 
+        st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
+    with k3: 
+        # Aquí mostramos que el volumen bajó
+        st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="off")
+    with k4: 
+        st.metric("COSTO LOGÍSTICO", f"{(total_flete_2026/total_fact_2026*100):.2f}%")
 
     k5, k6, k7, k8 = st.columns(4)
-    with k5: st.metric("COSTO POR CAJA", f"${costo_caja_real:,.2f}")
-    with k6: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
+    with k5: 
+        # ESTE ES EL KPI MÁS IMPORTANTE AHORA
+        st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
+    with k6: 
+        st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
     with k7:
         num_inc = (df_filtered['VALUACION'] > 0).sum()
-        perc_inc = (num_inc / len(df_filtered) * 100) if len(df_filtered) > 0 else 0
-        st.metric("% DE INCIDENCIAS", f"{perc_inc:.1f}%")
-    with k8: 
-        st.metric("INCREMENTO + VI", f"${monto_inc_vi:,.2f}", delta=f"{perc_inc_final:.2f}% vs 2025")
+        st.metric("% DE INCIDENCIAS", f"{(num_inc/len(df_filtered)*100):.1f}%")
+    with k8:
+        inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
+        st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
 
     # 6. TABLA
     st.markdown("---")
@@ -116,6 +131,7 @@ try:
 
 except Exception as e:
     st.error(f"¡Atención, amor! Hubo un detalle: {e}")
+
 
 
 
