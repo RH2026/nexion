@@ -2692,7 +2692,7 @@ else:
                             if st.button(":material/update: REFRESCAR DATOS", use_container_width=True): st.rerun()    
                 
                                 
-                                st.bar_chart({"Entregas": [10, 20, 15, 30]})
+                                
 
             elif st.session_state.menu_sub == "SAMPLES":
                 # --- VARIABLES DE GITHUB ---
@@ -4042,6 +4042,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
