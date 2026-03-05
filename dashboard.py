@@ -1902,7 +1902,7 @@ else:
                             border-radius: 5px;
                         }}
                         ::-webkit-scrollbar-thumb:hover {{
-                            background: #4b5563; /* Color cuando pasas el mouse */
+                            background: #007076; /* Color cuando pasas el mouse */
                         }}
                     </style>
                     </head>
@@ -4087,6 +4087,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
