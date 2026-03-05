@@ -1879,8 +1879,8 @@ else:
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
                         .grid-background {{ fill:#384A52 !important; }}
                         .grid-header {{ fill:#151a24 !important; }}
-                        .grid-row {{ fill:#0b0e14 !important; }}
-                        .grid-row:nth-child(even) {{ fill:#0f131a !important; }}
+                        .grid-row {{ fill:#384A52 !important; }}
+                        .grid-row:nth-child(even) {{ fill:#384A52 !important; }}
                         .grid-line {{ stroke: #384A52 !important; stroke-opacity: 0.1 !important; }}
                         .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
@@ -4087,6 +4087,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
