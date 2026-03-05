@@ -2368,7 +2368,7 @@ else:
                                 <tr>
                                     <td style="width: 50%;">
                                         <h1 style="margin: 0; font-size: 18px; font-weight: 900; letter-spacing: -1px; color: #000; border-bottom: none;">Jabones y Productos Especializados</h1>
-                                        <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">División de Ingeniería Logística | 2026</p>
+                                        <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">Distribucion y Logística | 2026</p>
                                     </td>
                                     <td style="width: 50%; text-align: right; font-size: 11px;">
                                         <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper()}-2026<br>
@@ -4045,6 +4045,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
