@@ -776,7 +776,7 @@ else:
                 # REPORTES: Filtramos APQ, OPS, OTD para los demás
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                     # Solo tú ves APQ, OPS y OTD
-                    opciones_rep = ["APQ", "OPS", "ENVIOS ESPECIALES", "ENVIO MUESTRAS"] if es_admin else ["ENVIO MUESTRAS"]
+                    opciones_rep = ["APQ", "% LOGISTICO", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"] if es_admin else ["ENVIO DE MUESTRAS"]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
@@ -2224,7 +2224,7 @@ else:
                 st.info("Cargando datos de calidad...")
                 # Ejemplo: st.dataframe(df_apq)
     
-            elif st.session_state.menu_sub == "OPS":
+            elif st.session_state.menu_sub == "% LOGISTICO":
                 # --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
                 st.markdown("""
                 <style>
@@ -2694,7 +2694,7 @@ else:
                                 
                                 
 
-            elif st.session_state.menu_sub == "ENVIO MUESTRAS":
+            elif st.session_state.menu_sub == "ENVIO DE MUESTRAS":
                 # --- VARIABLES DE GITHUB ---
                 GITHUB_USER = "RH2026"
                 GITHUB_REPO = "nexion"
@@ -4042,6 +4042,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
