@@ -1,186 +1,160 @@
-import os
-import io
-import zipfile
-import pandas as pd
 import streamlit as st
-import time
+import pandas as pd
 import requests
 import base64
+import time
 from io import BytesIO
-from datetime import datetime
-import unicodedata
-import re
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from pypdf import PdfReader, PdfWriter
+from datetime import date
+import streamlit.components.v1 as components
 
-# --- 0. CONFIGURACIÓN ---
-st.set_page_config(layout="wide", page_title="Nexion Hub")
+# --- CONFIGURACIÓN DE GITHUB ---
+GITHUB_USER = "RH2026"
+GITHUB_REPO = "nexion"
+GITHUB_PATH = "CEE.csv"  # Tu nueva matriz
+GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 
-GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
-REPO_OWNER = "RH2026"
-REPO_NAME = "nexion"
-FILE_PATH = "facturacion.csv"
-
-# --- 1. FUNCIONES CORE ---
-def obtener_matriz_github():
-    url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main/{FILE_PATH}?nocache={int(time.time())}"
+# --- FUNCIONES GITHUB ---
+def obtener_datos_github():
     try:
-        m = pd.read_csv(url)
-        m.columns = [str(c).upper().strip() for c in m.columns]
-        return m
+        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+        r = requests.get(url, headers=headers)
+        if r.status_code == 200:
+            content = r.json()
+            df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+            return df, content['sha']
     except:
-        return pd.DataFrame()
+        pass
+    return pd.DataFrame(), None
 
-def guardar_en_github(df_final):
-    if not GITHUB_TOKEN:
-        st.error("Token no configurado.")
-        return
-    csv_content = df_final.to_csv(index=False)
-    api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
+def subir_a_github(df, sha, msg):
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    res = requests.get(api_url, headers=headers)
-    sha = res.json().get('sha') if res.status_code == 200 else None
-    payload = {
-        "message": f"Update {datetime.now()}",
-        "content": base64.b64encode(csv_content.encode()).decode(),
-        "sha": sha
-    }
-    requests.put(api_url, json=payload, headers=headers)
+    csv_string = df.to_csv(index=False)
+    payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
+    return requests.put(url, json=payload, headers=headers).status_code == 200
 
-def limpiar_texto(texto):
-    if pd.isna(texto): return ""
-    texto = "".join(c for c in unicodedata.normalize('NFD', str(texto)) if unicodedata.category(c) != 'Mn').upper()
-    texto = re.sub(r'[^A-Z0-9\s]', ' ', texto) 
-    return " ".join(texto.split())
-
-def marcar_pdf_digital(pdf_file, texto_sello, x, y):
-    packet = io.BytesIO()
-    can = canvas.Canvas(packet, pagesize=letter)
-    can.setFont("Helvetica-Bold", 11)
-    can.drawString(x, y, f"{str(texto_sello).upper()}")
-    can.save()
-    packet.seek(0)
-    new_pdf = PdfReader(packet)
-    existing_pdf = PdfReader(pdf_file)
-    output = PdfWriter()
-    page = existing_pdf.pages[0]
-    page.merge_page(new_pdf.pages[0])
-    output.add_page(page)
-    for i in range(1, len(existing_pdf.pages)):
-        output.add_page(existing_pdf.pages[i])
-    out_io = io.BytesIO()
-    output.write(out_io)
-    return out_io.getvalue()
-
-# --- 2. INTERFAZ ---
-st.title("🚀 NEXION HUB")
-tab1, tab2 = st.tabs(["📥 CARGADOR", "🧠 SMART ROUTING & S&T"])
-
-# --- TAB 1: CARGADOR (Igual que antes) ---
-with tab1:
-    st.subheader("Subir información al Repositorio")
-    up = st.file_uploader("Excel del RPA", type=["xlsx", "csv"])
-    if up:
-        df_rpa = pd.read_excel(up) if up.name.endswith('.xlsx') else pd.read_csv(up)
-        df_rpa.columns = [str(c).upper() for c in df_rpa.columns]
-        col_f = next((c for c in df_rpa.columns if 'FACTURA' in c or 'DOCNUM' in c), df_rpa.columns[0])
+# --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
+def generar_html_impresion(folio, fecha, hotel, destino, contacto, solicito, paqueteria, paq_nombre, guia, costo, cajas):
+    html = f"""
+    <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; margin:auto; background: white; color: black;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom:10px;">
+            <h1 style="margin: 0; font-size: 28px;">JYPESA</h1>
+            <div style="text-align:right">
+                <h2 style="margin: 0; font-size: 16px;">REPORTE DE COSTO ENVÍO ESPECIAL</h2>
+                <p style="margin:0; font-size:12px;"><b>FOLIO: {folio}</b></p>
+            </div>
+        </div>
         
-        # Selección de folios
-        c1, c2 = st.columns(2)
-        ini = c1.number_input("Desde:", value=int(pd.to_numeric(df_rpa[col_f]).min()))
-        fin = c2.number_input("Hasta:", value=int(pd.to_numeric(df_rpa[col_f]).max()))
-        
-        df_sel = df_rpa[(pd.to_numeric(df_rpa[col_f]) >= ini) & (pd.to_numeric(df_rpa[col_f]) <= fin)].copy()
-        df_sel.insert(0, "INCLUIR", True)
-        edit_c = st.data_editor(df_sel, hide_index=True)
-        
-        if st.button("SUBIR A GITHUB"):
-            df_push = edit_c[edit_c["INCLUIR"]==True].drop(columns=["INCLUIR"]).rename(columns={col_f: "FACTURA"})
-            guardar_en_github(df_push)
-            st.success("Archivo 'facturacion.csv' actualizado.")
+        <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size: 12px;">
+            <tr>
+                <td style="border:1px solid black;padding:8px; width:50%;"><b>FECHA:</b> {fecha}</td>
+                <td style="border:1px solid black;padding:8px; width:50%;"><b>SOLICITÓ:</b> {solicito}</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid black;padding:8px;"><b>HOTEL:</b> {hotel}</td>
+                <td style="border:1px solid black;padding:8px;"><b>DESTINO:</b> {destino}</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid black;padding:8px;"><b>CONTACTO:</b> {contacto}</td>
+                <td style="border:1px solid black;padding:8px;"><b>MODALIDAD:</b> {paqueteria}</td>
+            </tr>
+        </table>
 
-# --- TAB 2: PROCESAMIENTO (TU CÓDIGO REPARADO) ---
-with tab2:
-    st.subheader("Preparación de S&T y Ruteo Inteligente")
+        <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size: 12px; text-align:center;">
+            <tr style="background:#eee;">
+                <th style="border:1px solid black;padding:8px;">PAQUETERÍA</th>
+                <th style="border:1px solid black;padding:8px;">NÚMERO DE GUÍA</th>
+                <th style="border:1px solid black;padding:8px;">CAJAS</th>
+                <th style="border:1px solid black;padding:8px;">COSTO ENVÍO</th>
+            </tr>
+            <tr>
+                <td style="border:1px solid black;padding:8px;">{paq_nombre}</td>
+                <td style="border:1px solid black;padding:8px;">{guia}</td>
+                <td style="border:1px solid black;padding:8px;">{cajas}</td>
+                <td style="border:1px solid black;padding:8px;">${costo:,.2f}</td>
+            </tr>
+        </table>
+        
+        <div style="margin-top:40px; text-align:center; font-size:10px;">
+            <p>__________________________<br>FIRMA RESPONSABLE</p>
+        </div>
+    </div>
+    """
+    return html
+
+# --- CARGA DE DATOS ---
+df_actual, sha_actual = obtener_datos_github()
+nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
+
+st.title("📦 Costos de Envíos Especiales (CEE)")
+
+# --- INTERFAZ DE CAPTURA ---
+with st.form("form_cee"):
+    c1, c2, c3 = st.columns([0.5, 1, 1])
+    f_folio = c1.text_input("FOLIO", value=str(nuevo_folio), disabled=True)
+    f_fecha = c2.date_input("FECHA", date.today())
+    f_solicito = c3.text_input("QUIEN SOLICITÓ", placeholder="Nombre del agente").upper()
+
+    f_hotel = st.text_input("NOMBRE DEL HOTEL").upper()
+    f_destino = st.text_input("DESTINO (DIRECCIÓN / CIUDAD)").upper()
     
-    if st.button("🔄 CARGAR DATOS DESDE GITHUB"):
-        st.session_state.matriz_raw = obtener_matriz_github()
+    col1, col2 = st.columns(2)
+    f_contacto = col1.text_input("CONTACTO / TELÉFONO").upper()
+    f_paq_tipo = col2.selectbox("MODALIDAD", ["ENVIO PAGADO", "ENVIO POR COBRAR", "ENTREGA PERSONAL"])
 
-    if "matriz_raw" in st.session_state and not st.session_state.matriz_raw.empty:
-        df_m = st.session_state.matriz_raw
+    st.divider()
+    
+    cx1, cx2, cx3, cx4 = st.columns(4)
+    f_paq_nombre = cx1.selectbox("PAQUETERÍA", ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"])
+    f_guia = cx2.text_input("NÚMERO DE GUÍA").upper()
+    f_cajas = cx3.number_input("CANTIDAD CAJAS", min_value=1, step=1)
+    f_costo = cx4.number_input("COSTO GUÍA ($)", min_value=0.0, step=10.0)
+
+    btn_guardar = st.form_submit_button("💾 GUARDAR Y REGISTRAR COSTO", use_container_width=True)
+
+if btn_guardar:
+    if not f_hotel or not f_solicito:
+        st.error("Por favor llena el Hotel y quien solicita.")
+    else:
+        nuevo_reg = {
+            "FOLIO": nuevo_folio,
+            "FECHA": f_fecha.strftime("%Y-%m-%d"),
+            "NOMBRE DEL HOTEL": f_hotel,
+            "DESTINO": f_destino,
+            "CONTACTO": f_contacto,
+            "SOLICITO": f_solicito,
+            "PAQUETERIA": f_paq_tipo,
+            "PAQUETERIA_NOMBRE": f_paq_nombre,
+            "NUMERO_GUIA": f_guia,
+            "COSTO_GUIA": f_costo,
+            "CAJAS": f_cajas
+        }
         
-        # --- PARTE 1: PREPARAR S&T DATA ---
-        st.markdown("### 1. Preparar S&T Data")
-        col_fact = "FACTURA"
-        
-        c1, c2 = st.columns(2)
-        v_ini = c1.number_input("Filtrar Desde:", value=int(df_m[col_fact].min()), key="s1")
-        v_fin = c2.number_input("Filtrar Hasta:", value=int(df_m[col_fact].max()), key="s2")
-        
-        df_filtro_st = df_m[(df_m[col_fact] >= v_ini) & (df_m[col_fact] <= v_fin)].copy()
-        df_filtro_st.insert(0, "Incluir", True)
-        
-        # Editor para elegir partidas
-        st.info("Selecciona las partidas para el archivo S&T y el Smart Routing")
-        edit_st = st.data_editor(df_filtro_st, hide_index=True, key="editor_st")
-        
-        if st.button("🚀 RENDERIZAR Y EJECUTAR SMART ROUTING"):
-            # Filtrar solo lo seleccionado
-            df_final_st = edit_st[edit_st["Incluir"] == True].copy()
+        df_final = pd.concat([df_actual, pd.DataFrame([nuevo_reg])], ignore_index=True)
+        if subir_a_github(df_final, sha_actual, f"Folio CEE {nuevo_folio}"):
+            st.success(f"Registro guardado correctamente. Folio: {nuevo_folio}")
             
-            # --- MOTOR SMART ROUTING ---
-            col_dir = next((c for c in df_final_st.columns if 'DIRECCION' in c), None)
-            col_tarifa = next((c for c in df_final_st.columns if any(x in c for x in ['PRECIO', 'CAJA', 'COSTO'])), None)
+            # Generar impresión automática
+            h_print = generar_html_impresion(nuevo_folio, f_fecha, f_hotel, f_destino, f_contacto, f_solicito, f_paq_tipo, f_paq_nombre, f_guia, f_costo, f_cajas)
+            components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
+            time.sleep(2)
+            st.rerun()
 
-            def motor(row):
-                if not col_dir: return "REVISAR DIR", 0.0
-                d_limpia = limpiar_texto(row[col_dir])
-                if any(loc in d_limpia for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA"]):
-                    return "LOCAL", 0.0
-                
-                flete = row.get('TRANSPORTE', 'POR ASIGNAR')
-                costo = pd.to_numeric(row.get(col_tarifa, 0.0), errors='coerce')
-                return flete, costo
+# --- TABLA DE CONSULTA ---
+st.divider()
+st.subheader("📋 Historial de Envíos Especiales")
+if not df_actual.empty:
+    st.dataframe(df_actual.sort_values(by="FOLIO", ascending=False), use_container_width=True, hide_index=True)
+    
+    # Exportar a Excel
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_actual.to_excel(writer, index=False)
+    st.download_button("📥 Descargar Reporte Completo (Excel)", data=output.getvalue(), file_name=f"Reporte_CEE_{date.today()}.xlsx")
+else:
+    st.info("Aún no hay datos en CEE.csv")
 
-            res = df_final_st.apply(motor, axis=1)
-            df_final_st['RECOMENDACION'] = [r[0] for r in res]
-            df_final_st['COSTO'] = [r[1] for r in res]
-            
-            st.session_state.df_analisis = df_final_st
-            st.success("S&T Data y Smart Routing procesados.")
-
-    # --- RESULTADOS, DESCARGAS Y SELLADO ---
-    if "df_analisis" in st.session_state:
-        st.markdown("---")
-        p = st.session_state.df_analisis
-        
-        # Mostrar tabla ruteada
-        cols_v = ["FACTURA", "RECOMENDACION", "COSTO", "NOMBRE_CLIENTE", "DIRECCION", "DESTINO"]
-        cols_existentes = [c for c in cols_v if c in p.columns]
-        
-        st.write("### Análisis Final")
-        p_editado = st.data_editor(p[cols_existentes], hide_index=True, use_container_width=True)
-
-        # Botones de Acción
-        ba1, ba2 = st.columns(2)
-        with ba1:
-            towrite = io.BytesIO()
-            p_editado.to_excel(towrite, index=False)
-            st.download_button("📥 DESCARGAR EXCEL S&T", towrite.getvalue(), "ST_DATA_FINAL.xlsx")
-        
-        # Sistema de Sellado
-        with st.expander("🖨️ SELLADO DIGITAL"):
-            pdfs = st.file_uploader("Subir PDFs", type="pdf", accept_multiple_files=True)
-            ax = st.slider("X", 0, 600, 510); ay = st.slider("Y", 0, 800, 760)
-            if pdfs and st.button("EJECUTAR SELLADO"):
-                mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["FACTURA"].astype(str)).to_dict()
-                z_io = io.BytesIO()
-                with zipfile.ZipFile(z_io, "a") as zf:
-                    for pdf in pdfs:
-                        f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
-                        if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-                st.download_button("DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip")
 
 
 
