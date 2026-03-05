@@ -2574,7 +2574,7 @@ else:
                 col_rem, col_dest = st.columns(2)
                 with col_rem:
                     # Color cambiado a un Azul oscuro para combinar con NEXION
-                    st.markdown('<div style="background:#CCDCE2;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">REMITENTE</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="background:#CCDCE2;color:black;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">REMITENTE</div>', unsafe_allow_html=True)
                     st.write("")
                     st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
                     c_rem1, c_rem2 = st.columns([2, 1])
@@ -4042,6 +4042,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
