@@ -857,11 +857,7 @@ else:
                             <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border-top: 4px solid {accent_color}; position: relative; padding: 20px; border-radius: 4px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                     <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
-                                    
-                                    <div style="display: flex; align-items: baseline; gap: 8px;">
-                                        <span style="font-size:18px; font-weight:600; color: white;">FACTURA:</span>
-                                        <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
-                                    </div>
+                                    <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
                                 </div>
                                 <div class="kpi-route-flow" style="margin-bottom: 25px;">
                                     <div class="city" style="color: white; font-weight:bold;">GDL</div>
@@ -4091,6 +4087,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
