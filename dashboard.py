@@ -2491,12 +2491,12 @@ else:
                     return requests.put(url, json=payload, headers=headers).status_code == 200
                 
                 # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
-                def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, cajas, comentarios, paq_nombre, tipo_pago):
+                def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, cajas, unidad, comentarios, paq_nombre, tipo_pago):
                     filas_prod = f"""
                     <tr>
-                        <td style='padding: 8px; border: 1px solid black;'>ENVIO DE CAJAS ESPECIALES</td>
+                        <td style='padding: 8px; border: 1px solid black;'>ENVIO DE MERCANCÍA ESPECIAL</td>
                         <td style='text-align:center; border: 1px solid black;'>-</td>
-                        <td style='text-align:center; border: 1px solid black;'>CAJAS</td>
+                        <td style='text-align:center; border: 1px solid black;'>{str(unidad).upper()}</td>
                         <td style='text-align:center; border: 1px solid black;'>{cajas}</td>
                     </tr>"""
                 
@@ -2573,7 +2573,6 @@ else:
                 
                 col_rem, col_dest = st.columns(2)
                 with col_rem:
-                    # Color cambiado a un Azul oscuro para combinar con NEXION
                     st.markdown('<div style="background:#CCDCE2;color:black;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">REMITENTE</div>', unsafe_allow_html=True)
                     st.write("")
                     st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
@@ -2583,7 +2582,6 @@ else:
                     f_soli = st.text_input(":material/badge: Solicitante / Agente", placeholder="NOMBRE DE QUIEN SOLICITA").upper()
                 
                 with col_dest:
-                    # Amarillo mantenido como en tu imagen
                     st.markdown('<div style="background:#2276AA;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">DESTINATARIO</div>', unsafe_allow_html=True)
                     st.write("")
                     f_h = st.text_input(":material/hotel: Hotel / Proveedor").upper()
@@ -2598,7 +2596,10 @@ else:
                 
                 st.divider()
                 st.subheader(":material/inventory_2: Detalles del Envío")
-                f_cajas = st.number_input("CANTIDAD DE CAJAS ENVIADAS", min_value=1, step=1)
+                cd_1, cd_2 = st.columns(2)
+                f_cajas = cd_1.number_input("CANTIDAD", min_value=1, step=1)
+                f_unidad = cd_2.selectbox("UNIDAD DE MEDIDA", ["CAJA", "PALLET", "BULTO", "SACO", "BIDON", "ATADO", "OTRO"])
+                
                 f_costo_guia = st.number_input("COSTO DE GUÍA ($)", min_value=0.0, step=10.0)
                 f_coment = st.text_area("💬 COMENTARIOS", height=70).upper()
                 
@@ -2612,14 +2613,14 @@ else:
                             "NOMBRE DEL HOTEL": f_h.upper(), "DESTINO": direccion_completa,
                             "CONTACTO": f_con.upper(), "SOLICITO": f_soli.upper() if f_soli else "JYPESA", 
                             "PAQUETERIA": f_paq_sel.upper(), "PAQUETERIA_NOMBRE": f_paq_nombre, 
-                            "NUMERO_GUIA": "", "COSTO_GUIA": f_costo_guia, "CAJAS": f_cajas
+                            "NUMERO_GUIA": "", "COSTO_GUIA": f_costo_guia, "CAJAS": f_cajas, "UNIDAD": f_unidad
                         }
                         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
                         if subir_a_github(df_f, sha_actual, f"Folio CEE {nuevo_folio}"):
                             st.success(f"¡Guardado!"); time.sleep(1); st.rerun()
                 
                 if col_b2.button(":material/print: IMPRIMIR ESTE FOLIO", use_container_width=True):
-                    h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, f_cajas, f_coment, f_paq_nombre, f_tipo_pago)
+                    h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, f_cajas, f_unidad, f_coment, f_paq_nombre, f_tipo_pago)
                     components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
                 
                 if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
@@ -2655,7 +2656,8 @@ else:
                             st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión</div>', unsafe_allow_html=True)
                             if st.button(":material/print: RE-IMPRIMIR", use_container_width=True):
                                 if datos_fol is not None:
-                                    h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], datos_fol["CAJAS"], "RE-IMPRESIÓN", datos_fol["PAQUETERIA_NOMBRE"], "S/P")
+                                    u_med = datos_fol["UNIDAD"] if "UNIDAD" in datos_fol else "CAJAS"
+                                    h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], datos_fol["CAJAS"], u_med, "RE-IMPRESIÓN", datos_fol["PAQUETERIA_NOMBRE"], "S/P")
                                     components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
                 
                 with t2:
@@ -2664,7 +2666,8 @@ else:
                         t_flete = df_actual["COSTO_GUIA"].sum()
                         filas_html = ""
                         for _, r in df_actual.iterrows():
-                            filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;'>ENVIO ESPECIAL: {int(r['CAJAS'])} CAJAS</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
+                            u_r = r['UNIDAD'] if 'UNIDAD' in r else 'CAJAS'
+                            filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;'>ENVIO ESPECIAL: {int(r['CAJAS'])} {u_r}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
                 
                         form_pt_html = f"""
                         <html><head><style>body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head>
@@ -2689,7 +2692,7 @@ else:
                             with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
                             st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_CEE_{date.today()}.xlsx", use_container_width=True)
                         with c3:
-                            if st.button(":material/update: REFRESCAR DATOS", use_container_width=True): st.rerun()    
+                            if st.button(":material/update: REFRESCAR DATOS", use_container_width=True): st.rerun()  
                 
                                 
                                 
@@ -4042,6 +4045,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
