@@ -2586,7 +2586,7 @@ else:
                     # Amarillo mantenido como en tu imagen
                     st.markdown('<div style="background:#2276AA;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
                     st.write("")
-                    f_h = st.text_input(":material/hotel: Hotel / Nombre").upper()
+                    f_h = st.text_input(":material/hotel: Hotel / Proveedor").upper()
                     f_ca = st.text_input(":material/location_on: Calle y Número").upper()
                     cd1, cd2 = st.columns(2)
                     f_co = cd1.text_input(":material/map: Colonia").upper()
@@ -4042,6 +4042,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
