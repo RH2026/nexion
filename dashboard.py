@@ -2503,8 +2503,10 @@ else:
                     html = f"""
                     <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; min-height:950px; margin:auto; position:relative; box-sizing:border-box; background: white; color: black;">
                         <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
-                            <h1 style="margin: 0; font-size: 28px; letter-spacing: 1px;">JYPESA</h1>
-                            <div style="text-align:right">
+                            <h1 style="margin: 0; font-size: 28px; letter-spacing: 1px;">Jabones y Productos Especializados</h1>
+                            <div style="text-align: right; font-size: 18px; margin-top: 5px;">
+                                Distribucion y Logística | 2026
+                            </div>
                                 <h2 style="margin: 0; font-size: 16px; text-decoration: underline;">ORDEN DE ENVÍO COSTOS ESPECIALES</h2>
                                 <p style="margin:0; font-size:12px;"><b>{paq_nombre} - {tipo_pago}</b></p>
                             </div>
@@ -4045,6 +4047,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
