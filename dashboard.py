@@ -1878,7 +1878,7 @@ else:
                         #gantt {{ background:#384A52; }}
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
                         .grid-background {{ fill:#384A52 !important; }}
-                        .grid-header {{ fill:#3F525B !important; }}
+                        .grid-header {{ fill:#1E262A !important; }}
                         .grid-row {{ fill:#384A52 !important; }}
                         .grid-row:nth-child(even) {{ fill:#3F525B !important; }}
                         .grid-line {{ stroke: #0F1517 !important; stroke-opacity: 0.1 !important; }}
@@ -4087,6 +4087,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
