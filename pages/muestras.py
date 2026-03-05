@@ -131,7 +131,7 @@ with col_rem:
 
 with col_dest:
     # Amarillo mantenido como en tu imagen
-    st.markdown('<div style="background:#ffcc4d;color:black;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+    st.markdown('<div style="background:#288CCA;color:black;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
     st.write("")
     f_h = st.text_input(":material/hotel: Hotel / Nombre").upper()
     f_ca = st.text_input(":material/location_on: Calle y Número").upper()
@@ -237,6 +237,7 @@ with t2:
             st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_CEE_{date.today()}.xlsx", use_container_width=True)
         with c3:
             if st.button(":material/update: REFRESCAR DATOS", use_container_width=True): st.rerun()
+
 
 
 
