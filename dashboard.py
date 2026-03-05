@@ -1875,7 +1875,7 @@ else:
                         <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
                         <style>
                         html, body {{ background:#384A52; margin:0; padding:0; }}
-                        #gantt {{ background:#0E1117; }}
+                        #gantt {{ background:#384A52; }}
                         .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
                         .grid-background {{ fill:#0b0e14 !important; }}
                         .grid-header {{ fill:#151a24 !important; }}
@@ -4087,6 +4087,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
