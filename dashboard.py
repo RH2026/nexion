@@ -1881,7 +1881,7 @@ else:
                         .grid-header {{ fill:#151a24 !important; }}
                         .grid-row {{ fill:#384A52 !important; }}
                         .grid-row:nth-child(even) {{ fill:#384A52 !important; }}
-                        .grid-line {{ stroke: #384A52 !important; stroke-opacity: 0.1 !important; }}
+                        .grid-line {{ stroke: #0F1517 !important; stroke-opacity: 0.1 !important; }}
                         .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
                         .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
                         .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
@@ -4087,6 +4087,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
