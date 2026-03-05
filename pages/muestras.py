@@ -36,7 +36,6 @@ def subir_a_github(df, sha, msg):
 
 # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
 def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, cajas, comentarios, paq_nombre, tipo_pago):
-    # Ajustamos la fila para mostrar solo cajas enviadas
     filas_prod = f"""
     <tr>
         <td style='padding: 8px; border: 1px solid black;'>ENVIO DE CAJAS ESPECIALES</td>
@@ -100,33 +99,18 @@ def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicit
 
 # --- CARGA DE DATOS ---
 df_actual, sha_actual = obtener_datos_github()
-
 nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
 
 # --- INTERFAZ ---
 with st.container():
     cp1, cp2 = st.columns(2)
-    f_paq_nombre = cp1.selectbox(
-        ":material/local_shipping: NOMBRE DE PAQUETERÍA", 
-        ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"]
-    )
-    f_tipo_pago = cp2.selectbox(
-        ":material/payments: MODALIDAD DE PAGO", 
-        ["CREDITO", "COBRO DESTINO"]
-    )
-    
+    f_paq_nombre = cp1.selectbox(":material/local_shipping: NOMBRE DE PAQUETERÍA", ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"])
+    f_tipo_pago = cp2.selectbox(":material/payments: MODALIDAD DE PAGO", ["CREDITO", "COBRO DESTINO"])
     st.write("") 
-    
     c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
     f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=str(nuevo_folio), disabled=True)
-    f_paq_sel = c2.selectbox(
-        ":material/local_shipping: FORMA DE ENVÍO", 
-        ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
-    )
-    f_ent_sel = c3.selectbox(
-        ":material/home_pin: TIPO DE ENTREGA", 
-        ["Domicilio", "Ocurre Oficina"]
-    )
+    f_paq_sel = c2.selectbox(":material/local_shipping: FORMA DE ENVÍO", ["Envio Pagado", "Envio por cobrar", "Entrega Personal"])
+    f_ent_sel = c3.selectbox(":material/home_pin: TIPO DE ENTREGA", ["Domicilio", "Ocurre Oficina"])
     f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
 
 st.divider()
@@ -155,17 +139,12 @@ with col_dest:
     f_con = st.text_input(":material/contact_phone: Contacto Receptor", placeholder="QUIEN RECIBE").upper()
 
 st.divider()
-
-# --- CAMBIO AQUÍ: SOLO CANTIDAD DE CAJAS ---
 st.subheader(":material/inventory_2: Detalles del Envío")
 f_cajas = st.number_input("CANTIDAD DE CAJAS ENVIADAS", min_value=1, step=1)
 f_costo_guia = st.number_input("COSTO DE GUÍA ($)", min_value=0.0, step=10.0)
-
 f_coment = st.text_area("💬 COMENTARIOS", height=70).upper()
 
-# --- BOTONES PRINCIPALES ---
 col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
-
 if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
     if not f_h: st.error("Falta el hotel")
     else:
@@ -188,32 +167,19 @@ if col_b2.button(":material/print: IMPRIMIR ESTE FOLIO", use_container_width=Tru
 if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
     st.rerun()
 
-# --- BÚSQUEDA RÁPIDA ---
-st.write("")
-with st.expander("🔍 BÚSQUEDA RÁPIDA DE GUÍAS", expanded=False):
-    if not df_actual.empty:
-        busqueda = st.text_input("Filtrar por Hotel o Folio:").upper()
-        df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "CAJAS"]].copy()
-        if busqueda:
-            df_vista = df_vista[df_vista.astype(str).apply(lambda x: x.str.contains(busqueda, case=False)).any(axis=1)]
-        st.dataframe(df_vista.sort_values(by="FOLIO", ascending=False), use_container_width=True, hide_index=True)
-
 # --- PANEL DE ADMIN ---
 st.divider()
 st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
-t1, t2 = st.tabs(["Gestionar Folios", "Historial"])
+t1, t2 = st.tabs(["Gestionar Folios", "Historial y Reportes"])
 
 with t1:
     if not df_actual.empty:
         df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
         opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
         fol_sel_texto = st.selectbox("Seleccionar Folio para Editar:", opciones_folios, index=None)
-        
-        fol_edit = ""
-        datos_fol = None
+        fol_edit = ""; datos_fol = None
         if fol_sel_texto:
-            fol_edit = int(fol_sel_texto.split(" - ")[0])
-            datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
+            fol_edit = int(fol_sel_texto.split(" - ")[0]); datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
 
         c_adm1, c_adm2 = st.columns(2)
         with c_adm1:
@@ -223,8 +189,7 @@ with t1:
             if st.button(":material/update: ACTUALIZAR", use_container_width=True):
                 if datos_fol is not None:
                     idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                    df_actual.at[idx, "NUMERO_GUIA"] = n_gui
-                    df_actual.at[idx, "COSTO_GUIA"] = c_gui
+                    df_actual.at[idx, "NUMERO_GUIA"] = n_gui; df_actual.at[idx, "COSTO_GUIA"] = c_gui
                     if subir_a_github(df_actual, sha_actual, f"Edit {fol_edit}"):
                         st.success("¡Listo!"); time.sleep(1); st.rerun()
 
@@ -238,7 +203,36 @@ with t1:
 with t2:
     if not df_actual.empty:
         st.dataframe(df_actual, use_container_width=True)
-        if st.button(":material/update: REFRESCAR", use_container_width=True): st.rerun()
+        t_flete = df_actual["COSTO_GUIA"].sum()
+        filas_html = ""
+        for _, r in df_actual.iterrows():
+            filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;'>ENVIO ESPECIAL: {int(r['CAJAS'])} CAJAS</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
+
+        form_pt_html = f"""
+        <html><head><style>body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head>
+        <body>
+            <div style="display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;">
+                <div><h2>JYPESA</h2><p style="margin:0;font-size:10px;">REPORTE DE COSTOS ESPECIALES</p></div>
+                <div style="text-align:right;">GENERADO: {date.today()}</div>
+            </div>
+            <table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>DETALLE</th><th>FLETE</th></tr></thead>
+            <tbody>{filas_html}</tbody></table>
+            <div style="text-align:right;margin-top:20px;border-top:1px solid black;">
+                <h3>TOTAL INVERSIÓN FLETES: ${t_flete:,.2f}</h3>
+            </div>
+        </body></html>"""
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            if st.button(":material/print: IMPRIMIR REPORTE GENERAL", type="primary", use_container_width=True):
+                components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
+        with c2:
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
+            st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_CEE_{date.today()}.xlsx", use_container_width=True)
+        with c3:
+            if st.button(":material/update: REFRESCAR DATOS", use_container_width=True): st.rerun()
+
 
 
 
