@@ -858,15 +858,18 @@ else:
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                     <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
                                     
-                                    <span style="color:{accent_color}; font-weight:800; font-size:22px;">
-                                        <small style="color: white; font-size: 14px; opacity: 0.8; margin-right: 5px; font-weight: 600;">FACTURA:</small>{d['NÚMERO DE PEDIDO']}
-                                    </span>
+                                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                                        <span style="font-size:16px; font-weight:600; color: white; opacity: 0.9;">FACTURA:</span>
+                                        <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
+                                    </div>
                                 </div>
+                    
                                 <div class="kpi-route-flow" style="margin-bottom: 25px;">
                                     <div class="city" style="color: white; font-weight:bold;">GDL</div>
                                     <div class="arrow" style="color: {accent_color}; margin: 0 15px;">→</div>
                                     <div class="city" style="color: white; font-weight:bold;">{d['DESTINO']}</div>
                                 </div>
+                    
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
                                     <div>
                                         <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CLIENTE</p>
@@ -4090,6 +4093,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
