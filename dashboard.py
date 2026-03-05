@@ -2502,12 +2502,13 @@ else:
                 
                     html = f"""
                     <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; min-height:950px; margin:auto; position:relative; box-sizing:border-box; background: white; color: black;">
-                        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
-                            <h1 style="margin: 0; font-size: 18px; font-weight: 900; letter-spacing: -1px; color: #000; border-bottom: none;">Jabones y Productos Especializados</h1>
+                        <div style="text-align: left; margin-bottom: 20px;">
+                            <h1 style="margin: 0; font-size: 18px; font-weight: 900; letter-spacing: -1px; color: #000;">Jabones y Productos Especializados</h1>
                             <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">Distribucion y Logística | 2026</p>
-                            </div>
-                                <h2 style="margin: 0; font-size: 16px; text-decoration: underline;">ORDEN DE ENVÍO COSTOS ESPECIALES</h2>
-                                <p style="margin:0; font-size:12px;"><b>{paq_nombre} - {tipo_pago}</b></p>
+                        </div>
+                    
+                        <h2 style="margin: 0; font-size: 16px; text-decoration: underline;">ORDEN DE ENVÍO COSTOS ESPECIALES</h2>
+                        <p style="margin:0; font-size:12px;"><b>{paq_nombre} - {tipo_pago}</b></p>
                         </div>
                         <table style="width:100%; border-collapse:collapse; margin-bottom:5px; font-size: 11px;">
                             <tr><td style="border:1px solid black;padding:4px"><b>FOLIO:</b> {folio}</td>
@@ -4045,6 +4046,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
