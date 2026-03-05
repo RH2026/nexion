@@ -966,26 +966,19 @@ else:
                 with col_search:
                     busqueda_manual = st.text_input("", key="busqueda_logistica_vfinal", placeholder="🔍 Ingrese factura o guía...").strip()
                     
+                    # --- 2. LÓGICA DE FILTRADO (Subida aquí para validar el warning) ---
+                    df_timeline = pd.DataFrame() # Inicializamos vacío
+                    
                     if busqueda_manual:
-                        # Usamos el nombre exacto que me pasaste: NÚMERO DE PEDIDO
-                        # Convertimos a string por si el pedido viene como número en el dataframe
-                        mask = df_raw['NÚMERO DE PEDIDO'].astype(str) == busqueda_manual
-                        df_timeline = df_raw[mask]
+                        # Buscamos en ambos campos usando el criterio flexible (contains)
+                        mask_master = (df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda_manual, case=False)) | \
+                                      (df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda_manual, case=False))
                         
-                        # El mensaje justo debajo de la caja si no hay resultados
+                        df_timeline = df_raw[mask_master].copy()
+                        
+                        # Ahora el mensaje solo saldrá si realmente no hay nada en ninguna columna
                         if df_timeline.empty:
                             st.warning("No se encontró detalle para la búsqueda principal.")
-                
-                # --- 2. LÓGICA DE FILTRADO ---
-                df_filtrado = df_raw.copy()
-                
-                # Filtro por caja principal (Afecta a lo que vemos en el Timeline)
-                if busqueda_manual:
-                    mask_master = (df_filtrado["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda_manual, case=False)) | \
-                                  (df_filtrado["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda_manual, case=False))
-                    df_timeline = df_filtrado[mask_master].copy()
-                else:
-                    df_timeline = pd.DataFrame()
                 
                 # --- 3. RENDERIZADO DEL TIMELINE (ARRIBA) ---
                 if not df_timeline.empty:
@@ -4090,6 +4083,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
