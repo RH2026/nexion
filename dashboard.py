@@ -2503,8 +2503,8 @@ else:
                     html = f"""
                     <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; min-height:950px; margin:auto; position:relative; box-sizing:border-box; background: white; color: black;">
                         <div style="text-align: left; margin-bottom: 20px;">
-                            <h1 style="margin: 0; font-size: 18px; font-weight: 900; letter-spacing: -1px; color: #000;">Jabones y Productos Especializados</h1>
-                            <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">Distribucion y Logística | 2026</p>
+                            <h1 style="margin: 0; font-size: 14px; font-weight: 900; letter-spacing: -1px; color: #000;">Jabones y Productos Especializados</h1>
+                            <p style="margin: 0; font-size: 08px; font-weight: bold; text-transform: uppercase;">Distribucion y Logística | 2026</p>
                         </div>
                     
                         <h2 style="margin: 0; font-size: 16px; text-decoration: underline;">ORDEN DE ENVÍO COSTOS ESPECIALES</h2>
@@ -4046,6 +4046,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
