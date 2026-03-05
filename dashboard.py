@@ -776,7 +776,7 @@ else:
                 # REPORTES: Filtramos APQ, OPS, OTD para los demás
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                     # Solo tú ves APQ, OPS y OTD
-                    opciones_rep = ["APQ", "OPS", "ENVIOS ESPECIALES", "SAMPLES"] if es_admin else ["SAMPLES"]
+                    opciones_rep = ["APQ", "OPS", "ENVIOS ESPECIALES", "ENVIO MUESTRAS"] if es_admin else ["ENVIO MUESTRAS"]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
@@ -2694,7 +2694,7 @@ else:
                                 
                                 
 
-            elif st.session_state.menu_sub == "SAMPLES":
+            elif st.session_state.menu_sub == "ENVIO MUESTRAS":
                 # --- VARIABLES DE GITHUB ---
                 GITHUB_USER = "RH2026"
                 GITHUB_REPO = "nexion"
@@ -4042,6 +4042,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
