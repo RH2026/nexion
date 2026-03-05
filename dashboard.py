@@ -1895,10 +1895,10 @@ else:
                             height: 10px;
                         }}
                         ::-webkit-scrollbar-track {{
-                            background: #111827; /* Fondo del scroll igual al body */
+                            background: #3F525B; /* Fondo del scroll igual al body */
                         }}
                         ::-webkit-scrollbar-thumb {{
-                            background: #374151; /* Color de la barrita */
+                            background: #00A0A8; /* Color de la barrita */
                             border-radius: 5px;
                         }}
                         ::-webkit-scrollbar-thumb:hover {{
@@ -4087,6 +4087,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
