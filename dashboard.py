@@ -2367,7 +2367,7 @@ else:
                             <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
                                 <tr>
                                     <td style="width: 50%;">
-                                        <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px; color: #000; border-bottom: none;">JYPESA</h1>
+                                        <h1 style="margin: 0; font-size: 18px; font-weight: 900; letter-spacing: -1px; color: #000; border-bottom: none;">Jabones y Productos Especializados</h1>
                                         <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">División de Ingeniería Logística | 2026</p>
                                     </td>
                                     <td style="width: 50%; text-align: right; font-size: 11px;">
@@ -4045,6 +4045,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
