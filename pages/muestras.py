@@ -7,6 +7,9 @@ from io import BytesIO
 from datetime import date
 import streamlit.components.v1 as components
 
+# --- CONFIGURACIÓN DE PÁGINA WIDE ---
+st.set_page_config(layout="wide")
+
 # --- VARIABLES DE GITHUB ---
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
@@ -117,7 +120,8 @@ st.divider()
 
 col_rem, col_dest = st.columns(2)
 with col_rem:
-    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">REMITENTE</div>', unsafe_allow_html=True)
+    # Color cambiado a un Azul oscuro para combinar con NEXION
+    st.markdown('<div style="background:#5c7aff;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">REMITENTE</div>', unsafe_allow_html=True)
     st.write("")
     st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
     c_rem1, c_rem2 = st.columns([2, 1])
@@ -126,7 +130,8 @@ with col_rem:
     f_soli = st.text_input(":material/badge: Solicitante / Agente", placeholder="NOMBRE DE QUIEN SOLICITA").upper()
 
 with col_dest:
-    st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+    # Amarillo mantenido como en tu imagen
+    st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
     st.write("")
     f_h = st.text_input(":material/hotel: Hotel / Nombre").upper()
     f_ca = st.text_input(":material/location_on: Calle y Número").upper()
@@ -183,7 +188,7 @@ with t1:
 
         c_adm1, c_adm2 = st.columns(2)
         with c_adm1:
-            st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar Folio {fol_edit}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="background:#5c7aff;color:white;padding:10px;border-radius:5px;">Actualizar Folio {fol_edit}</div>', unsafe_allow_html=True)
             n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"]) if datos_fol is not None else "").upper()
             c_gui = st.number_input("Costo Guía", value=float(datos_fol["COSTO_GUIA"]) if datos_fol is not None else 0.0)
             if st.button(":material/update: ACTUALIZAR", use_container_width=True):
@@ -232,6 +237,7 @@ with t2:
             st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_CEE_{date.today()}.xlsx", use_container_width=True)
         with c3:
             if st.button(":material/update: REFRESCAR DATOS", use_container_width=True): st.rerun()
+
 
 
 
