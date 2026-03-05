@@ -776,7 +776,7 @@ else:
                 # REPORTES: Filtramos APQ, OPS, OTD para los demás
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                     # Solo tú ves APQ, OPS y OTD
-                    opciones_rep = ["APQ", "OPS", "OTD", "SAMPLES"] if es_admin else ["SAMPLES"]
+                    opciones_rep = ["APQ", "OPS", "ENVIOS ESPECIALES", "SAMPLES"] if es_admin else ["SAMPLES"]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
@@ -2461,7 +2461,7 @@ else:
                     st.error(f"¡Atención, amor! Detalle en el código: {e}")
                             
             
-            elif st.session_state.menu_sub == "OTD":
+            elif st.session_state.menu_sub == "ENVIOS ESPECIALES":
                 # [Aquí va tu código o función para el reporte OTD]
                 # --- VARIABLES DE GITHUB ---
                 GITHUB_USER = "RH2026"
@@ -2584,7 +2584,7 @@ else:
                 
                 with col_dest:
                     # Amarillo mantenido como en tu imagen
-                    st.markdown('<div style="background:#2276AA;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="background:#2276AA;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">DESTINATARIO</div>', unsafe_allow_html=True)
                     st.write("")
                     f_h = st.text_input(":material/hotel: Hotel / Proveedor").upper()
                     f_ca = st.text_input(":material/location_on: Calle y Número").upper()
@@ -4042,6 +4042,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
