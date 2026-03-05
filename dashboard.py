@@ -1898,11 +1898,11 @@ else:
                             background: #3F525B; /* Fondo del scroll igual al body */
                         }}
                         ::-webkit-scrollbar-thumb {{
-                            background: #00A0A8; /* Color de la barrita */
+                            background: #007076; /* Color de la barrita */
                             border-radius: 5px;
                         }}
                         ::-webkit-scrollbar-thumb:hover {{
-                            background: #007076; /* Color cuando pasas el mouse */
+                            background: #00A0A8; /* Color cuando pasas el mouse */
                         }}
                     </style>
                     </head>
@@ -4087,6 +4087,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
