@@ -302,7 +302,7 @@ div[data-baseweb="tag"] svg {{
 * 1. EL CONTENEDOR (La caja oscura) */
 /* Usamos doble llave {{ }} para que Python no se confunda */
 div[data-baseweb="select"] > div:first-child {{
-    min-height: 42px !important;    /* Le damos altura suficiente para que el texto respire */
+    min-height: 38px !important;    /* Le damos altura suficiente para que el texto respire */
     height: auto !important;        /* Si seleccionas muchos productos, la caja crece hacia abajo */
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -4169,6 +4169,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
