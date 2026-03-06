@@ -2971,7 +2971,29 @@ else:
                 st.divider()
                 
                 # --- PRODUCTOS ---
-                st.subheader(":material/shopping_cart: Selección de Productos")
+                st.markdown("""
+                <style>
+                /* 1. Cambia el color y bordes de las etiquetas (lo que ya tenías) */
+                .stMultiSelect div[data-baseweb="tag"] {
+                    background-color: #384A52 !important;
+                    border-radius: 5px;
+                    color: white !important;
+                }
+            
+                /* 2. FUERZA A QUE EL CUADRO CREZCA HACIA ABAJO */
+                .stMultiSelect div[data-baseweb="select"] {
+                    height: auto !important;
+                    min-height: 45px;
+                }
+            
+                /* 3. EVITA QUE LAS ETIQUETAS SE AMONTONEN O SE CORTEN */
+                .stMultiSelect div[data-baseweb="valueContainer"] {
+                    flex-wrap: wrap !important; /* Esto hace que salten de línea */
+                    gap: 5px !important;
+                    padding: 5px 0 !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)st.subheader(":material/shopping_cart: Selección de Productos")
                 
                 # Usamos una variable para limpiar el multiselect visualmente o un contenedor
                 seleccionados = st.multiselect(
@@ -4134,6 +4156,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
