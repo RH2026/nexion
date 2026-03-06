@@ -297,30 +297,31 @@ div[data-baseweb="tag"] svg {{
 
 /* Valor seleccionado – Selectbox */
 
-/* 1. Altura base de 35px pero permitiendo crecimiento libre */
+# --- BUSCA ESTA SECCIÓN EN TU CÓDIGO Y REEMPLÁZALA ---
+
+/* 1. Altura base de 35px exacta */
 div[data-baseweb="select"] > div:first-child {{
-    height: auto !important; 
-    min-height: 30px !important; /* Tu medida ideal para el estado natural */
+    height: 35px !important; /* <--- Forza la altura slim */
+    min-height: 35px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 0px 10px !important; /* Reducimos padding vertical para que quepa en 35px */
+    padding: 0px 10px !important; 
 }}
 
-/* 2. Ajuste de fuente para que no se vea "mocho" en altura pequeña */
+/* 2. Ajuste del texto para que no empuje las paredes del cuadro */
 div[data-baseweb="select"] div {{
     font-size: 12px !important; 
     color: {vars_css['text']} !important;
-    line-height: 1.2 !important; /* Bajamos un poco el line-height para que quepa bien en 35px */
+    line-height: 1 !important; /* <--- Cambiado de 1.2 a 1 para que sea más compacto */
     text-transform: uppercase !important;
-    overflow: visible !important;
 }}
 
-/* 3. Placeholder centrado y ajustado */
+/* 3. Placeholder: AQUÍ ESTABA EL ERROR */
 div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {{
-    line-height: 35px !important; /* Forzamos que el texto de ayuda esté centrado en la altura base */
+    line-height: 1 !important; /* <--- Bajamos de 35px a 1 para que no "infle" el cuadro */
     font-size: 12px !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -4198,6 +4199,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
