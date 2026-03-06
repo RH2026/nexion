@@ -299,32 +299,43 @@ div[data-baseweb="tag"] svg {{
 
 /* ───────── SELECTBOX / MULTISELECT (CORREGIDO) ───────── */
 
-/* 1. Controlamos el ancho y la altura mínima */
+/* 1. Altura Flexible y Centrado Vertical */
 div[data-baseweb="select"] > div:first-child {{
-    height: auto !important; 
-    min-height: 38px !important; /* Altura más estética, no tan "ancha" */
+    height: Auto !important; 
+    min-height: 35px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 2px 8px !important; /* Menos padding arriba/abajo para que sea más esbelto */
+    padding: 2px 10px !important;
 }}
 
-/* 2. Ajuste de la fuente para que no se amontone */
+/* 2. Tamaño de letra y Line-Height para que no se corte */
 div[data-baseweb="select"] div {{
-    font-size: 13px !important; /* Bajamos un pelín el tamaño para que sea más fino */
+    font-size: 12px !important; 
     color: {vars_css['text']} !important;
-    line-height: 1.2 !important; /* Ajuste crucial para que no se vea ancho de más */
+    line-height: 1.5 !important;
     text-transform: uppercase !important;
+    overflow: visible !important;
 }}
 
-/* 3. Evitamos que el placeholder (Choose options) ocupe mucho espacio */
+/* 3. Ajuste específico para el Placeholder (el texto de fondo) */
 div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {{
-    line-height: 1.2 !important;
+    line-height: 1.5 !important;
+    font-size: 14px !important;
     margin: 0 !important;
     padding: 0 !important;
 }}
+
+/* 4. Etiquetas (Chips) de productos seleccionados */
+div[data-baseweb="tag"] {{
+    background-color: #384A52 !important;
+    border-radius: 5px !important;
+    padding: 5px 10px !important;
+}}
+</style>
+""", unsafe_allow_html=True)
 
 /* 4. El Menú Desplegable */
 div[data-baseweb="popover"] ul {{
@@ -4189,6 +4200,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
