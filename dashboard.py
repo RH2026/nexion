@@ -2815,32 +2815,32 @@ else:
                         </tr>"""
                 
                     html = f"""
-                    <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; min-height:850px; margin:auto; position:relative; box-sizing:border-box; background: white; color: black;">
+                    <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:30px; width:780px; margin:20px auto; box-sizing:border-box; background: white; color: black; min-height: 1000px; display: flex; flex-direction: column;">
                         
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
                             <div style="text-align: left;">
-                                <h1 style="margin: 0; font-size: 16px; font-weight: 900; letter-spacing: -0.5px; color: #000;">Jabones y Productos Especializados</h1>
-                                <p style="margin: 0; font-size: 10px; font-weight: bold; text-transform: uppercase;">Distribución y Logística | 2026</p>
+                                <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000;">Jabones y Productos Especializados</h1>
+                                <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #444;">Distribución y Logística | 2026</p>
                             </div>
                             <div style="text-align: right;">
-                                <h2 style="margin: 0; font-size: 15px; text-decoration: underline; font-weight: 900;">ORDEN DE ENVÍO MUESTRAS</h2>
-                                <p style="margin: 2px 0 0 0; font-size: 12px;"><b>{paq_nombre} - {tipo_pago}</b></p>
+                                <h2 style="margin: 0; font-size: 16px; text-decoration: underline; font-weight: 900;">ORDEN DE ENVÍO MUESTRAS</h2>
+                                <p style="margin: 5px 0 0 0; font-size: 13px;"><b>{paq_nombre} - {tipo_pago}</b></p>
                             </div>
                         </div>
                         
-                        <table style="width:100%; border-collapse:collapse; margin-bottom:10px; font-size: 11px;">
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size: 12px;">
                             <tr>
-                                <td style="border:1px solid black; padding:4px;"><b>FOLIO:</b> {folio}</td>
-                                <td style="border:1px solid black; padding:4px;"><b>ENVÍO:</b> {str(paq).upper()}</td>
-                                <td style="border:1px solid black; padding:4px;"><b>ENTREGA:</b> {str(entrega).upper()}</td>
-                                <td style="border:1px solid black; padding:4px;"><b>FECHA:</b> {fecha}</td>
+                                <td style="border:1px solid black; padding:6px;"><b>FOLIO:</b> {folio}</td>
+                                <td style="border:1px solid black; padding:6px;"><b>ENVÍO:</b> {str(paq).upper()}</td>
+                                <td style="border:1px solid black; padding:6px;"><b>ENTREGA:</b> {str(entrega).upper()}</td>
+                                <td style="border:1px solid black; padding:6px;"><b>FECHA:</b> {fecha}</td>
                             </tr>
                         </table>
                     
-                        <div style="display:flex; gap:5px; margin-bottom:10px;">
+                        <div style="display:flex; gap:10px; margin-bottom:15px;">
                             <div style="flex:1; border:1px solid black;">
-                                <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:11px; padding:2px;">REMITENTE</div>
-                                <div style="padding:5px; font-size:10px; line-height:1.2;">
+                                <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:12px; padding:4px;">REMITENTE</div>
+                                <div style="padding:8px; font-size:11px; line-height:1.4;">
                                     <b>JABONES Y PRODUCTOS ESPECIALIZADOS</b><br>
                                     C. Cernícalo 155, La Aurora C.P.: 44460<br>
                                     ATN: {str(atn_rem).upper()}<br>
@@ -2849,8 +2849,8 @@ else:
                                 </div>
                             </div>
                             <div style="flex:1; border:1px solid black;">
-                                <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:11px; padding:2px;">DESTINATARIO</div>
-                                <div style="padding:5px; font-size:10px; line-height:1.2;">
+                                <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
+                                <div style="padding:8px; font-size:11px; line-height:1.4;">
                                     <b>{str(hotel).upper()}</b><br>
                                     {str(calle).upper()}<br>
                                     Col: {str(col).upper()} C.P.: {cp}<br>
@@ -2860,28 +2860,30 @@ else:
                             </div>
                         </div>
                     
-                        <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:11px;">
-                            <tr style="background:#444; color:white;">
-                                <th style="padding: 6px; border: 1px solid black;">DESCRIPCIÓN DEL PRODUCTO</th>
-                                <th style="border: 1px solid black; width: 80px;">CÓDIGO</th>
-                                <th style="border: 1px solid black; width: 60px;">U.M.</th>
-                                <th style="border: 1px solid black; width: 60px;">CANT.</th>
-                            </tr>
-                            {filas_prod}
-                        </table>
-                    
-                        <div style="border:1px solid black; padding:8px; margin-top:10px; font-size:11px; min-height: 60px;">
-                            <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
+                        <div style="flex-grow: 1;">
+                            <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:12px;">
+                                <tr style="background:#444; color:white;">
+                                    <th style="padding: 8px; border: 1px solid black;">DESCRIPCIÓN DEL PRODUCTO</th>
+                                    <th style="border: 1px solid black; width: 100px;">CÓDIGO</th>
+                                    <th style="border: 1px solid black; width: 80px;">U.M.</th>
+                                    <th style="border: 1px solid black; width: 80px;">CANT.</th>
+                                </tr>
+                                {filas_prod}
+                            </table>
+                            
+                            <div style="border:1px solid black; padding:10px; margin-top:15px; font-size:12px; min-height: 80px;">
+                                <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
+                            </div>
                         </div>
                     
-                        <div style="position:absolute; bottom:30px; left:15px; right:15px;">
-                            <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:25px; border-bottom: 1px solid black; padding-bottom: 5px;">
+                        <div style="margin-top: 40px; padding-top: 20px;">
+                            <div style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:40px; border-bottom: 2px solid black; padding-bottom: 8px;">
                                 RECIBO DE CONFORMIDAD DEL CLIENTE
                             </div>
-                            <div style="display:flex; justify-content:space-between; text-align:center; font-size:10px;">
-                                <div style="width:30%;">__________________________<br>FECHA RECIBO</div>
-                                <div style="width:35%;">__________________________<br>NOMBRE Y FIRMA</div>
-                                <div style="width:30%;">__________________________<br>SELLO DE RECIBIDO</div>
+                            <div style="display:flex; justify-content:space-between; text-align:center; font-size:11px;">
+                                <div style="width:30%;">__________________________<br><b>FECHA RECIBO</b></div>
+                                <div style="width:35%;">__________________________<br><b>NOMBRE Y FIRMA</b></div>
+                                <div style="width:30%;">__________________________<br><b>SELLO DE RECIBIDO</b></div>
                             </div>
                         </div>
                     </div>
@@ -4116,6 +4118,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
