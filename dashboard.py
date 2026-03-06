@@ -313,7 +313,7 @@ div[data-baseweb="select"] > div:first-child {{
 
 /* 2. Tamaño de letra y Line-Height para que no se corte */
 div[data-baseweb="select"] div {{
-    font-size: 10px !important; 
+    font-size: 12px !important; 
     color: {vars_css['text']} !important;
     line-height: 1.5 !important;
     text-transform: uppercase !important;
@@ -4191,6 +4191,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
