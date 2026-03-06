@@ -2970,8 +2970,8 @@ else:
                 
                 st.divider()
                 
-                # --- PRODUCTOS ---
-                # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO (SIN TOCAR LOS BOTONES +/-)
+                # --- PRODUCTOS ---                
+                # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO
                 st.markdown("""
                     <style>
                     .stMultiSelect div[data-baseweb="select"] {
@@ -2989,7 +2989,6 @@ else:
                         border-radius: 5px;
                         color: white !important;
                     }
-                    /* Aseguramos que el input de número tenga espacio para sus botones */
                     div[data-testid="stNumberInput"] {
                         width: 100% !important;
                     }
@@ -3021,8 +3020,14 @@ else:
                 if seleccionados:
                     st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
                     
-                    with st.container(height=450, border=True):
-                        # DISEÑO DE TRIPLE BLOQUE
+                    # --- CÁLCULO DINÁMICO DE LA ALTURA ---
+                    # Calculamos cuántas filas hay (3 productos por fila)
+                    num_filas = (len(seleccionados) + 2) // 3  
+                    # Altura base por fila (aprox 90px) + un pequeño margen
+                    # Ponemos un máximo de 500px para que no se coma toda la pantalla si son muchísimos
+                    altura_dinamica = min(max(num_filas * 95, 120), 500) 
+                    
+                    with st.container(height=altura_dinamica, border=True):
                         col_bloque_1, col_bloque_2, col_bloque_3 = st.columns(3)
                         
                         for i, p in enumerate(seleccionados):
@@ -3034,14 +3039,12 @@ else:
                                 target_col = col_bloque_3
                             
                             with target_col:
-                                # Ajusté los anchos: 1.5 para el nombre, 1.8 para que los botones +/- quepan bien, y 0.5 para borrar
                                 c1, c2, c3 = st.columns([1.5, 1.8, 0.5])
                                 
                                 with c1:
                                     st.markdown(f"<div style='padding-top:10px; font-size:10px; line-height:1.1;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
                                 
                                 with c2:
-                                    # Aquí regresan tus botones de + y - amor
                                     q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
                                 
                                 with c3:
@@ -4179,6 +4182,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
