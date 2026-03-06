@@ -2971,22 +2971,19 @@ else:
                 st.divider()
                 
                 # --- PRODUCTOS ---
-                # 1. CSS CORREGIDO (Lo ponemos antes para asegurar que cargue)
+                # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO
                 st.markdown("""
                     <style>
-                    /* Forzamos que el contenedor principal del multiselect sea flexible */
                     .stMultiSelect div[data-baseweb="select"] {
                         height: auto !important;
                         min-height: 45px !important;
                     }
-                    /* Obligamos a las etiquetas a saltar de línea (wrap) */
                     .stMultiSelect div[data-baseweb="valueContainer"] {
                         flex-wrap: wrap !important;
                         display: flex !important;
                         gap: 5px !important;
                         padding: 5px 0 !important;
                     }
-                    /* Estilo de las etiquetas */
                     .stMultiSelect div[data-baseweb="tag"] {
                         background-color: #384A52 !important;
                         border-radius: 5px;
@@ -2997,20 +2994,20 @@ else:
                 
                 st.subheader(":material/shopping_cart: Selección de Productos")
                 
-                # Inicializamos el estado de la selección si no existe
+                # Inicializamos el estado si no existe
                 if "seleccionados_muestras" not in st.session_state:
                     st.session_state.seleccionados_muestras = []
                 
-                # Multiselect vinculado al session_state
+                # Multiselect: El corazón de la selección
+                # Usamos el session_state para que el botón de borrar pueda "avisarle" al multiselect
                 seleccionados = st.multiselect(
                     ":material/search: Busca y selecciona productos:", 
                     list(precios.keys()),
-                    key="multi_prods",
-                    default=st.session_state.seleccionados_muestras,
-                    help="Puedes escribir el nombre para filtrar rápido"
+                    key="multi_prods_main",
+                    default=st.session_state.seleccionados_muestras
                 )
                 
-                # Actualizamos el estado interno
+                # Actualizamos el estado con lo que el usuario elija manualmente
                 st.session_state.seleccionados_muestras = seleccionados
                 
                 prods_actuales = []
@@ -3018,37 +3015,37 @@ else:
                 total_costo_prods = 0
                 
                 if seleccionados:
-                    st.info(f"📦 Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
+                    st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
                     
                     with st.container(height=350, border=True):
-                        # Iteramos sobre los productos seleccionados
+                        # Usamos 3 columnas iguales como te gustaba
+                        cols_header = st.columns(3)
+                        cols_header[0].caption("PRODUCTO")
+                        cols_header[1].caption("CANTIDAD")
+                        cols_header[2].caption("ACCION")
+                
                         for p in seleccionados:
-                            # Creamos 3 columnas: Espacio para el nombre, Cantidad, y Botón de basura
-                            col_nombre, col_cant, col_del = st.columns([3, 1, 0.5])
+                            c1, c2, c3 = st.columns(3)
                             
-                            with col_nombre:
-                                st.markdown(f"<div style='padding-top:25px;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
+                            with c1:
+                                st.markdown(f"<div style='padding-top:10px; font-size:12px;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
                             
-                            with col_cant:
-                                q = st.number_input(
-                                    "CANT.", 
-                                    min_value=0, 
-                                    step=1, 
-                                    key=f"q_{p}",
-                                    label_visibility="visible"
-                                )
+                            with c2:
+                                q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
                             
-                            with col_del:
-                                st.write("##") # Espaciador para alinear con el input
-                                if st.button(":material/delete:", key=f"del_{p}", type="secondary", help="Eliminar producto"):
-                                    # Lógica para eliminar: lo quitamos de la lista y recargamos
-                                    st.session_state.seleccionados_muestras.remove(p)
+                            with c3:
+                                # El botón de eliminar ahora sí funciona
+                                if st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", help=f"Quitar {p}"):
+                                    # Quitamos el producto de la lista del session_state
+                                    nueva_lista = [item for item in st.session_state.seleccionados_muestras if item != p]
+                                    st.session_state.seleccionados_muestras = nueva_lista
+                                    # Forzamos el reinicio para que el multiselect se entere
                                     st.rerun()
-                            
+                
                             if q > 0:
                                 prods_actuales.append({"desc": p, "cant": q})
                                 total_cantidad += q
-                                total_costo_prods += (q * precios[p])
+                                total_costo_prods += (q * (precios.get(p, 0)))
                 
                 st.markdown("---")
                 f_coment = st.text_area("💬 COMENTARIOS ADICIONALES", height=100).upper()
@@ -4175,6 +4172,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
