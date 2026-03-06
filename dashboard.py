@@ -299,34 +299,33 @@ div[data-baseweb="tag"] svg {{
 
 /* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
 
-* 1. EL CONTENEDOR (La caja oscura) */
-/* Usamos doble llave {{ }} para que Python no se confunda */
+/* 1. EL CONTENEDOR (La caja oscura) */
 div[data-baseweb="select"] > div:first-child {{
-    min-height: 32px !important;    /* Le damos altura suficiente para que el texto respire */
-    height: auto !important;        /* Si seleccionas muchos productos, la caja crece hacia abajo */
+    min-height: 32px !important;    /* <--- ANTES 42px: Aquí controlas la altura mínima */
+    height: auto !important;        
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
-    align-items: center !important; /* Esto centra el texto verticalmente (el "curita" para lo cortado) */
-    padding: 2px 10px !important;   /* Margen interno para que las letras no peguen en las orillas */
+    align-items: center !important; 
+    padding: 0px 10px !important;   /* Bajamos el padding vertical a 0px */
 }}
 
-/* 2. EL TEXTO Y EL PLACEHOLDER (Lo que escribes) */
+/* 2. EL TEXTO Y EL PLACEHOLDER */
 div[data-baseweb="select"] div[role="button"], 
 div[data-baseweb="select"] div[aria-selected="true"],
 div[data-baseweb="select"] input::placeholder {{
-    font-size: 11px !important;
+    font-size: 10px !important;     /* Bajamos un punto la fuente para que quepa */
     color: {vars_css['text']} !important;
-    line-height: 1.6 !important;    /* Aumentamos el espacio entre líneas para que no se muerda la letra */
+    line-height: 1.2 !important;    /* Reducimos el espacio entre líneas */
     text-transform: uppercase !important;
     display: flex !important;
     align-items: center !important;
 }}
 
-/* 3. EL INPUT DE BÚSQUEDA (Invisible pero necesario) */
+/* 3. EL INPUT DE BÚSQUEDA */
 div[data-baseweb="select"] input {{
-    height: 32px !important;        /* Un poco más bajo que el contenedor para no estirarlo de más */
+    height: 26px !important;        /* <--- ANTES 32px: Debe ser siempre menor al min-height de arriba */
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
@@ -4169,6 +4168,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
