@@ -3124,22 +3124,44 @@ else:
                 col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
                 
                 if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
-                    if not f_h: st.error("Falta el hotel")
-                    elif not prods_actuales: st.error("Selecciona al menos un producto")
+                    if not f_h: 
+                        st.error("Falta el hotel")
+                    elif not prods_actuales: 
+                        st.error("Selecciona al menos un producto")
                     else:
                         direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
+                        
+                        # 1. Creamos el registro base
                         reg = {
-                            "FOLIO": nuevo_folio, "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
-                            "NOMBRE DEL HOTEL": f_h.upper(), "DESTINO": direccion_completa,
-                            "CONTACTO": f_con.upper(), "SOLICITO": f_soli.upper() if f_soli else "JYPESA", "PAQUETERIA": f_paq_sel.upper(),
-                            "PAQUETERIA_NOMBRE": "", "NUMERO_GUIA": "", "COSTO_GUIA": 0.0,
+                            "FOLIO": nuevo_folio, 
+                            "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
+                            "NOMBRE DEL HOTEL": f_h.upper(), 
+                            "DESTINO": direccion_completa,
+                            "CONTACTO": f_con.upper(), 
+                            "SOLICITO": f_soli.upper() if f_soli else "JYPESA", 
+                            "PAQUETERIA": f_paq_sel.upper(),
+                            "PAQUETERIA_NOMBRE": f_paq_nombre, # Guardamos el nombre seleccionado arriba
+                            "NUMERO_GUIA": "", 
+                            "COSTO_GUIA": 0.0,
                             "CANTIDAD_TOTAL": total_cantidad,
                             "COSTO_TOTAL": round(total_costo_prods, 2)
                         }
-                        for p, cant in cants_dict.items(): reg[p] = cant
+                        
+                        # 2. SOLUCIÓN AL NameError: Creamos el diccionario de cantidades a partir de prods_actuales
+                        # Inicializamos todos los productos en 0 para que la fila del CSV esté completa
+                        for p in precios.keys():
+                            reg[p] = 0
+                            
+                        # Llenamos con las cantidades que el usuario ingresó
+                        for item in prods_actuales:
+                            reg[item["desc"]] = item["cant"]
+                
+                        # 3. Concatenamos y subimos
                         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
                         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
-                            st.success(f"¡Guardado! Costo: ${total_costo_prods}"); time.sleep(1); st.rerun()
+                            st.success(f"¡Guardado correctamente! Folio: {nuevo_folio}")
+                            time.sleep(1)
+                            st.rerun()
                 
                 if col_b2.button(":material/print: IMPRIMIR ESTE FOLIO", use_container_width=True):
                     if not prods_actuales: st.warning("No hay productos")
@@ -4242,6 +4264,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
