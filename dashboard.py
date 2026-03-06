@@ -299,37 +299,60 @@ div[data-baseweb="tag"] svg {{
 
 /* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
 
-/* 1. EL CONTENEDOR (La caja oscura) */
-/* Usamos doble llave {{ }} para que Python no se confunda */
+/* 1. Altura y alineación de la caja principal */
 div[data-baseweb="select"] > div:first-child {{
-    min-height: 42px !important;    /* Le damos altura suficiente para que el texto respire */
-    height: auto !important;        /* Si seleccionas muchos productos, la caja crece hacia abajo */
+    height: 35px !important; 
+    min-height: 35px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
-    align-items: center !important; /* Esto centra el texto verticalmente (el "curita" para lo cortado) */
-    padding: 2px 10px !important;   /* Margen interno para que las letras no peguen en las orillas */
-}}
-
-/* 2. EL TEXTO Y EL PLACEHOLDER (Lo que escribes) */
-div[data-baseweb="select"] div[role="button"], 
-div[data-baseweb="select"] div[aria-selected="true"],
-div[data-baseweb="select"] input::placeholder {{
-    font-size: 11px !important;
-    color: {vars_css['text']} !important;
-    line-height: 1.6 !important;    /* Aumentamos el espacio entre líneas para que no se muerda la letra */
-    text-transform: uppercase !important;
-    display: flex !important;
     align-items: center !important;
 }}
 
-/* 3. EL INPUT DE BÚSQUEDA (Invisible pero necesario) */
-div[data-baseweb="select"] input {{
-    height: 32px !important;        /* Un poco más bajo que el contenedor para no estirarlo de más */
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
+/* 2. Ajuste del texto interno y el cursor */
+div[data-baseweb="select"] div {{
+    font-size: 10px !important;
+    color: {vars_css['text']} !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+}}
+
+/* 3. El Menú Desplegable (La lista de opciones de tu foto) */
+div[data-baseweb="popover"] ul {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    padding: 0 !important;
+}}
+
+/* 4. Cada opción individual de la lista */
+div[data-baseweb="popover"] li {{
+    background-color: transparent !important;
+    color: {vars_css['text']} !important;
+    font-size: 11px !important;
+    padding: 8px 12px !important;
+    text-transform: uppercase !important;
+    transition: background 0.2s ease !important;
+}}
+
+/* 5. Hover en las opciones (Color Aqua para resaltar) */
+div[data-baseweb="popover"] li:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+}}
+
+
+
+/* 6. Quitar el resplandor azul de Streamlit al hacer click */
+div[data-baseweb="select"]:focus-within {{
+    border-color: #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+}}
+
+div[data-baseweb="select"] > div {{
+    background-color: rgba(113, 128, 150, 0.15) !important;
+    border: 1px solid #718096 !important;
 }}
 
 /* Focus - Sin color azul, mantiene el estilo neutro */
@@ -4176,7 +4199,6 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
-
 
 
 
