@@ -314,7 +314,7 @@ div[data-baseweb="select"] > div:first-child {{
 div[data-baseweb="select"] div {{
     font-size: 10px !important;
     color: {vars_css['text']} !important;
-    line-height: 1 !important;
+    line-height: 35px !important;
     text-transform: uppercase !important;
 }}
 
@@ -4199,6 +4199,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
