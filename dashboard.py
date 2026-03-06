@@ -299,7 +299,7 @@ div[data-baseweb="tag"] svg {{
 
 /* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
 
-* 1. Altura Slim y Cero Padding para máximo espacio de texto */
+/* 1. Altura y alineación de la caja principal */
 div[data-baseweb="select"] > div:first-child {{
     height: 35px !important; 
     min-height: 35px !important;
@@ -308,20 +308,17 @@ div[data-baseweb="select"] > div:first-child {{
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 0px 5px !important; /* <--- PADDING MÍNIMO: El texto respira más */
 }}
 
-/* 2. Ajuste del texto: Más grande y centrado */
+/* 2. Ajuste del texto interno y el cursor */
 div[data-baseweb="select"] div {{
-    font-size: 11px !important; /* <--- Subimos un punto para que se note el cambio */
+    font-size: 08px !important;
     color: {vars_css['text']} !important;
     line-height: 1 !important;
     text-transform: uppercase !important;
-    margin: 0 !important;
-    padding: 0 !important;
 }}
 
-/* 3. Menú desplegable elegante */
+/* 3. El Menú Desplegable (La lista de opciones de tu foto) */
 div[data-baseweb="popover"] ul {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -329,12 +326,14 @@ div[data-baseweb="popover"] ul {{
     padding: 0 !important;
 }}
 
-/* 4. Opciones de la lista con buen espacio para el clic */
+/* 4. Cada opción individual de la lista */
 div[data-baseweb="popover"] li {{
-    font-size: 12px !important;
-    padding: 8px 12px !important;
+    background-color: transparent !important;
     color: {vars_css['text']} !important;
+    font-size: 11px !important;
+    padding: 8px 12px !important;
     text-transform: uppercase !important;
+    transition: background 0.2s ease !important;
 }}
 
 /* 5. Hover en las opciones (Color Aqua para resaltar) */
@@ -4186,6 +4185,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
