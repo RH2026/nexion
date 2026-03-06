@@ -297,54 +297,28 @@ div[data-baseweb="tag"] svg {{
 
 /* Valor seleccionado – Selectbox */
 
-# --- BUSCA ESTA SECCIÓN EN TU CÓDIGO Y REEMPLÁZALA ---
+/* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
 
-/* 1. Altura Flexible y Centrado Vertical */
+/* 1. Altura y alineación de la caja principal */
 div[data-baseweb="select"] > div:first-child {{
-    height: auto !important; 
+    height: 35px !important; 
     min-height: 35px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 2px 10px !important;
 }}
 
-/* 2. Tamaño de letra y Line-Height para que no se corte */
+/* 2. Ajuste del texto interno y el cursor */
 div[data-baseweb="select"] div {{
-    font-size: 11px !important; 
+    font-size: 12px !important;
     color: {vars_css['text']} !important;
-    line-height: 1.5 !important;
+    line-height: 1 !important;
     text-transform: uppercase !important;
-    overflow: visible !important;
 }}
 
-/* 3. Ajuste específico para el Placeholder (el texto de fondo) */
-div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {{
-    line-height: 1.5 !important;
-    font-size: 14px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}}
-
-/* 4. Etiquetas (Chips) de productos seleccionados */
-div[data-baseweb="tag"] {{
-    background-color: #384A52 !important;
-    border-radius: 5px !important;
-    padding: 5px 10px !important;
-}}
-
-/* 4. Etiquetas compactas para que no disparen la altura muy rápido */
-div[data-baseweb="tag"] {{
-    background-color: #384A52 !important;
-    border-radius: 4px !important;
-    padding: 2px 8px !important;
-    margin: 2px !important;
-    height: 24px !important; /* Etiquetas delgaditas */
-}}
-
-/* 4. El Menú Desplegable */
+/* 3. El Menú Desplegable (La lista de opciones de tu foto) */
 div[data-baseweb="popover"] ul {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -352,19 +326,23 @@ div[data-baseweb="popover"] ul {{
     padding: 0 !important;
 }}
 
-/* 5. Cada opción de la lista */
+/* 4. Cada opción individual de la lista */
 div[data-baseweb="popover"] li {{
+    background-color: transparent !important;
     color: {vars_css['text']} !important;
-    font-size: 13px !important;
-    padding: 10px 15px !important;
+    font-size: 11px !important;
+    padding: 8px 12px !important;
     text-transform: uppercase !important;
+    transition: background 0.2s ease !important;
 }}
 
-/* 6. Hover con tu color Aqua */
+/* 5. Hover en las opciones (Color Aqua para resaltar) */
 div[data-baseweb="popover"] li:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
 }}
+
+
 
 /* 6. Quitar el resplandor azul de Streamlit al hacer click */
 div[data-baseweb="select"]:focus-within {{
@@ -4207,6 +4185,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
