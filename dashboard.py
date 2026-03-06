@@ -597,39 +597,47 @@ div[data-baseweb="popover"] button[kind="primary"]:hover {{
     }}
 }}
 
-/* ───────── SOLUCIÓN BOTÓN POPOVER RESPONSIVE ───────── */
+* ───────── SOLUCIÓN DEFINITIVA RESPONSIVE POPOVER ───────── */
 
-/* 1. Aseguramos que el contenido del botón no se desborde nunca */
+/* 1. Evitamos que el texto se parta en escritorio (Tu problema de la foto) */
 div[data-testid="stPopover"] > button p {{
     white-space: nowrap !important;
-    overflow: hidden !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+    display: block !important;
+    text-overflow: ellipsis;
 }}
 
-/* 2. Media Query para pantallas pequeñas (móviles) */
+/* 2. Media Query para pantallas pequeñas */
 @media (max-width: 600px) {{
-    /* Escondemos el texto original bajando el tamaño a 0 */
+    /* Escondemos el texto original por completo */
     div[data-testid="stPopover"] > button p {{
-        font-size: 0 !important;
+        color: transparent !important; /* Lo hacemos invisible */
+        width: 0px !important;
+        height: 0px !important;
+        overflow: hidden !important;
+        position: relative;
     }}
 
-    /* Inyectamos la hamburguesa como único elemento visible */
-    div[data-testid="stPopover"] > button p::before {{
+    /* Insertamos el icono como un elemento nuevo centrado en el botón */
+    div[data-testid="stPopover"] > button::after {{
         content: "☰";
-        font-size: 18px !important; /* Tamaño legible del icono */
-        color: {vars_css['text']};
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 18px !important;
+        color: {vars_css['text']} !important;
         visibility: visible !important;
-        display: block !important;
     }}
-
-    /* Ajustamos el botón para que sea más compacto y no se vea estirado */
+    
+    /* Forzamos al botón a no ser tan ancho en móvil */
+    div[data-testid="stPopover"] {{
+        width: fit-content !important;
+        min-width: 50px !important;
+    }}
+    
     div[data-testid="stPopover"] > button {{
+        width: 50px !important;
         padding: 0 !important;
-        height: 35px !important;
-        min-width: 45px !important;
     }}
 }}
 
@@ -4262,6 +4270,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
