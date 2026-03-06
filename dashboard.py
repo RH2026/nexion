@@ -2824,6 +2824,7 @@ else:
                     "Dispensador Persea": 275.00,
                     "Dispensador Botánicos": 274.17,
                     "Dispensador Dove": 125.00,
+                    "Dispensador Rainforest": 274.17,
                     "Kit Elements": 29.34,
                     "Kit Almond": 33.83,
                     "Kit Biogena": 48.95,
@@ -4242,6 +4243,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
