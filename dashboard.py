@@ -301,7 +301,7 @@ div[data-baseweb="tag"] svg {{
 
 /* 1. Altura y alineación de la caja principal */
 div[data-baseweb="select"] > div:first-child {{
-    height: 35px !important; 
+    height: auto !important; 
     min-height: 35px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -4183,6 +4183,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
