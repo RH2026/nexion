@@ -299,32 +299,40 @@ div[data-baseweb="tag"] svg {{
 
 # --- BUSCA ESTA SECCIÓN EN TU CÓDIGO Y REEMPLÁZALA ---
 
-/* 1. Altura base de 35px exacta */
+/* 1. Altura Flexible y Centrado Vertical */
 div[data-baseweb="select"] > div:first-child {{
-    height: 35px !important; /* <--- Forza la altura slim */
+    height: auto !important; 
     min-height: 35px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 0px 10px !important; 
+    padding: 2px 10px !important;
 }}
 
-/* 2. Ajuste del texto para que no empuje las paredes del cuadro */
+/* 2. Tamaño de letra y Line-Height para que no se corte */
 div[data-baseweb="select"] div {{
-    font-size: 12px !important; 
+    font-size: 11px !important; 
     color: {vars_css['text']} !important;
-    line-height: 1 !important; /* <--- Cambiado de 1.2 a 1 para que sea más compacto */
+    line-height: 1.5 !important;
     text-transform: uppercase !important;
+    overflow: visible !important;
 }}
 
-/* 3. Placeholder: AQUÍ ESTABA EL ERROR */
+/* 3. Ajuste específico para el Placeholder (el texto de fondo) */
 div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {{
-    line-height: 1 !important; /* <--- Bajamos de 35px a 1 para que no "infle" el cuadro */
-    font-size: 12px !important;
+    line-height: 1.5 !important;
+    font-size: 14px !important;
     margin: 0 !important;
     padding: 0 !important;
+}}
+
+/* 4. Etiquetas (Chips) de productos seleccionados */
+div[data-baseweb="tag"] {{
+    background-color: #384A52 !important;
+    border-radius: 5px !important;
+    padding: 5px 10px !important;
 }}
 
 /* 4. Etiquetas compactas para que no disparen la altura muy rápido */
@@ -4199,6 +4207,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
