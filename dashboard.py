@@ -2972,29 +2972,45 @@ else:
                 
                 # --- PRODUCTOS ---
                 st.subheader(":material/shopping_cart: Selección de Productos")
-                # Aquí uso el multiselect con icono como querías
+                
+                # Usamos una variable para limpiar el multiselect visualmente o un contenedor
                 seleccionados = st.multiselect(
                     ":material/search: Busca y selecciona productos:", 
-                    list(precios.keys())
+                    list(precios.keys()),
+                    help="Puedes escribir el nombre para filtrar rápido"
                 )
                 
                 prods_actuales = []
-                cants_dict = {p: 0 for p in precios.keys()}
                 total_cantidad = 0
                 total_costo_prods = 0
                 
                 if seleccionados:
-                    cols_q = st.columns(4)
-                    for i, p in enumerate(seleccionados):
-                        with cols_q[i % 4]:
-                            q = st.number_input(f"{p}", min_value=0, step=1, key=f"q_{p}")
-                            cants_dict[p] = q
-                            if q > 0:
-                                prods_actuales.append({"desc": p, "cant": q})
-                                total_cantidad += q
-                                total_costo_prods += (q * precios[p])
+                    st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
+                    
+                    # Creamos un contenedor con scroll para que no empuje todo el diseño hacia abajo
+                    with st.container(height=300, border=True):
+                        # Usamos 2 columnas en lugar de 4 para que los nombres largos no se corten feo
+                        cols_q = st.columns(2) 
+                        
+                        for i, p in enumerate(seleccionados):
+                            # Alternamos entre columna 0 y 1
+                            with cols_q[i % 2]:
+                                # Un diseño más limpio para el input de cantidad
+                                q = st.number_input(
+                                    f"CANT. {p.upper()}", 
+                                    min_value=0, 
+                                    step=1, 
+                                    key=f"q_{p}"
+                                )
+                                
+                                if q > 0:
+                                    prods_actuales.append({"desc": p, "cant": q})
+                                    total_cantidad += q
+                                    total_costo_prods += (q * precios[p])
                 
-                f_coment = st.text_area("💬 COMENTARIOS", height=70).upper()
+                # Espacio para los comentarios fuera del contenedor de productos
+                st.markdown("---")
+                f_coment = st.text_area("💬 COMENTARIOS ADICIONALES", height=100).upper()
                 
                 # --- BOTONES PRINCIPALES ---
                 col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
@@ -4118,6 +4134,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
