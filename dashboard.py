@@ -334,8 +334,6 @@ div[data-baseweb="tag"] {{
     border-radius: 5px !important;
     padding: 5px 10px !important;
 }}
-</style>
-""", unsafe_allow_html=True)
 
 /* 4. El Menú Desplegable */
 div[data-baseweb="popover"] ul {{
@@ -4200,6 +4198,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
