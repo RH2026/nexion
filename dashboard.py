@@ -299,31 +299,29 @@ div[data-baseweb="tag"] svg {{
 
 /* ───────── SELECTBOX / MULTISELECT (CORREGIDO) ───────── */
 
-/* 1. Altura Flexible y Centrado Vertical */
+/* 1. Controlamos el ancho y la altura mínima */
 div[data-baseweb="select"] > div:first-child {{
     height: auto !important; 
-    min-height: 35px !important;
+    min-height: 38px !important; /* Altura más estética, no tan "ancha" */
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 2px 10px !important;
+    padding: 2px 8px !important; /* Menos padding arriba/abajo para que sea más esbelto */
 }}
 
-/* 2. Tamaño de letra y Line-Height para que no se corte */
+/* 2. Ajuste de la fuente para que no se amontone */
 div[data-baseweb="select"] div {{
-    font-size: 12px !important; 
+    font-size: 13px !important; /* Bajamos un pelín el tamaño para que sea más fino */
     color: {vars_css['text']} !important;
-    line-height: 1.5 !important;
+    line-height: 1.2 !important; /* Ajuste crucial para que no se vea ancho de más */
     text-transform: uppercase !important;
-    overflow: visible !important;
 }}
 
-/* 3. Ajuste específico para el Placeholder (el texto de fondo) */
+/* 3. Evitamos que el placeholder (Choose options) ocupe mucho espacio */
 div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {{
-    line-height: 1.5 !important;
-    font-size: 14px !important;
+    line-height: 1.2 !important;
     margin: 0 !important;
     padding: 0 !important;
 }}
@@ -4191,6 +4189,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
