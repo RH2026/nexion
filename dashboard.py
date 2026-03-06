@@ -299,32 +299,33 @@ div[data-baseweb="tag"] svg {{
 
 /* ───────── SELECTBOX / MULTISELECT (CORREGIDO) ───────── */
 
-/* 1. Altura automática para que crezca hacia abajo */
+/* 1. Altura Flexible y Centrado Vertical */
 div[data-baseweb="select"] > div:first-child {{
-    height: auto !important; /* CAMBIADO: Antes estaba fijo en 35px */
+    height: auto !important; 
     min-height: 45px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 5px !important;
+    padding: 2px 10px !important;
 }}
 
-/* 2. Tamaño de fuente legible */
+/* 2. Tamaño de letra y Line-Height para que no se corte */
 div[data-baseweb="select"] div {{
-    font-size: 14px !important; /* CAMBIADO: De 08px a 14px */
+    font-size: 14px !important; 
     color: {vars_css['text']} !important;
-    line-height: 1.2 !important;
+    line-height: 1.5 !important;
     text-transform: uppercase !important;
+    overflow: visible !important;
 }}
 
-/* 3. Estilo para las etiquetas (chips) de los productos */
-div[data-baseweb="tag"] {{
-    background-color: #384A52 !important;
-    border-radius: 4px !important;
-    padding: 5px 10px !important;
-    margin: 2px !important;
+/* 3. Ajuste específico para el Placeholder (el texto de fondo) */
+div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {{
+    line-height: 1.5 !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }}
 
 /* 4. El Menú Desplegable */
@@ -4190,6 +4191,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
