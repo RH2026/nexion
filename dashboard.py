@@ -3002,7 +3002,7 @@ else:
                 def eliminar_producto(prod_a_borrar):
                     # Filtramos la lista eliminando el producto
                     st.session_state.seleccionados_muestras = [p for p in st.session_state.seleccionados_muestras if p != prod_a_borrar]
-                    # Actualizamos el key del multiselect directamente
+                    # Sincronizamos con la llave del multiselect
                     st.session_state.multi_prods_main = st.session_state.seleccionados_muestras
                 
                 # Multiselect vinculado al session_state mediante 'key'
@@ -3023,26 +3023,32 @@ else:
                 if seleccionados:
                     st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
                     
-                    with st.container(height=400, border=True):
-                        # --- DISEÑO DE DOBLE BLOQUE (2 COLUMNAS PRINCIPALES) ---
-                        col_bloque_izq, col_bloque_der = st.columns(2)
+                    with st.container(height=450, border=True):
+                        # --- DISEÑO DE TRIPLE BLOQUE (3 COLUMNAS PRINCIPALES) ---
+                        col_bloque_1, col_bloque_2, col_bloque_3 = st.columns(3)
                         
                         for i, p in enumerate(seleccionados):
-                            # Elegimos en qué bloque colocar el producto (par o impar)
-                            target_col = col_bloque_izq if i % 2 == 0 else col_bloque_der
+                            # Distribuimos el producto en uno de los 3 bloques
+                            if i % 3 == 0:
+                                target_col = col_bloque_1
+                            elif i % 3 == 1:
+                                target_col = col_bloque_2
+                            else:
+                                target_col = col_bloque_3
                             
                             with target_col:
-                                # Dentro de cada bloque, creamos las 3 columnas de control [Nombre, Cant, Borrar]
-                                c1, c2, c3 = st.columns([2.5, 1, 0.6])
+                                # Sub-columnas internas para cada producto: [Nombre, Cant, Borrar]
+                                # Ajustamos los anchos para que quepa bien en 3 bloques
+                                c1, c2, c3 = st.columns([2, 1, 0.6])
                                 
                                 with c1:
-                                    st.markdown(f"<div style='padding-top:10px; font-size:11px;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
+                                    st.markdown(f"<div style='padding-top:10px; font-size:10px;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
                                 
                                 with c2:
                                     q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
                                 
                                 with c3:
-                                    # Botón con callback para asegurar el borrado
+                                    # Botón con callback infalible
                                     st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
                 
                                 if q > 0:
@@ -3050,6 +3056,7 @@ else:
                                     total_cantidad += q
                                     total_costo_prods += (q * (precios.get(p, 0)))
                                 
+                                # Línea separadora sutil
                                 st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
                 
                 st.markdown("---")
@@ -4177,6 +4184,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
