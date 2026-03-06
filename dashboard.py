@@ -297,28 +297,37 @@ div[data-baseweb="tag"] svg {{
 
 /* Valor seleccionado – Selectbox */
 
-/* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
+/* ───────── SELECTBOX / MULTISELECT (CORREGIDO) ───────── */
 
-/* 1. Altura y alineación de la caja principal */
+/* 1. Altura automática para que crezca hacia abajo */
 div[data-baseweb="select"] > div:first-child {{
-    height: auto !important; 
-    min-height: 35px !important;
+    height: auto !important; /* CAMBIADO: Antes estaba fijo en 35px */
+    min-height: 45px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
+    padding: 5px !important;
 }}
 
-/* 2. Ajuste del texto interno y el cursor */
+/* 2. Tamaño de fuente legible */
 div[data-baseweb="select"] div {{
-    font-size: 08px !important;
+    font-size: 14px !important; /* CAMBIADO: De 08px a 14px */
     color: {vars_css['text']} !important;
-    line-height: 1 !important;
+    line-height: 1.2 !important;
     text-transform: uppercase !important;
 }}
 
-/* 3. El Menú Desplegable (La lista de opciones de tu foto) */
+/* 3. Estilo para las etiquetas (chips) de los productos */
+div[data-baseweb="tag"] {{
+    background-color: #384A52 !important;
+    border-radius: 4px !important;
+    padding: 5px 10px !important;
+    margin: 2px !important;
+}}
+
+/* 4. El Menú Desplegable */
 div[data-baseweb="popover"] ul {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -326,17 +335,15 @@ div[data-baseweb="popover"] ul {{
     padding: 0 !important;
 }}
 
-/* 4. Cada opción individual de la lista */
+/* 5. Cada opción de la lista */
 div[data-baseweb="popover"] li {{
-    background-color: transparent !important;
     color: {vars_css['text']} !important;
-    font-size: 11px !important;
-    padding: 8px 12px !important;
+    font-size: 13px !important;
+    padding: 10px 15px !important;
     text-transform: uppercase !important;
-    transition: background 0.2s ease !important;
 }}
 
-/* 5. Hover en las opciones (Color Aqua para resaltar) */
+/* 6. Hover con tu color Aqua */
 div[data-baseweb="popover"] li:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
@@ -4183,6 +4190,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
