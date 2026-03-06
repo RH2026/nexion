@@ -753,13 +753,14 @@ else:
         with c4:
             # --- BOTÓN POPOVER (NAVEGACIÓN + PERFIL) ---
             with st.popover("☰ NAVEGACIÓN", use_container_width=True):
-    
+            
                 # 1. IDENTIFICACIÓN DE USUARIO
                 usuario = st.session_state.get("usuario_activo", "GUEST")
-                # Definimos si el usuario es Rigoberto para dar acceso total
-                es_admin = (usuario.upper() == "RIGOBERTO") 
-            
-                # 1. IDENTIFICACIÓN DE USUARIO (USANDO NOMBRE COMPLETO)
+                
+                # Definimos los roles
+                es_admin = (usuario.upper() == "RIGOBERTO")
+                es_ventas = (usuario.upper() == "VENTAS") # <--- Nueva validación para Ventas
+                
                 nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
                 
                 st.markdown(f"""
@@ -771,31 +772,37 @@ else:
                 
                 st.markdown("<p style='color:#f0f0f0; font-size:6px; font-weight:400; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
-                # 2. BOTONES DE NAVEGACIÓN (Restricciones específicas aplicadas)
-                
-                # DASHBOARD: Ahora visible para todos
-                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.session_state.menu_sub = "GENERAL"
-                    st.session_state.busqueda_activa = False
-                    st.rerun()
-                
-                # SEGUIMIENTO: Filtramos GANTT y QUEJAS para los demás
-                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                    # Solo tú ves Gantt y Quejas
-                    opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"] if es_admin else ["ALERTAS"]
-                    for s in opciones_seg:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
-                            st.session_state.menu_main = "SEGUIMIENTO"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
+                # 2. BOTONES DE NAVEGACIÓN (Restricciones dinámicas)
             
-                # REPORTES: Filtramos APQ, OPS, OTD para los demás
+                # DASHBOARD: Solo lo ve el Admin o usuarios que NO sean Ventas
+                if not es_ventas:
+                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
+                        st.session_state.busqueda_activa = False
+                        st.rerun()
+            
+                # SEGUIMIENTO: Se oculta completamente para Ventas
+                if not es_ventas:
+                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                        opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"] if es_admin else ["ALERTAS"]
+                        for s in opciones_seg:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                                st.session_state.menu_main = "SEGUIMIENTO"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+            
+                # REPORTES: Ventas solo puede ver "ENVIO DE MUESTRAS"
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                    # Solo tú ves APQ, OPS y OTD
-                    opciones_rep = ["APQ", "% LOGISTICO", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"] if es_admin else ["ENVIO DE MUESTRAS"]
+                    if es_admin:
+                        opciones_rep = ["APQ", "% LOGISTICO", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                    elif es_ventas:
+                        opciones_rep = ["ENVIO DE MUESTRAS"] # <--- Filtro estricto para Ventas
+                    else:
+                        opciones_rep = ["ENVIO DE MUESTRAS"] # Otros operadores
+                        
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
@@ -804,30 +811,28 @@ else:
                             st.session_state.busqueda_activa = False
                             st.rerun()
             
-                # FORMATOS: Ahora todos ven SALIDA DE PT y CONTRARRECIBOS
-                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS", "PROFORMA"]
-                    
-                    for s in opciones_for:
-                        # Estilo tradicional con la flecha indicadora cuando está seleccionado
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        
-                        if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
-                            st.session_state.menu_main = "FORMATOS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            # Aseguramos que la navegación sea limpia al cambiar de sección
-                            st.rerun()
+                # FORMATOS: Se oculta completamente para Ventas
+                if not es_ventas:
+                    with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                        opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS", "PROFORMA"]
+                        for s in opciones_for:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+                                st.session_state.menu_main = "FORMATOS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
             
-                # HUB LOG: Ahora visible para todos
-                with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                    for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
-                            st.session_state.menu_main = "HUB LOG"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
+                # HUB LOG: Se oculta completamente para Ventas
+                if not es_ventas:
+                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
+                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                                st.session_state.menu_main = "HUB LOG"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
             
                 # 3. SECCIÓN DE CIERRE DE SESIÓN
                 st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
@@ -4106,6 +4111,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
