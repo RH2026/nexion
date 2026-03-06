@@ -570,6 +570,33 @@ div[data-baseweb="popover"] button[kind="primary"]:hover {{
     color: white !important;
 }}
 
+/* ───────── RESPONSIVE POPOVER (SOLO ICONO EN MÓVIL) ───────── */
+
+@media (max-width: 600px) {{
+    /* Identificamos el párrafo dentro del botón del popover */
+    div[data-testid="stPopover"] > button p {{
+        font-size: 0 !important; /* Escondemos el texto "NAVEGACIÓN" */
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }}
+
+    /* Insertamos solo el icono de forma visible */
+    div[data-testid="stPopover"] > button p::before {{
+        content: "☰"; /* El icono que quieres mantener */
+        font-size: 18px !important; /* Tamaño cómodo para el dedo en móvil */
+        color: {vars_css['text']};
+        visibility: visible !important;
+        display: block !important;
+    }}
+    
+    /* Opcional: Ajustamos un poco la altura para que sea un botón cuadrado/compacto */
+    div[data-testid="stPopover"] > button {{
+        min-height: 40px !important;
+        height: 40px !important;
+    }}
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -4199,6 +4226,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
