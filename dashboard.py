@@ -621,20 +621,25 @@ def login_screen():
                     st.session_state.autenticado = True
                     st.session_state.usuario_activo = user_input
                     
-                    # Buscamos el nombre completo; si no está, usamos el user_input por defecto
+                    # Buscamos el nombre completo
                     nombre_completo = nombres_reales.get(user_input, user_input)
                     st.session_state.nombre_completo = nombre_completo 
                     
                     # --- LÓGICA DE SALUDO DINÁMICO ---
-                    # Obtenemos el género (si no existe en el dict, usamos "M" por defecto)
                     gen = generos.get(user_input, "M")
                     saludo = "BIENVENIDA" if gen == "F" else "BIENVENIDO"
                     
-                    # Configuramos el estado del menú
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.session_state.menu_sub = "GENERAL"
+                    # --- REDIRECCIÓN SEGÚN ROL ---
+                    # Si es Ventas, lo mandamos directo a Muestras
+                    if user_input.upper() == "VENTAS":
+                        st.session_state.menu_main = "REPORTES"
+                        st.session_state.menu_sub = "ENVIO DE MUESTRAS"
+                    else:
+                        # Para ti y los demás, el Dashboard de siempre
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
                     
-                    # Mostramos el mensaje personalizado con el género correcto
+                    # Mostramos el mensaje personalizado
                     st.success(f"¡{saludo}!, {nombre_completo.upper()}") 
                     
                     # Pausa estética y recarga de la app
@@ -4111,6 +4116,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
