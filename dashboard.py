@@ -301,8 +301,8 @@ div[data-baseweb="tag"] svg {{
 
 /* 1. Altura Flexible y Centrado Vertical */
 div[data-baseweb="select"] > div:first-child {{
-    height: auto !important; 
-    min-height: 45px !important;
+    height: 35px !important; 
+    min-height: 35px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
@@ -313,7 +313,7 @@ div[data-baseweb="select"] > div:first-child {{
 
 /* 2. Tamaño de letra y Line-Height para que no se corte */
 div[data-baseweb="select"] div {{
-    font-size: 14px !important; 
+    font-size: 10px !important; 
     color: {vars_css['text']} !important;
     line-height: 1.5 !important;
     text-transform: uppercase !important;
@@ -4191,6 +4191,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
