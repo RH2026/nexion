@@ -570,69 +570,46 @@ div[data-baseweb="popover"] button[kind="primary"]:hover {{
     color: white !important;
 }}
 
-/* ───────── RESPONSIVE POPOVER (SOLO ICONO EN MÓVIL) ───────── */
+/* ───────── SOLUCIÓN NUCLEAR: ICONO RESPONSIVE ───────── */
 
-@media (max-width: 600px) {{
-    /* Identificamos el párrafo dentro del botón del popover */
-    div[data-testid="stPopover"] > button p {{
-        font-size: 0 !important; /* Escondemos el texto "NAVEGACIÓN" */
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-    }}
-
-    /* Insertamos solo el icono de forma visible */
-    div[data-testid="stPopover"] > button p::before {{
-        content: "☰"; /* El icono que quieres mantener */
-        font-size: 18px !important; /* Tamaño cómodo para el dedo en móvil */
-        color: {vars_css['text']};
-        visibility: visible !important;
-        display: block !important;
-    }}
-    
-    /* Opcional: Ajustamos un poco la altura para que sea un botón cuadrado/compacto */
-    div[data-testid="stPopover"] > button {{
-        min-height: 40px !important;
-        height: 40px !important;
-    }}
-}}
-
-/* ───────── CAMBIO INMEDIATO A ICONO (RESPONSIVE AGRESIVO) ───────── */
-
-/* 1. Evitamos el salto de línea que viste en tu foto (NAVE-GACI-ÓN) */
-div[data-testid="stPopover"] > button p {{
+/* 1. Bloqueamos el texto vertical de tus fotos en cualquier tamaño */
+button[data-testid="stBaseButton-secondary"] p {{
     white-space: nowrap !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
+    word-break: keep-all !important;
 }}
 
-/* 2. Media Query con umbral alto (se activa rápido al achicar) */
-@media (max-width: 1000px) {{
+/* 2. Media Query Agresiva (1200px para que cambie apenas muevas la ventana) */
+@media (max-width: 1200px) {{
     
-    /* Forzamos que el texto desaparezca */
-    div[data-testid="stPopover"] > button p {{
-        font-size: 0 !important;
-        line-height: 0 !important;
-        color: transparent !important;
-    }}
-
-    /* Insertamos el icono de hamburguesa */
-    div[data-testid="stPopover"] > button p::before {{
-        content: "☰";
-        font-size: 20px !important; /* Tamaño del icono */
-        color: {vars_css['text']} !important;
-        visibility: visible !important;
-        display: block !important;
-        margin: 0 !important;
-    }}
-
-    /* Reducimos el ancho del botón para que no quede un espacio vacío largo */
-    div[data-testid="stPopover"], 
+    /* Buscamos el botón del popover específicamente */
     div[data-testid="stPopover"] > button {{
         width: 45px !important;
+        height: 45px !important;
         min-width: 45px !important;
+        max-width: 45px !important;
         padding: 0 !important;
+        border-radius: 50% !important; /* Lo hace circular y limpio */
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }}
+
+    /* OCULTAMOS TODO EL CONTENIDO ORIGINAL (Texto y Flecha) */
+    div[data-testid="stPopover"] > button * {{
+        display: none !important; /* Esto mata el texto vertical de raíz */
+    }}
+
+    /* INYECTAMOS EL ICONO SOLO */
+    div[data-testid="stPopover"] > button::after {{
+        content: "☰";
+        display: block !important;
+        font-size: 22px !important;
+        color: {vars_css['text']} !important;
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
     }}
 }}
 
@@ -4265,6 +4242,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
