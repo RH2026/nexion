@@ -2906,7 +2906,7 @@ else:
                     cp1, cp2 = st.columns(2)
                     f_paq_nombre = cp1.selectbox(
                         ":material/local_shipping: NOMBRE DE PAQUETERÍA", 
-                        ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"]
+                        ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK",""]
                     )
                     f_tipo_pago = cp2.selectbox(
                         ":material/payments: MODALIDAD DE PAGO", 
@@ -4182,6 +4182,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
