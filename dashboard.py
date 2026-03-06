@@ -659,21 +659,25 @@ if not st.session_state.splash_completado:
     # Creamos el contenedor vacío una sola vez
     p = st.empty()
     
-    mensajes = ["ESTABLISHING SECURE ACCESS", "UPLOADING LOGISTICS DATA", "SYSTEM READY"]
-    
-    # Definir el estilo una sola vez fuera del bucle
-    st.markdown(f"""
-    <style>
-        .splash {{ position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; background: transparent; }}
-        .loader {{ width: 80px; height: 80px; border: 2px solid {vars_css['border']}; border-top: 2px solid {vars_css['text']}; border-radius: 50%; animation: spin 1s linear infinite; }}
-        @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
-    </style>
-    """, unsafe_allow_html=True)
+    mensajes = ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]
     
     for m in mensajes:
+        # IMPORTANTE: El 'with p.container()' debe estar DENTRO del for
+        # Esto limpia el contenido anterior y pone el nuevo
         with p.container():
-            st.markdown(f'<div class="splash"><div class="loader"></div><p style="margin-top:40px; font-family:monospace; font-size:10px; letter-spacing:5px; color:{vars_css["text"]}; text-align:center;">{m}</p></div>', unsafe_allow_html=True)
-            time.sleep(0.6)
+            st.markdown(f"""
+            <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                <div style="width:80px;height:80px;border:2px solid {vars_css['border']}; border-top:2px solid {vars_css['text']};border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:{vars_css['text']};">{m}</p>
+            </div>
+            <style>
+                @keyframes spin {{
+                    to {{ transform: rotate(360deg); }}
+                }}
+            </style>
+            """, unsafe_allow_html=True)
+            # Aumentamos un pelín el tiempo para que el ojo humano alcance a leer
+            time.sleep(0.6) 
             
     # Al salir del bucle, limpiamos el espacio por completo
     p.empty()
@@ -4195,7 +4199,6 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
-
 
 
 
