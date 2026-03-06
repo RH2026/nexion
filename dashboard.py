@@ -581,6 +581,62 @@ div[data-baseweb="popover"] button[kind="primary"]:hover {{
     color: white !important;
 }}
 
+#CSS para multiselect----------------
+/* 1. Altura forzada del contenedor del Multiselect */
+div[data-baseweb="multiselect"] > div:first-child {{
+    min-height: 35px !important;
+    height: 35px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    align-items: center !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}}
+
+/* 2. ELIMINAR EL PADDING DEL CONTENEDOR DE VALORES */
+/* Aquí es donde Streamlit mete un padding de 8px que rompe todo */
+div[data-baseweb="multiselect"] [data-testid="stMultiSelectFloatingValue"] {{
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    display: flex !important;
+    align-items: center !important;
+    height: 33px !important; /* Un pelín menos que el padre para el borde */
+}}
+
+/* 3. Ajuste de las "Pastillas" (Tags) si ya seleccionaste algo */
+div[data-baseweb="multiselect"] [role="button"] {{
+    height: 22px !important; /* Pastillas más pequeñas */
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    font-size: 10px !important;
+    background-color: #00A3A3 !important; /* Color Aqua de Nexion */
+    color: white !important;
+}}
+
+/* 4. El texto "Choose options" (Placeholder) */
+div[data-baseweb="multiselect"] input::placeholder {{
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    vertical-align: middle !important;
+}}
+
+/* 5. El Input invisible que empuja todo */
+div[data-baseweb="multiselect"] input {{
+    height: 33px !important;
+    line-height: 33px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}}
+
+/* 6. Quitar el botón de "X" (Clear all) que a veces desalinea */
+div[data-baseweb="multiselect"] [aria-label="Clear all"] {{
+    height: 20px !important;
+    align-self: center !important;
+}}
+
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -4210,6 +4266,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
