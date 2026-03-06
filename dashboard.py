@@ -698,7 +698,7 @@ else:
         
         with c1:
             try:
-                st.image(vars_css["logo"], width=180)
+                st.image(vars_css["logo"], width=160)
             except:
                 st.write("**NEXION**")
     
@@ -4199,6 +4199,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
