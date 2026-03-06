@@ -2971,7 +2971,7 @@ else:
                 st.divider()
                 
                 # --- PRODUCTOS ---
-                # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO
+                # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO (SIN TOCAR LOS BOTONES +/-)
                 st.markdown("""
                     <style>
                     .stMultiSelect div[data-baseweb="select"] {
@@ -2989,23 +2989,22 @@ else:
                         border-radius: 5px;
                         color: white !important;
                     }
+                    /* Aseguramos que el input de número tenga espacio para sus botones */
+                    div[data-testid="stNumberInput"] {
+                        width: 100% !important;
+                    }
                     </style>
                 """, unsafe_allow_html=True)
                 
                 st.subheader(":material/shopping_cart: Selección de Productos")
                 
-                # Inicializamos el estado si no existe
                 if "seleccionados_muestras" not in st.session_state:
                     st.session_state.seleccionados_muestras = []
                 
-                # --- FUNCIÓN PARA ELIMINAR (CALLBACK) ---
                 def eliminar_producto(prod_a_borrar):
-                    # Filtramos la lista eliminando el producto
                     st.session_state.seleccionados_muestras = [p for p in st.session_state.seleccionados_muestras if p != prod_a_borrar]
-                    # Sincronizamos con la llave del multiselect
                     st.session_state.multi_prods_main = st.session_state.seleccionados_muestras
                 
-                # Multiselect vinculado al session_state mediante 'key'
                 seleccionados = st.multiselect(
                     ":material/search: Busca y selecciona productos:", 
                     list(precios.keys()),
@@ -3013,7 +3012,6 @@ else:
                     default=st.session_state.seleccionados_muestras
                 )
                 
-                # Sincronizamos el estado
                 st.session_state.seleccionados_muestras = seleccionados
                 
                 prods_actuales = []
@@ -3024,11 +3022,10 @@ else:
                     st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
                     
                     with st.container(height=450, border=True):
-                        # --- DISEÑO DE TRIPLE BLOQUE (3 COLUMNAS PRINCIPALES) ---
+                        # DISEÑO DE TRIPLE BLOQUE
                         col_bloque_1, col_bloque_2, col_bloque_3 = st.columns(3)
                         
                         for i, p in enumerate(seleccionados):
-                            # Distribuimos el producto en uno de los 3 bloques
                             if i % 3 == 0:
                                 target_col = col_bloque_1
                             elif i % 3 == 1:
@@ -3037,18 +3034,17 @@ else:
                                 target_col = col_bloque_3
                             
                             with target_col:
-                                # Sub-columnas internas para cada producto: [Nombre, Cant, Borrar]
-                                # Ajustamos los anchos para que quepa bien en 3 bloques
-                                c1, c2, c3 = st.columns([2, 1, 0.6])
+                                # Ajusté los anchos: 1.5 para el nombre, 1.8 para que los botones +/- quepan bien, y 0.5 para borrar
+                                c1, c2, c3 = st.columns([1.5, 1.8, 0.5])
                                 
                                 with c1:
-                                    st.markdown(f"<div style='padding-top:10px; font-size:10px;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
+                                    st.markdown(f"<div style='padding-top:10px; font-size:10px; line-height:1.1;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
                                 
                                 with c2:
+                                    # Aquí regresan tus botones de + y - amor
                                     q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
                                 
                                 with c3:
-                                    # Botón con callback infalible
                                     st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
                 
                                 if q > 0:
@@ -3056,7 +3052,6 @@ else:
                                     total_cantidad += q
                                     total_costo_prods += (q * (precios.get(p, 0)))
                                 
-                                # Línea separadora sutil
                                 st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
                 
                 st.markdown("---")
@@ -4184,6 +4179,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
