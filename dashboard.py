@@ -297,42 +297,42 @@ div[data-baseweb="tag"] svg {{
 
 /* Valor seleccionado – Selectbox */
 
-/* ───────── SELECTBOX / MULTISELECT (CORREGIDO) ───────── */
-
-/* 1. Altura Flexible y Centrado Vertical */
+/* 1. Altura base de 35px pero permitiendo crecimiento libre */
 div[data-baseweb="select"] > div:first-child {{
-    height: Auto !important; 
-    min-height: 35px !important;
+    height: auto !important; 
+    min-height: 35px !important; /* Tu medida ideal para el estado natural */
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 2px 10px !important;
+    padding: 0px 10px !important; /* Reducimos padding vertical para que quepa en 35px */
 }}
 
-/* 2. Tamaño de letra y Line-Height para que no se corte */
+/* 2. Ajuste de fuente para que no se vea "mocho" en altura pequeña */
 div[data-baseweb="select"] div {{
     font-size: 12px !important; 
     color: {vars_css['text']} !important;
-    line-height: 1.5 !important;
+    line-height: 1.2 !important; /* Bajamos un poco el line-height para que quepa bien en 35px */
     text-transform: uppercase !important;
     overflow: visible !important;
 }}
 
-/* 3. Ajuste específico para el Placeholder (el texto de fondo) */
+/* 3. Placeholder centrado y ajustado */
 div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {{
-    line-height: 1.5 !important;
-    font-size: 14px !important;
+    line-height: 35px !important; /* Forzamos que el texto de ayuda esté centrado en la altura base */
+    font-size: 12px !important;
     margin: 0 !important;
     padding: 0 !important;
 }}
 
-/* 4. Etiquetas (Chips) de productos seleccionados */
+/* 4. Etiquetas compactas para que no disparen la altura muy rápido */
 div[data-baseweb="tag"] {{
     background-color: #384A52 !important;
-    border-radius: 5px !important;
-    padding: 5px 10px !important;
+    border-radius: 4px !important;
+    padding: 2px 8px !important;
+    margin: 2px !important;
+    height: 24px !important; /* Etiquetas delgaditas */
 }}
 
 /* 4. El Menú Desplegable */
@@ -4198,6 +4198,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
