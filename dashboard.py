@@ -299,7 +299,7 @@ div[data-baseweb="tag"] svg {{
 
 /* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
 
-/* 1. Altura y alineación de la caja principal */
+/* 1. Contenedor Principal: Control de altura y centrado base */
 div[data-baseweb="select"] > div:first-child {{
     height: 35px !important; 
     min-height: 35px !important;
@@ -308,17 +308,22 @@ div[data-baseweb="select"] > div:first-child {{
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
+    padding: 0 10px !important;
 }}
 
-/* 2. Ajuste del texto interno y el cursor */
-div[data-baseweb="select"] div {{
-    font-size: 10px !important;
+/* 2. Ajuste del texto (Placeholder y Seleccionado) */
+/* Eliminamos el line-height: 1 que lo empujaba hacia arriba */
+div[data-baseweb="select"] div[role="button"],
+div[data-baseweb="select"] [aria-selected="true"] {{
+    font-size: 10px !important; /* Subimos a 10px para mejor equilibrio visual */
     color: {vars_css['text']} !important;
-    line-height: 1 !important;
     text-transform: uppercase !important;
+    line-height: normal !important; 
+    display: flex !important;
+    align-items: center !important;
 }}
 
-/* 3. El Menú Desplegable (La lista de opciones de tu foto) */
+/* 3. El Menú Desplegable */
 div[data-baseweb="popover"] ul {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -326,7 +331,7 @@ div[data-baseweb="popover"] ul {{
     padding: 0 !important;
 }}
 
-/* 4. Cada opción individual de la lista */
+/* 4. Cada opción individual */
 div[data-baseweb="popover"] li {{
     background-color: transparent !important;
     color: {vars_css['text']} !important;
@@ -336,18 +341,24 @@ div[data-baseweb="popover"] li {{
     transition: background 0.2s ease !important;
 }}
 
-/* 5. Hover en las opciones (Color Aqua para resaltar) */
+/* 5. Hover en las opciones */
 div[data-baseweb="popover"] li:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
 }}
 
-
-
-/* 6. Quitar el resplandor azul de Streamlit al hacer click */
+/* 6. Focus y limpieza de resplandores */
 div[data-baseweb="select"]:focus-within {{
-    border-color: #00A0A8 !important;
-    box-shadow: 0 0 0 1px #00A0A8 !important;
+    border-color: #718096 !important;
+    box-shadow: none !important;
+    outline: none !important;
+}}
+
+/* Ajuste para el icono de la flecha (centrado vertical) */
+div[data-baseweb="select"] svg {{
+    fill: {vars_css['text']} !important;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
 }}
 
 div[data-baseweb="select"] > div {{
@@ -4199,6 +4210,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
