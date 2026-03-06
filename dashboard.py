@@ -3008,8 +3008,8 @@ else:
                     ":material/search: Busca y selecciona productos:", 
                     list(precios.keys()),
                     key="multi_prods_main",
-                    default=st.session_state.seleccionados_muestras
-                    placeholder="Selecciona los productos para la muestra..." # <--- AQUÍ CAMBIAS EL TEXTO
+                    default=st.session_state.seleccionados_muestras,
+                    placeholder="Selecciona los productos a enviar..." # <--- AQUÍ CAMBIAS EL TEXTO
                 )
                 
                 st.session_state.seleccionados_muestras = seleccionados
@@ -4183,6 +4183,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
