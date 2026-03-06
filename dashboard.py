@@ -300,7 +300,7 @@ div[data-baseweb="tag"] svg {{
 /* 1. Altura base de 35px pero permitiendo crecimiento libre */
 div[data-baseweb="select"] > div:first-child {{
     height: auto !important; 
-    min-height: 35px !important; /* Tu medida ideal para el estado natural */
+    min-height: 30px !important; /* Tu medida ideal para el estado natural */
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
@@ -4198,6 +4198,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
