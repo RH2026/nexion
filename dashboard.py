@@ -597,6 +597,42 @@ div[data-baseweb="popover"] button[kind="primary"]:hover {{
     }}
 }}
 
+/* ───────── SOLUCIÓN BOTÓN POPOVER RESPONSIVE ───────── */
+
+/* 1. Aseguramos que el contenido del botón no se desborde nunca */
+div[data-testid="stPopover"] > button p {{
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}}
+
+/* 2. Media Query para pantallas pequeñas (móviles) */
+@media (max-width: 600px) {{
+    /* Escondemos el texto original bajando el tamaño a 0 */
+    div[data-testid="stPopover"] > button p {{
+        font-size: 0 !important;
+    }}
+
+    /* Inyectamos la hamburguesa como único elemento visible */
+    div[data-testid="stPopover"] > button p::before {{
+        content: "☰";
+        font-size: 18px !important; /* Tamaño legible del icono */
+        color: {vars_css['text']};
+        visibility: visible !important;
+        display: block !important;
+    }}
+
+    /* Ajustamos el botón para que sea más compacto y no se vea estirado */
+    div[data-testid="stPopover"] > button {{
+        padding: 0 !important;
+        height: 35px !important;
+        min-width: 45px !important;
+    }}
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -4226,6 +4262,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
