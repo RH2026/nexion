@@ -595,8 +595,7 @@ def login_screen():
                 lista_usuarios = st.secrets.get("usuarios", {})
                 
                 # VALIDACIÓN EXITOSA               
-                # --- DENTRO DE LOGIN_SCREEN ---
-                # Diccionario para convertir Operator ID en Nombre Real
+                # 1. Diccionario para convertir Operator ID en Nombre Real
                 nombres_reales = {
                     "Rigoberto": "Rigoberto Hernández",
                     "AGomez": "Ale Gomez",
@@ -606,19 +605,39 @@ def login_screen():
                     "Fialko": "Fialko"
                 }
                 
-                # VALIDACIÓN EXITOSA
+                # 2. Diccionario de géneros (F = Femenino, M = Masculino)
+                # Esto hará que el saludo sea dinámico
+                generos = {
+                    "Rigoberto": "M",
+                    "AGomez": "F",
+                    "JMoreno": "M",
+                    "Cynthia": "F",
+                    "Brenda": "F",
+                    "Fialko": "M"
+                }
+                
+                # --- VALIDACIÓN EXITOSA ---
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
                     st.session_state.usuario_activo = user_input
                     
-                    # Buscamos el nombre completo; si no está, usamos el Operator ID
+                    # Buscamos el nombre completo; si no está, usamos el user_input por defecto
                     nombre_completo = nombres_reales.get(user_input, user_input)
                     st.session_state.nombre_completo = nombre_completo 
                     
+                    # --- LÓGICA DE SALUDO DINÁMICO ---
+                    # Obtenemos el género (si no existe en el dict, usamos "M" por defecto)
+                    gen = generos.get(user_input, "M")
+                    saludo = "BIENVENIDA" if gen == "F" else "BIENVENIDO"
+                    
+                    # Configuramos el estado del menú
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     
-                    st.success(f"¡BIENVENIDA!, {nombre_completo.upper()}") # Bienvenida personalizada
+                    # Mostramos el mensaje personalizado con el género correcto
+                    st.success(f"¡{saludo}!, {nombre_completo.upper()}") 
+                    
+                    # Pausa estética y recarga de la app
                     time.sleep(1) 
                     st.rerun()
                 
@@ -4087,6 +4106,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
