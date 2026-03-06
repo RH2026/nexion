@@ -2998,8 +2998,14 @@ else:
                 if "seleccionados_muestras" not in st.session_state:
                     st.session_state.seleccionados_muestras = []
                 
-                # Multiselect: El corazón de la selección
-                # Usamos el session_state para que el botón de borrar pueda "avisarle" al multiselect
+                # --- FUNCIÓN PARA ELIMINAR (CALLBACK) ---
+                def eliminar_producto(prod_a_borrar):
+                    # Filtramos la lista eliminando el producto
+                    st.session_state.seleccionados_muestras = [p for p in st.session_state.seleccionados_muestras if p != prod_a_borrar]
+                    # Actualizamos el key del multiselect directamente
+                    st.session_state.multi_prods_main = st.session_state.seleccionados_muestras
+                
+                # Multiselect vinculado al session_state mediante 'key'
                 seleccionados = st.multiselect(
                     ":material/search: Busca y selecciona productos:", 
                     list(precios.keys()),
@@ -3007,7 +3013,7 @@ else:
                     default=st.session_state.seleccionados_muestras
                 )
                 
-                # Actualizamos el estado con lo que el usuario elija manualmente
+                # Sincronizamos el estado
                 st.session_state.seleccionados_muestras = seleccionados
                 
                 prods_actuales = []
@@ -3017,35 +3023,34 @@ else:
                 if seleccionados:
                     st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
                     
-                    with st.container(height=350, border=True):
-                        # Usamos 3 columnas iguales como te gustaba
-                        cols_header = st.columns(3)
-                        cols_header[0].caption("PRODUCTO")
-                        cols_header[1].caption("CANTIDAD")
-                        cols_header[2].caption("ACCION")
+                    with st.container(height=400, border=True):
+                        # --- DISEÑO DE DOBLE BLOQUE (2 COLUMNAS PRINCIPALES) ---
+                        col_bloque_izq, col_bloque_der = st.columns(2)
+                        
+                        for i, p in enumerate(seleccionados):
+                            # Elegimos en qué bloque colocar el producto (par o impar)
+                            target_col = col_bloque_izq if i % 2 == 0 else col_bloque_der
+                            
+                            with target_col:
+                                # Dentro de cada bloque, creamos las 3 columnas de control [Nombre, Cant, Borrar]
+                                c1, c2, c3 = st.columns([2.5, 1, 0.6])
+                                
+                                with c1:
+                                    st.markdown(f"<div style='padding-top:10px; font-size:11px;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
+                                
+                                with c2:
+                                    q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
+                                
+                                with c3:
+                                    # Botón con callback para asegurar el borrado
+                                    st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
                 
-                        for p in seleccionados:
-                            c1, c2, c3 = st.columns(3)
-                            
-                            with c1:
-                                st.markdown(f"<div style='padding-top:10px; font-size:12px;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
-                            
-                            with c2:
-                                q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
-                            
-                            with c3:
-                                # El botón de eliminar ahora sí funciona
-                                if st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", help=f"Quitar {p}"):
-                                    # Quitamos el producto de la lista del session_state
-                                    nueva_lista = [item for item in st.session_state.seleccionados_muestras if item != p]
-                                    st.session_state.seleccionados_muestras = nueva_lista
-                                    # Forzamos el reinicio para que el multiselect se entere
-                                    st.rerun()
-                
-                            if q > 0:
-                                prods_actuales.append({"desc": p, "cant": q})
-                                total_cantidad += q
-                                total_costo_prods += (q * (precios.get(p, 0)))
+                                if q > 0:
+                                    prods_actuales.append({"desc": p, "cant": q})
+                                    total_cantidad += q
+                                    total_costo_prods += (q * (precios.get(p, 0)))
+                                
+                                st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
                 
                 st.markdown("---")
                 f_coment = st.text_area("💬 COMENTARIOS ADICIONALES", height=100).upper()
@@ -4172,6 +4177,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
