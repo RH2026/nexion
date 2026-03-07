@@ -2450,10 +2450,51 @@ else:
                         with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
                         with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
                 
-                        st.markdown("### ANÁLISIS DINÁMICO DE OPERACIÓN")
-                        status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
-                        st.markdown(f'<div class="analysis-box"><b>Cumplimiento:</b> Operación <span class="highlight">{status_target}</span> del target logístico (7.5%). <br><b>Logística de Tiempos:</b> Eficiencia del <span class="highlight">{pct_eficiencia:.1f}%</span> on-time.</div>', unsafe_allow_html=True)
+                        # --- 6. ANÁLISIS DINÁMICO PROFUNDO ---
+                        st.markdown("###  DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
+                        
+                        # Lógica de interpretación
+                        # 1. Análisis de Costo
+                        if costo_log_real <= 7.5:
+                            status_target = "🟢 DENTRO DEL TARGET"
+                            desc_costo = "La gestión financiera es <span class="highlight">óptima</span>, manteniendo la rentabilidad bajo los parámetros establecidos."
+                        else:
+                            status_target = "🔴 FUERA DE TARGET"
+                            desc_costo = f"Se detecta una desviación del <span class="highlight">{diferencia_target:.2f}%</span>. Es prioritario revisar la negociación con fleteras o la consolidación de carga."
                 
+                        # 2. Análisis de Eficiencia (On-Time)
+                        if pct_eficiencia >= 95:
+                            status_entrega = "Excelencia Logística"
+                        elif pct_eficiencia >= 85:
+                            status_entrega = "Operación Estable"
+                        else:
+                            status_entrega = "Alerta de Servicio"
+                
+                        # 3. Análisis de Incidencias
+                        if pct_inc > 5:
+                            alerta_incidencias = f"<br>⚠️ <b style='color:#FF4B4B;'>ALERTA:</b> El nivel de incidencias ({pct_inc:.1f}%) está impactando la valuación en <span class='highlight'>${total_valuacion_2026:,.2f}</span>."
+                        else:
+                            alerta_incidencias = ""
+                
+                        # 4. Análisis de Eficiencia Unitaria
+                        tendencia_caja = "una <span class='highlight'>mejora</span>" if var_costo_caja <= 0 else "un <span class='highlight'>incremento</span>"
+                
+                        html_analisis = f'''
+                        <div class="analysis-box">
+                            <div style="display: flex; justify-content: space-between;">
+                                <b>ESTADO FINANCIERO:</b> <span>{status_target}</span>
+                            </div>
+                            <hr style="border: 0.5px solid #243441; margin: 10px 0;">
+                            <b>RESUMEN EJECUTIVO:</b><br>
+                            • {desc_costo}<br>
+                            • La logística de entregas se califica como <span class="highlight">{status_entrega}</span> con un cumplimiento del {pct_eficiencia:.1f}%.<br>
+                            • El costo operativo por unidad presenta {tendencia_caja} del {abs(var_costo_caja):.1f}% vs el año anterior.{alerta_incidencias}
+                            <br><br>
+                            <i style="font-size: 0.85rem; color: #A4B9C8;">* Datos calculados dinámicamente basados en el cierre de fletes y promesas de entrega.</i>
+                        </div>'''
+                        
+                        st.markdown(html_analisis, unsafe_allow_html=True)
+        
                         # --- REPORTE DE IMPRESIÓN REPOTENCIADO ---
                         def generar_reporte_grafico():
                             estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
@@ -2537,7 +2578,7 @@ else:
                 
                     # --- 8. VISTA DE GRÁFICO (COMPARATIVO) ---
                     else:
-                        st.markdown("###COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
+                        st.markdown("###  COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
                         
                         # 1. Preparación de datos
                         df_g_2026 = df_gastos.groupby('MES')['COSTO DE FLETE'].sum().reset_index()
@@ -4208,6 +4249,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
