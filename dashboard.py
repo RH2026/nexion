@@ -2768,7 +2768,8 @@ else:
                     payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
                     return requests.put(url, json=payload, headers=headers).status_code == 200
                 
-                # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
+                
+                # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN (COSTOS ESPECIALES) ---
                 def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, cajas, unidad, comentarios, paq_nombre, tipo_pago):
                     filas_prod = f"""
                     <tr>
@@ -2779,12 +2780,19 @@ else:
                     </tr>"""
                 
                     html = f"""
-                    <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:15px; width:700px; min-height:850px; margin:auto; position:relative; box-sizing:border-box; background: white; color: black;">
+                    <style>
+                        @media print {{
+                            @page {{ size: letter; margin: 1cm; }}
+                            body {{ margin: 0; padding: 0; }}
+                        }}
+                    </style>
+                    
+                    <div id="printable-area" style="font-family:Arial; width:100%; box-sizing:border-box; background: white; color: black; display: flex; flex-direction: column; min-height: 95vh;">
                         
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                             <div style="text-align: left;">
                                 <h1 style="margin: 0; font-size: 16px; font-weight: 900; letter-spacing: -0.5px; color: #000;">Jabones y Productos Especializados</h1>
-                                <p style="margin: 0; font-size: 10px; font-weight: bold; text-transform: uppercase;">Distribución y Logística | 2026</p>
+                                <p style="margin: 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #444;">Distribución y Logística | 2026</p>
                             </div>
                             <div style="text-align: right;">
                                 <h2 style="margin: 0; font-size: 15px; text-decoration: underline; font-weight: 900;">ORDEN DE ENVÍO COSTOS ESPECIALES</h2>
@@ -2824,28 +2832,30 @@ else:
                             </div>
                         </div>
                     
-                        <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:11px;">
-                            <tr style="background:#444; color:white;">
-                                <th style="padding: 6px; border: 1px solid black;">DESCRIPCIÓN</th>
-                                <th style="border: 1px solid black; width: 80px;">CÓDIGO</th>
-                                <th style="border: 1px solid black; width: 60px;">U.M.</th>
-                                <th style="border: 1px solid black; width: 60px;">CANT.</th>
-                            </tr>
-                            {filas_prod}
-                        </table>
-                    
-                        <div style="border:1px solid black; padding:8px; margin-top:10px; font-size:11px; min-height: 60px;">
-                            <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
+                        <div style="flex-grow: 1;">
+                            <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:11px;">
+                                <tr style="background:#444; color:white;">
+                                    <th style="padding: 6px; border: 1px solid black;">DESCRIPCIÓN</th>
+                                    <th style="border: 1px solid black; width: 80px;">CÓDIGO</th>
+                                    <th style="border: 1px solid black; width: 60px;">U.M.</th>
+                                    <th style="border: 1px solid black; width: 60px;">CANT.</th>
+                                </tr>
+                                {filas_prod}
+                            </table>
+                            
+                            <div style="border:1px solid black; padding:8px; margin-top:10px; font-size:11px; min-height: 60px;">
+                                <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
+                            </div>
                         </div>
                     
-                        <div style="position:absolute; bottom:30px; left:15px; right:15px;">
+                        <div style="margin-top: 30px; padding-bottom: 20px;">
                             <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:25px; border-bottom: 1px solid black; padding-bottom: 5px;">
                                 RECIBO DE CONFORMIDAD DEL CLIENTE
                             </div>
                             <div style="display:flex; justify-content:space-between; text-align:center; font-size:10px;">
-                                <div style="width:30%;">__________________________<br>FECHA RECIBO</div>
-                                <div style="width:35%;">__________________________<br>NOMBRE Y FIRMA</div>
-                                <div style="width:30%;">__________________________<br>SELLO DE RECIBIDO</div>
+                                <div style="width:30%;">__________________________<br><b>FECHA RECIBO</b></div>
+                                <div style="width:35%;">__________________________<br><b>NOMBRE Y FIRMA</b></div>
+                                <div style="width:30%;">__________________________<br><b>SELLO DE RECIBIDO</b></div>
                             </div>
                         </div>
                     </div>
@@ -4360,6 +4370,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
