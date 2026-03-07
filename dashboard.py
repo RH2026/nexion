@@ -2537,12 +2537,12 @@ else:
                             <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
                                 <div style="width: 45%;">
                                     <div style="border-top: 2px solid #000; padding-top: 10px;">
-                                        <b>HERNANPHY (RIGOBERTO)</b><br>Gerente de Logística JYPESA
+                                        <b>RIGOBERTO HERNANDEZ</b><br>Coordinador de Logística JYPESA
                                     </div>
                                 </div>
                                 <div style="width: 45%;">
                                     <div style="border-top: 2px solid #000; padding-top: 10px;">
-                                        <b>VALIDACIÓN NEXION</b><br>Ingeniería de Procesos
+                                        <b>Carlos Fialko</b><br>Director General
                                     </div>
                                 </div>
                             </div>
@@ -4169,9 +4169,11 @@ else:
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
                 # --- 1. CONFIGURACIÓN DE PODER ---
-                                                              
-            
-               
+                st.markdown("<h1>ORDER STAGING</h1>", unsafe_allow_html=True)
+                
+                # Espacio reservado para futura lógica
+                st.info("Sección en desarrollo. Próximamente visualización de pedidos en Staging.")
+                pass
     
     
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
@@ -4183,6 +4185,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
