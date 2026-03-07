@@ -1437,132 +1437,132 @@ else:
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_participacion:
-                URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
-                
-                @st.cache_data
-                def load_data_logistica():
-                    try:
-                        df_l = pd.read_csv(URL_LOGISTICA, low_memory=False)
-                        df_l.columns = [c.replace('_x000D_', '').strip() for c in df_l.columns]
-                        if 'MES' in df_l.columns:
-                            df_l['MES'] = df_l['MES'].astype(str).str.upper().str.strip()
-                        
-                        # Limpiamos también la columna FORMA DE ENVIO para evitar errores por espacios o saltos de línea
-                        if 'FORMA DE ENVIO' in df_l.columns:
-                            df_l['FORMA DE ENVIO'] = df_l['FORMA DE ENVIO'].astype(str).str.strip()
+                    URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+                    
+                    @st.cache_data
+                    def load_data_logistica():
+                        try:
+                            df_l = pd.read_csv(URL_LOGISTICA, low_memory=False)
+                            df_l.columns = [c.replace('_x000D_', '').strip() for c in df_l.columns]
+                            if 'MES' in df_l.columns:
+                                df_l['MES'] = df_l['MES'].astype(str).str.upper().str.strip()
                             
-                        df_l['CAJAS'] = pd.to_numeric(df_l['CAJAS'], errors='coerce').fillna(0)
-                        return df_l
-                    except Exception as e:
-                        st.error(f"Error de conexión: {e}")
-                        return None
-                
-                df_log = load_data_logistica()
-                
-                if df_log is not None:
-                    # --- NUEVO FILTRO DE TIPO DE MOVIMIENTO ---
-                    st.markdown("<p class='op-query-text' style='font-size:12px;'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
-                    tipo_mov = st.radio(
-                        "Selecciona el flujo:",
-                        ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
-                        index=2,
-                        horizontal=True,
-                        key=f"tipo_mov_{mes_sel}"
-                    )
-            
-                    # Aplicamos primer filtro: MES
-                    df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
-            
-                    # --- CAMBIO AQUÍ: Filtrado basado en 'FORMA DE ENVIO' ---
-                    if tipo_mov == "COBRO DESTINO":
-                        df_log_filtrado = df_log_filtrado[df_log_filtrado['FORMA DE ENVIO'].str.contains('DESTINO', case=False, na=False)]
-                    elif tipo_mov == "COBRO REGRESO":
-                        df_log_filtrado = df_log_filtrado[df_log_filtrado['FORMA DE ENVIO'].str.contains('REGRESO', case=False, na=False)]
-            
-                    if not df_log_filtrado.empty:
-                        # --- CABECERA ---                                                            
-                        total_cajas_mes = df_log_filtrado['CAJAS'].sum()
-                        # Mantenemos el agrupamiento por TRANSPORTE para ver qué carrier lo llevó
-                        df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
-                        df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
-                        df_part = df_part.sort_values(by='PORCENTAJE', ascending=True)
-                        
-                        # METRICAS
-                        c1, c2 = st.columns(2)
-                        with c1:
-                            st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>VOLUMEN TOTAL (UNIT)</p>", unsafe_allow_html=True)
-                            st.markdown(f"<h4 style='text-align:center; color:#FFFFFF;'>{int(total_cajas_mes):,}</h4>", unsafe_allow_html=True)
-                        with c2:
-                            st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>CARRIER DOMINANTE</p>", unsafe_allow_html=True)
-                            lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
-                            st.markdown(f"<h4 style='text-align:center; color:#00FFAA;'>{lider_n}</h4>", unsafe_allow_html=True)
-                        
-                        # --- GRÁFICO DE BARRAS ---
-                        altura_ajustada = max(400, len(df_part) * 40)
-                        
-                        fig_bar = go.Figure(go.Bar(
-                            x=df_part['PORCENTAJE'],
-                            y=df_part['TRANSPORTE'],
-                            orientation='h',
-                            marker=dict(
-                                color=df_part['PORCENTAJE'],
-                                colorscale=['#1a2432', '#1cc88a']
-                            ),
-                            text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
-                            textposition='outside',
-                            cliponaxis=False 
-                        ))
-                        
-                        fig_bar.update_layout(
-                            height=altura_ajustada,
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(family="Inter", size=12, color="#FFFFFF"),
-                            margin=dict(l=250, r=50, t=20, b=20),
-                            xaxis=dict(showgrid=False, zeroline=False, showticklabels=True),
-                            yaxis=dict(showgrid=False, automargin=True),
-                            showlegend=False
+                            # Limpiamos también la columna FORMA DE ENVIO para evitar errores por espacios o saltos de línea
+                            if 'FORMA DE ENVIO' in df_l.columns:
+                                df_l['FORMA DE ENVIO'] = df_l['FORMA DE ENVIO'].astype(str).str.strip()
+                                
+                            df_l['CAJAS'] = pd.to_numeric(df_l['CAJAS'], errors='coerce').fillna(0)
+                            return df_l
+                        except Exception as e:
+                            st.error(f"Error de conexión: {e}")
+                            return None
+                    
+                    df_log = load_data_logistica()
+                    
+                    if df_log is not None:
+                        # --- NUEVO FILTRO DE TIPO DE MOVIMIENTO ---
+                        st.markdown("<p class='op-query-text' style='font-size:12px;'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
+                        tipo_mov = st.radio(
+                            "Selecciona el flujo:",
+                            ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
+                            index=2,
+                            horizontal=True,
+                            key=f"tipo_mov_{mes_sel}"
                         )
-                        
-                        st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_part_{mes_sel}_{tipo_mov}")
-            
-                        # --- EXPANDER: DESGLOSE POR DESTINO ---
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        with st.expander("🌐 EXPLORADOR DE RUTAS Y DESTINOS"):
-                            lista_carriers = sorted(df_log_filtrado['TRANSPORTE'].unique())
-                            carriers_seleccionados = st.multiselect(
-                                "Filtrar por uno o varios Carriers:", 
-                                options=lista_carriers,
-                                default=None,
-                                key=f"multi_carrier_{mes_sel}_{tipo_mov}"
+                
+                        # Aplicamos primer filtro: MES
+                        df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
+                
+                        # --- CAMBIO AQUÍ: Filtrado basado en 'FORMA DE ENVIO' ---
+                        if tipo_mov == "COBRO DESTINO":
+                            df_log_filtrado = df_log_filtrado[df_log_filtrado['FORMA DE ENVIO'].str.contains('DESTINO', case=False, na=False)]
+                        elif tipo_mov == "COBRO REGRESO":
+                            df_log_filtrado = df_log_filtrado[df_log_filtrado['FORMA DE ENVIO'].str.contains('REGRESO', case=False, na=False)]
+                
+                        if not df_log_filtrado.empty:
+                            # --- CABECERA ---                                                            
+                            total_cajas_mes = df_log_filtrado['CAJAS'].sum()
+                            # Mantenemos el agrupamiento por TRANSPORTE para ver qué carrier lo llevó
+                            df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
+                            df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
+                            df_part = df_part.sort_values(by='PORCENTAJE', ascending=True)
+                            
+                            # METRICAS
+                            c1, c2 = st.columns(2)
+                            with c1:
+                                st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>VOLUMEN TOTAL (UNIT)</p>", unsafe_allow_html=True)
+                                st.markdown(f"<h4 style='text-align:center; color:#FFFFFF;'>{int(total_cajas_mes):,}</h4>", unsafe_allow_html=True)
+                            with c2:
+                                st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>CARRIER DOMINANTE</p>", unsafe_allow_html=True)
+                                lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
+                                st.markdown(f"<h4 style='text-align:center; color:#00FFAA;'>{lider_n}</h4>", unsafe_allow_html=True)
+                            
+                            # --- GRÁFICO DE BARRAS ---
+                            altura_ajustada = max(400, len(df_part) * 40)
+                            
+                            fig_bar = go.Figure(go.Bar(
+                                x=df_part['PORCENTAJE'],
+                                y=df_part['TRANSPORTE'],
+                                orientation='h',
+                                marker=dict(
+                                    color=df_part['PORCENTAJE'],
+                                    colorscale=['#1a2432', '#1cc88a']
+                                ),
+                                text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
+                                textposition='outside',
+                                cliponaxis=False 
+                            ))
+                            
+                            fig_bar.update_layout(
+                                height=altura_ajustada,
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                font=dict(family="Inter", size=12, color="#FFFFFF"),
+                                margin=dict(l=250, r=50, t=20, b=20),
+                                xaxis=dict(showgrid=False, zeroline=False, showticklabels=True),
+                                yaxis=dict(showgrid=False, automargin=True),
+                                showlegend=False
                             )
                             
-                            if carriers_seleccionados:
-                                df_dest_filtered = df_log_filtrado[df_log_filtrado['TRANSPORTE'].isin(carriers_seleccionados)].copy()
-                            else:
-                                df_dest_filtered = df_log_filtrado.copy()
-                            
-                            # Agregamos 'FORMA DE ENVIO' a la tabla para mayor claridad del usuario
-                            df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO', 'FORMA DE ENVIO'])['CAJAS'].sum().reset_index()
-                            df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
-                            
-                            total_sel = df_dest_sum['CAJAS'].sum()
-                            st.markdown(f"<p style='color:#00FFAA; font-size:12px;'>Unidades en selección actual: {int(total_sel):,}</p>", unsafe_allow_html=True)
-            
-                            st.dataframe(
-                                df_dest_sum,
-                                column_config={
-                                    "TRANSPORTE": "CARRIER",
-                                    "DESTINO": "CIUDAD / ESTADO",
-                                    "FORMA DE ENVIO": "MÉTODO",
-                                    "CAJAS": st.column_config.NumberColumn("UNITS", format="%d")
-                                },
-                                use_container_width=True,
-                                hide_index=True,
-                                key=f"tabla_destinos_{mes_sel}_{tipo_mov}"
-                            )
-                    else:
-                        st.warning(f"No se encontraron registros en la columna 'FORMA DE ENVIO' que coincidan con '{tipo_mov}' para el mes seleccionado.")
+                            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_part_{mes_sel}_{tipo_mov}")
+                
+                            # --- EXPANDER: DESGLOSE POR DESTINO ---
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            with st.expander("🌐 EXPLORADOR DE RUTAS Y DESTINOS"):
+                                lista_carriers = sorted(df_log_filtrado['TRANSPORTE'].unique())
+                                carriers_seleccionados = st.multiselect(
+                                    "Filtrar por uno o varios Carriers:", 
+                                    options=lista_carriers,
+                                    default=None,
+                                    key=f"multi_carrier_{mes_sel}_{tipo_mov}"
+                                )
+                                
+                                if carriers_seleccionados:
+                                    df_dest_filtered = df_log_filtrado[df_log_filtrado['TRANSPORTE'].isin(carriers_seleccionados)].copy()
+                                else:
+                                    df_dest_filtered = df_log_filtrado.copy()
+                                
+                                # Agregamos 'FORMA DE ENVIO' a la tabla para mayor claridad del usuario
+                                df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO', 'FORMA DE ENVIO'])['CAJAS'].sum().reset_index()
+                                df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
+                                
+                                total_sel = df_dest_sum['CAJAS'].sum()
+                                st.markdown(f"<p style='color:#00FFAA; font-size:12px;'>Unidades en selección actual: {int(total_sel):,}</p>", unsafe_allow_html=True)
+                
+                                st.dataframe(
+                                    df_dest_sum,
+                                    column_config={
+                                        "TRANSPORTE": "CARRIER",
+                                        "DESTINO": "CIUDAD / ESTADO",
+                                        "FORMA DE ENVIO": "MÉTODO",
+                                        "CAJAS": st.column_config.NumberColumn("UNITS", format="%d")
+                                    },
+                                    use_container_width=True,
+                                    hide_index=True,
+                                    key=f"tabla_destinos_{mes_sel}_{tipo_mov}"
+                                )
+                        else:
+                            st.warning(f"No se encontraron registros en la columna 'FORMA DE ENVIO' que coincidan con '{tipo_mov}' para el mes seleccionado.")
 
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
@@ -4258,6 +4258,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
