@@ -1952,8 +1952,8 @@ else:
                     <div id="printableArea">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 5px;">
                             <div>
-                                <h2 style="margin: 0; font-size: 16px;">Nexion - Gestión Logística</h2>
-                                <small style="font-size: 9px;">DISTRIBUCIÓN Y LOGÍSTICA | 2026</small>
+                                <h2 style="margin: 0; font-size: 16px;">Jabones y Productos Especializados</h2>
+                                <small style="font-size: 9px;">Distribución y Logística | 2026</small>
                             </div>
                             <div style="text-align: right;">
                                 <h3 style="margin: 0; font-size: 14px; text-decoration: underline;">REPORTE DE TAREAS</h3>
@@ -1986,14 +1986,14 @@ else:
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
-                        if st.button("🔄 SINCRONIZAR", use_container_width=True):
+                        if st.button(":material/sync: SINCRONIZAR", use_container_width=True):
                             df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
                             if guardar_en_github(df_guardar):
                                 st.session_state.df_tareas = df_guardar
                                 st.rerun()
                     
                     with col2:
-                        if st.button("🖨️ IMPRIMIR", use_container_width=True):
+                        if st.button(":material/print: IMPRIMIR", use_container_width=True):
                             # Inyectamos el HTML y disparamos la impresión automáticamente
                             components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
                     
@@ -2003,7 +2003,7 @@ else:
                             df_print.to_excel(writer, index=False, sheet_name='Tareas')
                         
                         st.download_button(
-                            label="📊 BAJAR EXCEL",
+                            label=":material/table_view: BAJAR EXCEL",
                             data=buffer.getvalue(),
                             file_name="tareas_nexion.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -4353,6 +4353,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
