@@ -2324,8 +2324,8 @@ else:
                     border-radius: 12px; 
                     border-left: 5px solid #A4B9C8; 
                     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-                    min-height: 130px !important;
-                    max-height: 130px !important;
+                    min-height: 100px !important;
+                    max-height: 100px !important;
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
@@ -2557,7 +2557,7 @@ else:
                             x=df_g_2025.sort_values('MES')['MES'], 
                             y=df_g_2025.sort_values('MES')['COSTO DE LA GUIA'], 
                             name='Gasto 2025', 
-                            marker_color='#5c7aff', # <--- AQUÍ ESTÁ EL CAMBIO DE COLOR
+                            marker_color='#36b9cc', # <--- AQUÍ ESTÁ EL CAMBIO DE COLOR
                             text=[f'${x:,.0f}' for x in df_g_2025.sort_values('MES')['COSTO DE LA GUIA']],
                             textposition='outside',
                             textfont=dict(color='#A4B9C8') # Mantenemos el texto en gris claro para legibilidad
@@ -4208,6 +4208,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
