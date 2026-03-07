@@ -2596,7 +2596,7 @@ else:
                         </div>'''
                         
                         st.markdown(html_analisis, unsafe_allow_html=True)
-        
+                        st.write("")
                         # --- REPORTE DE IMPRESIÓN REPOTENCIADO ---
                         def generar_reporte_grafico():
                             estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
@@ -2952,7 +2952,7 @@ else:
                         c_adm1, c_adm2 = st.columns(2)
                         with c_adm1:
                             st.markdown(f'<div style="background:#5c7aff;color:white;padding:10px;border-radius:5px;">Actualizar Folio {fol_edit}</div>', unsafe_allow_html=True)
-                            st.markdown("<br>", unsafe_allow_html=True) # Un salto sencillo
+                            st.write("")
                             n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"]) if datos_fol is not None else "").upper()
                             c_gui = st.number_input("Costo Guía", value=float(datos_fol["COSTO_GUIA"]) if datos_fol is not None else 0.0)
                             if st.button(":material/update: ACTUALIZAR", use_container_width=True):
@@ -2964,7 +2964,7 @@ else:
                 
                         with c_adm2:
                             st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión</div>', unsafe_allow_html=True)
-                            st.markdown("<br>", unsafe_allow_html=True) # Un salto sencillo
+                            st.write("")
                             if st.button(":material/print: RE-IMPRIMIR", use_container_width=True):
                                 if datos_fol is not None:
                                     u_med = datos_fol["UNIDAD"] if "UNIDAD" in datos_fol else "CAJAS"
@@ -4396,6 +4396,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
