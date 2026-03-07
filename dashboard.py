@@ -2347,7 +2347,6 @@ else:
                 </style>
                 """, unsafe_allow_html=True)
                 
-                # --- INICIALIZAR ESTADO DE VISTA ---
                 if 'ver_grafico' not in st.session_state:
                     st.session_state.ver_grafico = False
                 
@@ -2411,11 +2410,12 @@ else:
                     meses_activos = df_filtered['MES'].unique()
                     df_2025_filtrado = df_2025[df_2025['MES'].isin(meses_activos)]
                     total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum()
+                    total_cajas_2025 = df_2025_filtrado['CAJAS'].sum()
                     
                     costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
-                    costo_caja_2025 = (total_flete_2025 / df_2025_filtrado['CAJAS'].sum()) if df_2025_filtrado['CAJAS'].sum() > 0 else 0
+                    costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
                     var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
-                    var_volumen = ((total_cajas_2026 - df_2025_filtrado['CAJAS'].sum()) / df_2025_filtrado['CAJAS'].sum() * 100) if df_2025_filtrado['CAJAS'].sum() > 0 else 0
+                    var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
                     var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
                     costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
                     diferencia_target = costo_log_real - 7.5
@@ -2429,7 +2429,7 @@ else:
                         if st.button("📊 VER MÉTRICAS Y TARJETAS", use_container_width=True):
                             st.session_state.ver_grafico = False
                     with c_btn2:
-                        if st.button("📈 VER GRÁFICO COMPARATIVO 2025 vs 2026", use_container_width=True):
+                        if st.button("📈 VER GRÁFICO COMPARATIVO", use_container_width=True):
                             st.session_state.ver_grafico = True
                 
                     # --- 5, 6 y 7. VISTA DE TARJETAS ---
@@ -2452,48 +2452,85 @@ else:
                 
                         st.markdown("### ANÁLISIS DINÁMICO DE OPERACIÓN")
                         status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
-                        st.markdown(f'<div class="analysis-box"><b>Cumplimiento:</b> Operación <span class="highlight">{status_target}</span> del target. <br><b>Eficiencia:</b> {pct_eficiencia:.1f}% on-time.</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="analysis-box"><b>Cumplimiento:</b> Operación <span class="highlight">{status_target}</span> del target logístico (7.5%). <br><b>Logística de Tiempos:</b> Eficiencia del <span class="highlight">{pct_eficiencia:.1f}%</span> on-time.</div>', unsafe_allow_html=True)
                 
-                        # Botón de Reporte
+                        # --- REPORTE DE IMPRESIÓN (ESTILO ORIGINAL RESTAURADO) ---
                         def generar_reporte_grafico():
-                            return f'<div style="font-family: Arial; padding: 20px;"><h1>Reporte {mes_sel}</h1><p>Eficiencia: {pct_eficiencia:.1f}%</p></div>'
+                            estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
+                            pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
+                            c_flete_rep = "red" if var_flete_total > 0 else "green"
+                            c_caja_rep = "red" if var_costo_caja > 0 else "green"
                 
-                        if st.button(":material/print: GENERAR REPORTE"):
+                            return f"""
+                            <div id="printable-report" style="font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff; max-width: 900px; margin: auto; border: 1px solid #eee;">
+                                <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
+                                    <tr>
+                                        <td style="width: 50%;">
+                                            <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000; border-bottom: none;">Jabones y Productos Especializados</h1>
+                                            <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">Distribucion y Logística | 2026</p>
+                                        </td>
+                                        <td style="width: 50%; text-align: right; font-size: 11px;">
+                                            <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper()}-2026<br>
+                                            <b>FECHA:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br>
+                                            <span style="border: 2px solid #000; padding: 3px 8px; font-weight: bold;">{estatus_rep}</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <h2 style="text-align: center; text-transform: uppercase; font-size: 18px; text-decoration: underline;">Análisis Operativo Mensual: {mes_sel}</h2>
+                                <div style="margin-bottom: 40px;">
+                                    <p style="font-size: 12px; font-weight: bold;">RENDIMIENTO VS META (TARGET 7.5%):</p>
+                                    <div style="width: 100%; border: 2px solid #000; height: 35px; position: relative; background: #f0f0f0;">
+                                        <div style="width: {pct_cumplimiento_target}%; background: #444; height: 100%;"></div>
+                                        <div style="position: absolute; top: 8px; left: 10px; color: #fff; font-weight: bold;">ACTUAL: {costo_log_real:.2f}%</div>
+                                        <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold;">OBJETIVO: 7.50%</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 20px; margin-bottom: 40px;">
+                                    <div style="flex: 1; border: 1px solid #000; padding: 10px;">
+                                        <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">ESTRUCTURA DE COSTOS</p>
+                                        <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                                            <tr><td>Gasto Flete:</td><td style="text-align: right; color:{c_flete_rep}"><b>${total_flete_2026:,.2f}</b></td></tr>
+                                            <tr><td>Incidencias:</td><td style="text-align: right;"><b>${total_valuacion_2026:,.2f}</b></td></tr>
+                                            <tr style="border-top: 1px solid #000;"><td><b>Total Op:</b></td><td style="text-align: right;"><b>${(total_flete_2026 + total_valuacion_2026):,.2f}</b></td></tr>
+                                        </table>
+                                    </div>
+                                    <div style="flex: 1; border: 1px solid #000; padding: 10px;">
+                                        <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA UNITARIA</p>
+                                        <div style="text-align: center; padding-top: 5px;">
+                                            <span style="font-size: 26px; font-weight: bold;">${costo_caja_2026:.2f}</span><br>
+                                            <span style="font-size: 10px;">Costo por Caja</span><br>
+                                            <span style="font-size: 11px; color:{c_caja_rep}; font-weight:bold;">Var: {var_costo_caja:+.1f}% vs 2025</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                    <tr style="background: #eee; border: 1px solid #000;"><th style="padding: 10px; text-align: left;">MÉTRICA DE OPERACIÓN</th><th style="padding: 10px;">VALOR</th></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Facturación Bruta</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_fact_2026:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Eficiencia On-Time</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{pct_eficiencia:.1f}%</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Impacto Económico Neto</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${inc_vi_monto:,.2f}</td></tr>
+                                </table>
+                            </div>
+                            """
+                
+                        if st.button(":material/print: GENERAR REPORTE GRÁFICO PARA IMPRESIÓN", type="primary", use_container_width=True):
                             reporte_html = generar_reporte_grafico()
-                            components.html(f"<script>var win = window.open('', '', 'height=1100,width=950'); win.document.write('{reporte_html}'); win.print(); win.close();</script>", height=0)
+                            components.html(f"""<script>var win = window.open('', '', 'height=1100,width=950'); win.document.write(`<html><body>{reporte_html}</body></html>`); win.document.close(); win.onload = function() {{ win.print(); win.close(); }};</script>""", height=0)
                 
                     # --- 8. VISTA DE GRÁFICO (COMPARATIVO) ---
                     else:
                         st.markdown("### COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
-                        
-                        # Preparar datos para el gráfico
                         df_g_2026 = df_gastos.groupby('MES')['COSTO DE FLETE'].sum().reset_index()
                         df_g_2025 = df_2025.groupby('MES')['COSTO DE LA GUIA'].sum().reset_index()
-                        
-                        # Unir para asegurar orden de meses
                         meses_orden = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
                         df_g_2026['MES'] = pd.Categorical(df_g_2026['MES'], categories=meses_orden, ordered=True)
                         df_g_2025['MES'] = pd.Categorical(df_g_2025['MES'], categories=meses_orden, ordered=True)
                         
-                        df_g_2026 = df_g_2026.sort_values('MES')
-                        df_g_2025 = df_g_2025.sort_values('MES')
-                
                         fig = go.Figure()
-                        fig.add_trace(go.Bar(x=df_g_2025['MES'], y=df_g_2025['COSTO DE LA GUIA'], name='Gastos 2025', marker_color='#A4B9C8'))
-                        fig.add_trace(go.Bar(x=df_g_2026['MES'], y=df_g_2026['COSTO DE FLETE'], name='Gastos 2026 (Actual)', marker_color='#FFFFFF'))
+                        fig.add_trace(go.Bar(x=df_g_2025.sort_values('MES')['MES'], y=df_g_2025.sort_values('MES')['COSTO DE LA GUIA'], name='Gastos 2025', marker_color='#A4B9C8'))
+                        fig.add_trace(go.Bar(x=df_g_2026.sort_values('MES')['MES'], y=df_g_2026.sort_values('MES')['COSTO DE FLETE'], name='Gastos 2026 (Actual)', marker_color='#FFFFFF'))
                 
-                        fig.update_layout(
-                            template='plotly_dark',
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            barmode='group',
-                            xaxis_title="MESES DE OPERACIÓN",
-                            yaxis_title="MONTO TOTAL ($)",
-                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-                        )
+                        fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', barmode='group', xaxis_title="MESES", yaxis_title="GASTO TOTAL ($)")
                         st.plotly_chart(fig, use_container_width=True)
-                        
-                        st.info("💡 Este gráfico compara el total acumulado de fletes por mes para detectar desviaciones estacionales.")
                 
                 except Exception as e:
                     st.error(f"¡Atención, amor! Detalle en el código: {e}")
@@ -4113,6 +4150,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
