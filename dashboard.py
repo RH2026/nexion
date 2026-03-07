@@ -2386,13 +2386,34 @@ else:
                     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos.get('COSTOS ADICIONALES', 0)
                 
                     # 3. INTERFAZ
-                    c_f1, c_f2 = st.columns(2)
-                    with c_f1: mes_sel = st.selectbox(":material/calendar_month: FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
-                    with c_f2: flet_sel = st.selectbox(":material/local_shipping: FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
+                    # Diccionario para convertir el número de mes a tu formato de Excel
+                    meses_nombres = {
+                        1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 
+                        5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 
+                        9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"
+                    }
+                    mes_actual_nombre = meses_nombres[datetime.now().month]
+                    
+                    opciones_mes = ["TODOS"] + sorted(df_gastos['MES'].unique().tolist())
+                    
+                    # Buscamos en qué posición de la lista está el mes actual para que aparezca primero
+                    try:
+                        indice_default = opciones_mes.index(mes_actual_nombre)
+                    except ValueError:
+                        indice_default = 0 # Si el mes actual no tiene datos aún, ponemos "TODOS"
                 
-                    df_filtered = df_gastos.copy()
-                    if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
-                    if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
+                    c_f1, c_f2 = st.columns(2)
+                    with c_f1: 
+                        mes_sel = st.selectbox(
+                            ":material/calendar_month: FILTRAR POR MES:", 
+                            opciones_mes, 
+                            index=indice_default
+                        )
+                    with c_f2: 
+                        flet_sel = st.selectbox(
+                            ":material/local_shipping: FILTRAR POR FLETERA:", 
+                            ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist())
+                        )
                 
                     # 4. CÁLCULOS (LÓGICA FUNCIONAL INTEGRADA)
                     total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
@@ -4185,6 +4206,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
