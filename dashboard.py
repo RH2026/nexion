@@ -3064,7 +3064,7 @@ else:
                         </tr>"""
                 
                     html = f"""
-                    <div id="printable-area" style="font-family:Arial; border:2px solid black; padding:30px; width:780px; margin:20px auto; box-sizing:border-box; background: white; color: black; min-height: 1000px; display: flex; flex-direction: column;">
+                    <div id="printable-area" style="font-family:Arial; width:100%; padding:10px; box-sizing:border-box; background: white; color: black; display: flex; flex-direction: column;">
                         
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
                             <div style="text-align: left;">
@@ -4353,6 +4353,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
