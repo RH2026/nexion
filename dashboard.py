@@ -2324,8 +2324,8 @@ else:
                     border-radius: 12px; 
                     border-left: 5px solid #A4B9C8; 
                     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-                    min-height: 160px !important;
-                    max-height: 160px !important;
+                    min-height: 130px !important;
+                    max-height: 130px !important;
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
@@ -4286,6 +4286,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
