@@ -2454,7 +2454,7 @@ else:
                         status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
                         st.markdown(f'<div class="analysis-box"><b>Cumplimiento:</b> Operación <span class="highlight">{status_target}</span> del target logístico (7.5%). <br><b>Logística de Tiempos:</b> Eficiencia del <span class="highlight">{pct_eficiencia:.1f}%</span> on-time.</div>', unsafe_allow_html=True)
                 
-                        # --- REPORTE DE IMPRESIÓN (ESTILO ORIGINAL RESTAURADO) ---
+                        # --- REPORTE DE IMPRESIÓN REPOTENCIADO ---
                         def generar_reporte_grafico():
                             estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
                             pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
@@ -2477,7 +2477,8 @@ else:
                                     </tr>
                                 </table>
                                 <h2 style="text-align: center; text-transform: uppercase; font-size: 18px; text-decoration: underline;">Análisis Operativo Mensual: {mes_sel}</h2>
-                                <div style="margin-bottom: 40px;">
+                                
+                                <div style="margin-bottom: 30px;">
                                     <p style="font-size: 12px; font-weight: bold;">RENDIMIENTO VS META (TARGET 7.5%):</p>
                                     <div style="width: 100%; border: 2px solid #000; height: 35px; position: relative; background: #f0f0f0;">
                                         <div style="width: {pct_cumplimiento_target}%; background: #444; height: 100%;"></div>
@@ -2485,30 +2486,49 @@ else:
                                         <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold;">OBJETIVO: 7.50%</div>
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 20px; margin-bottom: 40px;">
+                
+                                <div style="display: flex; gap: 20px; margin-bottom: 30px;">
                                     <div style="flex: 1; border: 1px solid #000; padding: 10px;">
                                         <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">ESTRUCTURA DE COSTOS</p>
                                         <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
-                                            <tr><td>Gasto Flete:</td><td style="text-align: right; color:{c_flete_rep}"><b>${total_flete_2026:,.2f}</b></td></tr>
-                                            <tr><td>Incidencias:</td><td style="text-align: right;"><b>${total_valuacion_2026:,.2f}</b></td></tr>
-                                            <tr style="border-top: 1px solid #000;"><td><b>Total Op:</b></td><td style="text-align: right;"><b>${(total_flete_2026 + total_valuacion_2026):,.2f}</b></td></tr>
+                                            <tr><td>Gasto Flete 2026:</td><td style="text-align: right; color:{c_flete_rep}"><b>${total_flete_2026:,.2f}</b></td></tr>
+                                            <tr><td>Gasto Flete 2025:</td><td style="text-align: right;">${total_flete_2025:,.2f}</td></tr>
+                                            <tr><td>Variación Gasto:</td><td style="text-align: right;"><b>{var_flete_total:+.1f}%</b></td></tr>
                                         </table>
                                     </div>
                                     <div style="flex: 1; border: 1px solid #000; padding: 10px;">
                                         <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA UNITARIA</p>
                                         <div style="text-align: center; padding-top: 5px;">
                                             <span style="font-size: 26px; font-weight: bold;">${costo_caja_2026:.2f}</span><br>
-                                            <span style="font-size: 10px;">Costo por Caja</span><br>
+                                            <span style="font-size: 10px;">Costo por Caja Actual</span><br>
                                             <span style="font-size: 11px; color:{c_caja_rep}; font-weight:bold;">Var: {var_costo_caja:+.1f}% vs 2025</span>
                                         </div>
                                     </div>
                                 </div>
-                                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                                    <tr style="background: #eee; border: 1px solid #000;"><th style="padding: 10px; text-align: left;">MÉTRICA DE OPERACIÓN</th><th style="padding: 10px;">VALOR</th></tr>
-                                    <tr><td style="border: 1px solid #000; padding: 8px;">Facturación Bruta</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_fact_2026:,.2f}</td></tr>
-                                    <tr><td style="border: 1px solid #000; padding: 8px;">Eficiencia On-Time</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{pct_eficiencia:.1f}%</td></tr>
-                                    <tr><td style="border: 1px solid #000; padding: 8px;">Impacto Económico Neto</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${inc_vi_monto:,.2f}</td></tr>
+                
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 30px;">
+                                    <tr style="background: #000; color: #fff; border: 1px solid #000;">
+                                        <th style="padding: 10px; text-align: left;">MÉTRICA DE OPERACIÓN DETALLADA</th>
+                                        <th style="padding: 10px; text-align: center;">VALOR ACTUAL</th>
+                                    </tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Facturación Bruta Totales</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">${total_fact_2026:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Cajas Enviadas (Volumen)</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{int(total_cajas_2026):,.0f} Uds.</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Variación Volumen vs 2025</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{var_volumen:+.1f}%</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Costo Logístico sobre Ventas</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">{costo_log_real:.2f}%</td></tr>
+                                    <tr style="background: #f9f9f9;"><td style="border: 1px solid #000; padding: 8px;"><b>Eficiencia On-Time (Entregas en Tiempo)</b></td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">{pct_eficiencia:.1f}%</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Valuación de Incidencias</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_valuacion_2026:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Porcentaje de Incidencias sobre Pedidos</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{pct_inc:.1f}%</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Impacto Económico Neto (Incremento + VI)</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">${inc_vi_monto:,.2f}</td></tr>
                                 </table>
+                
+                                <div style="margin-top: 50px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
+                                    <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
+                                        <b>HERNANPHY (RIGOBERTO)</b><br>Gerente de Logística JYPESA
+                                    </div>
+                                    <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
+                                        <b>VALIDACIÓN NEXION</b><br>Ingeniería de Procesos
+                                    </div>
+                                </div>
                             </div>
                             """
                 
@@ -4150,6 +4170,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
