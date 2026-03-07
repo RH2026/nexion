@@ -2538,19 +2538,58 @@ else:
                 
                     # --- 8. VISTA DE GRÁFICO (COMPARATIVO) ---
                     else:
-                        st.markdown("### COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
+                        st.markdown("### 📈 COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
+                        
+                        # 1. Preparación de datos
                         df_g_2026 = df_gastos.groupby('MES')['COSTO DE FLETE'].sum().reset_index()
                         df_g_2025 = df_2025.groupby('MES')['COSTO DE LA GUIA'].sum().reset_index()
-                        meses_orden = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+                
+                        # 2. Ordenar meses
+                        meses_orden = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
+                                       "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
                         df_g_2026['MES'] = pd.Categorical(df_g_2026['MES'], categories=meses_orden, ordered=True)
                         df_g_2025['MES'] = pd.Categorical(df_g_2025['MES'], categories=meses_orden, ordered=True)
-                        
-                        fig = go.Figure()
-                        fig.add_trace(go.Bar(x=df_g_2025.sort_values('MES')['MES'], y=df_g_2025.sort_values('MES')['COSTO DE LA GUIA'], name='Gastos 2025', marker_color='#A4B9C8'))
-                        fig.add_trace(go.Bar(x=df_g_2026.sort_values('MES')['MES'], y=df_g_2026.sort_values('MES')['COSTO DE FLETE'], name='Gastos 2026 (Actual)', marker_color='#FFFFFF'))
                 
-                        fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', barmode='group', xaxis_title="MESES", yaxis_title="GASTO TOTAL ($)")
+                        # 3. Creación del Gráfico de Élite
+                        fig = go.Figure()
+                
+                        # Barra 2025 (Plata / Acero)
+                        fig.add_trace(go.Bar(
+                            x=df_g_2025.sort_values('MES')['MES'], 
+                            y=df_g_2025.sort_values('MES')['COSTO DE LA GUIA'], 
+                            name='Gasto 2025', 
+                            marker_color='#A4B9C8',
+                            text=[f'${x:,.0f}' for x in df_g_2025.sort_values('MES')['COSTO DE LA GUIA']],
+                            textposition='outside',
+                            textfont=dict(color='#A4B9C8')
+                        ))
+                
+                        # Barra 2026 (Oro / Dorado)
+                        fig.add_trace(go.Bar(
+                            x=df_g_2026.sort_values('MES')['MES'], 
+                            y=df_g_2026.sort_values('MES')['COSTO DE FLETE'], 
+                            name='Gasto 2026 (Actual)', 
+                            marker_color='#D4AF37', # Oro
+                            text=[f'${x:,.0f}' for x in df_g_2026.sort_values('MES')['COSTO DE FLETE']],
+                            textposition='outside',
+                            textfont=dict(color='#FFFFFF')
+                        ))
+                
+                        # 4. Diseño Onyx
+                        fig.update_layout(
+                            template='plotly_dark',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            barmode='group',
+                            xaxis_title="MESES DE OPERACIÓN",
+                            yaxis_title="MONTO TOTAL ($)",
+                            font=dict(color="#A4B9C8"),
+                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                            margin=dict(t=80) # Espacio extra arriba para las etiquetas
+                        )
+                
                         st.plotly_chart(fig, use_container_width=True)
+                        st.info("💡 Las etiquetas doradas muestran el gasto acumulado actual de JYPESA para comparación directa.")
                 
                 except Exception as e:
                     st.error(f"¡Atención, amor! Detalle en el código: {e}")
@@ -4170,6 +4209,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
