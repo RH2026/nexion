@@ -3064,7 +3064,14 @@ else:
                         </tr>"""
                 
                     html = f"""
-                    <div id="printable-area" style="font-family:Arial; width:100%; padding:10px; box-sizing:border-box; background: white; color: black; display: flex; flex-direction: column;">
+                    <style>
+                        @media print {{
+                            @page {{ size: letter; margin: 1cm; }}
+                            body {{ margin: 0; padding: 0; }}
+                        }}
+                    </style>
+                    
+                    <div id="printable-area" style="font-family:Arial; width:100%; box-sizing:border-box; background: white; color: black; display: flex; flex-direction: column; min-height: 95vh;">
                         
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
                             <div style="text-align: left;">
@@ -3125,7 +3132,7 @@ else:
                             </div>
                         </div>
                     
-                        <div style="margin-top: 40px; padding-top: 20px;">
+                        <div style="margin-top: 40px; padding-bottom: 20px;">
                             <div style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:40px; border-bottom: 2px solid black; padding-bottom: 8px;">
                                 RECIBO DE CONFORMIDAD DEL CLIENTE
                             </div>
@@ -4353,6 +4360,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
