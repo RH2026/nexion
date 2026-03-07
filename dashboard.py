@@ -2557,7 +2557,7 @@ else:
                             x=df_g_2025.sort_values('MES')['MES'], 
                             y=df_g_2025.sort_values('MES')['COSTO DE LA GUIA'], 
                             name='Gasto 2025', 
-                            marker_color='#34495E', # <--- AQUÍ ESTÁ EL CAMBIO DE COLOR
+                            marker_color='#5c7aff', # <--- AQUÍ ESTÁ EL CAMBIO DE COLOR
                             text=[f'${x:,.0f}' for x in df_g_2025.sort_values('MES')['COSTO DE LA GUIA']],
                             textposition='outside',
                             textfont=dict(color='#A4B9C8') # Mantenemos el texto en gris claro para legibilidad
@@ -4208,6 +4208,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
