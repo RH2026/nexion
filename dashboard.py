@@ -1908,71 +1908,94 @@ else:
                         }
                     )
                 
-                    # 1. Definimos las columnas que quieres
+                    # 1. Definimos las columnas y preparamos datos
                     cols_export = ["FECHA", "IMPORTANCIA", "TAREA", "ULTIMO ACCION", "TIPO", "GRUPO"]
                     df_print = df_editado[cols_export].copy()
                     
-                    # 2. Construcción del HTML tipo "Orden de Envío"
-                    # Usamos estilos CSS para que se vea igual a tu imagen de Jabones y Productos Especializados
+                    # 2. HTML con fuente reducida y optimización de espacio
                     html_print = f"""
-                    <div id="printableArea" style="font-family: Arial, sans-serif; width: 100%; border: 2px solid black; padding: 10px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 10px;">
+                    <style>
+                        @media print {{
+                            @page {{ size: letter; margin: 0.5cm; }}
+                            body {{ margin: 0; padding: 0; }}
+                            #printableArea {{ border: 1px solid black !important; }}
+                        }}
+                        #printableArea {{
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            width: 100%;
+                            border: 2px solid black;
+                            padding: 5px;
+                            box-sizing: border-box;
+                        }}
+                        table {{
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 10px;
+                            table-layout: auto;
+                        }}
+                        th {{
+                            background-color: #000 !important;
+                            color: #fff !important;
+                            font-size: 10px;
+                            border: 1px solid black;
+                            padding: 4px;
+                            text-transform: uppercase;
+                        }}
+                        td {{
+                            border: 1px solid black;
+                            padding: 4px;
+                            font-size: 9px;
+                            word-wrap: break-word;
+                        }}
+                    </style>
+                    
+                    <div id="printableArea">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 5px;">
                             <div>
-                                <h2 style="margin: 0;">Nexion - Gestión Logística</h2>
-                                <small>DISTRIBUCIÓN Y LOGÍSTICA | 2026</small>
+                                <h2 style="margin: 0; font-size: 16px;">Nexion - Gestión Logística</h2>
+                                <small style="font-size: 9px;">DISTRIBUCIÓN Y LOGÍSTICA | 2026</small>
                             </div>
                             <div style="text-align: right;">
-                                <h3 style="margin: 0; text-decoration: underline;">REPORTE DE TAREAS</h3>
-                                <p style="margin: 0;">FECHA: {pd.Timestamp.now().strftime('%Y-%m-%d')}</p>
+                                <h3 style="margin: 0; font-size: 14px; text-decoration: underline;">REPORTE DE TAREAS</h3>
+                                <p style="margin: 0; font-size: 10px;">FECHA: {pd.Timestamp.now().strftime('%Y-%m-%d')}</p>
                             </div>
                         </div>
                         
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <table>
                             <thead>
-                                <tr style="background-color: #000; color: #fff; text-align: left;">
-                                    {"".join([f'<th style="border: 1px solid black; padding: 8px;">{col}</th>' for col in cols_export])}
+                                <tr>
+                                    {"".join([f'<th>{col}</th>' for col in cols_export])}
                                 </tr>
                             </thead>
                             <tbody>
                                 {"".join([
-                                    f'<tr>{"".join([f"<td style=\'border: 1px solid black; padding: 8px;\'>{row[col]}</td>" for col in cols_export])}</tr>'
+                                    f'<tr>{"".join([f"<td>{row[col]}</td>" for col in cols_export])}</tr>'
                                     for _, row in df_print.iterrows()
                                 ])}
                             </tbody>
                         </table>
                         
-                        <div style="margin-top: 20px; border: 1px solid black; padding: 10px; height: 100px;">
-                            <strong>COMENTARIOS / NOTAS:</strong>
-                            <p>Generado por: {st.session_state.get('alias', 'Rigoberto')}</p>
+                        <div style="margin-top: 10px; border: 1px solid black; padding: 5px; min-height: 60px;">
+                            <strong style="font-size: 10px;">COMENTARIOS / NOTAS:</strong>
+                            <p style="font-size: 9px; margin: 5px 0;">Generado por: {st.session_state.get('alias', 'Rigoberto')}</p>
                         </div>
                     </div>
-                    
-                    <script>
-                        function printDiv() {{
-                            var printContents = document.getElementById("printableArea").innerHTML;
-                            var originalContents = document.body.innerHTML;
-                            document.body.innerHTML = printContents;
-                            window.print();
-                            document.body.innerHTML = originalContents;
-                            window.location.reload(); 
-                        }}
-                    </script>
                     """
                     
+                    # --- FILA DE BOTONES ---
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
-                        if st.button("🔄 Sincronizar", use_container_width=True):
+                        if st.button("🔄 SINCRONIZAR", use_container_width=True):
                             df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
                             if guardar_en_github(df_guardar):
                                 st.session_state.df_tareas = df_guardar
                                 st.rerun()
                     
                     with col2:
-                        # Este es el truco: mostramos el botón y si se pulsa, ejecutamos el script de impresión
-                        if st.button("🖨️ Imprimir Reporte", use_container_width=True):
+                        if st.button("🖨️ IMPRIMIR", use_container_width=True):
+                            # Inyectamos el HTML y disparamos la impresión automáticamente
                             components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
-                            # Esto abrirá el cuadro de diálogo inmediatamente
                     
                     with col3:
                         buffer = io.BytesIO()
@@ -1980,7 +2003,7 @@ else:
                             df_print.to_excel(writer, index=False, sheet_name='Tareas')
                         
                         st.download_button(
-                            label="📊 Bajar Excel",
+                            label="📊 BAJAR EXCEL",
                             data=buffer.getvalue(),
                             file_name="tareas_nexion.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -4330,6 +4353,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
