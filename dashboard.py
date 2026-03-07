@@ -2509,11 +2509,12 @@ else:
                                         <td style="width: 50%;">
                                             <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000; border-bottom: none;">Jabones y Productos Especializados</h1>
                                             <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">Distribucion y Logística | 2026</p>
-                                        </td>
-                                        <td style="width: 50%; text-align: right; font-size: 11px;">
+                                        <td style="width: 50%; text-align: right; font-size: 11px; line-height: 1.6;">
                                             <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper()}-2026<br>
                                             <b>FECHA:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br>
-                                            <span style="border: 2px solid #000; padding: 3px 8px; font-weight: bold;">{estatus_rep}</span>
+                                            <span style="border: 2px solid #000; padding: 4px 10px; font-weight: bold; display: inline-block; margin-top: 8px;">
+                                                {estatus_rep}
+                                            </span>
                                         </td>
                                     </tr>
                                 </table>
@@ -4250,6 +4251,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
