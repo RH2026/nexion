@@ -2374,10 +2374,9 @@ else:
                     if 'COSTO DE LA GUIA' in df_2025.columns: df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
                 
                     # --- PROCESAMIENTO DE FECHAS PARA EFICIENCIA ---
-                    col_fechas = ['FECHA DE ENVIO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL']
-                    for f_col in col_fechas:
-                        if f_col in df_actual.columns:
-                            df_actual[f_col] = pd.to_datetime(df_actual[f_col], errors='coerce')
+                    for col_f in ['FECHA DE ENVIO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL']:
+                        if col_f in df_actual.columns:
+                            df_actual[col_f] = pd.to_datetime(df_actual[col_f], errors='coerce')
                 
                     df_actual['MES'] = df_actual['MES'].astype(str).str.strip().str.upper()
                     df_2025['MES'] = df_2025['MES'].astype(str).str.strip().str.upper()
@@ -2415,53 +2414,61 @@ else:
                     costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
                     diferencia_target = costo_log_real - 7.5
                     
-                    # Lógica de incidencias
                     num_inc = (df_filtered['VALUACION'] > 0).sum()
                     pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
                     inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
                 
-                    # --- NUEVA LÓGICA DE PORCENTAJE DE EFICIENCIA (ON-TIME DELIVERY) ---
-                    mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
-                    df_eval = df_filtered[mask_evaluable]
-                    entregas_a_tiempo = (df_eval['FECHA DE ENTREGA REAL'] <= df_eval['PROMESA DE ENTREGA']).sum()
-                    total_pedidos = len(df_eval)
-                    pct_eficiencia = (entregas_a_tiempo / total_pedidos * 100) if total_pedidos > 0 else 0
+                    # --- NUEVO CÁLCULO: % EFICIENCIA (ON-TIME DELIVERY) ---
+                    entregas_con_data = df_filtered.dropna(subset=['PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL'])
+                    if not entregas_con_data.empty:
+                        a_tiempo = (entregas_con_data['FECHA DE ENTREGA REAL'] <= entregas_con_data['PROMESA DE ENTREGA']).sum()
+                        pct_eficiencia_entrega = (a_tiempo / len(entregas_con_data)) * 100
+                    else:
+                        pct_eficiencia_entrega = 0
                 
-                    # 5. RENDERIZADO DE KPIs (PANTALLA)
+                    # 5. RENDERIZADO DE KPIs (9 TARJETAS - 3X3)
                     st.markdown("### RESUMEN DE RENDIMIENTO")
-                    k1, k2, k3, k4 = st.columns(4)
+                    
+                    # Fila 1
+                    k1, k2, k3 = st.columns(3)
                     with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
                     with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
                     with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="off")
-                    with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
-                
+                    
                     st.markdown("<br>", unsafe_allow_html=True)
-                
-                    k5, k6, k7, k8 = st.columns(4)
+                    
+                    # Fila 2
+                    k4, k5, k6 = st.columns(3)
+                    with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
                     with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
-                    with k6: st.metric("EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%")
-                    with k7: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
-                    with k8: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
+                    with k6: st.metric("% EFICIENCIA ENTREGA", f"{pct_eficiencia_entrega:.1f}%")
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # Fila 3
+                    k7, k8, k9 = st.columns(3)
+                    with k7: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
+                    with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
+                    with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
                 
                     # 6. ANÁLISIS DINÁMICO
                     st.markdown("### ANÁLISIS DINÁMICO DE OPERACIÓN")
                     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
-                    status_eficiencia_txt = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
+                    status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
                     
                     html_analisis = f'''
                     <div class="analysis-box">
                         <b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br>
-                        <b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia_txt}</span> en la consolidación y despacho de mercancía. <br><br>
-                        <b>Logística de Tiempos:</b> Se registra un cumplimiento del <span class="highlight">{pct_eficiencia:.1f}%</span> en entregas a tiempo según fechas compromiso.
+                        <b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho. <br><br>
+                        <b>Eficiencia de Distribución:</b> Se reporta un <span class="highlight">{pct_eficiencia_entrega:.1f}%</span> de cumplimiento en tiempos de entrega de acuerdo a la promesa al cliente.
                     </div>'''
                     st.markdown(html_analisis, unsafe_allow_html=True)
                 
-                    # 7. LÓGICA DE REPORTE PARA IMPRESIÓN
+                    # 7. LÓGICA DE REPORTE PARA IMPRESIÓN (ACTUALIZADO CON 9 MÉTRICAS)
                     def generar_reporte_grafico():
                         estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
-                        pct_cumplimiento = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
+                        pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
                         c_flete = "red" if var_flete_total > 0 else "green"
-                        c_caja = "red" if var_costo_caja > 0 else "green"
                 
                         html_content = f"""
                         <div id="printable-report" style="font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff; max-width: 900px; margin: auto; border: 1px solid #eee;">
@@ -2481,59 +2488,32 @@ else:
                 
                             <h2 style="text-align: center; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; text-decoration: underline;">Análisis Operativo Mensual: {mes_sel}</h2>
                 
-                            <div style="margin-bottom: 40px;">
-                                <p style="font-size: 12px; font-weight: bold; margin-bottom: 10px;">RENDIMIENTO VS META (TARGET 7.5%):</p>
-                                <div style="width: 100%; border: 2px solid #000; height: 35px; position: relative; background: #f0f0f0;">
-                                    <div style="width: {pct_cumplimiento}%; background: #444; height: 100%;"></div>
-                                    <div style="position: absolute; top: 8px; left: 10px; color: #fff; font-weight: bold; font-size: 14px;">ACTUAL: {costo_log_real:.2f}%</div>
-                                    <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold; font-size: 14px;">OBJETIVO: 7.50%</div>
-                                </div>
-                            </div>
-                
-                            <div style="display: flex; gap: 20px; margin-bottom: 40px;">
-                                <div style="flex: 1; border: 1px solid #000; padding: 10px;">
-                                    <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">ESTRUCTURA DE COSTOS</p>
-                                    <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
-                                        <tr><td>Gasto Flete:</td><td style="text-align: right; color:{c_flete}"><b>${total_flete_2026:,.2f}</b> ({var_flete_total:+.1f}%)</td></tr>
-                                        <tr><td>Incidencias:</td><td style="text-align: right;"><b>${total_valuacion_2026:,.2f}</b></td></tr>
-                                        <tr style="border-top: 1px solid #000;"><td><b>Total Op:</b></td><td style="text-align: right;"><b>${(total_flete_2026 + total_valuacion_2026):,.2f}</b></td></tr>
-                                    </table>
-                                </div>
-                                <div style="flex: 1; border: 1px solid #000; padding: 10px;">
-                                    <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA OPERATIVA</p>
-                                    <div style="text-align: center; padding-top: 5px;">
-                                        <span style="font-size: 26px; font-weight: bold;">{pct_eficiencia:.1f}%</span><br>
-                                        <span style="font-size: 10px;">Entregas On-Time</span><br>
-                                        <span style="font-size: 11px; color:{c_caja}; font-weight:bold;">Costo/Caja: ${costo_caja_2026:.2f}</span>
-                                    </div>
-                                </div>
-                            </div>
-                
                             <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 50px;">
                                 <thead>
                                     <tr style="background: #eee; border: 1px solid #000;">
-                                        <th style="padding: 12px; text-align: left; border: 1px solid #000;">MÉTRICA DE OPERACIÓN</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #000;">MÉTRICA ESTRATÉGICA</th>
                                         <th style="padding: 12px; text-align: center; border: 1px solid #000;">VALOR ACTUAL</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td style="padding: 10px; border: 1px solid #000;">Ventas Totales Brutas (Facturación)</td><td style="padding: 10px; border: 1px solid #000; text-align: center; font-weight:bold;">${total_fact_2026:,.2f}</td></tr>
-                                    <tr><td style="padding: 10px; border: 1px solid #000;">Volumen de Despacho (Unidades)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{int(total_cajas_2026):,.0f} Cajas</td></tr>
-                                    <tr><td style="padding: 10px; border: 1px solid #000;">Eficiencia de Entrega a Tiempo</td><td style="padding: 10px; border: 1px solid #000; text-align: center; font-weight:bold;">{pct_eficiencia:.1f}%</td></tr>
-                                    <tr><td style="padding: 10px; border: 1px solid #000;">Impacto Económico Neto (INCR + VI)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${inc_vi_monto:,.2f}</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Costo de Flete Total</td><td style="padding: 10px; border: 1px solid #000; text-align: center; color:{c_flete}; font-weight:bold;">${total_flete_2026:,.2f}</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Facturación Bruta</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${total_fact_2026:,.2f}</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Volumen Total (Cajas)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{total_cajas_2026:,.0f}</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Costo Logístico (%)</td><td style="padding: 10px; border: 1px solid #000; text-align: center; font-weight:bold;">{costo_log_real:.2f}%</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Costo por Caja</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${costo_caja_2026:,.2f}</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;"><b>Eficiencia de Entrega (On-Time)</b></td><td style="padding: 10px; border: 1px solid #000; text-align: center; font-weight:bold; background:#f9f9f9;">{pct_eficiencia_entrega:.1f}%</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Valuación de Incidencias</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${total_valuacion_2026:,.2f}</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Porcentaje de Incidencias</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{pct_inc:.1f}%</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Incremento + VI</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${inc_vi_monto:,.2f}</td></tr>
                                 </tbody>
                             </table>
                 
                             <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
-                                <div style="width: 45%;">
-                                    <div style="border-top: 2px solid #000; padding-top: 10px;">
-                                        <b>HERNANPHY (RIGOBERTO)</b><br>Gerente de Logística JYPESA
-                                    </div>
+                                <div style="width: 45%; border-top: 2px solid #000; padding-top: 10px;">
+                                    <b>HERNANPHY (RIGOBERTO)</b><br>Gerente de Logística JYPESA
                                 </div>
-                                <div style="width: 45%;">
-                                    <div style="border-top: 2px solid #000; padding-top: 10px;">
-                                        <b>VALIDACIÓN NEXION</b><br>Ingeniería de Procesos
-                                    </div>
+                                <div style="width: 45%; border-top: 2px solid #000; padding-top: 10px;">
+                                    <b>VALIDACIÓN NEXION</b><br>Ingeniería de Procesos
                                 </div>
                             </div>
                         </div>
@@ -2543,7 +2523,6 @@ else:
                     st.write("---")
                     if st.button(":material/print: GENERAR REPORTE GRÁFICO PARA IMPRESIÓN", type="primary", use_container_width=True):
                         reporte_html = generar_reporte_grafico()
-                        
                         components.html(f"""
                             <script>
                                 var win = window.open('', '', 'height=1100,width=950');
@@ -4277,6 +4256,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
