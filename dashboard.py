@@ -3631,9 +3631,9 @@ else:
                 # --- HTML PARA IMPRESIÓN PT ---
                 filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
                 tabla_html = "".join([
-                    f"<tr><td style='border:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
-                    f"<td style='border:1px solid black;padding:8px;'>{r['DESCRIPCION']}</td>"
-                    f"<td style='border:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td></tr>" 
+                    f"<tr><td style='border:1px solid black;padding:6px; font-size:10px;'>{r['CODIGO']}</td>"
+                    f"<td style='border:1px solid black;padding:6px; font-size:10px;'>{r['DESCRIPCION']}</td>"
+                    f"<td style='border:1px solid black;padding:6px;text-align:center; font-size:10px;'>{r['CANTIDAD']}</td></tr>" 
                     for _, r in filas_print.iterrows()
                 ])
                 
@@ -3642,32 +3642,54 @@ else:
                 <head>
                     <style>
                         @page {{ 
-                            size: auto;
-                            margin: 0mm; 
+                            size: letter; 
+                            margin: 1cm; 
                         }}
                         @media print {{
-                            body {{ 
-                                margin: 0; 
-                                padding: 15mm; 
-                            }}
-                            .no-print {{ display: none !important; }}
+                            body {{ margin: 0; padding: 0; }}
+                            .print-container {{ min-height: 95vh; display: flex; flex-direction: column; }}
                         }}
-                        body {{ font-family: sans-serif; color: black; background: white; }}
-                        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
-                        th {{ background: #eee; border: 1px solid black; padding: 8px; text-align: left; }}
+                        body {{ 
+                            font-family: sans-serif; 
+                            color: black; 
+                            background: white; 
+                            margin: 0;
+                        }}
+                        .print-container {{
+                            display: flex;
+                            flex-direction: column;
+                            min-height: 95vh; /* Esto empuja el contenido hacia abajo */
+                            width: 100%;
+                        }}
+                        .main-content {{
+                            flex-grow: 1; /* Esta sección crece para ocupar el espacio libre */
+                        }}
+                        table {{ 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 10px; 
+                        }}
+                        th {{ 
+                            background: #eee; 
+                            border: 1px solid black; 
+                            padding: 6px; 
+                            text-align: left; 
+                            font-size: 11px;
+                        }}
                         .comments-section {{
-                            margin-top: 20px;
-                            font-size: 12px;
+                            margin-top: 15px;
+                            font-size: 10px;
                             border: 1px solid black;
-                            padding: 10px;
-                            min-height: 40px;
+                            padding: 8px;
+                            min-height: 30px;
                         }}
                         .signature-section {{
-                            margin-top: 60px;
+                            margin-top: 30px;
                             display: flex;
                             justify-content: space-between;
                             text-align: center;
-                            font-size: 11px;
+                            font-size: 9px;
+                            padding-bottom: 10px;
                         }}
                         .sig-box {{
                             width: 30%;
@@ -3678,31 +3700,33 @@ else:
                 </head>
                 <body>
                     <div class="print-container">
-                        <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:20px;">
-                            <div>
-                                <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
-                                <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                        <div class="main-content">
+                            <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:5px; margin-bottom:15px;">
+                                <div>
+                                    <h2 style="margin:0; font-size: 16px; letter-spacing:1px;">Jabones y Productos Especializados</h2>
+                                    <p style="margin:0; font-size:9px; letter-spacing:1px;">Distribución y Logística | 2026</p>
+                                </div>
+                                <div style="text-align:right; font-size:11px;">
+                                    <b>FOLIO:</b> {fol_val}<br>
+                                    <b>FECHA:</b> {f_val}
+                                </div>
                             </div>
-                            <div style="text-align:right; font-size:12px;">
-                                <b>FOLIO:</b> {fol_val}<br>
-                                <b>FECHA:</b> {f_val}
-                            </div>
-                        </div>
                 
-                        <h3 style="text-align:center; letter-spacing:1px;">ENTREGA DE MATERIALES PT</h3>
-                        <p style="font-size:12px;"><b>TURNO:</b> {t_val}</p>
-                        
-                        <table>
-                            <thead>
-                                <tr><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
-                            </thead>
-                            <tbody>
-                                {tabla_html}
-                            </tbody>
-                        </table>
-            
-                        <div class="comments-section">
-                            <b>COMENTARIOS:</b> {coment_val}
+                            <h3 style="text-align:center; font-size: 14px; letter-spacing:1px; margin: 10px 0;">ENTREGA DE MATERIALES PT</h3>
+                            <p style="font-size:11px;"><b>TURNO:</b> {t_val}</p>
+                            
+                            <table>
+                                <thead>
+                                    <tr><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
+                                </thead>
+                                <tbody>
+                                    {tabla_html}
+                                </tbody>
+                            </table>
+                
+                            <div class="comments-section">
+                                <b>COMENTARIOS:</b> {coment_val}
+                            </div>
                         </div>
                 
                         <div class="signature-section">
@@ -3820,8 +3844,8 @@ else:
                     <div class="print-box">
                         <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
                             <div>
-                                <h2 style="margin:0; letter-spacing:2px;">JYPESA</h2>
-                                <p style="margin:0; font-size:10px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
+                                <h2 style="margin:0; letter-spacing:2px;">Jabones y Productos Especiañizados</h2>
+                                <p style="margin:0; font-size:10px; letter-spacing:1px;">Distribución y Logística | 2026</p>
                             </div>
                             <div style="text-align:right;">
                                 <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{f_hora_c}</span>
@@ -4370,6 +4394,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
