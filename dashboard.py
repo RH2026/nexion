@@ -2562,9 +2562,10 @@ else:
                                     <tr><td style="border: 1px solid #000; padding: 8px;">Impacto Económico Neto (Incremento + VI)</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">${inc_vi_monto:,.2f}</td></tr>
                                 </table>
                 
-                                <div style="margin-top: 50px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
+                                <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
                                     <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
                                         <b>Rigoberto Hernández</b><br>Coordinador de Logística Nacional
+                                    </div>
                                     <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
                                         <b>Carlos Fialko</b><br>Director General
                                     </div>
@@ -4249,6 +4250,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
