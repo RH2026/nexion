@@ -2373,6 +2373,12 @@ else:
                         if col in df_actual.columns: df_actual[col] = limpiar_dinero(df_actual[col])
                     if 'COSTO DE LA GUIA' in df_2025.columns: df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
                 
+                    # --- PROCESAMIENTO DE FECHAS PARA EFICIENCIA ---
+                    col_fechas = ['FECHA DE ENVIO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL']
+                    for f_col in col_fechas:
+                        if f_col in df_actual.columns:
+                            df_actual[f_col] = pd.to_datetime(df_actual[f_col], errors='coerce')
+                
                     df_actual['MES'] = df_actual['MES'].astype(str).str.strip().str.upper()
                     df_2025['MES'] = df_2025['MES'].astype(str).str.strip().str.upper()
                 
@@ -2380,7 +2386,6 @@ else:
                     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos.get('COSTOS ADICIONALES', 0)
                 
                     # 3. INTERFAZ
-                    
                     c_f1, c_f2 = st.columns(2)
                     with c_f1: mes_sel = st.selectbox(":material/calendar_month: FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
                     with c_f2: flet_sel = st.selectbox(":material/local_shipping: FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
@@ -2410,10 +2415,17 @@ else:
                     costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
                     diferencia_target = costo_log_real - 7.5
                     
-                    # Lógica de incidencias del primer código
+                    # Lógica de incidencias
                     num_inc = (df_filtered['VALUACION'] > 0).sum()
                     pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
                     inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
+                
+                    # --- NUEVA LÓGICA DE PORCENTAJE DE EFICIENCIA (ON-TIME DELIVERY) ---
+                    mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
+                    df_eval = df_filtered[mask_evaluable]
+                    entregas_a_tiempo = (df_eval['FECHA DE ENTREGA REAL'] <= df_eval['PROMESA DE ENTREGA']).sum()
+                    total_pedidos = len(df_eval)
+                    pct_eficiencia = (entregas_a_tiempo / total_pedidos * 100) if total_pedidos > 0 else 0
                 
                     # 5. RENDERIZADO DE KPIs (PANTALLA)
                     st.markdown("### RESUMEN DE RENDIMIENTO")
@@ -2427,19 +2439,20 @@ else:
                 
                     k5, k6, k7, k8 = st.columns(4)
                     with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
-                    with k6: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
+                    with k6: st.metric("EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%")
                     with k7: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
-                    with k8: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
+                    with k8: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
                 
                     # 6. ANÁLISIS DINÁMICO
                     st.markdown("### ANÁLISIS DINÁMICO DE OPERACIÓN")
                     status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
-                    status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
+                    status_eficiencia_txt = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
                     
                     html_analisis = f'''
                     <div class="analysis-box">
                         <b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br>
-                        <b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.
+                        <b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia_txt}</span> en la consolidación y despacho de mercancía. <br><br>
+                        <b>Logística de Tiempos:</b> Se registra un cumplimiento del <span class="highlight">{pct_eficiencia:.1f}%</span> en entregas a tiempo según fechas compromiso.
                     </div>'''
                     st.markdown(html_analisis, unsafe_allow_html=True)
                 
@@ -2487,11 +2500,11 @@ else:
                                     </table>
                                 </div>
                                 <div style="flex: 1; border: 1px solid #000; padding: 10px;">
-                                    <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA UNITARIA</p>
+                                    <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA OPERATIVA</p>
                                     <div style="text-align: center; padding-top: 5px;">
-                                        <span style="font-size: 26px; font-weight: bold;">${costo_caja_2026:.2f}</span><br>
-                                        <span style="font-size: 10px;">Costo por Caja</span><br>
-                                        <span style="font-size: 11px; color:{c_caja}; font-weight:bold;">Var: {var_costo_caja:+.1f}% vs 2025</span>
+                                        <span style="font-size: 26px; font-weight: bold;">{pct_eficiencia:.1f}%</span><br>
+                                        <span style="font-size: 10px;">Entregas On-Time</span><br>
+                                        <span style="font-size: 11px; color:{c_caja}; font-weight:bold;">Costo/Caja: ${costo_caja_2026:.2f}</span>
                                     </div>
                                 </div>
                             </div>
@@ -2506,7 +2519,7 @@ else:
                                 <tbody>
                                     <tr><td style="padding: 10px; border: 1px solid #000;">Ventas Totales Brutas (Facturación)</td><td style="padding: 10px; border: 1px solid #000; text-align: center; font-weight:bold;">${total_fact_2026:,.2f}</td></tr>
                                     <tr><td style="padding: 10px; border: 1px solid #000;">Volumen de Despacho (Unidades)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{int(total_cajas_2026):,.0f} Cajas</td></tr>
-                                    <tr><td style="padding: 10px; border: 1px solid #000;">Variación Volumen vs 2025</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{var_volumen:+.1f}%</td></tr>
+                                    <tr><td style="padding: 10px; border: 1px solid #000;">Eficiencia de Entrega a Tiempo</td><td style="padding: 10px; border: 1px solid #000; text-align: center; font-weight:bold;">{pct_eficiencia:.1f}%</td></tr>
                                     <tr><td style="padding: 10px; border: 1px solid #000;">Impacto Económico Neto (INCR + VI)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${inc_vi_monto:,.2f}</td></tr>
                                 </tbody>
                             </table>
@@ -4264,6 +4277,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
