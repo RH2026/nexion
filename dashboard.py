@@ -2426,10 +2426,10 @@ else:
                     # --- BOTONES DE CAMBIO DE VISTA ---
                     c_btn1, c_btn2 = st.columns(2)
                     with c_btn1:
-                        if st.button("📊 VER MÉTRICAS Y TARJETAS", use_container_width=True):
+                        if st.button("VER MÉTRICAS Y TARJETAS", use_container_width=True):
                             st.session_state.ver_grafico = False
                     with c_btn2:
-                        if st.button("📈 VER GRÁFICO COMPARATIVO", use_container_width=True):
+                        if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
                             st.session_state.ver_grafico = True
                 
                     # --- 5, 6 y 7. VISTA DE TARJETAS ---
@@ -2523,10 +2523,9 @@ else:
                 
                                 <div style="margin-top: 50px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
                                     <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
-                                        <b>HERNANPHY (RIGOBERTO)</b><br>Gerente de Logística JYPESA
-                                    </div>
+                                        <b>Rigoberto Hernández</b><br>Coordinador de Logística Nacional
                                     <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
-                                        <b>VALIDACIÓN NEXION</b><br>Ingeniería de Procesos
+                                        <b>Carlos Fialko</b><br>Director General
                                     </div>
                                 </div>
                             </div>
@@ -2538,7 +2537,7 @@ else:
                 
                     # --- 8. VISTA DE GRÁFICO (COMPARATIVO) ---
                     else:
-                        st.markdown("### 📈 COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
+                        st.markdown("###COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
                         
                         # 1. Preparación de datos
                         df_g_2026 = df_gastos.groupby('MES')['COSTO DE FLETE'].sum().reset_index()
@@ -2553,15 +2552,15 @@ else:
                         # 3. Creación del Gráfico de Élite
                         fig = go.Figure()
                 
-                        # Barra 2025 (Plata / Acero)
+                        # --- NUEVA BARRA 2025 (Azul Grisáceo Profundo) ---
                         fig.add_trace(go.Bar(
                             x=df_g_2025.sort_values('MES')['MES'], 
                             y=df_g_2025.sort_values('MES')['COSTO DE LA GUIA'], 
                             name='Gasto 2025', 
-                            marker_color='#A4B9C8',
+                            marker_color='#34495E', # <--- AQUÍ ESTÁ EL CAMBIO DE COLOR
                             text=[f'${x:,.0f}' for x in df_g_2025.sort_values('MES')['COSTO DE LA GUIA']],
                             textposition='outside',
-                            textfont=dict(color='#A4B9C8')
+                            textfont=dict(color='#A4B9C8') # Mantenemos el texto en gris claro para legibilidad
                         ))
                 
                         # Barra 2026 (Oro / Dorado)
@@ -4209,6 +4208,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
