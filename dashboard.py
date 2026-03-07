@@ -1908,11 +1908,45 @@ else:
                         }
                     )
                 
-                    if st.button("SINCRONIZAR CON GITHUB", use_container_width=True):
-                        df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
-                        if guardar_en_github(df_guardar):
-                            st.session_state.df_tareas = df_guardar
-                            st.rerun() 
+                    # 1. Definimos las columnas que quieres exportar
+                    cols_export = ["FECHA", "IMPORTANCIA", "TAREA", "ULTIMO ACCION", "TIPO", "GRUPO"]
+                    
+                    # Filtramos el dataframe asegurándonos de que las columnas existen
+                    df_export = df_editado.copy()
+                    df_export = df_export[[c for c in cols_export if c in df_export.columns]]
+                    
+                    # 2. Creamos el contenedor para los botones
+                    col1, col2, col3 = st.columns(3)
+                    
+                    # --- BOTÓN SINCRONIZAR ---
+                    with col1:
+                        if st.button("🔄 Sincronizar", use_container_width=True):
+                            df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
+                            if guardar_en_github(df_guardar):
+                                st.session_state.df_tareas = df_guardar
+                                st.success("¡Sincronizado con éxito!")
+                                st.rerun()
+                    
+                    # --- BOTÓN IMPRIMIR ---
+                    with col2:
+                        # Usamos un poco de JS para invocar la ventana de impresión nativa del navegador
+                        if st.button("🖨️ Imprimir", use_container_width=True):
+                            st.write('<script>window.print();</script>', unsafe_allow_html=True)
+                    
+                    # --- BOTÓN EXCEL ---
+                    with col3:
+                        # Preparamos el buffer de memoria para el Excel
+                        buffer = io.BytesIO()
+                        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                            df_export.to_excel(writer, index=False, sheet_name='Tareas')
+                        
+                        st.download_button(
+                            label="📊 Descargar Excel",
+                            data=buffer.getvalue(),
+                            file_name="tareas_nexion.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        ) 
                 
                 
                 
@@ -4258,6 +4292,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
