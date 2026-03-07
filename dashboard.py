@@ -2451,16 +2451,16 @@ else:
                         with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
                 
                         # --- 6. ANÁLISIS DINÁMICO PROFUNDO ---
-                        st.markdown("###  DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
+                        st.markdown("### DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
                         
                         # Lógica de interpretación
                         # 1. Análisis de Costo
                         if costo_log_real <= 7.5:
                             status_target = "🟢 DENTRO DEL TARGET"
-                            desc_costo = "La gestión financiera es <span class="highlight">óptima</span>, manteniendo la rentabilidad bajo los parámetros establecidos."
+                            desc_costo = "La gestión financiera es <span class='highlight'>óptima</span>, manteniendo la rentabilidad bajo los parámetros establecidos."
                         else:
                             status_target = "🔴 FUERA DE TARGET"
-                            desc_costo = f"Se detecta una desviación del <span class="highlight">{diferencia_target:.2f}%</span>. Es prioritario revisar la negociación con fleteras o la consolidación de carga."
+                            desc_costo = f"Se detecta una desviación del <span class='highlight'>{diferencia_target:.2f}%</span>. Es prioritario revisar la negociación con fleteras o la consolidación de carga."
                 
                         # 2. Análisis de Eficiencia (On-Time)
                         if pct_eficiencia >= 95:
@@ -4249,6 +4249,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
