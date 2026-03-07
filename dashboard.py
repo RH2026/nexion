@@ -4122,7 +4122,7 @@ else:
                             commit_msg = st.text_input("Mensaje de Sincronización", 
                                                      value=f"Update Master {hora_actual_gdl}")
                 
-                            if st.button(":material/cloud_sync: SINCRONIZAR CON GITHUB", type="primary", use_container_width=True):
+                            if st.button(":material/cloud_sync: SINCRONIZAR", type="primary", use_container_width=True):
                                 with st.status("Iniciando conexión con GitHub...", expanded=True) as status:
                                     try:
                                         from github import Github
@@ -4169,110 +4169,7 @@ else:
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
                 # --- 1. CONFIGURACIÓN DE PODER ---
-                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-                
-                def leer_csv_github(nombre_archivo):
-                    try:
-                        url = f"https://api.github.com/repos/RH2026/nexion/contents/{nombre_archivo}"
-                        headers = {"Authorization": f"token {st.secrets['GITHUB_TOKEN']}"}
-                        r = requests.get(url, headers=headers)
-                        if r.status_code == 200:
-                            content = r.json()
-                            df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
-                            # Limpieza Pro: Quitamos espacios en blanco en nombres de columnas
-                            df.columns = df.columns.str.strip()
-                            return df
-                    except: return None
-                    return None
-                
-                # --- 2. INTERFAZ TIPO DASHBOARD ---
-                st.title("🚀 NEXION AI: INTELIGENCIA TOTAL")
-                st.sidebar.header("Configuración de Análisis")
-                
-                if "messages" not in st.session_state:
-                    st.session_state.messages = []
-                
-                # --- 3. PROCESAMIENTO ANALÍTICO (EL TRABAJO DURO) ---
-                def generar_auditoria_completa():
-                    matrices = {
-                        "Dashboard": "Matriz_Excel_Dashboard.csv",
-                        "Facturación": "facturacion_moreno.csv",
-                        "Inventario": "inventario.csv",
-                        "Historial": "matriz_historial.csv",
-                        "Muestras": "muestras.csv"
-                    }
-                    
-                    reporte_master = "--- REPORTE ANALÍTICO ESTRUCTURADO PARA JYPESA ---\n"
-                    
-                    for nombre, archivo in matrices.items():
-                        df = leer_csv_github(archivo)
-                        if df is not None:
-                            reporte_master += f"\n📊 MATRIZ: {nombre.upper()} ({len(df)} filas detectadas)\n"
-                            
-                            # Analizamos cada columna de forma inteligente
-                            for col in df.columns:
-                                # Si es numérica (Precios, Cantidades, Stock)
-                                if pd.api.types.is_numeric_dtype(df[col]):
-                                    suma = df[col].sum()
-                                    promedio = df[col].mean()
-                                    reporte_master += f"  > [Numérica] '{col}': Total Sumado={suma:,.2f} | Promedio={promedio:,.2f}\n"
-                                
-                                # Si es categoría (Clientes, Destinos, Productos, Vendedores)
-                                else:
-                                    # Sacamos los 10 valores que más se repiten (Frecuencia real)
-                                    top_10 = df[col].value_counts().head(10).to_dict()
-                                    reporte_master += f"  > [Categoría] '{col}': Top 10 Frecuencias={top_10}\n"
-                            
-                            # Agregamos una 'foto' de los últimos 5 movimientos para contexto narrativo
-                            reporte_master += f"  > Últimos movimientos:\n{df.tail(5).to_string(index=False)}\n"
-                        else:
-                            reporte_master += f"\n❌ MATRIZ: {nombre.upper()} (No se pudo conectar)\n"
-                            
-                    return reporte_master
-                
-                # --- 4. LÓGICA DEL CHAT INTELIGENTE ---
-                for m in st.session_state.messages:
-                    with st.chat_message(m["role"]): st.markdown(m["content"])
-                
-                if pregunta := st.chat_input("Hazme una pregunta compleja sobre JYPESA o cualquier tema..."):
-                    st.session_state.messages.append({"role": "user", "content": pregunta})
-                    with st.chat_message("user"): st.markdown(pregunta)
-                
-                    with st.spinner("Analizando miles de registros y cruzando información..."):
-                        try:
-                            # Detectar el mejor modelo disponible
-                            modelos = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                            model = genai.GenerativeModel(modelos[0])
-                            
-                            # Obtenemos la auditoría de Python
-                            contexto_data = generar_auditoria_completa()
-                            
-                            # Prompt de "Super Asistente"
-                            prompt_final = f"""
-                            ESTE ES EL REPORTE DE DATOS REAL DE JYPESA:
-                            {contexto_data}
-                            
-                            ERES UNA IA DE ELITE Y ANALISTA SENIOR.
-                            Instrucciones:
-                            1. Rigoberto te hará preguntas. Si la respuesta está en los datos de arriba, sé EXACTO.
-                               Ejemplo: "Tienes 45 envíos a Mazatlán según la matriz de Muestras".
-                            2. Si la pregunta es sobre estrategia, usa los datos para aconsejar.
-                               Ejemplo: "Veo que el producto X tiene poco stock pero muchas muestras, ¡surte pronto!".
-                            3. Si la pregunta es CUALQUIER OTRA COSA (cultura, ciencia, ocio), responde con excelencia.
-                            4. Tu tono es profesional, inteligente y directo.
-                            
-                            Pregunta de Rigoberto: {pregunta}
-                            """
-                            
-                            response = model.generate_content(prompt_final)
-                            
-                            with st.chat_message("assistant"):
-                                st.markdown(response.text)
-                            st.session_state.messages.append({"role": "assistant", "content": response.text})
-                
-                        except Exception as e:
-                            st.error(f"Error en el Cerebro Central, amor: {str(e)}")
-                                              
+                                                              
             
                
     
@@ -4286,6 +4183,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
