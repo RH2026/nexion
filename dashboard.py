@@ -1432,74 +1432,68 @@ else:
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     
-                    # 1. Configuración Técnica de Feriados y Formatos
-                    # Usamos numpy para el cálculo de días hábiles sin errores de conversión
+                    # 1. Configuración de Feriados
                     lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
                     feriados_np = np.array(lista_feriados, dtype='datetime64[D]')
 
-                    # 2. Función de Cálculo de Meta 24 Horas Hábiles
+                    # 2. Función de Cálculo BLINDADA
                     def calcular_kpi_24h(row):
-                        # Buscamos las columnas por nombre exacto
                         inicio = row.get('EMISION')
                         fin = row.get('FECHA DE ENVÍO')
                         
-                        if pd.isna(inicio) or pd.isna(fin): 
+                        # VALIDACIÓN CLAVE: Si alguna fecha es nula o no es válida, devolvemos "Sin Datos"
+                        if pd.isna(inicio) or pd.isna(fin) or not isinstance(inicio, pd.Timestamp) or not isinstance(fin, pd.Timestamp): 
                             return "Sin Datos"
-                        if fin <= inicio: 
-                            return "A Tiempo"
                         
-                        # Cálculo de días hábiles (Excluye Sáb/Dom y Feriados)
-                        dias_habiles = np.busday_count(
-                            inicio.to_datetime64().astype('datetime64[D]'), 
-                            fin.to_datetime64().astype('datetime64[D]'), 
-                            weekmask='1111100', 
-                            holidays=feriados_np
-                        )
-                        
-                        # Si es el mismo día hábil -> A Tiempo
-                        if dias_habiles == 0: 
-                            return "A Tiempo"
-                        # Si es el día hábil siguiente -> Validamos que sea antes de la misma hora
-                        elif dias_habiles == 1:
-                            return "A Tiempo" if fin.time() <= inicio.time() else "Fuera de Tiempo"
-                        # Más de un día hábil -> Fuera de Tiempo
-                        return "Fuera de Tiempo"
+                        try:
+                            # Ahora sí comparamos con seguridad
+                            if fin <= inicio: 
+                                return "A Tiempo"
+                            
+                            # Diferencia en días hábiles
+                            dias_habiles = np.busday_count(
+                                inicio.to_datetime64().astype('datetime64[D]'), 
+                                fin.to_datetime64().astype('datetime64[D]'), 
+                                weekmask='1111100', 
+                                holidays=feriados_np
+                            )
+                            
+                            if dias_habiles == 0: 
+                                return "A Tiempo"
+                            elif dias_habiles == 1:
+                                return "A Tiempo" if fin.time() <= inicio.time() else "Fuera de Tiempo"
+                            return "Fuera de Tiempo"
+                        except:
+                            return "Sin Datos"
 
-                    # Aplicamos la lógica al dataframe filtrado por el mes seleccionado
+                    # Aplicamos la lógica al dataframe
                     df_mes['Estado_KPI_24h'] = df_mes.apply(calcular_kpi_24h, axis=1)
                     
-                    # 3. Preparación de métricas para las Donitas
+                    # 3. Métricas para Donitas (Filtrando solo los válidos)
                     df_validos = df_mes[df_mes['Estado_KPI_24h'] != "Sin Datos"]
                     total_v = len(df_validos)
                     cumplen_v = len(df_validos[df_validos['Estado_KPI_24h'] == "A Tiempo"])
                     fallan_v = len(df_validos[df_validos['Estado_KPI_24h'] == "Fuera de Tiempo"])
 
-                    # 4. Renderizado de KPIs con tu estilo original
-                    st.markdown(f"""
+                    # 4. Renderizado (Igual que tus otros KPIs)
+                    st.markdown("""
                         <div style="text-align: center; margin-bottom: 30px;">
-                            <p style="color: #94a3b8; font-size: 12px; letter-spacing: 3px; font-weight: 700;">
-                                CUMPLIMIENTO DE DESPACHOS EN TIEMPO (META 98%)
+                            <p style="color: #94a3b8; font-size: 10px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase;">
+                                Cumplimiento de Despachos 24h
                             </p>
                         </div>
                     """, unsafe_allow_html=True)
 
-                    # Tres columnas para tus donitas
                     cv1, cv2, cv3 = st.columns(3)
-                    with cv1: 
-                        render_kpi(total_v, total_v, "Total Facturas", "#4e73df") # Azul
-                    with cv2: 
-                        render_kpi(cumplen_v, total_v, "A Tiempo (24h)", "#1cc88a") # Verde
-                    with cv3: 
-                        render_kpi(fallan_v, total_v, "Fuera de Meta", "#fb7185") # Rojo
+                    with cv1: render_kpi(total_v, total_v, "Facturas Válidas", "#4e73df")
+                    with cv2: render_kpi(cumplen_v, total_v, "En Tiempo", "#1cc88a")
+                    with cv3: render_kpi(fallan_v, total_v, "Fuera de Meta", "#fb7185")
 
-                    # 5. Detalle de Incidencias
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    with st.expander("🔍 VER LISTADO DE DESPACHOS FUERA DE TIEMPO"):
-                        retrasos = df_mes[df_mes['Estado_KPI_24h'] == "Fuera de Tiempo"][[
-                            'EMISION', 'FECHA DE ENVÍO', 'NOMBRE DEL CLIENTE', 'DESTINO'
-                        ]].sort_values(by='EMISION', ascending=False)
-                        
-                        st.dataframe(retrasos, use_container_width=True, hide_index=True)
+                    # Tabla de errores para que revises tu Excel
+                    if len(df_mes[df_mes['Estado_KPI_24h'] == "Sin Datos"]) > 0:
+                        with st.expander("⚠️ Ver facturas con fechas incompletas"):
+                            st.write("Estas filas no tienen fecha de emisión o envío y no entran en el KPI:")
+                            st.dataframe(df_mes[df_mes['Estado_KPI_24h'] == "Sin Datos"][['EMISION', 'FECHA DE ENVÍO']], use_container_width=True)
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_participacion:
@@ -4462,6 +4456,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
