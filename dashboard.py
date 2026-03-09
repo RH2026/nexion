@@ -1490,11 +1490,11 @@ else:
                     c_v1, c_v2, c_v3 = st.columns(3)
                     
                     with c_v1: 
-                        render_kpi(tot_v, tot_v, "Total Facturas", "#4e73df")  # Azul Real
+                        render_kpi(tot_v, tot_v, "Total Facturas", "#5a8dee")  # Azul Real
                     with c_v2: 
-                        render_kpi(ok_v, tot_v, "A Tiempo", "#1cc88a")       # Verde Esmeralda
+                        render_kpi(ok_v, tot_v, "A Tiempo", "#39da8a")       # Verde Esmeralda
                     with c_v3: 
-                        render_kpi(no_v, tot_v, "Fuera de Meta", "#fb7185")  # Rojo Coral
+                        render_kpi(no_v, tot_v, "Fuera de Meta", "#ff5b5c")  # Rojo Coral
 
                     st.markdown("<br><br>", unsafe_allow_html=True)
 
@@ -4468,6 +4468,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
