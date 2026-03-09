@@ -1432,83 +1432,102 @@ else:
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     # 1. Cargamos tu archivo
-                    st.title("📊 Control de Logística - Meta 98%")
-                    st.subheader("Análisis de Despachos (Máx 24h Hábiles)")
+                    # Configuración estética
+                    st.set_page_config(page_title="Nexion - KPI Logística", layout="wide")
                     
-                    # 1. Carga de Archivo
+                    # Estilo "Onyx & Blue"
+                    st.markdown("""
+                        <style>
+                        .stApp { background-color: #00050a; color: white; }
+                        .css-1r6slb0 { background-color: #001a33; border-radius: 10px; padding: 20px; }
+                        </style>
+                        """, unsafe_allow_html=True)
+                    
+                    st.title("🚀 Dashboard de Despachos | JYPESA")
+                    st.write("Meta de cumplimiento: **98%** (Plazo máximo: 24h hábiles)")
+                    
                     try:
-                        # Si prefieres subirlo manualmente, puedes usar st.file_uploader
+                        # 1. Carga de datos
                         df = pd.read_csv('Matriz_Excel_Dashboard.csv')
+                        
+                        # Limpiamos nombres de columnas por si acaso
+                        df.columns = df.columns.str.strip()
                     
-                        # Limpieza y Conversión
-                        df['EMISION'] = pd.to_datetime(df['EMISION'], errors='coerce')
-                        df['fecha de envio'] = pd.to_datetime(df['fecha de envio'], errors='coerce')
-                        df = df.dropna(subset=['EMISION', 'fecha de envio']).copy()
+                        # 2. Definición de columnas exactas
+                        col_emision = 'EMISION'
+                        col_envio = 'FECHA DE ENVÍO' # <--- Ya con el acento correcto
                     
-                        # 2. Configuración de Feriados (Personalízalo con los de México/tu país)
-                        feriados = pd.to_datetime(['2026-01-01', '2026-02-05', '2026-03-16']).date
+                        # Convertir a datetime
+                        df[col_emision] = pd.to_datetime(df[col_emision], errors='coerce')
+                        df[col_envio] = pd.to_datetime(df[col_envio], errors='coerce')
+                        
+                        # Quitamos datos vacíos
+                        df = df.dropna(subset=[col_emision, col_envio]).copy()
                     
-                        # 3. Lógica de Cálculo de Tiempo
-                        def calcular_cumplimiento(row):
-                            inicio = row['EMISION']
-                            fin = row['fecha de envio']
+                        # 3. Feriados 2026 (México) - Añade los que necesites
+                        feriados = pd.to_datetime([
+                            '2026-01-01', # Año nuevo
+                            '2026-02-02', # Constitución
+                            '2026-03-16'  # Natalicio Benito Juárez
+                        ]).date
+                    
+                        # 4. Función de cálculo de 24h hábiles
+                        def verificar_kpi(row):
+                            inicio = row[col_emision]
+                            fin = row[col_envio]
+                            
                             if fin <= inicio: return "A Tiempo"
                             
-                            # Contar días hábiles entre fechas
-                            dias = np.busday_count(inicio.date(), fin.date(), 
-                                                  weekmask='1111100', holidays=feriados)
+                            # Calculamos días hábiles (excluye Sábados (5) y Domingos (6))
+                            dias_habiles = np.busday_count(
+                                inicio.date(), 
+                                fin.date(), 
+                                weekmask='1111100', 
+                                holidays=feriados
+                            )
                             
-                            # Regla de las 24 horas hábiles
-                            if dias == 0: return "A Tiempo"
-                            if dias == 1 and fin.time() <= inicio.time(): return "A Tiempo"
-                            return "Fuera de Tiempo"
+                            # Si es el mismo día hábil
+                            if dias_habiles == 0:
+                                return "A Tiempo"
+                            # Si es el día hábil siguiente, comparamos que no pasen las 24h (misma hora)
+                            elif dias_habiles == 1:
+                                return "A Tiempo" if fin.time() <= inicio.time() else "Fuera de Tiempo"
+                            else:
+                                return "Fuera de Tiempo"
                     
-                        df['Estado'] = df.apply(calcular_cumplimiento, axis=1)
+                        df['Resultado'] = df.apply(verificar_kpi, axis=1)
                     
-                        # 4. Métricas Principales
+                        # 5. Métricas y Visualización
                         total = len(df)
-                        a_tiempo = len(df[df['Estado'] == "A Tiempo"])
-                        kpi_actual = (a_tiempo / total) * 100
+                        cumplen = len(df[df['Resultado'] == "A Tiempo"])
+                        kpi_valor = (cumplen / total) * 100
                         meta = 98.0
                     
-                        # Renderizado de KPIs en columnas
                         col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            st.metric("Total Despachos", f"{total}")
-                        
-                        with col2:
-                            # El color cambia a rojo si no llegas a la meta
-                            color_delta = "normal" if kpi_actual >= meta else "inverse"
-                            st.metric("KPI Actual", f"{kpi_actual:.2f}%", 
-                                      delta=f"{kpi_actual - meta:.2f}% vs Meta", 
-                                      delta_color=color_delta)
-                        
-                        with col3:
-                            st.metric("Meta Establecida", f"{meta}%")
+                        col1.metric("Total Facturado", total)
+                        col2.metric("KPI Actual", f"{kpi_valor:.2f}%", f"{kpi_valor - meta:.2f}%", delta_color="normal" if kpi_valor >= meta else "inverse")
+                        col3.metric("Meta", f"{meta}%")
                     
-                        # 5. Gráfico Visual
-                        fig = px.pie(df, names='Estado', 
-                                     color='Estado',
-                                     color_discrete_map={'A Tiempo':'#00CC96', 'Fuera de Tiempo':'#EF553B'},
-                                     hole=0.4,
-                                     title="Cumplimiento de Despachos")
+                        # Gráfico elegante
+                        fig = px.pie(
+                            df, names='Resultado', 
+                            hole=0.6,
+                            color='Resultado',
+                            color_discrete_map={'A Tiempo': '#003366', 'Fuera de Tiempo': '#000b1a'},
+                            title="Distribución de Entregas"
+                        )
+                        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
                         
                         st.plotly_chart(fig, use_container_width=True)
                     
-                        # 6. Tabla de Detalles
-                        with st.expander("Ver detalle de datos"):
-                            st.dataframe(df[['EMISION', 'fecha de envio', 'Estado']], use_container_width=True)
+                        # Tabla de revisión
+                        with st.expander("Ver lista de despachos fuera de tiempo"):
+                            retrasos = df[df['Resultado'] == "Fuera de Tiempo"]
+                            st.dataframe(retrasos[[col_emision, col_envio, 'Resultado']], use_container_width=True)
                     
-                        if kpi_actual >= meta:
-                            st.success("✨ ¡Felicidades! Estás cumpliendo la meta de logística.")
-                        else:
-                            st.warning(f"⚠️ Atención: Estamos un {meta - kpi_actual:.2f}% por debajo de la meta.")
-                    
-                    except FileNotFoundError:
-                        st.error("No encontré el archivo 'Matriz_Excel_Dashboard.csv'. Verifica que esté en la misma carpeta.")
                     except Exception as e:
-                        st.error(f"Hubo un error amor: {e}")
+                        st.error(f"Hubo un detalle amor: {e}")
+                        st.info(f"Asegúrate de que las columnas se llamen exactamente: **{col_emision}** y **{col_envio}**")
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_participacion:
@@ -4471,6 +4490,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
