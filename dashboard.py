@@ -1431,8 +1431,78 @@ else:
                 # PESTAÑA 3: VOLUMEN
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    st.write("Visualización de Volumen de Carga")
-                    #AQUI
+                    # 1. Cargamos tu archivo
+                    try:
+                        df = pd.read_csv('Matriz_Excel_Dashboard.csv')
+                    
+                        # Convertir columnas a datetime
+                        df['EMISION'] = pd.to_datetime(df['EMISION'], errors='coerce')
+                        df['fecha de envio'] = pd.to_datetime(df['fecha de envio'], errors='coerce')
+                        
+                        # Limpieza: eliminar filas sin fechas válidas
+                        df = df.dropna(subset=['EMISION', 'fecha de envio']).copy()
+                    
+                        # 2. Configuración de Días No Laborales (Feriados)
+                        # AMOR: Aquí debes escribir las fechas de los feriados de tu año entre comillas
+                        feriados = [
+                            '2024-01-01', '2024-05-01', '2024-09-16', '2024-12-25' 
+                        ]
+                        feriados = pd.to_datetime(feriados)
+                    
+                        # 3. Función para calcular si está a tiempo (Máximo 24 horas hábiles)
+                        def es_a_tiempo(fila):
+                            inicio = fila['EMISION']
+                            fin = fila['fecha de envio']
+                            
+                            # Si enviaron antes de que se emitiera (error de dedo o sistema), es a tiempo
+                            if fin <= inicio:
+                                return True
+                            
+                            # Contamos cuántos días hábiles pasaron (excluye Sáb, Dom y Feriados)
+                            # El día de inicio no se cuenta, por lo que si es 0 o 1, estamos en el rango de 24h hábiles
+                            dias_habiles = np.busday_count(
+                                inicio.date(), 
+                                fin.date(), 
+                                weekmask='1111100', # 1=Laboral, 0=Fin de semana (Lunes a Viernes)
+                                holidays=feriados.date
+                            )
+                            
+                            # Lógica de las 24 horas:
+                            # Si los días hábiles son 0, se envió el mismo día.
+                            # Si es 1, verificamos que la hora de envío sea menor o igual a la hora de emisión.
+                            if dias_habiles == 0:
+                                return True
+                            elif dias_habiles == 1:
+                                # Comparamos solo la hora, minuto y segundo
+                                return fin.time() <= inicio.time()
+                            else:
+                                return False
+                    
+                        # 4. Aplicamos la lógica a cada fila
+                        df['a_tiempo'] = df.apply(es_a_tiempo, axis=1)
+                    
+                        # 5. Cálculos del KPI
+                        total = len(df)
+                        cumplen = df['a_tiempo'].sum()
+                        kpi_actual = (cumplen / total) * 100
+                        meta = 98.0
+                    
+                        # 6. Resultados
+                        print(f"--- Análisis de KPI (Máx 24h Hábiles) ---")
+                        print(f"Total pedidos: {total}")
+                        print(f"A tiempo: {cumplen}")
+                        print(f"Resultado KPI: {kpi_actual:.2f}%")
+                        print(f"Meta: {meta}%")
+                    
+                        if kpi_actual >= meta:
+                            print(f"\n¡Lo lograste amor! Superaste la meta por {kpi_actual - meta:.2f}% 🏆")
+                        else:
+                            print(f"\nÁnimo vida, faltó {meta - kpi_actual:.2f}% para la meta. ¡Tú puedes! 💪")
+                    
+                    except FileNotFoundError:
+                        print("No encontré el archivo. Verifica el nombre 'Matriz_Excel_Dashboard.csv'")
+                    except Exception as e:
+                        print(f"Hubo un detalle: {e}")
                 
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
@@ -4396,6 +4466,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
