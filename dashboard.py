@@ -1432,7 +1432,7 @@ else:
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     # 1. Cargamos tu archivo
-                    # Estilo visual Ónix
+                    # Estilo visual Ónix y Azul
                     st.markdown("""
                         <style>
                         .stApp { background-color: #00050a; color: white; }
@@ -1440,7 +1440,8 @@ else:
                         </style>
                         """, unsafe_allow_html=True)
                     
-                    st.title("📊 KPI de Despachos | Logística JYPESA")
+                    st.title("📊 KPI de Despachos | JYPESA")
+                    st.write("Formato detectado: **Día/Mes/Año** | Meta: **98%**")
                     
                     try:
                         # 1. Carga de datos
@@ -1450,27 +1451,29 @@ else:
                         col_emision = 'EMISION'
                         col_envio = 'FECHA DE ENVÍO'
                     
-                        # Convertir a datetime y limpiar nulos
-                        df[col_emision] = pd.to_datetime(df[col_emision], errors='coerce')
-                        df[col_envio] = pd.to_datetime(df[col_envio], errors='coerce')
+                        # --- CORRECCIÓN DEFINITIVA: Formato Día/Mes/Año ---
+                        # dayfirst=True le indica a pandas que el primer número es el día
+                        df[col_emision] = pd.to_datetime(df[col_emision], dayfirst=True, errors='coerce')
+                        df[col_envio] = pd.to_datetime(df[col_envio], dayfirst=True, errors='coerce')
+                        
+                        # Limpiamos filas que no pudieron convertirse
                         df = df.dropna(subset=[col_emision, col_envio]).copy()
                     
-                        # 2. FERIADOS - Corrección técnica para evitar el error de array
-                        # Definimos la lista de feriados y la convertimos al formato que numpy ama: datetime64[D]
+                        # 2. FERIADOS 2026 (Ajustados a formato numpy)
+                        # Incluimos los principales de México para que no te afecten el KPI
                         lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
                         feriados_np = np.array(lista_feriados, dtype='datetime64[D]')
                     
-                        # 3. Función de cálculo mejorada
+                        # 3. Lógica de 24 horas hábiles
                         def calcular_kpi_24h(row):
                             inicio = row[col_emision]
                             fin = row[col_envio]
                             
-                            # Si se envió antes de emitirse
+                            # Si se envió antes o al mismo tiempo que la factura
                             if fin <= inicio:
                                 return "A Tiempo"
                             
-                            # Calculamos la diferencia de días hábiles
-                            # np.busday_count requiere objetos tipo date o datetime64
+                            # Diferencia en días hábiles (Lunes-Viernes, sin feriados)
                             dias_habiles = np.busday_count(
                                 inicio.to_datetime64().astype('datetime64[D]'), 
                                 fin.to_datetime64().astype('datetime64[D]'), 
@@ -1478,40 +1481,39 @@ else:
                                 holidays=feriados_np
                             )
                             
-                            # Lógica de las 24 horas hábiles
+                            # Si es el mismo día laboral
                             if dias_habiles == 0:
                                 return "A Tiempo"
+                            # Si es el siguiente día laboral, comparamos la hora (Regla de las 24h)
                             elif dias_habiles == 1:
-                                # Si pasó 1 día hábil, verificamos la hora para que no exceda las 24h
                                 return "A Tiempo" if fin.time() <= inicio.time() else "Fuera de Tiempo"
                             else:
                                 return "Fuera de Tiempo"
                     
-                        # Aplicar la lógica
+                        # Aplicamos la magia
                         df['Estado'] = df.apply(calcular_kpi_24h, axis=1)
                     
-                        # 4. Resultados y Dashboard
+                        # 4. Métricas de Dashboard
                         total = len(df)
                         cumplen = len(df[df['Estado'] == "A Tiempo"])
-                        kpi_final = (cumplen / total) * 100
+                        kpi_final = (cumplen / total) * 100 if total > 0 else 0
                         meta = 98.0
                     
-                        m1, m2, m3 = st.columns(3)
-                        m1.metric("Total Facturas", total)
-                        m2.metric("KPI Cumplimiento", f"{kpi_final:.2f}%", f"{kpi_final - meta:.2f}%")
-                        m3.metric("Meta JYPESA", f"{meta}%")
+                        col1, col2, col3 = st.columns(3)
+                        col1.metric("Total Operaciones", total)
+                        col2.metric("KPI Cumplimiento", f"{kpi_final:.2f}%", f"{kpi_final - meta:.2f}%")
+                        col3.metric("Meta Establecida", f"{meta}%")
                     
-                        # Gráfico de dona estilo Onyx
+                        # Gráfico de dona con tus colores favoritos
                         fig = px.pie(df, names='Estado', hole=0.7,
                                      color='Estado',
                                      color_discrete_map={'A Tiempo': '#002e63', 'Fuera de Tiempo': '#000b1a'})
-                        
-                        fig.update_layout(showlegend=True, paper_bgcolor='rgba(0,0,0,0)', font_color="white")
+                        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", showlegend=True)
                         st.plotly_chart(fig, use_container_width=True)
                     
-                        # Mostrar tabla con los que fallaron
-                        with st.expander("Ver detalles de despachos fuera de meta"):
-                            st.dataframe(df[df['Estado'] == "Fuera de Tiempo"], use_container_width=True)
+                        # Tabla de auditoría
+                        with st.expander("Ver detalle de los datos procesados"):
+                            st.dataframe(df[[col_emision, col_envio, 'Estado']], use_container_width=True)
                     
                     except Exception as e:
                         st.error(f"Hubo un detalle amor: {e}")
@@ -4477,6 +4479,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
