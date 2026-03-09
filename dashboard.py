@@ -2475,24 +2475,23 @@ else:
                         if col in df_actual.columns: df_actual[col] = limpiar_dinero(df_actual[col])
                     if 'COSTO DE LA GUIA' in df_2025.columns: df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
                 
+                    # Columnas de fecha
+                    c_emision = 'EMISION'
+                    c_envio = 'FECHA DE ENVIO' if 'FECHA DE ENVIO' in df_actual.columns else 'FECHA DE ENVÍO'
+                
                     for f_col in ['FECHA DE ENVIO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'EMISION', 'FECHA DE ENVÍO']:
-                        # Manejo de tildes en nombres de columnas para las fechas
-                        actual_col = f_col if f_col in df_actual.columns else f_col.replace('Í', 'I')
-                        if actual_col in df_actual.columns:
-                            df_actual[actual_col] = pd.to_datetime(df_actual[actual_col], errors='coerce')
+                        if f_col in df_actual.columns:
+                            df_actual[f_col] = pd.to_datetime(df_actual[f_col], errors='coerce')
                 
                     df_actual['MES'] = df_actual['MES'].astype(str).str.strip().str.upper()
                     df_2025['MES'] = df_2025['MES'].astype(str).str.strip().str.upper()
                 
-                    # --- DEFINICIÓN CLAVE DE DATASETS ---
-                    # df_total_mes para cálculos globales (como eficiencia de despacho)
+                    # --- DEFINICIÓN DE DATASETS ---
                     df_total_mes_base = df_actual.copy()
-                    
-                    # df_gastos solo para fletes (vistas originales)
                     df_gastos_base = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
                     df_gastos_base['COSTO DE FLETE'] = df_gastos_base['COSTO DE LA GUIA'] + df_gastos_base.get('COSTOS ADICIONALES', 0)
                 
-                    # 3. INTERFAZ
+                    # 3. INTERFAZ FILTROS
                     meses_nombres = {1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"}
                     mes_actual_txt = meses_nombres[datetime.now().month]
                     opciones_mes = ["TODOS"] + sorted(df_actual['MES'].unique().tolist())
@@ -2521,34 +2520,32 @@ else:
                     with c_btn3:
                         if st.button("EFICIENCIA DE DESPACHOS", use_container_width=True): st.session_state.ver_grafico = "EFICIENCIA"
                 
-                    # --- VISTA 1: MÉTRICAS ---
+                    # --- 4. CÁLCULOS PARA VISTAS ---
+                    # Cálculos necesarios para Reporte e Impresión
+                    mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
+                    df_eval = df_filtered[mask_evaluable]
+                    pct_eficiencia = ( (df_eval['FECHA DE ENTREGA REAL'] <= df_eval['PROMESA DE ENTREGA']).sum() / len(df_eval) * 100 ) if len(df_eval) > 0 else 0
+                    total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
+                    total_fact_2026 = df_filtered['FACTURACION'].sum()
+                    total_cajas_2026 = df_filtered['CAJAS'].sum()
+                    total_valuacion_2026 = df_filtered['VALUACION'].sum()
+                    meses_activos = df_filtered['MES'].unique()
+                    df_2025_filtrado = df_2025[df_2025['MES'].isin(meses_activos)]
+                    total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum()
+                    total_cajas_2025 = df_2025_filtrado['CAJAS'].sum()
+                    costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
+                    costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
+                    var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
+                    var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
+                    var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
+                    costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
+                    diferencia_target = costo_log_real - 7.5
+                    num_inc = (df_filtered['VALUACION'] > 0).sum()
+                    pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
+                    inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
+                
+                    # --- VISTA 1: MÉTRICAS Y TARJETAS ---
                     if st.session_state.ver_grafico == "METRICAS":
-                        # 4. CÁLCULOS ORIGINALES
-                        mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
-                        df_eval = df_filtered[mask_evaluable]
-                        pct_eficiencia = ( (df_eval['FECHA DE ENTREGA REAL'] <= df_eval['PROMESA DE ENTREGA']).sum() / len(df_eval) * 100 ) if len(df_eval) > 0 else 0
-                
-                        total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
-                        total_fact_2026 = df_filtered['FACTURACION'].sum()
-                        total_cajas_2026 = df_filtered['CAJAS'].sum()
-                        total_valuacion_2026 = df_filtered['VALUACION'].sum()
-                
-                        meses_activos = df_filtered['MES'].unique()
-                        df_2025_filtrado = df_2025[df_2025['MES'].isin(meses_activos)]
-                        total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum()
-                        total_cajas_2025 = df_2025_filtrado['CAJAS'].sum()
-                        
-                        costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
-                        costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
-                        var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
-                        var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
-                        var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
-                        costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
-                        diferencia_target = costo_log_real - 7.5
-                        num_inc = (df_filtered['VALUACION'] > 0).sum()
-                        pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
-                        inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
-                
                         st.markdown("### RESUMEN DE RENDIMIENTO")
                         k1, k2, k3 = st.columns(3)
                         with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
@@ -2565,7 +2562,6 @@ else:
                         with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
                         with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
                 
-                        # --- ANÁLISIS DINÁMICO PROFUNDO ---
                         st.markdown("### DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
                         status_target = "🟢 DENTRO DEL TARGET" if costo_log_real <= 7.5 else "🔴 FUERA DE TARGET"
                         desc_costo = "La gestión financiera es <span class='highlight'>óptima</span>." if costo_log_real <= 7.5 else f"Desviación del <span class='highlight'>{diferencia_target:.2f}%</span>."
@@ -2576,6 +2572,29 @@ else:
                         st.markdown(f'''<div class="analysis-box"><b>ESTADO FINANCIERO:</b> {status_target}<hr style="border: 0.5px solid #243441; margin: 10px 0;">
                             • {desc_costo}<br>• Logística: <span class="highlight">{status_entrega}</span> ({pct_eficiencia:.1f}%)<br>
                             • Costo por caja: {tendencia_caja} del {abs(var_costo_caja):.1f}% vs 2025.{alerta_incidencias}</div>''', unsafe_allow_html=True)
+                
+                        # BOTÓN DE IMPRESIÓN
+                        def generar_reporte_grafico():
+                            estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
+                            pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
+                            return f"""
+                            <div style="font-family: Arial; padding: 40px; color: #000; background: #fff; border: 1px solid #eee;">
+                                <h1 style="border-bottom: 4px solid #000;">Jabones y Productos Especializados - JYPESA</h1>
+                                <p><b>REPORTE LOGÍSTICO 2026 - MES: {mes_sel}</b> | {datetime.now().strftime('%d/%m/%Y')}</p>
+                                <h2 style="text-align:center;">{estatus_rep} ({costo_log_real:.2f}%)</h2>
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                                    <tr style="background: #f2f2f2; border: 1px solid #000;"><th style="padding:10px;">MÉTRICA</th><th style="padding:10px;">VALOR</th></tr>
+                                    <tr><td style="border:1px solid #000; padding:8px;">Gasto Flete Actual</td><td style="border:1px solid #000; padding:8px; text-align:center;">${total_flete_2026:,.2f}</td></tr>
+                                    <tr><td style="border:1px solid #000; padding:8px;">Facturación Bruta</td><td style="border:1px solid #000; padding:8px; text-align:center;">${total_fact_2026:,.2f}</td></tr>
+                                    <tr><td style="border:1px solid #000; padding:8px;">Cajas Enviadas</td><td style="border:1px solid #000; padding:8px; text-align:center;">{total_cajas_2026:,.0f}</td></tr>
+                                    <tr><td style="border:1px solid #000; padding:8px;">Eficiencia On-Time</td><td style="border:1px solid #000; padding:8px; text-align:center;">{pct_eficiencia:.1f}%</td></tr>
+                                </table>
+                                <p style="margin-top:50px; text-align:center;">___________________________<br>Firma Coordinación Logística</p>
+                            </div>"""
+                
+                        if st.button(":material/print: GENERAR REPORTE PARA IMPRESIÓN", type="primary", use_container_width=True):
+                            reporte_html = generar_reporte_grafico()
+                            components.html(f"""<script>var win = window.open('', '', 'height=1100,width=950'); win.document.write(`<html><body>{reporte_html}</body></html>`); win.document.close(); win.onload = function() {{ win.print(); win.close(); }};</script>""", height=0)
                 
                     # --- VISTA 2: GRÁFICO ---
                     elif st.session_state.ver_grafico == "GRAFICO":
@@ -2592,17 +2611,13 @@ else:
                         fig.update_layout(template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', barmode='group')
                         st.plotly_chart(fig, use_container_width=True)
                 
-                    # --- VISTA 3: EFICIENCIA DE DESPACHOS (NUEVA) ---
+                    # --- VISTA 3: EFICIENCIA DE DESPACHOS ---
                     elif st.session_state.ver_grafico == "EFICIENCIA":
                         st.markdown("### EFICIENCIA DE DESPACHOS (TARGET 24H HÁBILES)")
-                        # Buscamos las columnas de fecha (manejando posibles variaciones de nombre)
-                        c_emision = 'EMISION'
-                        c_envio = 'FECHA DE ENVIO' if 'FECHA DE ENVIO' in df_total_mes.columns else 'FECHA DE ENVÍO'
-                        
                         df_desp = df_total_mes[df_total_mes[c_emision].notna() & df_total_mes[c_envio].notna()].copy()
                         
                         if not df_desp.empty:
-                            # Cálculo de días hábiles entre emisión y envío
+                            # Cálculo de días hábiles: 0 o 1 día se considera dentro del margen de 24h
                             df_desp['A_TIEMPO'] = df_desp.apply(lambda x: 1 if np.busday_count(x[c_emision].date(), x[c_envio].date()) <= 1 else 0, axis=1)
                             pct_desp = (df_desp['A_TIEMPO'].sum() / len(df_desp) * 100)
                             
@@ -2614,7 +2629,7 @@ else:
                                         <p style="color: #A4B9C8; font-size: 1.1rem;">
                                             Pedidos despachados en 24h hábiles: <b>{df_desp['A_TIEMPO'].sum()}</b> de <b>{len(df_desp)}</b> totales.
                                         </p>
-                                        <small style="color: #5F7A8C;">* No incluye días inhábiles, sábados ni domingos.</small>
+                                        <small style="color: #5F7A8C;">* Cálculo basado en diferencia entre EMISIÓN y ENVÍO (Lunes-Viernes).</small>
                                     </div>
                                 </div>
                             """, unsafe_allow_html=True)
@@ -2622,7 +2637,7 @@ else:
                             st.warning("No hay datos de Emisión y Envío para calcular eficiencia en este periodo.")
                 
                 except Exception as e:
-                    st.error(f"¡Lo siento, amor! Hubo un error: {e}")
+                    st.error(f"¡Lo siento, amor! Hubo un error inesperado: {e}")
                             
             
             elif st.session_state.menu_sub == "ENVIOS ESPECIALES":
@@ -4282,6 +4297,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
