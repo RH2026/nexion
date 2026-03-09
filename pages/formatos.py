@@ -1,238 +1,52 @@
-import streamlit as st
 import pandas as pd
-import unicodedata
-import streamlit.components.v1 as components
-from datetime import datetime
+import streamlit as st
+import re
 
-# 1. CONFIGURACIÓN Y ESTILO (ONYX DHL)
-st.set_page_config(page_title="Nexion JYPESA - Dashboard", layout="wide")
-
-st.markdown("""
-    <style>
-    .main { background-color: #0B1014; }
-    [data-testid="stMetric"] { 
-        background-color: #162129; 
-        padding: 25px; 
-        border-radius: 12px; 
-        border-left: 5px solid #FFCC00; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        min-height: 160px !important;
-        max-height: 160px !important;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 2.2rem; }
-    div[data-testid="stMetricLabel"] { color: #FFCC00; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
-    h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #FFCC00; padding-bottom: 10px; }
-    h3 { color: #FFCC00; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
+def procesar_tabla_nexion(df_original):
+    # 1. Definimos cuáles son las columnas que no se deben mover
+    columnas_fijas = ['Número de artículo', 'Descripción del artículo']
     
-    .analysis-box {
-        background-color: #162129;
-        padding: 25px;
-        border-radius: 12px;
-        border: 1px solid #243441;
-        color: #A4B9C8;
-        line-height: 1.8;
-        font-size: 1.2rem;
-    }
-    .highlight { color: #FFCC00; font-weight: bold; }
-    </style>
-    """, unsafe_allow_html=True)
-
-def limpiar_columnas(txt):
-    if not isinstance(txt, str): return txt
-    texto = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
-    return texto.strip().upper()
-
-def limpiar_dinero(col):
-    if col.dtype == object:
-        return pd.to_numeric(col.str.replace('$', '').str.replace(',', '').str.strip(), errors='coerce').fillna(0)
-    return col.fillna(0)
-
-# 2. CARGA Y PROCESAMIENTO
-try:
-    df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
-    df_2025 = pd.read_csv('Historial2025.csv')
-
-    df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
-    df_2025.columns = [limpiar_columnas(c) for c in df_2025.columns]
-
-    columnas_dinero = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES']
-    for col in columnas_dinero:
-        if col in df_actual.columns: df_actual[col] = limpiar_dinero(df_actual[col])
-    if 'COSTO DE LA GUIA' in df_2025.columns: df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
-
-    df_actual['MES'] = df_actual['MES'].astype(str).str.strip().str.upper()
-    df_2025['MES'] = df_2025['MES'].astype(str).str.strip().str.upper()
-
-    df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
-    df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
-
-    # 3. INTERFAZ
-    st.title("📦 NEXION LOGISTICS | JYPESA EXECUTIVE")
-    c_f1, c_f2 = st.columns(2)
-    with c_f1: mes_sel = st.selectbox("📅 FILTRAR POR MES:", ["TODOS"] + sorted(df_gastos['MES'].unique().tolist()))
-    with c_f2: flet_sel = st.selectbox("🚛 FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
-
-    df_filtered = df_gastos.copy()
-    if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
-    if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
-
-    # 4. CÁLCULOS
-    total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
-    total_fact_2026 = df_filtered['FACTURACION'].sum()
-    total_cajas_2026 = df_filtered['CAJAS'].sum()
-    total_valuacion_2026 = df_filtered['VALUACION'].sum()
-
-    meses_activos = df_filtered['MES'].unique()
-    df_2025_filtrado = df_2025[df_2025['MES'].isin(meses_activos)]
-    total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum()
-    total_cajas_2025 = df_2025_filtrado['CAJAS'].sum()
-
-    costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
-    costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
+    # 2. Transponemos la tabla (Unpivot)
+    # 'var_name' será la columna del destino y 'value_name' la cantidad
+    df_flat = df_original.melt(
+        id_vars=columnas_fijas, 
+        var_name='Pedido_Raw', 
+        value_name='Cantidad'
+    )
     
-    var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
-    var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
-    var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
+    # 3. Quitamos la columna 'TOTAL' si se coló en el proceso
+    df_flat = df_flat[df_flat['Pedido_Raw'] != 'TOTAL']
     
-    costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
-    diferencia_target = costo_log_real - 7.5
-    num_inc = (df_filtered['VALUACION'] > 0).sum()
-    pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
-    inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
-
-    # 5. RENDERIZADO DE KPIs (PANTALLA)
-    st.markdown("### 📊 RESUMEN EJECUTIVO DE RENDIMIENTO")
-    k1, k2, k3, k4 = st.columns(4)
-    with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
-    with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
-    with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="off")
-    with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    k5, k6, k7, k8 = st.columns(4)
-    with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
-    with k6: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
-    with k7: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
-    with k8: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
-
-    # 6. ANÁLISIS DINÁMICO
-    st.markdown("### 🔍 ANÁLISIS DINÁMICO DE OPERACIÓN")
-    status_target = "🟢 DENTRO" if costo_log_real <= 7.5 else "🔴 FUERA"
-    status_eficiencia = "MÁS EFICIENTE" if var_costo_caja <= 0 else "MENOS EFICIENTE"
+    # 4. Limpiamos el texto para dejar solo el número de pedido
+    # Usamos regex para extraer el número de 6 dígitos al final
+    df_flat['Número de Pedido'] = df_flat['Pedido_Raw'].str.extract(r'(\d+)$')
     
-    html_analisis = f'<div class="analysis-box"><b>Cumplimiento de Objetivos:</b> Actualmente la operación se encuentra <span class="highlight">{status_target}</span> del target logístico (7.5%), con un costo real del <span class="highlight">{costo_log_real:.2f}%</span> sobre la facturación bruta. <br><br><b>Análisis de Rendimiento Unitario:</b> El costo por caja ha variado un <span class="highlight">{var_costo_caja:+.1f}%</span> respecto al año pasado. Esto indica que operativamente hoy somos <span class="highlight">{status_eficiencia}</span> en la consolidación y despacho de mercancía de JYPESA.</div>'
-    st.markdown(html_analisis, unsafe_allow_html=True)
+    # 5. Quitamos las filas donde la cantidad sea 0 (para no generar pedidos vacíos)
+    df_flat = df_flat[df_flat['Cantidad'] > 0]
+    
+    # Reordenamos las columnas como las quieres en la imagen 2
+    resultado = df_flat[['Número de Pedido', 'Número de artículo', 'Descripción del artículo', 'Cantidad']]
+    
+    return resultado
 
-    # 7. LÓGICA DE REPORTE PARA IMPRESIÓN (EL DISEÑO CHINGÓN)
-    def generar_reporte_grafico():
-        estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
-        pct_cumplimiento = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
-        
-        # Colores para deltas en impresión
-        c_flete = "red" if var_flete_total > 0 else "green"
-        c_caja = "red" if var_costo_caja > 0 else "green"
+# --- Interfaz de Streamlit ---
+st.title("Convertidor de Pedidos Nexion")
 
-        html_content = f"""
-        <div id="printable-report" style="font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff; max-width: 900px; margin: auto; border: 1px solid #eee;">
-            <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
-                <tr>
-                    <td style="width: 50%;">
-                        <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">JYPESA</h1>
-                        <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">División de Ingeniería Logística | 2026</p>
-                    </td>
-                    <td style="width: 50%; text-align: right; font-size: 11px;">
-                        <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper()}-2026<br>
-                        <b>FECHA:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br>
-                        <span style="border: 2px solid #000; padding: 3px 8px; display: inline-block; margin-top: 5px; font-weight: bold;">{estatus_rep}</span>
-                    </td>
-                </tr>
-            </table>
+uploaded_file = st.file_uploader("Sube tu Excel aquí", type=["xlsx"])
 
-            <h2 style="text-align: center; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; text-decoration: underline;">Análisis Operativo Mensual: {mes_sel}</h2>
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
+    
+    # Ejecutar la transformación
+    df_final = procesar_tabla_nexion(df)
+    
+    st.write("### Vista previa del formato para Nexion:")
+    st.dataframe(df_final)
+    
+    # Botón para descargar el resultado
+    csv = df_final.to_csv(index=False).encode('utf-8')
+    st.download_button("Descargar CSV para Nexion", csv, "pedido_nexion.csv", "text/csv")
 
-            <div style="margin-bottom: 40px;">
-                <p style="font-size: 12px; font-weight: bold; margin-bottom: 10px;">RENDIMIENTO VS META (TARGET 7.5%):</p>
-                <div style="width: 100%; border: 2px solid #000; height: 35px; position: relative; background: #f0f0f0;">
-                    <div style="width: {pct_cumplimiento}%; background: #444; height: 100%;"></div>
-                    <div style="position: absolute; top: 8px; left: 10px; color: #fff; font-weight: bold; font-size: 14px;">ACTUAL: {costo_log_real:.2f}%</div>
-                    <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold; font-size: 14px;">OBJETIVO: 7.50%</div>
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 20px; margin-bottom: 40px;">
-                <div style="flex: 1; border: 1px solid #000; padding: 10px;">
-                    <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">ESTRUCTURA DE COSTOS</p>
-                    <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
-                        <tr><td>Gasto Flete:</td><td style="text-align: right; color:{c_flete}"><b>${total_flete_2026:,.2f}</b> ({var_flete_total:+.1f}%)</td></tr>
-                        <tr><td>Incidencias:</td><td style="text-align: right;"><b>${total_valuacion_2026:,.2f}</b></td></tr>
-                        <tr style="border-top: 1px solid #000;"><td><b>Total Op:</b></td><td style="text-align: right;"><b>${(total_flete_2026 + total_valuacion_2026):,.2f}</b></td></tr>
-                    </table>
-                </div>
-                <div style="flex: 1; border: 1px solid #000; padding: 10px;">
-                    <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA UNITARIA</p>
-                    <div style="text-align: center; padding-top: 5px;">
-                        <span style="font-size: 26px; font-weight: bold;">${costo_caja_2026:.2f}</span><br>
-                        <span style="font-size: 10px;">Costo por Caja</span><br>
-                        <span style="font-size: 11px; color:{c_caja}; font-weight:bold;">Var: {var_costo_caja:+.1f}% vs 2025</span>
-                    </div>
-                </div>
-            </div>
-
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 50px;">
-                <thead>
-                    <tr style="background: #eee; border: 1px solid #000;">
-                        <th style="padding: 12px; text-align: left; border: 1px solid #000;">MÉTRICA DE OPERACIÓN</th>
-                        <th style="padding: 12px; text-align: center; border: 1px solid #000;">VALOR ACTUAL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td style="padding: 10px; border: 1px solid #000;">Ventas Totales Brutas (Facturación)</td><td style="padding: 10px; border: 1px solid #000; text-align: center; font-weight:bold;">${total_fact_2026:,.2f}</td></tr>
-                    <tr><td style="padding: 10px; border: 1px solid #000;">Volumen de Despacho (Unidades)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{int(total_cajas_2026):,.0f} Cajas</td></tr>
-                    <tr><td style="padding: 10px; border: 1px solid #000;">Variación Volumen vs 2025</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">{var_volumen:+.1f}%</td></tr>
-                    <tr><td style="padding: 10px; border: 1px solid #000;">Impacto Económico Neto (INCR + VI)</td><td style="padding: 10px; border: 1px solid #000; text-align: center;">${inc_vi_monto:,.2f}</td></tr>
-                </tbody>
-            </table>
-
-            <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
-                <div style="width: 45%;">
-                    <div style="border-top: 2px solid #000; padding-top: 10px;">
-                        <b>HERNANPHY (RIGOBERTO)</b><br>Gerente de Logística JYPESA
-                    </div>
-                </div>
-                <div style="width: 45%;">
-                    <div style="border-top: 2px solid #000; padding-top: 10px;">
-                        <b>VALIDACIÓN NEXION</b><br>Ingeniería de Procesos
-                    </div>
-                </div>
-            </div>
-        </div>
-        """
-        return html_content
-
-    st.write("---")
-    if st.button(":material/print: GENERAR REPORTE GRÁFICO PARA IMPRESIÓN", type="primary", use_container_width=True):
-        reporte_html = generar_reporte_grafico()
-        
-        components.html(f"""
-            <script>
-                var win = window.open('', '', 'height=1100,width=950');
-                win.document.write('<html><head><title>Reporte_Tecnico_{mes_sel}</title></head><body>');
-                win.document.write(`{reporte_html}`);
-                win.document.write('</body></html>');
-                win.document.close();
-                win.onload = function() {{
-                    win.print();
-                    win.close();
-                }};
-            </script>
-        """, height=0)
-
-except Exception as e:
-    st.error(f"¡Atención, amor! Detalle en el código: {e}")
 
 
 
