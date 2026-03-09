@@ -1429,14 +1429,13 @@ else:
                     
                 
                 # PESTAÑA 3: VOLUMEN (Análisis de Despachos 24h)
-                # PESTAÑA 3: VOLUMEN
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     
                     # 1. Limpieza rápida de fechas solo para esta pestaña
                     df_vol = df_mes.copy()
                     
-                    # Forzamos a que sean fechas, lo que no sea fecha se vuelve NaT (Not a Time)
+                    # Forzamos a que sean fechas
                     df_vol['EMISION'] = pd.to_datetime(df_vol['EMISION'], errors='coerce')
                     df_vol['FECHA DE ENVÍO'] = pd.to_datetime(df_vol['FECHA DE ENVÍO'], errors='coerce')
                     
@@ -1449,16 +1448,13 @@ else:
                         ini = row['EMISION']
                         fin = row['FECHA DE ENVÍO']
                         
-                        # Si alguno no es fecha válida, saltamos sin error
                         if pd.isna(ini) or pd.isna(fin):
                             return "Sin Datos"
                         
                         try:
-                            # Comparación segura entre Timestamps
                             if fin <= ini: 
                                 return "A Tiempo"
                             
-                            # Cálculo de días hábiles usando .date() para numpy
                             d = np.busday_count(
                                 ini.date(), 
                                 fin.date(), 
@@ -1481,25 +1477,35 @@ else:
                     ok_v = len(validos[validos['Estado_KPI'] == "A Tiempo"])
                     no_v = tot_v - ok_v
                     
-                    # 6. Renderizado con tu estilo
+                    # 6. Título de sección
                     st.markdown(f"""
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <p style="color: {vars_css['sub']}; font-size: 11px; letter-spacing: 2px; font-weight: 600; text-transform: uppercase;">
-                                Análisis de Despachos 24h - {mes_sel}
+                        <div style="text-align: center; margin-bottom: 40px;">
+                            <p style="color: {vars_css['sub']}; font-size: 11px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; opacity: 0.8;">
+                                Desempeño de Despachos 24h — {mes_sel}
                             </p>
                         </div>
                     """, unsafe_allow_html=True)
 
-                    c_v1, c_v2, c_v3, c_v4, c_v5 = st.columns(5)
-                    with c_v1: render_kpi(tot_v, tot_v, "Facturas", "#f6c23e")
-                    with c_v2: render_kpi(ok_v, tot_v, "A Tiempo", "#1cc88a")
-                    with c_v3: render_kpi(no_v, tot_v, "Fuera Meta", "#fb7185")
-                    with c_v4: st.empty()
-                    with c_v5: st.empty()
+                    # --- CAMBIO CLAVE: Usamos 3 columnas para que se repartan en todo el espacio ---
+                    c_v1, c_v2, c_v3 = st.columns(3)
+                    
+                    with c_v1: 
+                        render_kpi(tot_v, tot_v, "Total Facturas", "#4e73df")  # Azul Real
+                    with c_v2: 
+                        render_kpi(ok_v, tot_v, "A Tiempo", "#1cc88a")       # Verde Esmeralda
+                    with c_v3: 
+                        render_kpi(no_v, tot_v, "Fuera de Meta", "#fb7185")  # Rojo Coral
 
-                    # 7. Tabla detalle (Opcional, para que veas que sí calcula)
-                    with st.expander("DETALLE DE CÁLCULO"):
-                        st.dataframe(df_vol[['EMISION', 'FECHA DE ENVÍO', 'Estado_KPI']], use_container_width=True)
+                    st.markdown("<br><br>", unsafe_allow_html=True)
+
+                    # 7. Tabla detalle (Con el número de pedido que agregaste)
+                    with st.expander("🔍 EXPLORAR DETALLE DE CÁLCULO"):
+                        # Formateamos las fechas para que se vean bonitas en la tabla
+                        df_display = df_vol[['NÚMERO DE PEDIDO','EMISION', 'FECHA DE ENVÍO', 'Estado_KPI']].copy()
+                        df_display['EMISION'] = df_display['EMISION'].dt.strftime('%d/%m/%Y %H:%M')
+                        df_display['FECHA DE ENVÍO'] = df_display['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y %H:%M')
+                        
+                        st.dataframe(df_display, use_container_width=True, hide_index=True)
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_participacion:
@@ -4462,6 +4468,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
