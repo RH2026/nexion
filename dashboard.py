@@ -2475,7 +2475,6 @@ else:
                         if col in df_actual.columns: df_actual[col] = limpiar_dinero(df_actual[col])
                     if 'COSTO DE LA GUIA' in df_2025.columns: df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
                 
-                    # Columnas de fecha
                     c_emision = 'EMISION'
                     c_envio = 'FECHA DE ENVIO' if 'FECHA DE ENVIO' in df_actual.columns else 'FECHA DE ENVÍO'
                 
@@ -2486,12 +2485,11 @@ else:
                     df_actual['MES'] = df_actual['MES'].astype(str).str.strip().str.upper()
                     df_2025['MES'] = df_2025['MES'].astype(str).str.strip().str.upper()
                 
-                    # --- DEFINICIÓN DE DATASETS ---
                     df_total_mes_base = df_actual.copy()
                     df_gastos_base = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
                     df_gastos_base['COSTO DE FLETE'] = df_gastos_base['COSTO DE LA GUIA'] + df_gastos_base.get('COSTOS ADICIONALES', 0)
                 
-                    # 3. INTERFAZ FILTROS
+                    # 3. INTERFAZ
                     meses_nombres = {1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"}
                     mes_actual_txt = meses_nombres[datetime.now().month]
                     opciones_mes = ["TODOS"] + sorted(df_actual['MES'].unique().tolist())
@@ -2501,7 +2499,6 @@ else:
                     with c_f1: mes_sel = st.selectbox(":material/calendar_month: FILTRAR POR MES:", opciones_mes, index=indice_def)
                     with c_f2: flet_sel = st.selectbox(":material/local_shipping: FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos_base['FLETERA'].unique().tolist()))
                 
-                    # Aplicar Filtros
                     df_filtered = df_gastos_base.copy()
                     df_total_mes = df_total_mes_base.copy()
                     
@@ -2511,7 +2508,7 @@ else:
                     if flet_sel != "TODAS": 
                         df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
                 
-                    # --- BOTONES DE CAMBIO DE VISTA ---
+                    # --- BOTONES DE NAVEGACIÓN ---
                     c_btn1, c_btn2, c_btn3 = st.columns(3)
                     with c_btn1:
                         if st.button("VER MÉTRICAS Y TARJETAS", use_container_width=True): st.session_state.ver_grafico = "METRICAS"
@@ -2520,8 +2517,7 @@ else:
                     with c_btn3:
                         if st.button("EFICIENCIA DE DESPACHOS", use_container_width=True): st.session_state.ver_grafico = "EFICIENCIA"
                 
-                    # --- 4. CÁLCULOS PARA VISTAS ---
-                    # Cálculos necesarios para Reporte e Impresión
+                    # --- 4. CÁLCULOS LOGÍSTICOS ---
                     mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
                     df_eval = df_filtered[mask_evaluable]
                     pct_eficiencia = ( (df_eval['FECHA DE ENTREGA REAL'] <= df_eval['PROMESA DE ENTREGA']).sum() / len(df_eval) * 100 ) if len(df_eval) > 0 else 0
@@ -2544,7 +2540,7 @@ else:
                     pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
                     inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
                 
-                    # --- VISTA 1: MÉTRICAS Y TARJETAS ---
+                    # --- VISTA 1: MÉTRICAS ---
                     if st.session_state.ver_grafico == "METRICAS":
                         st.markdown("### RESUMEN DE RENDIMIENTO")
                         k1, k2, k3 = st.columns(3)
@@ -2573,32 +2569,31 @@ else:
                             • {desc_costo}<br>• Logística: <span class="highlight">{status_entrega}</span> ({pct_eficiencia:.1f}%)<br>
                             • Costo por caja: {tendencia_caja} del {abs(var_costo_caja):.1f}% vs 2025.{alerta_incidencias}</div>''', unsafe_allow_html=True)
                 
-                        # BOTÓN DE IMPRESIÓN
-                        def generar_reporte_grafico():
-                            estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
-                            pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
+                        # REPORTE DE IMPRESIÓN REINTEGRADO
+                        def generar_reporte_html():
                             return f"""
-                            <div style="font-family: Arial; padding: 40px; color: #000; background: #fff; border: 1px solid #eee;">
-                                <h1 style="border-bottom: 4px solid #000;">Jabones y Productos Especializados - JYPESA</h1>
-                                <p><b>REPORTE LOGÍSTICO 2026 - MES: {mes_sel}</b> | {datetime.now().strftime('%d/%m/%Y')}</p>
-                                <h2 style="text-align:center;">{estatus_rep} ({costo_log_real:.2f}%)</h2>
-                                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                                    <tr style="background: #f2f2f2; border: 1px solid #000;"><th style="padding:10px;">MÉTRICA</th><th style="padding:10px;">VALOR</th></tr>
-                                    <tr><td style="border:1px solid #000; padding:8px;">Gasto Flete Actual</td><td style="border:1px solid #000; padding:8px; text-align:center;">${total_flete_2026:,.2f}</td></tr>
-                                    <tr><td style="border:1px solid #000; padding:8px;">Facturación Bruta</td><td style="border:1px solid #000; padding:8px; text-align:center;">${total_fact_2026:,.2f}</td></tr>
-                                    <tr><td style="border:1px solid #000; padding:8px;">Cajas Enviadas</td><td style="border:1px solid #000; padding:8px; text-align:center;">{total_cajas_2026:,.0f}</td></tr>
-                                    <tr><td style="border:1px solid #000; padding:8px;">Eficiencia On-Time</td><td style="border:1px solid #000; padding:8px; text-align:center;">{pct_eficiencia:.1f}%</td></tr>
-                                </table>
-                                <p style="margin-top:50px; text-align:center;">___________________________<br>Firma Coordinación Logística</p>
+                            <div style="font-family: Arial; padding: 40px; color: #000; background: #fff; border: 5px solid #000;">
+                                <h1 style="text-align:center;">JYPESA - REPORTE LOGÍSTICO</h1>
+                                <hr>
+                                <p><b>MES ANALIZADO:</b> {mes_sel}</p>
+                                <p><b>FLETERA:</b> {flet_sel}</p>
+                                <h3>MÉTRICAS CLAVE:</h3>
+                                <ul>
+                                    <li>Gasto Flete: ${total_flete_2026:,.2f}</li>
+                                    <li>Costo Logístico: {costo_log_real:.2f}% (Target: 7.5%)</li>
+                                    <li>Costo por Caja: ${costo_caja_2026:,.2f}</li>
+                                    <li>Eficiencia de Entrega: {pct_eficiencia:.1f}%</li>
+                                </ul>
+                                <p style="font-size: 10px; margin-top: 40px;">Reporte generado automáticamente el {datetime.now().strftime('%d/%m/%Y')}</p>
                             </div>"""
                 
-                        if st.button(":material/print: GENERAR REPORTE PARA IMPRESIÓN", type="primary", use_container_width=True):
-                            reporte_html = generar_reporte_grafico()
-                            components.html(f"""<script>var win = window.open('', '', 'height=1100,width=950'); win.document.write(`<html><body>{reporte_html}</body></html>`); win.document.close(); win.onload = function() {{ win.print(); win.close(); }};</script>""", height=0)
+                        if st.button(":material/print: IMPRIMIR REPORTE EJECUTIVO", type="primary", use_container_width=True):
+                            html_rep = generar_reporte_html()
+                            components.html(f"""<script>var win = window.open('', '', 'height=1100,width=950'); win.document.write(`<html><body>{html_rep}</body></html>`); win.document.close(); win.onload = function() {{ win.print(); win.close(); }};</script>""", height=0)
                 
                     # --- VISTA 2: GRÁFICO ---
                     elif st.session_state.ver_grafico == "GRAFICO":
-                        st.markdown("### COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
+                        st.markdown("### COMPARATIVA ANUAL DE GASTOS")
                         df_g_2026 = df_gastos_base.groupby('MES')['COSTO DE FLETE'].sum().reset_index()
                         df_g_2025 = df_2025.groupby('MES')['COSTO DE LA GUIA'].sum().reset_index()
                         meses_orden = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
@@ -2617,27 +2612,29 @@ else:
                         df_desp = df_total_mes[df_total_mes[c_emision].notna() & df_total_mes[c_envio].notna()].copy()
                         
                         if not df_desp.empty:
-                            # Cálculo de días hábiles: 0 o 1 día se considera dentro del margen de 24h
+                            # Cálculo del porcentaje: pedidos entregados en <= 1 día hábil
                             df_desp['A_TIEMPO'] = df_desp.apply(lambda x: 1 if np.busday_count(x[c_emision].date(), x[c_envio].date()) <= 1 else 0, axis=1)
-                            pct_desp = (df_desp['A_TIEMPO'].sum() / len(df_desp) * 100)
+                            total_pedidos = len(df_desp)
+                            en_tiempo = df_desp['A_TIEMPO'].sum()
+                            pct_desp = (en_tiempo / total_pedidos * 100)
                             
                             st.markdown(f"""
                                 <div style="display: flex; justify-content: center; padding: 20px;">
                                     <div style="background-color: #1A252F; padding: 40px; border-radius: 12px; border-left: 10px solid #A4B9C8; text-align: center; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                                        <h3 style="color: #A4B9C8; margin:0;">RESULTADO DE EFICIENCIA</h3>
+                                        <h3 style="color: #A4B9C8; margin:0;">CUMPLIMIENTO DE DESPACHO</h3>
                                         <h1 style="font-size: 5rem; color: #FFFFFF; border:none; margin:10px 0;">{pct_desp:.1f}%</h1>
                                         <p style="color: #A4B9C8; font-size: 1.1rem;">
-                                            Pedidos despachados en 24h hábiles: <b>{df_desp['A_TIEMPO'].sum()}</b> de <b>{len(df_desp)}</b> totales.
+                                            De <b>{total_pedidos}</b> pedidos analizados, <b>{en_tiempo}</b> fueron despachados en menos de 24h hábiles.
                                         </p>
-                                        <small style="color: #5F7A8C;">* Cálculo basado en diferencia entre EMISIÓN y ENVÍO (Lunes-Viernes).</small>
+                                        <small style="color: #5F7A8C;">* Lógica: Se descuentan fines de semana para el cálculo de las 24 horas.</small>
                                     </div>
                                 </div>
                             """, unsafe_allow_html=True)
                         else:
-                            st.warning("No hay datos de Emisión y Envío para calcular eficiencia en este periodo.")
+                            st.warning("No hay datos de Emisión y Envío suficientes.")
                 
                 except Exception as e:
-                    st.error(f"¡Lo siento, amor! Hubo un error inesperado: {e}")
+                    st.error(f"¡Atención, amor! Detalle: {e}")
                             
             
             elif st.session_state.menu_sub == "ENVIOS ESPECIALES":
@@ -4297,6 +4294,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
