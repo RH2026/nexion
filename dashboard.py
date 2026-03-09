@@ -1428,95 +1428,78 @@ else:
                     st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")
                     
                 
-                # PESTAÑA 3: VOLUMEN
+                # PESTAÑA 3: VOLUMEN (Análisis de Despachos 24h)
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    # 1. Cargamos tu archivo
-                    # Estilo visual Ónix y Azul
-                    st.markdown("""
-                        <style>
-                        .stApp { background-color: #00050a; color: white; }
-                        [data-testid="stMetricValue"] { color: #0066cc; }
-                        </style>
-                        """, unsafe_allow_html=True)
                     
-                    st.title("📊 KPI de Despachos | JYPESA")
-                    st.write("Formato detectado: **Día/Mes/Año** | Meta: **98%**")
-                    
-                    try:
-                        # 1. Carga de datos
-                        df = pd.read_csv('Matriz_Excel_Dashboard.csv')
-                        df.columns = df.columns.str.strip()
-                    
-                        col_emision = 'EMISION'
-                        col_envio = 'FECHA DE ENVÍO'
-                    
-                        # --- CORRECCIÓN DEFINITIVA: Formato Día/Mes/Año ---
-                        # dayfirst=True le indica a pandas que el primer número es el día
-                        df[col_emision] = pd.to_datetime(df[col_emision], dayfirst=True, errors='coerce')
-                        df[col_envio] = pd.to_datetime(df[col_envio], dayfirst=True, errors='coerce')
+                    # 1. Configuración Técnica de Feriados y Formatos
+                    # Usamos numpy para el cálculo de días hábiles sin errores de conversión
+                    lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
+                    feriados_np = np.array(lista_feriados, dtype='datetime64[D]')
+
+                    # 2. Función de Cálculo de Meta 24 Horas Hábiles
+                    def calcular_kpi_24h(row):
+                        # Buscamos las columnas por nombre exacto
+                        inicio = row.get('EMISION')
+                        fin = row.get('FECHA DE ENVÍO')
                         
-                        # Limpiamos filas que no pudieron convertirse
-                        df = df.dropna(subset=[col_emision, col_envio]).copy()
+                        if pd.isna(inicio) or pd.isna(fin): 
+                            return "Sin Datos"
+                        if fin <= inicio: 
+                            return "A Tiempo"
+                        
+                        # Cálculo de días hábiles (Excluye Sáb/Dom y Feriados)
+                        dias_habiles = np.busday_count(
+                            inicio.to_datetime64().astype('datetime64[D]'), 
+                            fin.to_datetime64().astype('datetime64[D]'), 
+                            weekmask='1111100', 
+                            holidays=feriados_np
+                        )
+                        
+                        # Si es el mismo día hábil -> A Tiempo
+                        if dias_habiles == 0: 
+                            return "A Tiempo"
+                        # Si es el día hábil siguiente -> Validamos que sea antes de la misma hora
+                        elif dias_habiles == 1:
+                            return "A Tiempo" if fin.time() <= inicio.time() else "Fuera de Tiempo"
+                        # Más de un día hábil -> Fuera de Tiempo
+                        return "Fuera de Tiempo"
+
+                    # Aplicamos la lógica al dataframe filtrado por el mes seleccionado
+                    df_mes['Estado_KPI_24h'] = df_mes.apply(calcular_kpi_24h, axis=1)
                     
-                        # 2. FERIADOS 2026 (Ajustados a formato numpy)
-                        # Incluimos los principales de México para que no te afecten el KPI
-                        lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
-                        feriados_np = np.array(lista_feriados, dtype='datetime64[D]')
-                    
-                        # 3. Lógica de 24 horas hábiles
-                        def calcular_kpi_24h(row):
-                            inicio = row[col_emision]
-                            fin = row[col_envio]
-                            
-                            # Si se envió antes o al mismo tiempo que la factura
-                            if fin <= inicio:
-                                return "A Tiempo"
-                            
-                            # Diferencia en días hábiles (Lunes-Viernes, sin feriados)
-                            dias_habiles = np.busday_count(
-                                inicio.to_datetime64().astype('datetime64[D]'), 
-                                fin.to_datetime64().astype('datetime64[D]'), 
-                                weekmask='1111100', 
-                                holidays=feriados_np
-                            )
-                            
-                            # Si es el mismo día laboral
-                            if dias_habiles == 0:
-                                return "A Tiempo"
-                            # Si es el siguiente día laboral, comparamos la hora (Regla de las 24h)
-                            elif dias_habiles == 1:
-                                return "A Tiempo" if fin.time() <= inicio.time() else "Fuera de Tiempo"
-                            else:
-                                return "Fuera de Tiempo"
-                    
-                        # Aplicamos la magia
-                        df['Estado'] = df.apply(calcular_kpi_24h, axis=1)
-                    
-                        # 4. Métricas de Dashboard
-                        total = len(df)
-                        cumplen = len(df[df['Estado'] == "A Tiempo"])
-                        kpi_final = (cumplen / total) * 100 if total > 0 else 0
-                        meta = 98.0
-                    
-                        col1, col2, col3 = st.columns(3)
-                        col1.metric("Total Operaciones", total)
-                        col2.metric("KPI Cumplimiento", f"{kpi_final:.2f}%", f"{kpi_final - meta:.2f}%")
-                        col3.metric("Meta Establecida", f"{meta}%")
-                    
-                        # Gráfico de dona con tus colores favoritos
-                        fig = px.pie(df, names='Estado', hole=0.7,
-                                     color='Estado',
-                                     color_discrete_map={'A Tiempo': '#002e63', 'Fuera de Tiempo': '#000b1a'})
-                        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", showlegend=True)
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                        # Tabla de auditoría
-                        with st.expander("Ver detalle de los datos procesados"):
-                            st.dataframe(df[[col_emision, col_envio, 'Estado']], use_container_width=True)
-                    
-                    except Exception as e:
-                        st.error(f"Hubo un detalle amor: {e}")
+                    # 3. Preparación de métricas para las Donitas
+                    df_validos = df_mes[df_mes['Estado_KPI_24h'] != "Sin Datos"]
+                    total_v = len(df_validos)
+                    cumplen_v = len(df_validos[df_validos['Estado_KPI_24h'] == "A Tiempo"])
+                    fallan_v = len(df_validos[df_validos['Estado_KPI_24h'] == "Fuera de Tiempo"])
+
+                    # 4. Renderizado de KPIs con tu estilo original
+                    st.markdown(f"""
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <p style="color: #94a3b8; font-size: 12px; letter-spacing: 3px; font-weight: 700;">
+                                CUMPLIMIENTO DE DESPACHOS EN TIEMPO (META 98%)
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                    # Tres columnas para tus donitas
+                    cv1, cv2, cv3 = st.columns(3)
+                    with cv1: 
+                        render_kpi(total_v, total_v, "Total Facturas", "#4e73df") # Azul
+                    with cv2: 
+                        render_kpi(cumplen_v, total_v, "A Tiempo (24h)", "#1cc88a") # Verde
+                    with cv3: 
+                        render_kpi(fallan_v, total_v, "Fuera de Meta", "#fb7185") # Rojo
+
+                    # 5. Detalle de Incidencias
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    with st.expander("🔍 VER LISTADO DE DESPACHOS FUERA DE TIEMPO"):
+                        retrasos = df_mes[df_mes['Estado_KPI_24h'] == "Fuera de Tiempo"][[
+                            'EMISION', 'FECHA DE ENVÍO', 'NOMBRE DEL CLIENTE', 'DESTINO'
+                        ]].sort_values(by='EMISION', ascending=False)
+                        
+                        st.dataframe(retrasos, use_container_width=True, hide_index=True)
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_participacion:
@@ -4479,6 +4462,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
