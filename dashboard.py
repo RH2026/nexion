@@ -1429,73 +1429,76 @@ else:
                     
                 
                 # PESTAÑA 3: VOLUMEN (Análisis de Despachos 24h)
+                # PESTAÑA 3: VOLUMEN
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     
-                    # 1. Aseguramos que las columnas necesarias existan y sean fecha
-                    # (Esto usa el df_mes que ya filtraste arriba por el selectbox de mes)
+                    # 1. Limpieza rápida de fechas solo para esta pestaña
                     df_vol = df_mes.copy()
                     
-                    # 2. Configuración de Feriados para el cálculo
+                    # Forzamos a que sean fechas, lo que no sea fecha se vuelve NaT (Not a Time)
+                    df_vol['EMISION'] = pd.to_datetime(df_vol['EMISION'], errors='coerce')
+                    df_vol['FECHA DE ENVÍO'] = pd.to_datetime(df_vol['FECHA DE ENVÍO'], errors='coerce')
+                    
+                    # 2. Configuración de Feriados
                     lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
                     feriados_np = np.array(lista_feriados, dtype='datetime64[D]')
 
-                    # 3. Función de Cálculo (La que ya nos funcionaba)
+                    # 3. Función de Cálculo súper segura
                     def calcular_kpi_24h(row):
-                        inicio = row.get('EMISION')
-                        fin = row.get('FECHA DE ENVÍO')
+                        ini = row['EMISION']
+                        fin = row['FECHA DE ENVÍO']
                         
-                        if pd.isna(inicio) or pd.isna(fin): return "Sin Datos"
+                        # Si alguno no es fecha válida, saltamos sin error
+                        if pd.isna(ini) or pd.isna(fin):
+                            return "Sin Datos"
                         
-                        # Si fin es menor o igual a inicio (mismo día o error de captura), es a tiempo
-                        if fin <= inicio: return "A Tiempo"
-                        
-                        # Días hábiles entre emisión y envío
                         try:
-                            dias = np.busday_count(
-                                inicio.date(), 
+                            # Comparación segura entre Timestamps
+                            if fin <= ini: 
+                                return "A Tiempo"
+                            
+                            # Cálculo de días hábiles usando .date() para numpy
+                            d = np.busday_count(
+                                ini.date(), 
                                 fin.date(), 
                                 weekmask='1111100', 
                                 holidays=feriados_np
                             )
-                            if dias == 0: return "A Tiempo"
-                            if dias == 1 and fin.time() <= inicio.time(): return "A Tiempo"
+                            
+                            if d == 0: return "A Tiempo"
+                            if d == 1 and fin.time() <= ini.time(): return "A Tiempo"
                             return "Fuera de Tiempo"
                         except:
                             return "Sin Datos"
 
-                    # 4. Ejecutamos el cálculo sobre el mes seleccionado
+                    # 4. Ejecutamos el cálculo vinculado al mes seleccionado
                     df_vol['Estado_KPI'] = df_vol.apply(calcular_kpi_24h, axis=1)
                     
                     # 5. Métricas para tus donitas
-                    # Solo contamos los que tienen datos válidos para no bajar el KPI injustamente
-                    df_validos = df_vol[df_vol['Estado_KPI'] != "Sin Datos"]
+                    validos = df_vol[df_vol['Estado_KPI'] != "Sin Datos"]
+                    tot_v = len(validos)
+                    ok_v = len(validos[validos['Estado_KPI'] == "A Tiempo"])
+                    no_v = tot_v - ok_v
                     
-                    total_v = len(df_validos)
-                    cumplen_v = len(df_validos[df_validos['Estado_KPI'] == "A Tiempo"])
-                    fallan_v = total_v - cumplen_v
-                    
-                    # 6. Renderizado con tu estilo de Donitas
+                    # 6. Renderizado con tu estilo
                     st.markdown(f"""
                         <div style="text-align: center; margin-bottom: 20px;">
                             <p style="color: {vars_css['sub']}; font-size: 11px; letter-spacing: 2px; font-weight: 600; text-transform: uppercase;">
-                                DESEMPEÑO DE DESPACHOS {mes_sel}
+                                Análisis de Despachos 24h - {mes_sel}
                             </p>
                         </div>
                     """, unsafe_allow_html=True)
 
                     c_v1, c_v2, c_v3, c_v4, c_v5 = st.columns(5)
-                    # Usamos tus colores: Amarillo, Verde, Azul, Turquesa, Rojo
-                    with c_v1: render_kpi(total_v, total_v, "Facturas", "#f6c23e")
-                    with c_v2: render_kpi(cumplen_v, total_v, "A Tiempo", "#1cc88a")
-                    with c_v3: render_kpi(fallan_v, total_v, "Fuera Meta", "#fb7185")
-                    # Las otras dos pueden quedar vacías o con otros datos de volumen
+                    with c_v1: render_kpi(tot_v, tot_v, "Facturas", "#f6c23e")
+                    with c_v2: render_kpi(ok_v, tot_v, "A Tiempo", "#1cc88a")
+                    with c_v3: render_kpi(no_v, tot_v, "Fuera Meta", "#fb7185")
                     with c_v4: st.empty()
                     with c_v5: st.empty()
 
-                    # 7. Tabla de apoyo para ver qué está pasando con los datos
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    with st.expander("DETALLE DE DATOS EN VOLUMEN"):
+                    # 7. Tabla detalle (Opcional, para que veas que sí calcula)
+                    with st.expander("DETALLE DE CÁLCULO"):
                         st.dataframe(df_vol[['EMISION', 'FECHA DE ENVÍO', 'Estado_KPI']], use_container_width=True)
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
@@ -4459,6 +4462,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
