@@ -1432,78 +1432,83 @@ else:
                 with tab_volumen:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     # 1. Cargamos tu archivo
+                    st.title("📊 Control de Logística - Meta 98%")
+                    st.subheader("Análisis de Despachos (Máx 24h Hábiles)")
+                    
+                    # 1. Carga de Archivo
                     try:
+                        # Si prefieres subirlo manualmente, puedes usar st.file_uploader
                         df = pd.read_csv('Matriz_Excel_Dashboard.csv')
                     
-                        # Convertir columnas a datetime
+                        # Limpieza y Conversión
                         df['EMISION'] = pd.to_datetime(df['EMISION'], errors='coerce')
                         df['fecha de envio'] = pd.to_datetime(df['fecha de envio'], errors='coerce')
-                        
-                        # Limpieza: eliminar filas sin fechas válidas
                         df = df.dropna(subset=['EMISION', 'fecha de envio']).copy()
                     
-                        # 2. Configuración de Días No Laborales (Feriados)
-                        # AMOR: Aquí debes escribir las fechas de los feriados de tu año entre comillas
-                        feriados = [
-                            '2024-01-01', '2024-05-01', '2024-09-16', '2024-12-25' 
-                        ]
-                        feriados = pd.to_datetime(feriados)
+                        # 2. Configuración de Feriados (Personalízalo con los de México/tu país)
+                        feriados = pd.to_datetime(['2026-01-01', '2026-02-05', '2026-03-16']).date
                     
-                        # 3. Función para calcular si está a tiempo (Máximo 24 horas hábiles)
-                        def es_a_tiempo(fila):
-                            inicio = fila['EMISION']
-                            fin = fila['fecha de envio']
+                        # 3. Lógica de Cálculo de Tiempo
+                        def calcular_cumplimiento(row):
+                            inicio = row['EMISION']
+                            fin = row['fecha de envio']
+                            if fin <= inicio: return "A Tiempo"
                             
-                            # Si enviaron antes de que se emitiera (error de dedo o sistema), es a tiempo
-                            if fin <= inicio:
-                                return True
+                            # Contar días hábiles entre fechas
+                            dias = np.busday_count(inicio.date(), fin.date(), 
+                                                  weekmask='1111100', holidays=feriados)
                             
-                            # Contamos cuántos días hábiles pasaron (excluye Sáb, Dom y Feriados)
-                            # El día de inicio no se cuenta, por lo que si es 0 o 1, estamos en el rango de 24h hábiles
-                            dias_habiles = np.busday_count(
-                                inicio.date(), 
-                                fin.date(), 
-                                weekmask='1111100', # 1=Laboral, 0=Fin de semana (Lunes a Viernes)
-                                holidays=feriados.date
-                            )
-                            
-                            # Lógica de las 24 horas:
-                            # Si los días hábiles son 0, se envió el mismo día.
-                            # Si es 1, verificamos que la hora de envío sea menor o igual a la hora de emisión.
-                            if dias_habiles == 0:
-                                return True
-                            elif dias_habiles == 1:
-                                # Comparamos solo la hora, minuto y segundo
-                                return fin.time() <= inicio.time()
-                            else:
-                                return False
+                            # Regla de las 24 horas hábiles
+                            if dias == 0: return "A Tiempo"
+                            if dias == 1 and fin.time() <= inicio.time(): return "A Tiempo"
+                            return "Fuera de Tiempo"
                     
-                        # 4. Aplicamos la lógica a cada fila
-                        df['a_tiempo'] = df.apply(es_a_tiempo, axis=1)
+                        df['Estado'] = df.apply(calcular_cumplimiento, axis=1)
                     
-                        # 5. Cálculos del KPI
+                        # 4. Métricas Principales
                         total = len(df)
-                        cumplen = df['a_tiempo'].sum()
-                        kpi_actual = (cumplen / total) * 100
+                        a_tiempo = len(df[df['Estado'] == "A Tiempo"])
+                        kpi_actual = (a_tiempo / total) * 100
                         meta = 98.0
                     
-                        # 6. Resultados
-                        print(f"--- Análisis de KPI (Máx 24h Hábiles) ---")
-                        print(f"Total pedidos: {total}")
-                        print(f"A tiempo: {cumplen}")
-                        print(f"Resultado KPI: {kpi_actual:.2f}%")
-                        print(f"Meta: {meta}%")
+                        # Renderizado de KPIs en columnas
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            st.metric("Total Despachos", f"{total}")
+                        
+                        with col2:
+                            # El color cambia a rojo si no llegas a la meta
+                            color_delta = "normal" if kpi_actual >= meta else "inverse"
+                            st.metric("KPI Actual", f"{kpi_actual:.2f}%", 
+                                      delta=f"{kpi_actual - meta:.2f}% vs Meta", 
+                                      delta_color=color_delta)
+                        
+                        with col3:
+                            st.metric("Meta Establecida", f"{meta}%")
+                    
+                        # 5. Gráfico Visual
+                        fig = px.pie(df, names='Estado', 
+                                     color='Estado',
+                                     color_discrete_map={'A Tiempo':'#00CC96', 'Fuera de Tiempo':'#EF553B'},
+                                     hole=0.4,
+                                     title="Cumplimiento de Despachos")
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                        # 6. Tabla de Detalles
+                        with st.expander("Ver detalle de datos"):
+                            st.dataframe(df[['EMISION', 'fecha de envio', 'Estado']], use_container_width=True)
                     
                         if kpi_actual >= meta:
-                            print(f"\n¡Lo lograste amor! Superaste la meta por {kpi_actual - meta:.2f}% 🏆")
+                            st.success("✨ ¡Felicidades! Estás cumpliendo la meta de logística.")
                         else:
-                            print(f"\nÁnimo vida, faltó {meta - kpi_actual:.2f}% para la meta. ¡Tú puedes! 💪")
+                            st.warning(f"⚠️ Atención: Estamos un {meta - kpi_actual:.2f}% por debajo de la meta.")
                     
                     except FileNotFoundError:
-                        print("No encontré el archivo. Verifica el nombre 'Matriz_Excel_Dashboard.csv'")
+                        st.error("No encontré el archivo 'Matriz_Excel_Dashboard.csv'. Verifica que esté en la misma carpeta.")
                     except Exception as e:
-                        print(f"Hubo un detalle: {e}")
-                
+                        st.error(f"Hubo un error amor: {e}")
                     
                 # PESTAÑA 4: % PARTICIPACIÓN
                 with tab_participacion:
@@ -4466,6 +4471,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
