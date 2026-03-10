@@ -2604,6 +2604,8 @@ else:
                     var_val_monto = total_valuacion_2026 - total_valuacion_2025
                     # La variación de puntos porcentuales (para el delta de k8)
                     var_pct_inc = pct_inc - pct_inc_2025
+
+                    var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
                     
                 
                     # --- BOTONES DE CAMBIO DE VISTA ---
@@ -2631,7 +2633,7 @@ else:
                         k7, k8, k9 = st.columns(3)
                         with k7: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", delta=f"${var_val_monto:,.2f}", delta_color="inverse")
                         with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%", delta=f"{var_pct_inc:.1f}%", delta_color="inverse")
-                        with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
+                        with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}", delta=f"{var_inc_vi_pct:.1f}%", delta_color="normal")
                 
                         # --- 6. ANÁLISIS DINÁMICO PROFUNDO ---
                         st.markdown("### DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
@@ -4607,6 +4609,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
