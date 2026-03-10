@@ -2748,9 +2748,32 @@ else:
                             </div>
                             """
                 
-                        if st.button(":material/print: GENERAR REPORTE GRÁFICO PARA IMPRESIÓN", type="primary", use_container_width=True):
-                            reporte_html = generar_reporte_grafico()
-                            components.html(f"""<script>var win = window.open('', '', 'height=1100,width=950'); win.document.write(`<html><body>{reporte_html}</body></html>`); win.document.close(); win.onload = function() {{ win.print(); win.close(); }};</script>""", height=0)
+                        # --- BOTONES DE IMPRESIÓN (RESULTADOS Y MEMORIA TÉCNICA) ---
+                        col_print1, col_print2 = st.columns(2)
+                        
+                        with col_print1:
+                            if st.button(":material/print: GENERAR REPORTE GRÁFICO", type="primary", use_container_width=True):
+                                reporte_html = generar_reporte_grafico()
+                                components.html(f"""
+                                    <script>
+                                        var win = window.open('', '', 'height=1100,width=950');
+                                        win.document.write(`<html><body>{reporte_html}</body></html>`);
+                                        win.document.close();
+                                        win.onload = function() {{ win.print(); win.close(); }};
+                                    </script>
+                                """, height=0)
+                        
+                        with col_print2:
+                            if st.button(":material/calculate: IMPRIMIR MEMORIA TÉCNICA", use_container_width=True):
+                                memoria_html = generar_memoria_tecnica()
+                                components.html(f"""
+                                    <script>
+                                        var win = window.open('', '', 'height=1100,width=950');
+                                        win.document.write(`<html><body>{memoria_html}</body></html>`);
+                                        win.document.close();
+                                        win.onload = function() {{ win.print(); win.close(); }};
+                                    </script>
+                                """, height=0)
                 
                     # --- 8. VISTA DE GRÁFICO (COMPARATIVO) ---
                     else:
@@ -4468,6 +4491,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
