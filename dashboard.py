@@ -2751,75 +2751,82 @@ else:
                         def generar_memoria_tecnica():
                             # Cálculo base para la explicación técnica
                             gasto_base_2025 = total_flete_2026 - inc_vi_monto
+                            # Fecha y hora actual de la Zona Metropolitana
+                            fecha_hoy = datetime.now().strftime('%d/%m/%Y')
+                            hora_hoy = datetime.now().strftime('%H:%M')
                             
                             return f"""
-                            <div style="font-family: 'Segoe UI', Arial; padding: 40px; color: #333; max-width: 850px; margin: auto; border: 1px solid #ccc; background-color: #fff;">
-                                <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
-                                    <h1 style="margin: 0; font-size: 20px;">Jabones y Productos Especializados</h1>
-                                    <p style="margin: 5px 0; font-size: 11px; color: #666; font-weight: bold;">MEMORIA TÉCNICA DE CÁLCULO Y VARIACIONES | 2026</p>
+                            <div style="font-family: 'Segoe UI', Arial; padding: 10px; color: #333; max-width: 800px; margin: auto; background-color: #fff;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #000; padding-bottom: 5px; margin-bottom: 15px;">
+                                    <div style="text-align: left;">
+                                        <h1 style="margin: 0; font-size: 18px; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                        <p style="margin: 2px 0; font-size: 10px; color: #666; font-weight: bold;">MEMORIA TÉCNICA DE CÁLCULO Y VARIACIONES</p>
+                                    </div>
+                                    <div style="text-align: right; font-size: 10px; color: #444;">
+                                        <b>FECHA:</b> {fecha_hoy}<br>
+                                        <b>HORA:</b> {hora_hoy} (ZMG)
+                                    </div>
                                 </div>
                         
-                                <p style="font-size: 12px; line-height: 1.5; color: #555; margin-bottom: 20px;">
+                                <p style="font-size: 11px; line-height: 1.4; color: #555; margin-bottom: 15px;">
                                     Este documento detalla la trazabilidad algorítmica de los KPIs presentados en el periodo <b>{mes_sel} 2026</b>, incluyendo la procedencia de los indicadores comparativos (Deltas) contra el ejercicio 2025.
                                 </p>
                         
-                                <div style="margin-top: 15px; padding: 12px; border: 1px solid #eee; background: #fdfdfd;">
-                                    <h3 style="margin: 0 0 8px 0; color: #2276AA; font-size: 13px;">1. COSTO LOGÍSTICO (KPI DE RENTABILIDAD)</h3>
-                                    <div style="background: #f0f0f0; padding: 10px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 14px;">
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">1. COSTO LOGÍSTICO (KPI DE RENTABILIDAD)</h3>
+                                    <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
                                         ( ∑ Flete Actual / ∑ Facturación Actual ) x 100
                                     </div>
-                                    <p style="font-size: 11px; margin-top: 8px;"><b>Resultado:</b> (${total_flete_2026:,.2f} / ${total_fact_2026:,.2f}) x 100 = <b>{costo_log_real:.2f}%</b></p>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> (${total_flete_2026:,.2f} / ${total_fact_2026:,.2f}) x 100 = <b>{costo_log_real:.2f}%</b></p>
                                 </div>
                         
-                                <div style="margin-top: 15px; padding: 12px; border: 1px solid #eee; background: #fdfdfd;">
-                                    <h3 style="margin: 0 0 8px 0; color: #2276AA; font-size: 13px;">2. EFICIENCIA DE ENTREGA (OTD)</h3>
-                                    <div style="background: #f0f0f0; padding: 10px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 14px;">
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">2. EFICIENCIA DE ENTREGA (OTD)</h3>
+                                    <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
                                         ( Envíos On-Time / Total Envíos Evaluables ) x 100
                                     </div>
-                                    <p style="font-size: 11px; margin-top: 8px;"><b>Resultado:</b> Cumplimiento del <b>{pct_eficiencia:.1f}%</b> basado en {len(df_eval)} registros con trazabilidad de fechas.</p>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> Cumplimiento del <b>{pct_eficiencia:.1f}%</b> basado en registros con trazabilidad de fechas.</p>
                                 </div>
                         
-                                <div style="margin-top: 15px; padding: 12px; border: 1px solid #eee; background: #fdfdfd;">
-                                    <h3 style="margin: 0 0 8px 0; color: #2276AA; font-size: 13px;">3. COSTO POR CAJA (EFICIENCIA UNITARIA)</h3>
-                                    <div style="background: #f0f0f0; padding: 10px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 14px;">
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">3. COSTO POR CAJA (EFICIENCIA UNITARIA)</h3>
+                                    <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
                                         Gasto de Flete Total / Cantidad de Cajas Enviadas
                                     </div>
-                                    <p style="font-size: 11px; margin-top: 8px;"><b>Resultado:</b> ${total_flete_2026:,.2f} / {total_cajas_2026:,.0f} cajas = <b>${costo_caja_2026:,.2f} / caja</b></p>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> ${total_flete_2026:,.2f} / {total_cajas_2026:,.0f} cajas = <b>${costo_caja_2026:,.2f} / caja</b></p>
                                 </div>
                         
-                                <div style="margin-top: 15px; padding: 12px; border: 1px solid #eee; background: #fdfdfd;">
-                                    <h3 style="margin: 0 0 8px 0; color: #2276AA; font-size: 13px;">4. INCREMENTO LOGÍSTICO + VALUACIÓN INCIDENCIAS (VI)</h3>
-                                    <div style="background: #f0f0f0; padding: 10px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 14px;">
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">4. INCREMENTO LOGÍSTICO + VALUACIÓN INCIDENCIAS (VI)</h3>
+                                    <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
                                         (Gasto_2026 - Gasto_2025) + Valuación_Incidencias
                                     </div>
-                                    <p style="font-size: 11px; margin-top: 8px;"><b>Desglose:</b> (${total_flete_2026:,.2f} - ${gasto_base_2025:,.2f}) + ${total_valuacion_2026:,.2f} = <b>${inc_vi_monto:,.2f}</b></p>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Desglose:</b> (${total_flete_2026:,.2f} - ${gasto_base_2025:,.2f}) + ${total_valuacion_2026:,.2f} = <b>${inc_vi_monto:,.2f}</b></p>
                                 </div>
                         
-                                <div style="margin-top: 15px; padding: 12px; border: 2px solid #2276AA; background: #f0f7ff;">
-                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 13px;">5. ANÁLISIS DE DELTAS (FÓRMULA DE CRECIMIENTO)</h3>
-                                    <p style="font-size: 11px; margin-bottom: 10px;">Cálculo de variación porcentual: <b>((Valor_Actual - Valor_Previo) / Valor_Previo) * 100</b></p>
-                                    
-                                    <table style="width: 100%; font-size: 10px; border-collapse: collapse; text-align: left;">
+                                <div style="margin-top: 10px; padding: 10px; border: 2px solid #2276AA; background: #f0f7ff;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">5. ANÁLISIS DE DELTAS (COMPARATIVA ANUAL)</h3>
+                                    <table style="width: 100%; font-size: 9px; border-collapse: collapse; text-align: left; margin-top: 5px;">
                                         <tr style="border-bottom: 1px solid #2276AA; background: #e3f2fd;">
-                                            <th style="padding: 5px;">INDICADOR</th>
+                                            <th style="padding: 4px;">INDICADOR</th>
                                             <th>PREVIO (2025)</th>
                                             <th>ACTUAL (2026)</th>
                                             <th>VARIACIÓN (DELTA)</th>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 6px;"><b>Gasto de Flete</b></td>
+                                            <td style="padding: 4px;"><b>Gasto de Flete</b></td>
                                             <td>${gasto_base_2025:,.2f}</td>
                                             <td>${total_flete_2026:,.2f}</td>
                                             <td style="color: #d32f2f; font-weight: bold;">{var_flete_total:+.1f}%</td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 6px;"><b>Volumen Cajas</b></td>
+                                            <td style="padding: 4px;"><b>Volumen Cajas</b></td>
                                             <td>{total_cajas_2025:,.0f}</td>
                                             <td>{total_cajas_2026:,.0f}</td>
                                             <td style="color: #2e7d32; font-weight: bold;">{var_volumen:+.1f}%</td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 6px;"><b>Costo x Caja</b></td>
+                                            <td style="padding: 4px;"><b>Costo x Caja</b></td>
                                             <td>${costo_caja_2025:,.2f}</td>
                                             <td>${costo_caja_2026:,.2f}</td>
                                             <td style="color: #d32f2f; font-weight: bold;">{var_costo_caja:+.1f}%</td>
@@ -2827,13 +2834,13 @@ else:
                                     </table>
                                 </div>
                         
-                                <div style="margin-top: 20px; padding: 12px; background: #fffde7; border-left: 5px solid #fbc02d; font-size: 10px;">
-                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre la baja de volumen ({var_volumen:+.1f}%) y el alza del gasto ({var_flete_total:+.1f}%) confirma un incremento en la tarifa unitaria por caja. Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo.
+                                <div style="margin-top: 15px; padding: 10px; background: #fffde7; border-left: 5px solid #fbc02d; font-size: 9px; line-height: 1.3;">
+                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre la baja de volumen ({var_volumen:+.1f}%) y el alza del gasto ({var_flete_total:+.1f}%) confirma un incremento en la tarifa unitaria por caja. Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo y derivado de la gestión de transporte.
                                 </div>
                         
-                                <div style="margin-top: 40px; display: flex; justify-content: space-around; text-align: center; font-size: 11px;">
-                                    <div style="width: 200px; border-top: 1px solid #000; padding-top: 8px;">
-                                        <b>Rigoberto Hernández</b><br>Logística Nacional
+                                <div style="margin-top: 30px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
+                                    <div style="width: 200px; border-top: 1px solid #000; padding-top: 5px;">
+                                        <b>Rigoberto Hernández</b><br>Coordinación de Logística
                                     </div>
                                 </div>
                             </div>
@@ -4582,6 +4589,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
