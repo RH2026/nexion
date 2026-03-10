@@ -2606,6 +2606,25 @@ else:
                     var_pct_inc = pct_inc - pct_inc_2025
 
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
+
+                    # --- Lógica para Facturación Mes Anterior ---
+                    # Obtenemos el mes actual seleccionado (asumiendo que viene de tu filtro)
+                    mes_seleccionado = meses_activos[0] if len(meses_activos) > 0 else None
+                    
+                    if mes_seleccionado:
+                        # Filtramos el DataFrame de 2026 para el mes anterior
+                        # Nota: Esto funciona si 'MES' es numérico (1, 2, 3...). 
+                        # Si es texto (Enero, Febrero), necesitarías un diccionario de mapeo.
+                        df_mes_anterior = df_filtered[df_filtered['MES'] == (mes_seleccionado - 1)]
+                        total_fact_mes_anterior = df_mes_anterior['FACTURACION'].sum()
+                    else:
+                        total_fact_mes_anterior = 0
+                    
+                    # Calculamos la variación porcentual vs mes anterior
+                    if total_fact_mes_anterior > 0:
+                        var_fact_mensual = ((total_fact_2026 - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
+                    else:
+                        var_fact_mensual = 0
                     
                 
                     # --- BOTONES DE CAMBIO DE VISTA ---
@@ -2622,7 +2641,7 @@ else:
                         st.markdown("### RESUMEN DE RENDIMIENTO")
                         k1, k2, k3 = st.columns(3)
                         with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
-                        with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
+                        with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}", delta=f"{var_fact_mensual:.1f}% vs mes ant.")
                         with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="normal")
                         
                         k4, k5, k6 = st.columns(3)
@@ -4609,6 +4628,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
