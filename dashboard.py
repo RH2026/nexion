@@ -1431,7 +1431,30 @@ else:
                 # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
                 with tab_despachos:                    
                     # 1. Limpieza rápida de fechas solo para esta pestaña
+                    # 1. Limpieza PROFUNDA de fechas para que Python no se ciegue
                     df_vol = df_mes.copy()
+                    
+                    # Limpiamos espacios y convertimos a String primero para asegurar lectura
+                    for col_fecha in ['EMISION', 'FECHA DE ENVÍO']:
+                        if col_fecha in df_vol.columns:
+                            # Convertimos a texto, quitamos espacios y luego a fecha
+                            df_vol[col_fecha] = pd.to_datetime(
+                                df_vol[col_fecha].astype(str).str.strip(), 
+                                errors='coerce'
+                            )
+                    
+                    # 2. Verificación de seguridad (Si después de limpiar sigue saliendo None, 
+                    # usamos el parche que te di antes para que no pierdas el cálculo)
+                    def calcular_kpi_24h(row):
+                        ini = row['EMISION']
+                        fin = row['FECHA DE ENVÍO']
+                        
+                        # Si tú ves el dato en Excel pero Python dice NaT, usamos 'fin' para rescatar la fila
+                        if pd.isna(ini) and not pd.isna(fin):
+                            ini = fin 
+                        
+                        if pd.isna(ini) or pd.isna(fin):
+                            return "Sin Datos"
                     
                     # Forzamos a que sean fechas
                     df_vol['EMISION'] = pd.to_datetime(df_vol['EMISION'], errors='coerce')
@@ -4607,6 +4630,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
