@@ -2503,7 +2503,21 @@ else:
                     flex-direction: column;
                     justify-content: center;
                 }
-                div[data-testid="stMetricValue"] { color: #FFFFFF; font-weight: 900; font-size: 1.8rem; }
+                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.3rem; }
+                /* Estilo para las flechas y variaciones (Delta) */
+                [data-testid="stMetricDelta"] {
+                    background-color: rgba(255, 255, 255, 0.05); /* Un fondo sutil para que parezca una cápsula */
+                    padding: 2px 8px;
+                    border-radius: 6px;
+                    font-size: 0.85rem !important;
+                    width: fit-content;
+                }
+                
+                /* Forzar que el color de la flecha sea más estético */
+                [data-testid="stMetricDelta"] > div {
+                    font-weight: bold !important;
+                }
+                
                 div[data-testid="stMetricLabel"] { color: #A4B9C8; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
                 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #A4B9C8; padding-bottom: 10px; }
                 h3 { color: #A4B9C8; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
@@ -4597,6 +4611,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
