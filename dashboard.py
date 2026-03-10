@@ -2611,7 +2611,7 @@ else:
                         k1, k2, k3 = st.columns(3)
                         with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
                         with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}")
-                        with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="off")
+                        with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="normal")
                         
                         k4, k5, k6 = st.columns(3)
                         with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
@@ -4597,6 +4597,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
