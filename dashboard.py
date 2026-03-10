@@ -2752,8 +2752,8 @@ else:
                             return f"""
                             <div style="font-family: 'Segoe UI', Arial; padding: 50px; color: #333; max-width: 850px; margin: auto; border: 1px solid #ccc;">
                                 <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 30px;">
-                                    <h1 style="margin: 0; font-size: 22px;">MEMORIA DE CÁLCULO LOGÍSTICO</h1>
-                                    <p style="margin: 5px 0; font-size: 12px; color: #666;">SISTEMA NEXION | NEX-TECH LOGISTICS 2026</p>
+                                    <h1 style="margin: 0; font-size: 22px;">Jabones y Productos Especializados</h1>
+                                    <p style="margin: 5px 0; font-size: 12px; color: #666;">Distribucion y Logística | 2026</p>
                                 </div>
                         
                                 <p style="font-size: 13px; line-height: 1.6;">
@@ -2819,7 +2819,7 @@ else:
                                 """, height=0)
                         
                         with col_print2:
-                            if st.button(":material/calculate: IMPRIMIR MEMORIA TÉCNICA", use_container_width=True):
+                            if st.button(":material/calculate: IMPRIMIR CALCULO APLICADO", use_container_width=True):
                                 memoria_html = generar_memoria_tecnica()
                                 components.html(f"""
                                     <script>
@@ -4546,6 +4546,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
