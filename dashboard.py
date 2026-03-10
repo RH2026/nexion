@@ -1429,9 +1429,7 @@ else:
                     
                 
                 # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
-                with tab_despachos:
-                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-                    
+                with tab_despachos:                    
                     # 1. Limpieza rápida de fechas solo para esta pestaña
                     df_vol = df_mes.copy()
                     
@@ -4598,6 +4596,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
