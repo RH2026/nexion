@@ -1458,7 +1458,7 @@ else:
                             if fin <= ini: return "A Tiempo"
                             
                             # Días hábiles (Lunes a Sábado '1111110')
-                            d = np.busday_count(ini.date(), fin.date(), weekmask='1111110', holidays=feriados_np)
+                            d = np.busday_count(ini.date(), fin.date(), weekmask='1111100', holidays=feriados_np)
                             
                             if d == 0: return "A Tiempo"
                             if d == 1 and fin.time() <= ini.time(): return "A Tiempo"
@@ -4597,6 +4597,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
