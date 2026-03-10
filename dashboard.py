@@ -4080,52 +4080,123 @@ else:
                     for r in filas_c_data
                 ])
                 
-                # Rellenar espacios vacíos para que la hoja no se vea mocha
+                # Rellenar espacios vacíos sin bordes, solo para empujar las firmas al final
                 num_filas = len(filas_c_data)
-                espacios = "".join(["<tr><td style='border-bottom:1px solid black;height:25px;' colspan='4'></td></tr>"] * max(0, 12 - num_filas))
+                # Ajustamos el espacio para que las firmas siempre queden abajo
+                espacios = "".join(["<tr style='height:30px;'><td colspan='4'></td></tr>"] * max(0, 15 - num_filas))
                 
                 form_c_html = f"""
                 <html>
                 <head>
                     <style>
                         @media print {{
-                            @page {{ size: auto; margin: 0; }}
-                            body {{ margin: 0; padding: 10mm; }}
+                            @page {{ size: letter; margin: 15mm; }}
+                            body {{ -webkit-print-color-adjust: exact; }}
                             header, footer {{ display: none !important; }}
                         }}
-                        body {{ font-family: Arial, sans-serif; background: white; color: black; }}
-                        .print-box {{ padding: 20px; }}
-                        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-                        th, td {{ border-bottom: 1px solid black; padding: 8px; text-align: left; }}
+                        
+                        body {{ 
+                            font-family: 'Helvetica', Arial, sans-serif; 
+                            background: white; 
+                            color: #222; 
+                            margin: 0; 
+                            padding: 0;
+                        }}
+                
+                        .print-box {{ 
+                            padding: 10px;
+                            display: flex;
+                            flex-direction: column;
+                            min-height: 90vh; /* Esto ayuda a que el contenido estire hacia abajo */
+                        }}
+                
+                        /* Cabezal con estilo limpio */
+                        .header {{
+                            display: flex; 
+                            justify-content: space-between; 
+                            border-bottom: 2px solid black; 
+                            padding-bottom: 15px;
+                            align-items: flex-end;
+                        }}
+                
+                        /* Tabla sin bordes en las filas de datos */
+                        table {{ 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 30px; 
+                        }}
+                
+                        thead th {{ 
+                            border-bottom: 2px solid black; 
+                            padding: 10px 5px; 
+                            font-size: 12px; 
+                            text-align: left;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                        }}
+                
+                        tbody td {{ 
+                            padding: 12px 5px; 
+                            font-size: 13px; 
+                            border: none; /* Quitamos las filas para que se vea más 'chingón' */
+                        }}
+                
+                        /* Contenedor de firmas al final */
+                        .signature-container {{
+                            margin-top: auto; /* Empuja las firmas al fondo */
+                            padding-top: 50px;
+                            display: flex;
+                            justify-content: space-between;
+                            text-align: center;
+                            font-size: 12px;
+                        }}
+                
+                        .sig-box {{
+                            width: 40%;
+                            border-top: 1px solid black;
+                            padding-top: 8px;
+                        }}
                     </style>
                 </head>
                 <body>
                     <div class="print-box">
-                        <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;">
+                        <div class="header">
                             <div>
-                                <h2 style="margin:0; letter-spacing:2px;">Jabones y Productos Especializados</h2>
-                                <p style="margin:0; font-size:10px; letter-spacing:1px;">Distribución y Logística | 2026</p>
+                                <h2 style="margin:0; letter-spacing:2px; font-weight: 900;">Jabones y Productos Especializados</h2>
+                                <p style="margin:0; font-size:11px; color: #555; letter-spacing:1px;">Distribución y Logística | 2026</p>
                             </div>
                             <div style="text-align:right;">
-                                <span style="font-weight:bold; border:1px solid black; padding:2px 10px;">{f_hora_c}</span>
-                                <p style="margin:5px 0 0 0; font-size:10px;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
+                                <span style="font-weight:bold; border: 1.5px solid black; padding: 4px 12px; font-size: 14px;">{f_hora_c}</span>
+                                <p style="margin:8px 0 0 0; font-size:10px; font-weight: bold;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
                             </div>
                         </div>
-                        <h4 style="text-align:center; margin-top:30px; letter-spacing:1px;">REPORTE ENTREGA DE FACTURAS DE CONTRARECIBO</h4>
+                
+                        <h4 style="text-align:center; margin-top:40px; letter-spacing:2px; text-transform: uppercase;">Reporte Entrega de Facturas de Contrarecibo</h4>
+                
                         <table>
                             <thead>
-                                <tr style="font-size:12px; border-bottom: 2px solid black;">
-                                    <th>FECHA</th><th>CÓDIGO</th><th>PAQUETERÍA</th><th style="text-align:center;">CANTIDAD</th>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Código</th>
+                                    <th>Paquetería</th>
+                                    <th style="text-align:center;">Cantidad</th>
                                 </tr>
                             </thead>
-                            <tbody style="font-size:13px;">
+                            <tbody>
                                 {tabla_c_html}
                                 {espacios}
                             </tbody>
                         </table>
-                        <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
-                            <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>ELABORÓ</b><br>Rigoberto Hernandez - Cord de Logística</div>
-                            <div style="width:40%; border-top:1px solid black; padding-top:5px;"><b>RECIBIÓ</b><br>Nombre y Firma</div>
+                
+                        <div class="signature-container">
+                            <div class="sig-box">
+                                <b>ELABORÓ</b><br>
+                                Rigoberto Hernandez - Cord de Logística
+                            </div>
+                            <div class="sig-box">
+                                <b>RECIBIÓ</b><br>
+                                Nombre y Firma
+                            </div>
                         </div>
                     </div>
                 </body>
@@ -4653,6 +4724,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
