@@ -1492,7 +1492,7 @@ else:
                             <div style="background: rgba(26, 37, 47, 0.6); padding: 20px; border-radius: 15px; border: 1px solid #243441; text-align: center;">
                                 <p style="color: #A4B9C8; font-size: 10px; margin-bottom: 5px; font-weight: bold;">{label.upper()}</p>
                                 <h2 style="color: white; margin: 0; font-size: 24px;">{valor}</h2>
-                                <p style="color: {color}; font-size: 14px; margin-top: 5px; font-weight: bold;">{porcentaje:.1f}%</p>
+                                <p style="color: {color}; font-size: 16px; margin-top: 5px; font-weight: bold;">{porcentaje:.1f}%</p>
                                 <div style="background-color: #0B1014; border-radius: 10px; height: 8px; width: 100%; margin-top: 10px;">
                                     <div style="background-color: {color}; height: 8px; width: {porcentaje}%; border-radius: 10px; box-shadow: 0 0 10px {color}88;"></div>
                                 </div>
@@ -1507,6 +1507,7 @@ else:
                         render_modern_bar(no_v, tot_v, "Fuera de Meta", "#ff5b5c")
 
                     # 7. Tabla detalle (Con el número de pedido que agregaste)
+                    st.write("")
                     with st.expander("🔍 EXPLORAR DETALLE DE CÁLCULO"):
                         # Formateamos las fechas para que se vean bonitas en la tabla
                         df_display = df_vol[['NÚMERO DE PEDIDO','EMISION', 'FECHA DE ENVÍO', 'Estado_KPI']].copy()
@@ -4606,6 +4607,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
