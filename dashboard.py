@@ -2621,17 +2621,15 @@ else:
                     mes_actual_str = df_filtered['MES'].unique()[0] if not df_filtered.empty else None
                     
                     if mes_actual_str in meses_map:
-                        # 2. Convertimos a número, restamos 1 y regresamos a nombre
                         mes_anterior_num = meses_map[mes_actual_str] - 1
                         mes_anterior_nombre = meses_inv.get(mes_anterior_num)
                         
-                        # 3. Filtramos el DataFrame completo de 2026 para ese mes
-                        df_mes_ant = df_2026[df_2026['MES'] == mes_anterior_nombre]
+                        # IMPORTANTE: Cambia 'df' por el nombre de tu DataFrame principal de 2026
+                        df_mes_ant = df[df['MES'] == mes_anterior_nombre] 
                         total_fact_mes_anterior = df_mes_ant['FACTURACION'].sum()
                     else:
                         total_fact_mes_anterior = 0
                     
-                    # 4. Calculamos la variación porcentual final
                     var_fact_mensual = ((total_fact_2026 - total_fact_mes_anterior) / total_fact_mes_anterior * 100) if total_fact_mes_anterior > 0 else 0
                     
                 
@@ -4636,6 +4634,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
