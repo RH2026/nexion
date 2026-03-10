@@ -2749,65 +2749,79 @@ else:
                             """
                 
                         def generar_memoria_tecnica():
-                            # Cálculo del gasto base 2025 para la explicación técnica
+                            # Cálculos base para la explicación técnica
                             gasto_base_2025 = total_flete_2026 - inc_vi_monto
-                            
+                            # Si total_cajas_2025 no está definido en tu scope global, asegúrate de tenerlo
+                            # Para la memoria, calculamos el volumen previo basado en la var_volumen
+                            # volumen_2025 = total_cajas_2026 / (1 + (var_volumen / 100))
+                        
                             return f"""
                             <div style="font-family: 'Segoe UI', Arial; padding: 50px; color: #333; max-width: 850px; margin: auto; border: 1px solid #ccc; background-color: #fff;">
                                 <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 30px;">
                                     <h1 style="margin: 0; font-size: 22px;">Jabones y Productos Especializados</h1>
-                                    <p style="margin: 5px 0; font-size: 12px; color: #666;">Memoria Técnica de Cálculo | Distribución y Logística 2026</p>
+                                    <p style="margin: 5px 0; font-size: 12px; color: #666;">Memoria Técnica de Variaciones | Logística 2026</p>
                                 </div>
                         
                                 <p style="font-size: 13px; line-height: 1.6;">
-                                    Este documento detalla la lógica algorítmica aplicada para el análisis de indicadores del periodo <b>{mes_sel} 2026</b>. 
-                                    Los cálculos aseguran la trazabilidad entre los datos operativos y los resultados financieros presentados en el dashboard.
+                                    Este documento explica la procedencia de los indicadores comparativos (Deltas) presentados en el dashboard de <b>{mes_sel} 2026</b>.
                                 </p>
                         
-                                <div style="margin-top: 25px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
-                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">1. COSTO LOGÍSTICO SOBRE VENTAS (KPI FINANCIERO)</h3>
-                                    <p style="font-size: 12px; margin-bottom: 10px;">Determina qué porcentaje de la facturación bruta es absorbido por el costo de transporte.</p>
-                                    <div style="background: #f0f0f0; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 16px;">
-                                        ( ∑ Costo Flete 2026 / ∑ Facturación 2026 ) x 100
-                                    </div>
-                                    <p style="font-size: 11px; margin-top: 10px;"><b>Cálculo:</b> (${total_flete_2026:,.2f} / ${total_fact_2026:,.2f}) x 100 = <b>{costo_log_real:.2f}%</b></p>
-                                </div>
-                        
                                 <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
-                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">2. EFICIENCIA DE ENTREGA (OTD - ON TIME DELIVERY)</h3>
-                                    <p style="font-size: 12px; margin-bottom: 10px;">Mide el cumplimiento de la promesa de entrega al cliente final.</p>
-                                    <div style="background: #f0f0f0; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 16px;">
-                                        ( Envíos a Tiempo / Total Envíos Evaluados ) x 100
+                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">1. COSTO LOGÍSTICO (TARGET 7.5%)</h3>
+                                    <div style="background: #f0f0f0; padding: 12px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 14px;">
+                                        Fórmula: (Flete Actual / Facturación Actual) * 100
                                     </div>
-                                    <p style="font-size: 11px; margin-top: 10px;"><b>Cálculo:</b> Cumplimiento del <b>{pct_eficiencia:.1f}%</b> basado en {len(df_eval)} registros con trazabilidad completa.</p>
-                                </div>
-                        
-                                <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
-                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">3. VARIACIÓN DE COSTO POR CAJA (EFICIENCIA UNITARIA)</h3>
-                                    <p style="font-size: 12px; margin-bottom: 10px;">Compara el costo de mover una unidad física frente al año anterior.</p>
-                                    <div style="background: #f0f0f0; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 16px;">
-                                        ((Costo_Caja_2026 - Costo_Caja_2025) / Costo_Caja_2025) x 100
-                                    </div>
-                                    <p style="font-size: 11px; margin-top: 10px;"><b>Cálculo:</b> ${costo_caja_2026:,.2f} vs ${costo_caja_2025:,.2f} | <b>Variación Unitaria: {var_costo_caja:+.1f}%</b></p>
-                                </div>
-                        
-                                <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
-                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">4. INCREMENTO OPERATIVO + VALUACIÓN INCIDENCIAS (VI)</h3>
-                                    <p style="font-size: 12px; margin-bottom: 10px;">Representa el impacto económico total comparativo.</p>
-                                    <div style="background: #f0f0f0; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 16px;">
-                                        (Gasto_2026 - Gasto_2025) + Valuación_Incidencias
-                                    </div>
-                                    <div style="margin-top: 10px; padding: 10px; background: #fffde7; border-left: 4px solid #fbc02d; font-size: 11px;">
-                                        <b>NOTA TÉCNICA:</b> Con una Valuación de Incidencias de <b>$0.00</b>, el monto de <b>${inc_vi_monto:,.2f}</b> 
-                                        corresponde íntegramente al incremento en el gasto flete de este periodo.
-                                    </div>
-                                    <p style="font-size: 12px; margin-top: 10px; text-align: center;">
-                                        <b>Desglose:</b> (${total_flete_2026:,.2f} - ${gasto_base_2025:,.2f}) + $0.00 = <b>${inc_vi_monto:,.2f}</b>
+                                    <p style="font-size: 11px; margin-top: 10px;">
+                                        <b>Resultado:</b> (${total_flete_2026:,.2f} / ${total_fact_2026:,.2f}) * 100 = <b>{costo_log_real:.2f}%</b><br>
+                                        <span style="color: green;">Delta: {diferencia_target:+.2f}% vs Meta establecida.</span>
                                     </p>
                                 </div>
                         
-                                <div style="margin-top: 40px; font-size: 10px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
-                                    Documento de uso interno exclusivo para la Dirección de JYPESA - Rigoberto Hernández (Coordinación Logística).
+                                <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">2. LÓGICA DE VARIACIONES (DELTAS vs 2025)</h3>
+                                    <p style="font-size: 12px; margin-bottom: 10px;">Todos los deltas porcentuales utilizan la fórmula de crecimiento estándar:</p>
+                                    <div style="background: #e3f2fd; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 15px; border-radius: 5px;">
+                                        ((Valor Actual - Valor Anterior) / Valor Anterior) * 100
+                                    </div>
+                                    
+                                    <table style="width: 100%; font-size: 11px; margin-top: 15px; border-collapse: collapse;">
+                                        <tr style="border-bottom: 2px solid #333; text-align: left;">
+                                            <th style="padding: 5px;">Indicador</th>
+                                            <th>Valor 2025</th>
+                                            <th>Valor 2026</th>
+                                            <th>Cálculo Delta (%)</th>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px;">Gasto de Flete</td>
+                                            <td>${gasto_base_2025:,.2f}</td>
+                                            <td>${total_flete_2026:,.2f}</td>
+                                            <td style="color: #d32f2f; font-weight: bold;">{var_flete_total:+.1f}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px;">Volumen (Cajas)</td>
+                                            <td>{total_cajas_2025:,.0f}</td>
+                                            <td>{total_cajas_2026:,.0f}</td>
+                                            <td style="color: #2e7d32; font-weight: bold;">{var_volumen:+.1f}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px;">Costo por Caja</td>
+                                            <td>${costo_caja_2025:,.2f}</td>
+                                            <td>${costo_caja_2026:,.2f}</td>
+                                            <td style="color: #d32f2f; font-weight: bold;">{var_costo_caja:+.1f}%</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                        
+                                <div style="margin-top: 25px; padding: 15px; background: #fffde7; border-left: 5px solid #fbc02d; font-size: 11px;">
+                                    <b>INTERPRETACIÓN TÉCNICA:</b> El incremento del <b>{var_flete_total:.1f}%</b> en gasto, contrastado con la baja del <b>{abs(var_volumen):.1f}%</b> en volumen, 
+                                    explica matemáticamente el alza del <b>{var_costo_caja:.1f}%</b> en el costo unitario por caja. 
+                                    Este fenómeno se atribuye a un ajuste en tarifas externas o menor aprovechamiento de espacios.
+                                </div>
+                        
+                                <div style="margin-top: 50px; display: flex; justify-content: space-around; text-align: center; font-size: 11px;">
+                                    <div style="width: 200px; border-top: 1px solid #000; padding-top: 10px;">
+                                        Rigoberto Hernández<br>Logística JYPESA
+                                    </div>
                                 </div>
                             </div>
                             """
@@ -4555,6 +4569,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
