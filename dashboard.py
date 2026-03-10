@@ -2669,29 +2669,35 @@ else:
                         
                         st.markdown(html_analisis, unsafe_allow_html=True)
                         st.write("")
-                        # --- REPORTE DE IMPRESIÓN REPOTENCIADO ---
+                        # --- REPORTE DE IMPRESIÓN REPOTENCIADO (RESULTADOS GRÁFICOS) ---
                         def generar_reporte_grafico():
                             estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
                             pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
                             c_flete_rep = "red" if var_flete_total > 0 else "green"
                             c_caja_rep = "red" if var_costo_caja > 0 else "green"
-                
+                            
+                            # Fecha y hora actual ZMG
+                            fecha_hoy = datetime.now().strftime('%d/%m/%Y')
+                            hora_hoy = datetime.now().strftime('%H:%M')
+                        
                             return f"""
-                            <div id="printable-report" style="font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff; max-width: 900px; margin: auto; border: 1px solid #eee;">
+                            <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
                                 <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
                                     <tr>
                                         <td style="width: 50%;">
-                                            <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000; border-bottom: none;">Jabones y Productos Especializados</h1>
-                                            <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">Distribucion y Logística | 2026</p>
+                                            <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000; border-bottom: none; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                            <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #666;">Distribución y Logística | 2026</p>
+                                        </td>
                                         <td style="width: 50%; text-align: right; font-size: 11px; line-height: 1.6;">
                                             <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper()}-2026<br>
-                                            <b>FECHA:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br>
+                                            <b>FECHA:</b> {fecha_hoy} | <b>HORA:</b> {hora_hoy} (ZMG)<br>
                                             <span style="border: 2px solid #000; padding: 4px 10px; font-weight: bold; display: inline-block; margin-top: 8px;">
                                                 {estatus_rep}
                                             </span>
                                         </td>
                                     </tr>
                                 </table>
+                        
                                 <h2 style="text-align: center; text-transform: uppercase; font-size: 18px; text-decoration: underline;">Análisis Operativo Mensual: {mes_sel}</h2>
                                 
                                 <div style="margin-bottom: 30px;">
@@ -2702,7 +2708,7 @@ else:
                                         <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold;">OBJETIVO: 7.50%</div>
                                     </div>
                                 </div>
-                
+                        
                                 <div style="display: flex; gap: 20px; margin-bottom: 30px;">
                                     <div style="flex: 1; border: 1px solid #000; padding: 10px;">
                                         <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">ESTRUCTURA DE COSTOS</p>
@@ -2721,7 +2727,7 @@ else:
                                         </div>
                                     </div>
                                 </div>
-                
+                        
                                 <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 30px;">
                                     <tr style="background: #000; color: #fff; border: 1px solid #000;">
                                         <th style="padding: 10px; text-align: left;">MÉTRICA DE OPERACIÓN DETALLADA</th>
@@ -2736,7 +2742,7 @@ else:
                                     <tr><td style="border: 1px solid #000; padding: 8px;">Porcentaje de Incidencias sobre Pedidos</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{pct_inc:.1f}%</td></tr>
                                     <tr><td style="border: 1px solid #000; padding: 8px;">Impacto Económico Neto (Incremento + VI)</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">${inc_vi_monto:,.2f}</td></tr>
                                 </table>
-                
+                        
                                 <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
                                     <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
                                         <b>Rigoberto Hernández</b><br>Coordinador de Logística Nacional
@@ -2747,24 +2753,23 @@ else:
                                 </div>
                             </div>
                             """
-                
+                        
+                        # --- MEMORIA TÉCNICA DE CÁLCULO (LÓGICA Y DELTAS) ---
                         def generar_memoria_tecnica():
-                            # Cálculo base para la explicación técnica
                             gasto_base_2025 = total_flete_2026 - inc_vi_monto
-                            # Fecha y hora actual de la Zona Metropolitana
                             fecha_hoy = datetime.now().strftime('%d/%m/%Y')
                             hora_hoy = datetime.now().strftime('%H:%M')
                             
                             return f"""
-                            <div style="font-family: 'Segoe UI', Arial; padding: 10px; color: #333; max-width: 800px; margin: auto; background-color: #fff;">
+                            <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px; color: #333; max-width: 800px; margin: auto; background-color: #fff;">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #000; padding-bottom: 5px; margin-bottom: 15px;">
                                     <div style="text-align: left;">
                                         <h1 style="margin: 0; font-size: 18px; text-transform: uppercase;">Jabones y Productos Especializados</h1>
-                                        <p style="margin: 2px 0; font-size: 10px; color: #666; font-weight: bold;">MEMORIA TÉCNICA DE CÁLCULO Y VARIACIONES</p>
+                                        <p style="margin: 2px 0; font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase;">Memoria Técnica de Cálculo y Variaciones</p>
                                     </div>
-                                    <div style="text-align: right; font-size: 10px; color: #444;">
-                                        <b>FECHA:</b> {fecha_hoy}<br>
-                                        <b>HORA:</b> {hora_hoy} (ZMG)
+                                    <div style="text-align: right; font-size: 10px; color: #444; line-height: 1.6;">
+                                        <b>REPORTE ID:</b> TEC-{mes_sel[:3].upper()}-2026<br>
+                                        <b>FECHA:</b> {fecha_hoy} | <b>HORA:</b> {hora_hoy} (ZMG)
                                     </div>
                                 </div>
                         
@@ -2785,7 +2790,7 @@ else:
                                     <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
                                         ( Envíos On-Time / Total Envíos Evaluables ) x 100
                                     </div>
-                                    <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> Cumplimiento del <b>{pct_eficiencia:.1f}%</b> basado en registros con trazabilidad de fechas.</p>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> Cumplimiento del <b>{pct_eficiencia:.1f}%</b> basado en registros evaluables.</p>
                                 </div>
                         
                                 <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
@@ -2835,7 +2840,7 @@ else:
                                 </div>
                         
                                 <div style="margin-top: 15px; padding: 10px; background: #fffde7; border-left: 5px solid #fbc02d; font-size: 9px; line-height: 1.3;">
-                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre la baja de volumen ({var_volumen:+.1f}%) y el alza del gasto ({var_flete_total:+.1f}%) confirma un incremento en la tarifa unitaria por caja. Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo y derivado de la gestión de transporte.
+                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre la baja de volumen ({var_volumen:+.1f}%) y el alza del gasto ({var_flete_total:+.1f}%) confirma un incremento en la tarifa unitaria por caja. Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo.
                                 </div>
                         
                                 <div style="margin-top: 30px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
@@ -4589,6 +4594,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
