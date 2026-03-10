@@ -2503,7 +2503,7 @@ else:
                     flex-direction: column;
                     justify-content: center;
                 }
-                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.2rem; }
+                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.1rem; }
                 div[data-testid="stMetricLabel"] { color: #A4B9C8; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
                 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #A4B9C8; padding-bottom: 10px; }
                 h3 { color: #A4B9C8; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
@@ -4597,6 +4597,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
