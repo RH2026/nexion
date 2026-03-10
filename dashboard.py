@@ -1425,61 +1425,51 @@ else:
                 
                     st.dataframe(tabla_detalles, use_container_width=True, hide_index=True)
                 else:
-                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")
-                    
+                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                   
+                
                 
                 # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
                 with tab_despachos:                    
-                    # 1. Limpieza rápida de fechas solo para esta pestaña
                     # 1. Limpieza PROFUNDA de fechas para que Python no se ciegue
                     df_vol = df_mes.copy()
                     
-                    # Limpiamos espacios y convertimos a String primero para asegurar lectura
-                    for col_fecha in ['EMISION', 'FECHA DE ENVÍO']:
-                        if col_fecha in df_vol.columns:
-                            # Convertimos a texto, quitamos espacios y luego a fecha
-                            df_vol[col_fecha] = pd.to_datetime(
-                                df_vol[col_fecha].astype(str).str.strip(), 
-                                errors='coerce'
-                            )
+                    # Función interna para forzar la lectura de fechas rebeldes
+                    def forzar_fecha(serie):
+                        # Convertimos a texto, quitamos espacios y corregimos formatos NaN
+                        serie_limpia = serie.astype(str).str.strip().replace(['None', 'nan', 'NaT'], np.nan)
+                        # Intentamos convertir forzando que el día sea lo primero (formato latino)
+                        return pd.to_datetime(serie_limpia, dayfirst=True, errors='coerce')
+                
+                    df_vol['EMISION'] = forzar_fecha(df_vol['EMISION'])
+                    df_vol['FECHA DE ENVÍO'] = forzar_fecha(df_vol['FECHA DE ENVÍO'])
                     
-                    # 2. Verificación de seguridad (Si después de limpiar sigue saliendo None, 
-                    # usamos el parche que te di antes para que no pierdas el cálculo)
+                    # 2. Configuración de Feriados
+                    lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
+                    feriados_np = np.array(lista_feriados, dtype='datetime64[D]')
+                
+                    # 3. Función de Cálculo con "PARCHE DE RESCATE" para datos faltantes en Emisión
                     def calcular_kpi_24h(row):
                         ini = row['EMISION']
                         fin = row['FECHA DE ENVÍO']
                         
-                        # Si tú ves el dato en Excel pero Python dice NaT, usamos 'fin' para rescatar la fila
+                        # RESCATE: Si tú ves el dato pero Python dice NaT, usamos 'fin' para no perder la fila
                         if pd.isna(ini) and not pd.isna(fin):
                             ini = fin 
                         
                         if pd.isna(ini) or pd.isna(fin):
                             return "Sin Datos"
-                    
-                    # Forzamos a que sean fechas
-                    df_vol['EMISION'] = pd.to_datetime(df_vol['EMISION'], errors='coerce')
-                    df_vol['FECHA DE ENVÍO'] = pd.to_datetime(df_vol['FECHA DE ENVÍO'], errors='coerce')
-                    
-                    # 2. Configuración de Feriados
-                    lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
-                    feriados_np = np.array(lista_feriados, dtype='datetime64[D]')
-
-                    # 3. Función de Cálculo súper segura
-                    def calcular_kpi_24h(row):
-                        ini = row['EMISION']
-                        fin = row['FECHA DE ENVÍO']
-                        
-                        if pd.isna(ini) or pd.isna(fin):
-                            return "Sin Datos"
                         
                         try:
+                            # Si se envió antes o el mismo día que la emisión
                             if fin <= ini: 
                                 return "A Tiempo"
                             
+                            # Cálculo de días hábiles (Lunes a Sábado según tu mask '1111110')
+                            # Nota: Si tu operación es de Lunes a Viernes usa '1111100'
                             d = np.busday_count(
                                 ini.date(), 
                                 fin.date(), 
-                                weekmask='1111100', 
+                                weekmask='1111110', 
                                 holidays=feriados_np
                             )
                             
@@ -1488,17 +1478,17 @@ else:
                             return "Fuera de Tiempo"
                         except:
                             return "Sin Datos"
-
-                    # 4. Ejecutamos el cálculo vinculado al mes seleccionado
+                
+                    # 4. Ejecutamos el cálculo
                     df_vol['Estado_KPI'] = df_vol.apply(calcular_kpi_24h, axis=1)
                     
-                    # 5. Métricas para tus donitas
+                    # 5. Métricas para los indicadores visuales
                     validos = df_vol[df_vol['Estado_KPI'] != "Sin Datos"]
                     tot_v = len(validos)
                     ok_v = len(validos[validos['Estado_KPI'] == "A Tiempo"])
                     no_v = tot_v - ok_v
                     
-                    # 6. Renderizado con Estilo Progress Bar Neón
+                    # 6. Renderizado Visual (Progress Bars Neón)
                     st.markdown(f"""
                         <div style="text-align: center; margin-bottom: 30px;">
                             <p style="color: {vars_css['sub']}; font-size: 11px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; opacity: 0.8;">
@@ -1522,18 +1512,15 @@ else:
                             </div>
                         """, unsafe_allow_html=True)
                     
-                    with c_v1:
-                        render_modern_bar(tot_v, tot_v, "Total Facturas", "#5a8dee")
-                    with c_v2:
-                        render_modern_bar(ok_v, tot_v, "A Tiempo", "#39da8a")
-                    with c_v3:
-                        render_modern_bar(no_v, tot_v, "Fuera de Meta", "#ff5b5c")
-
-                    # 7. Tabla detalle (Con el número de pedido que agregaste)
+                    with c_v1: render_modern_bar(tot_v, tot_v, "Total Facturas", "#5a8dee")
+                    with c_v2: render_modern_bar(ok_v, tot_v, "A Tiempo", "#39da8a")
+                    with c_v3: render_modern_bar(no_v, tot_v, "Fuera de Meta", "#ff5b5c")
+                
+                    # 7. Tabla detalle
                     st.write("")
                     with st.expander("🔍 EXPLORAR DETALLE DE CÁLCULO"):
-                        # Formateamos las fechas para que se vean bonitas en la tabla
                         df_display = df_vol[['NÚMERO DE PEDIDO','EMISION', 'FECHA DE ENVÍO', 'Estado_KPI']].copy()
+                        # Formato de visualización amigable
                         df_display['EMISION'] = df_display['EMISION'].dt.strftime('%d/%m/%Y %H:%M')
                         df_display['FECHA DE ENVÍO'] = df_display['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y %H:%M')
                         
@@ -4630,6 +4617,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
