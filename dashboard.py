@@ -2608,23 +2608,31 @@ else:
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
 
                     # --- Lógica para Facturación Mes Anterior ---
-                    # Obtenemos el mes actual seleccionado (asumiendo que viene de tu filtro)
-                    mes_seleccionado = meses_activos[0] if len(meses_activos) > 0 else None
+                    # --- TRADUCTOR PARA OPERACIONES CON MESES ---
+                    meses_map = {
+                        "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, 
+                        "MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, 
+                        "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
+                    }
+                    meses_inv = {v: k for k, v in meses_map.items()}
                     
-                    if mes_seleccionado:
-                        # Filtramos el DataFrame de 2026 para el mes anterior
-                        # Nota: Esto funciona si 'MES' es numérico (1, 2, 3...). 
-                        # Si es texto (Enero, Febrero), necesitarías un diccionario de mapeo.
-                        df_mes_anterior = df_filtered[df_filtered['MES'] == (mes_seleccionado - 1)]
-                        total_fact_mes_anterior = df_mes_anterior['FACTURACION'].sum()
+                    # --- LÓGICA DELTA FACTURACIÓN (MES ANTERIOR 2026) ---
+                    # 1. Identificamos el mes que tienes seleccionado en el filtro
+                    mes_actual_str = df_filtered['MES'].unique()[0] if not df_filtered.empty else None
+                    
+                    if mes_actual_str in meses_map:
+                        # 2. Convertimos a número, restamos 1 y regresamos a nombre
+                        mes_anterior_num = meses_map[mes_actual_str] - 1
+                        mes_anterior_nombre = meses_inv.get(mes_anterior_num)
+                        
+                        # 3. Filtramos el DataFrame completo de 2026 para ese mes
+                        df_mes_ant = df_2026[df_2026['MES'] == mes_anterior_nombre]
+                        total_fact_mes_anterior = df_mes_ant['FACTURACION'].sum()
                     else:
                         total_fact_mes_anterior = 0
                     
-                    # Calculamos la variación porcentual vs mes anterior
-                    if total_fact_mes_anterior > 0:
-                        var_fact_mensual = ((total_fact_2026 - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
-                    else:
-                        var_fact_mensual = 0
+                    # 4. Calculamos la variación porcentual final
+                    var_fact_mensual = ((total_fact_2026 - total_fact_mes_anterior) / total_fact_mes_anterior * 100) if total_fact_mes_anterior > 0 else 0
                     
                 
                     # --- BOTONES DE CAMBIO DE VISTA ---
@@ -4628,6 +4636,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
