@@ -4162,7 +4162,9 @@ else:
                     <div class="print-box">
                         <div class="header">
                             <div>
-                                <h2 style="margin:0; letter-spacing:2px; font-weight: 900;">Jabones y Productos Especializados</h2>
+                                <h2 style="margin:0; letter-spacing:1.5px; font-weight: 900; font-size: 18px; text-transform: uppercase;">
+                                    Jabones y Productos Especializados
+                                </h2>
                                 <p style="margin:0; font-size:11px; color: #555; letter-spacing:1px;">Distribución y Logística | 2026</p>
                             </div>
                             <div style="text-align:right;">
@@ -4724,6 +4726,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
