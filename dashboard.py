@@ -2595,6 +2595,16 @@ else:
                     num_inc = (df_filtered['VALUACION'] > 0).sum()
                     pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
                     inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
+                    # --- Faltantes para los deltas de abajo ---
+                    total_valuacion_2025 = df_2025_filtrado['VALUACION'].sum() if 'VALUACION' in df_2025_filtrado.columns else 0
+                    num_inc_2025 = (df_2025_filtrado['VALUACION'] > 0).sum() if 'VALUACION' in df_2025_filtrado.columns else 0
+                    pct_inc_2025 = (num_inc_2025 / len(df_2025_filtrado) * 100) if len(df_2025_filtrado) > 0 else 0
+                    
+                    # La variación de la valuación (para el delta de k7)
+                    var_val_monto = total_valuacion_2026 - total_valuacion_2025
+                    # La variación de puntos porcentuales (para el delta de k8)
+                    var_pct_inc = pct_inc - pct_inc_2025
+                    
                 
                     # --- BOTONES DE CAMBIO DE VISTA ---
                     c_btn1, c_btn2 = st.columns(2)
@@ -2619,8 +2629,8 @@ else:
                         with k6: st.metric("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%")
                         
                         k7, k8, k9 = st.columns(3)
-                        with k7: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}")
-                        with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%")
+                        with k7: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", delta=f"${var_val_monto:,.2f}", delta_color="inverse")
+                        with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%", delta=f"{var_pct_inc:.1f}%", delta_color="inverse")
                         with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}")
                 
                         # --- 6. ANÁLISIS DINÁMICO PROFUNDO ---
@@ -4597,6 +4607,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
