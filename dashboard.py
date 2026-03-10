@@ -1242,8 +1242,8 @@ else:
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 # Definimos los 4 nombres de las pestañas
-                tab_kpis, tab_tiempos, tab_volumen, tab_participacion = st.tabs([
-                    "KPI´S", "TIEMPOS DE TRÁNSITO", "VOLUMEN", "DIST. CARGA"
+                tab_kpis, tab_tiempos, tab_despachos, tab_participacion = st.tabs([
+                    "KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA"
                 ])
     
                 # PESTAÑA 1: KPI'S (Tus donitas)
@@ -1428,8 +1428,8 @@ else:
                     st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")
                     
                 
-                # PESTAÑA 3: VOLUMEN (Análisis de Despachos 24h)
-                with tab_volumen:
+                # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
+                with tab_despachos:
                     st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
                     
                     # 1. Limpieza rápida de fechas solo para esta pestaña
@@ -4598,6 +4598,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
