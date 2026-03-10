@@ -1475,26 +1475,36 @@ else:
                     ok_v = len(validos[validos['Estado_KPI'] == "A Tiempo"])
                     no_v = tot_v - ok_v
                     
-                    # 6. Título de sección
+                    # 6. Renderizado con Estilo Progress Bar Neón
                     st.markdown(f"""
-                        <div style="text-align: center; margin-bottom: 40px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
                             <p style="color: {vars_css['sub']}; font-size: 11px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; opacity: 0.8;">
-                                Desempeño de Despachos 24h — {mes_sel}
+                                Análisis de Despachos 24h — {mes_sel}
                             </p>
                         </div>
                     """, unsafe_allow_html=True)
-
-                    # --- CAMBIO CLAVE: Usamos 3 columnas para que se repartan en todo el espacio ---
+                    
                     c_v1, c_v2, c_v3 = st.columns(3)
                     
-                    with c_v1: 
-                        render_kpi(tot_v, tot_v, "Total Facturas", "#5a8dee")  # Azul Real
-                    with c_v2: 
-                        render_kpi(ok_v, tot_v, "A Tiempo", "#39da8a")       # Verde Esmeralda
-                    with c_v3: 
-                        render_kpi(no_v, tot_v, "Fuera de Meta", "#ff5b5c")  # Rojo Coral
-
-                    st.markdown("<br><br>", unsafe_allow_html=True)
+                    def render_modern_bar(valor, total, label, color):
+                        porcentaje = (valor / total * 100) if total > 0 else 0
+                        st.markdown(f"""
+                            <div style="background: rgba(26, 37, 47, 0.6); padding: 20px; border-radius: 15px; border: 1px solid #243441; text-align: center;">
+                                <p style="color: #A4B9C8; font-size: 10px; margin-bottom: 5px; font-weight: bold;">{label.upper()}</p>
+                                <h2 style="color: white; margin: 0; font-size: 24px;">{valor}</h2>
+                                <p style="color: {color}; font-size: 12px; margin-top: 5px; font-weight: bold;">{porcentaje:.1f}%</p>
+                                <div style="background-color: #0B1014; border-radius: 10px; height: 8px; width: 100%; margin-top: 10px;">
+                                    <div style="background-color: {color}; height: 8px; width: {porcentaje}%; border-radius: 10px; box-shadow: 0 0 10px {color}88;"></div>
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with c_v1:
+                        render_modern_bar(tot_v, tot_v, "Total Facturas", "#5a8dee")
+                    with c_v2:
+                        render_modern_bar(ok_v, tot_v, "A Tiempo", "#39da8a")
+                    with c_v3:
+                        render_modern_bar(no_v, tot_v, "Fuera de Meta", "#ff5b5c")
 
                     # 7. Tabla detalle (Con el número de pedido que agregaste)
                     with st.expander("🔍 EXPLORAR DETALLE DE CÁLCULO"):
@@ -4596,6 +4606,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
