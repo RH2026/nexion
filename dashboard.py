@@ -2676,9 +2676,10 @@ else:
                             c_flete_rep = "red" if var_flete_total > 0 else "green"
                             c_caja_rep = "red" if var_costo_caja > 0 else "green"
                             
-                            # Fecha y hora actual ZMG
-                            fecha_hoy = datetime.now().strftime('%d/%m/%Y')
-                            hora_hoy = datetime.now().strftime('%H:%M')
+                            # AJUSTE MANUAL A ZONA GDL (UTC-6)
+                            ahora_gdl = datetime.utcnow() - timedelta(hours=6)
+                            fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
+                            hora_hoy = ahora_gdl.strftime('%H:%M')
                         
                             return f"""
                             <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
@@ -2757,8 +2758,11 @@ else:
                         # --- MEMORIA TÉCNICA DE CÁLCULO (LÓGICA Y DELTAS) ---
                         def generar_memoria_tecnica():
                             gasto_base_2025 = total_flete_2026 - inc_vi_monto
-                            fecha_hoy = datetime.now().strftime('%d/%m/%Y')
-                            hora_hoy = datetime.now().strftime('%H:%M')
+                            
+                            # AJUSTE MANUAL A ZONA GDL (UTC-6)
+                            ahora_gdl = datetime.utcnow() - timedelta(hours=6)
+                            fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
+                            hora_hoy = ahora_gdl.strftime('%H:%M')
                             
                             return f"""
                             <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px; color: #333; max-width: 800px; margin: auto; background-color: #fff;">
@@ -4594,6 +4598,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
