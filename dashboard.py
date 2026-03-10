@@ -2624,14 +2624,14 @@ else:
                         mes_anterior_num = meses_map[mes_actual_str] - 1
                         mes_anterior_nombre = meses_inv.get(mes_anterior_num)
                         
-                        # IMPORTANTE: Cambia 'df' por el nombre de tu DataFrame principal de 2026
-                        df_mes_ant = df[df['MES'] == mes_anterior_nombre] 
+                        # Aquí el cambio: usamos 'df_actual' que es tu DataFrame madre de 2026
+                        df_mes_ant = df_actual[df_actual['MES'] == mes_anterior_nombre] 
                         total_fact_mes_anterior = df_mes_ant['FACTURACION'].sum()
                     else:
                         total_fact_mes_anterior = 0
                     
                     var_fact_mensual = ((total_fact_2026 - total_fact_mes_anterior) / total_fact_mes_anterior * 100) if total_fact_mes_anterior > 0 else 0
-                    
+                                        
                 
                     # --- BOTONES DE CAMBIO DE VISTA ---
                     c_btn1, c_btn2 = st.columns(2)
@@ -4634,6 +4634,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
