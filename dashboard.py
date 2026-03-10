@@ -2631,6 +2631,25 @@ else:
                         total_fact_mes_anterior = 0
                     
                     var_fact_mensual = ((total_fact_2026 - total_fact_mes_anterior) / total_fact_mes_anterior * 100) if total_fact_mes_anterior > 0 else 0
+
+                    # --- LÓGICA DELTA EFICIENCIA (MES ANTERIOR 2026) ---
+                    if mes_actual_str in meses_map:
+                        # Filtramos el DataFrame original para el mes anterior (ya tenemos mes_anterior_nombre arriba)
+                        df_eval_ant = df_actual[df_actual['MES'] == mes_anterior_nombre]
+                        
+                        # Aplicamos la misma máscara de evaluable para el mes pasado
+                        mask_eval_ant = df_eval_ant['PROMESA DE ENTREGA'].notna() & df_eval_ant['FECHA DE ENTREGA REAL'].notna()
+                        df_eval_ant = df_eval_ant[mask_eval_ant]
+                        
+                        # Calculamos el porcentaje de eficiencia del mes anterior
+                        pct_eficiencia_ant = (
+                            (df_eval_ant['FECHA DE ENTREGA REAL'] <= df_eval_ant['PROMESA DE ENTREGA']).sum() / len(df_eval_ant) * 100 
+                        ) if len(df_eval_ant) > 0 else 0
+                        
+                        # La variación son puntos porcentuales (Ej: 95% - 90% = +5%)
+                        var_eficiencia_mensual = pct_eficiencia - pct_eficiencia_ant
+                    else:
+                        var_eficiencia_mensual = 0
                                         
                 
                     # --- BOTONES DE CAMBIO DE VISTA ---
@@ -2653,7 +2672,7 @@ else:
                         k4, k5, k6 = st.columns(3)
                         with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
                         with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
-                        with k6: st.metric("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%")
+                        with k6: st.metric("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%", delta=f"{var_eficiencia_mensual:+.1f}% vs mes ant.")
                         
                         k7, k8, k9 = st.columns(3)
                         with k7: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", delta=f"${var_val_monto:,.2f}", delta_color="inverse")
@@ -4634,6 +4653,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
