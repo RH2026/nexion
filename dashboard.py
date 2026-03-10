@@ -2748,6 +2748,61 @@ else:
                             </div>
                             """
                 
+                        def generar_memoria_tecnica():
+                            return f"""
+                            <div style="font-family: 'Segoe UI', Arial; padding: 50px; color: #333; max-width: 850px; margin: auto; border: 1px solid #ccc;">
+                                <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 30px;">
+                                    <h1 style="margin: 0; font-size: 22px;">MEMORIA DE CÁLCULO LOGÍSTICO</h1>
+                                    <p style="margin: 5px 0; font-size: 12px; color: #666;">SISTEMA NEXION | NEX-TECH LOGISTICS 2026</p>
+                                </div>
+                        
+                                <p style="font-size: 13px; line-height: 1.6;">
+                                    Este documento detalla la lógica algorítmica aplicada para el análisis de indicadores del periodo <b>{mes_sel} 2026</b>. 
+                                    Los cálculos aseguran la trazabilidad entre los datos operativos y los resultados financieros presentados.
+                                </p>
+                        
+                                <div style="margin-top: 25px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">1. COSTO LOGÍSTICO SOBRE VENTAS (KPI FINANCIERO)</h3>
+                                    <p style="font-size: 12px; margin-bottom: 10px;">Determina qué porcentaje de la facturación bruta es absorbido por el costo de transporte.</p>
+                                    <div style="background: #f0f0f0; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 16px;">
+                                        ( ∑ Costo Flete 2026 / ∑ Facturación 2026 ) x 100
+                                    </div>
+                                    <p style="font-size: 11px; margin-top: 10px;"><b>Tu Dato Actual:</b> (${total_flete_2026:,.2f} / ${total_fact_2026:,.2f}) x 100 = <b>{costo_log_real:.2f}%</b></p>
+                                </div>
+                        
+                                <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">2. EFICIENCIA DE ENTREGA (OTD - ON TIME DELIVERY)</h3>
+                                    <p style="font-size: 12px; margin-bottom: 10px;">Mide la precisión del servicio logístico frente al compromiso con el cliente.</p>
+                                    <div style="background: #f0f0f0; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 16px;">
+                                        ( Count(Fecha_Real ≤ Fecha_Promesa) / Total_Envíos ) x 100
+                                    </div>
+                                    <p style="font-size: 11px; margin-top: 10px;"><b>Tu Dato Actual:</b> Cumplimiento del <b>{pct_eficiencia:.1f}%</b> basado en {len(df_eval)} registros evaluables.</p>
+                                </div>
+                        
+                                <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">3. VARIACIÓN DE COSTO POR CAJA (UNIT COST VARIANCE)</h3>
+                                    <p style="font-size: 12px; margin-bottom: 10px;">Compara la eficiencia de gasto por unidad física contra el año previo.</p>
+                                    <div style="background: #f0f0f0; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 16px;">
+                                        ((Costo_Caja_2026 - Costo_Caja_2025) / Costo_Caja_2025) x 100
+                                    </div>
+                                    <p style="font-size: 11px; margin-top: 10px;"><b>Tu Dato Actual:</b> ${costo_caja_2026:,.2f} (2026) vs ${costo_caja_2025:,.2f} (2025) | Variación: <b>{var_costo_caja:+.1f}%</b></p>
+                                </div>
+                        
+                                <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 10px 0; color: #2276AA; font-size: 14px;">4. INCREMENTO LOGÍSTICO + VALUACIÓN INCIDENCIAS (VI)</h3>
+                                    <p style="font-size: 12px; margin-bottom: 10px;">Suma el aumento en gasto operativo más el valor perdido en incidencias.</p>
+                                    <div style="background: #f0f0f0; padding: 15px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 16px;">
+                                        (Gasto_2026 + Valuación_Incidencias) - Gasto_2025
+                                    </div>
+                                    <p style="font-size: 11px; margin-top: 10px;"><b>Impacto Neto Total:</b> ${inc_vi_monto:,.2f}</p>
+                                </div>
+                        
+                                <div style="margin-top: 40px; font-size: 10px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+                                    Documento generado para fines de auditoría interna y validación de KPIs - JYPESA Logística Nacional.
+                                </div>
+                            </div>
+                            """
+                        
                         # --- BOTONES DE IMPRESIÓN (RESULTADOS Y MEMORIA TÉCNICA) ---
                         col_print1, col_print2 = st.columns(2)
                         
@@ -4491,6 +4546,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
