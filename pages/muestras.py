@@ -4,66 +4,16 @@ import requests
 import base64
 from io import StringIO
 
-# --- CONFIGURACIÓN DE PÁGINA (ESTA ES LA LÍNEA QUE FALTABA) ---
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="Nexion Logistics - Facturación")
+
 # Configuración de GitHub
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
 FILE_FACTURACION = "facturacion_moreno.csv"
 FILE_BASE_MENSUAL = "basemensual.csv"
 
-def actualizar_matriz():
-    # URLs con bypass de caché
-    t = pd.Timestamp.now().timestamp()
-    url_moreno = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_FACTURACION}?t={t}"
-    url_base = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t}"
-    headers = {"Authorization": f"token {TOKEN}"}
-
-    try:
-        # 1. Leer Moreno
-        df_new = pd.read_csv(url_moreno)
-        df_new.columns = df_new.columns.str.strip() # Limpiar nombres de columnas
-
-        # Identificar columna de cantidad (por si es Quantity o QUENTITY)
-        col_cant = next((c for c in ['Quantity', 'QUENTITY', 'QUANTITY', 'CANTIDAD'] if c in df_new.columns), None)
-        
-        if not col_cant:
-            st.error(f"No hallé la columna de cantidad. Columnas: {list(df_new.columns)}")
-            return
-
-        # Columnas fijas que queremos traer
-        cols_fijas = ['Factura', 'Almacen', 'Fecha_Conta', 'Cliente', 'Nombre_Cliente', 
-                      'Nombre_Extran', 'Domicilio', 'Colonia', 'Cuidad', 'Estado', 'CP']
-        
-        # Agrupar y sumar cajas
-        df_grouped = df_new.groupby(cols_fijas)[col_cant].sum().reset_index()
-        df_grouped.rename(columns={col_cant: 'CAJAS'}, inplace=True)
-
-        # 2. Leer Base Mensual Actual para no perder lo editado
-        try:
-            df_actual = pd.read_csv(url_base)
-            df_actual.columns = df_actual.columns.str.strip()
-            # Columnas que el usuario llena manualmente
-            cols_manuales = ['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']
-            df_previo = df_actual[cols_manuales].drop_duplicates(subset=['Factura'])
-            
-            # Unir lo nuevo con lo viejo
-            df_final = pd.merge(df_grouped, df_previo, on='Factura', how='left')
-        except:
-            df_final = df_grouped.copy()
-            for c in ['SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']: df_final[c] = ""
-
-        # Limpieza final de nulos
-        df_final = df_final.fillna("")
-        
-        # 3. Guardar en GitHub
-        subir_a_github(df_final, "Actualización automática desde Moreno")
-        st.success("¡Información renderizada y actualizada! ✅")
-        st.rerun()
-
-    except Exception as e:
-        st.error(f"Error al procesar: {e}")
-
+# Función rápida para subir a GitHub
 def subir_a_github(df, mensaje):
     headers = {"Authorization": f"token {TOKEN}"}
     api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_BASE_MENSUAL}"
@@ -79,44 +29,93 @@ def subir_a_github(df, mensaje):
     }
     if sha: payload["sha"] = sha
     
-    requests.put(api_url, json=payload, headers=headers)
+    res = requests.put(api_url, json=payload, headers=headers)
+    return res.status_code == 200 or res.status_code == 201
 
-# --- INTERFAZ STREAMLIT ---
-st.title("🚚 Gestión de Facturación")
+# Función para actualizar (se llama solo al presionar el botón)
+def actualizar_matriz():
+    t = pd.Timestamp.now().timestamp()
+    url_moreno = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_FACTURACION}?t={t}"
+    url_base = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t}"
 
-if st.button("🔄 Renderizar Datos de Moreno"):
-    actualizar_matriz()
+    try:
+        # Cargar Moreno
+        df_new = pd.read_csv(url_moreno)
+        df_new.columns = df_new.columns.str.strip()
+
+        col_cant = next((c for c in ['Quantity', 'QUENTITY', 'QUANTITY', 'CANTIDAD'] if c in df_new.columns), None)
+        if not col_cant:
+            st.error("No encontré la columna de cantidad.")
+            return
+
+        cols_fijas = ['Factura', 'Almacen', 'Fecha_Conta', 'Cliente', 'Nombre_Cliente', 
+                      'Nombre_Extran', 'Domicilio', 'Colonia', 'Cuidad', 'Estado', 'CP']
+        
+        # Agrupar rápido
+        df_grouped = df_new.groupby(cols_fijas)[col_cant].sum().reset_index()
+        df_grouped.rename(columns={col_cant: 'CAJAS'}, inplace=True)
+
+        # Intentar traer manuales previos
+        try:
+            df_actual = pd.read_csv(url_base)
+            df_actual.columns = df_actual.columns.str.strip()
+            cols_manuales = ['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']
+            df_previo = df_actual[cols_manuales].drop_duplicates(subset=['Factura'])
+            df_final = pd.merge(df_grouped, df_previo, on='Factura', how='left')
+        except:
+            df_final = df_grouped.copy()
+            for c in ['SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']: df_final[c] = ""
+
+        df_final = df_final.fillna("")
+        
+        if subir_a_github(df_final, "Auto-update"):
+            st.success("¡Renderizado completo! Actualizando vista...")
+            st.cache_data.clear()
+            st.rerun()
+    except Exception as e:
+        st.error(f"Error: {e}")
+
+# --- INTERFAZ ---
+st.title("🚚 Nexion - Control de Facturación")
+
+col1, col2 = st.columns([1, 4])
+with col1:
+    if st.button("🔄 Renderizar Moreno"):
+        actualizar_matriz()
 
 st.divider()
 
-try:
-    # Cargar para mostrar en el editor
-    url_final = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={pd.Timestamp.now().timestamp()}"
-    df_editor = pd.read_csv(url_final).fillna("")
+# CARGA RÁPIDA DE LA TABLA
+@st.cache_data(ttl=10) # Cache de solo 10 segundos para que sea veloz
+def cargar_base_mensual():
+    t = pd.Timestamp.now().timestamp()
+    url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t}"
+    return pd.read_csv(url).fillna("")
 
-    st.subheader("📝 Edición de Base Mensual")
+try:
+    df_editor = cargar_base_mensual()
     
-    # Editor interactivo
+    st.subheader("📝 Edición de Información")
     df_modificado = st.data_editor(
         df_editor,
         column_config={
-            "CAJAS": st.column_config.NumberColumn(disabled=True),
             "Factura": st.column_config.TextColumn(disabled=True),
-            "SURTIDOR": st.column_config.TextColumn(help="Escribe el nombre del surtidor"),
+            "CAJAS": st.column_config.NumberColumn(disabled=True),
         },
         hide_index=True,
         use_container_width=True,
-        key="editor_principal"
+        key="editor_nexion"
     )
 
-    if st.button("💾 Guardar Cambios Manuales"):
-        with st.spinner("Guardando en GitHub..."):
-            subir_a_github(df_modificado, "Cambios manuales en editor")
-            st.success("¡Cambios guardados correctamente! 📁")
+    if st.button("💾 Guardar Cambios"):
+        if subir_a_github(df_modificado, "Manual update"):
+            st.success("¡Guardado!")
             st.cache_data.clear()
+            st.rerun()
 
-except Exception as e:
-    st.info("No hay datos en la base mensual. Haz clic en 'Renderizar' para comenzar.")
+except Exception:
+    st.info("Renderiza los datos para ver la tabla.")
+
 
 
 
