@@ -13,7 +13,19 @@ REPO_NAME = "RH2026/nexion"
 FILE_FACTURACION = "facturacion_moreno.csv"
 FILE_BASE_MENSUAL = "basemensual.csv"
 
-# Función rápida para subir a GitHub
+def obtener_csv_directo(url):
+    """Función para saltarse el caché de GitHub a la fuerza"""
+    headers = {
+        "Authorization": f"token {TOKEN}",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return pd.read_csv(StringIO(response.text))
+    else:
+        return None
+
 def subir_a_github(df, mensaje):
     headers = {"Authorization": f"token {TOKEN}"}
     api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_BASE_MENSUAL}"
@@ -30,91 +42,103 @@ def subir_a_github(df, mensaje):
     if sha: payload["sha"] = sha
     
     res = requests.put(api_url, json=payload, headers=headers)
-    return res.status_code == 200 or res.status_code == 201
+    return res.status_code in [200, 201]
 
-# Función para actualizar (se llama solo al presionar el botón)
 def actualizar_matriz():
+    # Bypass total de caché
     t = pd.Timestamp.now().timestamp()
     url_moreno = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_FACTURACION}?t={t}"
     url_base = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t}"
 
     try:
-        # Cargar Moreno
-        df_new = pd.read_csv(url_moreno)
+        # 1. Leer Moreno con el nuevo método directo
+        df_new = obtener_csv_directo(url_moreno)
+        if df_new is None:
+            st.error("No se pudo leer el archivo de Moreno desde GitHub.")
+            return
+
         df_new.columns = df_new.columns.str.strip()
+        df_new['Factura'] = df_new['Factura'].astype(str).str.strip() # Asegurar llave de cruce
 
         col_cant = next((c for c in ['Quantity', 'QUENTITY', 'QUANTITY', 'CANTIDAD'] if c in df_new.columns), None)
         if not col_cant:
-            st.error("No encontré la columna de cantidad.")
+            st.error(f"Columnas detectadas: {list(df_new.columns)}")
             return
 
         cols_fijas = ['Factura', 'Almacen', 'Fecha_Conta', 'Cliente', 'Nombre_Cliente', 
                       'Nombre_Extran', 'Domicilio', 'Colonia', 'Cuidad', 'Estado', 'CP']
         
-        # Agrupar rápido
+        # Agrupar y sumar cajas
         df_grouped = df_new.groupby(cols_fijas)[col_cant].sum().reset_index()
         df_grouped.rename(columns={col_cant: 'CAJAS'}, inplace=True)
 
-        # Intentar traer manuales previos
-        try:
-            df_actual = pd.read_csv(url_base)
+        # 2. Intentar cruzar con manuales previos
+        df_actual = obtener_csv_directo(url_base)
+        if df_actual is not None:
             df_actual.columns = df_actual.columns.str.strip()
+            df_actual['Factura'] = df_actual['Factura'].astype(str).str.strip()
+            
             cols_manuales = ['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']
+            # Solo tomamos lo que ya escribiste
             df_previo = df_actual[cols_manuales].drop_duplicates(subset=['Factura'])
+            
+            # EL CRUCE MÁGICO: Trae todo lo nuevo de Moreno y pégale lo viejo por Factura
             df_final = pd.merge(df_grouped, df_previo, on='Factura', how='left')
-        except:
+        else:
             df_final = df_grouped.copy()
             for c in ['SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']: df_final[c] = ""
 
         df_final = df_final.fillna("")
         
-        if subir_a_github(df_final, "Auto-update"):
-            st.success("¡Renderizado completo! Actualizando vista...")
+        if subir_a_github(df_final, "Sincronización total Moreno"):
+            st.success("¡Base actualizada con las nuevas filas! 🚀")
             st.cache_data.clear()
             st.rerun()
+            
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error en el cruce: {e}")
 
 # --- INTERFAZ ---
-st.title("🚚 Nexion - Control de Facturación")
+st.title("🚚 Nexion - Sincronización de Logística")
 
-col1, col2 = st.columns([1, 4])
-with col1:
-    if st.button("🔄 Renderizar Moreno"):
+if st.button("🔄 Forzar Sincronización (Moreno -> Base)"):
+    with st.spinner("Buscando nuevas facturas y cruzando datos..."):
         actualizar_matriz()
 
 st.divider()
 
-# CARGA RÁPIDA DE LA TABLA
-@st.cache_data(ttl=10) # Cache de solo 10 segundos para que sea veloz
-def cargar_base_mensual():
+@st.cache_data(ttl=5) # Cache súper corto
+def cargar_base():
     t = pd.Timestamp.now().timestamp()
     url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t}"
-    return pd.read_csv(url).fillna("")
+    df = obtener_csv_directo(url)
+    return df if df is not None else pd.DataFrame()
 
 try:
-    df_editor = cargar_base_mensual()
-    
-    st.subheader("📝 Edición de Información")
-    df_modificado = st.data_editor(
-        df_editor,
-        column_config={
-            "Factura": st.column_config.TextColumn(disabled=True),
-            "CAJAS": st.column_config.NumberColumn(disabled=True),
-        },
-        hide_index=True,
-        use_container_width=True,
-        key="editor_nexion"
-    )
+    df_editor = cargar_base()
+    if not df_editor.empty:
+        st.subheader(f"📝 Registros detectados: {len(df_editor)}")
+        df_modificado = st.data_editor(
+            df_editor,
+            column_config={
+                "Factura": st.column_config.TextColumn(disabled=True),
+                "CAJAS": st.column_config.NumberColumn(disabled=True),
+            },
+            hide_index=True,
+            use_container_width=True,
+            key="editor_nexion_v4"
+        )
 
-    if st.button("💾 Guardar Cambios"):
-        if subir_a_github(df_modificado, "Manual update"):
-            st.success("¡Guardado!")
-            st.cache_data.clear()
-            st.rerun()
+        if st.button("💾 Guardar Cambios Manuales"):
+            if subir_a_github(df_modificado, "Cambio manual"):
+                st.success("Guardado en GitHub")
+                st.cache_data.clear()
+                st.rerun()
+    else:
+        st.info("Presiona el botón de sincronización para cargar los datos.")
 
-except Exception:
-    st.info("Renderiza los datos para ver la tabla.")
+except Exception as e:
+    st.error(f"Error al mostrar tabla: {e}")
 
 
 
