@@ -21,16 +21,13 @@ def obtener_csv_directo(url):
     }
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        # Forzamos que todo se lea como texto para evitar errores de formato
         return pd.read_csv(StringIO(response.text)).fillna("")
-    else:
-        return None
+    return None
 
 def subir_a_github(df, mensaje):
     headers = {"Authorization": f"token {TOKEN}"}
     api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_BASE_MENSUAL}"
     
-    # Limpiamos nulos antes de subir
     csv_content = df.fillna("").to_csv(index=False)
     get_file = requests.get(api_url, headers=headers)
     
@@ -53,17 +50,14 @@ def actualizar_matriz():
     try:
         df_new = obtener_csv_directo(url_moreno)
         if df_new is None:
-            st.error("No se pudo leer el archivo de Moreno.")
+            st.error("No se pudo leer Moreno.")
             return
 
         df_new.columns = df_new.columns.str.strip()
         df_new['Factura'] = df_new['Factura'].astype(str).str.strip()
 
         col_cant = next((c for c in ['Quantity', 'QUENTITY', 'QUANTITY', 'CANTIDAD'] if c in df_new.columns), None)
-        if not col_cant:
-            st.error(f"Columnas detectadas: {list(df_new.columns)}")
-            return
-
+        
         cols_fijas = ['Factura', 'Almacen', 'Fecha_Conta', 'Cliente', 'Nombre_Cliente', 
                       'Nombre_Extran', 'Domicilio', 'Colonia', 'Cuidad', 'Estado', 'CP']
         
@@ -74,68 +68,66 @@ def actualizar_matriz():
         if df_actual is not None:
             df_actual.columns = df_actual.columns.str.strip()
             df_actual['Factura'] = df_actual['Factura'].astype(str).str.strip()
-            
             cols_manuales = ['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']
             df_previo = df_actual[cols_manuales].drop_duplicates(subset=['Factura'])
-            
             df_final = pd.merge(df_grouped, df_previo, on='Factura', how='left')
         else:
             df_final = df_grouped.copy()
             for c in ['SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']: df_final[c] = ""
 
-        # ESTA LÍNEA ES LA QUE QUITA LOS "NONE" AMOR
         df_final = df_final.fillna("")
         
         if subir_a_github(df_final, "Sincronización total Moreno"):
-            st.success("¡Base actualizada sin errores! 🚀")
+            st.success("¡Base sincronizada! 🚀")
             st.cache_data.clear()
             st.rerun()
             
     except Exception as e:
-        st.error(f"Error en el cruce: {e}")
+        st.error(f"Error: {e}")
 
 # --- INTERFAZ ---
 st.title("🚚 Nexion - Sincronización de Logística")
 
-if st.button("🔄 Forzar Sincronización (Moreno -> Base)"):
+if st.button("🔄 Sincronizar con Moreno"):
     actualizar_matriz()
 
 st.divider()
 
-@st.cache_data(ttl=5)
-def cargar_base():
-    t = pd.Timestamp.now().timestamp()
-    url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t}"
-    df = obtener_csv_directo(url)
-    return df.fillna("") if df is not None else pd.DataFrame()
+# CARGAR DATOS
+t_now = pd.Timestamp.now().timestamp()
+url_final = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t_now}"
+df_base_actual = obtener_csv_directo(url_final)
 
-try:
-    df_editor = cargar_base()
-    if not df_editor.empty:
-        st.subheader(f"📝 Registros: {len(df_editor)}")
-        
-        # El editor ahora recibirá celdas vacías en lugar de None
-        df_modificado = st.data_editor(
-            df_editor,
-            column_config={
-                "Factura": st.column_config.TextColumn(disabled=True),
-                "CAJAS": st.column_config.NumberColumn(disabled=True),
-            },
-            hide_index=True,
-            use_container_width=True,
-            key="editor_nexion_vfinal"
-        )
+if df_base_actual is not None:
+    st.subheader(f"📝 Registros: {len(df_base_actual)}")
+    
+    # IMPORTANTE: El editor guarda los cambios en st.session_state automáticamente
+    df_modificado = st.data_editor(
+        df_base_actual,
+        column_config={
+            "Factura": st.column_config.TextColumn(disabled=True),
+            "CAJAS": st.column_config.NumberColumn(disabled=True),
+        },
+        hide_index=True,
+        use_container_width=True,
+        key="editor_nexion" # Mantenemos la key para el estado
+    )
 
-        if st.button("💾 Guardar Cambios Manuales"):
-            if subir_a_github(df_modificado, "Cambio manual"):
-                st.success("Guardado con éxito")
-                st.cache_data.clear()
-                st.rerun()
-    else:
-        st.info("Sincroniza para cargar datos.")
+    # Botón de guardado usando el DataFrame modificado
+    if st.button("💾 Guardar Cambios Manuales"):
+        with st.spinner("Subiendo cambios a GitHub..."):
+            # Verificamos que el DataFrame tenga contenido antes de subir
+            if df_modificado is not None:
+                exito = subir_a_github(df_modificado, "Actualización manual desde editor")
+                if exito:
+                    st.success("¡Guardado en GitHub correctamente! 📁")
+                    st.cache_data.clear()
+                    st.rerun()
+                else:
+                    st.error("Error al intentar subir los cambios.")
+else:
+    st.info("No hay datos en la base mensual. Presiona Sincronizar.")
 
-except Exception as e:
-    st.error(f"Error: {e}")
 
 
 
