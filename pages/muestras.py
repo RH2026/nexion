@@ -22,95 +22,106 @@ def obtener_csv_directo(url):
     except: pass
     return None
 
-def guardar_y_sincronizar(df_actual_del_editor):
-    """Sincroniza con Moreno y guarda todo en un solo paso"""
-    t = pd.Timestamp.now().timestamp()
-    url_moreno = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_FACTURACION}?t={t}"
-    
-    # 1. Leer Moreno para ver si hay facturas nuevas
-    df_moreno = obtener_csv_directo(url_moreno)
-    if df_moreno is None:
-        st.error("No se pudo leer Moreno para sincronizar.")
-        return
-
-    # Preparar Moreno
-    df_moreno.columns = df_moreno.columns.str.strip()
-    df_moreno['Factura'] = df_moreno['Factura'].astype(str).str.strip()
-    col_cant = next((c for c in ['Quantity', 'QUENTITY', 'QUANTITY', 'CANTIDAD'] if c in df_moreno.columns), 'Quantity')
-    
-    cols_fijas = ['Factura', 'Almacen', 'Fecha_Conta', 'Cliente', 'Nombre_Cliente', 
-                  'Nombre_Extran', 'Domicilio', 'Colonia', 'Cuidad', 'Estado', 'CP']
-    
-    # Agrupar Moreno
-    df_grouped = df_moreno.groupby(cols_fijas)[col_cant].sum().reset_index()
-    df_grouped.rename(columns={col_cant: 'CAJAS'}, inplace=True)
-
-    # 2. Cruzar con lo que el usuario tiene actualmente en el editor (para no perder cambios)
-    df_actual_del_editor['Factura'] = df_actual_del_editor['Factura'].astype(str).str.strip()
-    cols_manuales = ['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']
-    df_manual = df_actual_del_editor[cols_manuales].drop_duplicates(subset=['Factura'])
-    
-    # Unimos: Mantenemos estructura de Moreno y pegamos lo editado
-    df_final = pd.merge(df_grouped, df_manual, on='Factura', how='left').fillna("")
-
-    # 3. Subir a GitHub
+def subir_a_github(df, mensaje):
     headers = {"Authorization": f"token {TOKEN}"}
     api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_BASE_MENSUAL}"
     
+    # 1. Obtener el SHA actual para poder sobreescribir
     res_get = requests.get(api_url, headers=headers)
     sha = res_get.json()['sha'] if res_get.status_code == 200 else None
     
-    csv_content = df_final.to_csv(index=False)
+    # 2. Convertir DataFrame a CSV y subir
+    csv_content = df.to_csv(index=False)
     payload = {
-        "message": "Sincronización y Guardado Automático",
+        "message": mensaje,
         "content": base64.b64encode(csv_content.encode()).decode(),
         "sha": sha
     }
     
     res_put = requests.put(api_url, json=payload, headers=headers)
-    if res_put.status_code in [200, 201]:
-        st.success("¡Sincronizado y Guardado en GitHub! ✅")
-        st.cache_data.clear()
-        st.rerun()
+    return res_put.status_code in [200, 201]
 
-# --- INTERFAZ ---
-st.title("🚚 Nexion - Panel Logístico Único")
+# --- MANEJO DE ESTADO DE DATOS ---
+if 'df_trabajo' not in st.session_state:
+    t = pd.Timestamp.now().timestamp()
+    url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t}"
+    data = obtener_csv_directo(url)
+    st.session_state.df_trabajo = data
 
-# Carga inicial de datos
-t_ini = pd.Timestamp.now().timestamp()
-url_ini = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t_ini}"
-df_inicial = obtener_csv_directo(url_ini)
+st.title("🚚 Nexion - Panel Logístico")
 
-if df_inicial is not None:
-    # Mostramos el editor
+if st.session_state.df_trabajo is not None:
+    # EL EDITOR: Siempre muestra lo que está en memoria
     df_editado = st.data_editor(
-        df_inicial,
+        st.session_state.df_trabajo,
         column_config={
             "Factura": st.column_config.TextColumn(disabled=True),
             "CAJAS": st.column_config.NumberColumn(disabled=True),
         },
         hide_index=True,
         use_container_width=True,
-        key="main_editor"
+        key="editor_nexion"
     )
 
     st.divider()
 
-    # EL BOTÓN ÚNICO
-    # Si hay cambios detectados, se pone rojo
-    hay_cambios = len(st.session_state.main_editor["edited_rows"]) > 0
-    
-    if hay_cambios:
-        st.markdown("""<style>div.stButton > button {background-color: #FF4B4B !important; color: white !important; font-weight: bold !important; width: 100% !important;}</style>""", unsafe_allow_html=True)
-        label = "⚠️ DETECTO CAMBIOS: GUARDAR Y SINCRONIZAR ⚠️"
-    else:
-        label = "🔄 GUARDAR Y SINCRONIZAR CON MORENO"
+    # BOTONES SEPARADOS ABAJO
+    col1, col2 = st.columns(2)
 
-    if st.button(label):
-        with st.spinner("Procesando todo en un paso..."):
-            guardar_y_sincronizar(df_editado)
+    with col1:
+        if st.button("💾 GUARDAR CAMBIOS", use_container_width=True):
+            with st.spinner("Guardando..."):
+                if subir_a_github(df_editado, "Guardado manual"):
+                    st.success("¡Cambios guardados! ✅")
+                    st.session_state.df_trabajo = df_editado
+                    st.cache_data.clear()
+                    st.rerun()
+
+    with col2:
+        if st.button("🔄 SINCRONIZAR CON MORENO", use_container_width=True):
+            with st.spinner("Sincronizando nuevas facturas..."):
+                t = pd.Timestamp.now().timestamp()
+                url_moreno = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_FACTURACION}?t={t}"
+                df_moreno = obtener_csv_directo(url_moreno)
+                
+                if df_moreno is not None:
+                    # Limpieza y preparación de Moreno
+                    df_moreno.columns = df_moreno.columns.str.strip()
+                    df_moreno['Factura'] = df_moreno['Factura'].astype(str).str.strip()
+                    
+                    col_cant = next((c for c in ['Quantity', 'QUENTITY', 'QUANTITY', 'CANTIDAD'] if c in df_moreno.columns), 'Quantity')
+                    
+                    cols_fijas = ['Factura', 'Almacen', 'Fecha_Conta', 'Cliente', 'Nombre_Cliente', 
+                                  'Nombre_Extran', 'Domicilio', 'Colonia', 'Cuidad', 'Estado', 'CP']
+                    
+                    # Agrupar Moreno (una fila por factura)
+                    df_grouped = df_moreno.groupby(cols_fijas)[col_cant].sum().reset_index()
+                    df_grouped.rename(columns={col_cant: 'CAJAS'}, inplace=True)
+
+                    # Cruzar con lo que tienes actualmente en el editor
+                    df_editado['Factura'] = df_editado['Factura'].astype(str).str.strip()
+                    
+                    # Merge: Mantenemos lo de Moreno y le pegamos tus ediciones manuales
+                    df_final = pd.merge(
+                        df_grouped, 
+                        df_editado[['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']], 
+                        on='Factura', 
+                        how='left'
+                    ).fillna("")
+
+                    if subir_a_github(df_final, "Sincronización Moreno"):
+                        st.success("¡Sincronización exitosa! 🚀")
+                        st.session_state.df_trabajo = df_final
+                        st.cache_data.clear()
+                        st.rerun()
+                else:
+                    st.error("No se pudo obtener el archivo Moreno.")
+
 else:
-    st.warning("No se pudo cargar la base mensual. Verifica tu archivo en GitHub.")
+    st.info("Cargando información desde GitHub...")
+    if st.button("Reintentar Carga"):
+        st.rerun()
+
 
 
 
