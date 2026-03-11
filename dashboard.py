@@ -3687,7 +3687,7 @@ else:
                 # --- PANEL DE ADMIN ---
                 # --- PANEL DE ADMIN ---
                 st.divider()
-                st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
+                st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO ESCLUSIVO DE LOGÍSTICA")
                 t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
                 
                 with t1:
@@ -4758,6 +4758,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
