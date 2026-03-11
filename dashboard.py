@@ -1131,7 +1131,7 @@ else:
                     # Extraemos el valor del TRIGGER
                     trigger_val = str(envio.get("TRIGGER", "")).strip()
                     
-                    # Lógica de Guía Dinámica para evitar confusión con el surtido
+                    # Lógica de Guía Dinámica
                     tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
                     
                     if tiene_guia:
@@ -1141,11 +1141,12 @@ else:
                     else:
                         n_guia = "EN ESPERA DE SURTIDO"
                 
+                    # Colores y fechas con Margen de Gracia (.normalize())
                     color_envio, color_guia, color_promesa = "#38bdf8", ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
                     linea_1_2, linea_2_3 = ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
                     
-                    f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-                    hoy = pd.Timestamp(datetime.now())
+                    f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce').normalize()
+                    hoy = pd.Timestamp(datetime.now()).normalize()
                 
                     # --- LÓGICA DE ESTATUS Y COLORES ACTUALIZADA ---
                     if not tiene_guia:
@@ -1153,13 +1154,18 @@ else:
                             status_text, status_color = "GENERANDO GUÍA", "#38bdf8"
                         else:
                             status_text, status_color = "SURTIENDO", "#FFA500"
+                        # Última parte apagada si no hay guía
                         color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
+                        
                     elif not entregado_real:
+                        # Margen de gracia: EN TRÁNSITO hasta que termine el día
                         status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                        color_entrega, linea_3_4 = status_color, status_color
+                        # Última bolita apagada mientras esté en camino
+                        color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
                     else:
-                        f_entrega_dt = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True, errors='coerce')
+                        f_entrega_dt = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True, errors='coerce').normalize()
                         status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                        # Aquí sí se prenden la última línea y bolita
                         color_entrega, linea_3_4 = status_color, status_color
                 
                     # HTML en una sola línea para renderizado perfecto
@@ -4795,6 +4801,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
