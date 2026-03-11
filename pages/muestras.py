@@ -4,6 +4,8 @@ import requests
 import base64
 from io import StringIO
 
+# --- CONFIGURACIÓN DE PÁGINA (ESTA ES LA LÍNEA QUE FALTABA) ---
+st.set_page_config(layout="wide", page_title="Nexion Logistics - Facturación")
 # Configuración de GitHub
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
@@ -115,6 +117,7 @@ try:
 
 except Exception as e:
     st.info("No hay datos en la base mensual. Haz clic en 'Renderizar' para comenzar.")
+
 
 
 
