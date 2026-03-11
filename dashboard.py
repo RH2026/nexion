@@ -948,10 +948,7 @@ else:
                         entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
                         f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
                         
-                        # Extraemos el valor del TRIGGER
                         trigger_val = str(envio.get("TRIGGER", "")).strip()
-                        
-                        # LÓGICA DE GUÍA: Si ya hay número, se pone. Si no, depende del TRIGGER.
                         tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
                         
                         if tiene_guia:
@@ -961,31 +958,34 @@ else:
                         else:
                             n_guia = "EN ESPERA DE SURTIDO"
                     
-                        # Colores y fechas con MARGEN DE GRACIA (.normalize())
+                        # Colores base
                         color_envio, color_guia, color_promesa = "#38bdf8", ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
                         linea_1_2, linea_2_3 = ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
                         
-                        # Normalizamos para comparar solo fechas sin horas
                         f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce').normalize()
                         hoy = pd.Timestamp(datetime.now()).normalize()
                     
-                        # --- LÓGICA DE ESTATUS SUPERIOR ---
+                        # --- LÓGICA DE ESTATUS Y COLORES FINALES ---
                         if not tiene_guia:
                             if trigger_val == "Enviada":
                                 status_text, status_color = "GENERANDO GUÍA", "#38bdf8"
                             else:
                                 status_text, status_color = "SURTIENDO", "#FFA500"
+                            # Si no hay guía, la entrega y su línea están apagadas
                             color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
+                            
                         elif not entregado_real:
-                            # Aquí aplica el margen de gracia: solo es retraso si hoy es mayor a la promesa
                             status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                            color_entrega, linea_3_4 = status_color, status_color
+                            # Aquí está el cambio: Aunque esté en tránsito, la última bolita y línea siguen apagadas
+                            color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
+                            
                         else:
                             f_entrega_dt = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True, errors='coerce').normalize()
                             status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                            # Solo aquí se prenden la última línea y bolita
                             color_entrega, linea_3_4 = status_color, status_color
                     
-                        # Renderizado en una sola línea para evitar errores
+                        # HTML en una sola línea
                         timeline_html = f'<div style="background:{vars_css["card"]}; padding:20px; border-radius:8px; border:1px solid {vars_css["border"]}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:30px;"><h2 style="margin:0; color:{vars_css["text"]}; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px; white-space:nowrap;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:30px; overflow-x:auto; padding-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">ENVÍO</div><div style="font-size:10px; color:white;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">GUÍA</div><div style="font-size:10px; color:white;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">PROMESA</div><div style="font-size:10px; color:white;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; box-shadow:{"0 0 10px "+color_entrega+"44" if entregado_real else "none"}; z-index:2;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:8px; font-weight:700;">ENTREGA</div><div style="font-size:10px; color:white;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px; border-top:1px solid {vars_css["border"]}; padding-top:20px;"><div style="flex:1; min-width:80px;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{envio["FLETERA"]}</div></div><div style="flex:1; min-width:80px; text-align:center;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{n_guia}</div></div><div style="flex:1; min-width:80px; text-align:right;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{envio["DESTINO"]}</div></div></div></div>'
                         st.markdown(timeline_html, unsafe_allow_html=True)
                     
@@ -4795,6 +4795,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
