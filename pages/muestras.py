@@ -37,28 +37,26 @@ def subir_a_github(df, mensaje):
     res_put = requests.put(api_url, json=payload, headers=headers)
     return res_put.status_code in [200, 201]
 
-# --- MANEJO DE ESTADO ---
-if 'version_editor' not in st.session_state:
-    st.session_state.version_editor = 0
-
-# Carga inicial (Siempre lee de GitHub al abrir la página)
-t_ini = pd.Timestamp.now().timestamp()
-url_repo = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t_ini}"
-df_actual_github = obtener_csv_directo(url_repo)
+# --- MANEJO DE ESTADO (CRÍTICO) ---
+# Si no cargamos esto en session_state, Streamlit lo borra cada vez que parpadeas
+if 'df_memoria' not in st.session_state:
+    t_ini = pd.Timestamp.now().timestamp()
+    url_repo = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t_ini}"
+    st.session_state.df_memoria = obtener_csv_directo(url_repo)
 
 st.title("🚚 Nexion - Panel Logístico")
 
-if df_actual_github is not None:
-    # EL EDITOR: Siempre muestra lo más reciente de GitHub
+if st.session_state.df_memoria is not None:
+    # EL EDITOR: Ahora usa df_memoria para no perder datos al recargar
     df_editado = st.data_editor(
-        df_actual_github,
+        st.session_state.df_memoria,
         column_config={
             "Factura": st.column_config.TextColumn(disabled=True),
             "CAJAS": st.column_config.NumberColumn(disabled=True),
         },
         hide_index=True,
         use_container_width=True,
-        key=f"editor_v{st.session_state.version_editor}"
+        key="editor_nexion"
     )
 
     st.divider()
@@ -68,13 +66,13 @@ if df_actual_github is not None:
         if st.button("💾 GUARDAR CAMBIOS MANUALES", use_container_width=True):
             with st.spinner("Guardando en GitHub..."):
                 if subir_a_github(df_editado, "Guardado manual"):
+                    st.session_state.df_memoria = df_editado # Actualizamos la memoria
                     st.success("¡Cambios guardados! ✅")
-                    st.cache_data.clear()
                     st.rerun()
 
     with col2:
         if st.button("🔄 SINCRONIZAR CON MORENO", use_container_width=True):
-            with st.spinner("Sincronizando... (Recuperando datos de GitHub)"):
+            with st.spinner("Sincronizando..."):
                 # 1. Traer Moreno
                 t = pd.Timestamp.now().timestamp()
                 url_moreno = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_FACTURACION}?t={t}"
@@ -91,27 +89,28 @@ if df_actual_github is not None:
                     df_grouped = df_moreno.groupby(cols_fijas)[col_cant].sum().reset_index()
                     df_grouped.rename(columns={col_cant: 'CAJAS'}, inplace=True)
 
-                    # 2. IMPORTANTE: Cruzamos Moreno contra lo que YA está en GitHub
-                    # Así, si cerraste la página, recuperamos lo que guardaste antes.
-                    df_actual_github['Factura'] = df_actual_github['Factura'].astype(str).str.strip()
+                    # 2. CRUCIAL: Cruzamos Moreno contra lo que tienes EN PANTALLA (df_editado)
+                    # No contra lo de GitHub, porque lo de la pantalla es lo que acabas de escribir
+                    df_editado['Factura'] = df_editado['Factura'].astype(str).str.strip()
                     
                     df_final = pd.merge(
                         df_grouped, 
-                        df_actual_github[['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']], 
+                        df_editado[['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']], 
                         on='Factura', 
                         how='left'
                     ).fillna("")
 
                     # 3. Guardar el resultado mezclado
                     if subir_a_github(df_final, "Sincronización Moreno"):
-                        st.success("¡Sincronizado! Se recuperaron tus capturas previas de GitHub. 🚀")
-                        st.cache_data.clear()
+                        st.session_state.df_memoria = df_final # Actualizamos la memoria
+                        st.success("¡Sincronizado! Se respetaron tus cambios en pantalla. 🚀")
                         st.rerun()
 else:
-    st.info("No hay datos en la base mensual. Sincroniza para empezar.")
+    st.info("No hay datos. Sincroniza para empezar.")
     if st.button("Sincronizar Moreno por primera vez"):
-        # (Aquí podrías poner la misma lógica de sincronización arriba)
+        # Lógica de sincronización inicial
         pass
+
 
 
 
