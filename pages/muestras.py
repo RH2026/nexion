@@ -41,17 +41,17 @@ def subir_a_github(df, mensaje):
 if 'version_editor' not in st.session_state:
     st.session_state.version_editor = 0
 
-if 'df_trabajo' not in st.session_state:
-    t = pd.Timestamp.now().timestamp()
-    url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t}"
-    st.session_state.df_trabajo = obtener_csv_directo(url)
+# Carga inicial (Siempre lee de GitHub al abrir la página)
+t_ini = pd.Timestamp.now().timestamp()
+url_repo = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_BASE_MENSUAL}?t={t_ini}"
+df_actual_github = obtener_csv_directo(url_repo)
 
 st.title("🚚 Nexion - Panel Logístico")
 
-if st.session_state.df_trabajo is not None:
-    # EL EDITOR: Usamos la versión para forzar el refresco
+if df_actual_github is not None:
+    # EL EDITOR: Siempre muestra lo más reciente de GitHub
     df_editado = st.data_editor(
-        st.session_state.df_trabajo,
+        df_actual_github,
         column_config={
             "Factura": st.column_config.TextColumn(disabled=True),
             "CAJAS": st.column_config.NumberColumn(disabled=True),
@@ -65,19 +65,17 @@ if st.session_state.df_trabajo is not None:
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("💾 GUARDAR CAMBIOS", use_container_width=True):
-            with st.spinner("Guardando..."):
+        if st.button("💾 GUARDAR CAMBIOS MANUALES", use_container_width=True):
+            with st.spinner("Guardando en GitHub..."):
                 if subir_a_github(df_editado, "Guardado manual"):
-                    st.session_state.df_trabajo = df_editado
-                    st.session_state.version_editor += 1 
-                    st.cache_data.clear()
                     st.success("¡Cambios guardados! ✅")
+                    st.cache_data.clear()
                     st.rerun()
 
     with col2:
         if st.button("🔄 SINCRONIZAR CON MORENO", use_container_width=True):
-            with st.spinner("Sincronizando y protegiendo tus cambios..."):
-                # 1. LEER MORENO
+            with st.spinner("Sincronizando... (Recuperando datos de GitHub)"):
+                # 1. Traer Moreno
                 t = pd.Timestamp.now().timestamp()
                 url_moreno = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_FACTURACION}?t={t}"
                 df_moreno = obtener_csv_directo(url_moreno)
@@ -85,37 +83,36 @@ if st.session_state.df_trabajo is not None:
                 if df_moreno is not None:
                     df_moreno.columns = df_moreno.columns.str.strip()
                     df_moreno['Factura'] = df_moreno['Factura'].astype(str).str.strip()
-                    
                     col_cant = next((c for c in ['Quantity', 'QUENTITY', 'QUANTITY', 'CANTIDAD'] if c in df_moreno.columns), 'Quantity')
+                    
                     cols_fijas = ['Factura', 'Almacen', 'Fecha_Conta', 'Cliente', 'Nombre_Cliente', 
                                   'Nombre_Extran', 'Domicilio', 'Colonia', 'Cuidad', 'Estado', 'CP']
                     
                     df_grouped = df_moreno.groupby(cols_fijas)[col_cant].sum().reset_index()
                     df_grouped.rename(columns={col_cant: 'CAJAS'}, inplace=True)
 
-                    # 2. EL CRUCE: Usamos 'df_editado' (lo que tienes ahorita en pantalla) 
-                    # para que NO se pierda nada de lo que acabas de capturar.
-                    df_editado['Factura'] = df_editado['Factura'].astype(str).str.strip()
+                    # 2. IMPORTANTE: Cruzamos Moreno contra lo que YA está en GitHub
+                    # Así, si cerraste la página, recuperamos lo que guardaste antes.
+                    df_actual_github['Factura'] = df_actual_github['Factura'].astype(str).str.strip()
                     
-                    # Traemos lo nuevo de Moreno pero le pegamos lo que TÚ tienes en el editor ahorita
                     df_final = pd.merge(
                         df_grouped, 
-                        df_editado[['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']], 
+                        df_actual_github[['Factura', 'SURTIDOR', 'PAQUETERIA', 'FECHA', 'INCIDENCIA']], 
                         on='Factura', 
                         how='left'
                     ).fillna("")
 
-                    # 3. GUARDAR RESULTADO
+                    # 3. Guardar el resultado mezclado
                     if subir_a_github(df_final, "Sincronización Moreno"):
-                        st.session_state.df_trabajo = df_final
-                        st.session_state.version_editor += 1
+                        st.success("¡Sincronizado! Se recuperaron tus capturas previas de GitHub. 🚀")
                         st.cache_data.clear()
-                        st.success("¡Sincronizado sin perder tus datos! 🚀")
                         st.rerun()
 else:
-    st.info("Cargando...")
-    if st.button("Reintentar"):
-        st.rerun()
+    st.info("No hay datos en la base mensual. Sincroniza para empezar.")
+    if st.button("Sincronizar Moreno por primera vez"):
+        # (Aquí podrías poner la misma lógica de sincronización arriba)
+        pass
+
 
 
 
