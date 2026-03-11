@@ -2816,7 +2816,7 @@ else:
                                 <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
                                     <tr>
                                         <td style="width: 50%;">
-                                            <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000; border-bottom: none; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                            <h1 style="margin: 0; font-size: 14px; font-weight: 900; color: #000; border-bottom: none; text-transform: uppercase;">Jabones y Productos Especializados</h1>
                                             <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #666;">Distribución y Logística | 2026</p>
                                         </td>
                                         <td style="width: 50%; text-align: right; font-size: 11px; line-height: 1.6;">
@@ -4801,6 +4801,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
