@@ -970,7 +970,7 @@ else:
                         # --- LÓGICA DE ESTATUS SUPERIOR ---
                         if not tiene_guia:
                             if trigger_val == "Enviada":
-                                status_text, status_color = "GENERANDO GUÍA", vars_css['sub']
+                                status_text, status_color = "GENERANDO GUÍA", "#38bdf8"
                             else:
                                 status_text, status_color = "SURTIENDO", "#FFA500"
                             color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
@@ -4774,6 +4774,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
