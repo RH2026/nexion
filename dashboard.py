@@ -1467,13 +1467,34 @@ else:
                     dias_redondeados = math.ceil(promedio_dias)
             
                     # --- LÓGICA DE PRECIOS BUSCANDO EN 'DOMICILIO' ---
+                    # --- LÓGICA DE PRECIOS "NEXION ELITE" ---
                     # Extraemos el texto del primer resultado para analizar la región
                     texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
                     
-                    # Lista de palabras clave para región de $65 (Bajío/Centro/Golfo)
-                    regiones_65 = ["QUERETARO", "QRO", "GUANAJUATO", "GTO", "LEON", "CELAYA", "AGUASCALIENTES", "AGS", 
-                                   "SAN LUIS POTOSI", "SLP", "CDMX", "MEXICO", "EDOMEX", "HIDALGO", "PUEBLA", "VERACRUZ"]
+                    # Lista Maestra "Chingona": Estados, Ciudades y Abreviaciones (Región $65)
+                    regiones_65 = [
+                        # Estados y Abreviaciones de tu lista
+                        "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
+                        "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
+                        "PUEBLA", "PUE", "JALISCO", "JAL", "MEXICO", "MEX", "ESTADO DE MEXICO", "EDOMEX",
+                        "TLAXCALA", "TLA", "VERACRUZ", "VER", "MORELOS", "MOR",
+                        
+                        # Variantes de CDMX (Muy importantes en tu lista)
+                        "CDMX", "CMX", "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2",
+                        
+                        # Ciudades específicas del Bajío/Centro que me pasaste
+                        "SANTIAGO DE QUERETARO", "JURIQUILLA", "TEQUISQUIAPAN", "BERNAL", "EL MARQUES",
+                        "SILAO", "SALAMANCA", "IRAPUATO", "SAN MIGUEL DE ALLENDE", "ACAMBARO",
+                        "CALVILLO", "MATEHUALA", "CEDRAL", "ATITALAQUIA", "PACHUCA", "TULA DE ALLENDE",
+                        "CUAUTLANCINGO", "CORONANGO", "SAN ANDRES CHOLULA", "ATLIXCO",
+                        "TOLUCA", "METEPEC", "NAUCALPAN", "TLANEPANTLA", "TEPOTZOTLAN", "CHOLULA",
+                        
+                        # Delegaciones / Alcaldías (Para que no se escape nada en CDMX)
+                        "CUAUHTEMOC", "ALVARO OBREGON", "IZTACALCO", "TLALPAN", "CUAJIMALPA", 
+                        "MIGUEL HIDALGO", "BENITO JUAREZ", "IZTAPALUCA", "NAUCALPAN DE JUAREZ"
+                    ]
                     
+                    # El match busca si alguna palabra de la lista está en el domicilio encontrado
                     es_region_65 = any(region in texto_domicilio for region in regiones_65)
             
                     if 1 <= num_cajas <= 4:
@@ -1483,12 +1504,14 @@ else:
                     else:
                         if es_region_65:
                             precio_unitario = 65
-                            leyenda_region = "Zona Bajío / Centro / Golfo"
+                            leyenda_region = "Zona Bajío / Centro / Golfo / CDMX"
                         else:
+                            # Si no está en la lista (Norte/Sur/Costa como Hermosillo, Mazatlán, etc.)
                             precio_unitario = 95
-                            leyenda_region = "Zona Norte / Sur"
+                            leyenda_region = "Zona Norte / Sur / Resto de la República"
                         total_sin_iva = num_cajas * precio_unitario
                     
+                    # El cálculo final con el 16% de IVA
                     total_con_iva = total_sin_iva * 1.16
             
                     # --- RENDERIZADO ESTILO ONYX ---
@@ -4829,6 +4852,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
