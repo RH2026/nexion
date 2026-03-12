@@ -4504,8 +4504,8 @@ else:
                         components.html(f"<html><body>{proforma_html}<script>window.print();</script></body></html>", height=0)
          
             
-            # --- SUBSECCIÓN D: CARTA RECLAMO ---
-            # --- DISEÑO A COLOR PARA PDF (PALETA DE JYPESA) ---
+            # --- SUBSECCIÓN D: CARTA RECLAMO ------
+            elif st.session_state.menu_sub == "CARTA RECLAMO":
                 def generar_carta_pro_html(datos_rem, datos_carta):
                     # Definimos los colores basados en tu imagen de la solicitud
                     jypesa_azul = "#005691"  # El azul profesional de tus encabezados
@@ -4999,6 +4999,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
