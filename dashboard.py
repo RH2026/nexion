@@ -4507,13 +4507,12 @@ else:
             # --- SUBSECCIÓN D: CARTA RECLAMO ---
             elif st.session_state.menu_sub == "CARTA RECLAMO":
                 # --- DISEÑO DE IMPRESIÓN PROFESIONAL ---
-                # --- DISEÑO COMPACTO PARA HOJA MEMBRETADA ---
+                # --- DISEÑO COMPACTO PARA HOJA MEMBRETADA (CON CONTACTO PERSONAL) ---
                 def generar_carta_pro_html(datos_rem, datos_carta):
                     return f"""
                     <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4;">
                         
-                        # Espacio superior para que no choque con tu logo y eslogan
-                        <div style="height: 80px;"></div> 
+                        <div style="height: 100px;"></div> 
 
                         <div style="text-align: right; margin-bottom: 20px;">
                             <span style="font-size: 0.95em; color: #333;">{datos_carta['fecha_texto']}</span>
@@ -4531,13 +4530,18 @@ else:
                             </h2>
                         </div>
 
-                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 300px;">{datos_carta['cuerpo_texto']}</div>
+                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 280px;">{datos_carta['cuerpo_texto']}</div>
 
-                        <div style="margin-top: 50px;">
-                            <p style="margin-bottom: 35px;">Atentamente,</p>
+                        <div style="margin-top: 40px;">
+                            <p style="margin-bottom: 30px;">Atentamente,</p>
                             <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000;">{datos_rem['atencion']}</p>
                             <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Coordinador de Distribución y Logística</p>
                             <p style="margin: 0; font-size: 0.85em; color: #555;">JYPESA | S.A. de C.V.</p>
+                            <div style="margin-top: 8px; font-size: 0.85em; color: #444; border-top: 1px solid #eee; padding-top: 8px; display: inline-block;">
+                                <span>📱 33 19 75 31 22</span> <span style="margin: 0 8px;">|</span> 
+                                <span>📞 {datos_rem['tel']}</span> <span style="margin: 0 8px;">|</span> 
+                                <span>✉ {datos_rem['email']}</span>
+                            </div>
                         </div>
                     </div>
                     """
@@ -4988,6 +4992,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
