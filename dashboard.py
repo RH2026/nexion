@@ -1467,29 +1467,47 @@ else:
                     dias_redondeados = math.ceil(promedio_dias)
             
                     # --- LÓGICA DE PRECIOS BUSCANDO EN 'DOMICILIO' ---
-                    # --- LÓGICA DE PRECIOS "NEXION ELITE" ---
-                    # Extraemos el texto del primer resultado para analizar la región
+                    # --- LÓGICA DE PRECIOS "NEXION ELITE" (FUSIÓN TOTAL) ---
                     texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
                     
-                    # Lista Maestra "Chingona": Estados, Ciudades y Abreviaciones (Región $65)
+                    # Lista Maestra Fusionada: Estados + Abreviaciones + Destinos Específicos Imagen
                     regiones_65 = [
-                        # Estados y Abreviaciones de tu lista
+                        # 1. ESTADOS Y ABREVIACIONES (Sin Veracruz)
                         "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
                         "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
                         "PUEBLA", "PUE", "JALISCO", "JAL", "MEXICO", "MEX", "ESTADO DE MEXICO", "EDOMEX",
-                        "TLAXCALA", "TLA", "VERACRUZ", "VER", "MORELOS", "MOR",
+                        "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2",
                         
-                        # Variantes de CDMX (Muy importantes en tu lista)
-                        "CDMX", "CMX", "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2",
+                        # 2. VARIANTES CDMX Y CIUDAD DE MÉXICO
+                        "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2", ", CMX",
+                        "CIUDAD DE MÉXICO, DF2", "DELEGACION CUAUHTEMOC, CMX", "ALCALDIA CUAUHTEMOC, CMX",
+                        "ALCALDIA CUAJIMALPA DE MORELOS, CMX", "CUAJIMALPA DE MORELOS, DF2",
                         
-                        # Ciudades específicas del Bajío/Centro que me pasaste
+                        # 3. DESTINOS ESPECÍFICOS (CIUDAD, ESTADO) DE TU LISTA
+                        "MATEHUALA, SLP", "IXTAPAN DE LA SAL, MEX", "QUERETARO, QUE", "ATITALAQUIA, HID",
+                        "MORELIA, MCH", "CELAYA, GTO", "APIZACO, TLA", "SILAO, GTO", "TOLUCA, MEX",
+                        "SALAMANCA, GTO", "AGUASCALIENTES, AGS", "LEON, GTO", "CUAUHTEMOC, CMX",
+                        "JURIQUILLA, QUE", "PACHUCA, HID", "CALVILLO, AGS", "PUEBLA, PUE", "AMEALCO DE BONFIL, QUE",
+                        "SAN LUIS POTOSI, SLP", "TULA DE ALLENDE, HID", "ACAMBARO, GTO", "CUAUTLANCINGO, PUE",
+                        "NUEVA ITALIA, MCH", "JACONA, MCH", "SANTIAGO DE QUERETARO, QUE", "CORONANGO, PUE",
+                        "IRAPUATO, GTO", "GUANAJUATO, GTO", "SAN MIGUEL DE ALLENDE, GTO", "ZAMORA, MCH",
+                        "CUERNAVACA, MOR", "TOLUCA, DF2", "IXTAPALUCA, MEX", "IZTACALCO, CMX", "TETLATLAHUACA, TLA", 
+                        "NAUCALPAN DE JUAREZ, MEX", "MEXICO, DF", "NICOLAS ROMERO, MEX", "SAN ANDRES, PUE", 
+                        "TLANEPANTLA, MEX", "TEPOTZOTLAN, MEX", "VALLE DE BRAVO, MEX", "PATZCUARO, MCH",
+                        "ALVARO OBREGON, CMX", "TLALPAN, DF2", "SAN ANDRES CHOLULA, PUE", "TOLUCA DE LERDO, MEX", 
+                        "CEDRAL, SLP", "TEQUISQUIAPAN, QUE", "TLALNEPANTLA DE BAZ, CMX", "BERNAL, QUE",
+                        "SILAO DE LA VICTORIA, GTO", "SAN JUAN DEL RIO, QUE", "CUAHUTEMOC, CMX", 
+                        "METEPEC, MEX", "PACHUCA de SOTO, HID", "MUNICIPIO ALVARO OBREGON, MCH", "TLANEPANTLA, CMX",
+                        "ATLIXCO, PUE", "MIGUEL HIDALGO, CMX", "SANTA CRUZ TECÁMAC, MEX", "EL MARQUES, QUE",
+                        "MARINA NACIONAL, CMX", "MEXICO, DF2", "CUAJIMALPA DE MORELOS, CMX", "URUAPAN, MCH",
+                        "CIUDAD DE MEXICO, DF2", "BENITO JUAREZ, CMX", "YAUHQUEMEHCAN, TLA", "NAUCALPAN DE JUAREZ, CMX",
+                        
+                        # 4. CIUDADES SUELTAS / DELEGACIONES
                         "SANTIAGO DE QUERETARO", "JURIQUILLA", "TEQUISQUIAPAN", "BERNAL", "EL MARQUES",
                         "SILAO", "SALAMANCA", "IRAPUATO", "SAN MIGUEL DE ALLENDE", "ACAMBARO",
                         "CALVILLO", "MATEHUALA", "CEDRAL", "ATITALAQUIA", "PACHUCA", "TULA DE ALLENDE",
                         "CUAUTLANCINGO", "CORONANGO", "SAN ANDRES CHOLULA", "ATLIXCO",
                         "TOLUCA", "METEPEC", "NAUCALPAN", "TLANEPANTLA", "TEPOTZOTLAN", "CHOLULA",
-                        
-                        # Delegaciones / Alcaldías (Para que no se escape nada en CDMX)
                         "CUAUHTEMOC", "ALVARO OBREGON", "IZTACALCO", "TLALPAN", "CUAJIMALPA", 
                         "MIGUEL HIDALGO", "BENITO JUAREZ", "IZTAPALUCA", "NAUCALPAN DE JUAREZ"
                     ]
@@ -1504,14 +1522,13 @@ else:
                     else:
                         if es_region_65:
                             precio_unitario = 65
-                            leyenda_region = "Zona Bajío / Centro / Golfo / CDMX"
+                            leyenda_region = "Zona Bajío / Centro / CDMX / Michoacán"
                         else:
-                            # Si no está en la lista (Norte/Sur/Costa como Hermosillo, Mazatlán, etc.)
+                            # Aquí caerán Veracruz, Sonora, Chihuahua, Sinaloa, etc.
                             precio_unitario = 95
-                            leyenda_region = "Zona Norte / Sur / Resto de la República"
+                            leyenda_region = "Zona Norte / Sur / Costa"
                         total_sin_iva = num_cajas * precio_unitario
                     
-                    # El cálculo final con el 16% de IVA
                     total_con_iva = total_sin_iva * 1.16
             
                     # --- RENDERIZADO ESTILO ONYX ---
@@ -4852,6 +4869,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
