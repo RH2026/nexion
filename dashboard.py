@@ -4505,7 +4505,7 @@ else:
          
             
             # --- SUBSECCIÓN D: CARTA RECLAMO ---
-            elif st.session_state.menu_sub == "CARTA RECLAMO":                
+            elif st.session_state.menu_sub == "CARTA RECLAMO":
                 # --- DISEÑO DE IMPRESIÓN PROFESIONAL ---
                 def generar_carta_pro_html(datos_rem, datos_carta):
                     return f"""
@@ -4589,11 +4589,12 @@ else:
                 st.write("### :material/edit: Edición de la Carta")
                 
                 # 1. Input de texto (Cuerpo de la carta)
+                # Se agrega key dinámico para forzar el refresco cuando cambian los inputs de arriba
                 cuerpo_final_rec = st.text_area(
                     "CUERPO DE LA CARTA", 
                     value=txt_def_rec, 
                     height=300, 
-                    key="txt_area_rec"
+                    key=f"txt_area_rec_{caj_rec}_{mon_rec}_{cod_rec}_{inc_rec}"
                 )
                 
                 # 2. Aviso de revisión
@@ -4616,7 +4617,7 @@ else:
                         "cuerpo_texto": cuerpo_final_rec
                     }
                     html_final_rec = generar_carta_pro_html(rem_rec, info_rec)
-                    components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)      
+                    components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)    
 
                 
         # 5. HUB LOG
@@ -4982,6 +4983,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
