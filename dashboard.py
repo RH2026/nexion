@@ -4492,9 +4492,7 @@ else:
          
             
             # --- SUBSECCIÓN D: CARTA RECLAMO ---
-            elif st.session_state.menu_sub == "CARTA RECLAMO":
-                st.title("✉️ Generador de Reclamos")
-                
+            elif st.session_state.menu_sub == "CARTA RECLAMO":                
                 # --- DISEÑO DE IMPRESIÓN PROFESIONAL ---
                 def generar_carta_pro_html(datos_rem, datos_carta):
                     return f"""
@@ -4573,31 +4571,38 @@ else:
                     f"Sin más por el momento quedo atento para cualquier aclaración."
                 )
                 
-                # Edición
-                ce1_rec, ce2_rec = st.columns([3, 1])
-                with ce1_rec:
-                    cuerpo_final_rec = st.text_area(":material/edit: CUERPO DE LA CARTA", value=txt_def_rec, height=220, key="txt_area_rec")
+                # --- SECCIÓN DE EDICIÓN Y ACCIÓN (EN VERTICAL) ---
+                st.write("### :material/edit: Edición de la Carta")
                 
-                with ce2_rec:
-                    st.write("###")
-                    st.info("Revisa los datos antes de imprimir.")
-                    if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary", key="btn_print_rec"):
-                        rem_rec = {
-                            "atencion": "Rigoberto Hernandez",
-                            "tel": "(52) 33 3540 2939 Ext. 157",
-                            "email": "rhernandez@jypesa.com"
-                        }
-                        ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-                        fec_txt_rec = f"{fec_rec.day} de {ms[fec_rec.month - 1]} del {fec_rec.year}"
-                        
-                        info_rec = {
-                            "paqueteria": paq_rec,
-                            "asunto": dict_asuntos_rec[inc_rec],
-                            "fecha_texto": fec_txt_rec,
-                            "cuerpo_texto": cuerpo_final_rec
-                        }
-                        html_final_rec = generar_carta_pro_html(rem_rec, info_rec)
-                        components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)        
+                # 1. Input de texto (Cuerpo de la carta)
+                cuerpo_final_rec = st.text_area(
+                    "CUERPO DE LA CARTA", 
+                    value=txt_def_rec, 
+                    height=300, 
+                    key="txt_area_rec"
+                )
+                
+                # 2. Aviso de revisión
+                st.info("⚠️ Revisa que el monto, los códigos y la redacción sean correctos antes de imprimir.")
+                
+                # 3. Botón de imprimir (abajo del todo)
+                if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary", key="btn_print_rec"):
+                    rem_rec = {
+                        "atencion": "Rigoberto Hernandez",
+                        "tel": "(52) 33 3540 2939 Ext. 157",
+                        "email": "rhernandez@jypesa.com"
+                    }
+                    ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+                    fec_txt_rec = f"{fec_rec.day} de {ms[fec_rec.month - 1]} del {fec_rec.year}"
+                    
+                    info_rec = {
+                        "paqueteria": paq_rec,
+                        "asunto": dict_asuntos_rec[inc_rec],
+                        "fecha_texto": fec_txt_rec,
+                        "cuerpo_texto": cuerpo_final_rec
+                    }
+                    html_final_rec = generar_carta_pro_html(rem_rec, info_rec)
+                    components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)      
 
                 
         # 5. HUB LOG
@@ -4963,6 +4968,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
