@@ -4553,7 +4553,7 @@ else:
                     </div>
                     """
                 
-                # Fila 1: Datos principales (Usamos nombres de variables únicos _rec)
+                # Fila 1: Datos principales
                 st.write("")
                 cr1, cr2, cr3, cr4 = st.columns([1.5, 1.2, 1, 1])
                 with cr1:
@@ -4574,7 +4574,7 @@ else:
                 with cr6:
                     cod_rec = st.text_input("CÓDIGOS AFECTADOS", placeholder="Ej: 4052-L20", key="cod_rec")
                 with cr7:
-                    mon_rec = st.text_input("MONTO RECLAMO", placeholder="Ej: 3,410", key="mon_rec")
+                    mon_rec = st.text_input("MONTO RECLAMO", placeholder="Ej: 30,441.87", key="mon_rec")
                 
                 st.divider()
                 
@@ -4586,37 +4586,49 @@ else:
                     "Daño Parcial": "Reclamo por Daño Parcial"
                 }
                 
-                if inc_rec == "Faltante":
-                    det_rec = f"notifico formalmente el faltante de {caj_rec} cajas con el código {cod_rec}, reportadas como faltantes por parte del cliente."
+                # --- NUEVA LÓGICA DE TEXTOS DINÁMICOS ---
+                if inc_rec == "Siniestro / Daño Total":
+                    det_rec = (
+                        f"Por medio de la presente se notifica y formaliza el reclamo por siniestro correspondiente a {caj_rec} cajas (Código: {cod_rec}), "
+                        f"mismas que se reportan como pérdida total.\n\n"
+                        f"Se anexan evidencias y factura para la validación y corroboración del valor de la mercancía.\n\n"
+                        f"El importe de la mercancía a reclamar asciende a ${mon_rec} + IVA."
+                    )
+                elif inc_rec == "Faltante":
+                    det_rec = (
+                        f"Por medio de la presente se notifica el faltante de {caj_rec} cajas con el código {cod_rec} en la entrega correspondiente.\n\n"
+                        f"Solicitamos su apoyo para la localización de las mismas o, en su defecto, proceder con la indemnización por la cantidad de ${mon_rec} + IVA."
+                    )
                 elif inc_rec == "Extravío":
-                    det_rec = f"hago de su conocimiento el extravío de {caj_rec} cajas con el código {cod_rec} relacionadas a la guía {guia_rec}."
-                elif inc_rec == "Siniestro / Daño Total":
-                    det_rec = f"notifico el siniestro de {caj_rec} cajas (Código {cod_rec}). pérdida total."
-                else:
-                    det_rec = f"notifico daños parciales en {caj_rec} cajas con el código {cod_rec}."
+                    det_rec = (
+                        f"Se reporta formalmente el extravío del envío amparado bajo la guía {guia_rec}, el cual contiene {caj_rec} cajas (Código {cod_rec}).\n\n"
+                        f"Derivado de lo anterior, solicitamos el reembolso del valor declarado de ${mon_rec} + IVA."
+                    )
+                else: # Daño Parcial
+                    det_rec = (
+                        f"Se notifica que el envío llegó con daños parciales en {caj_rec} cajas (Código {cod_rec}).\n\n"
+                        f"Se adjunta evidencia fotográfica de los daños y el costo de reposición asciende a ${mon_rec} + IVA."
+                    )
                 
                 txt_def_rec = (
-                    f"Por medio de la presente, {det_rec} anexo evidencias y factura para que corroboren el precio.\n\n"
-                    f"Costo de la mercancía a reclamar es de: {mon_rec} + IVA.\n\n"
-                    f"Sin más por el momento quedo atento para cualquier aclaración."
+                    f"{det_rec}\n\n"
+                    f"Agradeceré su apoyo para dar seguimiento al proceso correspondiente y confirmar la recepción del presente reclamo.\n\n"
+                    f"Quedo atento a sus comentarios.\n\n"
+                    f"Saludos cordiales."
                 )
                 
-                # --- SECCIÓN DE EDICIÓN Y ACCIÓN (EN VERTICAL) ---
+                # --- SECCIÓN DE EDICIÓN Y ACCIÓN ---
                 st.write("### :material/edit: Edición de la Carta")
                 
-                # 1. Input de texto (Cuerpo de la carta)
-                # Se agrega key dinámico para forzar el refresco cuando cambian los inputs de arriba
                 cuerpo_final_rec = st.text_area(
                     "CUERPO DE LA CARTA", 
                     value=txt_def_rec, 
                     height=300, 
-                    key=f"txt_area_rec_{caj_rec}_{mon_rec}_{cod_rec}_{inc_rec}"
+                    key=f"txt_area_rec_{caj_rec}_{mon_rec}_{cod_rec}_{inc_rec}_{guia_rec}"
                 )
                 
-                # 2. Aviso de revisión
                 st.info("⚠️ Revisa que el monto, los códigos y la redacción sean correctos antes de imprimir.")
                 
-                # 3. Botón de imprimir (abajo del todo)
                 if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary", key="btn_print_rec"):
                     rem_rec = {
                         "atencion": "Rigoberto Hernandez",
@@ -4633,8 +4645,7 @@ else:
                         "cuerpo_texto": cuerpo_final_rec
                     }
                     html_final_rec = generar_carta_pro_html(rem_rec, info_rec)
-                    components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)    
-
+                    components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)
                 
         # 5. HUB LOG
         elif st.session_state.menu_main == "HUB LOG":
@@ -4999,6 +5010,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
