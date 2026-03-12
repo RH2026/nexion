@@ -938,7 +938,7 @@ else:
         
             else: 
                 if total == 1:
-                    # --- 3. RENDERIZADO DEL TIMELINE (ADAPTADO) ---
+                    # --- 3. RENDERIZADO DEL TIMELINE (REPARADO) ---
                     df_timeline = resultados
                     if not df_timeline.empty:
                         envio = df_timeline.iloc[0]
@@ -961,7 +961,13 @@ else:
                         color_envio, color_guia, color_promesa = "#38bdf8", ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
                         linea_1_2, linea_2_3 = ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
                         
-                        f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce').normalize()
+                        # --- FIX ANTICRASH ---
+                        # Convertimos primero a datetime
+                        f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
+                        # Solo aplicamos normalize si NO es nulo para evitar el AttributeError
+                        if pd.notnull(f_promesa_dt):
+                            f_promesa_dt = f_promesa_dt.normalize()
+                        
                         hoy = pd.Timestamp(datetime.now()).normalize()
                     
                         # --- LÓGICA DE ESTATUS Y COLORES FINALES ---
@@ -970,18 +976,18 @@ else:
                                 status_text, status_color = "GENERANDO GUÍA", "#38bdf8"
                             else:
                                 status_text, status_color = "SURTIENDO", "#FFA500"
-                            # Si no hay guía, la entrega y su línea están apagadas
                             color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
                             
                         elif not entregado_real:
                             status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                            # Aquí está el cambio: Aunque esté en tránsito, la última bolita y línea siguen apagadas
                             color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
                             
                         else:
-                            f_entrega_dt = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], dayfirst=True, errors='coerce').normalize()
+                            # Aplicamos la misma seguridad para la fecha de entrega real por si acaso
+                            f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors='coerce')
+                            if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
+                            
                             status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
-                            # Solo aquí se prenden la última línea y bolita
                             color_entrega, linea_3_4 = status_color, status_color
                     
                         # HTML en una sola línea
@@ -4976,6 +4982,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
