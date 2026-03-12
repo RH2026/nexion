@@ -1489,8 +1489,8 @@ else:
                             # 2. ESTADOS Y ABREVIACIONES GENERALES (CENTRO/BAJÍO)
                             "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
                             "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
-                            "PUEBLA", "PUE", "JALISCO", "JAL", "ESTADO DE MEXICO", "EDOMEX", # <--- QUITÉ "MEXICO" Y "MEX" SOLITOS
-                            "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2"
+                            "PUEBLA", "PUE", "JALISCO", "JAL", "ESTADO DE MEXICO", "EDOMEX",
+                            "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2",
                             
                             # 3. VARIANTES CDMX Y CIUDAD DE MÉXICO
                             "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2", ", CMX",
@@ -4852,6 +4852,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
