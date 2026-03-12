@@ -2592,6 +2592,12 @@ else:
                     font-size: 0.95rem;
                 }
                 .highlight { color: #FFFFFF; font-weight: bold; }
+                
+                /* Esto cambia específicamente el tamaño del texto del Delta */
+                div[data-testid="stMetricDelta"] {
+                    font-size: 1.1rem !important; /* Aquí ajustas el tamaño (ejemplo: 0.9rem, 1.2rem, etc.) */
+                    font-weight: bold;
+                }                
                 </style>
                 """, unsafe_allow_html=True)
                 
@@ -4801,6 +4807,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
