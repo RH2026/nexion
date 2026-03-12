@@ -1474,12 +1474,17 @@ else:
                     # Lista Maestra Total: Imagen completa + Estados + Abreviaciones (Sin Veracruz)
                     regiones_65 = [
                         # 1. TUS DESTINOS DEL NORTE/PACÍFICO (POR TU CONVENIO ESPECIAL)
-                        "HERMOSILLO, SON", "GUAYMAS, SON", "DURANGO, DUR", "SALTILLO, COA", 
-                        "TEPIC, NAY", "MAZATLAN, SIN", "CANANEA, SON", "TORREON, COA", "CULIACAN, SIN", "CIUDAD OBREGON, SON", 
-                        "LOS MOCHIS, SIN", "OBREGON, SON", 
-                        "CABORCA, SON", "CAJEME, CIUDAD OBREGON, SON", "TORREON COAHUILA, COA", 
-                        "NOGALES, SON", "NAVOJOA, SON", "MONTERREY, NL", "PIEDRAS NEGRAS, COA",
-                        "APODACA, NL", "NUEVO VALLARTA, NAY", "RINCON DE GUAYABITOS, NAY",
+                        "HERMOSILLO", "HERMOSILLO, SON", "GUAYMAS", "GUAYMAS, SON", 
+                        "DURANGO", "DURANGO, DUR", "SALTILLO", "SALTILLO, COA", 
+                        "TEPIC", "TEPIC, NAY", "MAZATLAN", "MAZATLAN, SIN", 
+                        "CANANEA", "CANANEA, SON", "TORREON", "TORREON, COA", 
+                        "CULIACAN", "CULIACAN, SIN", "CIUDAD OBREGON", "CIUDAD OBREGON, SON", 
+                        "LOS MOCHIS", "LOS MOCHIS, SIN", "OBREGON", "OBREGON, SON", 
+                        "CABORCA", "CABORCA, SON", "NOGALES", "NOGALES, SON", 
+                        "NAVOJOA", "NAVOJOA, SON", "MONTERREY", "MONTERREY, NL",
+                        "APODACA", "APODACA, NL", "PIEDRAS NEGRAS", "PIEDRAS NEGRAS, COA",
+                        "NUEVO VALLARTA", "NUEVO VALLARTA, NAY", "RINCON DE GUAYABITOS", "RINCON DE GUAYABITOS, NAY",
+                        "CAJEME, CIUDAD OBREGON, SON", "TORREON COAHUILA, COA",
                         
                         # 2. ESTADOS Y ABREVIACIONES GENERALES (CENTRO/BAJÍO)
                         "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
@@ -1544,7 +1549,7 @@ else:
                                 <div class="kpi-subtext">Promedio en {total_viajes} envíos</div>
                             </div>
                             <div class="kpi-ruta-card" style="flex: 1; border-left: 5px solid #D4AF37; background: #1c2a35;">
-                                <span class="kpi-tag" style="background: #D4AF37; color: #000;">COTIZACIÓN NEXION</span>
+                                <span class="kpi-tag" style="background: #D4AF37; color: #000;">COSTO DE FLETE</span>
                                 <div style="margin-top:10px;">
                                     <div style="font-size: 1.5rem; font-weight: 900; color: #D4AF37;">${total_con_iva:,.2f} <small style="font-size: 0.8rem; color: #A4B9C8;">IVA INC.</small></div>
                                     <div style="font-size: 0.85rem; color: #E0E6ED; margin-top: 5px;">
@@ -4870,6 +4875,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
