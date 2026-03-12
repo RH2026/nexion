@@ -1403,104 +1403,150 @@ else:
                         else:
                             st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
             
-            # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
-            with tab_tiempos: 
-                st.write("")  # Esto agrega un pequeño espacio hacia abajo
-                # =========================================================
-                # 1. PROCESAMIENTO DE DATOS
-                # =========================================================
-                df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
-                df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
-                df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
-                
-                # =========================================================
-                # 2. SECCIÓN DEL CALCULADOR INTELIGENTE CON ANÁLISIS REAL
-                # =========================================================                
-                usuario_actual = st.session_state.get('usuario_activo', 'Cielo')
-                
-                c1, c2 = st.columns([1, 1])
-                
-                with c1:
-                    st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
-                
-                with c2:
-                    busqueda_manual = st.text_input(
-                        "BUSCAR POR DESTINO, CP O DOMICILIO", 
-                        placeholder="Ej: 63734, Litibu, Cancún...",
-                        key="busqueda_manual_v6"
-                    )
-                
-                # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
-                if not busqueda_manual:
-                    df_validos = df[df['DIAS_REALES'].notna()]
-                    # Buscamos rutas rápidas de 2 días para el ejemplo inicial
-                    rutas_dos_dias = df_validos[df_validos['DIAS_REALES'] == 2]
+                # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
+                with tab_tiempos: 
+                    st.write("") 
+                    # =========================================================
+                    # 1. PROCESAMIENTO DE DATOS
+                    # =========================================================
+                    df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
+                    df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
+                    df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
                     
-                    if not rutas_dos_dias.empty:
-                        busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
-                        texto_mostrar = f"{busqueda_activa}"
-                    elif not df_validos.empty:
-                        busqueda_activa = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
-                        texto_mostrar = f"{busqueda_activa} (Ruta sugerida)"
+                    # =========================================================
+                    # 2. SECCIÓN DEL CALCULADOR INTELIGENTE
+                    # =========================================================                
+                    usuario_actual = st.session_state.get('usuario_activo', 'Cielo')
+                    
+                    c1, c2, c3 = st.columns([1, 1, 0.8])
+                    
+                    with c1:
+                        st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
+                    
+                    with c2:
+                        busqueda_manual = st.text_input(
+                            "BUSCAR POR DESTINO, CP O DOMICILIO", 
+                            placeholder="Ej: 63734, Litibu, Cancún...",
+                            key="busqueda_manual_v6"
+                        )
+                    
+                    with c3:
+                        num_cajas = st.number_input("CANTIDAD DE CAJAS", min_value=1, value=1, step=1)
+                    
+                    # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
+                    if not busqueda_manual:
+                        df_validos = df[df['DIAS_REALES'].notna()]
+                        rutas_dos_dias = df_validos[df_validos['DIAS_REALES'] == 2]
+                        if not rutas_dos_dias.empty:
+                            busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
+                            texto_mostrar = f"{busqueda_activa}"
+                        elif not df_validos.empty:
+                            busqueda_activa = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
+                            texto_mostrar = f"{busqueda_activa} (Ruta sugerida)"
+                        else:
+                            busqueda_activa = ""
+                            texto_mostrar = "CONSULTA DE RUTA"
                     else:
-                        busqueda_activa = ""
-                        texto_mostrar = "CONSULTA DE RUTA"
-                else:
-                    busqueda_activa = busqueda_manual
-                    texto_mostrar = busqueda_manual.upper()
-                
-                # --- FILTRADO Y ANÁLISIS DE FRECUENCIA ---
-                busqueda_aux = busqueda_activa.lower()
-                mask = (
-                    df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
-                    df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
-                )
-                
-                historial = df[mask & (df['DIAS_REALES'].notna())].copy()
-                
-                if not historial.empty:
-                    # --- CÁLCULO DE LA FLETERA MÁS FRECUENTE ---
-                    # Sacamos la fletera que más se repite para este destino específico
-                    fletera_recomendada = historial['FLETERA'].value_counts().idxmax()
+                        busqueda_activa = busqueda_manual
+                        texto_mostrar = busqueda_manual.upper()
                     
-                    promedio_dias = historial['DIAS_REALES'].mean()
-                    total_viajes = len(historial)
-                    dias_redondeados = math.ceil(promedio_dias)
+                    # --- FILTRADO ORIGINAL (SIN ROMPER NADA) ---
+                    busqueda_aux = busqueda_activa.lower()
+                    mask = (
+                        df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
+                        df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
+                    )
+                    
+                    historial = df[mask & (df['DIAS_REALES'].notna())].copy()
+                    
+                    if not historial.empty:
+                        # --- CÁLCULO DE TIEMPOS ---
+                        fletera_recomendada = historial['FLETERA'].value_counts().idxmax()
+                        promedio_dias = historial['DIAS_REALES'].mean()
+                        total_viajes = len(historial)
+                        dias_redondeados = math.ceil(promedio_dias)
                 
-                    # 1. Renderizado del Widget Dinámico
-                    st.markdown(f"""
-                        <div class="kpi-ruta-container">
-                            <div class="kpi-ruta-card">
-                                <span class="kpi-tag">Paquetería Recomendada: {fletera_recomendada}</span>
-                                <div class="kpi-route-flow">
-                                    <span class="city">GDL</span>
-                                    <span class="arrow">→</span>
-                                    <span class="city">{texto_mostrar}</span>
-                                </div>
-                                <div class="kpi-value">{dias_redondeados} <small>DÍAS</small></div>
-                                <div class="kpi-subtext">
-                                    La fletera más usada en <b>{total_viajes}</b> entregas exitosas a esta zona
-                                </div>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        # --- LÓGICA DE PRECIOS BUSCANDO EN 'DOMICILIO' ---
+                        # --- LÓGICA DE PRECIOS "NEXION ELITE" (CONVENIO ESPECIAL $65) ---
+                        # Extraemos el texto del primer resultado para analizar la región
+                        texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
+                        
+                        # Lista Maestra Total: Imagen completa + Estados + Abreviaciones (Sin Veracruz)
+                        regiones_65 = [
+                            # 1. TUS DESTINOS DEL NORTE/PACÍFICO (POR TU CONVENIO ESPECIAL)
+                            "HERMOSILLO", "HERMOSILLO, SON", "GUAYMAS", "GUAYMAS, SON", 
+                            "DURANGO", "DURANGO, DUR", "SALTILLO", "SALTILLO, COA", 
+                            "TEPIC", "TEPIC, NAY", "MAZATLAN", "MAZATLAN, SIN", 
+                            "CANANEA", "CANANEA, SON", "TORREON", "TORREON, COA", 
+                            "CULIACAN", "CULIACAN, SIN", "CIUDAD OBREGON", "CIUDAD OBREGON, SON", 
+                            "LOS MOCHIS", "LOS MOCHIS, SIN", "OBREGON", "OBREGON, SON", 
+                            "CABORCA", "CABORCA, SON", "NOGALES", "NOGALES, SON", 
+                            "NAVOJOA", "NAVOJOA, SON", "MONTERREY", "MONTERREY, NL",
+                            "APODACA", "APODACA, NL", "PIEDRAS NEGRAS", "PIEDRAS NEGRAS, COA",
+                            "NUEVO VALLARTA", "NUEVO VALLARTA, NAY", "RINCON DE GUAYABITOS", "RINCON DE GUAYABITOS, NAY",
+                            "CAJEME, CIUDAD OBREGON, SON", "TORREON COAHUILA, COA",
+                            
+                            # 2. ESTADOS Y ABREVIACIONES GENERALES (CENTRO/BAJÍO)
+                            "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
+                            "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
+                            "PUEBLA", "PUE", "JALISCO", "JAL", "MEXICO", "MEX", "ESTADO DE MEXICO", "EDOMEX",
+                            "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2",
+                            
+                            # 3. VARIANTES CDMX Y CIUDAD DE MÉXICO
+                            "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2", ", CMX",
+                            "CIUDAD DE MÉXICO, DF2", "DELEGACION CUAUHTEMOC, CMX", "ALCALDIA CUAUHTEMOC, CMX",
+                            "ALCALDIA CUAJIMALPA DE MORELOS, CMX", "CUAJIMALPA DE MORELOS, DF2",
+                            
+                            # 4. CIUDADES ESPECÍFICAS DE TU IMAGEN (BAJÍO/CENTRO/SUR)
+                            "MATEHUALA, SLP", "IXTAPAN DE LA SAL, MEX", "QUERETARO, QUE", "ATITALAQUIA, HID",
+                            "MORELIA, MCH", "SILAO, GTO", "TOLUCA, MEX", "SALAMANCA, GTO", "SANTIAGO DE QUERETARO, QUE",
+                            "JURIQUILLA, QUE", "PACHUCA, HID", "CALVILLO, AGS", "PUEBLA, PUE", "AMEALCO DE BONFIL, QUE",
+                            "TULA DE ALLENDE, HID", "ACAMBARO, GTO", "CUAUTLANCINGO, PUE", "NUEVA ITALIA, MCH", 
+                            "JACONA, MCH", "CORONANGO, PUE", "IRAPUATO, GTO", "GUANAJUATO, GTO", 
+                            "SAN MIGUEL DE ALLENDE, GTO", "ZAMORA, MCH", "CUERNAVACA, MOR", "TOLUCA, DF2", 
+                            "IXTAPALUCA, MEX", "IZTACALCO, CMX", "TETLATLAHUACA, TLA", "NAUCALPAN DE JUAREZ, MEX", 
+                            "NICOLAS ROMERO, MEX", "SAN ANDRES, PUE", "TLANEPANTLA, MEX", "TEPOTZOTLAN, MEX", 
+                            "VALLE DE BRAVO, MEX", "PATZCUARO, MCH", "ALVARO OBREGON, CMX", "TLALPAN, DF2", 
+                            "SAN ANDRES CHOLULA, PUE", "TOLUCA DE LERDO, MEX", "CEDRAL, SLP", "TEQUISQUIAPAN, QUE", 
+                            "TLALNEPANTLA DE BAZ, CMX", "MÉXICO, DF2", "BERNAL, QUE", "SILAO DE LA VICTORIA, GTO", 
+                            "SAN JUAN DEL RIO, QUE", "CUAHUTEMOC, CMX", "METEPEC, MEX", "PACHUCA de SOTO, HID", 
+                            "MUNICIPIO ALVARO OBREGON, MCH", "TLANEPANTLA, CMX", "ATLIXCO, PUE", "MIGUEL HIDALGO, CMX", 
+                            "SANTA CRUZ TECÁMAC, MEX", "EL MARQUES, QUE", "MARINA NACIONAL, CMX", "MEXICO, DF2", 
+                            "CUAJIMALPA DE MORELOS, CMX", "URUAPAN, MCH", "CIUDAD DE MEXICO, DF2", "BENITO JUAREZ, CMX", 
+                            "YAUHQUEMEHCAN, TLA", "NAUCALPAN DE JUAREZ, CMX", "GUADALAJARA, JAL", "ZAPOTLAN EL GRANDE, JAL",
+                            "ARANDAS, JAL", "SAN JUAN DE LOS LAGOS, JAL", "JOCOTEPEC, JAL", "CD GUZMAN, JAL"
+                        ]
+                        
+                        # El match busca si alguna palabra o frase de la lista está en el domicilio
+                        es_region_65 = any(region in texto_domicilio for region in regiones_65)
                 
-                    # 2. Tabla de Detalles
-                    # 2. Tabla de Detalles Gobernada por tu CSS
-                    st.markdown(f'<p class="data-section-header">Detalles de envíos encontrados</p>', unsafe_allow_html=True)
-                    tabla_detalles = historial[[
-                        'NÚMERO DE PEDIDO',
-                        'NOMBRE DEL CLIENTE', 
-                        'DOMICILIO', 
-                        'FECHA DE ENVÍO', 
-                        'FLETERA', 
-                    ]].sort_values(by='FECHA DE ENVÍO', ascending=False)
+                        if 1 <= num_cajas <= 4:
+                            precio_unitario = 450 / num_cajas
+                            total_sin_iva = 450
+                            leyenda_region = "Tarifa Plana Nacional (1-4 cajas)"
+                        else:
+                            if es_region_65:
+                                precio_unitario = 65
+                                leyenda_region = "Zona con Tarifa Preferencial Nexion"
+                            else:
+                                # Aquí caerán Veracruz y destinos no registrados
+                                precio_unitario = 95
+                                leyenda_region = "Zona Norte / Sur / Costa"
+                            total_sin_iva = num_cajas * precio_unitario
+                        
+                        # El cálculo final con el 16% de IVA
+                        total_con_iva = total_sin_iva * 1.16
                 
-                    tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
-                
-                    st.dataframe(tabla_detalles, use_container_width=True, hide_index=True)
-                else:
-                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                   
+                        # --- RENDERIZADO ESTILO ONYX REPOTENCIADO ---
+                        st.markdown(f"""<div style="display: flex; gap: 15px; margin-bottom: 25px;"><div class="kpi-ruta-card" style="flex: 1; border-left: 5px solid #A4B9C8; position: relative; overflow: hidden;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 0.7rem; color: #A4B9C8; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Tiempo Estimado</span><span style="font-size: 1.1rem; color: #FFFFFF; font-weight: 900;">{fletera_recomendada}</span></div><div class="kpi-route-flow" style="margin: 15px 0;"><span class="city" style="font-size: 1.2rem;">GDL</span><div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><span style="font-size: 0.7rem; color: #A4B9C8; letter-spacing: 2px;">TRANSIT</span><div style="width: 80%; height: 2px; background: linear-gradient(90deg, transparent, #A4B9C8, transparent);"></div></div><span class="city" style="font-size: 1.2rem; color: #FFFFFF;">{texto_mostrar[:15]}</span></div><div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 2.2rem; font-weight: 900; color: #FFFFFF;">{dias_redondeados}</span><span style="font-size: 1rem; color: #A4B9C8; font-weight: bold;">DÍAS HÁBILES</span></div><div style="margin-top: 10px; font-size: 0.9rem; color: #A4B9C8; border-top: 1px solid rgba(164, 185, 200, 0.1); padding-top: 8px;">Basado en {total_viajes} entregas exitosas a esta zona.</div></div><div class="kpi-ruta-card" style="flex: 1; border-left: 5px solid #D4AF37; background: linear-gradient(145deg, #1c2a35, #111b22);"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="color: #D4AF37; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px;">Costo de Flete</span></div><div style="margin-top: 5px;"><div style="font-size: 0.75rem; color: #A4B9C8; text-transform: uppercase; letter-spacing: 1px;">Inversión Total</div><div style="display: flex; align-items: baseline; gap: 5px;"><span style="font-size: 2.2rem; font-weight: 900; color: #D4AF37;">${total_con_iva:,.2f}</span><span style="font-size: 0.8rem; color: #A4B9C8;">MXN</span></div></div><div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-top: 10px; border: 1px solid rgba(212, 175, 55, 0.1);"><div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #E0E6ED;"><span>Cajas: <b>{num_cajas}</b></span><span>Unit: <b>${precio_unitario:,.2f}</b></span></div><div style="font-size: 0.7rem; color: #D4AF37; margin-top: 5px; text-transform: uppercase; font-weight: bold;">✓ {leyenda_region}</div></div><div style="text-align: right; margin-top: 8px; font-size: 0.6rem; color: #A4B9C8; font-style: italic;">*Incluye 16% de IVA</div></div></div>""", unsafe_allow_html=True)
+                        # 3. Tabla de Detalles (Tu código original)
+                        st.markdown(f'<p class="data-section-header">Historial de envíos encontrados</p>', unsafe_allow_html=True)
+                        tabla_detalles = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False)
+                        tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
+                        st.dataframe(tabla_detalles, use_container_width=True, hide_index=True)
+                        
+                    else:
+                        st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                    
                 
                
                 # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
@@ -4807,6 +4853,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
