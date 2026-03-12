@@ -1549,10 +1549,10 @@ else:
                     st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                
                 
                
-                # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
-                with tab_despachos:
-                    # 1. Copia y limpieza inmediata
-                    df_vol = df_mes.copy()
+            # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
+            with tab_despachos:
+                # 1. Copia y limpieza inmediata
+                df_vol = df_mes.copy()
                     
                     # Forzamos la lectura de fechas ignorando errores de formato
                     df_vol['EMISION'] = pd.to_datetime(df_vol['EMISION'], errors='coerce')
@@ -4852,6 +4852,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
