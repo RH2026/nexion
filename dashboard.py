@@ -4518,7 +4518,7 @@ else:
 
                         <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: baseline;">
                             <div style="display: flex; flex-direction: column;">
-                                <span style="font-size: 1.15em; font-weight: 800; letter-spacing: 1px; color: {jypesa_azul}; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                <span style="font-size: 1.15em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
                                 <span style="font-size: 0.9em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
                             </div>
                             <span style="font-size: 0.95em; color: #444; font-weight: 700;">{datos_carta['fecha_texto']}</span>
@@ -4999,6 +4999,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
