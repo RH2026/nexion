@@ -4507,7 +4507,7 @@ else:
             # --- SUBSECCIÓN D: CARTA RECLAMO ---
             elif st.session_state.menu_sub == "CARTA RECLAMO":
                 # --- DISEÑO DE IMPRESIÓN PROFESIONAL ---
-                # --- DISEÑO COMPACTO PARA HOJA MEMBRETADA (CON CONTACTO PERSONAL) ---
+                # --- DISEÑO COMPACTO PARA HOJA MEMBRETADA (AJUSTE DE MARGEN INFERIOR) ---
                 def generar_carta_pro_html(datos_rem, datos_carta):
                     return f"""
                     <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4;">
@@ -4530,9 +4530,9 @@ else:
                             </h2>
                         </div>
 
-                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 280px;">{datos_carta['cuerpo_texto']}</div>
+                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 350px;">{datos_carta['cuerpo_texto']}</div>
 
-                        <div style="margin-top: 40px;">
+                        <div style="margin-top: 60px; margin-bottom: 40px;">
                             <p style="margin-bottom: 30px;">Atentamente,</p>
                             <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000;">{datos_rem['atencion']}</p>
                             <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Coordinador de Distribución y Logística</p>
@@ -4992,6 +4992,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
