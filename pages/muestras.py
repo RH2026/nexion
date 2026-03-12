@@ -91,16 +91,6 @@ ce1, ce2 = st.columns([3, 1])
 with ce1:
     cuerpo_final = st.text_area(":material/edit: CUERPO DE LA CARTA", value=texto_defecto, height=200)
 
-# Esto hará que el texto del st.info sea más grande
-st.markdown("""
-    <style>
-    .stAlert p {
-        font-size: 1.2rem !important;
-        font-weight: 500;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 with ce2:
     st.write("###") # Espaciador
     st.info("Revisa que el monto y los códigos sean correctos antes de imprimir.")
@@ -122,6 +112,7 @@ with ce2:
         }
         html_final = generar_carta_pro_html(rem_info, carta_info)
         components.html(f"<html><body>{html_final}<script>window.print();</script></body></html>", height=0)
+
 
 
 
