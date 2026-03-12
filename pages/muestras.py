@@ -27,7 +27,7 @@ def generar_carta_pro_html(datos_rem, datos_carta):
         <div style="margin-top: 60px; border-top: 1px solid #eee; padding-top: 20px;">
             <p style="margin-bottom: 40px;">Atentamente,</p>
             <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #003399;">{datos_rem['atencion']}</p>
-            <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Gerencia de Distribución y Logística</p>
+            <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Coordinador de Distribución y Logística</p>
             <p style="margin: 0; font-size: 0.85em; color: #555;">JYPESA | S.A. de C.V.</p>
             <div style="margin-top: 10px; font-size: 0.85em; color: #666;">
                 <span>📞 {datos_rem['tel']}</span> | <span>✉ {datos_rem['email']}</span>
@@ -89,7 +89,7 @@ texto_defecto = (
 # SECCIÓN DE EDICIÓN Y BOTÓN (Aprovechando el ancho)
 ce1, ce2 = st.columns([3, 1])
 with ce1:
-    cuerpo_final = st.text_area(":material/edit: CUERPO DE LA CARTA", value=texto_defecto, height=220)
+    cuerpo_final = st.text_area(":material/edit: CUERPO DE LA CARTA", value=texto_defecto, height=215)
 
 with ce2:
     st.write("###") # Espaciador
@@ -112,6 +112,7 @@ with ce2:
         }
         html_final = generar_carta_pro_html(rem_info, carta_info)
         components.html(f"<html><body>{html_final}<script>window.print();</script></body></html>", height=0)
+
 
 
 
