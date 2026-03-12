@@ -4505,45 +4505,49 @@ else:
          
             
             # --- SUBSECCIÓN D: CARTA RECLAMO ---
-            elif st.session_state.menu_sub == "CARTA RECLAMO":
-                # --- DISEÑO DE IMPRESIÓN PROFESIONAL ---
+            # --- DISEÑO A COLOR PARA PDF (PALETA DE JYPESA) ---
                 def generar_carta_pro_html(datos_rem, datos_carta):
+                    # Definimos los colores basados en tu imagen de la solicitud
+                    jypesa_azul = "#005691"  # El azul profesional de tus encabezados
+                    jypesa_amarillo = "#F7C300" # El amarillo para acentos destacados
+
                     return f"""
-                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4;">
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4; border: 1px solid #eee;">
                         
                         <div style="height: 60px;"></div> 
 
-                        <div style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: baseline;">
+                        <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: baseline;">
                             <div style="display: flex; flex-direction: column;">
-                                <span style="font-size: 1.1em; font-weight: 800; letter-spacing: 1px; color: #333; text-transform: uppercase;">Jabones y Productos Especializados</span>
-                                <span style="font-size: 0.85em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
+                                <span style="font-size: 1.15em; font-weight: 800; letter-spacing: 1px; color: {jypesa_azul}; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                <span style="font-size: 0.9em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
                             </div>
-                            <span style="font-size: 0.9em; color: #444; font-weight: 600;">{datos_carta['fecha_texto']}</span>
+                            <span style="font-size: 0.95em; color: #444; font-weight: 700;">{datos_carta['fecha_texto']}</span>
                         </div>
 
-                        <div style="margin-bottom: 30px;">
+                        <div style="margin-bottom: 35px;">
                             <p style="margin: 0; font-size: 0.8em; color: #666; text-transform: uppercase;">Atención a:</p>
-                            <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000;">{datos_carta['paqueteria']}</p>
+                            <p style="margin: 0; font-weight: bold; font-size: 1.15em; color: #000;">{datos_carta['paqueteria']}</p>
                             <p style="margin: 0; font-weight: bold; color: #444;">Departamento de Reclamos / Operaciones</p>
                         </div>
 
-                        <div style="margin-bottom: 25px;">
-                            <h2 style="font-size: 1.1em; border-left: 4px solid #5d327a; padding-left: 15px; text-transform: uppercase; color: #000; margin:0;">
+                        <div style="margin-bottom: 30px; background-color: #fefdf5; padding: 15px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo};">
+                            <h2 style="font-size: 1.1em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
                                 ASUNTO: {datos_carta['asunto']}
                             </h2>
                         </div>
 
-                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 320px;">{datos_carta['cuerpo_texto']}</div>
+                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 300px; padding: 0 10px;">{datos_carta['cuerpo_texto']}</div>
 
-                        <div style="margin-top: 50px; margin-bottom: 40px;">
-                            <p style="margin-bottom: 30px;">Atentamente,</p>
-                            <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000;">{datos_rem['atencion']}</p>
-                            <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Coordinador de Distribución y Logística</p>
-                            <p style="margin: 0; font-size: 0.85em; color: #555;">JYPESA | S.A. de C.V.</p>
-                            <div style="margin-top: 8px; font-size: 0.85em; color: #444; border-top: 1px solid #eee; padding-top: 8px; display: inline-block;">
-                                <span>📱 33 19 75 31 22</span> <span style="margin: 0 8px;">|</span> 
-                                <span>📞 {datos_rem['tel']}</span> <span style="margin: 0 8px;">|</span> 
-                                <span>✉ {datos_rem['email']}</span>
+                        <div style="margin-top: 55px; margin-bottom: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+                            <p style="margin-bottom: 35px; color: #333;">Atentamente,</p>
+                            <p style="margin: 0; font-weight: 800; font-size: 1.2em; color: {jypesa_azul};">{datos_rem['atencion']}</p>
+                            <p style="margin: 0; font-size: 0.95em; font-weight: 700; color: #333;">Coordinador de Distribución y Logística</p>
+                            <p style="margin: 0; font-size: 0.9em; color: #666;">JYPESA | S.A. de C.V.</p>
+                            
+                            <div style="margin-top: 15px; font-size: 0.9em; color: #444; background-color: #f9f9f9; padding: 10px; border-radius: 4px; display: inline-block; border: 1px solid #eee;">
+                                <span style="color: {jypesa_azul}; font-weight: bold;">📱 33 19 75 31 22</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
+                                <span>📞 {datos_rem['tel']}</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
+                                <span style="color: {jypesa_azul}; text-decoration: none;">✉ {datos_rem['email']}</span>
                             </div>
                         </div>
                     </div>
@@ -4995,6 +4999,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
