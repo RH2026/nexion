@@ -1466,14 +1466,14 @@ else:
                         total_viajes = len(historial)
                         dias_redondeados = math.ceil(promedio_dias)
                 
-                        # Si el domicilio contiene Veracruz, forzamos el precio de 95 de inmediato
-                        if "VERACRUZ" in texto_domicilio or " VER " in texto_domicilio:
-                            es_region_65 = False
-                        else:
-                            es_region_65 = any(region in texto_domicilio for region in regiones_65)
+                        # --- MOTOR LÓGICO DE PRECIOS NEXION ELITE ---
+
+                        # 1. Preparación del texto de búsqueda
+                        texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
                         
+                        # 2. Lista Maestra de Región $65 (Convenio Especial + Bajío/Centro)
                         regiones_65 = [
-                            # 1. NORTE/PACÍFICO (CONVENIO ESPECIAL $65)
+                            # TUS DESTINOS DEL NORTE/PACÍFICO (FORMATO DOBLE)
                             "HERMOSILLO", "HERMOSILLO, SON", "GUAYMAS", "GUAYMAS, SON", 
                             "DURANGO", "DURANGO, DUR", "SALTILLO", "SALTILLO, COA", 
                             "TEPIC", "TEPIC, NAY", "MAZATLAN", "MAZATLAN, SIN", 
@@ -1484,18 +1484,20 @@ else:
                             "NAVOJOA", "NAVOJOA, SON", "MONTERREY", "MONTERREY, NL",
                             "APODACA", "APODACA, NL", "PIEDRAS NEGRAS", "PIEDRAS NEGRAS, COA",
                             "NUEVO VALLARTA", "NUEVO VALLARTA, NAY", "RINCON DE GUAYABITOS", "RINCON DE GUAYABITOS, NAY",
-                
-                            # 2. ESTADOS Y ABREVIACIONES (QUITAMOS "VER" Y "VERACRUZ")
+                            "CAJEME, CIUDAD OBREGON, SON", "TORREON COAHUILA, COA",
+                        
+                            # ESTADOS Y ABREVIACIONES GENERALES (CENTRO/BAJÍO)
                             "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
                             "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
                             "PUEBLA", "PUE", "JALISCO", "JAL", "ESTADO DE MEXICO", "EDOMEX",
                             "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2",
                             
-                            # 3. CDMX ESPECÍFICO
+                            # VARIANTES CDMX Y CIUDAD DE MÉXICO
                             "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2", ", CMX",
                             "CIUDAD DE MÉXICO, DF2", "DELEGACION CUAUHTEMOC, CMX", "ALCALDIA CUAUHTEMOC, CMX",
+                            "ALCALDIA CUAJIMALPA DE MORELOS, CMX", "CUAJIMALPA DE MORELOS, DF2",
                             
-                            # 4. CIUDADES DE TU IMAGEN (BAJÍO/CENTRO/NORTE)
+                            # CIUDADES ESPECÍFICAS DE TU IMAGEN
                             "MATEHUALA, SLP", "IXTAPAN DE LA SAL, MEX", "QUERETARO, QUE", "ATITALAQUIA, HID",
                             "MORELIA, MCH", "SILAO, GTO", "TOLUCA, MEX", "SALAMANCA, GTO", "SANTIAGO DE QUERETARO, QUE",
                             "JURIQUILLA, QUE", "PACHUCA, HID", "CALVILLO, AGS", "PUEBLA, PUE", "AMEALCO DE BONFIL, QUE",
@@ -1515,9 +1517,14 @@ else:
                             "ARANDAS, JAL", "SAN JUAN DE LOS LAGOS, JAL", "JOCOTEPEC, JAL", "CD GUZMAN, JAL"
                         ]
                         
-                        # El match busca si alguna palabra o frase de la lista está en el domicilio
-                        es_region_65 = any(region in texto_domicilio for region in regiones_65)
-                
+                        # 3. Aplicación del "SEGURO VERACRUZ" y Evaluación de Región
+                        # Si detecta Veracruz en el domicilio, bloquea los $65 inmediatamente
+                        if any(x in texto_domicilio for x in ["VERACRUZ", " VER ", " VER.", ", VER"]):
+                            es_region_65 = False
+                        else:
+                            es_region_65 = any(region in texto_domicilio for region in regiones_65)
+                        
+                        # 4. Cálculo de Tarifas según cantidad de cajas
                         if 1 <= num_cajas <= 4:
                             precio_unitario = 450 / num_cajas
                             total_sin_iva = 450
@@ -1527,16 +1534,16 @@ else:
                                 precio_unitario = 65
                                 leyenda_region = "Zona con Tarifa Preferencial Nexion"
                             else:
-                                # Aquí caerán Veracruz y destinos no registrados
                                 precio_unitario = 95
                                 leyenda_region = "Zona Norte / Sur / Costa"
                             total_sin_iva = num_cajas * precio_unitario
                         
-                        # El cálculo final con el 16% de IVA
+                        # 5. Impuesto y Total Final
                         total_con_iva = total_sin_iva * 1.16
                 
                         # --- RENDERIZADO ESTILO ONYX REPOTENCIADO ---
                         st.markdown(f"""<div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;"><div class="kpi-ruta-card" style="flex: 1; min-width: 280px; border-left: 5px solid #A4B9C8; position: relative; overflow: hidden;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 0.7rem; color: #A4B9C8; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Tiempo Estimado</span><span style="font-size: 1.1rem; color: #FFFFFF; font-weight: 900;">{fletera_recomendada}</span></div><div class="kpi-route-flow" style="margin: 15px 0;"><span class="city" style="font-size: 1.2rem;">GDL</span><div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><span style="font-size: 0.7rem; color: #A4B9C8; letter-spacing: 2px;">TRANSIT</span><div style="width: 80%; height: 2px; background: linear-gradient(90deg, transparent, #A4B9C8, transparent);"></div></div><span class="city" style="font-size: 1.2rem; color: #FFFFFF;">{texto_mostrar[:15]}</span></div><div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 2.2rem; font-weight: 900; color: #FFFFFF;">{dias_redondeados}</span><span style="font-size: 1rem; color: #A4B9C8; font-weight: bold;">DÍAS HÁBILES</span></div><div style="margin-top: 10px; font-size: 0.9rem; color: #A4B9C8; border-top: 1px solid rgba(164, 185, 200, 0.1); padding-top: 8px;">Basado en {total_viajes} entregas exitosas a esta zona.</div></div><div class="kpi-ruta-card" style="flex: 1; min-width: 280px; border-left: 5px solid #D4AF37; background: linear-gradient(145deg, #1c2a35, #111b22);"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="color: #D4AF37; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px;">Costo de Flete</span></div><div style="margin-top: 5px;"><div style="font-size: 0.75rem; color: #A4B9C8; text-transform: uppercase; letter-spacing: 1px;">Inversión Total</div><div style="display: flex; align-items: baseline; gap: 5px;"><span style="font-size: 2.2rem; font-weight: 900; color: #D4AF37;">${total_con_iva:,.2f}</span><span style="font-size: 0.8rem; color: #A4B9C8;">MXN</span></div></div><div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-top: 10px; border: 1px solid rgba(212, 175, 55, 0.1);"><div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #E0E6ED;"><span>Cajas: <b>{num_cajas}</b></span><span>Unit: <b>${precio_unitario:,.2f}</b></span></div><div style="font-size: 0.7rem; color: #D4AF37; margin-top: 5px; text-transform: uppercase; font-weight: bold;">✓ {leyenda_region}</div></div><div style="text-align: right; margin-top: 8px; font-size: 0.6rem; color: #A4B9C8; font-style: italic;">*Incluye 16% de IVA</div></div></div>""", unsafe_allow_html=True) # 3. Tabla de Detalles (Tu código original)
+                        #------------
                         st.markdown(f'<p class="data-section-header">Historial de envíos encontrados</p>', unsafe_allow_html=True)
                         tabla_detalles = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False)
                         tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
@@ -4850,6 +4857,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
