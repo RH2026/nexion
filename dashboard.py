@@ -4493,7 +4493,8 @@ else:
             
         # --- SUBSECCIÓN D: CARTA RECLAMO ---
         elif st.session_state.menu_sub == "CARTA RECLAMO":
-            st.title("✉️ Generador de Reclamos")       
+            st.title("✉️ Generador de Reclamos")
+            
             # --- DISEÑO DE IMPRESIÓN PROFESIONAL ---
             def generar_carta_pro_html(datos_rem, datos_carta):
                 return f"""
@@ -4525,83 +4526,78 @@ else:
                 </div>
                 """
             
-            st.title("✉️ Generador de Reclamos")
+            # Fila 1: Datos principales (Usamos nombres de variables únicos _rec)
+            cr1, cr2, cr3, cr4 = st.columns([1.5, 1.2, 1, 1])
+            with cr1:
+                paq_rec = st.selectbox(":material/local_shipping: FLETERA", 
+                                      ["ONE PAQUETERIA", "FEDEX", "ESTAFETA", "DHL", "PAQUETEXPRESS", "TRESGUERRAS"], key="sel_paq_rec")
+            with cr2:
+                inc_rec = st.selectbox(":material/report_problem: INCIDENCIA", 
+                                      ["Faltante", "Extravío", "Siniestro / Daño Total", "Daño Parcial"], key="sel_inc_rec")
+            with cr3:
+                fec_rec = st.date_input(":material/calendar_today: FECHA CARTA", date.today(), key="fec_rec")
+            with cr4:
+                guia_rec = st.text_input(":material/tag: GUÍA", "JALGDL ", key="guia_rec")
             
-            # --- INTERFAZ COMPACTA EN MODO WIDE ---
-            # Fila 1: Datos principales de la fletera y tipo
-            c1, c2, c3, c4 = st.columns([1.5, 1.2, 1, 1])
-            with c1:
-                paqueteria_sel = st.selectbox(":material/local_shipping: FLETERA", 
-                                              ["ONE PAQUETERIA", "FEDEX", "ESTAFETA", "DHL", "PAQUETEXPRESS", "TRESGUERRAS"])
-            with c2:
-                tipo_incidencia = st.selectbox(":material/report_problem: INCIDENCIA", 
-                                               ["Faltante", "Extravío", "Siniestro / Daño Total", "Daño Parcial"])
-            with c3:
-                f_fecha = st.date_input(":material/calendar_today: FECHA CARTA", date.today())
-            with c4:
-                f_guia = st.text_input(":material/tag: GUÍA", "JALGDL ")
-            
-            # Fila 2: Detalles de la mercancía (Inputs pequeños)
-            c5, c6, c7 = st.columns([0.8, 2, 1])
-            with c5:
-                f_cajas = st.number_input("CANT. CAJAS", min_value=1, value=1)
-            with c6:
-                f_codigos = st.text_input("CÓDIGOS AFECTADOS", placeholder="Ej: 4052-L20, 4052-L18")
-            with c7:
-                f_monto = st.text_input("MONTO RECLAMO", placeholder="Ej: 3,410")
+            # Fila 2: Detalles
+            cr5, cr6, cr7 = st.columns([0.8, 2, 1])
+            with cr5:
+                caj_rec = st.number_input("CANT. CAJAS", min_value=1, value=1, key="caj_rec")
+            with cr6:
+                cod_rec = st.text_input("CÓDIGOS AFECTADOS", placeholder="Ej: 4052-L20", key="cod_rec")
+            with cr7:
+                mon_rec = st.text_input("MONTO RECLAMO", placeholder="Ej: 3,410", key="mon_rec")
             
             st.divider()
             
-            # --- LÓGICA DE TEXTO DINÁMICO ---
-            dict_asuntos = {
+            # Lógica de texto
+            dict_asuntos_rec = {
                 "Faltante": "Reclamo por Faltante de Mercancía",
                 "Extravío": "Reporte de Extravío de Envío",
                 "Siniestro / Daño Total": "Notificación de Siniestro (Daño Total)",
                 "Daño Parcial": "Reclamo por Daño Parcial"
             }
             
-            if tipo_incidencia == "Faltante":
-                detalle = f"notifico formalmente el faltante de {f_cajas} cajas con el código {f_codigos}, reportadas como faltantes por parte del cliente. Se cuenta con anotaciones en carta porte y factura."
-            elif tipo_incidencia == "Extravío":
-                detalle = f"hago de su conocimiento el extravío de {f_cajas} cajas con el código {f_codigos} relacionadas a la guía {f_guia}. Procedemos con la solicitud de indemnización."
-            elif tipo_incidencia == "Siniestro / Daño Total":
-                detalle = f"notifico el siniestro de {f_cajas} cajas (Código {f_codigos}). La mercancía llegó con daños severos que impiden su uso, declarándose pérdida total."
+            if inc_rec == "Faltante":
+                det_rec = f"notifico formalmente el faltante de {caj_rec} cajas con el código {cod_rec}, reportadas como faltantes por parte del cliente."
+            elif inc_rec == "Extravío":
+                det_rec = f"hago de su conocimiento el extravío de {caj_rec} cajas con el código {cod_rec} relacionadas a la guía {guia_rec}."
+            elif inc_rec == "Siniestro / Daño Total":
+                det_rec = f"notifico el siniestro de {caj_rec} cajas (Código {cod_rec}). pérdida total."
             else:
-                detalle = f"notifico daños parciales en {f_cajas} cajas con el código {f_codigos}. El contenido presenta afectaciones que impactan su valor comercial."
+                det_rec = f"notifico daños parciales en {caj_rec} cajas con el código {cod_rec}."
             
-            texto_defecto = (
-                f"Por medio de la presente, {detalle} anexo evidencias y factura para que corroboren el precio.\n\n"
-                f"Costo de la mercancía a reclamar es de: {f_monto} + IVA, se anexa factura para corroborar precio.\n\n"
+            txt_def_rec = (
+                f"Por medio de la presente, {det_rec} anexo evidencias y factura para que corroboren el precio.\n\n"
+                f"Costo de la mercancía a reclamar es de: {mon_rec} + IVA.\n\n"
                 f"Sin más por el momento quedo atento para cualquier aclaración."
             )
             
-            # SECCIÓN DE EDICIÓN Y BOTÓN (Aprovechando el ancho)
-            ce1, ce2 = st.columns([3, 1])
-            with ce1:
-                cuerpo_final = st.text_area(":material/edit: CUERPO DE LA CARTA", value=texto_defecto, height=200)
+            # Edición
+            ce1_rec, ce2_rec = st.columns([3, 1])
+            with ce1_rec:
+                cuerpo_final_rec = st.text_area(":material/edit: CUERPO DE LA CARTA", value=txt_def_rec, height=220, key="txt_area_rec")
             
-            with ce2:
-                st.write("###") # Espaciador
-                st.info("Revisa que el monto y los códigos sean correctos antes de imprimir.")
-                
-                if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary"):
-                    rem_info = {
+            with ce2_rec:
+                st.write("###")
+                st.info("Revisa los datos antes de imprimir.")
+                if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary", key="btn_print_rec"):
+                    rem_rec = {
                         "atencion": "Rigoberto Hernandez",
                         "tel": "(52) 33 3540 2939 Ext. 157",
                         "email": "rhernandez@jypesa.com"
                     }
-                    meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-                    fecha_formato = f"{f_fecha.day} de {meses[f_fecha.month - 1]} del {f_fecha.year}"
+                    ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+                    fec_txt_rec = f"{fec_rec.day} de {ms[fec_rec.month - 1]} del {fec_rec.year}"
                     
-                    carta_info = {
-                        "paqueteria": paqueteria_sel,
-                        "asunto": dict_asuntos[tipo_incidencia],
-                        "guia": f_guia,
-                        "fecha_texto": fecha_formato,
-                        "cuerpo_texto": cuerpo_final
+                    info_rec = {
+                        "paqueteria": paq_rec,
+                        "asunto": dict_asuntos_rec[inc_rec],
+                        "fecha_texto": fec_txt_rec,
+                        "cuerpo_texto": cuerpo_final_rec
                     }
-                    html_final = generar_carta_pro_html(rem_info, carta_info)
-                    components.html(f"<html><body>{html_final}<script>window.print();</script></body></html>", height=0)        
+                    html_final_rec = generar_carta_pro_html(rem_rec, info_rec)
+                    components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)        
 
                 
         # 5. HUB LOG
@@ -4967,6 +4963,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
