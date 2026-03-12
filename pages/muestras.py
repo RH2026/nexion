@@ -89,7 +89,7 @@ texto_defecto = (
 # SECCIÓN DE EDICIÓN Y BOTÓN (Aprovechando el ancho)
 ce1, ce2 = st.columns([3, 1])
 with ce1:
-    cuerpo_final = st.text_area(":material/edit: CUERPO DE LA CARTA", value=texto_defecto, height=215)
+    cuerpo_final = st.text_area(":material/edit: CUERPO DE LA CARTA", value=texto_defecto, height=200)
 
 with ce2:
     st.write("###") # Espaciador
@@ -112,6 +112,7 @@ with ce2:
         }
         html_final = generar_carta_pro_html(rem_info, carta_info)
         components.html(f"<html><body>{html_final}<script>window.print();</script></body></html>", height=0)
+
 
 
 
