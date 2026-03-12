@@ -1544,7 +1544,7 @@ else:
                         else:
                             if es_region_65:
                                 precio_unitario = 65
-                                leyenda_region = "Zona con Tarifa Preferencial Nexion"
+                                leyenda_region = "Zona con Tarifa Preferencial"
                             else:
                                 precio_unitario = 95
                                 leyenda_region = "Zona Norte / Sur / Costa"
@@ -4963,6 +4963,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
