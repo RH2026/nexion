@@ -1418,28 +1418,25 @@ else:
                 # =========================================================                
                 usuario_actual = st.session_state.get('usuario_activo', 'Cielo')
                 
-                # --- NUEVOS INPUTS ---
-                c1, c2, c3 = st.columns([1, 1, 0.8]) # Agregamos C3 para cajas
+                c1, c2, c3 = st.columns([1, 1, 0.8])
                 
                 with c1:
                     st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
                 
                 with c2:
                     busqueda_manual = st.text_input(
-                        "BUSCAR DESTINO, CP O DOMICILIO", 
-                        placeholder="Ej: 63734, Cancún...",
+                        "BUSCAR POR DESTINO, CP O DOMICILIO", 
+                        placeholder="Ej: 63734, Litibu, Cancún...",
                         key="busqueda_manual_v6"
                     )
                 
                 with c3:
-                    # Nuevo input para las cajas
-                    num_cajas = st.number_input("CANTIDAD DE CAJAS", min_value=1, value=1, step=1, key="cajas_cotizacion")
+                    num_cajas = st.number_input("CANTIDAD DE CAJAS", min_value=1, value=1, step=1)
                 
                 # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
                 if not busqueda_manual:
                     df_validos = df[df['DIAS_REALES'].notna()]
                     rutas_dos_dias = df_validos[df_validos['DIAS_REALES'] == 2]
-                    
                     if not rutas_dos_dias.empty:
                         busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
                         texto_mostrar = f"{busqueda_activa}"
@@ -1453,12 +1450,11 @@ else:
                     busqueda_activa = busqueda_manual
                     texto_mostrar = busqueda_manual.upper()
                 
-                # --- FILTRADO ---
+                # --- FILTRADO ORIGINAL (SIN ROMPER NADA) ---
                 busqueda_aux = busqueda_activa.lower()
                 mask = (
                     df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
-                    df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
-                    df['ESTADO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
+                    df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
                 )
                 
                 historial = df[mask & (df['DIAS_REALES'].notna())].copy()
@@ -1470,65 +1466,63 @@ else:
                     total_viajes = len(historial)
                     dias_redondeados = math.ceil(promedio_dias)
             
-                    # --- LÓGICA DE COTIZACIÓN CHINGONA ---
-                    estado_destino = str(historial['ESTADO'].iloc[0]).upper().strip()
+                    # --- LÓGICA DE PRECIOS BUSCANDO EN 'DOMICILIO' ---
+                    # Extraemos el texto del primer resultado para analizar la región
+                    texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
                     
-                    # Clasificamos regiones (Ajusta los estados según tu logística)
-                    region_especial = ["QUERETARO", "GUANAJUATO", "AGUASCALIENTES", "SAN LUIS POTOSI", "CIUDAD DE MEXICO", "ESTADO DE MEXICO", "HIDALGO", "PUEBLA", "VERACRUZ"]
+                    # Lista de palabras clave para región de $65 (Bajío/Centro/Golfo)
+                    regiones_65 = ["QUERETARO", "QRO", "GUANAJUATO", "GTO", "LEON", "CELAYA", "AGUASCALIENTES", "AGS", 
+                                   "SAN LUIS POTOSI", "SLP", "CDMX", "MEXICO", "EDOMEX", "HIDALGO", "PUEBLA", "VERACRUZ"]
                     
-                    if num_cajas >= 1 and num_cajas <= 4:
-                        precio_unitario = 450 / num_cajas # El paquete de 1-4 sale en 450 total
-                        total_cotizacion = 450 * 1.16
-                        leyenda_precio = "Tarifa Plana (1-4 cajas)"
+                    es_region_65 = any(region in texto_domicilio for region in regiones_65)
+            
+                    if 1 <= num_cajas <= 4:
+                        precio_unitario = 450 / num_cajas
+                        total_sin_iva = 450
+                        leyenda_region = "Tarifa Plana Nacional (1-4 cajas)"
                     else:
-                        if any(reg in estado_destino for reg in region_especial):
+                        if es_region_65:
                             precio_unitario = 65
-                            leyenda_precio = "Tarifa Bajío/Centro/Golfo"
+                            leyenda_region = "Zona Bajío / Centro / Golfo"
                         else:
                             precio_unitario = 95
-                            leyenda_precio = "Tarifa Norte/Sur"
-                        total_cotizacion = (num_cajas * precio_unitario) * 1.16
+                            leyenda_region = "Zona Norte / Sur"
+                        total_sin_iva = num_cajas * precio_unitario
+                    
+                    total_con_iva = total_sin_iva * 1.16
             
-                    # --- RENDERIZADO DEL WIDGET DUAL (TIEMPO + PRECIO) ---
+                    # --- RENDERIZADO ESTILO ONYX ---
                     st.markdown(f"""
-                        <div class="kpi-ruta-container" style="display: flex; gap: 15px; flex-wrap: wrap;">
-                            <div class="kpi-ruta-card" style="flex: 1; min-width: 300px;">
-                                <span class="kpi-tag">📦 Paquetería: {fletera_recomendada}</span>
+                        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                            <div class="kpi-ruta-card" style="flex: 1; border-left: 5px solid #A4B9C8;">
+                                <span class="kpi-tag">LOGÍSTICA: {fletera_recomendada}</span>
                                 <div class="kpi-route-flow">
-                                    <span class="city">GDL</span>
-                                    <span class="arrow">→</span>
-                                    <span class="city">{texto_mostrar}</span>
+                                    <span class="city">GDL</span> <span class="arrow">→</span> <span class="city">{texto_mostrar}</span>
                                 </div>
                                 <div class="kpi-value">{dias_redondeados} <small>DÍAS</small></div>
-                                <div class="kpi-subtext">Basado en {total_viajes} entregas reales</div>
+                                <div class="kpi-subtext">Promedio en {total_viajes} envíos</div>
                             </div>
-                            
-                            <div class="kpi-ruta-card" style="flex: 1; min-width: 300px; border-left: 5px solid #D4AF37;">
-                                <span class="kpi-tag" style="background: #D4AF37; color: #000;">💰 Cotización Estimada</span>
-                                <div style="margin-top: 15px;">
-                                    <span style="font-size: 0.8rem; color: #A4B9C8;">{num_cajas} Cajas x ${precio_unitario:,.2f}</span>
-                                    <div class="kpi-value" style="color: #D4AF37;">${total_cotizacion:,.2f} <small style="font-size: 0.5em;">con IVA</small></div>
-                                    <div class="kpi-subtext"><b>{leyenda_precio}</b><br>Destino detectado: {estado_destino}</div>
+                            <div class="kpi-ruta-card" style="flex: 1; border-left: 5px solid #D4AF37; background: #1c2a35;">
+                                <span class="kpi-tag" style="background: #D4AF37; color: #000;">COTIZACIÓN NEXION</span>
+                                <div style="margin-top:10px;">
+                                    <div style="font-size: 1.5rem; font-weight: 900; color: #D4AF37;">${total_con_iva:,.2f} <small style="font-size: 0.8rem; color: #A4B9C8;">IVA INC.</small></div>
+                                    <div style="font-size: 0.85rem; color: #E0E6ED; margin-top: 5px;">
+                                        <b>{num_cajas}</b> Cajas | <b>${precio_unitario:,.2f}</b> unitario<br>
+                                        <span style="color: #A4B9C8; font-size: 0.75rem;">{leyenda_region}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # 2. Tabla de Detalles
-                    st.markdown(f'<p class="data-section-header">Historial de envíos encontrados en esta zona</p>', unsafe_allow_html=True)
-                    tabla_detalles = historial[[
-                        'NÚMERO DE PEDIDO',
-                        'NOMBRE DEL CLIENTE', 
-                        'DOMICILIO', 
-                        'FECHA DE ENVÍO', 
-                        'FLETERA', 
-                    ]].sort_values(by='FECHA DE ENVÍO', ascending=False)
-                    
+                    # 3. Tabla de Detalles (Tu código original)
+                    st.markdown(f'<p class="data-section-header">Historial de envíos encontrados</p>', unsafe_allow_html=True)
+                    tabla_detalles = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False)
                     tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
                     st.dataframe(tabla_detalles, use_container_width=True, hide_index=True)
                     
                 else:
-                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                  
+                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                
                 
                
                 # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
@@ -4835,6 +4829,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
