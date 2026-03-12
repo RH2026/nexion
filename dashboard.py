@@ -1467,52 +1467,52 @@ else:
                     dias_redondeados = math.ceil(promedio_dias)
             
                     # --- LÓGICA DE PRECIOS BUSCANDO EN 'DOMICILIO' ---
-                    # --- LÓGICA DE PRECIOS "NEXION ELITE" (FUSIÓN TOTAL) ---
+                    # --- LÓGICA DE PRECIOS "NEXION ELITE" (CONVENIO ESPECIAL $65) ---
+                    # Extraemos el texto del primer resultado para analizar la región
                     texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
                     
-                    # Lista Maestra Fusionada: Estados + Abreviaciones + Destinos Específicos Imagen
+                    # Lista Maestra Total: Imagen completa + Estados + Abreviaciones (Sin Veracruz)
                     regiones_65 = [
-                        # 1. ESTADOS Y ABREVIACIONES (Sin Veracruz)
+                        # 1. TUS DESTINOS DEL NORTE/PACÍFICO (POR TU CONVENIO ESPECIAL)
+                        "HERMOSILLO, SON", "GUAYMAS, SON", "DURANGO, DUR", "SALTILLO, COA", 
+                        "TEPIC, NAY", "MAZATLAN, SIN", "CANANEA, SON", "TORREON, COA", "CULIACAN, SIN", "CIUDAD OBREGON, SON", 
+                        "LOS MOCHIS, SIN", "OBREGON, SON", 
+                        "CABORCA, SON", "CAJEME, CIUDAD OBREGON, SON", "TORREON COAHUILA, COA", 
+                        "NOGALES, SON", "NAVOJOA, SON", "MONTERREY, NL", "PIEDRAS NEGRAS, COA",
+                        "APODACA, NL", "NUEVO VALLARTA, NAY", "RINCON DE GUAYABITOS, NAY",
+                        
+                        # 2. ESTADOS Y ABREVIACIONES GENERALES (CENTRO/BAJÍO)
                         "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
                         "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
                         "PUEBLA", "PUE", "JALISCO", "JAL", "MEXICO", "MEX", "ESTADO DE MEXICO", "EDOMEX",
                         "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2",
                         
-                        # 2. VARIANTES CDMX Y CIUDAD DE MÉXICO
+                        # 3. VARIANTES CDMX Y CIUDAD DE MÉXICO
                         "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2", ", CMX",
                         "CIUDAD DE MÉXICO, DF2", "DELEGACION CUAUHTEMOC, CMX", "ALCALDIA CUAUHTEMOC, CMX",
                         "ALCALDIA CUAJIMALPA DE MORELOS, CMX", "CUAJIMALPA DE MORELOS, DF2",
                         
-                        # 3. DESTINOS ESPECÍFICOS (CIUDAD, ESTADO) DE TU LISTA
+                        # 4. CIUDADES ESPECÍFICAS DE TU IMAGEN (BAJÍO/CENTRO/SUR)
                         "MATEHUALA, SLP", "IXTAPAN DE LA SAL, MEX", "QUERETARO, QUE", "ATITALAQUIA, HID",
-                        "MORELIA, MCH", "CELAYA, GTO", "APIZACO, TLA", "SILAO, GTO", "TOLUCA, MEX",
-                        "SALAMANCA, GTO", "AGUASCALIENTES, AGS", "LEON, GTO", "CUAUHTEMOC, CMX",
+                        "MORELIA, MCH", "SILAO, GTO", "TOLUCA, MEX", "SALAMANCA, GTO", "SANTIAGO DE QUERETARO, QUE",
                         "JURIQUILLA, QUE", "PACHUCA, HID", "CALVILLO, AGS", "PUEBLA, PUE", "AMEALCO DE BONFIL, QUE",
-                        "SAN LUIS POTOSI, SLP", "TULA DE ALLENDE, HID", "ACAMBARO, GTO", "CUAUTLANCINGO, PUE",
-                        "NUEVA ITALIA, MCH", "JACONA, MCH", "SANTIAGO DE QUERETARO, QUE", "CORONANGO, PUE",
-                        "IRAPUATO, GTO", "GUANAJUATO, GTO", "SAN MIGUEL DE ALLENDE, GTO", "ZAMORA, MCH",
-                        "CUERNAVACA, MOR", "TOLUCA, DF2", "IXTAPALUCA, MEX", "IZTACALCO, CMX", "TETLATLAHUACA, TLA", 
-                        "NAUCALPAN DE JUAREZ, MEX", "MEXICO, DF", "NICOLAS ROMERO, MEX", "SAN ANDRES, PUE", 
-                        "TLANEPANTLA, MEX", "TEPOTZOTLAN, MEX", "VALLE DE BRAVO, MEX", "PATZCUARO, MCH",
-                        "ALVARO OBREGON, CMX", "TLALPAN, DF2", "SAN ANDRES CHOLULA, PUE", "TOLUCA DE LERDO, MEX", 
-                        "CEDRAL, SLP", "TEQUISQUIAPAN, QUE", "TLALNEPANTLA DE BAZ, CMX", "BERNAL, QUE",
-                        "SILAO DE LA VICTORIA, GTO", "SAN JUAN DEL RIO, QUE", "CUAHUTEMOC, CMX", 
-                        "METEPEC, MEX", "PACHUCA de SOTO, HID", "MUNICIPIO ALVARO OBREGON, MCH", "TLANEPANTLA, CMX",
-                        "ATLIXCO, PUE", "MIGUEL HIDALGO, CMX", "SANTA CRUZ TECÁMAC, MEX", "EL MARQUES, QUE",
-                        "MARINA NACIONAL, CMX", "MEXICO, DF2", "CUAJIMALPA DE MORELOS, CMX", "URUAPAN, MCH",
-                        "CIUDAD DE MEXICO, DF2", "BENITO JUAREZ, CMX", "YAUHQUEMEHCAN, TLA", "NAUCALPAN DE JUAREZ, CMX",
-                        
-                        # 4. CIUDADES SUELTAS / DELEGACIONES
-                        "SANTIAGO DE QUERETARO", "JURIQUILLA", "TEQUISQUIAPAN", "BERNAL", "EL MARQUES",
-                        "SILAO", "SALAMANCA", "IRAPUATO", "SAN MIGUEL DE ALLENDE", "ACAMBARO",
-                        "CALVILLO", "MATEHUALA", "CEDRAL", "ATITALAQUIA", "PACHUCA", "TULA DE ALLENDE",
-                        "CUAUTLANCINGO", "CORONANGO", "SAN ANDRES CHOLULA", "ATLIXCO",
-                        "TOLUCA", "METEPEC", "NAUCALPAN", "TLANEPANTLA", "TEPOTZOTLAN", "CHOLULA",
-                        "CUAUHTEMOC", "ALVARO OBREGON", "IZTACALCO", "TLALPAN", "CUAJIMALPA", 
-                        "MIGUEL HIDALGO", "BENITO JUAREZ", "IZTAPALUCA", "NAUCALPAN DE JUAREZ"
+                        "TULA DE ALLENDE, HID", "ACAMBARO, GTO", "CUAUTLANCINGO, PUE", "NUEVA ITALIA, MCH", 
+                        "JACONA, MCH", "CORONANGO, PUE", "IRAPUATO, GTO", "GUANAJUATO, GTO", 
+                        "SAN MIGUEL DE ALLENDE, GTO", "ZAMORA, MCH", "CUERNAVACA, MOR", "TOLUCA, DF2", 
+                        "IXTAPALUCA, MEX", "IZTACALCO, CMX", "TETLATLAHUACA, TLA", "NAUCALPAN DE JUAREZ, MEX", 
+                        "NICOLAS ROMERO, MEX", "SAN ANDRES, PUE", "TLANEPANTLA, MEX", "TEPOTZOTLAN, MEX", 
+                        "VALLE DE BRAVO, MEX", "PATZCUARO, MCH", "ALVARO OBREGON, CMX", "TLALPAN, DF2", 
+                        "SAN ANDRES CHOLULA, PUE", "TOLUCA DE LERDO, MEX", "CEDRAL, SLP", "TEQUISQUIAPAN, QUE", 
+                        "TLALNEPANTLA DE BAZ, CMX", "MÉXICO, DF2", "BERNAL, QUE", "SILAO DE LA VICTORIA, GTO", 
+                        "SAN JUAN DEL RIO, QUE", "CUAHUTEMOC, CMX", "METEPEC, MEX", "PACHUCA de SOTO, HID", 
+                        "MUNICIPIO ALVARO OBREGON, MCH", "TLANEPANTLA, CMX", "ATLIXCO, PUE", "MIGUEL HIDALGO, CMX", 
+                        "SANTA CRUZ TECÁMAC, MEX", "EL MARQUES, QUE", "MARINA NACIONAL, CMX", "MEXICO, DF2", 
+                        "CUAJIMALPA DE MORELOS, CMX", "URUAPAN, MCH", "CIUDAD DE MEXICO, DF2", "BENITO JUAREZ, CMX", 
+                        "YAUHQUEMEHCAN, TLA", "NAUCALPAN DE JUAREZ, CMX", "GUADALAJARA, JAL", "ZAPOTLAN EL GRANDE, JAL",
+                        "ARANDAS, JAL", "SAN JUAN DE LOS LAGOS, JAL", "JOCOTEPEC, JAL", "CD GUZMAN, JAL"
                     ]
                     
-                    # El match busca si alguna palabra de la lista está en el domicilio encontrado
+                    # El match busca si alguna palabra o frase de la lista está en el domicilio
                     es_region_65 = any(region in texto_domicilio for region in regiones_65)
             
                     if 1 <= num_cajas <= 4:
@@ -1522,13 +1522,14 @@ else:
                     else:
                         if es_region_65:
                             precio_unitario = 65
-                            leyenda_region = "Zona Bajío / Centro / CDMX / Michoacán"
+                            leyenda_region = "Zona con Tarifa Preferencial Nexion"
                         else:
-                            # Aquí caerán Veracruz, Sonora, Chihuahua, Sinaloa, etc.
+                            # Aquí caerán Veracruz y destinos no registrados
                             precio_unitario = 95
                             leyenda_region = "Zona Norte / Sur / Costa"
                         total_sin_iva = num_cajas * precio_unitario
                     
+                    # El cálculo final con el 16% de IVA
                     total_con_iva = total_sin_iva * 1.16
             
                     # --- RENDERIZADO ESTILO ONYX ---
@@ -4869,6 +4870,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
