@@ -1467,13 +1467,11 @@ else:
                         dias_redondeados = math.ceil(promedio_dias)
                 
                         # --- LÓGICA DE PRECIOS BUSCANDO EN 'DOMICILIO' ---
-                        # --- LÓGICA DE PRECIOS "NEXION ELITE" (CONVENIO ESPECIAL $65) ---
-                        # Extraemos el texto del primer resultado para analizar la región
+                        # --- LÓGICA DE PRECIOS "NEXION ELITE" (FUSIÓN SIN VERACRUZ) ---
                         texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
                         
-                        # Lista Maestra Total: Imagen completa + Estados + Abreviaciones (Sin Veracruz)
                         regiones_65 = [
-                            # 1. TUS DESTINOS DEL NORTE/PACÍFICO (POR TU CONVENIO ESPECIAL)
+                            # 1. NORTE/PACÍFICO (CONVENIO ESPECIAL $65)
                             "HERMOSILLO", "HERMOSILLO, SON", "GUAYMAS", "GUAYMAS, SON", 
                             "DURANGO", "DURANGO, DUR", "SALTILLO", "SALTILLO, COA", 
                             "TEPIC", "TEPIC, NAY", "MAZATLAN", "MAZATLAN, SIN", 
@@ -1484,20 +1482,18 @@ else:
                             "NAVOJOA", "NAVOJOA, SON", "MONTERREY", "MONTERREY, NL",
                             "APODACA", "APODACA, NL", "PIEDRAS NEGRAS", "PIEDRAS NEGRAS, COA",
                             "NUEVO VALLARTA", "NUEVO VALLARTA, NAY", "RINCON DE GUAYABITOS", "RINCON DE GUAYABITOS, NAY",
-                            "CAJEME, CIUDAD OBREGON, SON", "TORREON COAHUILA, COA",
-                            
-                            # 2. ESTADOS Y ABREVIACIONES GENERALES (CENTRO/BAJÍO)
+                
+                            # 2. ESTADOS Y ABREVIACIONES (QUITAMOS "VER" Y "VERACRUZ")
                             "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
                             "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
                             "PUEBLA", "PUE", "JALISCO", "JAL", "ESTADO DE MEXICO", "EDOMEX",
                             "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2",
                             
-                            # 3. VARIANTES CDMX Y CIUDAD DE MÉXICO
+                            # 3. CDMX ESPECÍFICO
                             "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2", ", CMX",
                             "CIUDAD DE MÉXICO, DF2", "DELEGACION CUAUHTEMOC, CMX", "ALCALDIA CUAUHTEMOC, CMX",
-                            "ALCALDIA CUAJIMALPA DE MORELOS, CMX", "CUAJIMALPA DE MORELOS, DF2",
                             
-                            # 4. CIUDADES ESPECÍFICAS DE TU IMAGEN (BAJÍO/CENTRO/SUR)
+                            # 4. CIUDADES DE TU IMAGEN (BAJÍO/CENTRO/NORTE)
                             "MATEHUALA, SLP", "IXTAPAN DE LA SAL, MEX", "QUERETARO, QUE", "ATITALAQUIA, HID",
                             "MORELIA, MCH", "SILAO, GTO", "TOLUCA, MEX", "SALAMANCA, GTO", "SANTIAGO DE QUERETARO, QUE",
                             "JURIQUILLA, QUE", "PACHUCA, HID", "CALVILLO, AGS", "PUEBLA, PUE", "AMEALCO DE BONFIL, QUE",
@@ -4852,6 +4848,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
