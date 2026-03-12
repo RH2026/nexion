@@ -1144,7 +1144,14 @@ else:
                     color_envio, color_guia, color_promesa = "#38bdf8", ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
                     linea_1_2, linea_2_3 = ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
                     
-                    f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce').normalize()
+                    # 1. Convertimos a datetime primero (con errors='coerce' para que los vacíos sean NaT)
+                    f_promesa_dt = pd.to_datetime(envio["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+                    
+                    # 2. Normalizamos solo si NO es nulo, usando .dt si es serie o un simple check si es valor único
+                    if pd.notnull(f_promesa_dt):
+                        f_promesa_dt = f_promesa_dt.normalize()
+                    # Si es nulo, f_promesa_dt se queda como NaT y no rompe el resto de tu lógica
+                    
                     hoy = pd.Timestamp(datetime.now()).normalize()
                 
                     # --- LÓGICA DE ESTATUS Y COLORES ACTUALIZADA ---
@@ -4969,6 +4976,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
