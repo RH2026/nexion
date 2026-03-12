@@ -1405,7 +1405,7 @@ else:
             
             # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
             with tab_tiempos: 
-                st.write("")  # Esto agrega un pequeño espacio hacia abajo
+                st.write("") 
                 # =========================================================
                 # 1. PROCESAMIENTO DE DATOS
                 # =========================================================
@@ -1414,26 +1414,30 @@ else:
                 df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
                 
                 # =========================================================
-                # 2. SECCIÓN DEL CALCULADOR INTELIGENTE CON ANÁLISIS REAL
+                # 2. SECCIÓN DEL CALCULADOR INTELIGENTE
                 # =========================================================                
                 usuario_actual = st.session_state.get('usuario_activo', 'Cielo')
                 
-                c1, c2 = st.columns([1, 1])
+                # --- NUEVOS INPUTS ---
+                c1, c2, c3 = st.columns([1, 1, 0.8]) # Agregamos C3 para cajas
                 
                 with c1:
                     st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
                 
                 with c2:
                     busqueda_manual = st.text_input(
-                        "BUSCAR POR DESTINO, CP O DOMICILIO", 
-                        placeholder="Ej: 63734, Litibu, Cancún...",
+                        "BUSCAR DESTINO, CP O DOMICILIO", 
+                        placeholder="Ej: 63734, Cancún...",
                         key="busqueda_manual_v6"
                     )
+                
+                with c3:
+                    # Nuevo input para las cajas
+                    num_cajas = st.number_input("CANTIDAD DE CAJAS", min_value=1, value=1, step=1, key="cajas_cotizacion")
                 
                 # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
                 if not busqueda_manual:
                     df_validos = df[df['DIAS_REALES'].notna()]
-                    # Buscamos rutas rápidas de 2 días para el ejemplo inicial
                     rutas_dos_dias = df_validos[df_validos['DIAS_REALES'] == 2]
                     
                     if not rutas_dos_dias.empty:
@@ -1449,45 +1453,69 @@ else:
                     busqueda_activa = busqueda_manual
                     texto_mostrar = busqueda_manual.upper()
                 
-                # --- FILTRADO Y ANÁLISIS DE FRECUENCIA ---
+                # --- FILTRADO ---
                 busqueda_aux = busqueda_activa.lower()
                 mask = (
                     df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
-                    df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
+                    df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
+                    df['ESTADO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
                 )
                 
                 historial = df[mask & (df['DIAS_REALES'].notna())].copy()
                 
                 if not historial.empty:
-                    # --- CÁLCULO DE LA FLETERA MÁS FRECUENTE ---
-                    # Sacamos la fletera que más se repite para este destino específico
+                    # --- CÁLCULO DE TIEMPOS ---
                     fletera_recomendada = historial['FLETERA'].value_counts().idxmax()
-                    
                     promedio_dias = historial['DIAS_REALES'].mean()
                     total_viajes = len(historial)
                     dias_redondeados = math.ceil(promedio_dias)
-                
-                    # 1. Renderizado del Widget Dinámico
+            
+                    # --- LÓGICA DE COTIZACIÓN CHINGONA ---
+                    estado_destino = str(historial['ESTADO'].iloc[0]).upper().strip()
+                    
+                    # Clasificamos regiones (Ajusta los estados según tu logística)
+                    region_especial = ["QUERETARO", "GUANAJUATO", "AGUASCALIENTES", "SAN LUIS POTOSI", "CIUDAD DE MEXICO", "ESTADO DE MEXICO", "HIDALGO", "PUEBLA", "VERACRUZ"]
+                    
+                    if num_cajas >= 1 and num_cajas <= 4:
+                        precio_unitario = 450 / num_cajas # El paquete de 1-4 sale en 450 total
+                        total_cotizacion = 450 * 1.16
+                        leyenda_precio = "Tarifa Plana (1-4 cajas)"
+                    else:
+                        if any(reg in estado_destino for reg in region_especial):
+                            precio_unitario = 65
+                            leyenda_precio = "Tarifa Bajío/Centro/Golfo"
+                        else:
+                            precio_unitario = 95
+                            leyenda_precio = "Tarifa Norte/Sur"
+                        total_cotizacion = (num_cajas * precio_unitario) * 1.16
+            
+                    # --- RENDERIZADO DEL WIDGET DUAL (TIEMPO + PRECIO) ---
                     st.markdown(f"""
-                        <div class="kpi-ruta-container">
-                            <div class="kpi-ruta-card">
-                                <span class="kpi-tag">Paquetería Recomendada: {fletera_recomendada}</span>
+                        <div class="kpi-ruta-container" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <div class="kpi-ruta-card" style="flex: 1; min-width: 300px;">
+                                <span class="kpi-tag">📦 Paquetería: {fletera_recomendada}</span>
                                 <div class="kpi-route-flow">
                                     <span class="city">GDL</span>
                                     <span class="arrow">→</span>
                                     <span class="city">{texto_mostrar}</span>
                                 </div>
                                 <div class="kpi-value">{dias_redondeados} <small>DÍAS</small></div>
-                                <div class="kpi-subtext">
-                                    La fletera más usada en <b>{total_viajes}</b> entregas exitosas a esta zona
+                                <div class="kpi-subtext">Basado en {total_viajes} entregas reales</div>
+                            </div>
+                            
+                            <div class="kpi-ruta-card" style="flex: 1; min-width: 300px; border-left: 5px solid #D4AF37;">
+                                <span class="kpi-tag" style="background: #D4AF37; color: #000;">💰 Cotización Estimada</span>
+                                <div style="margin-top: 15px;">
+                                    <span style="font-size: 0.8rem; color: #A4B9C8;">{num_cajas} Cajas x ${precio_unitario:,.2f}</span>
+                                    <div class="kpi-value" style="color: #D4AF37;">${total_cotizacion:,.2f} <small style="font-size: 0.5em;">con IVA</small></div>
+                                    <div class="kpi-subtext"><b>{leyenda_precio}</b><br>Destino detectado: {estado_destino}</div>
                                 </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-                
+                    
                     # 2. Tabla de Detalles
-                    # 2. Tabla de Detalles Gobernada por tu CSS
-                    st.markdown(f'<p class="data-section-header">Detalles de envíos encontrados</p>', unsafe_allow_html=True)
+                    st.markdown(f'<p class="data-section-header">Historial de envíos encontrados en esta zona</p>', unsafe_allow_html=True)
                     tabla_detalles = historial[[
                         'NÚMERO DE PEDIDO',
                         'NOMBRE DEL CLIENTE', 
@@ -1495,12 +1523,12 @@ else:
                         'FECHA DE ENVÍO', 
                         'FLETERA', 
                     ]].sort_values(by='FECHA DE ENVÍO', ascending=False)
-                
+                    
                     tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
-                
                     st.dataframe(tabla_detalles, use_container_width=True, hide_index=True)
+                    
                 else:
-                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                   
+                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                  
                 
                
                 # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
@@ -4807,6 +4835,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
