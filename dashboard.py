@@ -4507,15 +4507,12 @@ else:
             # --- SUBSECCIÓN D: CARTA RECLAMO ------
             elif st.session_state.menu_sub == "CARTA RECLAMO":
                 def generar_carta_pro_html(datos_rem, datos_carta):
-                    # Definimos los colores basados en tu imagen de la solicitud
-                    jypesa_azul = "#005691"  # El azul profesional de tus encabezados
-                    jypesa_amarillo = "#F7C300" # El amarillo para acentos destacados
+                    jypesa_azul = "#005691"
+                    jypesa_amarillo = "#F7C300"
 
                     return f"""
                     <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4; border: 1px solid #eee;">
-                        
                         <div style="height: 60px;"></div> 
-
                         <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: baseline;">
                             <div style="display: flex; flex-direction: column;">
                                 <span style="font-size: 1.15em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
@@ -4523,27 +4520,22 @@ else:
                             </div>
                             <span style="font-size: 0.9em; color: #444; font-weight: 700;">{datos_carta['fecha_texto']}</span>
                         </div>
-
                         <div style="margin-bottom: 35px;">
                             <p style="margin: 0; font-size: 0.8em; color: #666; text-transform: uppercase;">Atención a:</p>
                             <p style="margin: 0; font-weight: bold; font-size: 1.15em; color: #000;">{datos_carta['paqueteria']}</p>
                             <p style="margin: 0; font-weight: bold; color: #444;">Departamento de Reclamos / Operaciones</p>
                         </div>
-
                         <div style="margin-bottom: 30px; background-color: #fefdf5; padding: 15px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo};">
                             <h2 style="font-size: 1.1em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
                                 ASUNTO: {datos_carta['asunto']}
                             </h2>
                         </div>
-
                         <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 300px; padding: 0 10px;">{datos_carta['cuerpo_texto']}</div>
-
                         <div style="margin-top: 55px; margin-bottom: 40px; border-top: 2px solid #eee; padding-top: 20px;">
                             <p style="margin-bottom: 35px; color: #333;">Atentamente,</p>
                             <p style="margin: 0; font-weight: 800; font-size: 1.2em; color: {jypesa_azul};">{datos_rem['atencion']}</p>
                             <p style="margin: 0; font-size: 0.95em; font-weight: 700; color: #333;">Coordinador de Distribución y Logística</p>
                             <p style="margin: 0; font-size: 0.85em; color: #555;">JYPESA | S.A. de C.V.</p>
-                            
                             <div style="margin-top: 15px; font-size: 0.9em; color: #444; background-color: #f9f9f9; padding: 10px; border-radius: 4px; display: inline-block; border: 1px solid #eee;">
                                 <span style="color: {jypesa_azul}; font-weight: bold;">📱 33 19 75 31 22</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
                                 <span>📞 {datos_rem['tel']}</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
@@ -4557,93 +4549,54 @@ else:
                 st.write("")
                 cr1, cr2, cr3, cr4 = st.columns([1.5, 1.2, 1, 1])
                 with cr1:
-                    paq_rec = st.selectbox(":material/local_shipping: FLETERA", 
-                                          ["ONE PAQUETERIA", "FEDEX", "ESTAFETA", "DHL", "TINY PACK", "PAQUETEXPRESS", "TRES GUERRAS"], key="sel_paq_rec")
+                    paq_rec = st.selectbox(":material/local_shipping: FLETERA", ["ONE PAQUETERIA", "FEDEX", "ESTAFETA", "DHL", "TINY PACK", "PAQUETEXPRESS", "TRES GUERRAS"], key="sel_paq_rec")
                 with cr2:
-                    inc_rec = st.selectbox(":material/report_problem: INCIDENCIA", 
-                                          ["Faltante", "Extravío", "Siniestro / Daño Total", "Daño Parcial"], key="sel_inc_rec")
+                    inc_rec = st.selectbox(":material/report_problem: INCIDENCIA", ["Faltante", "Extravío", "Siniestro / Daño Total", "Daño Parcial"], key="sel_inc_rec")
                 with cr3:
                     fec_rec = st.date_input(":material/calendar_today: FECHA CARTA", date.today(), key="fec_rec")
                 with cr4:
                     guia_rec = st.text_input(":material/tag: GUÍA", "JALGDL ", key="guia_rec")
                 
-                # Fila 2: Detalles
-                cr5, cr6, cr7 = st.columns([0.8, 2, 1])
+                # Fila 2: Detalles (Agregado campo Factura)
+                cr5, cr6, cr7, cr8 = st.columns([0.8, 1.2, 1, 1])
                 with cr5:
                     caj_rec = st.number_input("CANT. CAJAS", min_value=1, value=1, key="caj_rec")
                 with cr6:
-                    cod_rec = st.text_input("CÓDIGOS AFECTADOS", placeholder="Ej: 4052-L20", key="cod_rec")
+                    cod_rec = st.text_input("CÓDIGOS", placeholder="Ej: 4052-L20", key="cod_rec")
                 with cr7:
-                    mon_rec = st.text_input("MONTO RECLAMO", placeholder="Ej: 30,441.87", key="mon_rec")
+                    fac_rec = st.text_input("FACTURA", placeholder="Ej: F-12345", key="fac_rec")
+                with cr8:
+                    mon_rec = st.text_input("MONTO", placeholder="Ej: 30,441.87", key="mon_rec")
                 
                 st.divider()
                 
-                # Lógica de texto
-                dict_asuntos_rec = {
-                    "Faltante": "Reclamo por Faltante de Mercancía",
-                    "Extravío": "Reporte de Extravío de Envío",
-                    "Siniestro / Daño Total": "Notificación de Siniestro (Daño Total)",
-                    "Daño Parcial": "Reclamo por Daño Parcial"
-                }
+                dict_asuntos_rec = {"Faltante": "Reclamo por Faltante de Mercancía", "Extravío": "Reporte de Extravío de Envío", "Siniestro / Daño Total": "Notificación de Siniestro (Daño Total)", "Daño Parcial": "Reclamo por Daño Parcial"}
                 
-                # --- NUEVA LÓGICA DE TEXTOS DINÁMICOS CON GUÍA ---
+                # Lógica dinámica mejorada con Factura
                 if inc_rec == "Siniestro / Daño Total":
-                    det_rec = (
-                        f"Por medio de la presente se notifica y formaliza el reclamo por siniestro correspondiente a la guía {guia_rec} con {caj_rec} cajas (Código: {cod_rec}), "
-                        f"mismas que se reportan como pérdida total.\n\n"
-                        f"Se anexan evidencias y factura para la validación y corroboración del valor de la mercancía.\n\n"
-                        f"El importe de la mercancía a reclamar asciende a ${mon_rec} + IVA."
-                    )
+                    det_rec = (f"Por medio de la presente se notifica y formaliza el reclamo por siniestro correspondiente a la guía {guia_rec} con {caj_rec} cajas (Código: {cod_rec}), mismas que se reportan como pérdida total.\n\n"
+                               f"Se anexan evidencias y la factura {fac_rec} para la validación y corroboración del valor de la mercancía.\n\n"
+                               f"El importe de la mercancía a reclamar asciende a ${mon_rec} + IVA.")
                 elif inc_rec == "Faltante":
-                    det_rec = (
-                        f"Por medio de la presente se notifica el faltante de {caj_rec} cajas con el código {cod_rec} en la entrega correspondiente a la guía {guia_rec}.\n\n"
-                        f"Solicitamos su apoyo para la localización de las mismas o, en su defecto, proceder con la indemnización por la cantidad de ${mon_rec} + IVA."
-                    )
+                    det_rec = (f"Por medio de la presente se notifica el faltante de {caj_rec} cajas con el código {cod_rec} en la entrega correspondiente a la guía {guia_rec} y factura {fac_rec}.\n\n"
+                               f"Solicitamos su apoyo para la localización de las mismas o, en su defecto, proceder con la indemnización por la cantidad de ${mon_rec} + IVA.")
                 elif inc_rec == "Extravío":
-                    det_rec = (
-                        f"Se reporta formalmente el extravío del envío amparado bajo la guía {guia_rec}, el cual contiene {caj_rec} cajas (Código {cod_rec}).\n\n"
-                        f"Derivado de lo anterior, solicitamos el reembolso del valor declarado de ${mon_rec} + IVA."
-                    )
-                else: # Daño Parcial
-                    det_rec = (
-                        f"Se notifica que el envío amparado con la guía {guia_rec} llegó con daños parciales en {caj_rec} cajas (Código {cod_rec}).\n\n"
-                        f"Se adjunta evidencia fotográfica de los daños y el costo de reposición asciende a ${mon_rec} + IVA."
-                    )
+                    det_rec = (f"Se reporta formalmente el extravío del envío amparado bajo la guía {guia_rec} y factura {fac_rec}, el cual contiene {caj_rec} cajas (Código {cod_rec}).\n\n"
+                               f"Derivado de lo anterior, solicitamos el reembolso del valor declarado de ${mon_rec} + IVA.")
+                else:
+                    det_rec = (f"Se notifica que el envío amparado con la guía {guia_rec} y factura {fac_rec} llegó con daños parciales en {caj_rec} cajas (Código {cod_rec}).\n\n"
+                               f"Se adjunta evidencia fotográfica de los daños y el costo de reposición asciende a ${mon_rec} + IVA.")
                 
-                txt_def_rec = (
-                    f"{det_rec}\n\n"
-                    f"Agradeceré su apoyo para dar seguimiento al proceso correspondiente y confirmar la recepción del presente reclamo.\n\n"
-                    f"Quedo atento a sus comentarios.\n\n"
-                    f"Saludos cordiales."
-                )
+                txt_def_rec = f"{det_rec}\n\nAgradeceré su apoyo para dar seguimiento al proceso correspondiente y confirmar la recepción del presente reclamo.\n\nQuedo atento a sus comentarios.\n\nSaludos cordiales."
                 
-                # --- SECCIÓN DE EDICIÓN Y ACCIÓN ---
                 st.write("### :material/edit: Edición de la Carta")
+                cuerpo_final_rec = st.text_area("CUERPO DE LA CARTA", value=txt_def_rec, height=300, key=f"txt_area_rec_{caj_rec}_{mon_rec}_{cod_rec}_{inc_rec}_{guia_rec}_{fac_rec}")
                 
-                cuerpo_final_rec = st.text_area(
-                    "CUERPO DE LA CARTA", 
-                    value=txt_def_rec, 
-                    height=300, 
-                    key=f"txt_area_rec_{caj_rec}_{mon_rec}_{cod_rec}_{inc_rec}_{guia_rec}"
-                )
-                
-                st.info("⚠️ Revisa que el monto, los códigos y la redacción sean correctos antes de imprimir.")
-                
-                if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary", key="btn_print_rec"):
-                    rem_rec = {
-                        "atencion": "Rigoberto Hernandez",
-                        "tel": "(52) 33 3540 2939 Ext. 157",
-                        "email": "rhernandez@jypesa.com"
-                    }
+                if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary"):
+                    rem_rec = {"atencion": "Rigoberto Hernandez", "tel": "(52) 33 3540 2939 Ext. 157", "email": "rhernandez@jypesa.com"}
                     ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
                     fec_txt_rec = f"{fec_rec.day} de {ms[fec_rec.month - 1]} del {fec_rec.year}"
-                    
-                    info_rec = {
-                        "paqueteria": paq_rec,
-                        "asunto": dict_asuntos_rec[inc_rec],
-                        "fecha_texto": fec_txt_rec,
-                        "cuerpo_texto": cuerpo_final_rec
-                    }
+                    info_rec = {"paqueteria": paq_rec, "asunto": dict_asuntos_rec[inc_rec], "fecha_texto": fec_txt_rec, "cuerpo_texto": cuerpo_final_rec}
                     html_final_rec = generar_carta_pro_html(rem_rec, info_rec)
                     components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)
                 
@@ -5010,6 +4963,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
