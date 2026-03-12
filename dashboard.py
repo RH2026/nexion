@@ -4512,7 +4512,7 @@ else:
                     return f"""
                     <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4;">
                         
-                        <div style="height: 100px;"></div> 
+                        <div style="height: 160px;"></div> 
 
                         <div style="text-align: right; margin-bottom: 20px;">
                             <span style="font-size: 0.95em; color: #333;">{datos_carta['fecha_texto']}</span>
@@ -4992,6 +4992,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
