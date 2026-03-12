@@ -1466,9 +1466,11 @@ else:
                         total_viajes = len(historial)
                         dias_redondeados = math.ceil(promedio_dias)
                 
-                        # --- LÓGICA DE PRECIOS BUSCANDO EN 'DOMICILIO' ---
-                        # --- LÓGICA DE PRECIOS "NEXION ELITE" (FUSIÓN SIN VERACRUZ) ---
-                        texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
+                        # Si el domicilio contiene Veracruz, forzamos el precio de 95 de inmediato
+                        if "VERACRUZ" in texto_domicilio or " VER " in texto_domicilio:
+                            es_region_65 = False
+                        else:
+                            es_region_65 = any(region in texto_domicilio for region in regiones_65)
                         
                         regiones_65 = [
                             # 1. NORTE/PACÍFICO (CONVENIO ESPECIAL $65)
@@ -4848,6 +4850,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
