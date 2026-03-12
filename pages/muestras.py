@@ -94,6 +94,7 @@ with ce1:
 with ce2:
     st.write("###") # Espaciador
     st.info("Revisa que el monto y los códigos sean correctos antes de imprimir.")
+    
     if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary"):
         rem_info = {
             "atencion": "Rigoberto Hernandez",
@@ -112,6 +113,7 @@ with ce2:
         }
         html_final = generar_carta_pro_html(rem_info, carta_info)
         components.html(f"<html><body>{html_final}<script>window.print();</script></body></html>", height=0)
+
 
 
 
