@@ -4507,15 +4507,18 @@ else:
             # --- SUBSECCIÓN D: CARTA RECLAMO ---
             elif st.session_state.menu_sub == "CARTA RECLAMO":
                 # --- DISEÑO DE IMPRESIÓN PROFESIONAL ---
-                # --- DISEÑO COMPACTO PARA HOJA MEMBRETADA (AJUSTE DE MARGEN INFERIOR) ---
                 def generar_carta_pro_html(datos_rem, datos_carta):
                     return f"""
                     <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4;">
                         
-                        <div style="height: 160px;"></div> 
+                        <div style="height: 60px;"></div> 
 
-                        <div style="text-align: right; margin-bottom: 20px;">
-                            <span style="font-size: 0.95em; color: #333;">{datos_carta['fecha_texto']}</span>
+                        <div style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: baseline;">
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="font-size: 1.1em; font-weight: 800; letter-spacing: 1px; color: #333; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                <span style="font-size: 0.85em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
+                            </div>
+                            <span style="font-size: 0.9em; color: #444; font-weight: 600;">{datos_carta['fecha_texto']}</span>
                         </div>
 
                         <div style="margin-bottom: 30px;">
@@ -4530,9 +4533,9 @@ else:
                             </h2>
                         </div>
 
-                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 350px;">{datos_carta['cuerpo_texto']}</div>
+                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 320px;">{datos_carta['cuerpo_texto']}</div>
 
-                        <div style="margin-top: 60px; margin-bottom: 40px;">
+                        <div style="margin-top: 50px; margin-bottom: 40px;">
                             <p style="margin-bottom: 30px;">Atentamente,</p>
                             <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000;">{datos_rem['atencion']}</p>
                             <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Coordinador de Distribución y Logística</p>
@@ -4992,6 +4995,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
