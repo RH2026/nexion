@@ -4521,7 +4521,7 @@ else:
                                 <span style="font-size: 1.15em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
                                 <span style="font-size: 0.9em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
                             </div>
-                            <span style="font-size: 0.95em; color: #444; font-weight: 700;">{datos_carta['fecha_texto']}</span>
+                            <span style="font-size: 0.9em; color: #444; font-weight: 700;">{datos_carta['fecha_texto']}</span>
                         </div>
 
                         <div style="margin-bottom: 35px;">
@@ -4542,7 +4542,7 @@ else:
                             <p style="margin-bottom: 35px; color: #333;">Atentamente,</p>
                             <p style="margin: 0; font-weight: 800; font-size: 1.2em; color: {jypesa_azul};">{datos_rem['atencion']}</p>
                             <p style="margin: 0; font-size: 0.95em; font-weight: 700; color: #333;">Coordinador de Distribución y Logística</p>
-                            <p style="margin: 0; font-size: 0.9em; color: #666;">JYPESA | S.A. de C.V.</p>
+                            <p style="margin: 0; font-size: 0.85em; color: #555;">JYPESA | S.A. de C.V.</p>
                             
                             <div style="margin-top: 15px; font-size: 0.9em; color: #444; background-color: #f9f9f9; padding: 10px; border-radius: 4px; display: inline-block; border: 1px solid #eee;">
                                 <span style="color: {jypesa_azul}; font-weight: bold;">📱 33 19 75 31 22</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
@@ -4586,17 +4586,17 @@ else:
                     "Daño Parcial": "Reclamo por Daño Parcial"
                 }
                 
-                # --- NUEVA LÓGICA DE TEXTOS DINÁMICOS ---
+                # --- NUEVA LÓGICA DE TEXTOS DINÁMICOS CON GUÍA ---
                 if inc_rec == "Siniestro / Daño Total":
                     det_rec = (
-                        f"Por medio de la presente se notifica y formaliza el reclamo por siniestro correspondiente a {caj_rec} cajas (Código: {cod_rec}), "
+                        f"Por medio de la presente se notifica y formaliza el reclamo por siniestro correspondiente a la guía {guia_rec} con {caj_rec} cajas (Código: {cod_rec}), "
                         f"mismas que se reportan como pérdida total.\n\n"
                         f"Se anexan evidencias y factura para la validación y corroboración del valor de la mercancía.\n\n"
                         f"El importe de la mercancía a reclamar asciende a ${mon_rec} + IVA."
                     )
                 elif inc_rec == "Faltante":
                     det_rec = (
-                        f"Por medio de la presente se notifica el faltante de {caj_rec} cajas con el código {cod_rec} en la entrega correspondiente.\n\n"
+                        f"Por medio de la presente se notifica el faltante de {caj_rec} cajas con el código {cod_rec} en la entrega correspondiente a la guía {guia_rec}.\n\n"
                         f"Solicitamos su apoyo para la localización de las mismas o, en su defecto, proceder con la indemnización por la cantidad de ${mon_rec} + IVA."
                     )
                 elif inc_rec == "Extravío":
@@ -4606,7 +4606,7 @@ else:
                     )
                 else: # Daño Parcial
                     det_rec = (
-                        f"Se notifica que el envío llegó con daños parciales en {caj_rec} cajas (Código {cod_rec}).\n\n"
+                        f"Se notifica que el envío amparado con la guía {guia_rec} llegó con daños parciales en {caj_rec} cajas (Código {cod_rec}).\n\n"
                         f"Se adjunta evidencia fotográfica de los daños y el costo de reposición asciende a ${mon_rec} + IVA."
                     )
                 
@@ -5010,6 +5010,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
