@@ -4507,32 +4507,37 @@ else:
             # --- SUBSECCIÓN D: CARTA RECLAMO ---
             elif st.session_state.menu_sub == "CARTA RECLAMO":
                 # --- DISEÑO DE IMPRESIÓN PROFESIONAL ---
+                # --- DISEÑO COMPACTO PARA HOJA MEMBRETADA ---
                 def generar_carta_pro_html(datos_rem, datos_carta):
                     return f"""
-                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 60px; color: #1a1a1a; max-width: 750px; margin: auto; background: white; line-height: 1.6;">
-                        <div style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: baseline;">
-                            <span style="font-size: 1.2em; font-weight: bold; letter-spacing: 2px; color: #333;">JABONES Y PRODUCTOS ESPECIALIZADOS</span>
-                            <span style="font-size: 0.9em; color: #666;">{datos_carta['fecha_texto']}</span>
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4;">
+                        
+                        # Espacio superior para que no choque con tu logo y eslogan
+                        <div style="height: 80px;"></div> 
+
+                        <div style="text-align: right; margin-bottom: 20px;">
+                            <span style="font-size: 0.95em; color: #333;">{datos_carta['fecha_texto']}</span>
                         </div>
-                        <div style="margin-bottom: 40px;">
+
+                        <div style="margin-bottom: 30px;">
                             <p style="margin: 0; font-size: 0.8em; color: #666; text-transform: uppercase;">Atención a:</p>
-                            <p style="margin: 0; font-weight: bold; font-size: 1.1em;">{datos_carta['paqueteria']}</p>
+                            <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000;">{datos_carta['paqueteria']}</p>
                             <p style="margin: 0; font-weight: bold; color: #444;">Departamento de Reclamos / Operaciones</p>
                         </div>
-                        <div style="margin-bottom: 30px;">
-                            <h2 style="font-size: 1.1em; border-left: 4px solid #003399; padding-left: 15px; text-transform: uppercase; color: #000;">
+
+                        <div style="margin-bottom: 25px;">
+                            <h2 style="font-size: 1.1em; border-left: 4px solid #5d327a; padding-left: 15px; text-transform: uppercase; color: #000; margin:0;">
                                 ASUNTO: {datos_carta['asunto']}
                             </h2>
                         </div>
-                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap;">{datos_carta['cuerpo_texto']}</div>
-                        <div style="margin-top: 60px; border-top: 1px solid #eee; padding-top: 20px;">
-                            <p style="margin-bottom: 40px;">Atentamente,</p>
-                            <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #003399;">{datos_rem['atencion']}</p>
+
+                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 300px;">{datos_carta['cuerpo_texto']}</div>
+
+                        <div style="margin-top: 50px;">
+                            <p style="margin-bottom: 35px;">Atentamente,</p>
+                            <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000;">{datos_rem['atencion']}</p>
                             <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Coordinador de Distribución y Logística</p>
                             <p style="margin: 0; font-size: 0.85em; color: #555;">JYPESA | S.A. de C.V.</p>
-                            <div style="margin-top: 10px; font-size: 0.85em; color: #666;">
-                                <span>📞 {datos_rem['tel']}</span> | <span>✉ {datos_rem['email']}</span>
-                            </div>
                         </div>
                     </div>
                     """
@@ -4983,6 +4988,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
