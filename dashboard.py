@@ -4525,10 +4525,11 @@ else:
                     """
                 
                 # Fila 1: Datos principales (Usamos nombres de variables únicos _rec)
+                st.write("")
                 cr1, cr2, cr3, cr4 = st.columns([1.5, 1.2, 1, 1])
                 with cr1:
                     paq_rec = st.selectbox(":material/local_shipping: FLETERA", 
-                                          ["ONE PAQUETERIA", "FEDEX", "ESTAFETA", "DHL", "PAQUETEXPRESS", "TRESGUERRAS"], key="sel_paq_rec")
+                                          ["ONE PAQUETERIA", "FEDEX", "ESTAFETA", "DHL", "TINY PACK", "PAQUETEXPRESS", "TRES GUERRAS"], key="sel_paq_rec")
                 with cr2:
                     inc_rec = st.selectbox(":material/report_problem: INCIDENCIA", 
                                           ["Faltante", "Extravío", "Siniestro / Daño Total", "Daño Parcial"], key="sel_inc_rec")
@@ -4968,6 +4969,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
