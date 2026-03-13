@@ -3928,7 +3928,7 @@ else:
                 
                 else:
                     # --- DISEÑO PRO: FRANJA ULTRA DELGADA EN UNA SOLA LÍNEA ---
-                    html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:6px solid #F7C300; padding:8px 30px; border-radius:6px; margin:10px 0; box-shadow:0 4px 10px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:20px;"><span style="font-size:22px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:800; font-size:11px; letter-spacing:2px; text-transform:uppercase;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:12px; margin-left:15px; opacity:0.8;">El perfil <b>{usuario_logeado}</b> no tiene privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:2px 10px; border:1px solid rgba(247,195,0,0.4); background:rgba(247,195,0,0.05); border-radius:4px; font-size:9px; color:#F7C300; font-weight:bold; letter-spacing:1px;">ID: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
+                    html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:8px solid #F7C300; padding:18px 40px; border-radius:10px; margin:15px 0; box-shadow:0 6px 20px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:25px;"><span style="font-size:28px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:900; font-size:14px; letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:4px;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:14px; font-weight:500; opacity:0.9;">El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:6px 16px; border:1px solid rgba(247,195,0,0.5); background:rgba(247,195,0,0.1); border-radius:6px; font-size:11px; color:#F7C300; font-weight:900; letter-spacing:1px;">ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
                     st.markdown(html_restringido, unsafe_allow_html=True)
         
     
@@ -4984,6 +4984,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
