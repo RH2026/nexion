@@ -3821,7 +3821,7 @@ else:
                 lista_admins = ["Rigoberto", "JMoreno"]
                 
                 # Verificamos quién está en la sesión
-                usuario_logeado = st.session_state.get('usuario', 'Invitado')
+                usuario_identificado = st.session_state.get('usuario_activo', 'Invitado')
 
                 if usuario_logeado in lista_admins:
                     st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
@@ -4981,6 +4981,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
