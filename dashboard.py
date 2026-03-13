@@ -1810,7 +1810,29 @@ else:
                                     margin: 0;
                                     padding: 10px;
                                 }}
-                                /* Fila estilizada en lugar de tarjeta pesada */
+                
+                                /* ───────── SCROLLBAR PERSONALIZADO ───────── */
+                                /* Tamaño del scroll */
+                                ::-webkit-scrollbar {{
+                                    width: 8px;
+                                    height: 8px;
+                                }}
+                                /* Fondo del scroll (Track) */
+                                ::-webkit-scrollbar-track {{
+                                    background: rgba(0, 0, 0, 0.1);
+                                    border-radius: 10px;
+                                }}
+                                /* La barrita que se mueve (Thumb) */
+                                ::-webkit-scrollbar-thumb {{
+                                    background: rgba(255, 255, 255, 0.1);
+                                    border-radius: 10px;
+                                    border: 2px solid #384A52; /* Crea un efecto de separación */
+                                }}
+                                /* Cuando pasas el mouse por el scroll */
+                                ::-webkit-scrollbar-thumb:hover {{
+                                    background: rgba(56, 189, 248, 0.4); /* Color azulito como tus hovers */
+                                }}
+                
                                 .list-row {{
                                     background-color: #263238;
                                     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -1886,7 +1908,7 @@ else:
                         """
                         return components.html(html_content, height=800, scrolling=True)
                 
-                    # Dataset
+                    # El dataset se mantiene igual...
                     data_corregida = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
