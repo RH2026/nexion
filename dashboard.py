@@ -312,7 +312,7 @@ div[data-baseweb="select"] > div:first-child {{
 
 /* 2. Ajuste del texto interno y el cursor */
 div[data-baseweb="select"] div {{
-    font-size: 10px !important;
+    font-size: 12px !important;
     color: {vars_css['text']} !important;
     line-height: 1 !important;
     text-transform: uppercase !important;
@@ -4968,6 +4968,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
