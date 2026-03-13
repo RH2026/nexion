@@ -3634,19 +3634,22 @@ else:
                         unsafe_allow_html=True
                     )
                     st.write("")
-                    f_h = st.text_input(":material/hotel: Hotel / Nombre").upper()
-                    f_ca = st.text_input(":material/location_on: Calle y Número").upper()
+                    # Agregamos la key dinámica a cada uno:
+                    f_h = st.text_input(":material/hotel: Hotel / Nombre", key=f"h_{st.session_state.reset_key}").upper()
+                    f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_{st.session_state.reset_key}").upper()
                     
                     cd1, cd2 = st.columns(2)
-                    f_co = cd1.text_input(":material/map: Colonia").upper()
-                    f_cp = cd2.text_input(":material/mailbox: C.P.")
+                    f_co = cd1.text_input(":material/map: Colonia", key=f"co_{st.session_state.reset_key}").upper()
+                    f_cp = cd2.text_input(":material/mailbox: C.P.", key=f"cp_{st.session_state.reset_key}")
                     
                     cd3, cd4 = st.columns(2)
-                    f_ci = cd3.text_input(":material/location_city: Ciudad").upper()
-                    f_es = cd4.text_input(":material/public: Estado").upper()
+                    f_ci = cd3.text_input(":material/location_city: Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
+                    f_es = cd4.text_input(":material/public: Estado", key=f"es_{st.session_state.reset_key}").upper()
+                    
                     f_con = st.text_input(
                         ":material/contact_phone: Contacto Receptor", 
-                        placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE"
+                        placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE",
+                        key=f"con_{st.session_state.reset_key}" # <--- La clave del éxito
                     ).upper()
                 
                 st.divider()
