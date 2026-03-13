@@ -3874,14 +3874,14 @@ else:
                                 with c_adm2:
                                     st.subheader("2. Impresión Final")
                                     st.markdown("""
-                                        <div style="background-color: #f0f2f6;
-                                                    border: 1px solid #d1d5db;
+                                        <div style="background-color: #fffbeb;
+                                                    border: 1px solid #fcd34d;
                                                     padding: 15px;
                                                     border-radius: 8px;">
-                                            <span style="color: #4b5563; font-size: 20px; vertical-align: middle;"></span>
-                                            <b style="color: #4b5563; margin-left: 10px; font-weight: 700;">AVISO IMPORTANTE:</b>
-                                            <span style="color: #1f2937; margin-left: 5px;">
-                                                Utiliza la función de impresión para previsualizar los datos. Esta acción <b style="color: #1d4ed8; font-weight: 700;">no modifica</b> la base de datos. Los cambios se aplicarán únicamente al guardar.
+                                            <span style="color: #b45309; font-size: 20px; vertical-align: middle;">:material/print:</span>
+                                            <b style="color: #b45309; margin-left: 10px; font-weight: 700;">REVISIÓN DE LOGÍSTICA:</b>
+                                            <span style="color: #92400e; margin-left: 5px;">
+                                                Genera una impresión para validar los detalles del envío. Este proceso <b style="color: #ea580c; font-weight: 700;">no afectará</b> tu repositorio en GitHub. Recuerda pulsar 'Guardar' para confirmar los cambios.
                                             </span>
                                         </div>
                                         <br>
@@ -5013,6 +5013,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
