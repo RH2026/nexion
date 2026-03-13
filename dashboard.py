@@ -3598,7 +3598,7 @@ else:
                     # Ahora empezamos directamente con los datos que sí llena Ventas
                     c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
                     
-                    f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=str(nuevo_folio), disabled=True)
+                    f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=f"JYP-{nuevo_num}", disabled=True)
                     f_paq_sel = c2.selectbox(
                         ":material/local_shipping: FORMA DE ENVÍO", 
                         ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
