@@ -3878,9 +3878,12 @@ else:
                                                     border-left: 5px solid #007BFF; 
                                                     padding: 15px; 
                                                     border-radius: 5px;">
-                                            <span style="font-size: 20px;">ℹ️</span> 
+                                            <span style="color: #007BFF; font-size: 20px; vertical-align: middle;">:material/print:</span> 
                                             <b style="color: #007BFF; margin-left: 10px;">VERIFICACIÓN PREVIA:</b> 
-                                            <span style="color: #555;">Puedes generar la impresión para validar los datos. Recuerda que esto <b>no afectará</b> la base de datos de GitHub hasta que guardes.</span>
+                                            <span style="color: white; margin-left: 5px;">
+                                                Puedes generar la impresión para validar los datos. Recuerda que esto 
+                                                <b style="color: #F7C300;">no afectará</b> la base de datos de GitHub hasta que guardes.
+                                            </span>
                                         </div>
                                         <br>
                                     """, unsafe_allow_html=True)
@@ -5011,6 +5014,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
