@@ -3588,21 +3588,13 @@ else:
                 
                 # --- CAPTURA NUEVA ---
                 with st.container():
-                    # NUEVOS INPUTS SOLICITADOS CON ICONOS MATERIAL
-                    cp1, cp2 = st.columns(2)
-                    f_paq_nombre = cp1.selectbox(
-                        ":material/local_shipping: NOMBRE DE PAQUETERÍA", 
-                        ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK",""]
-                    )
-                    f_tipo_pago = cp2.selectbox(
-                        ":material/payments: MODALIDAD DE PAGO", 
-                        ["CREDITO", "COBRO DESTINO"]
-                    )
+                    # Definimos valores por defecto (ya no se muestran a Ventas)
+                    f_paq_nombre = ""
+                    f_tipo_pago = ""
                     
-                    st.write("") # Espaciador
-                    
+                    # Ahora empezamos directamente con los datos que sí llena Ventas
                     c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
-                    # Usamos str(nuevo_folio) como lo tienes en tu lógica
+                    
                     f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=str(nuevo_folio), disabled=True)
                     f_paq_sel = c2.selectbox(
                         ":material/local_shipping: FORMA DE ENVÍO", 
@@ -3797,7 +3789,7 @@ else:
                     st.markdown("""
                         <div style="background-color: rgba(255, 165, 0, 0.1); border-left: 5px solid #FFA500; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
                             <span style="color: white; font-size: 14px;">
-                                :material/lock: <b style="color: #FFA500;">BLOQUEO DE SEGURIDAD:</b> 
+                                <b style="color: #FFA500;">BLOQUEO DE SEGURIDAD:</b> 
                                 Debes guardar el registro antes de poder imprimir.
                             </span>
                         </div>
@@ -5037,6 +5029,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
