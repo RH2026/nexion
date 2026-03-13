@@ -62,14 +62,14 @@ def render_logistica_flow_mid(data):
                         <h3 class="text-xl font-black text-white leading-none mb-1 tracking-tight">{item['oc']}</h3>
                         <p class="text-[10px] text-slate-500 font-medium mb-4 truncate italic">{item['entrega_texto']}</p>
                         
-                        <div class="space-y-2.5 bg-black/30 rounded-xl p-3 border border-white/5">
+                        <div class="space-y-2.5 bg-black/40 rounded-xl p-3 border border-white/5 shadow-inner">
                             <div class="flex items-center justify-between">
-                                <span class="text-[9px] text-slate-500 uppercase font-bold tracking-tight">Volumen</span>
-                                <span class="text-sm font-bold text-slate-200">{item['cantidad']}</span>
+                                <span class="text-[9px] text-white/90 uppercase font-extrabold tracking-widest">Volumen</span>
+                                <span class="text-sm font-bold text-white leading-none">{item['cantidad']}</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-[9px] text-slate-500 uppercase font-bold tracking-tight">Cita</span>
-                                <span class="text-[11px] font-mono font-bold {"text-orange-400" if item['cita'] == "PENDIENTE" else "text-blue-400"}">
+                                <span class="text-[9px] text-white/90 uppercase font-extrabold tracking-widest">Cita</span>
+                                <span class="text-[11px] font-mono font-bold {"text-orange-400 shadow-orange-500/20" if item['cita'] == "PENDIENTE" else "text-blue-400 shadow-blue-500/20"}">
                                     {item['cita']}
                                 </span>
                             </div>
@@ -78,12 +78,12 @@ def render_logistica_flow_mid(data):
                     
                     <div class="mt-4">
                         <div class="w-full bg-slate-800 rounded-full h-1 relative overflow-hidden">
-                            <div class="{"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-orange-500"} h-full rounded-full" 
+                            <div class="{"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-orange-500"} h-full rounded-full transition-all duration-700" 
                                  style="width: {'100%' if item['estatus'] == "ENTREGADA" else '30%'}"></div>
                         </div>
                         <div class="flex justify-between mt-1.5 px-0.5">
-                            <span class="text-[8px] font-bold text-slate-600 uppercase tracking-tighter">{item['estatus']}</span>
-                            <span class="text-[8px] font-bold text-slate-500">{"100%" if item['estatus'] == "ENTREGADA" else "30%"}</span>
+                            <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">{item['estatus']}</span>
+                            <span class="text-[8px] font-bold text-slate-400">{"100%" if item['estatus'] == "ENTREGADA" else "30%"}</span>
                         </div>
                     </div>
                 </div>
@@ -95,7 +95,7 @@ def render_logistica_flow_mid(data):
     """
     return components.html(html_content, height=850, scrolling=True)
 
-# Dataset 
+# Dataset (Simulando la info de tus imágenes)
 data_corregida = [
     {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026", "estatus": "ENTREGADA"},
     {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026", "estatus": "ENTREGADA"},
