@@ -285,12 +285,12 @@ div[data-baseweb="tag"] {{
     color: #ffffff !important;
     border-radius: 4px !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
+    font-size: 16px !important;
 }}
 
 div[data-baseweb="tag"] span {{
     color: #ffffff !important;
-    font-size: 14px !important;
+    font-size: 16px !important;
 }}
 
 div[data-baseweb="tag"] svg {{
@@ -314,7 +314,7 @@ div[data-baseweb="select"] > div:first-child {{
 
 /* 2. Ajuste del texto interno y el cursor */
 div[data-baseweb="select"] div {{
-    font-size: 12px !important;
+    font-size: 11px !important;
     color: {vars_css['text']} !important;
     line-height: 1 !important;
     text-transform: uppercase !important;
@@ -4970,6 +4970,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
