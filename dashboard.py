@@ -3965,7 +3965,9 @@ else:
                                             datos_fol["SOLICITO"], 
                                             datos_fol["NOMBRE DEL HOTEL"], 
                                             # Aquí es donde quitamos los "-" y ponemos los datos de la base de datos:
-                                            
+                                            datos_fol.get("CALLE", "-"), 
+                                            datos_fol.get("COLONIA", "-"), 
+                                            datos_fol.get("CP", "-"), 
                                             datos_fol["DESTINO"], # Este ya lo tenías, es Ciudad/Estado
                                             "", # Este puede quedar vacío si no guardaste el estado aparte
                                             datos_fol["CONTACTO"], 
