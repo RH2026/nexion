@@ -3834,57 +3834,69 @@ else:
                             opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
                             
                             fol_sel_texto = st.selectbox(
-                                "Seleccionar Folio para Editar:", 
+                                "Seleccionar Folio para procesar (Logística):", 
                                 opciones_folios, 
                                 index=None, 
-                                placeholder="Busca un folio para cargar datos..."
+                                placeholder="Busca el folio que envió Ventas..."
                             )
-                            
-                            fol_edit = ""
-                            datos_fol = None
                             
                             if fol_sel_texto:
                                 fol_edit = int(fol_sel_texto.split(" - ")[0])
                                 datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
-                            
-                            c_adm1, c_adm2 = st.columns(2)
-                            
-                            with c_adm1:
-                                st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
-                                st.write("")
-                                n_paq = st.text_input("Empresa de Paquetería", key="edit_paq", 
-                                                     value=str(datos_fol["PAQUETERIA_NOMBRE"]) if datos_fol is not None else "").upper()
-                                n_gui = st.text_input("Número de Guía", key="edit_guia", 
-                                                     value=str(datos_fol["NUMERO_GUIA"]) if datos_fol is not None else "").upper()
-                                c_gui = st.number_input("Costo de Guía ($)", key="edit_costo", 
-                                                       value=float(datos_fol["COSTO_GUIA"]) if datos_fol is not None else 0.0)
+                    
+                                c_adm1, c_adm2 = st.columns(2)
                                 
-                                if st.button(":material/update: ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
-                                    if datos_fol is not None:
+                                with c_adm1:
+                                    st.subheader("1. Asignar Datos de Envío")
+                                    # Aquí es donde tú haces tu magia de Logística
+                                    n_paq_nombre = st.selectbox("Nombre de Paquetería", 
+                                        ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
+                                        index=None, placeholder="Selecciona paquetería...")
+                                    
+                                    n_tipo_pago = st.selectbox("Modalidad de Pago", 
+                                        ["CREDITO", "COBRO DESTINO"],
+                                        index=None, placeholder="¿Cómo se paga?")
+                                    
+                                    n_gui = st.text_input("Número de Guía").upper()
+                                    n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
+                    
+                                    if st.button("✅ GUARDAR Y ACTUALIZAR FOLIO", use_container_width=True):
                                         idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                                        df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
-                                        df_actual.at[idx, "NUMERO_GUIA"] = n_gui.upper()
-                                        df_actual.at[idx, "COSTO_GUIA"] = c_gui
-                                        if subir_a_github(df_actual, sha_actual, f"Guía {fol_edit}"):
-                                            st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
-                                    else:
-                                        st.warning("Selecciona un folio primero.")
-                            
-                            with c_adm2:
-                                st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
-                                st.write("")
-                                if st.button(":material/print: RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
-                                    if datos_fol is not None:
+                                        df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
+                                        df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
+                                        df_actual.at[idx, "NUMERO_GUIA"] = n_gui
+                                        df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
+                                        
+                                        if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
+                                            st.success("¡Datos de envío guardados!")
+                                            st.rerun()
+                    
+                                with c_adm2:
+                                    st.subheader("2. Impresión Final")
+                                    st.info("Una vez guardados los datos a la izquierda, puedes imprimir el formato completo.")
+                                    
+                                    if st.button("🖨️ IMPRIMIR FORMATO ACTUALIZADO", use_container_width=True, type="primary"):
+                                        # Extraer productos del folio
                                         prods_re = []
                                         for p in precios.keys():
                                             if p in datos_fol and datos_fol[p] > 0: 
                                                 prods_re.append({"desc": p, "cant": int(datos_fol[p])})
                                         
+                                        # Generar el HTML con la info que TÚ acabas de poner o que ya estaba guardada
                                         h_re = generar_html_impresion(
-                                            fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], 
-                                            "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], 
-                                            datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], 
-                                            "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN", "S/P", "S/D"
+                                            fol_edit, 
+                                            datos_fol.get("PAQUETERIA", "ENVIO"), # Lo que puso ventas
+                                            "DOMICILIO", 
+                                            datos_fol["FECHA"], 
+                                            "RIGOBERTO HERNANDEZ", "3319753122", 
+                                            datos_fol["SOLICITO"], 
+                                            datos_fol["NOMBRE DEL HOTEL"], 
+                                            "-", "-", "-", datos_fol["DESTINO"], 
+                                            "", datos_fol["CONTACTO"], 
+                                            prods_re, 
+                                            "FORMATO FINAL DE LOGÍSTICA", 
+                                            datos_fol["PAQUETERIA_NOMBRE"], # El que tú elegiste
+                                            datos_fol.get("MODALIDAD_PAGO", "PENDIENTE") # El que tú elegiste
                                         )
                                         components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
@@ -4984,6 +4996,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
