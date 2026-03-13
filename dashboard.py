@@ -3681,7 +3681,7 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
-                st.subheader(":material/shopping_cart: Selección de Productos")
+                st.subheader(":material/shopping_cart: SELECCION DE PRODUCTOS")
                 
                 if "seleccionados_muestras" not in st.session_state:
                     st.session_state.seleccionados_muestras = []
@@ -3847,7 +3847,7 @@ else:
                                 c_adm1, c_adm2 = st.columns(2)
                                 
                                 with c_adm1:
-                                    st.subheader("1. Asignar Datos de Envío")
+                                    st.subheader("1. ASIGNAR DATOS DE ENVIO")
                                     # Aquí es donde tú haces tu magia de Logística
                                     n_paq_nombre = st.selectbox("Nombre de Paquetería", 
                                         ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
@@ -3872,7 +3872,7 @@ else:
                                             st.rerun()
                     
                                 with c_adm2:
-                                    st.subheader("2. Impresión Final")
+                                    st.subheader("2. IMPRESION FINAL")
                                     st.markdown("""
                                         <div style="background-color: rgba(0, 150, 255, 0.1); 
                                                     border-left: 5px solid #F7C300; 
@@ -5013,6 +5013,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
