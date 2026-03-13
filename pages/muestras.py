@@ -1,11 +1,9 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# Configuración de la página
-st.set_page_config(page_title="Logistics Dashboard Premium", layout="wide")
+st.set_page_config(page_title="Logistics Dashboard Pro", layout="wide")
 
 def render_chingon_calendar(data):
-    # Definimos el template HTML con Tailwind CSS para el look "Chingón"
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -20,63 +18,62 @@ def render_chingon_calendar(data):
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 transition: all 0.3s ease;
             }}
-            .glass:hover {{
-                border-color: #38bdf8;
-                transform: translateY(-2px);
-                box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.2);
-            }}
-            .timeline-dot {{
-                width: 12px; height: 12px;
-                background: #38bdf8;
-                box-shadow: 0 0 10px #38bdf8;
-            }}
+            .card-entregada {{ border-color: #10b981 !important; box-shadow: 0 0 15px -5px rgba(16, 185, 129, 0.3); }}
+            .card-pendiente {{ border-color: rgba(255, 255, 255, 0.1); }}
+            .glass:hover {{ transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }}
         </style>
     </head>
     <body class="p-8">
-        <div class="max-w-6xl mx-auto">
-            <header class="mb-10 text-center">
-                <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-                    Calendario de Suministros 2026
-                </h1>
-                <p class="text-slate-400 mt-2">Seguimiento de Órdenes de Compra y Entregas</p>
+        <div class="max-w-7xl mx-auto">
+            <header class="mb-12 flex justify-between items-end">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 italic">
+                        LOGÍSTICA FLOW 2026
+                    </h1>
+                    <p class="text-slate-400 font-light">Control de suministros y estatus de almacén</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-500 uppercase tracking-widest">Última actualización</span>
+                    <p class="text-sm font-mono text-emerald-400">13/MAR/2026</p>
+                </div>
             </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {"".join([f'''
-                <div class="glass p-6 rounded-2xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-3">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-blue-400/10 px-2 py-1 rounded">
-                            {item['semana']}
+                <div class="glass p-5 rounded-3xl relative {"card-entregada" if item['estatus'] == "ENTREGADA" else "card-pendiente"}">
+                    <div class="absolute top-4 right-4">
+                        <span class="text-[9px] font-bold px-2 py-1 rounded-full {"bg-emerald-500/20 text-emerald-400" if item['estatus'] == "ENTREGADA" else "bg-blue-500/10 text-blue-400"}">
+                            {item['estatus'] if item['estatus'] else 'EN PROCESO'}
                         </span>
                     </div>
-                    
-                    <div class="flex flex-col h-full">
-                        <div class="mb-4">
-                            <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Orden de Compra</p>
-                            <h2 class="text-xl font-bold text-white tracking-tight">{item['oc']}</h2>
+
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <span class="text-slate-500 text-[10px] font-bold tracking-widest uppercase">{item['semana']}</span>
+                            <h2 class="text-2xl font-black text-white">{item['oc']}</h2>
                         </div>
 
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="bg-emerald-500/20 p-3 rounded-xl">
-                                <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        <div class="flex items-center gap-3">
+                            <div class="{"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-blue-400"}">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                                 </svg>
                             </div>
                             <div>
-                                <p class="text-slate-500 text-xs">Cantidad</p>
-                                <p class="text-lg font-mono font-bold text-slate-200">{item['cantidad']} <span class="text-xs font-normal text-slate-400">cajas</span></p>
+                                <p class="text-slate-500 text-[10px] uppercase">Volumen</p>
+                                <p class="text-lg font-bold">{item['cantidad']} <span class="text-xs font-normal opacity-50">Cajas</span></p>
                             </div>
                         </div>
 
-                        <div class="mt-auto border-t border-slate-700/50 pt-4">
-                            <div class="flex justify-between items-end">
+                        <div class="bg-slate-800/50 rounded-2xl p-3 border border-white/5">
+                            <div class="flex justify-between items-center">
                                 <div>
-                                    <p class="text-slate-500 text-[10px] uppercase font-bold">Fecha Entrega Estimada</p>
-                                    <p class="text-sm text-slate-300 italic">"{item['entrega_texto']}"</p>
+                                    <p class="text-slate-500 text-[9px] uppercase">Cita Programada</p>
+                                    <p class="text-sm font-semibold text-slate-200">{item['cita'] if item['cita'] else 'Sin fecha'}</p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-blue-400 text-[10px] uppercase font-bold">Fecha de Cita</p>
-                                    <p class="text-lg font-bold text-white">{item['cita'] if item['cita'] else '-- / --'}</p>
+                                    <p class="text-slate-500 text-[9px] uppercase">Semana de</p>
+                                    <p class="text-sm font-medium text-slate-400 italic text-[11px]">{item['entrega_texto']}</p>
                                 </div>
                             </div>
                         </div>
@@ -88,25 +85,21 @@ def render_chingon_calendar(data):
     </body>
     </html>
     """
-    return components.html(html_content, height=800, scrolling=True)
+    return components.html(html_content, height=900, scrolling=True)
 
-# Data extraída de tu imagen
+# Data actualizada con la columna ESTATUS
 data_logistica = [
-    {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026"},
-    {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026"},
-    {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 15", "entrega_texto": "6 de abril", "cita": ""},
-    {"oc": "OC 9197", "cantidad": "520", "semana": "SEMANA 17", "entrega_texto": "20 de abril", "cita": ""},
-    {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEMANA 19", "entrega_texto": "4 de mayo", "cita": ""},
-    {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEMANA 21", "entrega_texto": "18 de mayo", "cita": ""},
-    {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEMANA 23", "entrega_texto": "1 de junio", "cita": ""},
-    {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEMANA 25", "entrega_texto": "15 de junio", "cita": ""},
-    {"oc": "OC 10663", "cantidad": "160", "semana": "SEMANA 27", "entrega_texto": "29 de junio", "cita": ""},
+    {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026", "estatus": "ENTREGADA"},
+    {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026", "estatus": ""},
+    {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 15", "entrega_texto": "6 de abril", "cita": "", "estatus": ""},
+    {"oc": "OC 9197", "cantidad": "520", "semana": "SEMANA 17", "entrega_texto": "20 de abril", "cita": "", "estatus": ""},
+    {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEMANA 19", "entrega_texto": "4 de mayo", "cita": "", "estatus": ""},
+    {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEMANA 21", "entrega_texto": "18 de mayo", "cita": "", "estatus": ""},
+    {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEMANA 23", "entrega_texto": "1 de junio", "cita": "", "estatus": ""},
+    {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEMANA 25", "entrega_texto": "15 de junio", "cita": "", "estatus": ""},
+    {"oc": "OC 10663", "cantidad": "160", "semana": "SEMANA 27", "entrega_texto": "29 de junio", "cita": "", "estatus": ""},
 ]
 
-# Título de Streamlit (opcional, ya que el HTML tiene el suyo)
-st.markdown("### Visualización de Logística Avanzada")
-
-# Ejecutamos el render
 render_chingon_calendar(data_logistica)
 
 
