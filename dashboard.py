@@ -3814,119 +3814,119 @@ else:
                         st.info("No hay registros todavía.")
                 
                 # --- PANEL DE ADMIN ---
-                # --- PANEL DE ADMIN ---
+                # --- PANEL DE ADMINISTRACIÓN (SOLO RIGOBERTO Y JMORENO) ---
                 st.divider()
-                st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO ESCLUSIVO DE LOGÍSTICA")
-                t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
                 
-                with t1:
-                    if not df_actual.empty:
-                        df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
-                        opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
-                        
-                        fol_sel_texto = st.selectbox(
-                            "Seleccionar Folio para Editar:", 
-                            opciones_folios, 
-                            index=None, 
-                            placeholder="Busca un folio para cargar datos..."
-                        )
+                # Lista de usuarios con acceso total
+                lista_admins = ["Rigoberto", "JMoreno"]
                 
-                        # --- Lógica de carga de datos ---
-                        # Inicializamos variables vacías por defecto
-                        fol_edit = ""
-                        datos_fol = None
-                        
-                        # Si hay algo seleccionado, llenamos las variables con la info real
-                        if fol_sel_texto:
-                            fol_edit = int(fol_sel_texto.split(" - ")[0])
-                            datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
-                
-                        # --- Interfaz siempre visible ---
-                        c_adm1, c_adm2 = st.columns(2)
-                        
-                        with c_adm1:
-                            st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
-                            st.write("")
+                # Verificamos quién está en la sesión
+                usuario_logeado = st.session_state.get('usuario', 'Invitado')
+
+                if usuario_logeado in lista_admins:
+                    st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
+                    t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
+                    
+                    with t1:
+                        if not df_actual.empty:
+                            df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
+                            opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
                             
-                            # El truco está en el "value": si datos_fol existe, pone el valor; si no, pone "" o 0.0
-                            n_paq = st.text_input("Empresa de Paquetería", key="edit_paq", 
-                                                 value=str(datos_fol["PAQUETERIA_NOMBRE"]) if datos_fol is not None else "").upper()
+                            fol_sel_texto = st.selectbox(
+                                "Seleccionar Folio para Editar:", 
+                                opciones_folios, 
+                                index=None, 
+                                placeholder="Busca un folio para cargar datos..."
+                            )
                             
-                            n_gui = st.text_input("Número de Guía", key="edit_guia", 
-                                                 value=str(datos_fol["NUMERO_GUIA"]) if datos_fol is not None else "").upper()
+                            fol_edit = ""
+                            datos_fol = None
                             
-                            c_gui = st.number_input("Costo de Guía ($)", key="edit_costo", 
-                                                   value=float(datos_fol["COSTO_GUIA"]) if datos_fol is not None else 0.0)
+                            if fol_sel_texto:
+                                fol_edit = int(fol_sel_texto.split(" - ")[0])
+                                datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
                             
-                            # El botón solo funciona si realmente se seleccionó un folio
-                            if st.button(":material/update: ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
-                                if datos_fol is not None:
-                                    idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                                    df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
-                                    df_actual.at[idx, "NUMERO_GUIA"] = n_gui.upper()
-                                    df_actual.at[idx, "COSTO_GUIA"] = c_gui
-                                    if subir_a_github(df_actual, sha_actual, f"Guía {fol_edit}"):
-                                        st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
-                                else:
-                                    st.warning("Primero debes seleccionar un folio de la lista superior.")
-                        
-                        with c_adm2:
-                            st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
-                            st.write("")
-                            if st.button(":material/print: RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
-                                if datos_fol is not None:
-                                    prods_re = []
-                                    for p in precios.keys():
-                                        if p in datos_fol and datos_fol[p] > 0: 
-                                            prods_re.append({"desc": p, "cant": int(datos_fol[p])})
-                                    
-                                    h_re = generar_html_impresion(
-                                        fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], 
-                                        "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], 
-                                        datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], 
-                                        "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN", "S/P", "S/D"
-                                    )
-                                    components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
-                                else:
-                                    st.warning("Selecciona un folio para poder imprimir.")
+                            c_adm1, c_adm2 = st.columns(2)
+                            
+                            with c_adm1:
+                                st.markdown(f'<div style="background:#4e73df;color:white;padding:10px;border-radius:5px;">Actualizar envío - Folio {fol_edit}</div>', unsafe_allow_html=True)
+                                st.write("")
+                                n_paq = st.text_input("Empresa de Paquetería", key="edit_paq", 
+                                                     value=str(datos_fol["PAQUETERIA_NOMBRE"]) if datos_fol is not None else "").upper()
+                                n_gui = st.text_input("Número de Guía", key="edit_guia", 
+                                                     value=str(datos_fol["NUMERO_GUIA"]) if datos_fol is not None else "").upper()
+                                c_gui = st.number_input("Costo de Guía ($)", key="edit_costo", 
+                                                       value=float(datos_fol["COSTO_GUIA"]) if datos_fol is not None else 0.0)
+                                
+                                if st.button(":material/update: ACTUALIZAR DATOS DE ENVÍO", use_container_width=True):
+                                    if datos_fol is not None:
+                                        idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
+                                        df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq.upper()
+                                        df_actual.at[idx, "NUMERO_GUIA"] = n_gui.upper()
+                                        df_actual.at[idx, "COSTO_GUIA"] = c_gui
+                                        if subir_a_github(df_actual, sha_actual, f"Guía {fol_edit}"):
+                                            st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
+                                    else:
+                                        st.warning("Selecciona un folio primero.")
+                            
+                            with c_adm2:
+                                st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión de Documento</div>', unsafe_allow_html=True)
+                                st.write("")
+                                if st.button(":material/print: RE-GENERAR FORMATO E IMPRIMIR", use_container_width=True):
+                                    if datos_fol is not None:
+                                        prods_re = []
+                                        for p in precios.keys():
+                                            if p in datos_fol and datos_fol[p] > 0: 
+                                                prods_re.append({"desc": p, "cant": int(datos_fol[p])})
+                                        
+                                        h_re = generar_html_impresion(
+                                            fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], 
+                                            "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], 
+                                            datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], 
+                                            "", datos_fol["CONTACTO"], prods_re, "RE-IMPRESIÓN", "S/P", "S/D"
+                                        )
+                                        components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
+
+                    with t2:
+                        if not df_actual.empty:
+                            st.dataframe(df_actual, use_container_width=True)
+                            t_prod = df_actual["COSTO_TOTAL"].sum()
+                            t_flete = df_actual["COSTO_GUIA"].sum()
+                            filas_html = ""
+                            for _, r in df_actual.iterrows():
+                                detalle_p = ""
+                                for p in precios.keys():
+                                    cant = r.get(p, 0)
+                                    if cant > 0: detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
+                                filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
+                            
+                            form_pt_html = f"""
+                            <html><head><style>@media print{{body{{padding:15mm;}} .no-print{{display:none;}}}} body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head>
+                            <body>
+                                <div style="display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;">
+                                    <div><h2>JYPESA</h2><p style="margin:0;font-size:10px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
+                                    <div style="text-align:right;"><b>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</b><br>GENERADO: {date.today()}</div>
+                                </div>
+                                <table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>DETALLE</th><th>COSTO PROD.</th><th>FLETE</th></tr></thead>
+                                <tbody>{filas_html}</tbody></table>
+                                <div style="text-align:right;margin-top:20px;border-top:1px solid black;">
+                                    <p>TOTAL PRODUCTOS: ${t_prod:,.2f}</p><p>TOTAL FLETES: ${t_flete:,.2f}</p><h3>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3>
+                                </div>
+                            </body></html>"""
+                            
+                            c1, c2, c3 = st.columns(3)
+                            with c1:
+                                if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
+                                    components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
+                            with c2:
+                                output = BytesIO()
+                                with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
+                                st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_{date.today()}.xlsx", use_container_width=True)
+                            with c3:
+                                if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
                 
-                with t2:
-                    if not df_actual.empty:
-                        st.dataframe(df_actual, use_container_width=True)
-                        t_prod = df_actual["COSTO_TOTAL"].sum()
-                        t_flete = df_actual["COSTO_GUIA"].sum()
-                        filas_html = ""
-                        for _, r in df_actual.iterrows():
-                            detalle_p = ""
-                            for p in precios.keys():
-                                cant = r.get(p, 0)
-                                if cant > 0: detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
-                            filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
-                
-                        form_pt_html = f"""
-                        <html><head><style>@media print{{body{{padding:15mm;}} .no-print{{display:none;}}}} body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head>
-                        <body>
-                            <div style="display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;">
-                                <div><h2>JYPESA</h2><p style="margin:0;font-size:10px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
-                                <div style="text-align:right;"><b>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</b><br>GENERADO: {date.today()}</div>
-                            </div>
-                            <table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>DETALLE</th><th>COSTO PROD.</th><th>FLETE</th></tr></thead>
-                            <tbody>{filas_html}</tbody></table>
-                            <div style="text-align:right;margin-top:20px;border-top:1px solid black;">
-                                <p>TOTAL PRODUCTOS: ${t_prod:,.2f}</p><p>TOTAL FLETES: ${t_flete:,.2f}</p><h3>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3>
-                            </div>
-                        </body></html>"""
-                
-                        c1, c2, c3 = st.columns(3)
-                        with c1:
-                            if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
-                                components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
-                        with c2:
-                            output = BytesIO()
-                            with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
-                            st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_{date.today()}.xlsx", use_container_width=True)
-                        with c3:
-                            if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
+                else:
+                    st.info("💡 Tu usuario actual no tiene permisos para acceder al Panel de Administración de Logística.")
         
     
         # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
@@ -4981,6 +4981,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
