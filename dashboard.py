@@ -279,22 +279,33 @@ input[data-testid="stDateInputView"] {{
 
 /* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
 
-/* Chips seleccionadas – Multiselect */
+* El contenedor de la burbuja */
 div[data-baseweb="tag"] {{
     background-color: #718096 !important;
-    color: #ffffff !important;
     border-radius: 4px !important;
-    font-weight: 600 !important;
-    font-size: 16px !important;
+    height: 22px !important;
+    margin: 2px !important;
 }}
 
+/* El texto dentro de la burbuja (AQUÍ CAMBIA EL TAMAÑO) */
 div[data-baseweb="tag"] span {{
     color: #ffffff !important;
-    font-size: 16px !important;
+    font-size: 12px !important; /* <--- Ajusta este número a tu gusto */
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
 }}
 
+/* El icono de cerrar (X) */
 div[data-baseweb="tag"] svg {{
     fill: #ffffff !important;
+    height: 12px !important;
+    width: 12px !important;
+}}
+
+/* AJUSTE EXTRA: El texto antes de ser seleccionado */
+div[data-baseweb="select"] div {{
+    font-size: 12px !important; /* Para que todo el multiselect sea uniforme */
+    text-transform: uppercase !important;
 }}
 
 /* Valor seleccionado – Selectbox */
@@ -314,7 +325,7 @@ div[data-baseweb="select"] > div:first-child {{
 
 /* 2. Ajuste del texto interno y el cursor */
 div[data-baseweb="select"] div {{
-    font-size: 11px !important;
+    font-size: 10px !important;
     color: {vars_css['text']} !important;
     line-height: 1 !important;
     text-transform: uppercase !important;
@@ -4970,6 +4981,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
