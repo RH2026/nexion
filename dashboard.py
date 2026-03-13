@@ -3808,13 +3808,32 @@ else:
                     """, unsafe_allow_html=True)
                 
                 # BOTÓN IMPRIMIR (CON CANDADO)
-                # Se deshabilita si folio_guardado es False
-                if col_b2.button(":material/print: IMPRIMIR ESTE FOLIO", use_container_width=True, disabled=not st.session_state.folio_guardado):
+                # --- BOTÓN GUARDAR PDF (CON CANDADO) ---
+                if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
                     if not prods_actuales: 
                         st.warning("No hay productos")
                     else:
-                        h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment, f_paq_nombre, f_tipo_pago)
-                        components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
+                        # Usamos el folio con prefijo para el nombre del archivo
+                        h_print = generar_html_impresion(folio_con_prefijo, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment, f_paq_nombre, f_tipo_pago)
+                        
+                        # Agregamos un pequeño truco: cambiamos el título de la página temporalmente
+                        # para que al guardar el PDF, el navegador sugiera "JYP-XX.pdf" automáticamente.
+                        js_code = f"""
+                            <html>
+                                <head>
+                                    <title>{folio_con_prefijo}_{f_h}</title>
+                                </head>
+                                <body>
+                                    {h_print}
+                                    <script>
+                                        setTimeout(function(){{
+                                            window.print();
+                                        }}, 500);
+                                    </script>
+                                </body>
+                            </html>
+                        """
+                        components.html(js_code, height=0)
                 
                 # --- BOTÓN BORRAR (CORREGIDO) ---
                 if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
