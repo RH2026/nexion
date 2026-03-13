@@ -1787,7 +1787,6 @@ else:
                 
                 # PESTAÑA 5: AGC
                 with tab_entregas_agc: 
-                    st.write("")
                     def render_logistica_flow_mid(data):
                         html_content = f"""
                         <!DOCTYPE html>
@@ -1830,7 +1829,7 @@ else:
                             <div class="max-w-full mx-auto">
                                 <header class="flex justify-between items-center mb-6 px-2">
                                     <h1 class="text-2xl font-black tracking-tighter text-white uppercase italic">
-                                        Logística <span class="text-blue-400 underline decoration-blue-400/20">Flow</span>
+                                         <span class="text-blue-400 underline decoration-blue-400/20"></span>
                                     </h1>
                                     <div class="bg-black/30 px-4 py-2 rounded-xl border border-white/10">
                                         <p class="text-[9px] text-white/50 font-bold uppercase tracking-widest leading-none">Status</p>
