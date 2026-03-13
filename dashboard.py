@@ -3879,10 +3879,9 @@ else:
                                                     padding: 15px; 
                                                     border-radius: 5px;">
                                             <span style="color: #007BFF; font-size: 20px; vertical-align: middle;"></span> 
-                                            <b style="color: #007BFF; margin-left: 10px;">VERIFICACIÓN PREVIA:</b> 
+                                            <b style="color: #F7C300; margin-left: 10px;">VERIFICACIÓN PREVIA:</b> 
                                             <span style="color: white; margin-left: 5px;">
-                                                Puedes generar la impresión para validar los datos. Recuerda que esto 
-                                                <b style="color: #F7C300;">no afectará</b> la base de datos hasta que guardes.
+                                                Puedes generar la impresión para validar los datos. Recuerda que esto la base de datos hasta que guardes.
                                             </span>
                                         </div>
                                         <br>
@@ -5014,6 +5013,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
