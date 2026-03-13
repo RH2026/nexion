@@ -3434,12 +3434,17 @@ else:
                     "Kit Lavarino": 36.30,
                     "Kit Botánicos": 29.34,
                     "Kit Rainforest": 30.34,
-                    "Llave Magnetica": 180.00,
-                    "Rack Dove": 0.00,
-                    "Rack JH  Color Blanco de 2 pzas": 62.00,
-                    "Rack JH  Color Blanco de 1 pzas": 50.00,
-                    "Soporte dob INOX Cap lock": 679.00,
-                    "Soporte Ind INOX Cap lock": 608.00
+                    "JHJY-0050 Llave magnetica para soporte JH": 180.00,
+                    "68829526 Rack Dove Dove Mlac Bracket Metalized Bottle 1 Pieza": 193.90,
+                    "JHJY-0033 Rack JH  Color Blanco de 2 pzas": 65.00,
+                    "JHJY-0034 Rack JH  Color Blanco de 1 pzas": 50.00,
+                    "JHJY-0045 Soporte de acero inoxidable Jypesa INOX Cap lock individual": 679.00,
+                    "JHJY-0046 Soporte de acero inoxidable Jypesa INOX Cap lock doble": 679.00,
+                    "JHJY-0047 Soporte de acero inoxidable Jypesa INOX Cap lock triple": 679.00,
+                    "JHJY-0037 Llave para rack de acero Jypesa": 25.50,
+                    "JHJY-0026 Rack JH Individual color Negro": 40.28,
+                    "JHJY-0027 Rack JH Doble color Negro": 40.28,
+        
                 }
                 
                 # --- FUNCIONES GITHUB ---
@@ -4963,6 +4968,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
