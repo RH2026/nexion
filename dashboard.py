@@ -567,20 +567,28 @@ div[data-baseweb="popover"] span {{
     letter-spacing: 1px !important;
 }}
 
-/* 4. El botón de Logout (tipo Primary) lo hacemos aún más discreto */
+/* 4. El botón de Logout con fondo rojo sólido y hover intenso */
 div[data-baseweb="popover"] button[kind="primary"] {{
     font-size: 12px !important;
     height: 26px !important;
     min-height: 26px !important;
     line-height: 26px !important;
-    background-color: transparent !important;
-    border: 1px solid #ff4b4b !important; /* Un rojo sutil para identificar salida */
-    color: #ff4b4b !important;
+    
+    /* Rojo sólido original (el que tenías en el hover) */
+    background-color: #ff4b4b !important; 
+    border: 1px solid #ff4b4b !important;
+    color: white !important;
+    
+    border-radius: 4px !important; /* Para mantenerlo limpio */
+    transition: background-color 0.3s ease !important;
 }}
 
 div[data-baseweb="popover"] button[kind="primary"]:hover {{
-    background-color: #ff4b4b !important;
+    /* Rojo más intenso y oscuro para el hover */
+    background-color: #b91c1c !important; 
+    border-color: #b91c1c !important;
     color: white !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
 }}
 
 /* ───────── SOLUCIÓN NUCLEAR: ICONO RESPONSIVE ───────── */
