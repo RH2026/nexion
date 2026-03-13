@@ -3808,28 +3808,28 @@ else:
                     """, unsafe_allow_html=True)
                 
                 # BOTÓN IMPRIMIR (CON CANDADO)
-                # --- BOTÓN GUARDAR PDF (CON CANDADO) ---
+                # --- BOTÓN GUARDAR PDF ---
                 if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
                     if not prods_actuales: 
                         st.warning("No hay productos")
                     else:
-                        # Usamos el folio con prefijo para el nombre del archivo
-                        h_print = generar_html_impresion(folio_con_prefijo, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment, f_paq_nombre, f_tipo_pago)
+                        # AQUÍ ESTÁ EL TRUCO FÁCIL: Armamos el folio JYP aquí mismo
+                        folio_simple = f"JYP-{nuevo_num}"
                         
-                        # Agregamos un pequeño truco: cambiamos el título de la página temporalmente
-                        # para que al guardar el PDF, el navegador sugiera "JYP-XX.pdf" automáticamente.
+                        h_print = generar_html_impresion(
+                            folio_simple, # <--- Mandamos el texto JYP-XX
+                            f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, 
+                            f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, 
+                            prods_actuales, f_coment, f_paq_nombre, f_tipo_pago
+                        )
+                        
+                        # Este código abre la ventana para guardar como PDF con el nombre correcto
                         js_code = f"""
                             <html>
-                                <head>
-                                    <title>{folio_con_prefijo}_{f_h}</title>
-                                </head>
+                                <head><title>{folio_simple}_{f_h}</title></head>
                                 <body>
                                     {h_print}
-                                    <script>
-                                        setTimeout(function(){{
-                                            window.print();
-                                        }}, 500);
-                                    </script>
+                                    <script>setTimeout(function(){{ window.print(); }}, 500);</script>
                                 </body>
                             </html>
                         """
