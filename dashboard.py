@@ -1787,7 +1787,7 @@ else:
                 
                 # PESTAÑA 5: AGC
                 with tab_entregas_agc:                  
-                    def render_logistica_flow_discreet(data):
+                    def render_logistica_flow_compact(data):
                         html_content = f"""
                         <!DOCTYPE html>
                         <html lang="es">
@@ -1797,129 +1797,86 @@ else:
                             <style>
                                 body {{ 
                                     font-family: 'Inter', sans-serif; 
-                                    background-color: #263238; /* Usando el color de fondo de tarjeta previo para el body para un look minimal total */
+                                    background-color: #384A52; 
                                     color: #e2e8f0; 
                                     margin: 0;
                                 }}
-                                .main-container {{
-                                    background-color: #384A52; /* Fondo de la app original como contenedor */
-                                    min-height: 100vh;
-                                    padding: 1.5rem;
-                                }}
                                 .card {{
-                                    background-color: #263238; /* Gris Carbón AGC */
-                                    border: 1px solid rgba(255, 255, 255, 0.03); /* Borde casi invisible */
-                                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-                                    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+                                    background-color: #263238;
+                                    border: 1px solid rgba(255, 255, 255, 0.05);
+                                    transition: all 0.2s ease;
+                                    min-height: 180px; /* Altura controlada */
                                 }}
                                 .card:hover {{
                                     transform: translateY(-2px);
-                                    border-color: rgba(56, 189, 248, 0.2);
-                                    box-shadow: 0 5px 20px rgba(56, 189, 248, 0.1);
+                                    border-color: rgba(56, 189, 248, 0.3);
                                 }}
-                                /* Animación de pulsación más suave */
-                                @keyframes pulse-border-soft {{
-                                    0% {{ border-color: rgba(245, 158, 11, 0.1); }}
-                                    50% {{ border-color: rgba(245, 158, 11, 0.4); }}
-                                    100% {{ border-color: rgba(245, 158, 11, 0.1); }}
-                                }}
-                                /* Barras de estado más discretas: 2px de ancho y opacidad reducida */
-                                .status-pending {{ 
-                                    border-left: 2px solid rgba(245, 158, 11, 0.6); /* Naranja discreto */
-                                    animation: pulse-border-soft 3s infinite; /* Pulsación más lenta */
-                                }}
-                                .status-delivered {{ 
-                                    border-left: 2px solid rgba(16, 185, 129, 0.6); /* Verde discreto */
-                                }}
-                                
-                                /* Toque AGC de brillo neón sutil */
-                                .glow-dot {{
-                                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-                                }}
+                                .status-pending {{ border-left: 2px solid rgba(245, 158, 11, 0.7); }}
+                                .status-delivered {{ border-left: 2px solid rgba(16, 185, 129, 0.7); }}
                             </style>
                         </head>
-                        <body class="m-0 p-0">
-                            <div class="main-container">
-                                <header class="flex justify-between items-center mb-8 px-2 border-b border-white/5 pb-4">
-                                    <h1 class="text-3xl font-black tracking-tighter text-white uppercase italic leading-none">
-                                        Logística <span class="text-blue-400">Flow</span> <span class="text-[10px] font-mono text-slate-500">v1.2</span>
-                                    </h1>
-                                    <div class="flex gap-2 items-center bg-black/20 px-4 py-2 rounded-full border border-white/5 glow-dot">
-                                        <span class="relative flex h-2 w-2">
-                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                        </span>
-                                        <p class="text-xs font-bold text-emerald-400 mt-0.5 uppercase tracking-tighter">Monitoreo AGC en Vivo</p>
-                                    </div>
-                                </header>
-                    
-                                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-                                    {"".join([f'''
-                                    <div class="card rounded-2xl p-5 flex flex-col justify-between {"status-delivered" if item['estatus'] == "ENTREGADA" else "status-pending"}">
-                                        <div>
-                                            <div class="flex justify-between items-center mb-5">
-                                                <span class="text-[10px] font-mono text-white/50 bg-black/30 px-3 py-1 rounded uppercase tracking-wider">
-                                                    {item['semana']}
-                                                </span>
-                                                <span class="text-[10px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tight">
-                                                    {item['estatus']}
-                                                </span>
-                                            </div>
-                                            
-                                            <h3 class="text-3xl font-black text-white leading-none mb-2 tracking-tighter italic">{item['oc']}</h3>
-                                            <p class="text-[11px] text-white/60 font-medium mb-6 truncate italic leading-tight">{item['entrega_texto']}</p>
-                                            
-                                            <div class="space-y-3 bg-black/20 rounded-xl p-4 border border-white/5 shadow-inner">
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-[10px] text-white uppercase font-extrabold tracking-widest opacity-95">Volumen</span>
-                                                    <span class="text-base font-bold text-white leading-none">{item['cantidad']}</span>
-                                                </div>
-                                                <div class="h-[1px] bg-white/5"></div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-[10px] text-white uppercase font-extrabold tracking-widest opacity-95">Cita</span>
-                                                    <span class="text-xs font-mono font-bold {"text-orange-400" if item['cita'] == "PENDIENTE" else "text-blue-300"}">
-                                                        {item['cita']}
-                                                    </span>
-                                                </div>
-                                            </div>
+                        <body class="p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                                {"".join([f'''
+                                <div class="card rounded-xl p-3 flex flex-col justify-between {"status-delivered" if item['estatus'] == "ENTREGADA" else "status-pending"}">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-[8px] font-bold text-white/40 bg-black/20 px-2 py-0.5 rounded uppercase tracking-widest">
+                                                {item['semana']}
+                                            </span>
+                                            <span class="text-[9px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter">
+                                                {item['estatus']}
+                                            </span>
                                         </div>
                                         
-                                        <div class="mt-6 pt-4 border-t border-white/5">
-                                            <div class="flex justify-between items-center mb-1.5 px-0.5">
-                                                <span class="text-[9px] font-bold text-white/30 uppercase tracking-tighter">Progreso de Entrega</span>
-                                                <span class="text-[10px] font-bold text-white/50">{"100%" if item['estatus'] == "ENTREGADA" else "30%"}</span>
+                                        <h3 class="text-xl font-black text-white leading-none mb-1 italic tracking-tighter">{item['oc']}</h3>
+                                        <p class="text-[9px] text-white/50 mb-3 truncate italic">{item['entrega_texto']}</p>
+                                        
+                                        <div class="space-y-1.5 bg-black/20 rounded-lg p-2 border border-white/5">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[8px] text-white uppercase font-extrabold tracking-widest opacity-80">Volumen</span>
+                                                <span class="text-xs font-bold text-white">{item['cantidad']}</span>
                                             </div>
-                                            <div class="w-full bg-black/40 rounded-full h-1 relative overflow-hidden">
-                                                <div class="{"bg-emerald-400" if item['estatus'] == "ENTREGADA" else "bg-orange-500"} h-full rounded-full transition-all duration-700 glow-dot" 
-                                                     style="width: {'100%' if item['estatus'] == "ENTREGADA" else '30%'}"></div>
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[8px] text-white uppercase font-extrabold tracking-widest opacity-80">Cita</span>
+                                                <span class="text-[10px] font-mono font-bold {"text-orange-400" if item['cita'] == "PENDIENTE" else "text-blue-300"}">
+                                                    {item['cita']}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                    ''' for item in data])}
+                                    
+                                    <div class="mt-3">
+                                        <div class="w-full bg-black/30 rounded-full h-1 overflow-hidden">
+                                            <div class="{"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-orange-500"} h-full rounded-full transition-all duration-700" 
+                                                 style="width: {'100%' if item['estatus'] == "ENTREGADA" else '30%'}"></div>
+                                        </div>
+                                    </div>
                                 </div>
+                                ''' for item in data])}
                             </div>
                         </body>
                         </html>
                         """
-                        return components.html(html_content, height=1000, scrolling=True)
+                        return components.html(html_content, height=800, scrolling=True)
                     
-                    # Dataset (Simulando la info de tus imágenes)
+                    # Dataset corregido
                     data_corregida = [
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "semana del 9 de marzo", "cita": "10/03/2026", "estatus": "ENTREGADA"},
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "semana del 23 de marzo", "cita": "24/03/2026", "estatus": "ENTREGADA"},
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "semana del 6 de abril", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "semana del 20 de abril", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "semana del 4 de mayo (lote 1)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "semana del 4 de mayo (lote 2)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "semana del 4 de mayo (lote 3)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 21", "entrega_texto": "semana del 18 de mayo", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "semana del 1 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 25", "entrega_texto": "semana del 15 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 26", "entrega_texto": "semana del 22 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 27", "entrega_texto": "semana del 29 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026", "estatus": "ENTREGADA"},
+                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026", "estatus": "ENTREGADA"},
+                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "6 de abril", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "20 de abril", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L1)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L2)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L3)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 21", "entrega_texto": "18 de mayo", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "1 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 25", "entrega_texto": "15 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 26", "entrega_texto": "22 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 27", "entrega_texto": "29 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
                     ]
                     
-                    render_logistica_flow_discreet(data_corregida)
+                    render_logistica_flow_compact(data_corregida)
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
             # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
