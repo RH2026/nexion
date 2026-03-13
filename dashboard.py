@@ -3874,15 +3874,14 @@ else:
                                 with c_adm2:
                                     st.subheader("2. Impresión Final")
                                     st.markdown("""
-                                        <div style="background-color: rgba(0, 150, 255, 0.1); 
-                                                    border-left: 5px solid #007BFF; 
-                                                    padding: 15px; 
-                                                    border-radius: 5px;">
-                                            <span style="color: #007BFF; font-size: 20px; vertical-align: middle;">:material/print:</span> 
-                                            <b style="color: #007BFF; margin-left: 10px;">VERIFICACIÓN PREVIA:</b> 
-                                            <span style="color: white; margin-left: 5px;">
-                                                Puedes generar la impresión para validar los datos. Recuerda que esto 
-                                                <b style="color: #F7C300;">no afectará</b> la base de datos de GitHub hasta que guardes.
+                                        <div style="background-color: #f0f2f6;
+                                                    border: 1px solid #d1d5db;
+                                                    padding: 15px;
+                                                    border-radius: 8px;">
+                                            <span style="color: #4b5563; font-size: 20px; vertical-align: middle;"></span>
+                                            <b style="color: #4b5563; margin-left: 10px; font-weight: 700;">AVISO IMPORTANTE:</b>
+                                            <span style="color: #1f2937; margin-left: 5px;">
+                                                Utiliza la función de impresión para previsualizar los datos. Esta acción <b style="color: #1d4ed8; font-weight: 700;">no modifica</b> la base de datos. Los cambios se aplicarán únicamente al guardar.
                                             </span>
                                         </div>
                                         <br>
@@ -5014,6 +5013,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
