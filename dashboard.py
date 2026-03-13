@@ -3750,6 +3750,11 @@ else:
                 # --- BOTONES PRINCIPALES ---
                 col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
                 
+                # 1. Inicializamos el estado del candado si no existe
+                if "folio_guardado" not in st.session_state:
+                    st.session_state.folio_guardado = False
+                
+                # BOTÓN GUARDAR
                 if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
                     if not f_h: 
                         st.error("Falta el hotel")
@@ -3758,7 +3763,6 @@ else:
                     else:
                         direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
                         
-                        # 1. Creamos el registro base
                         reg = {
                             "FOLIO": nuevo_folio, 
                             "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
@@ -3767,37 +3771,57 @@ else:
                             "CONTACTO": f_con.upper(), 
                             "SOLICITO": f_soli.upper() if f_soli else "JYPESA", 
                             "PAQUETERIA": f_paq_sel.upper(),
-                            "PAQUETERIA_NOMBRE": f_paq_nombre, # Guardamos el nombre seleccionado arriba
+                            "PAQUETERIA_NOMBRE": f_paq_nombre,
                             "NUMERO_GUIA": "", 
                             "COSTO_GUIA": 0.0,
                             "CANTIDAD_TOTAL": total_cantidad,
                             "COSTO_TOTAL": round(total_costo_prods, 2)
                         }
                         
-                        # 2. SOLUCIÓN AL NameError: Creamos el diccionario de cantidades a partir de prods_actuales
-                        # Inicializamos todos los productos en 0 para que la fila del CSV esté completa
                         for p in precios.keys():
                             reg[p] = 0
                             
-                        # Llenamos con las cantidades que el usuario ingresó
                         for item in prods_actuales:
                             reg[item["desc"]] = item["cant"]
                 
-                        # 3. Concatenamos y subimos
                         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
                         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
+                            # ACTIVAMOS EL CANDADO PARA PERMITIR IMPRESIÓN
+                            st.session_state.folio_guardado = True
                             st.success(f"¡Guardado correctamente! Folio: {nuevo_folio}")
                             time.sleep(1)
                             st.rerun()
                 
-                if col_b2.button(":material/print: IMPRIMIR ESTE FOLIO", use_container_width=True):
-                    if not prods_actuales: st.warning("No hay productos")
+                # MENSAJE DE ADVERTENCIA PRO (TEXTO EN BLANCO)
+                if not st.session_state.folio_guardado:
+                    st.markdown("""
+                        <div style="background-color: rgba(255, 165, 0, 0.1); border-left: 5px solid #FFA500; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+                            <span style="color: white; font-size: 14px;">
+                                :material/lock: <b style="color: #FFA500;">BLOQUEO DE SEGURIDAD:</b> 
+                                Debes guardar el registro antes de poder imprimir.
+                            </span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                # BOTÓN IMPRIMIR (CON CANDADO)
+                # Se deshabilita si folio_guardado es False
+                if col_b2.button(":material/print: IMPRIMIR ESTE FOLIO", use_container_width=True, disabled=not st.session_state.folio_guardado):
+                    if not prods_actuales: 
+                        st.warning("No hay productos")
                     else:
-                        # Se pasan los nuevos campos a la función de impresión
                         h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment, f_paq_nombre, f_tipo_pago)
                         components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
                 
+                # BOTÓN BORRAR (RESET INTELIGENTE)
                 if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
+                    # Reseteamos el candado y los productos seleccionados
+                    st.session_state.folio_guardado = False
+                    if "seleccionados_muestras" in st.session_state:
+                        st.session_state.seleccionados_muestras = []
+                    if "multi_prods_main" in st.session_state:
+                        st.session_state.multi_prods_main = []
+                    
+                    # Limpiamos caché y reiniciamos el módulo sin cerrar sesión
                     st.rerun()
                 
                 # --- BÚSQUEDA RÁPIDA ---
@@ -5013,6 +5037,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
