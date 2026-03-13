@@ -3765,6 +3765,9 @@ else:
                     elif not prods_actuales: 
                         st.error("Selecciona al menos un producto")
                     else:
+                        # --- SOLUCIÓN NameError: Definimos nuevo_folio aquí adentro ---
+                        nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
+                        
                         direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
                         
                         reg = {
@@ -3782,17 +3785,19 @@ else:
                             "COSTO_TOTAL": round(total_costo_prods, 2)
                         }
                         
+                        # Llenamos las columnas de productos
                         for p in precios.keys():
                             reg[p] = 0
                             
                         for item in prods_actuales:
                             reg[item["desc"]] = item["cant"]
                 
+                        # Concatenamos y subimos a GitHub
                         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
                         if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
                             # ACTIVAMOS EL CANDADO PARA PERMITIR IMPRESIÓN
                             st.session_state.folio_guardado = True
-                            st.success(f"¡Guardado correctamente! Folio: {nuevo_folio}")
+                            st.success(f"¡Guardado correctamente! Folio: JYP-{nuevo_folio}")
                             time.sleep(1)
                             st.rerun()
                 
