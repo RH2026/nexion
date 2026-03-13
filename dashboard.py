@@ -3804,16 +3804,21 @@ else:
                         h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, prods_actuales, f_coment, f_paq_nombre, f_tipo_pago)
                         components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
                 
-                # BOTÓN BORRAR (RESET INTELIGENTE)
+                # --- BOTÓN BORRAR (CORREGIDO) ---
                 if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
-                    # Reseteamos el candado y los productos seleccionados
+                    # 1. Limpiamos el candado de impresión
                     st.session_state.folio_guardado = False
+                    
+                    # 2. Limpiamos la lista de productos (la variable que NO es widget)
                     if "seleccionados_muestras" in st.session_state:
                         st.session_state.seleccionados_muestras = []
-                    if "multi_prods_main" in st.session_state:
-                        st.session_state.multi_prods_main = []
                     
-                    # Limpiamos caché y reiniciamos el módulo sin cerrar sesión
+                    # 3. Para limpiar el multiselect sin que truene, simplemente 
+                    # borramos la llave del estado. Streamlit la recreará vacía al reiniciar.
+                    if "multi_prods_main" in st.session_state:
+                        del st.session_state["multi_prods_main"]
+                    
+                    # 4. Reiniciamos
                     st.rerun()
                 
                 # --- BÚSQUEDA RÁPIDA ---
@@ -5029,6 +5034,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
