@@ -3927,39 +3927,43 @@ else:
                                 if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
                 
                 else:
-                    # --- DISEÑO PRO: WIDGET DE ACCESO RESTRINGIDO ---
-                    # --- DISEÑO PRO COMPACTO: ACCESO RESTRINGIDO ---
+                    # --- DISEÑO PRO: FRANJA DELGADA A TODO LO ANCHO ---
                     st.markdown(f"""
                     <div style="
                         background-color: {vars_css['card']};
                         border: 1px solid {vars_css['border']};
-                        border-left: 5px solid #F7C300;
-                        padding: 15px 25px; 
-                        border-radius: 10px;
-                        text-align: center;
-                        margin: 10px auto; 
-                        max-width: 700px;
-                        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                        border-left: 6px solid #F7C300;
+                        padding: 10px 40px; 
+                        border-radius: 8px;
+                        margin: 10px 0;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
                     ">
-                        <div style="font-size: 30px; margin-bottom: 5px;">🔐</div>
-                        <h3 style="color: #F7C300; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 14px;">
-                            Área Restringida
-                        </h3>
-                        <p style="color: {vars_css['text']}; font-size: 13px; margin: 8px 0; opacity: 0.8;">
-                            Perfil (<b>{usuario_logeado}</b>) sin privilegios de <b>Logística</b>.
-                        </p>
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <span style="font-size: 24px;">🔐</span>
+                            <div style="text-align: left;">
+                                <h3 style="color: #F7C300; margin: 0; letter-spacing: 3px; text-transform: uppercase; font-size: 13px; font-weight: 800;">
+                                    Área Restringida
+                                </h3>
+                                <p style="color: {vars_css['text']}; font-size: 13px; margin: 0; opacity: 0.8;">
+                                    El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.
+                                </p>
+                            </div>
+                        </div>
+                        
                         <div style="
-                            display: inline-block;
-                            padding: 2px 12px;
+                            padding: 4px 15px;
                             background-color: rgba(247, 195, 0, 0.1);
-                            border: 1px solid rgba(247, 195, 0, 0.2);
-                            border-radius: 15px;
-                            font-size: 9px;
+                            border: 1px solid rgba(247, 195, 0, 0.3);
+                            border-radius: 4px;
+                            font-size: 10px;
                             color: #F7C300;
-                            letter-spacing: 1px;
-                            text-transform: uppercase;
+                            letter-spacing: 2px;
+                            font-weight: bold;
                         ">
-                            ID: {st.session_state.get('usuario_activo', 'ERR_NULL')}
+                            ID ACCESO: {st.session_state.get('usuario_activo', 'ERR_NULL')}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -5017,6 +5021,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
