@@ -285,10 +285,12 @@ div[data-baseweb="tag"] {{
     color: #ffffff !important;
     border-radius: 4px !important;
     font-weight: 600 !important;
+    font-size: 14px !important;
 }}
 
 div[data-baseweb="tag"] span {{
     color: #ffffff !important;
+    font-size: 14px !important;
 }}
 
 div[data-baseweb="tag"] svg {{
@@ -4968,6 +4970,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
