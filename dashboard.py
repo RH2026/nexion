@@ -290,7 +290,7 @@ div[data-baseweb="tag"] {{
 /* El texto dentro de la burbuja (AQUÍ CAMBIA EL TAMAÑO) */
 div[data-baseweb="tag"] span {{
     color: #ffffff !important;
-    font-size: 12px !important; /* <--- Ajusta este número a tu gusto */
+    font-size: 14px !important; /* <--- Ajusta este número a tu gusto */
     font-weight: 600 !important;
     text-transform: uppercase !important;
 }}
@@ -325,7 +325,7 @@ div[data-baseweb="select"] > div:first-child {{
 
 /* 2. Ajuste del texto interno y el cursor */
 div[data-baseweb="select"] div {{
-    font-size: 10px !important;
+    font-size: 14px !important;
     color: {vars_css['text']} !important;
     line-height: 1 !important;
     text-transform: uppercase !important;
@@ -343,7 +343,7 @@ div[data-baseweb="popover"] ul {{
 div[data-baseweb="popover"] li {{
     background-color: transparent !important;
     color: {vars_css['text']} !important;
-    font-size: 11px !important;
+    font-size: 14px !important;
     padding: 8px 12px !important;
     text-transform: uppercase !important;
     transition: background 0.2s ease !important;
@@ -4981,6 +4981,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
