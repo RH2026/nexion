@@ -3860,7 +3860,7 @@ else:
                                     n_gui = st.text_input("Número de Guía").upper()
                                     n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
                     
-                                    if st.button("✅ GUARDAR Y ACTUALIZAR FOLIO", use_container_width=True):
+                                    if st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", use_container_width=True):
                                         idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
                                         df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
                                         df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
@@ -3873,9 +3873,19 @@ else:
                     
                                 with c_adm2:
                                     st.subheader("2. Impresión Final")
-                                    st.info("Puedes imprimir para revisar antes de guardar en el servidor.")
+                                    st.markdown("""
+                                        <div style="background-color: rgba(0, 150, 255, 0.1); 
+                                                    border-left: 5px solid #007BFF; 
+                                                    padding: 15px; 
+                                                    border-radius: 5px;">
+                                            <span style="font-size: 20px;">ℹ️</span> 
+                                            <b style="color: #007BFF; margin-left: 10px;">VERIFICACIÓN PREVIA:</b> 
+                                            <span style="color: #555;">Puedes generar la impresión para validar los datos. Recuerda que esto <b>no afectará</b> la base de datos de GitHub hasta que guardes.</span>
+                                        </div>
+                                        <br>
+                                    """, unsafe_allow_html=True)
                                     
-                                    if st.button("🖨️ IMPRIMIR FORMATO ACTUALIZADO", use_container_width=True, type="primary"):
+                                    if st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", use_container_width=True, type="primary"):
                                         # Extraer productos del folio
                                         prods_re = []
                                         for p in precios.keys():
@@ -5001,6 +5011,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
