@@ -3814,14 +3814,15 @@ else:
                         st.info("No hay registros todavía.")
                 
                 # --- PANEL DE ADMIN ---
-                # --- PANEL DE ADMINISTRACIÓN (SOLO RIGOBERTO Y JMORENO) ---
+                # --- PANEL DE ADMINISTRACIÓN (CORRECCIÓN DE NAMEERROR) ---
                 st.divider()
                 
-                # Lista de usuarios con acceso total
+                # 1. Definimos la lista de quiénes mandan aquí
                 lista_admins = ["Rigoberto", "JMoreno"]
                 
-                # Verificamos quién está en la sesión
-                usuario_identificado = st.session_state.get('usuario_activo', 'Invitado')
+                # 2. DEFINIMOS LA VARIABLE (Esto es lo que te faltaba, amor)
+                # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
+                usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
 
                 if usuario_logeado in lista_admins:
                     st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
@@ -4981,6 +4982,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
