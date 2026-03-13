@@ -1915,7 +1915,7 @@ else:
                         {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 27", "entrega_texto": "29 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
                     ]
                     
-                    render_logistica_flow_list(data_corregida)
+                    render_logistica_flow_responsive(data_corregida)
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
             # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
