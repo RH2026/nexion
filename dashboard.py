@@ -1794,8 +1794,8 @@ else:
                             st.warning(f"No se encontraron registros en la columna 'FORMA DE ENVIO' que coincidan con '{tipo_mov}' para el mes seleccionado.")
                 
                 # PESTAÑA 5: AGC
-                with tab_entregas_agc:                  
-                    def render_logistica_flow_compact(data):
+                with tab_entregas_agc:
+                    def render_logistica_flow_list(data):
                         html_content = f"""
                         <!DOCTYPE html>
                         <html lang="es">
@@ -1808,56 +1808,74 @@ else:
                                     background-color: #384A52; 
                                     color: #e2e8f0; 
                                     margin: 0;
+                                    padding: 10px;
                                 }}
-                                .card {{
+                                /* Fila estilizada en lugar de tarjeta pesada */
+                                .list-row {{
                                     background-color: #263238;
                                     border: 1px solid rgba(255, 255, 255, 0.05);
                                     transition: all 0.2s ease;
-                                    min-height: 180px; /* Altura controlada */
+                                    margin-bottom: 8px;
+                                    display: flex;
+                                    align-items: center;
+                                    padding: 12px 20px;
+                                    border-radius: 12px;
                                 }}
-                                .card:hover {{
-                                    transform: translateY(-2px);
+                                .list-row:hover {{
+                                    background-color: #2c3b42;
                                     border-color: rgba(56, 189, 248, 0.3);
+                                    transform: translateX(4px);
                                 }}
-                                .status-pending {{ border-left: 2px solid rgba(245, 158, 11, 0.7); }}
-                                .status-delivered {{ border-left: 2px solid rgba(16, 185, 129, 0.7); }}
+                                .status-indicator {{
+                                    width: 4px;
+                                    height: 40px;
+                                    border-radius: 10px;
+                                    margin-right: 20px;
+                                }}
+                                .bg-pending {{ background-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }}
+                                .bg-delivered {{ background-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }}
+                                
+                                .label-mini {{
+                                    font-size: 9px;
+                                    text-transform: uppercase;
+                                    font-weight: 800;
+                                    color: rgba(255,255,255,0.4);
+                                    letter-spacing: 0.5px;
+                                }}
                             </style>
                         </head>
-                        <body class="p-4">
-                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                        <body>
+                            <div class="max-w-6xl mx-auto">
                                 {"".join([f'''
-                                <div class="card rounded-xl p-3 flex flex-col justify-between {"status-delivered" if item['estatus'] == "ENTREGADA" else "status-pending"}">
-                                    <div>
-                                        <div class="flex justify-between items-center mb-2">
-                                            <span class="text-[8px] font-bold text-white/40 bg-black/20 px-2 py-0.5 rounded uppercase tracking-widest">
-                                                {item['semana']}
-                                            </span>
-                                            <span class="text-[9px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter">
-                                                {item['estatus']}
-                                            </span>
+                                <div class="list-row">
+                                    <div class="status-indicator {"bg-delivered" if item['estatus'] == "ENTREGADA" else "bg-pending"}"></div>
+                                    
+                                    <div class="flex-1">
+                                        <div class="label-mini">{item['semana']}</div>
+                                        <div class="text-xl font-black text-white italic tracking-tighter leading-none">{item['oc']}</div>
+                                    </div>
+                
+                                    <div class="flex-1 hidden md:block">
+                                        <div class="label-mini text-center">Referencia de Entrega</div>
+                                        <div class="text-[11px] text-white/70 italic text-center truncate">{item['entrega_texto']}</div>
+                                    </div>
+                
+                                    <div class="flex gap-10 px-6 border-x border-white/5 mx-6">
+                                        <div class="text-center">
+                                            <div class="label-mini">Volumen</div>
+                                            <div class="text-sm font-bold text-white leading-none">{item['cantidad']}</div>
                                         </div>
-                                        
-                                        <h3 class="text-xl font-black text-white leading-none mb-1 italic tracking-tighter">{item['oc']}</h3>
-                                        <p class="text-[9px] text-white/50 mb-3 truncate italic">{item['entrega_texto']}</p>
-                                        
-                                        <div class="space-y-1.5 bg-black/20 rounded-lg p-2 border border-white/5">
-                                            <div class="flex items-center justify-between">
-                                                <span class="text-[8px] text-white uppercase font-extrabold tracking-widest opacity-80">Volumen</span>
-                                                <span class="text-xs font-bold text-white">{item['cantidad']}</span>
-                                            </div>
-                                            <div class="flex items-center justify-between">
-                                                <span class="text-[8px] text-white uppercase font-extrabold tracking-widest opacity-80">Cita</span>
-                                                <span class="text-[10px] font-mono font-bold {"text-orange-400" if item['cita'] == "PENDIENTE" else "text-blue-300"}">
-                                                    {item['cita']}
-                                                </span>
+                                        <div class="text-center">
+                                            <div class="label-mini">Cita</div>
+                                            <div class="text-sm font-mono font-bold {"text-orange-400" if item['cita'] == "PENDIENTE" else "text-blue-400"} leading-none">
+                                                {item['cita']}
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="mt-3">
-                                        <div class="w-full bg-black/30 rounded-full h-1 overflow-hidden">
-                                            <div class="{"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-orange-500"} h-full rounded-full transition-all duration-700" 
-                                                 style="width: {'100%' if item['estatus'] == "ENTREGADA" else '30%'}"></div>
+                
+                                    <div class="w-24 text-right">
+                                        <div class="text-[10px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"}">
+                                            {item['estatus']}
                                         </div>
                                     </div>
                                 </div>
@@ -1867,11 +1885,11 @@ else:
                         </html>
                         """
                         return components.html(html_content, height=800, scrolling=True)
-                    
-                    # Dataset corregido
+                
+                    # Dataset
                     data_corregida = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026", "estatus": "ENTREGADA"},
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026", "estatus": "PENDIENTE"},
+                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "6 de abril", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
                         {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "20 de abril", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L1)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
@@ -1884,7 +1902,7 @@ else:
                         {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 27", "entrega_texto": "29 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
                     ]
                     
-                    render_logistica_flow_compact(data_corregida)
+                    render_logistica_flow_list(data_corregida)
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
             # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
