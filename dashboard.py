@@ -3927,8 +3927,8 @@ else:
                                 if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
                 
                 else:
-                    # --- DISEÑO PRO: FRANJA DELGADA (LÍNEA ÚNICA PARA EVITAR ERRORES) ---
-                    html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:6px solid #F7C300; padding:10px 30px; border-radius:8px; margin:10px 0; box-shadow:0 4px 15px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:15px;"><span style="font-size:22px;">🔐</span><div style="text-align:left;"><h3 style="color:#F7C300; margin:0; letter-spacing:2px; text-transform:uppercase; font-size:13px; font-weight:800;">Área Restringida</h3><p style="color:{vars_css['text']}; font-size:12px; margin:0; opacity:0.8;">Perfil (<b>{usuario_logeado}</b>) sin privilegios de nivel <b>Logística</b>.</p></div></div><div style="padding:4px 12px; background-color:rgba(247,195,0,0.1); border:1px solid rgba(247,195,0,0.3); border-radius:4px; font-size:10px; color:#F7C300; letter-spacing:1px; font-weight:bold;">ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
+                    # --- DISEÑO PRO: FRANJA ULTRA DELGADA EN UNA SOLA LÍNEA ---
+                    html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:6px solid #F7C300; padding:8px 30px; border-radius:6px; margin:10px 0; box-shadow:0 4px 10px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:20px;"><span style="font-size:22px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:800; font-size:11px; letter-spacing:2px; text-transform:uppercase;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:12px; margin-left:15px; opacity:0.8;">El perfil <b>{usuario_logeado}</b> no tiene privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:2px 10px; border:1px solid rgba(247,195,0,0.4); background:rgba(247,195,0,0.05); border-radius:4px; font-size:9px; color:#F7C300; font-weight:bold; letter-spacing:1px;">ID: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
                     st.markdown(html_restringido, unsafe_allow_html=True)
         
     
@@ -4984,6 +4984,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
