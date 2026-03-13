@@ -92,7 +92,6 @@ def render_chingon_calendar(data):
 
 # Data extraída de tu imagen
 data_logistica = [
-    {"oc": "C09421-L01", "cantidad": "---", "semana": "N/A", "entrega_texto": "Pendiente", "cita": ""},
     {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026"},
     {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026"},
     {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEMANA 15", "entrega_texto": "6 de abril", "cita": ""},
