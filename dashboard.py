@@ -3873,7 +3873,7 @@ else:
                     
                                 with c_adm2:
                                     st.subheader("2. Impresión Final")
-                                    st.info("Una vez guardados los datos a la izquierda, puedes imprimir el formato completo.")
+                                    st.info("Puedes imprimir para revisar antes de guardar en el servidor.")
                                     
                                     if st.button("🖨️ IMPRIMIR FORMATO ACTUALIZADO", use_container_width=True, type="primary"):
                                         # Extraer productos del folio
@@ -3882,10 +3882,15 @@ else:
                                             if p in datos_fol and datos_fol[p] > 0: 
                                                 prods_re.append({"desc": p, "cant": int(datos_fol[p])})
                                         
-                                        # Generar el HTML con la info que TÚ acabas de poner o que ya estaba guardada
+                                        # --- AQUÍ ESTÁ EL TRUCO, AMOR ---
+                                        # Si los inputs de arriba tienen algo, usamos eso. 
+                                        # Si están vacíos, usamos lo que ya estaba en GitHub por si es una re-impresión.
+                                        paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
+                                        pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
+                    
                                         h_re = generar_html_impresion(
                                             fol_edit, 
-                                            datos_fol.get("PAQUETERIA", "ENVIO"), # Lo que puso ventas
+                                            datos_fol.get("PAQUETERIA", "ENVIO"), 
                                             "DOMICILIO", 
                                             datos_fol["FECHA"], 
                                             "RIGOBERTO HERNANDEZ", "3319753122", 
@@ -3895,8 +3900,8 @@ else:
                                             "", datos_fol["CONTACTO"], 
                                             prods_re, 
                                             "FORMATO FINAL DE LOGÍSTICA", 
-                                            datos_fol["PAQUETERIA_NOMBRE"], # El que tú elegiste
-                                            datos_fol.get("MODALIDAD_PAGO", "PENDIENTE") # El que tú elegiste
+                                            paq_a_imprimir, # <--- Usa el valor del selectbox de arriba
+                                            pago_a_imprimir  # <--- Usa el valor del selectbox de arriba
                                         )
                                         components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
@@ -4996,6 +5001,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
