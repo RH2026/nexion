@@ -3422,6 +3422,9 @@ else:
                                 
 
             elif st.session_state.menu_sub == "ENVIO DE MUESTRAS":
+                if "reset_key" not in st.session_state:
+                st.session_state.reset_key = 0
+                
                 # --- VARIABLES DE GITHUB ---
                 GITHUB_USER = "RH2026"
                 GITHUB_REPO = "nexion"
@@ -3685,9 +3688,9 @@ else:
                 seleccionados = st.multiselect(
                     ":material/search: Busca y selecciona productos:", 
                     list(precios.keys()),
-                    key="multi_prods_main",
-                    default=st.session_state.seleccionados_muestras,
-                    placeholder="Selecciona los productos a enviar..." # <--- AQUÍ CAMBIAS EL TEXTO
+                    key=f"prod_select_{st.session_state.reset_key}", # <--- Esto es lo que hace la magia
+                    default=st.session_state.get('seleccionados_muestras', []),
+                    placeholder="Selecciona los productos a enviar..."
                 )
                 
                 st.session_state.seleccionados_muestras = seleccionados
@@ -3806,19 +3809,16 @@ else:
                 
                 # --- BOTÓN BORRAR (CORREGIDO) ---
                 if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
-                    # 1. Limpiamos el candado de impresión
+                    # Reseteamos el candado de impresión
                     st.session_state.folio_guardado = False
                     
-                    # 2. Limpiamos la lista de productos (la variable que NO es widget)
-                    if "seleccionados_muestras" in st.session_state:
-                        st.session_state.seleccionados_muestras = []
+                    # Limpiamos la lista de memoria
+                    st.session_state.seleccionados_muestras = []
                     
-                    # 3. Para limpiar el multiselect sin que truene, simplemente 
-                    # borramos la llave del estado. Streamlit la recreará vacía al reiniciar.
-                    if "multi_prods_main" in st.session_state:
-                        del st.session_state["multi_prods_main"]
+                    # Aumentamos la llave para que el multiselect se "auto-destruya" y nazca vacío
+                    st.session_state.reset_key += 1
                     
-                    # 4. Reiniciamos
+                    # Reiniciamos la app para que se vea el cambio
                     st.rerun()
                 
                 # --- BÚSQUEDA RÁPIDA ---
@@ -5034,6 +5034,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
