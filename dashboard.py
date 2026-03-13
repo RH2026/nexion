@@ -1342,8 +1342,8 @@ else:
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 # Definimos los 4 nombres de las pestañas
-                tab_kpis, tab_tiempos, tab_despachos, tab_participacion = st.tabs([
-                    "KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA"
+                tab_kpis, tab_tiempos, tab_despachos, tab_participacion, tap_entregas_agc = st.tabs([
+                    "KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA", "ENTREGAS AGC"
                 ])
     
                 # PESTAÑA 1: KPI'S (Tus donitas)
@@ -1784,7 +1784,10 @@ else:
                                 )
                         else:
                             st.warning(f"No se encontraron registros en la columna 'FORMA DE ENVIO' que coincidan con '{tipo_mov}' para el mes seleccionado.")
-
+                
+                # PESTAÑA 5: AGC
+                with tab_entregas_agc: 
+                    st.write("") 
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
             # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
