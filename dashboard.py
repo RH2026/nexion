@@ -3954,20 +3954,27 @@ else:
                                         paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
                                         pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
                     
+                                        # --- RE-IMPRESIÓN CORREGIDA EN PANEL DE ADMIN ---
                                         h_re = generar_html_impresion(
-                                            fol_edit, 
+                                            f"JYP-{int(datos_fol['FOLIO'])}", 
                                             datos_fol.get("PAQUETERIA", "ENVIO"), 
-                                            "DOMICILIO", 
+                                            datos_fol.get("TIPO_ENTREGA", "DOMICILIO"), # Cambiamos el "-" por el dato real
                                             datos_fol["FECHA"], 
-                                            "RIGOBERTO HERNANDEZ", "3319753122", 
+                                            "RIGOBERTO HERNANDEZ", 
+                                            "3319753122", 
                                             datos_fol["SOLICITO"], 
                                             datos_fol["NOMBRE DEL HOTEL"], 
-                                            "-", "-", "-", datos_fol["DESTINO"], 
-                                            "", datos_fol["CONTACTO"], 
+                                            # Aquí es donde quitamos los "-" y ponemos los datos de la base de datos:
+                                            datos_fol.get("CALLE", "-"), 
+                                            datos_fol.get("COLONIA", "-"), 
+                                            datos_fol.get("CP", "-"), 
+                                            datos_fol["DESTINO"], # Este ya lo tenías, es Ciudad/Estado
+                                            "", # Este puede quedar vacío si no guardaste el estado aparte
+                                            datos_fol["CONTACTO"], 
                                             prods_re, 
-                                            "FORMATO FINAL DE LOGÍSTICA", 
-                                            paq_a_imprimir, # <--- Usa el valor del selectbox de arriba
-                                            pago_a_imprimir  # <--- Usa el valor del selectbox de arriba
+                                            "RE-IMPRESIÓN DE LOGÍSTICA", 
+                                            paq_a_imprimir, 
+                                            pago_a_imprimir 
                                         )
                                         components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
