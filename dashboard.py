@@ -3927,7 +3927,40 @@ else:
                                 if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
                 
                 else:
-                    st.info("💡 Tu usuario actual no tiene permisos para acceder al Panel de Administración de Logística.")
+                    # --- DISEÑO PRO: WIDGET DE ACCESO RESTRINGIDO ---
+                    st.markdown(f"""
+                    <div style="
+                        background-color: {vars_css['card']};
+                        border: 1px solid {vars_css['border']};
+                        border-left: 5px solid #F7C300;
+                        padding: 30px;
+                        border-radius: 12px;
+                        text-align: center;
+                        margin: 20px 0;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    ">
+                        <div style="font-size: 50px; margin-bottom: 15px;">🔐</div>
+                        <h3 style="color: #F7C300; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 16px;">
+                            Área Restringida
+                        </h3>
+                        <p style="color: {vars_css['text']}; font-size: 14px; margin-top: 10px; opacity: 0.8;">
+                            Tu perfil de operador (<b>{usuario_logeado}</b>) no cuenta con privilegios de nivel <b>Logística</b>.
+                        </p>
+                        <div style="
+                            display: inline-block;
+                            margin-top: 15px;
+                            padding: 5px 15px;
+                            background-color: rgba(247, 195, 0, 0.1);
+                            border: 1px solid rgba(247, 195, 0, 0.3);
+                            border-radius: 20px;
+                            font-size: 10px;
+                            color: #F7C300;
+                            letter-spacing: 1px;
+                        ">
+                            ID DE ACCESO: {st.session_state.get('usuario_activo', 'ERR_NULL')}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
         
     
         # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
@@ -4982,6 +5015,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
