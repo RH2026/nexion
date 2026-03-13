@@ -3625,7 +3625,8 @@ else:
                     f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
                     f_soli = st.text_input(
                         ":material/badge: Solicitante / Agente", 
-                        placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS"
+                        placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS",
+                        key=f"soli_{st.session_state.reset_key}" # <--- Agregamos esta línea
                     ).upper()
                 
                 with col_dest:
@@ -3753,9 +3754,14 @@ else:
                     st.session_state.folio_guardado = False
                 
                 # BOTÓN GUARDAR
+                # BOTÓN GUARDAR
                 if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
                     if not f_h: 
                         st.error("Falta el hotel")
+                    # --- NUEVO CANDADO: SOLICITANTE OBLIGATORIO ---
+                    elif not f_soli:
+                        st.error("Falta el nombre de quien solicita (Solicitante / Agente)")
+                    # ---------------------------------------------
                     elif not prods_actuales: 
                         st.error("Selecciona al menos un producto")
                     else:
@@ -3767,7 +3773,7 @@ else:
                             "NOMBRE DEL HOTEL": f_h.upper(), 
                             "DESTINO": direccion_completa,
                             "CONTACTO": f_con.upper(), 
-                            "SOLICITO": f_soli.upper() if f_soli else "JYPESA", 
+                            "SOLICITO": f_soli.upper(), # Aquí ya va validado
                             "PAQUETERIA": f_paq_sel.upper(),
                             "PAQUETERIA_NOMBRE": f_paq_nombre,
                             "NUMERO_GUIA": "", 
