@@ -575,8 +575,8 @@ div[data-baseweb="popover"] button[kind="primary"] {{
     line-height: 26px !important;
     
     /* Rojo sólido original (el que tenías en el hover) */
-    background-color: #ff4b4b !important; 
-    border: 1px solid #ff4b4b !important;
+    background-color: #b91c1c !important; 
+    border: 1px solid #b91c1c !important;
     color: white !important;
     
     border-radius: 4px !important; /* Para mantenerlo limpio */
@@ -585,8 +585,8 @@ div[data-baseweb="popover"] button[kind="primary"] {{
 
 div[data-baseweb="popover"] button[kind="primary"]:hover {{
     /* Rojo más intenso y oscuro para el hover */
-    background-color: #b91c1c !important; 
-    border-color: #b91c1c !important;
+    background-color: #ff4b4b !important; 
+    border-color: #ff4b4b !important;
     color: white !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
 }}
