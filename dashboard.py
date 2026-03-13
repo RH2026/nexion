@@ -119,513 +119,206 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. Limpieza de Interfaz */
-header, footer, [data-testid="stHeader"] {{
-    visibility: hidden;
-    height: 0px;
+/* BASE */
+header, footer, [data-testid="stHeader"] {{visibility:hidden;height:0}}
+html, body, .stApp {{
+    background:{vars_css['bg']} !important;
+    color:{vars_css['text']} !important;
+    font-family:'Inter',sans-serif !important;
 }}
 
-/* APP BASE */
-html, body {{
-    background-color: {vars_css['bg']} !important;
-    color: {vars_css['text']} !important;
+.block-container {{
+    padding:0.8rem 0 5rem 0 !important;
+    background:{vars_css['bg']} !important;
 }}
 
-.stApp {{ 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['text']} !important; 
-    font-family: 'Inter', sans-serif !important; 
+/* ANIMACIÓN */
+@keyframes fadeInUp {{from{{opacity:0;transform:translateY(15px)}}to{{opacity:1;transform:translateY(0)}}}}
+[data-testid="stVerticalBlock"]>div{{animation:fadeInUp .6s ease-out}}
+
+/* TITULOS */
+h3,.op-query-text {{
+    font-size:11px !important;
+    letter-spacing:8px;
+    text-align:center;
+    margin:8px 0 18px;
+    color:{vars_css['sub']} !important;
 }}
 
-/* CONTENEDOR PRINCIPAL */
-.block-container {{ 
-    padding-top: 0.8rem !important; 
-    padding-bottom: 5rem !important; 
-    background-color: {vars_css['bg']} !important;
+/* BOTONES */
+div.stButton>button {{
+    background:{vars_css['card']} !important;
+    color:{vars_css['text']} !important;
+    border:1px solid {vars_css['border']} !important;
+    border-radius:2px;
+    font-weight:700;
+    text-transform:uppercase;
+    font-size:10px;
+    height:28px;
+    width:100%;
 }}
 
-/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
-@keyframes fadeInUp {{ 
-    from {{ opacity: 0; transform: translateY(15px); }} 
-    to {{ opacity: 1; transform: translateY(0); }} 
+div.stButton>button:hover {{
+    background:#00A3A3 !important;
+    border-color:#00A3A3 !important;
+    color:#fff !important;
 }}
 
-[data-testid="stVerticalBlock"] > div {{
-    animation: fadeInUp 0.6s ease-out;
-}}
-
-/* 3. TÍTULOS Y OPERATIONAL QUERY */
-h3, .op-query-text {{ 
-    font-size: 11px !important; 
-    letter-spacing: 8px !important; 
-    text-align: center !important; 
-    margin-top: 8px !important; 
-    margin-bottom: 18px !important; 
-    color: {vars_css['sub']} !important; 
-    display: block !important; 
-    width: 100% !important; 
-}}
-
-/* 4. BOTONES SLIM */
-div.stButton > button {{ 
-    background-color: {vars_css['card']} !important; 
-    color: {vars_css['text']} !important; 
-    border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
-    font-weight: 700 !important; 
-    text-transform: uppercase; 
-    font-size: 10px !important; 
-    height: 28px !important; 
-    min-height: 28px !important; 
-    line-height: 28px !important; 
-    transition: all 0.2s ease !important; 
-    width: 100% !important; 
-}}
-
-div.stButton > button:hover {{ 
-    background-color: #00A3A3 !important; 
-    color: #ffffff !important; 
-    border-color: #00A3A3 !important; 
-}}
-
-
-
-/* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
-
-/* Atacamos al contenedor que envuelve el input */
+/* INPUTS */
 div[data-baseweb="input"] {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    height: 35px !important; /* <--- AGREGA ESTO (Ajusta el número a tu gusto) */
-    border-radius: 4px !important;
-    transition: all 0.3s ease-in-out !important;
+    background:{vars_css['card']} !important;
+    border:1px solid {vars_css['border']} !important;
+    height:35px;
+    border-radius:4px;
 }}
 
-/* Cuando el usuario hace clic (Focus) en el contenedor */
 div[data-baseweb="input"]:focus-within {{
-    border: 1px solid #00A0A8 !important;
-    box-shadow: 0 0 0 1px #00A0A8 !important;
+    border:1px solid #00A0A8 !important;
+    box-shadow:0 0 0 1px #00A0A8 !important;
 }}
 
-/* Estilo del campo de texto real */
-.stTextInput input {{ 
-    background-color: transparent !important; /* Para que se vea el fondo del contenedor */
-    color: {vars_css['text']} !important; 
-    border: none !important; /* Quitamos el borde de aquí para que no choque */
-    box-shadow: none !important; 
-    height: 35px !important;
-    line-height: 35px !important; /* <--- PARA CENTRAR EL TEXTO VERTICALMENTE */
-    text-align: center !important; 
-    letter-spacing: 2px; 
-    outline: none !important;
+.stTextInput input {{
+    background:transparent !important;
+    color:{vars_css['text']} !important;
+    border:none !important;
+    height:35px;
+    line-height:35px;
+    text-align:center;
+    letter-spacing:2px;
 }}
 
-/* Eliminamos cualquier borde extra que Streamlit ponga por defecto */
-div[data-baseweb="base-input"] {{
-    border: none !important;
-    background-color: transparent !important;
-}}
-
-/* Bajar tamaño de los nombres de los filtros (Labels) */
-[data-testid="stWidgetLabel"] p {{
-    font-size: 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 2px !important;
-    color: {vars_css['sub']} !important;
-    font-weight: 600 !important;
-}}
-
-/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
-div[data-baseweb="select"] div {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
-}}
-
-/* Cambiar el texto de ADENTRO del input de fecha */
-input[data-testid="stDateInputView"] {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-}}
-
-/* --- NUEVO: Control de Placeholder (Escapado para f-string) --- */
 .stTextInput input::placeholder {{
-    font-size: 12px !important; 
-    color: {vars_css['sub']} !important; 
-    opacity: 0.7 !important;
-    letter-spacing: 1px !important;
-    text-transform: uppercase !important;
+    font-size:12px;
+    color:{vars_css['sub']} !important;
+    opacity:.7;
+    text-transform:uppercase;
 }}
 
-
-/* 6. FOOTER FIJO */
-.footer {{ 
-    position: fixed; 
-    bottom: 0 !important; 
-    left: 0 !important; 
-    width: 100% !important; 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['sub']} !important; 
-    text-align: center; 
-    padding: 12px 0px !important; 
-    font-size: 9px; 
-    letter-spacing: 2px; 
-    border-top: 1px solid {vars_css['border']} !important; 
-    z-index: 999999 !important; 
-    animation: none !important; 
-    transform: none !important; 
+/* LABELS */
+[data-testid="stWidgetLabel"] p {{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    color:{vars_css['sub']} !important;
+    font-weight:600;
 }}
 
+/* SELECTBOX / MULTISELECT */
+div[data-baseweb="select"]>div:first-child {{
+    height:35px;
+    background:{vars_css['card']} !important;
+    border:1px solid {vars_css['border']} !important;
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+}}
 
-/* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
+div[data-baseweb="select"] * {{
+    font-size:14px !important;
+    text-transform:uppercase;
+    color:{vars_css['text']} !important;
+}}
 
-* El contenedor de la burbuja */
+div[data-baseweb="select"]:focus-within {{
+    border-color:#718096 !important;
+    box-shadow:none !important;
+}}
+
+/* TAGS MULTISELECT */
 div[data-baseweb="tag"] {{
-    background-color: #718096 !important;
-    border-radius: 4px !important;
-    height: 22px !important;
-    margin: 2px !important;
+    background:#718096 !important;
+    border-radius:4px;
+    height:22px;
 }}
 
-/* El texto dentro de la burbuja (AQUÍ CAMBIA EL TAMAÑO) */
 div[data-baseweb="tag"] span {{
-    color: #ffffff !important;
-    font-size: 12px !important; /* <--- Ajusta este número a tu gusto */
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
+    color:#fff !important;
+    font-size:14px !important;
+    font-weight:600;
 }}
 
-/* El icono de cerrar (X) */
 div[data-baseweb="tag"] svg {{
-    fill: #ffffff !important;
-    height: 12px !important;
-    width: 12px !important;
+    fill:#fff;
+    height:12px;
+    width:12px;
 }}
 
-/* AJUSTE EXTRA: El texto antes de ser seleccionado */
-div[data-baseweb="select"] div {{
-    font-size: 12px !important; /* Para que todo el multiselect sea uniforme */
-    text-transform: uppercase !important;
-}}
-
-/* Valor seleccionado – Selectbox */
-
-/* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
-
-/* 1. Altura y alineación de la caja principal */
-div[data-baseweb="select"] > div:first-child {{
-    height: 35px !important; 
-    min-height: 35px !important;
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    display: flex !important;
-    align-items: center !important;
-}}
-
-/* 2. Ajuste del texto interno y el cursor */
-div[data-baseweb="select"] div {{
-    font-size: 10px !important;
-    color: {vars_css['text']} !important;
-    line-height: 1 !important;
-    text-transform: uppercase !important;
-}}
-
-/* 3. El Menú Desplegable (La lista de opciones de tu foto) */
+/* DROPDOWN LISTA */
 div[data-baseweb="popover"] ul {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    padding: 0 !important;
+    background:{vars_css['card']} !important;
+    border:1px solid {vars_css['border']} !important;
 }}
 
-/* 4. Cada opción individual de la lista */
 div[data-baseweb="popover"] li {{
-    background-color: transparent !important;
-    color: {vars_css['text']} !important;
-    font-size: 11px !important;
-    padding: 8px 12px !important;
-    text-transform: uppercase !important;
-    transition: background 0.2s ease !important;
+    font-size:14px !important;
+    padding:8px 12px;
+    text-transform:uppercase;
 }}
 
-/* 5. Hover en las opciones (Color Aqua para resaltar) */
 div[data-baseweb="popover"] li:hover {{
-    background-color: #00A3A3 !important;
-    color: #ffffff !important;
+    background:#00A3A3 !important;
+    color:#fff !important;
 }}
 
-
-
-/* 6. Quitar el resplandor azul de Streamlit al hacer click */
-div[data-baseweb="select"]:focus-within {{
-    border-color: #00A0A8 !important;
-    box-shadow: 0 0 0 1px #00A0A8 !important;
+/* FOOTER */
+.footer {{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:{vars_css['bg']} !important;
+    color:{vars_css['sub']} !important;
+    text-align:center;
+    padding:12px 0;
+    font-size:9px;
+    letter-spacing:2px;
+    border-top:1px solid {vars_css['border']} !important;
 }}
 
-div[data-baseweb="select"] > div {{
-    background-color: rgba(113, 128, 150, 0.15) !important;
-    border: 1px solid #718096 !important;
-}}
-
-/* Focus - Sin color azul, mantiene el estilo neutro */
-div[data-baseweb="select"]:focus-within {{
-    border-color: #718096 !important; /* Mantiene el gris slate */
-    box-shadow: none !important;      /* Elimina cualquier resplandor azul */
-    outline: none !important;
-}}
-
-/* Eliminar el azul de fondo de la pestaña seleccionada */
+/* TABS */
 button[data-baseweb="tab"] {{
-    background-color: transparent !important;
-    border: none !important;
-    color: {vars_css['sub']} !important; /* Texto grisáceo para los no seleccionados */
-    font-weight: 400 !important;
-    transition: all 0.3s ease !important;
+    background:transparent !important;
+    border:none !important;
+    color:{vars_css['sub']} !important;
 }}
 
-/* Estilo para la pestaña cuando está activa (seleccionada) */
 div[data-baseweb="tab-list"] button[aria-selected="true"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-}}
-
-div[data-baseweb="tab-list"] button:focus, 
-div[data-baseweb="tab-list"] button:active {{
-    outline: none !important;
-    box-shadow: none !important;
-}}
-
-div[data-baseweb="tab-list"] button {{
-    background-color: transparent !important;
-    color: {vars_css['sub']} !important;
-    border: none !important;
+    background:{vars_css['card']} !important;
+    color:{vars_css['text']} !important;
 }}
 
 div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important; 
+    background:#00FFAA !important;
 }}
 
-/* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
-
-div[data-baseweb="layer"] div[data-baseweb="popover"] > div {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 6px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+/* POPOVER */
+div[data-baseweb="layer"] div[data-baseweb="popover"]>div {{
+    background:{vars_css['card']} !important;
+    border:1px solid {vars_css['border']} !important;
+    border-radius:6px;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
 }}
 
-div[data-baseweb="popover"] {{
-    color: {vars_css['text']} !important;
+div[data-baseweb="popover"] p,
+div[data-baseweb="popover"] span,
+div[data-baseweb="popover"] button {{
+    font-size:12px !important;
+    text-transform:uppercase;
 }}
 
+/* BOTON SECONDARY */
 button[kind="secondary"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
+    background:{vars_css['card']} !important;
+    color:{vars_css['text']} !important;
+    border:1px solid {vars_css['border']} !important;
+    height:35px;
+    padding:0 12px;
+    font-size:11px;
 }}
 
 button[kind="secondary"]:hover {{
-    background-color: #617F8D !important;   /* un poco más claro que tu card */
-    color: {vars_css['text']} !important;
-    border-color: #617F8D !important;
+    background:#617F8D !important;
+    border-color:#617F8D !important;
 }}
-
-button[kind="secondary"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-
-    height: 35px !important;
-    min-height: 32px !important;
-    padding: 0 12px !important;
-    font-size: 11px !important;
-    line-height: 30px !important;
-}}
-
-/* --- WIDGET DE RUTA PREMIUM (Optimizado para f-string) --- */
-.kpi-ruta-container {{
-    display: flex;
-    justify-content: center;
-    padding: 10px 0;
-    font-family: 'Inter', sans-serif;
-}}
-
-.kpi-ruta-card {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 12px !important;
-    padding: 30px !important;
-    width: 100%;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
-}}
-
-/* Línea de acento superior */
-.kpi-ruta-card::before {{
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, #00FFAA, #00A3A3);
-}}
-
-.kpi-tag {{
-    font-size: 16px !important;
-    letter-spacing: 3px;
-    color: #00FFAA;
-    font-weight: 500;
-    text-transform: uppercase;
-    opacity: 0.9;
-}}
-
-.kpi-route-flow {{
-    margin: 20px 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-}}
-
-.city {{
-    font-size: 20px !important;
-    font-weight: 600;
-    color: {vars_css['text']};
-    letter-spacing: 1px;
-}}
-
-.arrow {{
-    color: #00FFAA;
-    font-size: 34px;
-    font-weight: bold;
-}}
-
-.kpi-value {{
-    font-size: 28px !important;
-    font-weight: 900;
-    color: {vars_css['text']};
-    margin: 5px 0;
-    line-height: 1;
-    text-shadow: 0 0 20px rgba(0,255,170,0.2);
-}}
-
-.kpi-value small {{
-    font-size: 18px !important;
-    color: {vars_css['sub']};
-    letter-spacing: 2px;
-    font-weight: 400;
-}}
-
-.kpi-subtext {{
-    font-size: 16px !important;
-    color: {vars_css['sub']};
-    margin-top: 15px;
-    line-height: 1.4;
-}}
-
-.kpi-subtext b {{
-    color: #00FFAA;
-}}
-
-/* CLASE PARA TÍTULOS DE SECCIÓN DE DATOS */
-.data-section-header {{
-    font-size: 13px !important;
-    letter-spacing: 3px !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    color: {vars_css['sub']} !important;
-    margin-bottom: 15px !important;
-    margin-top: 25px !important;
-    border-left: 3px solid #00FFAA; /* Una pequeña línea de acento como tus cards */
-    padding-left: 10px !important;
-}}
-
-/* ───────── REFINAMIENTO GENERAL DEL POPOVER ───────── */
-
-/* 1. Achicar el texto de los botones dentro del Popover */
-div[data-baseweb="popover"] button {{
-    font-size: 12px !important;
-    letter-spacing: 1px !important;
-    text-transform: uppercase !important;
-}}
-
-/* 2. Achicar el texto de los Expanders dentro del Popover (Navegación) */
-div[data-baseweb="popover"] .st-expanderHeader p {{
-    font-size: 12px !important;
-    letter-spacing: 1.5px !important;
-    font-weight: 600 !important;
-}}
-
-/* 3. Achicar cualquier texto simple (p, span) dentro del Popover */
-div[data-baseweb="popover"] p, 
-div[data-baseweb="popover"] span {{
-    font-size: 12px !important;
-    letter-spacing: 1px !important;
-}}
-
-/* 4. El botón de Logout (tipo Primary) lo hacemos aún más discreto */
-div[data-baseweb="popover"] button[kind="primary"] {{
-    font-size: 12px !important;
-    height: 26px !important;
-    min-height: 26px !important;
-    line-height: 26px !important;
-    background-color: transparent !important;
-    border: 1px solid #ff4b4b !important; /* Un rojo sutil para identificar salida */
-    color: #ff4b4b !important;
-}}
-
-div[data-baseweb="popover"] button[kind="primary"]:hover {{
-    background-color: #ff4b4b !important;
-    color: white !important;
-}}
-
-/* ───────── SOLUCIÓN NUCLEAR: ICONO RESPONSIVE ───────── */
-
-/* 1. Bloqueamos el texto vertical de tus fotos en cualquier tamaño */
-button[data-testid="stBaseButton-secondary"] p {{
-    white-space: nowrap !important;
-    word-break: keep-all !important;
-}}
-
-/* 2. Media Query Agresiva (1200px para que cambie apenas muevas la ventana) */
-@media (max-width: 1200px) {{
-    
-    /* Buscamos el botón del popover específicamente */
-    div[data-testid="stPopover"] > button {{
-        width: 45px !important;
-        height: 45px !important;
-        min-width: 45px !important;
-        max-width: 45px !important;
-        padding: 0 !important;
-        border-radius: 50% !important; /* Lo hace circular y limpio */
-        position: relative !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }}
-
-    /* OCULTAMOS TODO EL CONTENIDO ORIGINAL (Texto y Flecha) */
-    div[data-testid="stPopover"] > button * {{
-        display: none !important; /* Esto mata el texto vertical de raíz */
-    }}
-
-    /* INYECTAMOS EL ICONO SOLO */
-    div[data-testid="stPopover"] > button::after {{
-        content: "☰";
-        display: block !important;
-        font-size: 22px !important;
-        color: {vars_css['text']} !important;
-        position: absolute !important;
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
-    }}
-}}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -4981,6 +4674,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
