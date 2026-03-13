@@ -3541,9 +3541,16 @@ else:
                                 <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
                                 <div style="padding:8px; font-size:11px; line-height:1.4;">
                                     <b>{str(hotel).upper()}</b><br>
-                                    {str(calle).upper()}<br>
-                                    Col: {str(col).upper()} C.P.: {cp}<br>
-                                    {str(ciudad).upper()}, {str(estado).upper()}<br>
+                                    {f"{str(calle).upper()}<br>" if calle and calle != "-" else ""}
+                                    
+                                    # Aquí la magia: Solo pone Col: y C.P.: si no están vacíos
+                                    {f"Col: {str(col).upper()} " if col and col != "-" else ""}
+                                    {f"C.P.: {cp}" if cp and cp != "-" else ""}
+                                    
+                                    # Si pusimos algo arriba, damos un salto de línea
+                                    {"<br>" if (col and col != "-") or (cp and cp != "-") else ""}
+                                    
+                                    {str(ciudad).upper()}{f", {str(estado).upper()}" if estado and estado != "-" else ""}<br>
                                     ATN: {str(contacto).upper()}
                                 </div>
                             </div>
