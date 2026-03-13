@@ -3875,7 +3875,7 @@ else:
                                     st.subheader("2. Impresión Final")
                                     st.markdown("""
                                         <div style="background-color: rgba(0, 150, 255, 0.1); 
-                                                    border-left: 5px solid #007BFF; 
+                                                    border-left: 5px solid ##F7C300; 
                                                     padding: 15px; 
                                                     border-radius: 5px;">
                                             <span style="color: #007BFF; font-size: 20px; vertical-align: middle;"></span> 
@@ -5013,6 +5013,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
