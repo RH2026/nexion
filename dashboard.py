@@ -3423,7 +3423,7 @@ else:
 
             elif st.session_state.menu_sub == "ENVIO DE MUESTRAS":
                 if "reset_key" not in st.session_state:
-                st.session_state.reset_key = 0
+                    st.session_state.reset_key = 0
                 
                 # --- VARIABLES DE GITHUB ---
                 GITHUB_USER = "RH2026"
@@ -5034,6 +5034,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
