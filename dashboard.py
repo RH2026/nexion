@@ -1795,11 +1795,12 @@ else:
                 
                 # PESTAÑA 5: AGC
                 with tab_entregas_agc:
-                    def render_logistica_flow_list(data):
+                    def render_logistica_flow_responsive(data):
                         html_content = f"""
                         <!DOCTYPE html>
                         <html lang="es">
                         <head>
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
                             <script src="https://cdn.tailwindcss.com"></script>
                             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
                             <style>
@@ -1808,57 +1809,38 @@ else:
                                     background-color: #384A52; 
                                     color: #e2e8f0; 
                                     margin: 0;
-                                    padding: 10px;
+                                    padding: 8px;
                                 }}
                 
-                                /* ───────── SCROLLBAR PERSONALIZADO ───────── */
-                                /* Tamaño del scroll */
-                                ::-webkit-scrollbar {{
-                                    width: 8px;
-                                    height: 8px;
-                                }}
-                                /* Fondo del scroll (Track) */
-                                ::-webkit-scrollbar-track {{
-                                    background: rgba(0, 0, 0, 0.1);
-                                    border-radius: 10px;
-                                }}
-                                /* La barrita que se mueve (Thumb) */
-                                ::-webkit-scrollbar-thumb {{
-                                    background: rgba(255, 255, 255, 0.1);
-                                    border-radius: 10px;
-                                    border: 2px solid #384A52; /* Crea un efecto de separación */
-                                }}
-                                /* Cuando pasas el mouse por el scroll */
-                                ::-webkit-scrollbar-thumb:hover {{
-                                    background: rgba(56, 189, 248, 0.4); /* Color azulito como tus hovers */
-                                }}
+                                /* Scrollbar Minimalista */
+                                ::-webkit-scrollbar {{ width: 6px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); }}
+                                ::-webkit-scrollbar-thumb {{ background: rgba(255, 255, 255, 0.1); border-radius: 10px; }}
                 
                                 .list-row {{
                                     background-color: #263238;
                                     border: 1px solid rgba(255, 255, 255, 0.05);
                                     transition: all 0.2s ease;
                                     margin-bottom: 8px;
-                                    display: flex;
-                                    align-items: center;
-                                    padding: 12px 20px;
                                     border-radius: 12px;
+                                    overflow: hidden;
                                 }}
+                                
                                 .list-row:hover {{
                                     background-color: #2c3b42;
                                     border-color: rgba(56, 189, 248, 0.3);
-                                    transform: translateX(4px);
                                 }}
+                
                                 .status-indicator {{
                                     width: 4px;
-                                    height: 40px;
-                                    border-radius: 10px;
-                                    margin-right: 20px;
+                                    min-height: 100%;
                                 }}
-                                .bg-pending {{ background-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }}
-                                .bg-delivered {{ background-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }}
+                                
+                                .bg-pending {{ background-color: #f59e0b; box-shadow: 2px 0 10px rgba(245, 158, 11, 0.2); }}
+                                .bg-delivered {{ background-color: #10b981; box-shadow: 2px 0 10px rgba(16, 185, 129, 0.2); }}
                                 
                                 .label-mini {{
-                                    font-size: 9px;
+                                    font-size: 8px;
                                     text-transform: uppercase;
                                     font-weight: 800;
                                     color: rgba(255,255,255,0.4);
@@ -1867,38 +1849,47 @@ else:
                             </style>
                         </head>
                         <body>
-                            <div class="max-w-6xl mx-auto">
+                            <div class="max-w-6xl mx-auto space-y-2">
                                 {"".join([f'''
-                                <div class="list-row">
+                                <div class="list-row flex items-stretch">
                                     <div class="status-indicator {"bg-delivered" if item['estatus'] == "ENTREGADA" else "bg-pending"}"></div>
                                     
-                                    <div class="flex-1">
-                                        <div class="label-mini">{item['semana']}</div>
-                                        <div class="text-xl font-black text-white italic tracking-tighter leading-none">{item['oc']}</div>
-                                    </div>
-                
-                                    <div class="flex-1 hidden md:block">
-                                        <div class="label-mini text-center">Referencia de Entrega</div>
-                                        <div class="text-[11px] text-white/70 italic text-center truncate">{item['entrega_texto']}</div>
-                                    </div>
-                
-                                    <div class="flex gap-10 px-6 border-x border-white/5 mx-6">
-                                        <div class="text-center">
-                                            <div class="label-mini">Volumen</div>
-                                            <div class="text-sm font-bold text-white leading-none">{item['cantidad']}</div>
-                                        </div>
-                                        <div class="text-center">
-                                            <div class="label-mini">Cita</div>
-                                            <div class="text-sm font-mono font-bold {"text-orange-400" if item['cita'] == "PENDIENTE" else "text-blue-400"} leading-none">
-                                                {item['cita']}
+                                    <div class="flex flex-col sm:flex-row flex-1 p-3 sm:items-center gap-3 sm:gap-6">
+                                        
+                                        <div class="flex-1 min-w-[120px]">
+                                            <div class="label-mini">{item['semana']}</div>
+                                            <div class="text-lg sm:text-xl font-black text-white italic tracking-tighter leading-none">
+                                                {item['oc']}
                                             </div>
                                         </div>
-                                    </div>
                 
-                                    <div class="w-24 text-right">
-                                        <div class="text-[10px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"}">
-                                            {item['estatus']}
+                                        <div class="hidden lg:block flex-[1.5]">
+                                            <div class="label-mini">Referencia</div>
+                                            <div class="text-[10px] text-white/60 italic truncate max-w-[200px]">
+                                                {item['entrega_texto']}
+                                            </div>
                                         </div>
+                
+                                        <div class="grid grid-cols-2 sm:flex sm:gap-8 gap-4 py-2 sm:py-0 border-t sm:border-t-0 sm:border-x border-white/5 sm:px-6">
+                                            <div>
+                                                <div class="label-mini">Volumen</div>
+                                                <div class="text-sm font-bold text-white">{item['cantidad']}</div>
+                                            </div>
+                                            <div>
+                                                <div class="label-mini">Cita</div>
+                                                <div class="text-sm font-mono font-bold {"text-orange-400" if item['cita'] == "PENDIENTE" else "text-blue-400"}">
+                                                    {item['cita']}
+                                                </div>
+                                            </div>
+                                        </div>
+                
+                                        <div class="flex justify-between sm:block sm:w-24 text-right border-t sm:border-t-0 pt-2 sm:pt-0">
+                                            <div class="label-mini sm:hidden">Estatus</div>
+                                            <div class="text-[10px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tight">
+                                                {item['estatus']}
+                                            </div>
+                                        </div>
+                                        
                                     </div>
                                 </div>
                                 ''' for item in data])}
