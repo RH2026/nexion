@@ -3927,13 +3927,13 @@ else:
                                 if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
                 
                 else:
-                    # --- DISEÑO PRO: FRANJA DELGADA A TODO LO ANCHO ---
+                    # --- DISEÑO PRO: FRANJA DELGADA INTEGRADA ---
                     st.markdown(f"""
                     <div style="
                         background-color: {vars_css['card']};
                         border: 1px solid {vars_css['border']};
                         border-left: 6px solid #F7C300;
-                        padding: 10px 40px; 
+                        padding: 10px 30px; 
                         border-radius: 8px;
                         margin: 10px 0;
                         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -3941,29 +3941,29 @@ else:
                         align-items: center;
                         justify-content: space-between;
                     ">
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <span style="font-size: 24px;">🔐</span>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="font-size: 22px;">🔐</span>
                             <div style="text-align: left;">
-                                <h3 style="color: #F7C300; margin: 0; letter-spacing: 3px; text-transform: uppercase; font-size: 13px; font-weight: 800;">
+                                <h3 style="color: #F7C300; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; font-weight: 800;">
                                     Área Restringida
                                 </h3>
-                                <p style="color: {vars_css['text']}; font-size: 13px; margin: 0; opacity: 0.8;">
-                                    El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.
+                                <p style="color: {vars_css['text']}; font-size: 12px; margin: 0; opacity: 0.8;">
+                                    Perfil (<b>{usuario_logeado}</b>) sin privilegios de nivel <b>Logística</b>.
                                 </p>
                             </div>
                         </div>
                         
                         <div style="
-                            padding: 4px 15px;
+                            padding: 4px 12px;
                             background-color: rgba(247, 195, 0, 0.1);
                             border: 1px solid rgba(247, 195, 0, 0.3);
                             border-radius: 4px;
                             font-size: 10px;
                             color: #F7C300;
-                            letter-spacing: 2px;
+                            letter-spacing: 1px;
                             font-weight: bold;
                         ">
-                            ID ACCESO: {st.session_state.get('usuario_activo', 'ERR_NULL')}
+                            ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -5021,6 +5021,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
