@@ -3928,36 +3928,38 @@ else:
                 
                 else:
                     # --- DISEÑO PRO: WIDGET DE ACCESO RESTRINGIDO ---
+                    # --- DISEÑO PRO COMPACTO: ACCESO RESTRINGIDO ---
                     st.markdown(f"""
                     <div style="
                         background-color: {vars_css['card']};
                         border: 1px solid {vars_css['border']};
                         border-left: 5px solid #F7C300;
-                        padding: 30px;
-                        border-radius: 12px;
+                        padding: 15px 25px; 
+                        border-radius: 10px;
                         text-align: center;
-                        margin: 20px 0;
-                        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                        margin: 10px auto; 
+                        max-width: 700px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
                     ">
-                        <div style="font-size: 50px; margin-bottom: 15px;">🔐</div>
-                        <h3 style="color: #F7C300; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 16px;">
+                        <div style="font-size: 30px; margin-bottom: 5px;">🔐</div>
+                        <h3 style="color: #F7C300; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 14px;">
                             Área Restringida
                         </h3>
-                        <p style="color: {vars_css['text']}; font-size: 14px; margin-top: 10px; opacity: 0.8;">
-                            Tu perfil de operador (<b>{usuario_logeado}</b>) no cuenta con privilegios de nivel <b>Logística</b>.
+                        <p style="color: {vars_css['text']}; font-size: 13px; margin: 8px 0; opacity: 0.8;">
+                            Perfil (<b>{usuario_logeado}</b>) sin privilegios de <b>Logística</b>.
                         </p>
                         <div style="
                             display: inline-block;
-                            margin-top: 15px;
-                            padding: 5px 15px;
+                            padding: 2px 12px;
                             background-color: rgba(247, 195, 0, 0.1);
-                            border: 1px solid rgba(247, 195, 0, 0.3);
-                            border-radius: 20px;
-                            font-size: 10px;
+                            border: 1px solid rgba(247, 195, 0, 0.2);
+                            border-radius: 15px;
+                            font-size: 9px;
                             color: #F7C300;
                             letter-spacing: 1px;
+                            text-transform: uppercase;
                         ">
-                            ID DE ACCESO: {st.session_state.get('usuario_activo', 'ERR_NULL')}
+                            ID: {st.session_state.get('usuario_activo', 'ERR_NULL')}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -5015,6 +5017,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     
+
 
 
 
