@@ -1342,7 +1342,7 @@ else:
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 # Definimos los 4 nombres de las pestañas
-                tab_kpis, tab_tiempos, tab_despachos, tab_participacion, tap_entregas_agc = st.tabs([
+                tab_kpis, tab_tiempos, tab_despachos, tab_participacion, tab_entregas_agc = st.tabs([
                     "KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA", "ENTREGAS AGC"
                 ])
     
