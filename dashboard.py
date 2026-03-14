@@ -4503,17 +4503,14 @@ else:
                     st.rerun()
                 
                 # --- BÚSQUEDA RÁPIDA ---                
-                # --- BÚSQUEDA RÁPIDA DE GUÍAS (CORREGIDO SIN NaN) ---
+                # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
                 st.write("")
-                with st.expander("🔍 BÚSQUEDA RÁPIDA DE GUÍAS (CONSULTA DE FOLIOS)", expanded=False):
+                with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS)", expanded=False):
                     if not df_actual.empty:
                         busqueda = st.text_input("Escribe el nombre del Hotel o Folio para filtrar:").upper()
                         
-                        # 1. Preparación y limpieza (Aquí matamos los NaN amor)
                         df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA"]].copy()
                         df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA"]
-                        
-                        # --- EL TRUCO: Cambiamos NaN por vacío para que la lógica del HTML funcione ---
                         df_vista = df_vista.fillna('') 
                         
                         if busqueda:
@@ -4522,8 +4519,7 @@ else:
                         df_render = df_vista.sort_values(by="FOLIO", ascending=False)
                         data_busqueda = df_render.to_dict('records')
                 
-                        # Calculamos alto dinámico
-                        alto_busqueda = min(len(data_busqueda) * 100 + 20, 500)
+                        alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) # Subí un poco el alto por tarjeta
                 
                         html_busqueda = f"""
                         <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
@@ -4553,28 +4549,30 @@ else:
                                 .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
                                 .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
                                 .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
-                                .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 12px; font-weight: 700; }}
-                                .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 10px; font-weight: 400; }}
+                                
+                                /* TEXTO DE LOGÍSTICA MÁS GRANDE */
+                                .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 15px; font-weight: 800; line-height: 1.2; }}
+                                .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 13px; font-weight: 700; margin-top: 4px; }}
+                                
+                                .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 11px; font-weight: 400; }}
                             </style>
                             {"".join([f'''
                             <div class="card-busqueda">
-                                <div style="flex: 1.2;">
+                                <div style="flex: 1.1;">
                                     <div class="label-mini">Folio / Fecha</div>
                                     <div class="val-folio">#{str(item['FOLIO'])}</div>
                                     <div style="color: rgba(255,255,255,0.5); font-size: 10px;">{str(item['FECHA ENVÍO'])[:10]}</div>
                                 </div>
-                                <div style="flex: 2; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
                                     <div class="label-mini">Hotel</div>
                                     <div class="val-hotel">{str(item['HOTEL'])[:40]}</div>
                                 </div>
-                                <div style="flex: 1.5; text-align: right;">
-                                    <div class="label-mini">Logística</div>
-                                    
+                                <div style="flex: 1.6; text-align: right;">
                                     <div class="val-guia { 'pendiente' if item['PAQUETERÍA'] == '' or item['PAQUETERÍA'] == 'nan' else '' }">
                                         { item['PAQUETERÍA'] if item['PAQUETERÍA'] != '' and item['PAQUETERÍA'] != 'nan' else 'PAQUETERÍA PENDIENTE' }
                                     </div>
                                     
-                                    <div class="val-guia { 'pendiente' if item['NÚMERO DE GUÍA'] == '' or item['NÚMERO DE GUÍA'] == 'nan' else '' }" style="font-size: 11px;">
+                                    <div class="val-sub-guia { 'pendiente' if item['NÚMERO DE GUÍA'] == '' or item['NÚMERO DE GUÍA'] == 'nan' else '' }">
                                         { item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] != '' and item['NÚMERO DE GUÍA'] != 'nan' else 'GUÍA PENDIENTE' }
                                     </div>
                                 </div>
