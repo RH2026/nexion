@@ -1893,22 +1893,25 @@ else:
                                     padding: 8px;
                                 }}
                 
-                                /* ───────── SCROLLBAR MINIMALISTA AGC ───────── */
+                                /* ───────── SCROLLBAR PERSONALIZADO AGC ───────── */
                                 ::-webkit-scrollbar {{
-                                    width: 6px;
-                                    height: 6px;
+                                    width: 8px;
+                                    height: 8px;
                                 }}
                                 ::-webkit-scrollbar-track {{
                                     background: rgba(0, 0, 0, 0.1);
                                     border-radius: 10px;
                                 }}
                                 ::-webkit-scrollbar-thumb {{
-                                    background: rgba(255, 255, 255, 0.1);
+                                    /* Estado Natural: Azul sutil (como tu primera imagen) */
+                                    background: #3498db; 
                                     border-radius: 10px;
-                                    border: 1px solid #384A52;
+                                    border: 2px solid #384A52; /* Efecto de separación */
                                 }}
                                 ::-webkit-scrollbar-thumb:hover {{
-                                    background: rgba(56, 189, 248, 0.4);
+                                    /* Estado Activo: Verde brillante (como tu segunda imagen) */
+                                    background: #2ecc71; 
+                                    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
                                 }}
                 
                                 .list-row {{
@@ -1918,7 +1921,7 @@ else:
                                     margin-bottom: 8px;
                                     border-radius: 12px;
                                     overflow: hidden;
-                                    width: 100%; /* Ocupa todo el ancho disponible amor */
+                                    width: 100%;
                                 }}
                                 
                                 .list-row:hover {{
