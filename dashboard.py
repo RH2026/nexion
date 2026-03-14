@@ -1824,6 +1824,7 @@ else:
                                 ::-webkit-scrollbar-thumb {{
                                     background: rgba(255, 255, 255, 0.1);
                                     border-radius: 10px;
+                                    border: 1px solid #384A52;
                                 }}
                                 ::-webkit-scrollbar-thumb:hover {{
                                     background: rgba(56, 189, 248, 0.4);
@@ -1889,7 +1890,7 @@ else:
                                             </div>
                                             <div>
                                                 <div class="label-mini">Cita</div>
-                                                <div class="text-sm font-mono font-bold {"text-orange-400" if item['cita'] == "PENDIENTE" else "text-blue-400"}">
+                                                <div class="text-sm font-mono font-bold {"text-slate-400 opacity-50" if "PENDIENTE" in item['cita'].upper() else "text-blue-400"}">
                                                     {item['cita']}
                                                 </div>
                                             </div>
@@ -1910,7 +1911,7 @@ else:
                         """
                         return components.html(html_content, height=800, scrolling=True)
                 
-                    # Dataset actualizado
+                    # Dataset actualizado (el mismo que me pasaste)
                     data_corregida = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026 - 11:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 08:00 AM", "estatus": "PENDIENTE"},
