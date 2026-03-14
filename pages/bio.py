@@ -23,6 +23,7 @@ def load_consignas():
         return None
 
 def render_expediente_chingon(df):
+    # Llenamos vacíos para evitar errores de tipo None y nan
     df_clean = df.fillna('')
     data = df_clean.to_dict('records')
     
@@ -38,7 +39,7 @@ def render_expediente_chingon(df):
                 color: #e2e8f0; 
                 font-family: 'Inter', sans-serif; 
                 margin: 0; 
-                padding: 0px 5px; /* Ajuste fino lateral */
+                padding: 0px 5px;
             }}
             
             ::-webkit-scrollbar {{ width: 6px; }}
@@ -53,7 +54,7 @@ def render_expediente_chingon(df):
                 margin-bottom: 12px;
                 padding: 18px 24px;
                 transition: all 0.3s ease;
-                width: 100%; /* Fuerza el ancho total */
+                width: 100%;
                 box-sizing: border-box;
             }}
             
@@ -88,7 +89,7 @@ def render_expediente_chingon(df):
                     </div>
                     
                     <div class="md:border-l md:border-white/5 md:pl-6">
-                        <div class="label-mini">Destinatario</div>
+                        <div class="label-mini">Destinatario / Origen-Dest</div>
                         <div class="valor truncate text-sm uppercase">{str(item.get('DESTINATARIO', ''))[:45]}</div>
                         <div class="text-[10px] text-white/50 italic">{str(item.get('ORIGEN', ''))} → {str(item.get('DESTINO', ''))}</div>
                     </div>
@@ -119,9 +120,15 @@ def render_expediente_chingon(df):
                         <span class="label-mini text-blue-300">Domicilio Entrega:</span>
                         <span class="text-[11px] text-white/60 ml-2"> {str(item.get('DOMICILIO DEL DESTINATARIO', ''))}</span>
                     </div>
-                    <div class="text-right">
-                        <span class="label-mini">Notas:</span>
-                        <span class="text-[11px] text-white/40 italic ml-2"> {str(item.get('OBSERVACION 1', '--'))}</span>
+                    <div class="text-right flex gap-4">
+                        <div>
+                            <span class="label-mini text-orange-300">Ref:</span>
+                            <span class="text-[11px] text-white/60 italic ml-1">{str(item.get('REFERENCIA', '--'))}</span>
+                        </div>
+                        <div>
+                            <span class="label-mini">Notas:</span>
+                            <span class="text-[11px] text-white/40 italic ml-1">{str(item.get('OBSERVACION 1', '--'))}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -130,19 +137,27 @@ def render_expediente_chingon(df):
     </body>
     </html>
     """
-    # Usamos height dinámico o uno alto para que el scroll de la página mande
     return components.html(html_content, height=1200, scrolling=True)
 
-# --- EJECUCIÓN ---
+# --- EJECUCIÓN PRINCIPAL ---
 df_consignas = load_consignas()
 
 if df_consignas is not None:
     st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>EXPEDIENTES LOGÍSTICOS</h3>", unsafe_allow_html=True)
     
-    # El buscador ahora se verá igual de ancho que las tarjetas de abajo
-    search = st.text_input("🔍 Buscar por Talón:", placeholder="Escribe el número de talón...", key="search_main")
+    # BUSCADOR TRIPARTITO (Talon, Cliente o Referencia)
+    search = st.text_input("🔍 Buscar por Talón, Cliente o Referencia:", placeholder="Escribe aquí...", key="search_main")
     
     if search:
-        df_consignas = df_consignas[df_consignas['TALON'].astype(str).str.contains(search, case=False)]
+        # Filtramos en las 3 columnas ignorando mayúsculas/minúsculas
+        mask = (
+            df_consignas['TALON'].astype(str).str.contains(search, case=False, na=False) | 
+            df_consignas['DESTINATARIO'].astype(str).str.contains(search, case=False, na=False) |
+            df_consignas['REFERENCIA'].astype(str).str.contains(search, case=False, na=False)
+        )
+        df_consignas = df_consignas[mask]
+        
+        # Pequeño aviso de cuántos encontramos
+        st.markdown(f"<p style='color:#00FFAA; font-size:12px; font-style:italic;'>Se encontraron {len(df_consignas)} coincidencia(s)</p>", unsafe_allow_html=True)
         
     render_expediente_chingon(df_consignas)
