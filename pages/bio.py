@@ -17,6 +17,14 @@ def load_consignas():
         headers = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
         df = pd.read_csv(URL_CONSIGNAS, storage_options=headers, low_memory=False)
         df.columns = [c.strip() for c in df.columns]
+        
+        # --- LÓGICA DE ORDENAMIENTO POR FECHA ---
+        if 'F.DOC' in df.columns:
+            # Intentamos convertir a fecha (dayfirst=True por si viene en formato DD/MM/YYYY)
+            df['F_TEMP'] = pd.to_datetime(df['F.DOC'], errors='coerce', dayfirst=True)
+            # Ordenamos: las más recientes (NaT o vacías se van al final)
+            df = df.sort_values(by='F_TEMP', ascending=False).drop(columns=['F_TEMP'])
+            
         return df
     except Exception as e:
         st.error(f"Error cargando consignas: {e}")
@@ -41,9 +49,8 @@ def render_expediente_chingon(df):
                 padding: 10px 15px;
             }}
             
-            /* SCROLLBAR MÁS PRESENTE */
             ::-webkit-scrollbar {{ 
-                width: 10px; /* Un poco más ancho amor */
+                width: 10px; 
                 height: 10px;
             }}
             ::-webkit-scrollbar-track {{ 
@@ -51,7 +58,7 @@ def render_expediente_chingon(df):
                 border-radius: 10px;
             }}
             ::-webkit-scrollbar-thumb {{ 
-                background: rgba(56, 189, 248, 0.6); /* Más brillante */
+                background: rgba(56, 189, 248, 0.6); 
                 border-radius: 10px;
                 border: 2px solid #384A52;
             }}
@@ -76,11 +83,10 @@ def render_expediente_chingon(df):
                 transform: scale(1.001);
             }}
             
-            /* TEXTOS GRISES MÁS CLAROS */
             .label-mini {{
                 font-size: 8px;
                 text-transform: uppercase;
-                color: rgba(255,255,255,0.6); /* Mucho más claro amor */
+                color: rgba(255,255,255,0.6); 
                 font-weight: 800;
                 letter-spacing: 1.5px;
             }}
@@ -89,7 +95,7 @@ def render_expediente_chingon(df):
             .highlight {{ color: #00FFAA; font-family: monospace; }}
             
             .text-muted-claro {{
-                color: rgba(255,255,255,0.7); /* Texto gris ahora es legible */
+                color: rgba(255,255,255,0.7); 
                 font-style: italic;
             }}
         </style>
@@ -159,6 +165,10 @@ def render_expediente_chingon(df):
 
 # --- EJECUCIÓN PRINCIPAL ---
 df_consignas = load_consignas()
+
+if df_consignas is not None:
+    st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>EXPEDIENTES LOGÍSTICOS</h3>", unsafe_allow_html=True)
+    render_expediente_chingon(df_consignas)
 
 if df_consignas is not None:
     st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>EXPEDIENTES LOGÍSTICOS</h3>", unsafe_allow_html=True)
