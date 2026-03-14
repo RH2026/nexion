@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
 
+st.set_page_config(
+    page_title="Nexion Logística Pro",
+    layout="wide",  # Aquí activamos el modo ancho, amor
+    initial_sidebar_state="collapsed"
+)
 # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
 # Extraemos el token de forma segura
 GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "TU_TOKEN_AQUÍ")
