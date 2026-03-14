@@ -1918,6 +1918,7 @@ else:
                                     margin-bottom: 8px;
                                     border-radius: 12px;
                                     overflow: hidden;
+                                    width: 100%; /* Ocupa todo el ancho disponible amor */
                                 }}
                                 
                                 .list-row:hover {{
@@ -1943,7 +1944,7 @@ else:
                             </style>
                         </head>
                         <body>
-                            <div class="max-w-6xl mx-auto space-y-2">
+                            <div class="w-full space-y-2">
                                 {"".join([f'''
                                 <div class="list-row flex items-stretch">
                                     <div class="status-indicator {"bg-delivered" if item['estatus'] == "ENTREGADA" else "bg-pending"}"></div>
@@ -1957,14 +1958,14 @@ else:
                                             </div>
                                         </div>
                 
-                                        <div class="hidden lg:block flex-[1.5]">
+                                        <div class="hidden lg:block flex-[2]">
                                             <div class="label-mini">Referencia</div>
-                                            <div class="text-[10px] text-white/60 italic truncate max-w-[200px]">
+                                            <div class="text-[10px] text-white/60 italic truncate">
                                                 {item['entrega_texto']}
                                             </div>
                                         </div>
                 
-                                        <div class="grid grid-cols-2 sm:flex sm:gap-8 gap-4 py-2 sm:py-0 border-t sm:border-t-0 sm:border-x border-white/5 sm:px-6">
+                                        <div class="grid grid-cols-2 sm:flex sm:gap-12 gap-4 py-2 sm:py-0 border-t sm:border-t-0 sm:border-x border-white/5 sm:px-8">
                                             <div>
                                                 <div class="label-mini">Volumen</div>
                                                 <div class="text-sm font-bold text-white">{item['cantidad']}</div>
@@ -1977,7 +1978,7 @@ else:
                                             </div>
                                         </div>
                 
-                                        <div class="flex justify-between sm:block sm:w-24 text-right border-t sm:border-t-0 pt-2 sm:pt-0">
+                                        <div class="flex justify-between sm:block sm:w-32 text-right border-t sm:border-t-0 pt-2 sm:pt-0">
                                             <div class="label-mini sm:hidden">Estatus</div>
                                             <div class="text-[10px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tight">
                                                 {item['estatus']}
@@ -1992,7 +1993,7 @@ else:
                         """
                         return components.html(html_content, height=800, scrolling=True)
                 
-                    # Dataset actualizado (el mismo que me pasaste)
+                    # Dataset corregido
                     data_corregida = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026 - 11:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 08:00 AM", "estatus": "PENDIENTE"},
