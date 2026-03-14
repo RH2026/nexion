@@ -2177,12 +2177,9 @@ else:
                     # --- EJECUCIÓN PRINCIPAL ---
                     df_consignas = load_consignas()
                     
-                    if df_consignas is not None:
-                        st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>EXPEDIENTES LOGÍSTICOS</h3>", unsafe_allow_html=True)
-                        render_expediente_chingon(df_consignas)
                     
                     if df_consignas is not None:
-                        st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>EXPEDIENTES LOGÍSTICOS</h3>", unsafe_allow_html=True)
+                        st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>CONSIGNAS BARCELO</h3>", unsafe_allow_html=True)
                         
                         # Renderizado directo sin buscador amor
                         render_expediente_chingon(df_consignas)
