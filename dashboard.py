@@ -1913,17 +1913,17 @@ else:
                     # Dataset actualizado
                     data_corregida = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026 - 11:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 8:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "6 de abril", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "20 de abril", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L1)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L2)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L3)", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 21", "entrega_texto": "18 de mayo", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "1 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 25", "entrega_texto": "15 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 26", "entrega_texto": "22 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 27", "entrega_texto": "29 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "6 de abril", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "20 de abril", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L1)", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L2)", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "4 de mayo (L3)", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 21", "entrega_texto": "18 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "1 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 25", "entrega_texto": "15 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 26", "entrega_texto": "22 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 27", "entrega_texto": "29 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                     ]
                 
                     render_logistica_flow_responsive(data_corregida)
