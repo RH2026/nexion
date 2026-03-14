@@ -1,30 +1,34 @@
 import streamlit as st
 import cv2
-from pyzbar.pyzbar import decode
 import numpy as np
+from pyzbar.pyzbar import decode
+import pytesseract
 
-st.title("Lector de Muestras - JYPESA")
+st.title("Scanner Inteligente Nexion")
 
-# Usamos el input de cámara de Streamlit que es muy compatible con Android
-img_file_buffer = st.camera_input("Escanea el código de barras de la muestra")
+img_file_buffer = st.camera_input("Captura la etiqueta de la muestra")
 
 if img_file_buffer is not None:
-    # Convertir la imagen para que OpenCV la entienda
+    # Convertir imagen
     bytes_data = img_file_buffer.getvalue()
     cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
 
-    # Buscar códigos de barras en la imagen
-    objetos_detectados = decode(cv2_img)
+    # 1. Intentar leer Código de Barras
+    codigos = decode(cv2_img)
+    if codigos:
+        for obj in codigos:
+            st.success(f"📦 Código de barras: {obj.data.decode('utf-8')}")
 
-    if objetos_detectados:
-        for obj in objetos_detectados:
-            codigo_leido = obj.data.decode("utf-8")
-            st.success(f"✅ Código detectado: {codigo_leido}")
-            
-            # Aquí puedes poner tu lógica para buscar en el inventario
-            st.write(f"Buscando información para el código {codigo_leido}...")
+    # 2. Intentar leer Texto (OCR)
+    # Convertimos a escala de grises para que sea más fácil leer letras
+    gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
+    texto_detectado = pytesseract.image_to_string(gray, lang='spa')
+
+    if texto_detectado.strip():
+        st.info("📝 Texto detectado en la etiqueta:")
+        st.text(texto_detectado)
     else:
-        st.warning("No se detectó ningún código. Intenta acercar más la cámara o mejorar la iluminación.")
+        st.warning("No se detectó texto claro, intenta enfocar mejor.")
 
 
 
