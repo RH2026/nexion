@@ -1750,27 +1750,27 @@ else:
                             c1, c2 = st.columns(2)
                             
                             with c1:
-                            st.markdown(f"""
-                                <div class="metric-card-agc">
-                                    <p class="op-query-text">VOLUMEN TOTAL (UNIT)</p>
-                                    <h3 style="margin:0; color:#FFFFFF; font-weight:800; font-family:monospace; 
-                                               font-size: 16px; letter-spacing: 4px;">
-                                        {int(total_cajas_mes):,}
-                                    </h3>
-                                </div>
-                            """, unsafe_allow_html=True)
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text">VOLUMEN TOTAL (UNIT)</p>
+                                        <h3 style="margin:0; color:#FFFFFF; font-weight:800; font-family:monospace; 
+                                                   font-size: 16px; letter-spacing: 4px;">
+                                            {int(total_cajas_mes):,}
+                                        </h3>
+                                    </div>
+                                """, unsafe_allow_html=True)
                                 
                             with c2:
-                            lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
-                            st.markdown(f"""
-                                <div class="metric-card-agc">
-                                    <p class="op-query-text">CARRIER DOMINANTE</p>
-                                    <h3 style="margin:0; color:#00FFAA; font-weight:800; font-style: italic; 
-                                               font-size: 16px; letter-spacing: 3px;">
-                                        {lider_n}
-                                    </h3>
-                                </div>
-                            """, unsafe_allow_html=True)
+                                lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text">CARRIER DOMINANTE</p>
+                                        <h3 style="margin:0; color:#00FFAA; font-weight:800; font-style: italic; 
+                                                   font-size: 16px; letter-spacing: 3px;">
+                                            {lider_n}
+                                        </h3>
+                                    </div>
+                                """, unsafe_allow_html=True)
                             
                             st.markdown("<br>", unsafe_allow_html=True)
                             
