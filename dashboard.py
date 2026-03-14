@@ -1728,14 +1728,16 @@ else:
                             
                             # --- GRÁFICO DE BARRAS ---
                             altura_ajustada = max(400, len(df_part) * 40)
-                            
+
                             fig_bar = go.Figure(go.Bar(
                                 x=df_part['PORCENTAJE'],
                                 y=df_part['TRANSPORTE'],
                                 orientation='h',
                                 marker=dict(
                                     color=df_part['PORCENTAJE'],
-                                    colorscale=['#1a2432', '#1cc88a']
+                                    # Cambié el inicio de la escala para que combine mejor con el fondo oscuro
+                                    colorscale=['#2c3e50', '#1cc88a'], 
+                                    line=dict(color='rgba(255, 255, 255, 0.1)', width=1) # Un borde sutil
                                 ),
                                 text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
                                 textposition='outside',
@@ -1744,16 +1746,40 @@ else:
                             
                             fig_bar.update_layout(
                                 height=altura_ajustada,
-                                paper_bgcolor='rgba(0,0,0,0)',
-                                plot_bgcolor='rgba(0,0,0,0)',
+                                # El color exacto de tus tarjetas AGC
+                                paper_bgcolor='#263238', 
+                                plot_bgcolor='#263238', 
                                 font=dict(family="Inter", size=12, color="#FFFFFF"),
-                                margin=dict(l=250, r=50, t=20, b=20),
-                                xaxis=dict(showgrid=False, zeroline=False, showticklabels=True),
-                                yaxis=dict(showgrid=False, automargin=True),
-                                showlegend=False
+                                margin=dict(l=200, r=60, t=30, b=20),
+                                # Añadimos bordes redondeados visuales (vía Streamlit container usualmente)
+                                # pero aquí forzamos que el texto y ejes se vean impecables
+                                xaxis=dict(
+                                    showgrid=False, 
+                                    zeroline=False, 
+                                    showticklabels=True,
+                                    tickfont=dict(color='rgba(255,255,255,0.5)')
+                                ),
+                                yaxis=dict(
+                                    showgrid=False, 
+                                    automargin=True,
+                                    tickfont=dict(color='#FFFFFF', size=11)
+                                ),
+                                showlegend=False,
+                                # Este paso es clave para que no se vea el recuadro blanco al hacer hover
+                                hoverlabel=dict(
+                                    bgcolor='#1a2432',
+                                    font_size=12,
+                                    font_family="Inter"
+                                )
                             )
                             
-                            st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_part_{mes_sel}_{tipo_mov}")
+                            # Renderizado con un toque extra de estilo AGC
+                            st.plotly_chart(
+                                fig_bar, 
+                                use_container_width=True, 
+                                config={'displayModeBar': False}, 
+                                key=f"bar_part_{mes_sel}_{tipo_mov}"
+                            )
                 
                             # --- EXPANDER: DESGLOSE POR DESTINO ---
                             st.markdown("<br>", unsafe_allow_html=True)
