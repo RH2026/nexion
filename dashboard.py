@@ -2512,10 +2512,25 @@ else:
                         # Alto dinámico
                         alto_panel = (len(data_excepciones) * 115) + 20
                 
+                        # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM CON SCROLL AGC) ---
                         html_excepciones = f"""
-                        <div style="font-family: 'Inter', sans-serif; padding: 0px;">
+                        <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
                             <style>
-                                body {{ background: transparent; margin: 0; padding: 0; overflow: hidden; }}
+                                body {{ background: transparent; margin: 0; padding: 0; }}
+                                
+                                /* ───────── SCROLLBAR AGC STYLE ───────── */
+                                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ 
+                                    background: #3498db; 
+                                    border-radius: 10px; 
+                                    border: 2px solid #384A52; 
+                                }}
+                                ::-webkit-scrollbar-thumb:hover {{ 
+                                    background: #2ecc71; 
+                                    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
+                                }}
+            
                                 .card-excepcion {{
                                     background: #263238;
                                     border: 1px solid rgba(255, 75, 75, 0.15);
@@ -2527,6 +2542,8 @@ else:
                                     justify-content: space-between;
                                     align-items: center;
                                     transition: all 0.3s ease;
+                                    width: 100%;
+                                    box-sizing: border-box;
                                 }}
                                 .card-excepcion:hover {{ 
                                     border-color: #FF4B4B; 
@@ -2546,10 +2563,7 @@ else:
                                     border: 1px solid rgba(255, 75, 75, 0.3);
                                 }}
                                 .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }}
-                                
-                                /* TAMAÑO DE FACTURA REFORZADO */
                                 .factura-destacada {{ color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 1px; font-family: monospace; }}
-                                
                                 .info-main {{ color: #FFFFFF; font-size: 14px; font-weight: 700; }}
                                 .info-sub {{ color: rgba(255,255,255,0.5); font-size: 11px; font-style: italic; }}
                                 .moderado {{ border-left-color: #FFA500; border-color: rgba(255, 165, 0, 0.2); }}
@@ -2579,7 +2593,8 @@ else:
                             ''' for item in data_excepciones])}
                         </div>
                         """
-                        components.html(html_excepciones, height=alto_panel, scrolling=False)
+                        # Altura fija para forzar el scroll interno y scrolling=True
+                        components.html(html_excepciones, height=500, scrolling=True)
                     else:
                         st.info("No hay pedidos que coincidan con los filtros seleccionados.")
                 else:
