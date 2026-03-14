@@ -2005,7 +2005,7 @@ else:
                                     {"".join([f'''
                                     <div class="carrier-group">
                                         <div class="carrier-header">
-                                            <span class="carrier-name">🚚 {item['TRANSPORTE']}</span>
+                                            <span class="carrier-name">{item['TRANSPORTE']}</span>
                                             <span style="color:rgba(255,255,255,0.3); font-size:8px; font-weight:800;">DETALLE DE RUTA</span>
                                         </div>
                                         <div class="route-row">
