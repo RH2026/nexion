@@ -2015,7 +2015,7 @@ else:
                     render_logistica_flow_responsive(data_corregida)
                 
                 # PESTAÑA 6: CONSIGNAS
-                with tab_consignas_agc:
+                with tab_consignas:
                     # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
                     GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
                     REPO_NAME = "RH2026/nexion"
