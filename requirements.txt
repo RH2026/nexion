@@ -11,8 +11,7 @@ pytz
 fpdf2
 xlsxwriter
 google-generativeai
-streamlit-barcode-reader
-
+pyzbar
 
 
 
