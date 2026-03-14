@@ -2631,7 +2631,7 @@ else:
                     
                     # 4. El botón de descarga
                     st.download_button(
-                        label="📥 DESCARGAR DETALLE DE RETRASOS (EXCEL)",
+                        label="DESCARGAR DETALLE DE RETRASOS (EXCEL)",
                         data=buffer,
                         file_name=f"Reporte_Retrasos_Nexion_{mes_sel}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
