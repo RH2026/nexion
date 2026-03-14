@@ -2424,8 +2424,8 @@ else:
                 
                 # B. Filtrado por fletera
                 if filtro_global_fletera != "TODOS":
-                df_kpi = df_kpi[df_kpi["FLETERA"] == filtro_global_fletera]
-                
+                    df_kpi = df_kpi[df_kpi["FLETERA"] == filtro_global_fletera]
+                    
                 # C. Identificación de "En Tránsito" y Cálculo de Atrasos
                 df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
                 df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
