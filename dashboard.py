@@ -4502,16 +4502,86 @@ else:
                     # Reiniciamos la app para que se vea el cambio
                     st.rerun()
                 
-                # --- BÚSQUEDA RÁPIDA ---
+                # --- BÚSQUEDA RÁPIDA ---                
+                # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO PREMIUM) ---
                 st.write("")
                 with st.expander("🔍 BÚSQUEDA RÁPIDA DE GUÍAS (CONSULTA DE FOLIOS)", expanded=False):
                     if not df_actual.empty:
                         busqueda = st.text_input("Escribe el nombre del Hotel o Folio para filtrar:").upper()
+                        
+                        # Preparación de datos (Tu lógica amor)
                         df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA"]].copy()
                         df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA"]
+                        
                         if busqueda:
                             df_vista = df_vista[df_vista.astype(str).apply(lambda x: x.str.contains(busqueda, case=False)).any(axis=1)]
-                        st.dataframe(df_vista.sort_values(by="FOLIO", ascending=False), use_container_width=True, hide_index=True)
+                        
+                        df_render = df_vista.sort_values(by="FOLIO", ascending=False)
+                        data_busqueda = df_render.to_dict('records')
+                
+                        # Calculamos alto dinámico (máximo 500px para no romper el scroll principal)
+                        alto_busqueda = min(len(data_busqueda) * 100 + 20, 500)
+                
+                        html_busqueda = f"""
+                        <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                            <style>
+                                body {{ background: transparent; margin: 0; padding: 0; }}
+                                
+                                /* SCROLLBAR AGC STYLE */
+                                ::-webkit-scrollbar {{ width: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                
+                                .card-busqueda {{
+                                    background: #263238;
+                                    border: 1px solid rgba(255, 255, 255, 0.05);
+                                    border-radius: 10px;
+                                    padding: 15px;
+                                    margin-bottom: 10px;
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    transition: all 0.3s ease;
+                                }}
+                                .card-busqueda:hover {{
+                                    border-color: #38bdf8;
+                                    background: #2d3b42;
+                                    transform: translateX(5px);
+                                }}
+                                .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
+                                .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
+                                .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
+                                .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 12px; font-weight: 700; }}
+                                .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 11px; }}
+                            </style>
+                            {"".join([f'''
+                            <div class="card-busqueda">
+                                <div style="flex: 1.2;">
+                                    <div class="label-mini">Folio / Fecha</div>
+                                    <div class="val-folio">#{str(item['FOLIO'])}</div>
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px;">{str(item['FECHA ENVÍO'])[:10]}</div>
+                                </div>
+                                <div style="flex: 2; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="label-mini">Hotel</div>
+                                    <div class="val-hotel">{str(item['HOTEL'])[:40]}</div>
+                                </div>
+                                <div style="flex: 1.5; text-align: right;">
+                                    <div class="label-mini">Logística</div>
+                                    <div class="val-guia {'pendiente' if not item['PAQUETERÍA'] or str(item['PAQUETERÍA']).strip() == '' else ''}">
+                                        {item['PAQUETERÍA'] if item['PAQUETERÍA'] and str(item['PAQUETERÍA']).strip() != '' else 'PAQUETERÍA PENDIENTE'}
+                                    </div>
+                                    <div class="val-guia {'pendiente' if not item['NÚMERO DE GUÍA'] or str(item['NÚMERO DE GUÍA']).strip() == '' else ''}" style="font-size: 11px;">
+                                        {item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] and str(item['NÚMERO DE GUÍA']).strip() != '' else 'GUÍA PENDIENTE'}
+                                    </div>
+                                </div>
+                            </div>
+                            ''' for item in data_busqueda])}
+                        </div>
+                        """
+                        import streamlit.components.v1 as components
+                        components.html(html_busqueda, height=alto_busqueda, scrolling=True)
+                        
                     else:
                         st.info("No hay registros todavía.")
                 
