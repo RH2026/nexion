@@ -15,6 +15,7 @@ pyzbar
 opencv-python-headless
 pyzbar
 numpy
+pytesseract
 
 
 
