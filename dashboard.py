@@ -1201,19 +1201,24 @@ else:
                 with st.expander("Listado de pedidos completo", expanded=False):
                                 
                     # --- BÚSQUEDA MAESTRA ---
-                    # --- BÚSQUEDA MAESTRA Y TIMELINE (VERSIÓN COMPACTA) ---
-
-                    # 1. Caja de búsqueda expandida (Wide)
-                    busqueda_manual = st.text_input("", key="bus_maestra_log", placeholder="🔍 Buscar por Factura, Guía o Cliente...").strip()
+                    #1. Definimos la búsqueda
+                    busqueda_manual = st.text_input("", key="bus_maestra_log", placeholder="🔍 Buscar...").strip()
+                    
+                    # 2. ¡AQUÍ ESTÁ EL TRUCO! 
+                    # Creamos df_final por defecto con TODO el contenido
+                    df_final = df_raw.copy() 
                     
                     if busqueda_manual:
-                        # Lógica de filtrado
+                        # Si el usuario escribe algo, entonces SÍ filtramos
                         mask = (
                             df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda_manual, case=False, na=False) |
                             df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda_manual, case=False, na=False) |
                             df_raw["NOMBRE DEL CLIENTE"].astype(str).str.contains(busqueda_manual, case=False, na=False)
                         )
                         df_final = df_raw[mask].copy()
+                    
+                    # 3. Ahora esta línea YA NO VA A TRONAR porque df_final siempre existe
+                    st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
                     
                         if not df_final.empty:
                             # Preparación de datos para el Timeline
