@@ -1876,6 +1876,7 @@ else:
                 
                 # PESTAÑA 5: AGC
                 with tab_entregas_agc:
+                    st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>PROGRAMA DE ENTREGAS AGC</h3>", unsafe_allow_html=True)
                     def render_logistica_flow_responsive(data):
                         html_content = f"""
                         <!DOCTYPE html>
