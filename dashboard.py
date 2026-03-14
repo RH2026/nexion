@@ -1753,8 +1753,7 @@ else:
                                 st.markdown(f"""
                                     <div class="metric-card-agc">
                                         <p class="op-query-text">VOLUMEN TOTAL (UNIT)</p>
-                                        <h3 style="margin:0; color:#FFFFFF; font-weight:800; font-family:monospace; 
-                                                   font-size: 16px; letter-spacing: 4px;">
+                                        <h3 style="margin:0; color:#FFFFFF; font-weight:800; font-family:monospace; font-size: 14px !important; letter-spacing: 2px;">
                                             {int(total_cajas_mes):,}
                                         </h3>
                                     </div>
@@ -1765,8 +1764,7 @@ else:
                                 st.markdown(f"""
                                     <div class="metric-card-agc">
                                         <p class="op-query-text">CARRIER DOMINANTE</p>
-                                        <h3 style="margin:0; color:#00FFAA; font-weight:800; font-style: italic; 
-                                                   font-size: 16px; letter-spacing: 3px;">
+                                        <h3 style="margin:0; color:#00FFAA; font-weight:800; font-size: 12px !important; font-style: italic; letter-spacing: 1px;">
                                             {lider_n}
                                         </h3>
                                     </div>
