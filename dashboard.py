@@ -1812,10 +1812,22 @@ else:
                                     padding: 8px;
                                 }}
                 
-                                /* Scrollbar Minimalista */
-                                ::-webkit-scrollbar {{ width: 6px; }}
-                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); }}
-                                ::-webkit-scrollbar-thumb {{ background: rgba(255, 255, 255, 0.1); border-radius: 10px; }}
+                                /* ───────── SCROLLBAR MINIMALISTA AGC ───────── */
+                                ::-webkit-scrollbar {{
+                                    width: 6px;
+                                    height: 6px;
+                                }}
+                                ::-webkit-scrollbar-track {{
+                                    background: rgba(0, 0, 0, 0.1);
+                                    border-radius: 10px;
+                                }}
+                                ::-webkit-scrollbar-thumb {{
+                                    background: rgba(255, 255, 255, 0.1);
+                                    border-radius: 10px;
+                                }}
+                                ::-webkit-scrollbar-thumb:hover {{
+                                    background: rgba(56, 189, 248, 0.4);
+                                }}
                 
                                 .list-row {{
                                     background-color: #263238;
@@ -1858,7 +1870,7 @@ else:
                                         
                                         <div class="flex-1 min-w-[120px]">
                                             <div class="label-mini">{item['semana']}</div>
-                                            <div class="text-lg sm:text-1g font-black text-white italic tracking-tighter leading-none">
+                                            <div class="text-base sm:text-lg font-black text-white italic tracking-tighter leading-none">
                                                 {item['oc']}
                                             </div>
                                         </div>
@@ -1889,7 +1901,6 @@ else:
                                                 {item['estatus']}
                                             </div>
                                         </div>
-                                        
                                     </div>
                                 </div>
                                 ''' for item in data])}
@@ -1899,7 +1910,7 @@ else:
                         """
                         return components.html(html_content, height=800, scrolling=True)
                 
-                    # El dataset se mantiene igual...
+                    # Dataset actualizado
                     data_corregida = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "9 de marzo", "cita": "10/03/2026 - 11:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 8:00 AM", "estatus": "PENDIENTE"},
@@ -1914,7 +1925,7 @@ else:
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 26", "entrega_texto": "22 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
                         {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 27", "entrega_texto": "29 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
                     ]
-                    
+                
                     render_logistica_flow_responsive(data_corregida)
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
