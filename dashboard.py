@@ -1692,15 +1692,15 @@ else:
                                 color: #FFFFFF !important;
                                 font-weight: 800 !important;
                                 font-family: monospace !important;
-                                font-size: 28px !important; 
+                                font-size: 26px !important; 
                                 letter-spacing: 2px !important;
                                 margin: 0 !important;
                             }
                             /* CLASE NUEVA: Para el nombre de la Paquetería */
                             .valor-carrier {
                                 color: #00FFAA !important;
-                                font-weight: 800 !important;
-                                font-size: 28px !important;
+                                font-weight: 500 !important;
+                                font-size: 26px !important;
                                 font-style: italic !important;
                                 letter-spacing: 1px !important;
                                 margin: 0 !important;
