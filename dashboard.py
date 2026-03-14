@@ -575,8 +575,8 @@ div[data-baseweb="popover"] button[kind="primary"] {{
     line-height: 26px !important;
     
     /* Rojo sólido original (el que tenías en el hover) */
-    background-color: #b91c1c !important; 
-    border: 1px solid #b91c1c !important;
+    background-color: #FF7C80 !important; 
+    border: 1px solid #FF7C80 !important;
     color: white !important;
     
     border-radius: 4px !important; /* Para mantenerlo limpio */
