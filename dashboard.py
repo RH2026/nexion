@@ -1666,15 +1666,15 @@ else:
                     
                 # PESTAÑA 4: % PARTICIPACIÓN-
                 with tab_participacion:
-                    # --- CSS INYECTADO PARA ESTA PESTAÑA ---
+                    # --- CSS ACTUALIZADO: Texto Blanco y Fuentes más Pequeñas ---
                     st.markdown("""
                         <style>
                             /* Contenedor de métricas estilo Tarjeta AGC */
                             .metric-card-agc {
                                 background-color: #263238;
                                 border: 1px solid rgba(255, 255, 255, 0.05);
-                                border-radius: 15px;
-                                padding: 15px;
+                                border-radius: 12px;
+                                padding: 12px;
                                 text-align: center;
                                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
                             }
@@ -1683,14 +1683,20 @@ else:
                                 color: #00FFAA !important;
                                 font-family: 'Inter', sans-serif;
                                 font-weight: 800 !important;
+                                font-size: 11px !important;
                                 letter-spacing: 1px;
                                 text-transform: uppercase;
                             }
+                            /* Títulos en BLANCO y más pequeños */
                             div[data-testid="stMarkdownContainer"] p.op-query-text {
-                                color: #56c1ff !important;
-                                font-weight: 800;
+                                color: #FFFFFF !important; /* Cambiado de azul a BLANCO */
+                                font-weight: 700;
+                                font-size: 10px !important; /* Texto más pequeño */
                                 text-align: center;
-                                margin-bottom: 10px;
+                                margin-bottom: 8px;
+                                letter-spacing: 1.5px;
+                                text-transform: uppercase;
+                                opacity: 0.9;
                             }
                         </style>
                     """, unsafe_allow_html=True)
@@ -1717,8 +1723,7 @@ else:
                     df_log = load_data_logistica()
                     
                     if df_log is not None:
-                        # --- SELECTOR DE FLUJO ESTILIZADO ---
-                        st.markdown("<p class='op-query-text' style='font-size:12px; letter-spacing:2px;'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
+                        st.markdown("<p class='op-query-text'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
                         
                         tipo_mov = st.radio(
                             "Selecciona el flujo:",
@@ -1728,7 +1733,6 @@ else:
                             key=f"tipo_mov_{mes_sel}"
                         )
                 
-                        # Lógica de filtrado (Intacta)
                         df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
                 
                         if tipo_mov == "COBRO DESTINO":
@@ -1742,15 +1746,14 @@ else:
                             df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
                             df_part = df_part.sort_values(by='PORCENTAJE', ascending=True)
                             
-                            # --- METRICAS EN TARJETAS ---
                             st.markdown("<br>", unsafe_allow_html=True)
                             c1, c2 = st.columns(2)
                             
                             with c1:
                                 st.markdown(f"""
                                     <div class="metric-card-agc">
-                                        <p class="op-query-text" style="letter-spacing:2px; font-size:10px;">VOLUMEN TOTAL (UNIT)</p>
-                                        <h2 style="margin:0; color:#FFFFFF; font-weight:800; font-family:monospace;">{int(total_cajas_mes):,}</h2>
+                                        <p class="op-query-text">VOLUMEN TOTAL (UNIT)</p>
+                                        <h3 style="margin:0; color:#FFFFFF; font-weight:800; font-family:monospace; font-size: 20px;">{int(total_cajas_mes):,}</h3>
                                     </div>
                                 """, unsafe_allow_html=True)
                                 
@@ -1758,8 +1761,8 @@ else:
                                 lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
                                 st.markdown(f"""
                                     <div class="metric-card-agc">
-                                        <p class="op-query-text" style="letter-spacing:2px; font-size:10px;">CARRIER DOMINANTE</p>
-                                        <h2 style="margin:0; color:#00FFAA; font-weight:800; italic;">{lider_n}</h2>
+                                        <p class="op-query-text">CARRIER DOMINANTE</p>
+                                        <h3 style="margin:0; color:#00FFAA; font-weight:800; font-size: 18px; font-style: italic;">{lider_n}</h3>
                                     </div>
                                 """, unsafe_allow_html=True)
                             
