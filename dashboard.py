@@ -2600,27 +2600,36 @@ else:
                 else:
                     st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
                 
-                # --- 6. BOTÓN DE DESCARGA: EXCEPCIONES Y RETRASOS ---
+               
+                # --- 6. BOTÓN DE DESCARGA: EXCEPCIONES Y RETRASOS (SOLO FECHAS) ---
                 st.divider()
                 
                 if not df_viz.empty:
                     import io
                 
-                    # 1. Preparamos el archivo Excel en memoria
-                    buffer = io.BytesIO()
+                    # 1. Preparamos una copia para el reporte sin afectar tu lógica principal
+                    df_reporte = df_viz.copy()
                     
-                    # Seleccionamos las columnas más importantes para tu reporte en Excel
+                    # Seleccionamos las columnas deseadas
                     columnas_excel = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "FLETERA", "NÚMERO DE GUÍA", "DIAS_TRANS", "DIAS_ATRASO", "FECHA DE ENVÍO", "PROMESA DE ENTREGA"]
-                    columnas_existentes = [c for c in columnas_excel if c in df_viz.columns]
+                    columnas_existentes = [c for c in columnas_excel if c in df_reporte.columns]
                     
+                    # 2. LIMPIEZA DE FECHAS: Quitamos la hora dejando solo la fecha corta (DD/MM/YYYY)
+                    for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA"]:
+                        if col in df_reporte.columns:
+                            # Convertimos a string con formato de fecha para que Excel no le vuelva a poner horas
+                            df_reporte[col] = pd.to_datetime(df_reporte[col]).dt.strftime('%d/%m/%Y')
+                
+                    # 3. Preparamos el archivo Excel en memoria
+                    buffer = io.BytesIO()
                     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                        df_viz[columnas_existentes].to_excel(writer, index=False, sheet_name='Retrasos_Criticos')
+                        df_reporte[columnas_existentes].to_excel(writer, index=False, sheet_name='Retrasos_Criticos')
                         
                     buffer.seek(0)
                 
                     st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:3px; color:#38bdf8; text-transform:uppercase; text-align:center; margin-bottom:10px;'>REPORTE DE EXCEPCIONES DETECTADAS</p>""", unsafe_allow_html=True)
                     
-                    # 2. El botón de descarga con estilo Streamlit
+                    # 4. El botón de descarga
                     st.download_button(
                         label="📥 DESCARGAR DETALLE DE RETRASOS (EXCEL)",
                         data=buffer,
