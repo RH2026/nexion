@@ -2395,9 +2395,18 @@ else:
                         )
                     
                     with f_col3:
-                        # Filtro de Fletera
-                        opciones_f = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
-                        filtro_global_fletera = st.multiselect("FILTRAR PAQUETERÍA", opciones_f, placeholder="TODOS")
+                    # 1. Obtenemos las fleteras únicas
+                    opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
+                    
+                    # 2. Creamos la lista final agregando "TODOS" al inicio
+                    opciones_f = ["TODOS"] + opciones_raw
+                    
+                    # 3. Cambiamos a selectbox para selección única
+                    filtro_global_fletera = st.selectbox(
+                        "FILTRAR PAQUETERÍA", 
+                        options=opciones_f, 
+                        index=0  # Esto hace que seleccione "TODOS" por defecto
+                    )
                 
                 # ── 2. PROCESAMIENTO DE DATOS KPI ──
                 df_kpi = df_seguimiento.copy()
@@ -2414,8 +2423,8 @@ else:
                                     (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])]
                 
                 # B. Filtrado por fletera
-                if filtro_global_fletera:
-                    df_kpi = df_kpi[df_kpi["FLETERA"].isin(filtro_global_fletera)]
+                if filtro_global_fletera != "TODOS":
+                df_kpi = df_kpi[df_kpi["FLETERA"] == filtro_global_fletera]
                 
                 # C. Identificación de "En Tránsito" y Cálculo de Atrasos
                 df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
@@ -2479,7 +2488,7 @@ else:
                 df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
                 
                 if not df_criticos.empty:
-                    st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:#FF4B4B; text-transform:uppercase; text-align:center; margin-bottom:20px;'>⚠️ PANEL DE EXCEPCIONES CRÍTICAS</p>""", unsafe_allow_html=True)
+                    st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:#FFFFFF; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES CRÍTICAS</p>""", unsafe_allow_html=True)
                     
                     # Filtros directos sin expander
                     c1, c2 = st.columns(2)
@@ -2556,7 +2565,7 @@ else:
                                 <div style="flex: 1.5; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05);">
                                     <div class="label-mini">Transporte / Estatus</div>
                                     <div class="info-main" style="color:#38bdf8;">{item['FLETERA']}</div>
-                                    <div class="info-sub">Guía: {item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] else 'SIN ASIGNAR'}</div>
+                                    <div class="info-sub" style="color: #FFFFFF !important;">Guía: {item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] else 'SIN ASIGNAR'}</div>
                                 </div>
                                 <div style="flex: 1; text-align: right; padding-right: 25px;">
                                     <div class="label-mini">Días en Ruta</div>
