@@ -1911,7 +1911,7 @@ else:
                             )
                 
                             # --- EXPANDER: DESGLOSE POR DESTINO ---
-                            # --- EXPLORADOR DE RUTAS Y DESTINOS (SIN EXPANDER - WIDE) ---
+                            # --- EXPLORADOR DE RUTAS Y DESTINOS (DISEÑO PREMIUM CON SCROLL AGC) ---
                             st.markdown("<h3 style='color:white; font-size:16px; letter-spacing:2px; font-weight:800; border-left:4px solid #38bdf8; padding-left:10px; margin-bottom:20px;'>🌐 EXPLORADOR DE RUTAS Y DESTINOS</h3>", unsafe_allow_html=True)
                             
                             lista_carriers = ["TODOS"] + sorted(df_log_filtrado['TRANSPORTE'].unique())
@@ -1922,14 +1922,13 @@ else:
                                 key=f"select_carrier_{mes_sel}_{tipo_mov}"
                             )
                             
-                            # Lógica de filtrado según el selectbox
+                            # Lógica de filtrado
                             if carrier_sel != "TODOS":
                                 df_dest_filtered = df_log_filtrado[df_log_filtrado['TRANSPORTE'] == carrier_sel].copy()
                             else:
                                 df_dest_filtered = df_log_filtrado.copy()
                             
                             if not df_dest_filtered.empty:
-                                # Agrupación técnica
                                 df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO', 'FORMA DE ENVIO'])['CAJAS'].sum().reset_index()
                                 df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
                                 
@@ -1937,15 +1936,25 @@ else:
                                 st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px; margin-bottom:15px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
                                 
                                 data_rutas = df_dest_sum.to_dict('records')
-                                
-                                # Calculamos el alto para evitar que se trabe el scroll principal
-                                # 85px por tarjeta es el punto dulce para que no haya scroll interno
-                                alto_ajustado = len(data_rutas) * 85 + 20
                             
                                 html_rutas = f"""
-                                <div style="font-family: 'Inter', sans-serif; padding: 0px;">
+                                <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
                                     <style>
-                                        body {{ background: transparent; margin: 0; padding: 0; overflow: hidden; }}
+                                        body {{ background: transparent; margin: 0; padding: 0; }}
+                                        
+                                        /* ───────── SCROLLBAR AGC STYLE ───────── */
+                                        ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                        ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                        ::-webkit-scrollbar-thumb {{ 
+                                            background: #3498db; 
+                                            border-radius: 10px; 
+                                            border: 2px solid #384A52; 
+                                        }}
+                                        ::-webkit-scrollbar-thumb:hover {{ 
+                                            background: #2ecc71; 
+                                            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
+                                        }}
+                            
                                         .carrier-group {{
                                             background: #263238;
                                             border: 1px solid rgba(255,255,255,0.05);
@@ -1953,7 +1962,10 @@ else:
                                             margin-bottom: 12px;
                                             overflow: hidden;
                                             width: 100%;
+                                            transition: all 0.3s ease;
                                         }}
+                                        .carrier-group:hover {{ border-color: rgba(0, 255, 170, 0.3); }}
+                                        
                                         .carrier-header {{
                                             background: rgba(56, 189, 248, 0.1);
                                             padding: 10px 15px;
@@ -2007,8 +2019,8 @@ else:
                                     ''' for item in data_rutas])}
                                 </div>
                                 """
-                                # Renderizado con altura dinámica y sin scroll interno para fluidez total
-                                components.html(html_rutas, height=min(alto_ajustado, 2500), scrolling=False)
+                                # Le dejamos scrolling=True para usar nuestro scroll personalizado amor
+                                components.html(html_rutas, height=500, scrolling=True)
                                 
                             else:
                                 st.warning(f"No se encontraron registros para '{tipo_mov}' en el mes seleccionado.")
