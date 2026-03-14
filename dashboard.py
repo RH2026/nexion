@@ -2474,100 +2474,107 @@ else:
                 c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)                     
                 
                 # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM) ---
+                # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM - VERSIÓN FINAL) ---
                 st.divider()
                 df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
                 
                 if not df_criticos.empty:
                     st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:#FF4B4B; text-transform:uppercase; text-align:center; margin-bottom:20px;'>⚠️ PANEL DE EXCEPCIONES CRÍTICAS</p>""", unsafe_allow_html=True)
                     
-                    with st.expander("🔍 FILTRAR Y ANALIZAR DETALLE DE RETRASOS", expanded=True):
-                        c1, c2 = st.columns(2)
-                        with c1: 
-                            sel_f = st.multiselect("TRANSPORTISTA:", sorted(df_criticos["FLETERA"].unique()), placeholder="TODOS", key="f_critico")
-                        with c2: 
-                            sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"], key="g_critico")
+                    # Filtros directos sin expander
+                    c1, c2 = st.columns(2)
+                    with c1: 
+                        lista_fleteras = ["TODOS"] + sorted(df_criticos["FLETERA"].unique())
+                        sel_f = st.selectbox("TRANSPORTISTA:", options=lista_fleteras, key="f_critico_v2")
+                    with c2: 
+                        sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"], key="g_critico_v2")
+                    
+                    # Lógica de filtrado (Intacta, amor)
+                    df_viz = df_criticos.copy()
+                    if sel_f != "TODOS": df_viz = df_viz[df_viz["FLETERA"] == sel_f]
+                    if sel_g == "CRÍTICO (+5 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
+                    elif sel_g == "MODERADO (2-4 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
+                    elif sel_g == "LEVE (1 DÍA)": df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
+                
+                    if not df_viz.empty:
+                        df_viz = df_viz.sort_values("DIAS_ATRASO", ascending=False)
+                        data_excepciones = df_viz.to_dict('records')
                         
-                        df_viz = df_criticos.copy()
-                        if sel_f: df_viz = df_viz[df_viz["FLETERA"].isin(sel_f)]
-                        if sel_g == "CRÍTICO (+5 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
-                        elif sel_g == "MODERADO (2-4 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
-                        elif sel_g == "LEVE (1 DÍA)": df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
+                        # Alto dinámico
+                        alto_panel = (len(data_excepciones) * 115) + 20
                 
-                        if not df_viz.empty:
-                            df_viz = df_viz.sort_values("DIAS_ATRASO", ascending=False)
-                            data_excepciones = df_viz.to_dict('records')
-                            
-                            # Calculamos alto dinámico para evitar peleas de scroll
-                            alto_panel = (len(data_excepciones) * 110) + 50
-                
-                            html_excepciones = f"""
-                            <div style="font-family: 'Inter', sans-serif; padding: 5px;">
-                                <style>
-                                    body {{ background: transparent; margin: 0; padding: 0; overflow: hidden; }}
-                                    .card-excepcion {{
-                                        background: #263238;
-                                        border: 1px solid rgba(255, 75, 75, 0.2);
-                                        border-left: 5px solid #FF4B4B;
-                                        border-radius: 12px;
-                                        margin-bottom: 12px;
-                                        padding: 15px 20px;
-                                        display: flex;
-                                        justify-content: space-between;
-                                        align-items: center;
-                                        transition: all 0.3s ease;
-                                    }}
-                                    .card-excepcion:hover {{ 
-                                        transform: scale(1.005); 
-                                        border-color: #FF4B4B; 
-                                        background: #2d3b42;
-                                    }}
-                                    .badge-retraso {{
-                                        background: rgba(255, 75, 75, 0.1);
-                                        color: #FF4B4B;
-                                        padding: 8px 15px;
-                                        border-radius: 8px;
-                                        font-weight: 800;
-                                        font-family: monospace;
-                                        font-size: 18px;
-                                        text-align: center;
-                                        min-width: 80px;
-                                        border: 1px solid rgba(255, 75, 75, 0.3);
-                                    }}
-                                    .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
-                                    .info-main {{ color: #FFFFFF; font-size: 13px; font-weight: 700; }}
-                                    .info-sub {{ color: rgba(255,255,255,0.6); font-size: 10px; font-style: italic; }}
-                                    .moderado {{ border-left-color: #FFA500; border-color: rgba(255, 165, 0, 0.2); }}
-                                    .badge-moderado {{ color: #FFA500; background: rgba(255, 165, 0, 0.1); border-color: rgba(255, 165, 0, 0.3); }}
-                                </style>
-                                {"".join([f'''
-                                <div class="card-excepcion {'moderado' if item['DIAS_ATRASO'] < 5 else ''}">
-                                    <div style="flex: 1.5;">
-                                        <div class="label-mini">Pedido / Cliente</div>
-                                        <div class="info-main">📦 {item['NÚMERO DE PEDIDO']}</div>
-                                        <div class="info-sub">{str(item['NOMBRE DEL CLIENTE'])[:35]}</div>
-                                    </div>
-                                    <div style="flex: 1.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05);">
-                                        <div class="label-mini">Transporte / Guía</div>
-                                        <div class="info-main" style="color:#38bdf8;">{item['FLETERA']}</div>
-                                        <div class="info-sub">Guía: {item['NÚMERO DE GUÍA']}</div>
-                                    </div>
-                                    <div style="flex: 1; text-align: right; padding-right: 20px;">
-                                        <div class="label-mini">Días de Viaje</div>
-                                        <div class="info-main">{item['DIAS_TRANS']} Días</div>
-                                    </div>
-                                    <div>
-                                        <div class="label-mini" style="text-align:center;">Retraso</div>
-                                        <div class="badge-retraso {'badge-moderado' if item['DIAS_ATRASO'] < 5 else ''}">+{item['DIAS_ATRASO']}</div>
-                                    </div>
+                        html_excepciones = f"""
+                        <div style="font-family: 'Inter', sans-serif; padding: 0px;">
+                            <style>
+                                body {{ background: transparent; margin: 0; padding: 0; overflow: hidden; }}
+                                .card-excepcion {{
+                                    background: #263238;
+                                    border: 1px solid rgba(255, 75, 75, 0.15);
+                                    border-left: 6px solid #FF4B4B;
+                                    border-radius: 12px;
+                                    margin-bottom: 12px;
+                                    padding: 18px 25px;
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    transition: all 0.3s ease;
+                                }}
+                                .card-excepcion:hover {{ 
+                                    border-color: #FF4B4B; 
+                                    background: #2d3b42;
+                                    transform: translateX(5px);
+                                }}
+                                .badge-retraso {{
+                                    background: rgba(255, 75, 75, 0.1);
+                                    color: #FF4B4B;
+                                    padding: 10px 18px;
+                                    border-radius: 10px;
+                                    font-weight: 800;
+                                    font-family: monospace;
+                                    font-size: 22px;
+                                    text-align: center;
+                                    min-width: 90px;
+                                    border: 1px solid rgba(255, 75, 75, 0.3);
+                                }}
+                                .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }}
+                                
+                                /* TAMAÑO DE FACTURA REFORZADO */
+                                .factura-destacada {{ color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 1px; font-family: monospace; }}
+                                
+                                .info-main {{ color: #FFFFFF; font-size: 14px; font-weight: 700; }}
+                                .info-sub {{ color: rgba(255,255,255,0.5); font-size: 11px; font-style: italic; }}
+                                .moderado {{ border-left-color: #FFA500; border-color: rgba(255, 165, 0, 0.2); }}
+                                .badge-moderado {{ color: #FFA500; background: rgba(255, 165, 0, 0.1); border-color: rgba(255, 165, 0, 0.3); }}
+                            </style>
+                            {"".join([f'''
+                            <div class="card-excepcion {'moderado' if item['DIAS_ATRASO'] < 5 else ''}">
+                                <div style="flex: 1.5;">
+                                    <div class="label-mini">No. Factura / Pedido</div>
+                                    <div class="factura-destacada">{item['NÚMERO DE PEDIDO']}</div>
+                                    <div class="info-sub" style="margin-top:5px;">Cliente: {str(item['NOMBRE DEL CLIENTE'])[:35]}</div>
                                 </div>
-                                ''' for item in data_excepciones])}
+                                <div style="flex: 1.5; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="label-mini">Transporte / Estatus</div>
+                                    <div class="info-main" style="color:#38bdf8;">{item['FLETERA']}</div>
+                                    <div class="info-sub">Guía: {item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] else 'SIN ASIGNAR'}</div>
+                                </div>
+                                <div style="flex: 1; text-align: right; padding-right: 25px;">
+                                    <div class="label-mini">Días en Ruta</div>
+                                    <div class="info-main">{item['DIAS_TRANS']} d.</div>
+                                </div>
+                                <div>
+                                    <div class="label-mini" style="text-align:center;">Retraso</div>
+                                    <div class="badge-retraso {'badge-moderado' if item['DIAS_ATRASO'] < 5 else ''}">+{item['DIAS_ATRASO']}</div>
+                                </div>
                             </div>
-                            """
-                            components.html(html_excepciones, height=alto_panel, scrolling=False)
-                        else:
-                            st.info("No hay pedidos que coincidan con los filtros seleccionados.")
+                            ''' for item in data_excepciones])}
+                        </div>
+                        """
+                        components.html(html_excepciones, height=alto_panel, scrolling=False)
+                    else:
+                        st.info("No hay pedidos que coincidan con los filtros seleccionados.")
                 else:
-                    st.success("✨ SISTEMA NEXION: SIN RETRASOS DETECTADOS")
+                    st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
                 
                 # 6. DETALLE DE ENTREGAS DEL PRÓXIMO MES
                 st.divider()
