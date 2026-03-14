@@ -1815,7 +1815,7 @@ else:
                         tipo_mov = st.radio(
                             "Selecciona el flujo:",
                             ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
-                            index=2,
+                            index=0,
                             horizontal=True,
                             key=f"tipo_mov_{mes_sel}"
                         )
@@ -1911,7 +1911,7 @@ else:
                             )
                 
                             # --- EXPANDER: DESGLOSE POR DESTINO ---
-                            # --- EXPLORADOR DE RUTAS Y DESTINOS (OPTIMIZADO PARA SCROLL PRINCIPAL) ---
+                            # --- EXPLORADOR DE RUTAS Y DESTINOS (DISEÑO PREMIUM CON SCROLL AGC) ---
                             st.markdown("<h3 style='color:white; font-size:16px; letter-spacing:2px; font-weight:800; border-left:4px solid #38bdf8; padding-left:10px; margin-bottom:20px;'>🌐 EXPLORADOR DE RUTAS Y DESTINOS</h3>", unsafe_allow_html=True)
                             
                             lista_carriers = ["TODOS"] + sorted(df_log_filtrado['TRANSPORTE'].unique())
@@ -1937,26 +1937,34 @@ else:
                                 
                                 data_rutas = df_dest_sum.to_dict('records')
                             
-                                # --- TRUCO DE ALTURA DINÁMICA ---
-                                # Calculamos el alto exacto (aprox 90px por tarjeta) para que el componente
-                                # no necesite scroll propio y deje funcionar al scroll principal de la app.
-                                alto_total = (len(data_rutas) * 90) + 20
-                            
                                 html_rutas = f"""
-                                <div style="font-family: 'Inter', sans-serif; padding: 0px;">
+                                <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
                                     <style>
-                                        /* Quitamos el scroll del body interno para evitar conflictos */
-                                        body {{ background: transparent; margin: 0; padding: 0; overflow: hidden; }}
+                                        body {{ background: transparent; margin: 0; padding: 0; }}
                                         
+                                        /* ───────── SCROLLBAR AGC STYLE ───────── */
+                                        ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                        ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                        ::-webkit-scrollbar-thumb {{ 
+                                            background: #3498db; 
+                                            border-radius: 10px; 
+                                            border: 2px solid #384A52; 
+                                        }}
+                                        ::-webkit-scrollbar-thumb:hover {{ 
+                                            background: #2ecc71; 
+                                            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
+                                        }}
+                            
                                         .carrier-group {{
                                             background: #263238;
                                             border: 1px solid rgba(255,255,255,0.05);
                                             border-radius: 12px;
                                             margin-bottom: 12px;
+                                            overflow: hidden;
                                             width: 100%;
                                             transition: all 0.3s ease;
                                         }}
-                                        .carrier-group:hover {{ border-color: #00FFAA; transform: scale(1.002); }}
+                                        .carrier-group:hover {{ border-color: rgba(0, 255, 170, 0.3); }}
                                         
                                         .carrier-header {{
                                             background: rgba(56, 189, 248, 0.1);
@@ -2011,8 +2019,8 @@ else:
                                     ''' for item in data_rutas])}
                                 </div>
                                 """
-                                # IMPORTANTE: scrolling=False y usamos el alto calculado
-                                components.html(html_rutas, height=alto_total, scrolling=False)
+                                # Le dejamos scrolling=True para usar nuestro scroll personalizado amor
+                                components.html(html_rutas, height=500, scrolling=True)
                                 
                             else:
                                 st.warning(f"No se encontraron registros para '{tipo_mov}' en el mes seleccionado.")
