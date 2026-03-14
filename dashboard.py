@@ -1592,13 +1592,72 @@ else:
                         # --- RENDERIZADO ESTILO ONYX REPOTENCIADO ---
                         st.markdown(f"""<div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;"><div class="kpi-ruta-card" style="flex: 1; min-width: 280px; border-left: 5px solid #A4B9C8; position: relative; overflow: hidden;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 0.7rem; color: #A4B9C8; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Tiempo Estimado</span><span style="font-size: 1.1rem; color: #FFFFFF; font-weight: 900;">{fletera_recomendada}</span></div><div class="kpi-route-flow" style="margin: 15px 0;"><span class="city" style="font-size: 1.2rem;">GDL</span><div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><span style="font-size: 0.7rem; color: #A4B9C8; letter-spacing: 2px;">TRANSIT</span><div style="width: 80%; height: 2px; background: linear-gradient(90deg, transparent, #A4B9C8, transparent);"></div></div><span class="city" style="font-size: 1.2rem; color: #FFFFFF;">{texto_mostrar[:15]}</span></div><div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 2.2rem; font-weight: 900; color: #FFFFFF;">{dias_redondeados}</span><span style="font-size: 1rem; color: #A4B9C8; font-weight: bold;">DÍAS HÁBILES</span></div><div style="margin-top: 10px; font-size: 0.9rem; color: #A4B9C8; border-top: 1px solid rgba(164, 185, 200, 0.1); padding-top: 8px;">Basado en {total_viajes} entregas exitosas a esta zona.</div></div><div class="kpi-ruta-card" style="flex: 1; min-width: 280px; border-left: 5px solid #D4AF37; background: linear-gradient(145deg, #1c2a35, #111b22);"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="color: #D4AF37; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px;">Costo de Flete</span></div><div style="margin-top: 5px;"><div style="font-size: 0.75rem; color: #A4B9C8; text-transform: uppercase; letter-spacing: 1px;">Inversión Total</div><div style="display: flex; align-items: baseline; gap: 5px;"><span style="font-size: 2.2rem; font-weight: 400; color: #D4AF37;">${total_con_iva:,.2f}</span><span style="font-size: 0.8rem; color: #A4B9C8;">MXN</span></div></div><div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-top: 10px; border: 1px solid rgba(212, 175, 55, 0.1);"><div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #E0E6ED;"><span>Cajas: <b>{num_cajas}</b></span><span>Unit: <b>${precio_unitario:,.2f}</b></span></div><div style="font-size: 0.7rem; color: #D4AF37; margin-top: 5px; text-transform: uppercase; font-weight: bold;">✓ {leyenda_region}</div></div><div style="text-align: right; margin-top: 8px; font-size: 0.6rem; color: #A4B9C8; font-style: italic;">*Incluye 16% de IVA</div></div></div>""", unsafe_allow_html=True) # 3. Tabla de Detalles (Tu código original)
                         #------------
-                        st.markdown(f'<p class="data-section-header">Historial de envíos encontrados</p>', unsafe_allow_html=True)
-                        tabla_detalles = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False)
-                        tabla_detalles['FECHA DE ENVÍO'] = tabla_detalles['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
-                        st.dataframe(tabla_detalles, use_container_width=True, hide_index=True)
+                        # --- HISTORIAL DE ENVÍOS ENCONTRADOS (DISEÑO PREMIUM) ---
+                        if not historial.empty:
+                            st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:14px; margin-bottom:15px; border-left: 4px solid #00FFAA; padding-left: 10px;">HISTORIAL DE ENVÍOS ENCONTRADOS</p>', unsafe_allow_html=True)
+                            
+                            # Preparación de datos
+                            historial_sorted = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False).copy()
+                            historial_sorted['FECHA_STR'] = historial_sorted['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
+                            data_hist = historial_sorted.fillna('').to_dict('records')
                         
-                    else:
-                        st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")                    
+                            # Renderizado de Tarjetas
+                            html_historial = f"""
+                            <div style="padding: 5px; font-family: 'Inter', sans-serif;">
+                                <style>
+                                    .card-historial {{
+                                        background-color: #263238;
+                                        border: 1px solid rgba(255, 255, 255, 0.05);
+                                        border-radius: 10px;
+                                        padding: 14px 20px;
+                                        margin-bottom: 10px;
+                                        transition: all 0.3s ease;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        width: 100%;
+                                        box-sizing: border-box;
+                                    }}
+                                    .card-historial:hover {{
+                                        border-color: #38bdf8;
+                                        background-color: #2d3b42;
+                                        transform: translateX(4px);
+                                    }}
+                                    .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px; }}
+                                    .valor-id {{ font-size: 15px; font-weight: 800; color: #00FFAA; font-family: monospace; }}
+                                    .valor-text {{ font-size: 12px; font-weight: 600; color: #FFFFFF; }}
+                                    .sub-text {{ font-size: 10px; color: rgba(255,255,255,0.6); font-style: italic; }}
+                                    
+                                    /* Scrollbar */
+                                    ::-webkit-scrollbar {{ width: 8px; }}
+                                    ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                    ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                                </style>
+                                {"".join([f'''
+                                <div class="card-historial">
+                                    <div style="flex: 1;">
+                                        <div class="label-mini">Pedido</div>
+                                        <div class="valor-id">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
+                                    </div>
+                                    <div style="flex: 2; padding: 0 15px;">
+                                        <div class="label-mini">Cliente / Domicilio</div>
+                                        <div class="valor-text uppercase truncate">{str(item.get('NOMBRE DEL CLIENTE', ''))[:35]}</div>
+                                        <div class="sub-text truncate">{str(item.get('DOMICILIO', ''))[:50]}</div>
+                                    </div>
+                                    <div style="flex: 1; text-align: right;">
+                                        <div class="label-mini">Fletera / Fecha</div>
+                                        <div style="color: #38bdf8; font-size: 12px; font-weight: 700;">{str(item.get('FLETERA', ''))}</div>
+                                        <div class="valor-text" style="font-size: 11px; opacity: 0.8;">{item.get('FECHA_STR', '')}</div>
+                                    </div>
+                                </div>
+                                ''' for item in data_hist])}
+                            </div>
+                            """
+                            components.html(html_historial, height=450, scrolling=True)
+                        
+                        else:
+                            st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")   
                 
                
                 # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
