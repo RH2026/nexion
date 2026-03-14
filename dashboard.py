@@ -1201,21 +1201,23 @@ else:
                 with st.expander("Listado de pedidos completo", expanded=False):
                                 
                     # --- BÚSQUEDA MAESTRA ---
-                    # --- 1. INICIALIZAR VARIABLE DE BÚSQUEDA ---
-                    busqueda = "" # La dejamos vacía por defecto para que no truene
+                    # --- 1. DEFINIMOS LA VARIABLE (La caja de búsqueda) ---
+                    # Le ponemos el nombre 'busqueda_manual' para que coincida con tu error
+                    busqueda_manual = st.text_input(
+                        "", 
+                        key="bus_maestra_logistica_vfinal", 
+                        placeholder="🔍 Buscar por Factura, Guía o Cliente..."
+                    ).strip()
                     
-                    # --- 2. LUEGO VIENE TU INPUT (La caja de texto) ---
-                    busqueda = st.text_input("🔍 Buscar:", placeholder="Ingresa Numero de factura o cliente...", key="bus_maestra_unica")
-                    
-                    df_final = df_raw.copy()
-                    
-                    if busqueda:
+                    # --- 2. AHORA SÍ EL IF (Ya no dará NameError porque ya existe arriba) ---
+                    if busqueda_manual:
+                        # Usamos 'busqueda_manual' también aquí adentro
                         mask = (
-                            df_final["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda, case=False, na=False) |
-                            df_final["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda, case=False, na=False) |
-                            df_final["NOMBRE DEL CLIENTE"].astype(str).str.contains(busqueda, case=False, na=False)
+                            df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda_manual, case=False, na=False) |
+                            df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda_manual, case=False, na=False) |
+                            df_raw["NOMBRE DEL CLIENTE"].astype(str).str.contains(busqueda_manual, case=False, na=False)
                         )
-                        df_final = df_final[mask]
+                        df_final = df_raw[mask].copy()
             
                     # --- RENDER DEL TIMELINE (Si hay una búsqueda específica y un solo resultado o seleccionamos el primero) ---
                     if busqueda and not df_final.empty:
