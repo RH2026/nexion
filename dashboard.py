@@ -1198,15 +1198,14 @@ else:
             df_raw = cargar_datos()
             
             if df_raw is not None:
-                with st.expander("📊 Detalle Operativo y Consulta de Estatus", expanded=True):
-                    st.markdown('<div class="op-query-text" style="text-align:center; color:#56c1ff; font-weight:800; letter-spacing:3px;">CONSULTA DE ESTATUS LOGÍSTICO</div>', unsafe_allow_html=True)
-            
+                with st.expander("Listado de pedidos completo", expanded=False):
+                                
                     # --- BÚSQUEDA MAESTRA ---
                     # --- 1. INICIALIZAR VARIABLE DE BÚSQUEDA ---
                     busqueda = "" # La dejamos vacía por defecto para que no truene
                     
                     # --- 2. LUEGO VIENE TU INPUT (La caja de texto) ---
-                    busqueda = st.text_input("🔍 Buscar:", placeholder="Escribe algo...", key="bus_maestra_unica")
+                    busqueda = st.text_input("🔍 Buscar:", placeholder="Ingresa Numero de factura o cliente...", key="bus_maestra_unica")
                     
                     df_final = df_raw.copy()
                     
