@@ -2600,28 +2600,39 @@ else:
                 else:
                     st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
                 
-                # 6. DETALLE DE ENTREGAS DEL PRÓXIMO MES
+                # --- 6. BOTÓN DE DESCARGA: EXCEPCIONES Y RETRASOS ---
                 st.divider()
-                df_detalle_prox = df_seguimiento.copy()
-                df_detalle_prox.columns = [c.upper() for c in df_detalle_prox.columns]
                 
-                if "PROMESA DE ENTREGA" in df_detalle_prox.columns:
-                    df_detalle_prox["PROMESA DE ENTREGA"] = pd.to_datetime(df_detalle_prox["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-                    df_futuro = df_detalle_prox[(df_detalle_prox["PROMESA DE ENTREGA"].dt.month == proximo_mes_num) & (df_detalle_prox["PROMESA DE ENTREGA"].dt.year == anio_proximo)].copy()
+                if not df_viz.empty:
+                    import io
                 
-                    if not df_futuro.empty:
-                        st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:5px; color:#a855f7; text-transform:uppercase; text-align:center;'>PLANIFICACIÓN DE ENTREGAS: {nombre_prox_mes}</p>""", unsafe_allow_html=True)
-                        with st.expander(f"VER LISTADO DE {len(df_futuro)} PEDIDOS PARA {nombre_prox_mes}", expanded=False):
-                            cols_prox = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO", "PROMESA DE ENTREGA", "FLETERA", "ESTATUS"]
-                            cols_prox_existentes = [c for c in cols_prox if c in df_futuro.columns]
-                            st.dataframe(
-                                df_futuro[cols_prox_existentes].sort_values("PROMESA DE ENTREGA"),
-                                use_container_width=True, hide_index=True,
-                                column_config={
-                                    "PROMESA DE ENTREGA": st.column_config.DateColumn("FECHA PACTADA", format="DD/MM/YYYY"),
-                                    "NÚMERO DE PEDIDO": st.column_config.TextColumn("PEDIDO"),
-                                }
-                            )
+                    # 1. Preparamos el archivo Excel en memoria
+                    buffer = io.BytesIO()
+                    
+                    # Seleccionamos las columnas más importantes para tu reporte en Excel
+                    columnas_excel = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "FLETERA", "NÚMERO DE GUÍA", "DIAS_TRANS", "DIAS_ATRASO", "FECHA DE ENVÍO", "PROMESA DE ENTREGA"]
+                    columnas_existentes = [c for c in columnas_excel if c in df_viz.columns]
+                    
+                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                        df_viz[columnas_existentes].to_excel(writer, index=False, sheet_name='Retrasos_Criticos')
+                        
+                    buffer.seek(0)
+                
+                    st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:3px; color:#38bdf8; text-transform:uppercase; text-align:center; margin-bottom:10px;'>REPORTE DE EXCEPCIONES DETECTADAS</p>""", unsafe_allow_html=True)
+                    
+                    # 2. El botón de descarga con estilo Streamlit
+                    st.download_button(
+                        label="📥 DESCARGAR DETALLE DE RETRASOS (EXCEL)",
+                        data=buffer,
+                        file_name=f"Reporte_Retrasos_Nexion_{mes_sel}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key="btn_descarga_excel_retrasos"
+                    )
+                    
+                    st.markdown(f"<p style='color:#94a3b8; font-size:10px; text-align:center;'>Se exportarán {len(df_viz)} registros con anomalías en la entrega.</p>", unsafe_allow_html=True)
+                else:
+                    st.info("No hay datos de excepciones para exportar en este momento.")
                    
             
             elif st.session_state.menu_sub == "GANTT":
