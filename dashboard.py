@@ -1911,8 +1911,9 @@ else:
                             )
                 
                             # --- EXPANDER: DESGLOSE POR DESTINO ---
+                            # --- EXPANDER: DESGLOSE POR DESTINO (DISEÑO PREMIUM) ---
                             st.markdown("<br>", unsafe_allow_html=True)
-                            with st.expander("🌐 EXPLORADOR DE RUTAS Y DESTINOS"):
+                            with st.expander("🌐 EXPLORADOR DE RUTAS Y DESTINOS", expanded=True):
                                 lista_carriers = sorted(df_log_filtrado['TRANSPORTE'].unique())
                                 carriers_seleccionados = st.multiselect(
                                     "Filtrar por uno o varios Carriers:", 
@@ -1926,27 +1927,91 @@ else:
                                 else:
                                     df_dest_filtered = df_log_filtrado.copy()
                                 
-                                # Agregamos 'FORMA DE ENVIO' a la tabla para mayor claridad del usuario
-                                df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO', 'FORMA DE ENVIO'])['CAJAS'].sum().reset_index()
-                                df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
-                                
-                                total_sel = df_dest_sum['CAJAS'].sum()
-                                st.markdown(f"<p style='color:#00FFAA; font-size:12px;'>Unidades en selección actual: {int(total_sel):,}</p>", unsafe_allow_html=True)
-                
-                                st.dataframe(
-                                    df_dest_sum,
-                                    column_config={
-                                        "TRANSPORTE": "CARRIER",
-                                        "DESTINO": "CIUDAD / ESTADO",
-                                        "FORMA DE ENVIO": "MÉTODO",
-                                        "CAJAS": st.column_config.NumberColumn("UNITS", format="%d")
-                                    },
-                                    use_container_width=True,
-                                    hide_index=True,
-                                    key=f"tabla_destinos_{mes_sel}_{tipo_mov}"
-                                )
-                        else:
-                            st.warning(f"No se encontraron registros en la columna 'FORMA DE ENVIO' que coincidan con '{tipo_mov}' para el mes seleccionado.")
+                                if not df_dest_filtered.empty:
+                                    # Lógica de agrupación (Tu lógica intacta amor)
+                                    df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO', 'FORMA DE ENVIO'])['CAJAS'].sum().reset_index()
+                                    df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
+                                    
+                                    total_sel = df_dest_sum['CAJAS'].sum()
+                                    st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
+                                    
+                                    # --- RENDERIZADO CHINGÓN ---
+                                    data_rutas = df_dest_sum.to_dict('records')
+                                    
+                                    html_rutas = f"""
+                                    <div style="font-family: 'Inter', sans-serif; padding: 5px;">
+                                        <style>
+                                            .carrier-group {{
+                                                background: #263238;
+                                                border: 1px solid rgba(255,255,255,0.05);
+                                                border-radius: 12px;
+                                                margin-bottom: 15px;
+                                                overflow: hidden;
+                                            }}
+                                            .carrier-header {{
+                                                background: rgba(56, 189, 248, 0.1);
+                                                padding: 10px 15px;
+                                                border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+                                                display: flex;
+                                                justify-content: space-between;
+                                                align-items: center;
+                                            }}
+                                            .carrier-name {{ color: #38bdf8; font-weight: 800; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }}
+                                            .route-row {{
+                                                display: flex;
+                                                justify-content: space-between;
+                                                padding: 8px 15px;
+                                                border-bottom: 1px solid rgba(255,255,255,0.03);
+                                                align-items: center;
+                                            }}
+                                            .route-row:last-child {{ border-bottom: none; }}
+                                            .dest-name {{ color: #FFFFFF; font-size: 11px; font-weight: 600; }}
+                                            .method-tag {{ 
+                                                background: rgba(168, 85, 247, 0.1); 
+                                                color: #a855f7; 
+                                                padding: 2px 6px; 
+                                                border-radius: 4px; 
+                                                font-size: 9px; 
+                                                font-weight: 700;
+                                                margin-left: 8px;
+                                            }}
+                                            .unit-badge {{ 
+                                                background: rgba(0, 255, 170, 0.1); 
+                                                color: #00FFAA; 
+                                                padding: 4px 10px; 
+                                                border-radius: 6px; 
+                                                font-family: monospace; 
+                                                font-weight: 800; 
+                                                font-size: 12px;
+                                            }}
+                                            /* Scrollbar AGC */
+                                            ::-webkit-scrollbar {{ width: 8px; }}
+                                            ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
+                                            ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                            ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                                        </style>
+                                        
+                                        {"".join([f'''
+                                        <div class="carrier-group">
+                                            <div class="carrier-header">
+                                                <span class="carrier-name">🚚 {item['TRANSPORTE']}</span>
+                                                <span style="color:rgba(255,255,255,0.4); font-size:9px;">DESTINO ACTIVO</span>
+                                            </div>
+                                            <div class="route-row">
+                                                <div>
+                                                    <span class="dest-name">{item['DESTINO']}</span>
+                                                    <span class="method-tag">{item['FORMA DE ENVIO']}</span>
+                                                </div>
+                                                <div class="unit-badge">{int(item['CAJAS']):,} u.</div>
+                                            </div>
+                                        </div>
+                                        ''' for item in data_rutas])}
+                                    </div>
+                                    """
+                                    components.html(html_rutas, height=500, scrolling=True)
+                                    
+                                else:
+                                    st.warning(f"No se encontraron registros en la columna 'FORMA DE ENVIO' que coincidan con '{tipo_mov}' para el mes seleccionado.")
                 
                 # PESTAÑA 5: AGC
                 with tab_entregas_agc:
