@@ -2,14 +2,11 @@ import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
 
-st.set_page_config(
-    page_title="Nexion Logística Pro",
-    layout="wide",  # Aquí activamos el modo ancho, amor
-    initial_sidebar_state="collapsed"
-)
+# ── CONFIGURACIÓN DE PÁGINA (Debe ser lo primero) ──
+st.set_page_config(layout="wide", page_title="Nexion Expedientes")
+
 # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
-# Extraemos el token de forma segura
-GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "TU_TOKEN_AQUÍ")
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
 REPO_NAME = "RH2026/nexion"
 FILE_PATH_CON = "consignas.csv"
 URL_CONSIGNAS = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_CON}"
@@ -17,10 +14,8 @@ URL_CONSIGNAS = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_
 @st.cache_data(ttl=600)
 def load_consignas():
     try:
-        # Usamos el token para archivos si es necesario
         headers = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
         df = pd.read_csv(URL_CONSIGNAS, storage_options=headers, low_memory=False)
-        # Limpiamos nombres de columnas
         df.columns = [c.strip() for c in df.columns]
         return df
     except Exception as e:
@@ -28,7 +23,6 @@ def load_consignas():
         return None
 
 def render_expediente_chingon(df):
-    # Llenamos vacíos para evitar errores de tipo None
     df_clean = df.fillna('')
     data = df_clean.to_dict('records')
     
@@ -39,9 +33,14 @@ def render_expediente_chingon(df):
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
         <style>
-            body {{ background-color: #384A52; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 10px; }}
+            body {{ 
+                background-color: #384A52; 
+                color: #e2e8f0; 
+                font-family: 'Inter', sans-serif; 
+                margin: 0; 
+                padding: 0px 5px; /* Ajuste fino lateral */
+            }}
             
-            /* SCROLLBAR MINIMALISTA */
             ::-webkit-scrollbar {{ width: 6px; }}
             ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
             ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.1); border-radius: 10px; }}
@@ -51,71 +50,78 @@ def render_expediente_chingon(df):
                 background-color: #263238;
                 border: 1px solid rgba(255, 255, 255, 0.05);
                 border-radius: 12px;
-                margin-bottom: 10px;
-                padding: 15px;
+                margin-bottom: 12px;
+                padding: 18px 24px;
                 transition: all 0.3s ease;
+                width: 100%; /* Fuerza el ancho total */
+                box-sizing: border-box;
             }}
+            
             .row-expediente:hover {{
                 border-color: #00FFAA;
-                transform: translateX(4px);
+                background-color: #2d3b42;
+                transform: scale(1.001);
             }}
+            
             .label-mini {{
                 font-size: 8px;
                 text-transform: uppercase;
                 color: rgba(255,255,255,0.3);
                 font-weight: 800;
-                letter-spacing: 1.2px;
+                letter-spacing: 1.5px;
             }}
-            .valor {{ font-size: 13px; font-weight: 700; color: #FFFFFF; }}
+            
+            .valor {{ font-size: 14px; font-weight: 700; color: #FFFFFF; }}
             .highlight {{ color: #00FFAA; font-family: monospace; }}
         </style>
     </head>
     <body>
-        <div class="max-w-6xl mx-auto">
+        <div class="w-full">
             {"".join([f'''
             <div class="row-expediente">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <div class="label-mini">Talon / Folio</div>
-                        <div class="valor highlight text-lg">{str(item.get('TALON', ''))}</div>
-                        <div class="label-mini mt-1 text-blue-400">F. Doc: {str(item.get('F.DOC', ''))}</div>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                     
                     <div>
+                        <div class="label-mini">Talon / Folio</div>
+                        <div class="valor highlight text-xl leading-none">{str(item.get('TALON', ''))}</div>
+                        <div class="text-[10px] text-blue-400 mt-1 opacity-70 italic">F. Doc: {str(item.get('F.DOC', ''))}</div>
+                    </div>
+                    
+                    <div class="md:border-l md:border-white/5 md:pl-6">
                         <div class="label-mini">Destinatario</div>
-                        <div class="valor truncate text-xs">{str(item.get('DESTINATARIO', ''))[:30]}</div>
+                        <div class="valor truncate text-sm uppercase">{str(item.get('DESTINATARIO', ''))[:45]}</div>
                         <div class="text-[10px] text-white/50 italic">{str(item.get('ORIGEN', ''))} → {str(item.get('DESTINO', ''))}</div>
                     </div>
 
-                    <div class="border-x border-white/5 px-4">
-                        <div class="label-mini">Financiero</div>
-                        <div class="flex justify-between">
-                            <span class="label-mini">Bultos:</span> <span class="valor text-[11px]">{str(item.get('BULTOS', '0'))}</span>
+                    <div class="md:border-l md:border-white/5 md:pl-6">
+                        <div class="label-mini">Resumen Financiero</div>
+                        <div class="flex justify-between items-center">
+                            <span class="label-mini">Bultos:</span> <span class="valor text-xs">{str(item.get('BULTOS', '0'))}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="label-mini">Total:</span> <span class="valor text-emerald-400">${str(item.get('TOTAL', '0'))}</span>
+                        <div class="flex justify-between items-center">
+                            <span class="label-mini">Total Cargo:</span> <span class="valor text-emerald-400 text-sm">${str(item.get('TOTAL', '0'))}</span>
                         </div>
                     </div>
 
-                    <div class="text-right">
+                    <div class="text-right md:border-l md:border-white/5 md:pl-6">
                         <div class="label-mini">Estatus Entrega</div>
-                        <div class="valor text-[11px] {"text-orange-400" if not item.get('F.ENTREGA') else "text-white"}">
+                        <div class="valor text-sm {"text-orange-400" if not item.get('F.ENTREGA') else "text-white"}">
                             {str(item.get('F.ENTREGA', 'PENDIENTE'))}
                         </div>
-                        <div class="text-[9px] text-blue-400 font-bold uppercase">
-                            {str(item.get('QUIEN RECIBIO', ''))[:20]}
+                        <div class="text-[10px] text-blue-400 font-bold uppercase tracking-tighter">
+                            {str(item.get('QUIEN RECIBIO', ''))[:25]}
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-3 pt-3 border-t border-white/5 flex flex-wrap gap-4">
-                    <div class="flex-1 min-w-[200px]">
-                        <span class="label-mini">Domicilio:</span>
-                        <span class="text-[10px] text-white/50"> {str(item.get('DOMICILIO DEL DESTINATARIO', ''))}</span>
+                <div class="mt-4 pt-3 border-t border-white/5 flex flex-col md:flex-row justify-between gap-4">
+                    <div class="flex-1">
+                        <span class="label-mini text-blue-300">Domicilio Entrega:</span>
+                        <span class="text-[11px] text-white/60 ml-2"> {str(item.get('DOMICILIO DEL DESTINATARIO', ''))}</span>
                     </div>
-                    <div class="w-full md:w-auto">
-                        <span class="label-mini">Obs:</span>
-                        <span class="text-[10px] text-white/40 italic"> {str(item.get('OBSERVACION 1', '--'))}</span>
+                    <div class="text-right">
+                        <span class="label-mini">Notas:</span>
+                        <span class="text-[11px] text-white/40 italic ml-2"> {str(item.get('OBSERVACION 1', '--'))}</span>
                     </div>
                 </div>
             </div>
@@ -124,16 +130,18 @@ def render_expediente_chingon(df):
     </body>
     </html>
     """
-    return components.html(html_content, height=850, scrolling=True)
+    # Usamos height dinámico o uno alto para que el scroll de la página mande
+    return components.html(html_content, height=1200, scrolling=True)
 
 # --- EJECUCIÓN ---
 df_consignas = load_consignas()
 
 if df_consignas is not None:
-    st.markdown("<h3 style='text-align:center; color:white; font-size:16px; letter-spacing:2px;'>EXPEDIENTES LOGÍSTICOS</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>EXPEDIENTES LOGÍSTICOS</h3>", unsafe_allow_html=True)
     
-    # Buscador por Talón
-    search = st.text_input("🔍 Buscar por Talón:", placeholder="Escribe el número de talón...")
+    # El buscador ahora se verá igual de ancho que las tarjetas de abajo
+    search = st.text_input("🔍 Buscar por Talón:", placeholder="Escribe el número de talón...", key="search_main")
+    
     if search:
         df_consignas = df_consignas[df_consignas['TALON'].astype(str).str.contains(search, case=False)]
         
