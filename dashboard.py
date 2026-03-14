@@ -1664,8 +1664,37 @@ else:
                         df_display['FECHA DE ENVÍO'] = df_display['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y %H:%M').fillna("S/D")
                         st.dataframe(df_display, use_container_width=True, hide_index=True)
                     
-                # PESTAÑA 4: % PARTICIPACIÓN
+                # PESTAÑA 4: % PARTICIPACIÓN-
                 with tab_participacion:
+                    # --- CSS INYECTADO PARA ESTA PESTAÑA ---
+                    st.markdown("""
+                        <style>
+                            /* Contenedor de métricas estilo Tarjeta AGC */
+                            .metric-card-agc {
+                                background-color: #263238;
+                                border: 1px solid rgba(255, 255, 255, 0.05);
+                                border-radius: 15px;
+                                padding: 15px;
+                                text-align: center;
+                                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                            }
+                            /* Estilo para los Radio Buttons (Flujo) */
+                            div[data-testid="stRadio"] > label {
+                                color: #00FFAA !important;
+                                font-family: 'Inter', sans-serif;
+                                font-weight: 800 !important;
+                                letter-spacing: 1px;
+                                text-transform: uppercase;
+                            }
+                            div[data-testid="stMarkdownContainer"] p.op-query-text {
+                                color: #56c1ff !important;
+                                font-weight: 800;
+                                text-align: center;
+                                margin-bottom: 10px;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+                
                     URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
                     
                     @st.cache_data
@@ -1676,7 +1705,6 @@ else:
                             if 'MES' in df_l.columns:
                                 df_l['MES'] = df_l['MES'].astype(str).str.upper().str.strip()
                             
-                            # Limpiamos también la columna FORMA DE ENVIO para evitar errores por espacios o saltos de línea
                             if 'FORMA DE ENVIO' in df_l.columns:
                                 df_l['FORMA DE ENVIO'] = df_l['FORMA DE ENVIO'].astype(str).str.strip()
                                 
@@ -1689,8 +1717,9 @@ else:
                     df_log = load_data_logistica()
                     
                     if df_log is not None:
-                        # --- NUEVO FILTRO DE TIPO DE MOVIMIENTO ---
-                        st.markdown("<p class='op-query-text' style='font-size:12px;'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
+                        # --- SELECTOR DE FLUJO ESTILIZADO ---
+                        st.markdown("<p class='op-query-text' style='font-size:12px; letter-spacing:2px;'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
+                        
                         tipo_mov = st.radio(
                             "Selecciona el flujo:",
                             ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
@@ -1699,32 +1728,42 @@ else:
                             key=f"tipo_mov_{mes_sel}"
                         )
                 
-                        # Aplicamos primer filtro: MES
+                        # Lógica de filtrado (Intacta)
                         df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
                 
-                        # --- CAMBIO AQUÍ: Filtrado basado en 'FORMA DE ENVIO' ---
                         if tipo_mov == "COBRO DESTINO":
                             df_log_filtrado = df_log_filtrado[df_log_filtrado['FORMA DE ENVIO'].str.contains('DESTINO', case=False, na=False)]
                         elif tipo_mov == "COBRO REGRESO":
                             df_log_filtrado = df_log_filtrado[df_log_filtrado['FORMA DE ENVIO'].str.contains('REGRESO', case=False, na=False)]
                 
                         if not df_log_filtrado.empty:
-                            # --- CABECERA ---                                                            
                             total_cajas_mes = df_log_filtrado['CAJAS'].sum()
-                            # Mantenemos el agrupamiento por TRANSPORTE para ver qué carrier lo llevó
                             df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
                             df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
                             df_part = df_part.sort_values(by='PORCENTAJE', ascending=True)
                             
-                            # METRICAS
+                            # --- METRICAS EN TARJETAS ---
+                            st.markdown("<br>", unsafe_allow_html=True)
                             c1, c2 = st.columns(2)
+                            
                             with c1:
-                                st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>VOLUMEN TOTAL (UNIT)</p>", unsafe_allow_html=True)
-                                st.markdown(f"<h4 style='text-align:center; color:#FFFFFF;'>{int(total_cajas_mes):,}</h4>", unsafe_allow_html=True)
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text" style="letter-spacing:2px; font-size:10px;">VOLUMEN TOTAL (UNIT)</p>
+                                        <h2 style="margin:0; color:#FFFFFF; font-weight:800; font-family:monospace;">{int(total_cajas_mes):,}</h2>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                                
                             with c2:
-                                st.markdown(f"<p class='op-query-text' style='letter-spacing:3px;'>CARRIER DOMINANTE</p>", unsafe_allow_html=True)
                                 lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
-                                st.markdown(f"<h4 style='text-align:center; color:#00FFAA;'>{lider_n}</h4>", unsafe_allow_html=True)
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text" style="letter-spacing:2px; font-size:10px;">CARRIER DOMINANTE</p>
+                                        <h2 style="margin:0; color:#00FFAA; font-weight:800; italic;">{lider_n}</h2>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            
+                            st.markdown("<br>", unsafe_allow_html=True)
                             
                             # --- GRÁFICO DE BARRAS ---
                             altura_ajustada = max(400, len(df_part) * 40)
