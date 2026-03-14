@@ -1666,10 +1666,9 @@ else:
                     
                 # PESTAÑA 4: % PARTICIPACIÓN-
                 with tab_participacion:
-                    # --- CSS ACTUALIZADO: Texto Blanco y Fuentes más Pequeñas ---
+                    # --- CSS BLINDADO: Clases específicas para resultados ---
                     st.markdown("""
                         <style>
-                            /* Contenedor de métricas estilo Tarjeta AGC */
                             .metric-card-agc {
                                 background-color: #263238;
                                 border: 1px solid rgba(255, 255, 255, 0.05);
@@ -1678,25 +1677,41 @@ else:
                                 text-align: center;
                                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
                             }
-                            /* Estilo para los Radio Buttons (Flujo) */
+                            /* Título de la tarjeta (Blanco, pequeño) */
+                            .op-query-text {
+                                color: #FFFFFF !important;
+                                font-weight: 700 !important;
+                                font-size: 10px !important;
+                                letter-spacing: 1.5px !important;
+                                text-transform: uppercase !important;
+                                margin-bottom: 8px !important;
+                                opacity: 0.8;
+                            }
+                            /* CLASE NUEVA: Para los números del Volumen */
+                            .valor-volumen {
+                                color: #FFFFFF !important;
+                                font-weight: 800 !important;
+                                font-family: monospace !important;
+                                font-size: 14px !important; 
+                                letter-spacing: 2px !important;
+                                margin: 0 !important;
+                            }
+                            /* CLASE NUEVA: Para el nombre de la Paquetería */
+                            .valor-carrier {
+                                color: #00FFAA !important;
+                                font-weight: 800 !important;
+                                font-size: 12px !important;
+                                font-style: italic !important;
+                                letter-spacing: 1px !important;
+                                margin: 0 !important;
+                            }
+                            /* Estilo para los Radio Buttons */
                             div[data-testid="stRadio"] > label {
                                 color: #00FFAA !important;
                                 font-family: 'Inter', sans-serif;
                                 font-weight: 800 !important;
                                 font-size: 11px !important;
-                                letter-spacing: 1px;
                                 text-transform: uppercase;
-                            }
-                            /* Títulos en BLANCO y más pequeños */
-                            div[data-testid="stMarkdownContainer"] p.op-query-text {
-                                color: #FFFFFF !important; /* Cambiado de azul a BLANCO */
-                                font-weight: 700;
-                                font-size: 10px !important; /* Texto más pequeño */
-                                text-align: center;
-                                margin-bottom: 8px;
-                                letter-spacing: 1.5px;
-                                text-transform: uppercase;
-                                opacity: 0.9;
                             }
                         </style>
                     """, unsafe_allow_html=True)
@@ -1710,10 +1725,8 @@ else:
                             df_l.columns = [c.replace('_x000D_', '').strip() for c in df_l.columns]
                             if 'MES' in df_l.columns:
                                 df_l['MES'] = df_l['MES'].astype(str).str.upper().str.strip()
-                            
                             if 'FORMA DE ENVIO' in df_l.columns:
                                 df_l['FORMA DE ENVIO'] = df_l['FORMA DE ENVIO'].astype(str).str.strip()
-                                
                             df_l['CAJAS'] = pd.to_numeric(df_l['CAJAS'], errors='coerce').fillna(0)
                             return df_l
                         except Exception as e:
@@ -1723,7 +1736,7 @@ else:
                     df_log = load_data_logistica()
                     
                     if df_log is not None:
-                        st.markdown("<p class='op-query-text'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
+                        st.markdown("<p class='op-query-text' style='text-align:center;'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
                         
                         tipo_mov = st.radio(
                             "Selecciona el flujo:",
@@ -1753,9 +1766,7 @@ else:
                                 st.markdown(f"""
                                     <div class="metric-card-agc">
                                         <p class="op-query-text">VOLUMEN TOTAL (UNIT)</p>
-                                        <h3 style="margin:0; color:#FFFFFF; font-weight:800; font-family:monospace; font-size: 14px !important; letter-spacing: 2px;">
-                                            {int(total_cajas_mes):,}
-                                        </h3>
+                                        <p class="valor-volumen">{int(total_cajas_mes):,}</p>
                                     </div>
                                 """, unsafe_allow_html=True)
                                 
@@ -1764,9 +1775,7 @@ else:
                                 st.markdown(f"""
                                     <div class="metric-card-agc">
                                         <p class="op-query-text">CARRIER DOMINANTE</p>
-                                        <h3 style="margin:0; color:#00FFAA; font-weight:800; font-size: 12px !important; font-style: italic; letter-spacing: 1px;">
-                                            {lider_n}
-                                        </h3>
+                                        <p class="valor-carrier">{lider_n}</p>
                                     </div>
                                 """, unsafe_allow_html=True)
                             
