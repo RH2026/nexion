@@ -1202,13 +1202,11 @@ else:
                     st.markdown('<div class="op-query-text" style="text-align:center; color:#56c1ff; font-weight:800; letter-spacing:3px;">CONSULTA DE ESTATUS LOGÍSTICO</div>', unsafe_allow_html=True)
             
                     # --- BÚSQUEDA MAESTRA ---
-                    # --- 1. BLOQUE DE BÚSQUEDA GENERAL (MODO WIDE) ---
-                    # Al no tener columnas, Streamlit lo expande a todo el ancho disponible
-                    busqueda_manual = st.text_input(
-                        "", 
-                        key="busqueda_logistica_vfinal", 
-                        placeholder="🔍 Ingrese factura, guía o cliente..."
-                    ).strip()
+                    # --- 1. INICIALIZAR VARIABLE DE BÚSQUEDA ---
+                    busqueda = "" # La dejamos vacía por defecto para que no truene
+                    
+                    # --- 2. LUEGO VIENE TU INPUT (La caja de texto) ---
+                    busqueda = st.text_input("🔍 Buscar:", placeholder="Escribe algo...", key="bus_maestra_unica")
                     
                     df_final = df_raw.copy()
                     
