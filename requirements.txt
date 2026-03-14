@@ -12,10 +12,9 @@ fpdf2
 xlsxwriter
 google-generativeai
 pyzbar
-import cv2
-from pyzbar.pyzbar import decode
-import numpy as np
-
+opencv-python-headless
+pyzbar
+numpy
 
 
 
