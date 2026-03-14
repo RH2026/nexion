@@ -1217,8 +1217,8 @@ else:
                         )
                         df_final = df_raw[mask].copy()
                     
-                    # 3. Ahora esta línea YA NO VA A TRONAR porque df_final siempre existe
-                    st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
+                        # 3. Ahora esta línea YA NO VA A TRONAR porque df_final siempre existe
+                        st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
                     
                         if not df_final.empty:
                             # Preparación de datos para el Timeline
