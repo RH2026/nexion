@@ -2395,18 +2395,18 @@ else:
                         )
                     
                     with f_col3:
-                    # 1. Obtenemos las fleteras únicas
-                    opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
-                    
-                    # 2. Creamos la lista final agregando "TODOS" al inicio
-                    opciones_f = ["TODOS"] + opciones_raw
-                    
-                    # 3. Cambiamos a selectbox para selección única
-                    filtro_global_fletera = st.selectbox(
-                        "FILTRAR PAQUETERÍA", 
-                        options=opciones_f, 
-                        index=0  # Esto hace que seleccione "TODOS" por defecto
-                    )
+                        # 1. Obtenemos las fleteras únicas
+                        opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
+                        
+                        # 2. Creamos la lista final agregando "TODOS" al inicio
+                        opciones_f = ["TODOS"] + opciones_raw
+                        
+                        # 3. Cambiamos a selectbox para selección única
+                        filtro_global_fletera = st.selectbox(
+                            "FILTRAR PAQUETERÍA", 
+                            options=opciones_f, 
+                            index=0  # Esto hace que seleccione "TODOS" por defecto
+                        )
                 
                 # ── 2. PROCESAMIENTO DE DATOS KPI ──
                 df_kpi = df_seguimiento.copy()
