@@ -2594,7 +2594,7 @@ else:
                         </div>
                         """
                         # Altura fija para forzar el scroll interno y scrolling=True
-                        components.html(html_excepciones, height=500, scrolling=True)
+                        components.html(html_excepciones, height=700, scrolling=True)
                     else:
                         st.info("No hay pedidos que coincidan con los filtros seleccionados.")
                 else:
