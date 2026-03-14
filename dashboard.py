@@ -2519,7 +2519,7 @@ else:
                                 body {{ background: transparent; margin: 0; padding: 0; }}
                                 
                                 /* ───────── SCROLLBAR AGC STYLE ───────── */
-                                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                ::-webkit-scrollbar {{ width: 14px; height: 8px; }}
                                 ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
                                 ::-webkit-scrollbar-thumb {{ 
                                     background: #3498db; 
