@@ -4901,7 +4901,7 @@ else:
                                     st.session_state.rows.at[idx, "CODIGO"] = val_codigo
                 
                 # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
-                st.markdown("<p style='font-size:12px; font-weight:bold; color:#FFFFFF; letter-spacing:2px; margin-bottom:10px;'>EDICIÓN SOLICITUD DE MATERIALES</p>", unsafe_allow_html=True)
+                st.markdown("<p style='font-size:12px; font-weight:normal; color:#FFFFFF; letter-spacing:2px; margin-bottom:10px;'>EDICIÓN SOLICITUD DE MATERIALES</p>", unsafe_allow_html=True)
                 
                 df_final_pt = st.data_editor(
                     st.session_state.rows, 
