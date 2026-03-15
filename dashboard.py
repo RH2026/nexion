@@ -4901,7 +4901,10 @@ else:
                                     st.session_state.rows.at[idx, "CODIGO"] = val_codigo
                 
                 # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
-                st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px;'>DETALLE DE MATERIALES</p>", unsafe_allow_html=True)
+                # ── E. EDITOR DE DATOS DINÁMICO (VERSION NEXION PRO) ────────────────────────────────────
+                st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px; margin-bottom:10px;'>📋 DETALLE DE MATERIALES</p>", unsafe_allow_html=True)
+                
+                # Tuneamos las columnas para que no se vea como un Excel aburrido
                 df_final_pt = st.data_editor(
                     st.session_state.rows, 
                     num_rows="dynamic", 
@@ -4909,33 +4912,60 @@ else:
                     key="editor_pt", 
                     on_change=lookup_pt,
                     column_config={
-                        "CODIGO": st.column_config.TextColumn("CÓDIGO"),
-                        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN"),
-                        "CANTIDAD": st.column_config.TextColumn("CANTIDAD", width="small")
+                        "CODIGO": st.column_config.TextColumn(
+                            "🆔 CÓDIGO", 
+                            help="Código único del producto",
+                            width="medium"
+                        ),
+                        "DESCRIPCION": st.column_config.TextColumn(
+                            "📦 DESCRIPCIÓN", 
+                            help="Nombre del material o producto",
+                            width="large"
+                        ),
+                        "CANTIDAD": st.column_config.NumberColumn(
+                            "🔢 CANT.", 
+                            help="Cantidad de piezas",
+                            min_value=0,
+                            step=1,
+                            format="%d",
+                            width="small"
+                        )
                     }
                 )
-                # Definimos el color que quieres (puedes cambiarlo aquí)
-                color_fondo = "#465B66"  # Un rosa claro, por ejemplo
+                
+                # --- CSS PERSONALIZADO PARA EL TEXT AREA ---
+                # Usamos tu color Onyx (#465B66) pero con letras blancas para que se lea de lujo
+                color_onyx = "#465B66" 
                 
                 st.markdown(f"""
                     <style>
-                    /* Buscamos el textarea que tenga tu 'key' específica */
-                    div[data-testid="stTextArea"] textarea[id^="coment_in_pt"] {{
-                        background-color: {color_fondo} !important;
-                        color: #31333F !important; /* Color de la letra */
+                    /* Estilizamos el TextArea */
+                    div[data-testid="stTextArea"] textarea {{
+                        background-color: {color_onyx} !important;
+                        color: #FFFFFF !important; /* Letra blanca para que resalte */
+                        border: 1px solid rgba(255,255,255,0.1) !important;
+                        border-radius: 10px !important;
+                        font-size: 14px !important;
                     }}
                     
-                    /* Esto cambia el contenedor del textarea por si acaso */
-                    div[data-testid="stTextArea"] > div:nth-child(2) {{
-                        background-color: {color_fondo} !important;
+                    /* Cambiamos el color del label del TextArea */
+                    div[data-testid="stTextArea"] label p {{
+                        color: #54AFE7 !important;
+                        font-weight: bold !important;
+                        letter-spacing: 1px !important;
+                    }}
+                
+                    /* Efecto de foco en el textarea */
+                    div[data-testid="stTextArea"] textarea:focus {{
+                        border-color: #00FFAA !important;
+                        box-shadow: 0 0 10px rgba(0, 255, 170, 0.2) !important;
                     }}
                     </style>
                     """, unsafe_allow_html=True)
                 
-                # Tu código original
                 coment_val = st.text_area(
-                    ":material/chat: COMENTARIOS ADICIONALES", 
-                    placeholder="Escribe aquí cualquier observación...", 
+                    "💬 COMENTARIOS ADICIONALES", 
+                    placeholder="Escribe aquí cualquier observación sobre este envío...", 
                     key="coment_in_pt"
                 )
                 
