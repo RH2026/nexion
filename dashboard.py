@@ -1729,14 +1729,102 @@ else:
                     with c_v2: render_modern_bar(ok_v, tot_v, "A Tiempo", "#39da8a")
                     with c_v3: render_modern_bar(no_v, tot_v, "Fuera de Meta", "#ff5b5c")
                 
-                    # 7. Tabla Detalle
-                    st.write("")
-                    with st.expander("🔍 DETALLE DE OPERACIÓN"):
+                    # --- 7. DETALLE DE OPERACIÓN (SIEMPRE VISIBLE) ---
+                    st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px; margin-top:20px; margin-bottom:15px;'>🔍 DETALLE DE OPERACIÓN EN TIEMPO REAL</p>", unsafe_allow_html=True)
+                    
+                    if not df_vol.empty:
+                        # Preparamos los datos (Tu lógica amor)
                         df_display = df_vol[['NÚMERO DE PEDIDO','EMISION', 'FECHA DE ENVÍO', 'Estado_KPI']].copy()
-                        # Convertimos a string para que la tabla no de lata con formatos
-                        df_display['EMISION'] = df_display['EMISION'].dt.strftime('%d/%m/%Y %H:%M').fillna("S/D")
-                        df_display['FECHA DE ENVÍO'] = df_display['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y %H:%M').fillna("S/D")
-                        st.dataframe(df_display, use_container_width=True, hide_index=True)
+                        
+                        # Formateo de fechas
+                        df_display['EMISION_STR'] = df_display['EMISION'].dt.strftime('%d/%m/%Y %H:%M').fillna("S/D")
+                        df_display['ENVIO_STR'] = df_display['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y %H:%M').fillna("S/D")
+                        
+                        data_detalle = df_display.to_dict('records')
+                        
+                        # Alto dinámico con el scroll de la casa
+                        alto_detalle = min(len(data_detalle) * 90 + 20, 550)
+                    
+                        html_detalle = f"""
+                        <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                            <style>
+                                body {{ background: transparent; margin: 0; padding: 0; }}
+                                
+                                /* SCROLLBAR AGC STYLE */
+                                ::-webkit-scrollbar {{ width: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.05); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                    
+                                .card-detalle {{
+                                    background: #263238;
+                                    border: 1px solid rgba(255, 255, 255, 0.05);
+                                    border-left: 5px solid #38bdf8;
+                                    border-radius: 10px;
+                                    padding: 12px 20px;
+                                    margin-bottom: 8px;
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    transition: 0.3s;
+                                }}
+                                .card-detalle:hover {{ border-color: #38bdf8; background: #2d3b42; transform: translateX(5px); }}
+                                
+                                .label-mini {{ 
+                                    font-size: 8px; 
+                                    color: rgba(255,255,255,0.4); 
+                                    font-weight: normal; 
+                                    letter-spacing: 1px; 
+                                    text-transform: uppercase; 
+                                }}
+                                
+                                .val-pedido {{ color: #00FFAA; font-family: monospace; font-size: 15px; font-weight: 800; }}
+                                .val-fecha {{ color: #FFFFFF; font-size: 11px; font-weight: 400; opacity: 0.9; }}
+                                
+                                .badge-kpi {{
+                                    padding: 4px 10px;
+                                    border-radius: 6px;
+                                    font-size: 10px;
+                                    font-weight: 800;
+                                    text-align: center;
+                                    min-width: 100px;
+                                }}
+                                
+                                .st-entregado {{ background: rgba(0, 255, 170, 0.1); color: #00FFAA; border: 1px solid rgba(0, 255, 170, 0.2); }}
+                                .st-transito {{ background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }}
+                                .st-alerta {{ background: rgba(255, 75, 75, 0.1); color: #FF4B4B; border: 1px solid rgba(255, 75, 75, 0.2); }}
+                            </style>
+                            
+                            {"".join([f'''
+                            <div class="card-detalle" style="border-left-color: {'#00FFAA' if 'ENTREGADO' in str(item['Estado_KPI']).upper() else '#38bdf8' if 'TRANS' in str(item['Estado_KPI']).upper() else '#FF4B4B'};">
+                                <div style="flex: 1;">
+                                    <div class="label-mini">Pedido</div>
+                                    <div class="val-pedido">{item['NÚMERO DE PEDIDO']}</div>
+                                </div>
+                                
+                                <div style="flex: 1.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="label-mini">Emisión</div>
+                                    <div class="val-fecha">{item['EMISION_STR']}</div>
+                                </div>
+                    
+                                <div style="flex: 1.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="label-mini">Salida de Almacén</div>
+                                    <div class="val-fecha">{item['ENVIO_STR']}</div>
+                                </div>
+                    
+                                <div style="flex: 1; text-align: right;">
+                                    <div class="badge-kpi {'st-entregado' if 'ENTREGADO' in str(item['Estado_KPI']).upper() else 'st-transito' if 'TRANS' in str(item['Estado_KPI']).upper() else 'st-alerta'}">
+                                        {str(item['Estado_KPI']).upper()}
+                                    </div>
+                                </div>
+                            </div>
+                            ''' for item in data_detalle])}
+                        </div>
+                        """
+                        import streamlit.components.v1 as components
+                        components.html(html_detalle, height=alto_detalle, scrolling=True)
+                    else:
+                        st.info("No hay datos disponibles para el detalle.")
                     
                 # PESTAÑA 4: % PARTICIPACIÓN-
                 with tab_participacion:
