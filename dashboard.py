@@ -4696,14 +4696,19 @@ else:
                                     components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
                     with t2:
-                        # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM FINAL) ---
+                        # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM CON ORDEN DESCENDENTE) ---
                         if not df_actual.empty:
                             # 1. Cálculos de lógica (Intactos amor)
                             t_prod = df_actual["COSTO_TOTAL"].sum()
                             t_flete = df_actual["COSTO_GUIA"].sum()
                             filas_html = ""
                             tarjetas_html = ""
+                            
+                            # Usamos fillna para evitar los molestos NaN
                             df_render = df_actual.fillna(0)
+                            
+                            # --- EL CAMBIO CLAVE: Ordenamos para que el último folio aparezca primero ---
+                            df_render = df_render.sort_values(by="FOLIO", ascending=False)
                         
                             for _, r in df_render.iterrows():
                                 detalle_p = ""
@@ -4712,10 +4717,10 @@ else:
                                     if cant > 0: 
                                         detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                                 
-                                # Guardamos para el PDF original
+                                # Guardamos para el PDF original (mantenemos tu lógica de impresión)
                                 filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
                                 
-                                # 2. Tarjetas visuales
+                                # 2. Tarjetas visuales (Ahora en orden correcto)
                                 tarjetas_html += f"""
                                 <div class="card-reporte">
                                     <div class="col-folio">
@@ -4751,7 +4756,7 @@ else:
                             html_final = f"""
                             <div style="font-family: 'Inter', sans-serif;">
                                 <style>
-                                    body {{ background: transparent; padding: 0; margin: 0; }}
+                                    body {{ background: transparent; margin: 0; padding: 0; }}
                                     .container-reporte {{ height: 500px; overflow-y: auto; padding-right: 10px; }}
                                     .card-reporte {{
                                         background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;
