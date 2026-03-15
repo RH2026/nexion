@@ -4913,28 +4913,20 @@ else:
                     column_config={
                         "CODIGO": st.column_config.TextColumn(
                             "CÓDIGO", 
-                            help="Escribe el código para buscar el producto",
-                            validate=r"^[a-zA-Z0-9_-]+$" # Validación para que no metan caracteres raros
+                            alignment="center" # <--- También podemos centrar el código
                         ),
                         "DESCRIPCION": st.column_config.TextColumn(
                             "DESCRIPCIÓN DEL PRODUCTO",
-                            width="large",
-                            disabled=True # Si tienes una función lookup, que no la editen a mano para no romper tu base
+                            width="large"
                         ),
                         "CANTIDAD": st.column_config.NumberColumn(
                             "CANT.", 
                             min_value=0,
                             max_value=1000,
                             step=1,
-                            format="%d", # Sin decimales para que se vea limpio
+                            format="%d",
                             width="small",
-                            alignment="center"
-                        ),
-                        # TRUCO PRO: Añade una columna de estatus visual aunque no esté en tu DF original
-                        "DISPONIBILIDAD": st.column_config.CheckboxColumn(
-                            "✅ LISTO",
-                            help="Marca si ya tienes el material físicamente",
-                            default=False
+                            alignment="center" # <--- ¡AQUÍ ESTÁ EL TRUCO, AMOR!
                         )
                     }
                 )
