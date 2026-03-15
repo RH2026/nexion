@@ -4595,8 +4595,9 @@ else:
                 
                 # 2. DEFINIMOS LA VARIABLE (Esto es lo que te faltaba, amor)
                 # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
+                # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
                 usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
-
+                
                 if usuario_logeado in lista_admins:
                     st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
                     t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
@@ -4606,6 +4607,7 @@ else:
                             df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
                             opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
                             
+                            # 1. El selector siempre arriba
                             fol_sel_texto = st.selectbox(
                                 "Seleccionar Folio para procesar (Logística):", 
                                 opciones_folios, 
@@ -4613,89 +4615,85 @@ else:
                                 placeholder="Busca el folio que envió Ventas..."
                             )
                             
+                            # --- SECCIONES SIEMPRE VISIBLES ---
+                            st.divider() # Una línea para separar
+                            c_adm1, c_adm2 = st.columns(2)
+                            
+                            # Inicializamos variables vacías por si no hay selección
+                            datos_fol = None
+                            fol_edit = None
+                
                             if fol_sel_texto:
                                 fol_edit = int(fol_sel_texto.split(" - ")[0])
                                 datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
-                    
-                                c_adm1, c_adm2 = st.columns(2)
+                
+                            with c_adm1:
+                                st.subheader("1. ASIGNAR DATOS DE ENVIO")
+                                n_paq_nombre = st.selectbox("Nombre de Paquetería", 
+                                    ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
+                                    index=None, placeholder="Selecciona paquetería...")
                                 
-                                with c_adm1:
-                                    st.subheader("1. ASIGNAR DATOS DE ENVIO")
-                                    # Aquí es donde tú haces tu magia de Logística
-                                    n_paq_nombre = st.selectbox("Nombre de Paquetería", 
-                                        ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
-                                        index=None, placeholder="Selecciona paquetería...")
+                                n_tipo_pago = st.selectbox("Modalidad de Pago", 
+                                    ["CREDITO", "COBRO DESTINO"],
+                                    index=None, placeholder="¿Cómo se paga?")
+                                
+                                n_gui = st.text_input("Número de Guía").upper()
+                                n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
+                
+                                # El botón solo se activa si hay un folio seleccionado
+                                btn_guardar = st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", 
+                                                        use_container_width=True, 
+                                                        disabled=not fol_sel_texto)
+                                
+                                if btn_guardar and datos_fol is not None:
+                                    idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
+                                    df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
+                                    df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
+                                    df_actual.at[idx, "NUMERO_GUIA"] = n_gui
+                                    df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
                                     
-                                    n_tipo_pago = st.selectbox("Modalidad de Pago", 
-                                        ["CREDITO", "COBRO DESTINO"],
-                                        index=None, placeholder="¿Cómo se paga?")
+                                    if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
+                                        st.success(f"¡Folio {fol_edit} actualizado!")
+                                        st.rerun()
+                
+                            with c_adm2:
+                                st.subheader("2. IMPRESION FINAL")
+                                st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
+                                
+                                # El botón de imprimir también se deshabilita si no hay selección
+                                btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
+                                                          use_container_width=True, 
+                                                          type="primary",
+                                                          disabled=not fol_sel_texto)
+                                
+                                if btn_imprimir and datos_fol is not None:
+                                    prods_re = []
+                                    for p in precios.keys():
+                                        if p in datos_fol and datos_fol[p] > 0: 
+                                            prods_re.append({"desc": p, "cant": int(datos_fol[p])})
                                     
-                                    n_gui = st.text_input("Número de Guía").upper()
-                                    n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
-                    
-                                    if st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", use_container_width=True):
-                                        idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                                        df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
-                                        df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
-                                        df_actual.at[idx, "NUMERO_GUIA"] = n_gui
-                                        df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
-                                        
-                                        if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
-                                            st.success("¡Datos de envío guardados!")
-                                            st.rerun()
-                    
-                                with c_adm2:
-                                    st.subheader("2. IMPRESION FINAL")
-                                    st.markdown("""
-                                        <div style="background-color: rgba(0, 150, 255, 0.1); 
-                                                    border-left: 5px solid #F7C300; 
-                                                    padding: 15px; 
-                                                    border-radius: 5px;">
-                                            <span style="color: #007BFF; font-size: 20px; vertical-align: middle;"></span> 
-                                            <b style="color: #F7C300; margin-left: 10px;">VERIFICACIÓN PREVIA:</b> 
-                                            <span style="color: white; margin-left: 5px;">
-                                                Puedes generar la impresión para validar los datos. Recuerda que esto la base de datos hasta que guardes.
-                                            </span>
-                                        </div>
-                                        <br>
-                                    """, unsafe_allow_html=True)
-                                    
-                                    if st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", use_container_width=True, type="primary"):
-                                        # Extraer productos del folio
-                                        prods_re = []
-                                        for p in precios.keys():
-                                            if p in datos_fol and datos_fol[p] > 0: 
-                                                prods_re.append({"desc": p, "cant": int(datos_fol[p])})
-                                        
-                                        # --- AQUÍ ESTÁ EL TRUCO, AMOR ---
-                                        # Si los inputs de arriba tienen algo, usamos eso. 
-                                        # Si están vacíos, usamos lo que ya estaba en GitHub por si es una re-impresión.
-                                        paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
-                                        pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
-                    
-                                        # --- RE-IMPRESIÓN CORREGIDA EN PANEL DE ADMIN ---
-                                        h_re = generar_html_impresion(
-                                            f"JYP-{int(datos_fol['FOLIO'])}", 
-                                            datos_fol.get("PAQUETERIA", "ENVIO"), 
-                                            datos_fol.get("TIPO_ENTREGA", "DOMICILIO"), # Cambiamos el "-" por el dato real
-                                            datos_fol["FECHA"], 
-                                            "RIGOBERTO HERNANDEZ", 
-                                            "3319753122", 
-                                            datos_fol["SOLICITO"], 
-                                            datos_fol["NOMBRE DEL HOTEL"], 
-                                            # Aquí es donde quitamos los "-" y ponemos los datos de la base de datos:
-                                            "", # Calle
-                                            "", # Colonia
-                                            "", # CP
-                                            datos_fol["DESTINO"], # Este ya lo tenías, es Ciudad/Estado
-                                            "", # Este puede quedar vacío si no guardaste el estado aparte
-                                            datos_fol["CONTACTO"], 
-                                            prods_re, 
-                                            "RE-IMPRESIÓN DE LOGÍSTICA", 
-                                            paq_a_imprimir, 
-                                            pago_a_imprimir 
-                                        )
-                                        components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
+                                    paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
+                                    pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
+                
+                                    h_re = generar_html_impresion(
+                                        f"JYP-{int(datos_fol['FOLIO'])}", 
+                                        datos_fol.get("PAQUETERIA", "ENVIO"), 
+                                        datos_fol.get("TIPO_ENTREGA", "DOMICILIO"), 
+                                        datos_fol["FECHA"], 
+                                        "RIGOBERTO HERNANDEZ", 
+                                        "3319753122", 
+                                        datos_fol["SOLICITO"], 
+                                        datos_fol["NOMBRE DEL HOTEL"], 
+                                        "", "", "", 
+                                        datos_fol["DESTINO"], 
+                                        "", 
+                                        datos_fol["CONTACTO"], 
+                                        prods_re, 
+                                        "RE-IMPRESIÓN DE LOGÍSTICA", 
+                                        paq_a_imprimir, 
+                                        pago_a_imprimir 
+                                    )
+                                    components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
                     with t2:
                         # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM FINAL) ---
