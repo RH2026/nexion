@@ -4902,7 +4902,7 @@ else:
                 
                 # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
                 # ── E. EDITOR DE DATOS EVOLUCIONADO (ESTILO NEXION ULTRA) ────────────────────────────────────
-                st.markdown("<p style='font-size:12px; font-weight:bold; color:#00FFAA; letter-spacing:2px; margin-bottom:10px;'>🚀 GESTIÓN DINÁMICA DE MATERIALES</p>", unsafe_allow_html=True)
+                st.markdown("<p style='font-size:12px; font-weight:bold; color:#00FFAA; letter-spacing:2px; margin-bottom:10px;'>EDICIÓN SALIDA DE MATERIALES</p>", unsafe_allow_html=True)
                 
                 df_final_pt = st.data_editor(
                     st.session_state.rows, 
@@ -4912,22 +4912,23 @@ else:
                     on_change=lookup_pt,
                     column_config={
                         "CODIGO": st.column_config.TextColumn(
-                            "🆔 CÓDIGO", 
+                            "CÓDIGO", 
                             help="Escribe el código para buscar el producto",
                             validate=r"^[a-zA-Z0-9_-]+$" # Validación para que no metan caracteres raros
                         ),
                         "DESCRIPCION": st.column_config.TextColumn(
-                            "📦 DESCRIPCIÓN DEL PRODUCTO",
+                            "DESCRIPCIÓN DEL PRODUCTO",
                             width="large",
                             disabled=True # Si tienes una función lookup, que no la editen a mano para no romper tu base
                         ),
                         "CANTIDAD": st.column_config.NumberColumn(
-                            "🔢 CANT.", 
+                            "CANT.", 
                             min_value=0,
                             max_value=1000,
                             step=1,
                             format="%d", # Sin decimales para que se vea limpio
-                            width="small"
+                            width="small",
+                            alignment="center"
                         ),
                         # TRUCO PRO: Añade una columna de estatus visual aunque no esté en tu DF original
                         "DISPONIBILIDAD": st.column_config.CheckboxColumn(
@@ -4965,7 +4966,7 @@ else:
                     """, unsafe_allow_html=True)
                 
                 coment_val = st.text_area(
-                    "📝 NOTAS DE LOGÍSTICA", 
+                    "NOTAS DE LOGÍSTICA", 
                     placeholder="¿Alguna instrucción especial para este folio?", 
                     key="coment_in_pt"
                 )
