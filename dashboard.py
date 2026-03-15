@@ -1629,7 +1629,7 @@ else:
                                     .sub-text {{ font-size: 10px; color: rgba(255,255,255,0.6); font-style: italic; }}
                                     
                                     /* Scrollbar */
-                                    ::-webkit-scrollbar {{ width: 8px; }}
+                                    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
                                     ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
                                     ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
                                     ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
