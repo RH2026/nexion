@@ -4698,42 +4698,118 @@ else:
                                         components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
                     with t2:
+                        # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM FINAL) ---
                         if not df_actual.empty:
-                            st.dataframe(df_actual, use_container_width=True)
+                            # 1. Cálculos de lógica (Intactos amor)
                             t_prod = df_actual["COSTO_TOTAL"].sum()
                             t_flete = df_actual["COSTO_GUIA"].sum()
                             filas_html = ""
-                            for _, r in df_actual.iterrows():
+                            tarjetas_html = ""
+                            df_render = df_actual.fillna(0)
+                        
+                            for _, r in df_render.iterrows():
                                 detalle_p = ""
                                 for p in precios.keys():
                                     cant = r.get(p, 0)
-                                    if cant > 0: detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
+                                    if cant > 0: 
+                                        detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
+                                
+                                # Guardamos para el PDF original
                                 filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
-                            
-                            form_pt_html = f"""
-                            <html><head><style>@media print{{body{{padding:15mm;}} .no-print{{display:none;}}}} body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head>
-                            <body>
-                                <div style="display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;">
-                                    <div><h2>JYPESA</h2><p style="margin:0;font-size:10px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
-                                    <div style="text-align:right;"><b>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</b><br>GENERADO: {date.today()}</div>
+                                
+                                # 2. Tarjetas visuales
+                                tarjetas_html += f"""
+                                <div class="card-reporte">
+                                    <div class="col-folio">
+                                        <div class="label-mini">FOLIO</div>
+                                        <div class="val-folio">#{r['FOLIO']}</div>
+                                        <div class="val-sub">{r['FECHA']}</div>
+                                    </div>
+                                    <div class="col-info">
+                                        <div class="label-mini">SOLICITANTE / DESTINO</div>
+                                        <div class="val-main">{str(r['SOLICITO']).upper()}</div>
+                                        <div class="val-sub">{str(r['NOMBRE DEL HOTEL']).upper()} - {str(r['DESTINO']).upper()}</div>
+                                    </div>
+                                    <div class="col-detalle">
+                                        <div class="label-mini">DESGLOSE PRODUCTOS</div>
+                                        <div class="val-list">{detalle_p if detalle_p else 'SIN DETALLE'}</div>
+                                    </div>
+                                    <div class="col-costos">
+                                        <div class="label-mini">INVERSIÓN</div>
+                                        <div class="val-costo">Prod: ${r['COSTO_TOTAL']:,.2f}</div>
+                                        <div class="val-flete">Flete: ${r['COSTO_GUIA']:,.2f}</div>
+                                    </div>
                                 </div>
-                                <table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>DETALLE</th><th>COSTO PROD.</th><th>FLETE</th></tr></thead>
-                                <tbody>{filas_html}</tbody></table>
-                                <div style="text-align:right;margin-top:20px;border-top:1px solid black;">
-                                    <p>TOTAL PRODUCTOS: ${t_prod:,.2f}</p><p>TOTAL FLETES: ${t_flete:,.2f}</p><h3>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3>
+                                """
+                        
+                            # 3. Renderizado del visor con Scroll AGC
+                            st.markdown(f"""
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                    <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>📊 RESUMEN DE INVERSIÓN JYPESA</p>
+                                    <p style='color:#FFFFFF; font-size:12px; opacity:0.6;'>Total Registros: {len(df_actual)}</p>
                                 </div>
-                            </body></html>"""
+                            """, unsafe_allow_html=True)
+                        
+                            html_final = f"""
+                            <div style="font-family: 'Inter', sans-serif;">
+                                <style>
+                                    body {{ background: transparent; padding: 0; margin: 0; }}
+                                    .container-reporte {{ height: 500px; overflow-y: auto; padding-right: 10px; }}
+                                    .card-reporte {{
+                                        background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;
+                                        padding: 15px 20px; margin-bottom: 12px; display: flex; min-width: 800px;
+                                        justify-content: space-between; align-items: center; transition: 0.3s;
+                                    }}
+                                    .card-reporte:hover {{ border-color: #38bdf8; background: #2d3b42; }}
+                                    .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }}
+                                    .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
+                                    .val-main {{ color: #FFFFFF; font-size: 12px; font-weight: 700; }}
+                                    .val-sub {{ color: rgba(255,255,255,0.5); font-size: 10px; }}
+                                    .val-list {{ color: #FFFFFF; font-size: 9px; line-height: 1.4; opacity: 0.8; }}
+                                    .val-costo {{ color: #38bdf8; font-size: 13px; font-weight: 700; font-family: monospace; }}
+                                    .val-flete {{ color: #a855f7; font-size: 13px; font-weight: 700; font-family: monospace; }}
+                                    
+                                    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                    ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; min-height: 60px; }}
+                                    ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                                    
+                                    .col-folio {{ flex: 0.8; }}
+                                    .col-info {{ flex: 2; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05); }}
+                                    .col-detalle {{ flex: 2; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05); }}
+                                    .col-costos {{ flex: 1.2; text-align: right; padding-left: 15px; border-left: 1px solid rgba(255,255,255,0.05); }}
+                                </style>
+                                <div class="container-reporte">{tarjetas_html}</div>
+                            </div>
+                            """
+                            import streamlit.components.v1 as components
+                            components.html(html_final, height=520, scrolling=False)
+                        
+                            # Banner de Totales
+                            st.markdown(f"""
+                                <div style="background:#263238; border-top: 4px solid #00FFAA; border-radius: 0 0 12px 12px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                                    <div style="color:rgba(255,255,255,0.6); font-size:12px;">PRODUCTOS: <span style="color:white; font-weight:bold;">${t_prod:,.2f}</span></div>
+                                    <div style="color:rgba(255,255,255,0.6); font-size:12px;">FLETES: <span style="color:white; font-weight:bold;">${t_flete:,.2f}</span></div>
+                                    <div style="color:#00FFAA; font-size:16px; font-weight:800; letter-spacing:1px;">INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</div>
+                                </div>
+                            """, unsafe_allow_html=True)
                             
+                            # 4. BOTONES DE ACCIÓN (Ahora sí fuera del else amor)
                             c1, c2, c3 = st.columns(3)
                             with c1:
+                                form_pt_html = f"<html><head><style>@media print{{body{{padding:15mm;}} .no-print{{display:none;}}}} body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head><body><div style='display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;'><div><h2>JYPESA</h2><p style='margin:0;font-size:10px;'>AUTOMATIZACIÓN DE PROCESOS</p></div><div style='text-align:right;'><b>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</b><br>GENERADO: {date.today()}</div></div><table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>DETALLE</th><th>COSTO PROD.</th><th>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:1px solid black;'><p>TOTAL PRODUCTOS: ${t_prod:,.2f}</p><p>TOTAL FLETES: ${t_flete:,.2f}</p><h3>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
                                 if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
-                                    components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
+                                    components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
                             with c2:
+                                from io import BytesIO
                                 output = BytesIO()
                                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
                                 st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_{date.today()}.xlsx", use_container_width=True)
                             with c3:
                                 if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
+                        
+                        else:
+                            st.info("No hay registros todavía.")
                 
                 else:
                     # --- DISEÑO PRO: FRANJA ULTRA DELGADA EN UNA SOLA LÍNEA ---
