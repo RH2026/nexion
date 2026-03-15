@@ -4901,10 +4901,6 @@ else:
                                     st.session_state.rows.at[idx, "CODIGO"] = val_codigo
                 
                 # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
-                # ── E. EDITOR DE DATOS EVOLUCIONADO (ESTILO NEXION ULTRA) ────────────────────────────────────
-                st.markdown("<p style='font-size:12px; font-weight:bold; color:#00FFAA; letter-spacing:2px; margin-bottom:10px;'>EDICIÓN SALIDA DE MATERIALES</p>", unsafe_allow_html=True)
-                
-                # ── E. EDITOR DE DATOS EVOLUCIONADO (ESTILO NEXION ULTRA) ────────────────────────────────────
                 st.markdown("<p style='font-size:12px; font-weight:bold; color:#FFFFFF; letter-spacing:2px; margin-bottom:10px;'>EDICIÓN SOLICITUD DE MATERIALES</p>", unsafe_allow_html=True)
                 
                 df_final_pt = st.data_editor(
