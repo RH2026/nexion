@@ -4965,7 +4965,7 @@ else:
                 
                 coment_val = st.text_area(
                     "NOTAS DE LOGÍSTICA", 
-                    placeholder="¿Alguna instrucción especial para este folio?", 
+                    placeholder="¿Alguna instrucción especial para esta solicitud?", 
                     key="coment_in_pt"
                 )
                 
