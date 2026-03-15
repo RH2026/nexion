@@ -4925,8 +4925,7 @@ else:
                             max_value=1000,
                             step=1,
                             format="%d",
-                            width="small",
-                            alignment="center" # <--- ¡AQUÍ ESTÁ EL TRUCO, AMOR!
+                            width="small"
                         )
                     }
                 )
