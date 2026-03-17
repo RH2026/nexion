@@ -2664,7 +2664,7 @@ else:
                                 .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }}
                                 .factura-destacada {{ color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 1px; font-family: monospace; }}
                                 .info-main {{ color: #FFFFFF; font-size: 14px; font-weight: 700; }}
-                                .info-sub {{ color: rgba(255,255,255,0.5); font-size: 11px; font-style: italic; }}
+                                .info-sub {{ color: #FFFFFF; font-size: 11px; font-style: italic; }}
                                 .moderado {{ border-left-color: #FFA500; border-color: rgba(255, 165, 0, 0.2); }}
                                 .badge-moderado {{ color: #FFA500; background: rgba(255, 165, 0, 0.1); border-color: rgba(255, 165, 0, 0.3); }}
                             </style>
