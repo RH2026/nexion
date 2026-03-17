@@ -4734,11 +4734,11 @@ else:
                             with c_adm1:
                                 st.subheader("1. ASIGNAR DATOS DE ENVIO")
                                 n_paq_nombre = st.selectbox("Nombre de Paquetería", 
-                                    ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
+                                    ["NO APLICA","TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
                                     index=None, placeholder="Selecciona paquetería...")
                                 
                                 n_tipo_pago = st.selectbox("Modalidad de Pago", 
-                                    ["CREDITO", "COBRO DESTINO"],
+                                    ["NO APLICA","CREDITO", "COBRO DESTINO"],
                                     index=None, placeholder="¿Cómo se paga?")
                                 
                                 n_gui = st.text_input("Número de Guía").upper()
