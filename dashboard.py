@@ -4783,7 +4783,7 @@ else:
                                                     gap: 15px;
                                                     animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                                                 ">
-                                                    <span style="font-size: 26px;">🚀</span>
+                                                    <span style="font-size: 26px;"></span>
                                                     <div style="font-family: sans-serif;">
                                                         <b style="display: block; font-size: 16px; letter-spacing: 0.5px; text-transform: uppercase;">¡LOGÍSTICA ACTUALIZADA!</b>
                                                         <span style="font-size: 13px; opacity: 0.9;">Folio JYP-{fol_edit} guardado con éxito.</span>
@@ -4799,7 +4799,7 @@ else:
                                         
                                         # 4. Pausa de 2 segundos y reinicio
                                         import time
-                                        time.sleep(2)
+                                        time.sleep(1)
                                         st.rerun()
                 
                             with c_adm2:
