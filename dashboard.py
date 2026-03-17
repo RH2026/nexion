@@ -4822,14 +4822,32 @@ else:
                                         detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                                 
                                 # Guardamos para el PDF original (Márgenes compactos para impresión amor)
+                                # Configuramos el ancho por porcentajes para que use TODA la hoja sin amontonar
                                 filas_html += f"""
-                                <tr>
-                                    <td style='border:1px solid black; padding:4px; text-align:center; font-size:10px; width:40px;'>{r['FOLIO']}</td>
-                                    <td style='border:1px solid black; padding:4px; font-size:10px; width:100px;'><b>{str(r['SOLICITO']).upper()}</b><br><small style='font-size:8px;'>{r['FECHA']}</small></td>
-                                    <td style='border:1px solid black; padding:4px; font-size:10px; width:200px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small style='font-size:8px;'>{str(r['DESTINO']).upper()}</small></td>
-                                    <td style='border:1px solid black; padding:4px; font-size:9px; line-height:1.1;'>{detalle_p}</td>
-                                    <td style='border:1px solid black; padding:4px; text-align:right; font-size:10px; width:80px;'>${r['COSTO_TOTAL']:,.2f}</td>
-                                    <td style='border:1px solid black; padding:4px; text-align:right; font-size:10px; width:60px;'>${r['COSTO_GUIA']:,.2f}</td>
+                                <tr style="page-break-inside: avoid;">
+                                    <td style='border:1px solid black; padding:5px; text-align:center; font-size:10px; width:8%;'>{r['FOLIO']}</td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; font-size:10px; width:18%;'>
+                                        <b>{str(r['SOLICITO']).upper()}</b><br>
+                                        <small style='font-size:8px; color:#666;'>{r['FECHA']}</small>
+                                    </td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; font-size:10px; width:25%;'>
+                                        <b>{str(r['NOMBRE DEL HOTEL']).upper()}</b><br>
+                                        <small style='font-size:8px;'>{str(r['DESTINO']).upper()}</small>
+                                    </td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; font-size:9px; line-height:1.2; width:33%;'>
+                                        {detalle_p}
+                                    </td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; text-align:right; font-size:10px; width:8%; white-space:nowrap;'>
+                                        ${r['COSTO_TOTAL']:,.2f}
+                                    </td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; text-align:right; font-size:10px; width:8%; white-space:nowrap;'>
+                                        ${r['COSTO_GUIA']:,.2f}
+                                    </td>
                                 </tr>
                                 """
                                 # 2. TABLAA--------Tarjetas visuales (Márgenes corregidos para que respiren amor)
