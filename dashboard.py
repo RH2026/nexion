@@ -2611,14 +2611,14 @@ else:
                         # Alto dinámico
                         alto_panel = (len(data_excepciones) * 115) + 20
                 
-                        # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM CON SCROLL AGC) ---
+                        # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM CON PROMESA DE ENTREGA) ---
                         html_excepciones = f"""
                         <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
                             <style>
                                 body {{ background: transparent; margin: 0; padding: 0; }}
                                 
                                 /* ───────── SCROLLBAR AGC STYLE ───────── */
-                                ::-webkit-scrollbar {{ width: 08px; height: 8px; }}
+                                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
                                 ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
                                 ::-webkit-scrollbar-thumb {{ 
                                     background: #3498db; 
@@ -2629,7 +2629,7 @@ else:
                                     background: #2ecc71; 
                                     box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
                                 }}
-            
+                        
                                 .card-excepcion {{
                                     background: #263238;
                                     border: 1px solid rgba(255, 75, 75, 0.15);
@@ -2675,15 +2675,20 @@ else:
                                     <div class="factura-destacada">{item['NÚMERO DE PEDIDO']}</div>
                                     <div class="info-sub" style="margin-top:5px;">Cliente: {str(item['NOMBRE DEL CLIENTE'])[:35]}</div>
                                 </div>
+                        
                                 <div style="flex: 1.5; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05);">
                                     <div class="label-mini">Transporte / Estatus</div>
                                     <div class="info-main" style="color:#38bdf8;">{item['FLETERA']}</div>
                                     <div class="info-sub" style="color: #FFFFFF !important;">Guía: {item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] else 'SIN ASIGNAR'}</div>
                                 </div>
-                                <div style="flex: 1; text-align: right; padding-right: 25px;">
+                        
+                                <div style="flex: 1.2; text-align: right; padding-right: 25px; border-left: 1px solid rgba(255,255,255,0.05);">
                                     <div class="label-mini">Días en Ruta</div>
-                                    <div class="info-main">{item['DIAS_TRANS']} d.</div>
+                                    <div class="info-main" style="margin-bottom: 5px;">{item['DIAS_TRANS']} d.</div>
+                                    <div class="label-mini" style="font-size: 7px; color: #FFA500;">P. Entrega</div>
+                                    <div class="info-sub" style="font-size: 10px; font-style: normal;">{item['PROMESA DE ENTREGA'].strftime('%d/%m/%Y') if hasattr(item['PROMESA DE ENTREGA'], 'strftime') else item['PROMESA DE ENTREGA']}</div>
                                 </div>
+                        
                                 <div>
                                     <div class="label-mini" style="text-align:center;">Retraso</div>
                                     <div class="badge-retraso {'badge-moderado' if item['DIAS_ATRASO'] < 5 else ''}">+{item['DIAS_ATRASO']}</div>
