@@ -4822,51 +4822,78 @@ else:
                                         detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                                 
                                 # Guardamos para el PDF original (Márgenes compactos para impresión amor)
-                                # Configuramos el ancho por porcentajes para que use TODA la hoja sin amontonar
-                                # 1. Primero, asegúrate de que la estructura de la tabla principal sea esta:
                                 form_pt_html = f"""
                                 <html>
                                 <head>
                                     <style>
-                                        @media print {{
-                                            body {{ padding: 10mm; background: white; }}
-                                            .no-print {{ display: none; }}
-                                        }}
-                                        body {{ font-family: sans-serif; }}
-                                        
-                                        /* AQUÍ ESTÁ EL SECRETO AMOR: width 100% y table-layout fixed */
-                                        table {{ 
-                                            width: 100%; 
-                                            border-collapse: collapse; 
-                                            margin-top: 15px; 
-                                            table-layout: fixed; /* Esto obliga a respetar los anchos que daremos */
-                                            word-wrap: break-word;
+                                        /* Configuramos la hoja completa amor */
+                                        @page {{
+                                            size: letter landscape; /* O 'portrait' si la prefieres vertical */
+                                            margin: 0.5cm; /* Márgenes físicos de la hoja muy pequeños */
                                         }}
                                         
-                                        th {{ background: #eee; border: 1px solid black; padding: 8px; font-size: 11px; }}
+                                        body {{ 
+                                            font-family: 'Helvetica', Arial, sans-serif; 
+                                            margin: 0; 
+                                            padding: 10px; 
+                                            width: 100%;
+                                        }}
+                                
+                                        /* La tabla ahora sí va a ocupar todo el ancho */
+                                        .tabla-wide {{
+                                            width: 100% !important;
+                                            border-collapse: collapse;
+                                            table-layout: fixed; /* Esto es lo que evita que se amontone */
+                                            margin-top: 20px;
+                                        }}
+                                
+                                        .tabla-wide th {{
+                                            background-color: #f2f2f2;
+                                            border: 1px solid black;
+                                            padding: 8px;
+                                            font-size: 11px;
+                                            text-transform: uppercase;
+                                        }}
+                                
+                                        .tabla-wide td {{
+                                            border: 1px solid black;
+                                            padding: 6px;
+                                            font-size: 10px;
+                                            word-wrap: break-word; /* Para que el texto largo salte de línea */
+                                            vertical-align: top;
+                                        }}
+                                
+                                        .header-reporte {{
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: flex-end;
+                                            border-bottom: 3px solid black;
+                                            padding-bottom: 10px;
+                                            width: 100%;
+                                        }}
                                     </style>
                                 </head>
                                 <body>
-                                    <div style='display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;'>
+                                    <div class="header-reporte">
                                         <div>
-                                            <h2 style='margin:0;'>JYPESA</h2>
-                                            <p style='margin:0; font-size:10px;'>AUTOMATIZACIÓN DE PROCESOS</p>
+                                            <h1 style="margin:0; font-size:24px;">JYPESA</h1>
+                                            <p style="margin:0; font-size:12px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
                                         </div>
-                                        <div style='text-align:right;'>
-                                            <b>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</b><br>
-                                            GENERADO: {date.today()}
+                                        <div style="text-align:right;">
+                                            <h3 style="margin:0;">REPORTE DE SALIDA DE ENVÍOS Y MUESTRAS</h3>
+                                            <p style="margin:0; font-size:12px;">GENERADO: {date.today()}</p>
                                         </div>
                                     </div>
                                 
-                                    <table>
+                                    <table class="tabla-wide">
                                         <thead>
                                             <tr>
-                                                <th style='width: 7%;'>FOLIO</th>
-                                                <th style='width: 15%;'>SOLICITANTE</th>
-                                                <th style='width: 25%;'>DESTINO</th>
-                                                <th style='width: 35%;'>DETALLE</th>
-                                                <th style='width: 10%;'>COSTO PROD.</th>
-                                                <th style='width: 8%;'>FLETE</th>
+                                                <th style="width: 6%;">FOLIO</th>
+                                                <th style="width: 15%;">SOLICITANTE</th>
+                                                <th style="width: 25%;">DESTINO</th>
+                                                <th style="width: 34%;">DETALLE</th>
+                                                <th style="width: 10%;">COSTO PROD.</th>
+                                                <th style="width: 10%;">FLETE</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -4874,10 +4901,19 @@ else:
                                         </tbody>
                                     </table>
                                 
-                                    <div style='text-align:right; margin-top:20px; border-top:1px solid black;'>
-                                        <p style='margin:5px 0;'>TOTAL PRODUCTOS: ${t_prod:,.2f}</p>
-                                        <p style='margin:5px 0;'>TOTAL FLETES: ${t_flete:,.2f}</p>
-                                        <h3 style='margin:10px 0;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3>
+                                    <div style="margin-top: 20px; float: right; width: 300px;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                                            <span>TOTAL PRODUCTOS:</span>
+                                            <b>${t_prod:,.2f}</b>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 5px;">
+                                            <span>TOTAL FLETES:</span>
+                                            <b>${t_flete:,.2f}</b>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; font-size: 16px; margin-top: 10px; border-top: 2px solid black; padding-top: 5px;">
+                                            <b>INVERSIÓN TOTAL:</b>
+                                            <b>${(t_prod+t_flete):,.2f}</b>
+                                        </div>
                                     </div>
                                 </body>
                                 </html>
