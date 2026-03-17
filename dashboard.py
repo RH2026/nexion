@@ -4823,32 +4823,64 @@ else:
                                 
                                 # Guardamos para el PDF original (Márgenes compactos para impresión amor)
                                 # Configuramos el ancho por porcentajes para que use TODA la hoja sin amontonar
-                                filas_html += f"""
-                                <tr style="page-break-inside: avoid;">
-                                    <td style='border:1px solid black; padding:5px; text-align:center; font-size:10px; width:8%;'>{r['FOLIO']}</td>
-                                    
-                                    <td style='border:1px solid black; padding:5px; font-size:10px; width:18%;'>
-                                        <b>{str(r['SOLICITO']).upper()}</b><br>
-                                        <small style='font-size:8px; color:#666;'>{r['FECHA']}</small>
-                                    </td>
-                                    
-                                    <td style='border:1px solid black; padding:5px; font-size:10px; width:25%;'>
-                                        <b>{str(r['NOMBRE DEL HOTEL']).upper()}</b><br>
-                                        <small style='font-size:8px;'>{str(r['DESTINO']).upper()}</small>
-                                    </td>
-                                    
-                                    <td style='border:1px solid black; padding:5px; font-size:9px; line-height:1.2; width:33%;'>
-                                        {detalle_p}
-                                    </td>
-                                    
-                                    <td style='border:1px solid black; padding:5px; text-align:right; font-size:10px; width:8%; white-space:nowrap;'>
-                                        ${r['COSTO_TOTAL']:,.2f}
-                                    </td>
-                                    
-                                    <td style='border:1px solid black; padding:5px; text-align:right; font-size:10px; width:8%; white-space:nowrap;'>
-                                        ${r['COSTO_GUIA']:,.2f}
-                                    </td>
-                                </tr>
+                                # 1. Primero, asegúrate de que la estructura de la tabla principal sea esta:
+                                form_pt_html = f"""
+                                <html>
+                                <head>
+                                    <style>
+                                        @media print {{
+                                            body {{ padding: 10mm; background: white; }}
+                                            .no-print {{ display: none; }}
+                                        }}
+                                        body {{ font-family: sans-serif; }}
+                                        
+                                        /* AQUÍ ESTÁ EL SECRETO AMOR: width 100% y table-layout fixed */
+                                        table {{ 
+                                            width: 100%; 
+                                            border-collapse: collapse; 
+                                            margin-top: 15px; 
+                                            table-layout: fixed; /* Esto obliga a respetar los anchos que daremos */
+                                            word-wrap: break-word;
+                                        }}
+                                        
+                                        th {{ background: #eee; border: 1px solid black; padding: 8px; font-size: 11px; }}
+                                    </style>
+                                </head>
+                                <body>
+                                    <div style='display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px;'>
+                                        <div>
+                                            <h2 style='margin:0;'>JYPESA</h2>
+                                            <p style='margin:0; font-size:10px;'>AUTOMATIZACIÓN DE PROCESOS</p>
+                                        </div>
+                                        <div style='text-align:right;'>
+                                            <b>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</b><br>
+                                            GENERADO: {date.today()}
+                                        </div>
+                                    </div>
+                                
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th style='width: 7%;'>FOLIO</th>
+                                                <th style='width: 15%;'>SOLICITANTE</th>
+                                                <th style='width: 25%;'>DESTINO</th>
+                                                <th style='width: 35%;'>DETALLE</th>
+                                                <th style='width: 10%;'>COSTO PROD.</th>
+                                                <th style='width: 8%;'>FLETE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filas_html}
+                                        </tbody>
+                                    </table>
+                                
+                                    <div style='text-align:right; margin-top:20px; border-top:1px solid black;'>
+                                        <p style='margin:5px 0;'>TOTAL PRODUCTOS: ${t_prod:,.2f}</p>
+                                        <p style='margin:5px 0;'>TOTAL FLETES: ${t_flete:,.2f}</p>
+                                        <h3 style='margin:10px 0;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3>
+                                    </div>
+                                </body>
+                                </html>
                                 """
                                 # 2. TABLAA--------Tarjetas visuales (Márgenes corregidos para que respiren amor)
                                 tarjetas_html += f"""
