@@ -4754,52 +4754,50 @@ else:
                                 if btn_guardar and datos_fol is not None:
                                     # 1. Localizamos el folio en el DataFrame
                                     idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                                    
-                                    # 2. Actualizamos los datos
                                     df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
                                     df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
                                     df_actual.at[idx, "NUMERO_GUIA"] = n_gui
                                     df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
                                     
-                                    # 3. Subimos a GitHub
+                                    # 2. Subimos a GitHub
                                     if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
                                         
-                                        # --- AQUÍ ESTÁ EL TRUCO: USAMOS EL CONTENEDOR QUE PUSIMOS ARRIBA ---
-                                        with contenedor_aviso:
-                                            st.markdown(f"""
-                                                <div style="
-                                                    position: fixed;
-                                                    top: 25px;
-                                                    right: 25px;
-                                                    background-color: #263238;
-                                                    color: #00FFAA;
-                                                    padding: 20px 30px;
-                                                    border-radius: 12px;
-                                                    border-left: 6px solid #00FFAA;
-                                                    box-shadow: 0 15px 50px rgba(0,0,0,0.8);
-                                                    z-index: 999999;
-                                                    display: flex;
-                                                    align-items: center;
-                                                    gap: 15px;
-                                                    animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                                                ">
-                                                    <span style="font-size: 26px;"></span>
-                                                    <div style="font-family: sans-serif;">
-                                                        <b style="display: block; font-size: 16px; letter-spacing: 0.5px; text-transform: uppercase;">¡LOGÍSTICA ACTUALIZADA!</b>
-                                                        <span style="font-size: 13px; opacity: 0.9;">Folio JYP-{fol_edit} guardado con éxito.</span>
-                                                    </div>
+                                        # 3. EL TRUCO: Solo lo pintamos en el estacionamiento de arriba
+                                        # y usamos un aviso que se auto-elimina con el rerun
+                                        contenedor_aviso.markdown(f"""
+                                            <div style="
+                                                position: fixed;
+                                                top: 25px;
+                                                right: 25px;
+                                                background-color: #263238;
+                                                color: #00FFAA;
+                                                padding: 20px 30px;
+                                                border-radius: 12px;
+                                                border-left: 6px solid #00FFAA;
+                                                box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+                                                z-index: 999999;
+                                                display: flex;
+                                                align-items: center;
+                                                gap: 15px;
+                                                animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                                            ">
+                                                <span style="font-size: 26px;">✅</span>
+                                                <div style="font-family: sans-serif;">
+                                                    <b style="display: block; font-size: 16px; letter-spacing: 0.5px; text-transform: uppercase;">¡LOGÍSTICA ACTUALIZADA!</b>
+                                                    <span style="font-size: 13px; opacity: 0.9;">Folio JYP-{fol_edit} guardado con éxito.</span>
                                                 </div>
-                                                <style>
-                                                    @keyframes slideIn {{
-                                                        from {{ transform: translateX(120%); opacity: 0; }}
-                                                        to {{ transform: translateX(0); opacity: 1; }}
-                                                    }}
-                                                </style>
-                                            """, unsafe_allow_html=True)
+                                            </div>
+                                            <style>
+                                                @keyframes slideIn {{
+                                                    from {{ transform: translateX(120%); opacity: 0; }}
+                                                    to {{ transform: translateX(0); opacity: 1; }}
+                                                }}
+                                            </style>
+                                        """, unsafe_allow_html=True)
                                         
-                                        # 4. Pausa de 2 segundos y reinicio
+                                        # 4. Pausa y reinicio
                                         import time
-                                        time.sleep(1)
+                                        time.sleep(1.5)
                                         st.rerun()
                 
                             with c_adm2:
