@@ -848,8 +848,8 @@ else:
                 
                 # Definimos los roles
                 es_admin = (usuario.upper() == "RIGOBERTO")
-                es_ventas = (usuario.upper() == "VENTAS") # <--- Nueva validación para Ventas
-                es_atencion3g = (usuario.upper() == "ATENCION3G")
+                es_ventas = (usuario.upper() == "VENTAS")
+                es_atencion3g = (usuario.upper() == "ATENCION3G") # <--- Usuario Atencion3G
                 
                 nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
                 
@@ -862,25 +862,23 @@ else:
                 
                 st.markdown("<p style='color:#f0f0f0; font-size:6px; font-weight:400; margin-bottom:10px; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
                 
-                # 2. BOTONES DE NAVEGACIÓN (Restricciones dinámicas
-                if not es_ventas:
+                # 2. BOTONES DE NAVEGACIÓN (Restricciones dinámicas)
+
+                # --- DASHBOARD: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
                     if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                         st.session_state.menu_main = "DASHBOARD"
                         st.session_state.menu_sub = "GENERAL"
                         st.session_state.busqueda_activa = False
                         st.rerun()
             
-                # --- SECCIÓN SEGUIMIENTO ---
-                # Se oculta para VENTAS, pero ATENCION3G y los demás SÍ lo ven
+                # --- SEGUIMIENTO: Aquí es donde entra Atencion3G ---
                 if not es_ventas:
                     with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                        # Definimos qué botones ve cada quién
                         if es_admin:
                             opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
-                        elif es_atencion3g:
-                            opciones_seg = ["ALERTAS"] # Atencion3G solo ve Alertas
                         else:
-                            opciones_seg = ["ALERTAS"] # Otros operadores
+                            opciones_seg = ["ALERTAS"] # Atencion3G y otros solo ven esto
                             
                         for s in opciones_seg:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -890,27 +888,25 @@ else:
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
             
-                # REPORTES: Ventas solo puede ver "ENVIO DE MUESTRAS"
-                with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                    if es_admin:
-                        opciones_rep = ["APQ", "% LOGISTICO", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
-                    elif es_ventas:
-                        opciones_rep = ["ENVIO DE MUESTRAS"] # <--- Filtro estricto para Ventas
-                    else:
-                        opciones_rep = ["ENVIO DE MUESTRAS"] # Otros operadores
-                        
-                    for s in opciones_rep:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
-                            st.session_state.menu_main = "REPORTES"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
+                # --- REPORTES: Oculto para Atencion3G ---
+                if not es_atencion3g:
+                    with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                        if es_admin:
+                            opciones_rep = ["APQ", "% LOGISTICO", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                        else:
+                            opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
+                            
+                        for s in opciones_rep:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+                                st.session_state.menu_main = "REPORTES"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
             
-                # FORMATOS: Se oculta completamente para Ventas
-                if not es_ventas:
+                # --- FORMATOS: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        # Simplemente agregamos "CARTA RECLAMO" al final de esta lista
                         opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS", "PROFORMA", "CARTA RECLAMO"]                        
                         for s in opciones_for:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -920,8 +916,8 @@ else:
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
             
-                # HUB LOG: Se oculta completamente para Ventas
-                if not es_ventas:
+                # --- HUB LOG: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
                     with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
                         for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
