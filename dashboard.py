@@ -4822,37 +4822,41 @@ else:
                                         detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                                 
                                 # Guardamos para el PDF original (mantenemos tu lógica de impresión)
-                                filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
+                                filas_html += f"<tr><td style='border:1px solid black;padding:10px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:10px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:10px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:10px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:10px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:10px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
                                 
-                                # 2. Tarjetas visuales (Ahora en orden correcto)
+                                # 2. Tarjetas visuales (Márgenes corregidos para que respiren amor)
                                 tarjetas_html += f"""
-                                <div class="card-reporte">
-                                    <div class="col-folio">
+                                <div class="card-reporte" style="padding: 20px 30px; margin-bottom: 15px;">
+                                    <div class="col-folio" style="flex: 1;">
                                         <div class="label-mini">FOLIO</div>
-                                        <div class="val-folio">#{r['FOLIO']}</div>
+                                        <div class="val-folio" style="margin-bottom: 5px;">#{r['FOLIO']}</div>
                                         <div class="val-sub">{r['FECHA']}</div>
                                     </div>
-                                    <div class="col-info">
+                                    
+                                    <div class="col-info" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
                                         <div class="label-mini">SOLICITANTE / DESTINO</div>
-                                        <div class="val-main">{str(r['SOLICITO']).upper()}</div>
-                                        <div class="val-sub">{str(r['NOMBRE DEL HOTEL']).upper()} - {str(r['DESTINO']).upper()}</div>
+                                        <div class="val-main" style="margin-bottom: 4px;">{str(r['SOLICITO']).upper()}</div>
+                                        <div class="val-sub">{str(r['NOMBRE DEL HOTEL']).upper()}</div>
+                                        <div class="val-sub" style="opacity: 0.7;">{str(r['DESTINO']).upper()}</div>
                                     </div>
-                                    <div class="col-detalle">
+                                    
+                                    <div class="col-detalle" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
                                         <div class="label-mini">DESGLOSE PRODUCTOS</div>
-                                        <div class="val-list">{detalle_p if detalle_p else 'SIN DETALLE'}</div>
+                                        <div class="val-list" style="line-height: 1.6;">{detalle_p if detalle_p else 'SIN DETALLE'}</div>
                                     </div>
-                                    <div class="col-costos">
+                                    
+                                    <div class="col-costos" style="flex: 1.5; text-align: right; padding-left: 25px; border-left: 1px solid rgba(255,255,255,0.08);">
                                         <div class="label-mini">INVERSIÓN</div>
-                                        <div class="val-costo">Prod: ${r['COSTO_TOTAL']:,.2f}</div>
-                                        <div class="val-flete">Flete: ${r['COSTO_GUIA']:,.2f}</div>
+                                        <div class="val-costo" style="font-size: 14px; margin-bottom: 5px;">Prod: ${r['COSTO_TOTAL']:,.2f}</div>
+                                        <div class="val-flete" style="font-size: 14px;">Flete: ${r['COSTO_GUIA']:,.2f}</div>
                                     </div>
                                 </div>
                                 """
                         
-                            # 3. Renderizado del visor con Scroll AGC
+                            # 3. TABLA DE ENVIOS --- Renderizado del visor con Scroll AGC
                             st.markdown(f"""
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                                    <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>📊 RESUMEN DE INVERSIÓN JYPESA</p>
+                                    <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>RESUMEN DE INVERSIÓN MUESTRAS JYPESA</p>
                                     <p style='color:#FFFFFF; font-size:12px; opacity:0.6;'>Total Registros: {len(df_actual)}</p>
                                 </div>
                             """, unsafe_allow_html=True)
