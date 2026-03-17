@@ -4822,30 +4822,30 @@ else:
                                         detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                                 
                                 # Guardamos para el PDF original (Márgenes compactos para impresión amor)
-                                # Configuramos el ancho por porcentajes para que use TODA la hoja sin amontonar
+                                # IMPRESIO DE CONTENIDO DE REPORTE GLOBAL-------
                                 filas_html += f"""
                                 <tr style="page-break-inside: avoid;">
-                                    <td style='border:1px solid black; padding:5px; text-align:center; font-size:10px; width:8%;'>{r['FOLIO']}</td>
+                                    <td style='border:1px solid black; padding:6px; text-align:center; font-size:10px; width:7%;'>{r['FOLIO']}</td>
                                     
-                                    <td style='border:1px solid black; padding:5px; font-size:10px; width:18%;'>
-                                        <b>{str(r['SOLICITO']).upper()}</b><br>
-                                        <small style='font-size:8px; color:#666;'>{r['FECHA']}</small>
+                                    <td style='border:1px solid black; padding:6px; font-size:10px; width:15%;'>
+                                        <b style='color:black;'>{str(r['SOLICITO']).upper()}</b><br>
+                                        <small style='font-size:8px; color:#444;'>{r['FECHA']}</small>
                                     </td>
                                     
-                                    <td style='border:1px solid black; padding:5px; font-size:10px; width:25%;'>
+                                    <td style='border:1px solid black; padding:6px; font-size:10px; width:25%;'>
                                         <b>{str(r['NOMBRE DEL HOTEL']).upper()}</b><br>
-                                        <small style='font-size:8px;'>{str(r['DESTINO']).upper()}</small>
+                                        <small style='font-size:8px; color:#333;'>{str(r['DESTINO']).upper()}</small>
                                     </td>
                                     
-                                    <td style='border:1px solid black; padding:5px; font-size:9px; line-height:1.2; width:33%;'>
+                                    <td style='border:1px solid black; padding:6px; font-size:9px; line-height:1.3; width:33%;'>
                                         {detalle_p}
                                     </td>
                                     
-                                    <td style='border:1px solid black; padding:5px; text-align:right; font-size:10px; width:8%; white-space:nowrap;'>
-                                        ${r['COSTO_TOTAL']:,.2f}
+                                    <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
+                                        <b>${r['COSTO_TOTAL']:,.2f}</b>
                                     </td>
                                     
-                                    <td style='border:1px solid black; padding:5px; text-align:right; font-size:10px; width:8%; white-space:nowrap;'>
+                                    <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
                                         ${r['COSTO_GUIA']:,.2f}
                                     </td>
                                 </tr>
@@ -4934,6 +4934,7 @@ else:
                             # 4. BOTONES DE ACCIÓN (Ahora sí fuera del else amor)
                             c1, c2, c3 = st.columns(3)
                             with c1:
+                                #CODIGO PARA ENCABEXADO DE REPORTE GLOBAL------------
                                 form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;width:100% !important;font-family:sans-serif;}} .no-print{{display:none;}}}} table{{width:100% !important;border-collapse:collapse;margin-top:15px;table-layout:fixed;}} th{{background:#eee !important;border:1px solid black;padding:8px;font-size:11px;-webkit-print-color-adjust:exact;}} td{{border:1px solid black;padding:6px;font-size:10px;vertical-align:top;word-wrap:break-word;}}</style></head><body><div style='display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid black;padding-bottom:10px;'><div><h1 style='margin:0;font-size:25px;font-weight:900;'>Jabones y Productos Especializados</h1><p style='margin:0;font-size:10px;font-weight:bold;letter-spacing:1px;'>DISTRIBUCIÓN Y LOGÍSTICA | 2026</p></div><div style='text-align:right;'><h2 style='margin:0;font-size:16px;text-decoration:underline;'>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</h2><p style='margin:5px 0 0 0;font-size:12px;'><b>GENERADO: {date.today().strftime('%d/%m/%Y')}</b></p></div></div><table><thead><tr><th style='width:7%;'>FOLIO</th><th style='width:15%;'>SOLICITANTE</th><th style='width:25%;'>DESTINO / HOTEL</th><th style='width:33%;'>DETALLE DE PRODUCTOS</th><th style='width:10%;'>COSTO PROD.</th><th style='width:10%;'>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:2px solid black;padding-top:10px;'><p style='margin:2px 0;'>TOTAL PRODUCTOS: <b>${t_prod:,.2f}</b></p><p style='margin:2px 0;'>TOTAL FLETES: <b>${t_flete:,.2f}</b></p><h3 style='margin:8px 0;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
                                 if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
                                     components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
