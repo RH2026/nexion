@@ -4757,7 +4757,43 @@ else:
                                     df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
                                     
                                     if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
-                                        st.success(f"¡Folio {fol_edit} actualizado!")
+                                        # --- AVISO PERSONALIZADO CON CSS AMORCITO ---
+                                        aviso_html = f"""
+                                        <div style="
+                                            position: fixed;
+                                            top: 20px;
+                                            right: 20px;
+                                            background-color: #263238;
+                                            color: #00FFAA;
+                                            padding: 20px 30px;
+                                            border-radius: 12px;
+                                            border-left: 6px solid #00FFAA;
+                                            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                                            z-index: 9999;
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 15px;
+                                            animation: slideIn 0.5s ease-out;
+                                        ">
+                                            <span style="font-size: 24px;">✅</span>
+                                            <div>
+                                                <b style="display: block; font-size: 16px;">¡LOGÍSTICA ACTUALIZADA!</b>
+                                                <span style="font-size: 13px; opacity: 0.8;">Folio JYP-{fol_edit} guardado con éxito.</span>
+                                            </div>
+                                        </div>
+                                        <style>
+                                            @keyframes slideIn {{
+                                                from {{ transform: translateX(100%); opacity: 0; }}
+                                                to {{ transform: translateX(0); opacity: 1; }}
+                                            }}
+                                        </style>
+                                        """
+                                        st.markdown(aviso_html, unsafe_allow_html=True)
+                                        
+                                        # Esperamos 2 segundos para que veas tu aviso hermoso
+                                        import time
+                                        time.sleep(2)
+                                        
                                         st.rerun()
                 
                             with c_adm2:
