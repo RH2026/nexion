@@ -668,7 +668,8 @@ def login_screen():
                     "JMoreno": "Jesus Moreno",
                     "Cynthia": "Cynthia Ornelas",
                     "Brenda": "Brenda Pizano",
-                    "Fialko": "Fialko"
+                    "Fialko": "Fialko",
+                    "Atencion3G": "Yaneli"
                 }
                 
                 # 2. Diccionario de géneros (F = Femenino, M = Masculino)
@@ -679,7 +680,8 @@ def login_screen():
                     "JMoreno": "M",
                     "Cynthia": "F",
                     "Brenda": "F",
-                    "Fialko": "M"
+                    "Fialko": "M",
+                    "Yaneli": "F"
                 }
                 
                 # --- VALIDACIÓN EXITOSA ---
@@ -786,14 +788,17 @@ else:
             """, unsafe_allow_html=True)
     
         with c3:
-            # Generamos una key única basada en la versión actual para el input
+            # Verificamos si es Atencion3G para desactivar el input
+            es_atencion3g = (st.session_state.get("usuario_activo", "").upper() == "ATENCION3G")
+            
             key_actual = f"main_search_v{st.session_state.search_key_version}"
             
             query = st.text_input(
                 "Buscar", 
-                placeholder="🔍 Buscar...", 
+                placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar...", 
                 label_visibility="collapsed", 
-                key=key_actual
+                key=key_actual,
+                disabled=es_atencion3g  # <--- Aquí sucede la magia
             )
             
             if query:
