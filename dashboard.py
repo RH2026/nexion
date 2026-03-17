@@ -700,6 +700,10 @@ def login_screen():
                     if user_input.upper() == "VENTAS":
                         st.session_state.menu_main = "REPORTES"
                         st.session_state.menu_sub = "ENVIO DE MUESTRAS"
+
+                    elif user_input.upper() == "ATENCION3G":
+                        st.session_state.menu_main = "SEGUIMIENTO"
+                        st.session_state.menu_sub = "ALERTAS"
                     else:
                         # Para ti y los demás, el Dashboard de siempre
                         st.session_state.menu_main = "DASHBOARD"
@@ -845,6 +849,7 @@ else:
                 # Definimos los roles
                 es_admin = (usuario.upper() == "RIGOBERTO")
                 es_ventas = (usuario.upper() == "VENTAS") # <--- Nueva validación para Ventas
+                es_atencion3g = (usuario.upper() == "ATENCION3G")
                 
                 nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
                 
@@ -865,10 +870,18 @@ else:
                         st.session_state.busqueda_activa = False
                         st.rerun()
             
-                # SEGUIMIENTO: Se oculta completamente para Ventas
+                # --- SECCIÓN SEGUIMIENTO ---
+                # Se oculta para VENTAS, pero ATENCION3G y los demás SÍ lo ven
                 if not es_ventas:
                     with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                        opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"] if es_admin else ["ALERTAS"]
+                        # Definimos qué botones ve cada quién
+                        if es_admin:
+                            opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
+                        elif es_atencion3g:
+                            opciones_seg = ["ALERTAS"] # Atencion3G solo ve Alertas
+                        else:
+                            opciones_seg = ["ALERTAS"] # Otros operadores
+                            
                         for s in opciones_seg:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
@@ -2494,17 +2507,23 @@ else:
                         )
                     
                     with f_col3:
-                        # 1. Obtenemos las fleteras únicas
                         opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
                         
-                        # 2. Creamos la lista final agregando "TODOS" al inicio
-                        opciones_f = ["TODOS"] + opciones_raw
-                        
-                        # 3. Cambiamos a selectbox para selección única
+                        # --- LÓGICA DE FILTRO PARA ATENCION3G ---
+                        if es_atencion3g:
+                            opciones_f = ["TRES GUERRAS"]
+                            indice_defecto = 0
+                            habilitado = False # Bloqueamos el selector para que no cambie
+                        else:
+                            opciones_f = ["TODOS"] + opciones_raw
+                            indice_defecto = 0
+                            habilitado = True
+                    
                         filtro_global_fletera = st.selectbox(
                             "FILTRAR PAQUETERÍA", 
                             options=opciones_f, 
-                            index=0  # Esto hace que seleccione "TODOS" por defecto
+                            index=indice_defecto,
+                            disabled=not habilitado # Si es Atencion3G, no puede moverle
                         )
                 
                 # ── 2. PROCESAMIENTO DE DATOS KPI ──
