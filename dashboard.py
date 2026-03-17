@@ -2605,6 +2605,8 @@ else:
                 # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM - VERSIÓN FINAL) ---
                 st.divider()
                 df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
+                # AGREGA ESTA LÍNEA AQUÍ:
+                df_viz = pd.DataFrame()
                 
                 if not df_criticos.empty:
                     st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:#FFFFFF; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES CRÍTICAS</p>""", unsafe_allow_html=True)
