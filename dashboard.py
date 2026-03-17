@@ -4822,101 +4822,33 @@ else:
                                         detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                                 
                                 # Guardamos para el PDF original (Márgenes compactos para impresión amor)
-                                form_pt_html = f"""
-                                <html>
-                                <head>
-                                    <style>
-                                        /* Configuramos la hoja completa amor */
-                                        @page {{
-                                            size: letter landscape; /* O 'portrait' si la prefieres vertical */
-                                            margin: 0.5cm; /* Márgenes físicos de la hoja muy pequeños */
-                                        }}
-                                        
-                                        body {{ 
-                                            font-family: 'Helvetica', Arial, sans-serif; 
-                                            margin: 0; 
-                                            padding: 10px; 
-                                            width: 100%;
-                                        }}
-                                
-                                        /* La tabla ahora sí va a ocupar todo el ancho */
-                                        .tabla-wide {{
-                                            width: 100% !important;
-                                            border-collapse: collapse;
-                                            table-layout: fixed; /* Esto es lo que evita que se amontone */
-                                            margin-top: 20px;
-                                        }}
-                                
-                                        .tabla-wide th {{
-                                            background-color: #f2f2f2;
-                                            border: 1px solid black;
-                                            padding: 8px;
-                                            font-size: 11px;
-                                            text-transform: uppercase;
-                                        }}
-                                
-                                        .tabla-wide td {{
-                                            border: 1px solid black;
-                                            padding: 6px;
-                                            font-size: 10px;
-                                            word-wrap: break-word; /* Para que el texto largo salte de línea */
-                                            vertical-align: top;
-                                        }}
-                                
-                                        .header-reporte {{
-                                            display: flex;
-                                            justify-content: space-between;
-                                            align-items: flex-end;
-                                            border-bottom: 3px solid black;
-                                            padding-bottom: 10px;
-                                            width: 100%;
-                                        }}
-                                    </style>
-                                </head>
-                                <body>
-                                    <div class="header-reporte">
-                                        <div>
-                                            <h1 style="margin:0; font-size:24px;">JYPESA</h1>
-                                            <p style="margin:0; font-size:12px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p>
-                                        </div>
-                                        <div style="text-align:right;">
-                                            <h3 style="margin:0;">REPORTE DE SALIDA DE ENVÍOS Y MUESTRAS</h3>
-                                            <p style="margin:0; font-size:12px;">GENERADO: {date.today()}</p>
-                                        </div>
-                                    </div>
-                                
-                                    <table class="tabla-wide">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 6%;">FOLIO</th>
-                                                <th style="width: 15%;">SOLICITANTE</th>
-                                                <th style="width: 25%;">DESTINO</th>
-                                                <th style="width: 34%;">DETALLE</th>
-                                                <th style="width: 10%;">COSTO PROD.</th>
-                                                <th style="width: 10%;">FLETE</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filas_html}
-                                        </tbody>
-                                    </table>
-                                
-                                    <div style="margin-top: 20px; float: right; width: 300px;">
-                                        <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                                            <span>TOTAL PRODUCTOS:</span>
-                                            <b>${t_prod:,.2f}</b>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 5px;">
-                                            <span>TOTAL FLETES:</span>
-                                            <b>${t_flete:,.2f}</b>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; font-size: 16px; margin-top: 10px; border-top: 2px solid black; padding-top: 5px;">
-                                            <b>INVERSIÓN TOTAL:</b>
-                                            <b>${(t_prod+t_flete):,.2f}</b>
-                                        </div>
-                                    </div>
-                                </body>
-                                </html>
+                                # Configuramos el ancho por porcentajes para que use TODA la hoja sin amontonar
+                                filas_html += f"""
+                                <tr style="page-break-inside: avoid;">
+                                    <td style='border:1px solid black; padding:5px; text-align:center; font-size:10px; width:8%;'>{r['FOLIO']}</td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; font-size:10px; width:18%;'>
+                                        <b>{str(r['SOLICITO']).upper()}</b><br>
+                                        <small style='font-size:8px; color:#666;'>{r['FECHA']}</small>
+                                    </td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; font-size:10px; width:25%;'>
+                                        <b>{str(r['NOMBRE DEL HOTEL']).upper()}</b><br>
+                                        <small style='font-size:8px;'>{str(r['DESTINO']).upper()}</small>
+                                    </td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; font-size:9px; line-height:1.2; width:33%;'>
+                                        {detalle_p}
+                                    </td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; text-align:right; font-size:10px; width:8%; white-space:nowrap;'>
+                                        ${r['COSTO_TOTAL']:,.2f}
+                                    </td>
+                                    
+                                    <td style='border:1px solid black; padding:5px; text-align:right; font-size:10px; width:8%; white-space:nowrap;'>
+                                        ${r['COSTO_GUIA']:,.2f}
+                                    </td>
+                                </tr>
                                 """
                                 # 2. TABLAA--------Tarjetas visuales (Márgenes corregidos para que respiren amor)
                                 tarjetas_html += f"""
