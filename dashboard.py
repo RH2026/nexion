@@ -4821,10 +4821,18 @@ else:
                                     if cant > 0: 
                                         detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                                 
-                                # Guardamos para el PDF original (mantenemos tu lógica de impresión)
-                                filas_html += f"<tr><td style='border:1px solid black;padding:10px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:10px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:10px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:10px;font-size:10px;'>{detalle_p}</td><td style='border:1px solid black;padding:10px;text-align:right;'>${r['COSTO_TOTAL']:,.2f}</td><td style='border:1px solid black;padding:10px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
-                                
-                                # 2. Tarjetas visuales (Márgenes corregidos para que respiren amor)
+                                # Guardamos para el PDF original (Márgenes compactos para impresión amor)
+                                filas_html += f"""
+                                <tr>
+                                    <td style='border:1px solid black; padding:4px; text-align:center; font-size:10px;'>{r['FOLIO']}</td>
+                                    <td style='border:1px solid black; padding:4px; font-size:10px;'><b>{str(r['SOLICITO']).upper()}</b><br><small style='font-size:8px;'>{r['FECHA']}</small></td>
+                                    <td style='border:1px solid black; padding:4px; font-size:10px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small style='font-size:8px;'>{str(r['DESTINO']).upper()}</small></td>
+                                    <td style='border:1px solid black; padding:4px; font-size:9px; line-height:1;'>{detalle_p}</td>
+                                    <td style='border:1px solid black; padding:4px; text-align:right; font-size:10px;'>${r['COSTO_TOTAL']:,.2f}</td>
+                                    <td style='border:1px solid black; padding:4px; text-align:right; font-size:10px;'>${r['COSTO_GUIA']:,.2f}</td>
+                                </tr>
+                                """
+                                # 2. TABLAA--------Tarjetas visuales (Márgenes corregidos para que respiren amor)
                                 tarjetas_html += f"""
                                 <div class="card-reporte" style="padding: 20px 30px; margin-bottom: 15px;">
                                     <div class="col-folio" style="flex: 1;">
