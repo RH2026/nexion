@@ -2730,7 +2730,7 @@ else:
                 # --- 6. BOTÓN DE DESCARGA: EXCEPCIONES Y RETRASOS (SOLO FECHAS) ---
                 st.divider()
                 
-                if not df_viz.empty:
+                if 'df_viz' in locals() and not df_viz.empty:
                     import io
                 
                     # 1. Preparamos una copia para el reporte sin afectar tu lógica principal
