@@ -1237,8 +1237,35 @@ else:
             
             # --- EJECUCIÓN DEL MÓDULO ---
             df_raw = cargar_datos()
-            
+
+            # PRIMERO VERIFICAMOS SI HAY DATOS, AMOR
             if df_raw is not None:
+                
+                # --- 2. CÁLCULO DE MÉTRICAS PARA LAS DONITAS ---
+                total_pedidos = len(df_raw)
+                entregados = len(df_raw[df_raw['FECHA DE ENTREGA REAL'].notna()])
+                en_transito = len(df_raw[df_raw['FECHA DE ENTREGA REAL'].isna()])
+                con_guia = len(df_raw[df_raw['NÚMERO DE GUÍA'].notna() & (df_raw['NÚMERO DE GUÍA'].astype(str) != '0')])
+    
+                # --- 3. RENDERIZADO DE LAS DONITAS EN COLUMNAS ---
+                st.markdown("<br>", unsafe_allow_html=True) 
+                col_d1, col_d2, col_d3, col_d4 = st.columns(4)
+    
+                with col_d1:
+                    render_kpi(total_pedidos, total_pedidos, "TOTAL PEDIDOS", "#FFFFFF")
+                
+                with col_d2:
+                    render_kpi(entregados, total_pedidos, "ENTREGADOS", "#00FFAA")
+                
+                with col_d3:
+                    render_kpi(en_transito, total_pedidos, "EN TRÁNSITO", "#38bdf8")
+                
+                with col_d4:
+                    render_kpi(con_guia, total_pedidos, "CON GUÍA", "#a855f7")
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+            
+            
                 with st.expander("Listado de pedidos completo", expanded=False):
                                 
                     # --- BÚSQUEDA MAESTRA ---
