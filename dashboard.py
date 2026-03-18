@@ -848,7 +848,7 @@ else:
         
         with c4:
             # --- BOTÓN POPOVER (NAVEGACIÓN + PERFIL) ---
-            with st.popover("☰ NAVEGACIÓN", use_container_width=True):
+            with st.popover("☰ Navegación", use_container_width=True):
             
                 # 1. IDENTIFICACIÓN DE USUARIO
                 usuario = st.session_state.get("usuario_activo", "GUEST")
@@ -862,7 +862,7 @@ else:
                 
                 st.markdown(f"""
                     <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid {vars_css['text']};'>
-                        <p style='color:#f6c23e; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>OPERATOR ACTIVE</p>
+                        <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
                         <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                     </div>
                 """, unsafe_allow_html=True)
