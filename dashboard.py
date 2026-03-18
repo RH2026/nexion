@@ -4391,7 +4391,7 @@ else:
                     for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL"]:
                         if col not in df_actual.columns: df_actual[col] = 0.0
                 
-                
+                nuevo_num = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
                 
                 # --- INTERFAZ ---
                 
