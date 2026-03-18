@@ -961,17 +961,16 @@ else:
                     st.rerun()
         
             if tipo == "INVENTARIO":
-                st.markdown(f"<p style='color:{inv_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>EXISTENCIAS EN INVENTARIO ({total})</p>", unsafe_allow_html=True)
+          
+                # 1. Estilo para el efecto hover (se mueve a la derecha y brilla el borde)
+                st.markdown(f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(54, 185, 204, 0.12) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>", unsafe_allow_html=True)
+                
+                # 2. Encabezado con indicador lateral
+                st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
+                
+                # 3. Bucle de tarjetas (Todo en una sola línea para evitar errores)
                 for index, i in resultados.iterrows():
-                    st.markdown(f"""
-                        <div style="background: rgba(54,185,204,0.07); border-left: 4px solid {inv_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
-                            <span style="color:{inv_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CÓDIGO / SKU</span>
-                            <span style="font-size:16px; font-weight:bold; color:white;">{i['CODIGO']}</span>
-                            <div style="margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px;">
-                                <span style="font-size:13px; color:#E0E0E0;">{i['DESCRIPCION']}</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"<div class='card-inv' style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:12px;padding:15px 20px;margin-bottom:10px;display:flex;flex-direction:column;justify-content:center;'><div style='display:flex;justify-content:space-between;align-items:center;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:18px;color:{inv_color};letter-spacing:1px;'>{i['CODIGO']}</b></div><div style='text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:4px 10px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>STOCK JYPESA</span></div></div><div style='margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN DEL PRODUCTO</span><br><span style='font-size:14px;color:white;font-weight:600;display:block;margin-top:2px;'>{i['DESCRIPCION']}</span></div></div>", unsafe_allow_html=True)
         
             else: 
                 if total == 1:
