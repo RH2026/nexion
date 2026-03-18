@@ -663,14 +663,14 @@ def login_screen():
                 # VALIDACIÓN EXITOSA               
                 # 1. Diccionario para convertir Operator ID en Nombre Real
                 nombres_reales = {
-                    "Rigoberto": "Rigoberto H",
+                    "Rigoberto": "Rigoberto",
                     "AGomez": "Ale Gomez",
                     "JMoreno": "Jesus Moreno",
-                    "Cynthia": "Cynthia Ornelas",
-                    "Brenda": "Brenda Pizano",
+                    "Cynthia": "Cynthia",
+                    "Brenda": "Brenda",
                     "Fialko": "Fialko",
                     "Atencion3G": "Yaneli",
-                    "Claudia": "claudia Jimenez"
+                    "Claudia": "Claudia"
                 }
                 
                 # 2. Diccionario de géneros (F = Femenino, M = Masculino)
