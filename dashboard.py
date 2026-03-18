@@ -1077,31 +1077,58 @@ else:
                         </div>
                         """, unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<p style='color:{accent_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 15px;'>
+                            <div style='background: {accent_color}; width: 4px; height: 20px; border-radius: 2px;'></div>
+                            <span style='color: white; font-size: 14px; font-weight: 800; letter-spacing: 1.5px; opacity: 0.9;'>
+                                MULTIPLE MATCHES DETECTED <span style='color: {accent_color}; opacity: 1;'>({total})</span>
+                            </span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
                     for index, d in resultados.iterrows():
                         status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
+                        
                         st.markdown(f"""
-                            <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {accent_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div style="flex: 1;">
-                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">PEDIDO</span>
-                                        <span style="font-size:15px; font-weight:bold; color:white;">{d['NÚMERO DE PEDIDO']}</span>
+                            <div style="
+                                background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+                                border: 1px solid rgba(255,255,255,0.1);
+                                border-left: 5px solid {accent_color};
+                                padding: 15px 20px;
+                                margin-bottom: 12px;
+                                border-radius: 8px;
+                                transition: transform 0.2s;
+                            ">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <span style="color: {accent_color}; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Orden de Venta</span>
+                                        <div style="font-size: 18px; font-weight: 700; color: #FFFFFF; margin-top: -2px;">#{d['NÚMERO DE PEDIDO']}</div>
                                     </div>
-                                    <div style="flex: 2;">
-                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CLIENTE ({d['NO CLIENTE']})</span>
-                                        <span style="font-size:13px; color:white; font-weight:600;">{d['NOMBRE DEL CLIENTE']}</span>
-                                    </div>
-                                    <div style="flex: 1; text-align: right;">
-                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">GUÍA</span>
-                                        <span style="font-size:13px; color:#FFFFFF; font-weight:bold;">{d['NÚMERO DE GUÍA']}</span>
+                                    <div style="text-align: right;">
+                                        <span style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 700; text-transform: uppercase;">Tracking / Guía</span>
+                                        <div style="font-size: 14px; font-weight: 600; color: #FFFFFF; letter-spacing: 0.5px;">{d['NÚMERO DE GUÍA']}</div>
                                     </div>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
-                                    <span style="font-size:11px; color:#FFFFFF;">📍 <b>{d['DESTINO']}</b></span>
-                                    <span style="font-size:11px; color:#FFFFFF;">📅 ENVÍO: <b>{d['FECHA DE ENVÍO']}</b></span>
-                                    <div style="text-align: right;">
-                                        <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 {d['CANTIDAD DE CAJAS']} CJ | </span>
-                                        <span style="font-size:10px; color:#FFFFFF; opacity:0.8; font-style: italic;">{status_text}</span>
+                
+                                <div style="margin: 12px 0; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <div style="color: rgba(255,255,255,0.6); font-size: 11px; margin-bottom: 2px;">CLIENTE <span style="color: {accent_color}; font-weight: 700;">[{d['NO CLIENTE']}]</span></div>
+                                    <div style="font-size: 15px; color: white; font-weight: 500; letter-spacing: 0.3px;">{d['NOMBRE DEL CLIENTE']}</div>
+                                </div>
+                
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; gap: 15px;">
+                                        <div style="font-size: 12px; color: rgba(255,255,255,0.8);">
+                                            <span style="opacity: 0.6;">📍</span> <b>{d['DESTINO']}</b>
+                                        </div>
+                                        <div style="font-size: 12px; color: rgba(255,255,255,0.8);">
+                                            <span style="opacity: 0.6;">📅</span> {d['FECHA DE ENVÍO']}
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                                             <span style="font-size: 11px; color: {accent_color}; font-weight: 800;">📦 {d['CANTIDAD DE CAJAS']} CJ</span>
+                                        </div>
+                                        <span style="font-size: 11px; color: #FFFFFF; opacity: 0.7; font-weight: 400; font-style: italic;">{status_text}</span>
                                     </div>
                                 </div>
                             </div>
