@@ -6092,7 +6092,7 @@ else:
         <div class="footer">
             NEXION // LOGISTICS OS // GUADALAJARA, JAL. // © 2026 <br>
             <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY </span>
-            <span style="color:{vars_css['text']}; font-weight:800; letter-spacing:3px;">HERNANPHY</span>
+            <span style="color:{vars_css['text']}; font-weight:600; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
         </div>
     """, unsafe_allow_html=True)
     
