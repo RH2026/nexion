@@ -663,7 +663,7 @@ def login_screen():
                 # VALIDACIÓN EXITOSA               
                 # 1. Diccionario para convertir Operator ID en Nombre Real
                 nombres_reales = {
-                    "Rigoberto": "Rigoberto Hernández",
+                    "Rigoberto": "Rigoberto H",
                     "AGomez": "Ale Gomez",
                     "JMoreno": "Jesus Moreno",
                     "Cynthia": "Cynthia Ornelas",
