@@ -4228,6 +4228,9 @@ else:
             elif st.session_state.menu_sub == "ENVIO DE MUESTRAS":
                 if "reset_key" not in st.session_state:
                     st.session_state.reset_key = 0
+                # AQUÍ ESTÁ: Inicializamos el candado si no existe
+                if "folio_guardado" not in st.session_state:
+                    st.session_state.folio_guardado = False
                 
                 # --- VARIABLES DE GITHUB ---
                 GITHUB_USER = "RH2026"
@@ -4391,7 +4394,7 @@ else:
                     for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL"]:
                         if col not in df_actual.columns: df_actual[col] = 0.0
                 
-                nuevo_num = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
+               
                 
                 # --- INTERFAZ ---
                 
@@ -4554,12 +4557,8 @@ else:
                 
                 # --- BOTONES PRINCIPALES ---
                 col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
-                
-                # 1. Inicializamos el estado del candado si no existe
-                if "folio_guardado" not in st.session_state:
-                    st.session_state.folio_guardado = False
-                
-                # BOTÓN GUARDAR
+
+                # --- BOTÓN GUARDAR ---
                 if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
                     if not f_h: 
                         st.error("Falta el hotel")
@@ -4568,11 +4567,10 @@ else:
                     elif not prods_actuales: 
                         st.error("Selecciona al menos un producto")
                     else:
-                        # --- AQUÍ YA NO CALCULAMOS NADA NUEVO, USAMOS 'nuevo_num' ---
                         direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
                         
                         reg = {
-                            "FOLIO": nuevo_num, # <--- USAMOS EL MISMO QUE VIMOS ARRIBA
+                            "FOLIO": nuevo_num, 
                             "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
                             "NOMBRE DEL HOTEL": f_h.upper(), 
                             "DESTINO": direccion_completa,
@@ -4586,23 +4584,20 @@ else:
                             "COSTO_TOTAL": round(total_costo_prods, 2)
                         }
                         
-                        # Llenamos las columnas de productos
                         for p in precios.keys():
                             reg[p] = 0
                         for item in prods_actuales:
                             reg[item["desc"]] = item["cant"]
-                
-                        # Concatenamos y subimos a GitHub
+                        
                         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
                         
-                        # IMPORTANTE: Aquí también usamos nuevo_num
                         if subir_a_github(df_f, sha_actual, f"Folio JYP-{nuevo_num}"):
-                            st.session_state.folio_guardado = True
+                            st.session_state.folio_guardado = True 
                             st.success(f"¡Guardado correctamente! Folio: JYP-{nuevo_num}")
                             time.sleep(1)
                             st.rerun()
-                
-                # MENSAJE DE ADVERTENCIA PRO (TEXTO EN BLANCO)
+
+                # --- MENSAJE DE ADVERTENCIA (Solo si no han guardado) ---
                 if not st.session_state.folio_guardado:
                     st.markdown("""
                         <div style="background-color: rgba(255, 165, 0, 0.1); border-left: 5px solid #FFA500; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
@@ -4612,47 +4607,34 @@ else:
                             </span>
                         </div>
                     """, unsafe_allow_html=True)
-                
-                # BOTÓN IMPRIMIR (CON CANDADO)
-                # --- BOTÓN GUARDAR PDF ---
+
+                # --- BOTÓN GUARDAR PDF (CON CORRECCIONES) ---
                 if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
-                    if not prods_actuales: 
-                        st.warning("No hay productos")
-                    else:
-                        # AQUÍ ESTÁ EL TRUCO: Armamos el folio JYP con la misma variable
-                        folio_simple = f"JYP-{nuevo_num}"
-                        
-                        h_print = generar_html_impresion(
-                            folio_simple, # <--- Pasamos JYP-33 (o el que sea)
-                            f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, 
-                            f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, 
-                            prods_actuales, f_coment, f_paq_nombre, f_tipo_pago
-                        )
-                        
-                        # Este código abre la ventana para guardar como PDF con el nombre correcto
-                        js_code = f"""
-                            <html>
-                                <head><title>{folio_simple}_{f_h}</title></head>
-                                <body>
-                                    {h_print}
-                                    <script>setTimeout(function(){{ window.print(); }}, 500);</script>
-                                </body>
-                            </html>
-                        """
-                        components.html(js_code, height=0)
-                
-                # --- BOTÓN BORRAR (CORREGIDO) ---
+                    folio_simple = f"JYP-{nuevo_num}" 
+                    
+                    h_print = generar_html_impresion(
+                        folio_simple, 
+                        f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, 
+                        f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, 
+                        prods_actuales, f_coment, f_paq_nombre, f_tipo_pago
+                    )
+                    
+                    js_code = f"""
+                        <html>
+                            <head><title>{folio_simple}_{f_h}</title></head>
+                            <body>
+                                {h_print}
+                                <script>setTimeout(function(){{ window.print(); }}, 500);</script>
+                            </body>
+                        </html>
+                    """
+                    components.html(js_code, height=0)
+
+                # --- BOTÓN BORRAR ---
                 if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
-                    # Reseteamos el candado de impresión
                     st.session_state.folio_guardado = False
-                    
-                    # Limpiamos la lista de memoria
                     st.session_state.seleccionados_muestras = []
-                    
-                    # Aumentamos la llave para que el multiselect se "auto-destruya" y nazca vacío
                     st.session_state.reset_key += 1
-                    
-                    # Reiniciamos la app para que se vea el cambio
                     st.rerun()
                 
                 # --- BÚSQUEDA RÁPIDA ---                
