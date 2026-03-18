@@ -1077,19 +1077,62 @@ else:
                         </div>
                         """, unsafe_allow_html=True)
                 else:
-                    # Encabezado de la sección
+                    # Definimos el nuevo color azulito para esta sección
+                    azul_premium = "#00D4FF"
+                    
+                    # Encabezado de la sección con el indicador azul
                     st.markdown(f"""
-                        <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 15px;'>
-                            <div style='background: {accent_color}; width: 4px; height: 20px; border-radius: 2px;'></div>
-                            <span style='color: white; font-size: 14px; font-weight: 800; letter-spacing: 1.5px; opacity: 0.9;'>
-                                MULTIPLE MATCHES DETECTED <span style='color: {accent_color}; opacity: 1;'>({total})</span>
+                        <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'>
+                            <div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div>
+                            <span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>
+                                MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span>
                             </span>
                         </div>
                     """, unsafe_allow_html=True)
-                
+                    
                     for index, d in resultados.iterrows():
                         status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
-                        st.markdown(f"<div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:15px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;border-left:4px solid {accent_color};'><div style='flex:1;'><span style='color:rgba(255,255,255,0.5);font-size:10px;font-weight:700;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{accent_color};'># {d['NÚMERO DE PEDIDO']}</b><br><span style='font-size:11px;color:rgba(255,255,255,0.6);'>Envío: {d['FECHA DE ENVÍO']}</span></div><div style='flex:2;padding-left:20px;border-left:1px solid rgba(255,255,255,0.1);'><span style='color:rgba(255,255,255,0.5);font-size:10px;font-weight:700;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;'>{d['NOMBRE DEL CLIENTE']}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.6);'>{d['DESTINO']}</i></div><div style='flex:1.5;padding-left:20px;border-left:1px solid rgba(255,255,255,0.1);'><span style='color:rgba(255,255,255,0.5);font-size:10px;font-weight:700;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;'>{d.get('TRANSPORTE', 'LOGÍSTICA')}</b><br><span style='font-size:12px;color:{accent_color};font-weight:600;'>{d['NÚMERO DE GUÍA']}</span></div><div style='flex:1;text-align:right;'><span style='color:rgba(255,255,255,0.5);font-size:10px;font-weight:700;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:white;'>{d['FECHA DE ENVÍO']}</b><br><span style='font-size:10px;color:{accent_color};font-weight:800;text-transform:uppercase;'>{status_text}</span></div></div>", unsafe_allow_html=True)
+                        
+                        # Renderizado con el estilo exacto de la imagen
+                        st.markdown(f"""
+                            <div style="
+                                background: rgba(30, 39, 46, 0.7); 
+                                border: 1px solid rgba(255,255,255,0.05);
+                                border-left: 4px solid {azul_premium}; 
+                                border-radius: 12px;
+                                padding: 18px 25px; 
+                                margin-bottom: 12px; 
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: space-between;
+                                transition: 0.3s ease;
+                            ">
+                                <div style='flex: 1;'>
+                                    <span style='color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>PEDIDO / FACTURA</span><br>
+                                    <b style='font-size:18px; color:{azul_premium}; letter-spacing:0.5px;'>{d['NÚMERO DE PEDIDO']}</b><br>
+                                    <span style='font-size:10px; color:rgba(255,255,255,0.5); font-weight:600;'>Envío: {d['FECHA DE ENVÍO']}</span>
+                                </div>
+                    
+                                <div style='flex: 2.5; padding-left:25px; border-left:1px solid rgba(255,255,255,0.08);'>
+                                    <span style='color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>CLIENTE / DESTINO</span><br>
+                                    <b style='font-size:13px; color:white; text-transform: uppercase;'>{d['NOMBRE DEL CLIENTE']}</b><br>
+                                    <i style='font-size:11px; color:rgba(255,255,255,0.5); font-style: normal; font-weight:600;'>{d['DESTINO']}</i>
+                                </div>
+                    
+                                <div style='flex: 1.8; padding-left:25px; border-left:1px solid rgba(255,255,255,0.08);'>
+                                    <span style='color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br>
+                                    <b style='font-size:13px; color:white; text-transform: uppercase;'>{d.get('TRANSPORTE', 'LOGÍSTICA')}</b><br>
+                                    <span style='font-size:12px; color:{azul_premium}; font-weight:700; font-family:monospace;'>{d['NÚMERO DE GUÍA']}</span>
+                                </div>
+                    
+                                <div style='flex: 1.2; text-align:right;'>
+                                    <span style='color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>ESTATUS ENTREGA</span><br>
+                                    <b style='font-size:14px; color:{azul_premium};'>{d['FECHA DE ENVÍO']}</b><br>
+                                    <span style='font-size:10px; color:white; font-weight:800; text-transform:uppercase; opacity:0.8;'>{status_text}</span>
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+        
         # Línea decorativa final
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
