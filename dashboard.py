@@ -2783,7 +2783,7 @@ else:
                 else:
                     st.markdown(f"""
                         <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 30px; text-align: center; margin-top: 20px;">
-                            <div style="color: #94a3b8; font-size: 40px; margin-bottom: 15px;">📊</div>
+                            <div style="color: #94a3b8; font-size: 40px; margin-bottom: 15px;"></div>
                             <h4 style="color: #FFFFFF; font-size: 16px; font-weight: 700; letter-spacing: 2px; margin: 0;">ARCHIVO DE EXPORTACIÓN NO DISPONIBLE</h4>
                             <p style="color: #64748b; font-size: 12px; margin-top: 10px; line-height: 1.6;">
                                 <b>SISTEMA NEXION:</b> No se han generado excepciones críticas en el filtro actual.<br>
