@@ -1032,6 +1032,7 @@ else:
                         st.markdown(timeline_html, unsafe_allow_html=True)
                     
                     # --- RENDERIZADO DE DETALLES (TU BLOQUE ORIGINAL) ---
+                    # --- RENDERIZADO DE DETALLES (UN SOLO RESULTADO) ---
                     d = resultados.iloc[0]
                     st.markdown(f"""
                         <div class="kpi-ruta-container">
@@ -1070,7 +1071,7 @@ else:
                                         <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CARGA</p>
                                         <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
                                         <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
-                                   </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
