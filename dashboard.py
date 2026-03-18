@@ -1073,11 +1073,10 @@ else:
                                     </div>
                                 </div>
                             </div>
-                        </div>
                         """, unsafe_allow_html=True)
+                
                     else:
-                        # --- RENDER PREMIUM: MULTIPLE MATCHES DETECTED ---
-    
+                        # ── RENDER PREMIUM: MULTIPLE MATCHES DETECTED ────────────────
                         # 1. Cabecera con Estilo Neón
                         st.markdown(f"""
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
@@ -1117,7 +1116,7 @@ else:
                                         <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">CLIENTE ID: {d['NO CLIENTE']}</span>
                                         <span style="font-size:15px; color:white; font-weight:700; text-transform: uppercase;">{d['NOMBRE DEL CLIENTE']}</span>
                                     </div>
-                        
+                
                                     <div style="flex: 1.5; text-align: right;">
                                         <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">RASTREO / GUÍA</span>
                                         <span style="font-size:14px; color:#FFFFFF; font-weight:800; font-family:monospace; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius:4px;">
@@ -1125,7 +1124,7 @@ else:
                                         </span>
                                     </div>
                                 </div>
-                        
+                
                                 <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
                                     <div style="display: flex; gap: 25px;">
                                         <div style="font-size:12px; color:white;">
@@ -1148,8 +1147,8 @@ else:
                                 </div>
                             </div>
                             """
-                        
-                        # Renderizamos todo dentro de un contenedor con scroll AGC
+                
+                        # Renderizamos todo dentro de un contenedor con scroll
                         st.markdown(f"""
                             <div style="height: 500px; overflow-y: auto; overflow-x: auto; padding-right: 10px;">
                                 {html_resultados}
