@@ -439,7 +439,7 @@ button[kind="secondary"] {{
     height: 35px !important;
     min-height: 32px !important;
     padding: 0 12px !important;
-    font-size: 11px !important;
+    font-size: 09px !important;
     line-height: 30px !important;
 }}
 
