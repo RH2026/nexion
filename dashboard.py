@@ -1075,86 +1075,86 @@ else:
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                else:
-                    # --- RENDER PREMIUM: MULTIPLE MATCHES DETECTED ---
-
-                    # 1. Cabecera con Estilo Neón
-                    st.markdown(f"""
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                            <div style="width: 12px; height: 12px; background: {accent_color}; border-radius: 50%; box-shadow: 0 0 10px {accent_color};"></div>
-                            <p style='color:{accent_color}; font-size:14px; font-weight:900; margin:0; letter-spacing:2px; text-transform: uppercase;'>
-                                Coincidencias Múltiples Detectadas ({total})
-                            </p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Contenedor con scroll para no perder el control
-                    html_resultados = ""
-                    
-                    for index, d in resultados.iterrows():
-                        # Limpiamos el status
-                        status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) and d['COMENTARIOS'] != '' else 'SIN NOVEDAD'
+                    else:
+                        # --- RENDER PREMIUM: MULTIPLE MATCHES DETECTED ---
+    
+                        # 1. Cabecera con Estilo Neón
+                        st.markdown(f"""
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <div style="width: 12px; height: 12px; background: {accent_color}; border-radius: 50%; box-shadow: 0 0 10px {accent_color};"></div>
+                                <p style='color:{accent_color}; font-size:14px; font-weight:900; margin:0; letter-spacing:2px; text-transform: uppercase;'>
+                                    Coincidencias Múltiples Detectadas ({total})
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
                         
-                        # Creamos la tarjeta estilo "Glass-Card"
-                        html_resultados += f"""
-                        <div style="
-                            background: rgba(38, 50, 56, 0.6); 
-                            border: 1px solid rgba(255,255,255,0.05);
-                            border-left: 5px solid {accent_color}; 
-                            padding: 18px 25px; 
-                            margin-bottom: 12px; 
-                            border-radius: 10px;
-                            transition: 0.3s;
-                            min-width: 800px;
-                        ">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <div style="flex: 1;">
-                                    <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">PEDIDO</span>
-                                    <span style="font-size:18px; font-family:monospace; font-weight:900; color:{accent_color};">#{d['NÚMERO DE PEDIDO']}</span>
-                                </div>
-                                
-                                <div style="flex: 2; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.1);">
-                                    <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">CLIENTE ID: {d['NO CLIENTE']}</span>
-                                    <span style="font-size:15px; color:white; font-weight:700; text-transform: uppercase;">{d['NOMBRE DEL CLIENTE']}</span>
-                                </div>
-                    
-                                <div style="flex: 1.5; text-align: right;">
-                                    <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">RASTREO / GUÍA</span>
-                                    <span style="font-size:14px; color:#FFFFFF; font-weight:800; font-family:monospace; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius:4px;">
-                                        {d['NÚMERO DE GUÍA'] if d['NÚMERO DE GUÍA'] != '0' else 'PENDIENTE'}
-                                    </span>
-                                </div>
-                            </div>
-                    
-                            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-                                <div style="display: flex; gap: 25px;">
-                                    <div style="font-size:12px; color:white;">
-                                        <span style="opacity:0.5;">📍</span> <b>{d['DESTINO']}</b>
+                        # Contenedor con scroll para no perder el control
+                        html_resultados = ""
+                        
+                        for index, d in resultados.iterrows():
+                            # Limpiamos el status
+                            status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) and d['COMENTARIOS'] != '' else 'SIN NOVEDAD'
+                            
+                            # Creamos la tarjeta estilo "Glass-Card"
+                            html_resultados += f"""
+                            <div style="
+                                background: rgba(38, 50, 56, 0.6); 
+                                border: 1px solid rgba(255,255,255,0.05);
+                                border-left: 5px solid {accent_color}; 
+                                padding: 18px 25px; 
+                                margin-bottom: 12px; 
+                                border-radius: 10px;
+                                transition: 0.3s;
+                                min-width: 800px;
+                            ">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <div style="flex: 1;">
+                                        <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">PEDIDO</span>
+                                        <span style="font-size:18px; font-family:monospace; font-weight:900; color:{accent_color};">#{d['NÚMERO DE PEDIDO']}</span>
                                     </div>
-                                    <div style="font-size:12px; color:white;">
-                                        <span style="opacity:0.5;">📅</span> {d['FECHA DE ENVÍO']}
+                                    
+                                    <div style="flex: 2; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.1);">
+                                        <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">CLIENTE ID: {d['NO CLIENTE']}</span>
+                                        <span style="font-size:15px; color:white; font-weight:700; text-transform: uppercase;">{d['NOMBRE DEL CLIENTE']}</span>
+                                    </div>
+                        
+                                    <div style="flex: 1.5; text-align: right;">
+                                        <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">RASTREO / GUÍA</span>
+                                        <span style="font-size:14px; color:#FFFFFF; font-weight:800; font-family:monospace; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius:4px;">
+                                            {d['NÚMERO DE GUÍA'] if d['NÚMERO DE GUÍA'] != '0' else 'PENDIENTE'}
+                                        </span>
                                     </div>
                                 </div>
-                                
-                                <div style="text-align: right;">
-                                    <span style="font-size:13px; color:{accent_color}; font-weight:900;">
-                                        {d['CANTIDAD DE CAJAS']} <span style="font-size:10px; opacity:0.7;">BULTOS</span>
-                                    </span>
-                                    <span style="margin: 0 10px; color:rgba(255,255,255,0.2);">|</span>
-                                    <span style="font-size:11px; color:#FFFFFF; opacity:0.8; font-style: italic; background: rgba(0,255,170,0.05); padding: 2px 6px; border-radius:3px;">
-                                        {status_text}
-                                    </span>
+                        
+                                <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                                    <div style="display: flex; gap: 25px;">
+                                        <div style="font-size:12px; color:white;">
+                                            <span style="opacity:0.5;">📍</span> <b>{d['DESTINO']}</b>
+                                        </div>
+                                        <div style="font-size:12px; color:white;">
+                                            <span style="opacity:0.5;">📅</span> {d['FECHA DE ENVÍO']}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="text-align: right;">
+                                        <span style="font-size:13px; color:{accent_color}; font-weight:900;">
+                                            {d['CANTIDAD DE CAJAS']} <span style="font-size:10px; opacity:0.7;">BULTOS</span>
+                                        </span>
+                                        <span style="margin: 0 10px; color:rgba(255,255,255,0.2);">|</span>
+                                        <span style="font-size:11px; color:#FFFFFF; opacity:0.8; font-style: italic; background: rgba(0,255,170,0.05); padding: 2px 6px; border-radius:3px;">
+                                            {status_text}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        """
-                    
-                    # Renderizamos todo dentro de un contenedor con scroll AGC
-                    st.markdown(f"""
-                        <div style="height: 500px; overflow-y: auto; overflow-x: auto; padding-right: 10px;">
-                            {html_resultados}
-                        </div>
-                    """, unsafe_allow_html=True)
+                            """
+                        
+                        # Renderizamos todo dentro de un contenedor con scroll AGC
+                        st.markdown(f"""
+                            <div style="height: 500px; overflow-y: auto; overflow-x: auto; padding-right: 10px;">
+                                {html_resultados}
+                            </div>
+                        """, unsafe_allow_html=True)
         
         # Línea decorativa final
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
