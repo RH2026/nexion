@@ -6091,7 +6091,7 @@ else:
     st.markdown(f"""
         <div class="footer">
             NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
-            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">Deployed & Engineered by </span>
+            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">Engineered by </span>
             <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
         </div>
     """, unsafe_allow_html=True)
