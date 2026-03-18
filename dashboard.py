@@ -2781,7 +2781,19 @@ else:
                     
                     st.markdown(f"<p style='color:#94a3b8; font-size:10px; text-align:center;'>Se exportarán {len(df_viz)} registros con anomalías en la entrega.</p>", unsafe_allow_html=True)
                 else:
-                    st.info("No hay datos de excepciones para exportar en este momento.")
+                    st.markdown(f"""
+                        <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 30px; text-align: center; margin-top: 20px;">
+                            <div style="color: #94a3b8; font-size: 40px; margin-bottom: 15px;">📊</div>
+                            <h4 style="color: #FFFFFF; font-size: 16px; font-weight: 700; letter-spacing: 2px; margin: 0;">ARCHIVO DE EXPORTACIÓN NO DISPONIBLE</h4>
+                            <p style="color: #64748b; font-size: 12px; margin-top: 10px; line-height: 1.6;">
+                                <b>SISTEMA NEXION:</b> No se han generado excepciones críticas en el filtro actual.<br>
+                                El reporte de descarga se habilitará automáticamente cuando se detecten anomalías.
+                            </p>
+                            <div style="display: inline-block; margin-top: 15px; padding: 4px 12px; background: rgba(0, 255, 170, 0.1); border-radius: 20px;">
+                                <span style="color: #00FFAA; font-size: 10px; font-weight: 800; letter-spacing: 1px;">✓ OPERACIÓN SIN INCIDENCIAS</span>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
                    
             
             elif st.session_state.menu_sub == "GANTT":
