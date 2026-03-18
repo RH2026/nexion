@@ -4560,29 +4560,24 @@ else:
                     st.session_state.folio_guardado = False
                 
                 # BOTÓN GUARDAR
-                # BOTÓN GUARDAR
                 if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
                     if not f_h: 
                         st.error("Falta el hotel")
-                    # --- NUEVO CANDADO: SOLICITANTE OBLIGATORIO ---
                     elif not f_soli:
                         st.error("Falta el nombre de quien solicita (Solicitante / Agente)")
-                    # ---------------------------------------------
                     elif not prods_actuales: 
                         st.error("Selecciona al menos un producto")
                     else:
-                        # --- SOLUCIÓN NameError: Definimos nuevo_folio aquí adentro ---
-                        nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
-                        
+                        # --- AQUÍ YA NO CALCULAMOS NADA NUEVO, USAMOS 'nuevo_num' ---
                         direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
                         
                         reg = {
-                            "FOLIO": nuevo_folio, 
+                            "FOLIO": nuevo_num, # <--- USAMOS EL MISMO QUE VIMOS ARRIBA
                             "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
                             "NOMBRE DEL HOTEL": f_h.upper(), 
                             "DESTINO": direccion_completa,
                             "CONTACTO": f_con.upper(), 
-                            "SOLICITO": f_soli.upper(), # Aquí ya va validado
+                            "SOLICITO": f_soli.upper(),
                             "PAQUETERIA": f_paq_sel.upper(),
                             "PAQUETERIA_NOMBRE": f_paq_nombre,
                             "NUMERO_GUIA": "", 
@@ -4594,16 +4589,16 @@ else:
                         # Llenamos las columnas de productos
                         for p in precios.keys():
                             reg[p] = 0
-                            
                         for item in prods_actuales:
                             reg[item["desc"]] = item["cant"]
                 
                         # Concatenamos y subimos a GitHub
                         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
-                        if subir_a_github(df_f, sha_actual, f"Folio {nuevo_folio}"):
-                            # ACTIVAMOS EL CANDADO PARA PERMITIR IMPRESIÓN
+                        
+                        # IMPORTANTE: Aquí también usamos nuevo_num
+                        if subir_a_github(df_f, sha_actual, f"Folio JYP-{nuevo_num}"):
                             st.session_state.folio_guardado = True
-                            st.success(f"¡Guardado correctamente! Folio: JYP-{nuevo_folio}")
+                            st.success(f"¡Guardado correctamente! Folio: JYP-{nuevo_num}")
                             time.sleep(1)
                             st.rerun()
                 
@@ -4624,11 +4619,11 @@ else:
                     if not prods_actuales: 
                         st.warning("No hay productos")
                     else:
-                        # AQUÍ ESTÁ EL TRUCO FÁCIL: Armamos el folio JYP aquí mismo
+                        # AQUÍ ESTÁ EL TRUCO: Armamos el folio JYP con la misma variable
                         folio_simple = f"JYP-{nuevo_num}"
                         
                         h_print = generar_html_impresion(
-                            folio_simple, # <--- Mandamos el texto JYP-XX
+                            folio_simple, # <--- Pasamos JYP-33 (o el que sea)
                             f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, 
                             f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, 
                             prods_actuales, f_coment, f_paq_nombre, f_tipo_pago
