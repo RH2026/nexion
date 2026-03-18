@@ -4860,21 +4860,40 @@ else:
                                     )
                                     components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
 
+                    
                     with t2:
-                        # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM CON ORDEN DESCENDENTE) ---
+                        # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
                         if not df_actual.empty:
-                            # 1. Cálculos de lógica (Intactos amor)
-                            t_prod = df_actual["COSTO_TOTAL"].sum()
-                            t_flete = df_actual["COSTO_GUIA"].sum()
+                            # --- BLOQUE DE FILTRADO POR MES ---
+                            st.write("")
+                            # Preparamos los meses disponibles
+                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'])
+                            df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y')
+                            meses_lista = sorted(df_actual['MES_FILTRO'].unique(), reverse=True)
+                            
+                            col_f1, col_f2 = st.columns([1.5, 2.5])
+                            mes_sel = col_f1.selectbox(
+                                ":material/calendar_month: FILTRAR PERIODO", 
+                                ["MOSTRAR TODO"] + meses_lista
+                            )
+
+                            # Aplicamos el filtro al DataFrame que vamos a renderizar
+                            if mes_sel != "MOSTRAR TODO":
+                                df_render = df_actual[df_actual['MES_FILTRO'] == mes_sel].copy()
+                            else:
+                                df_render = df_actual.copy()
+
+                            # 1. Cálculos de lógica (Sobre el DF filtrado amor)
+                            t_prod = df_render["COSTO_TOTAL"].sum()
+                            t_flete = df_render["COSTO_GUIA"].sum()
                             filas_html = ""
                             tarjetas_html = ""
                             
-                            # Usamos fillna para evitar los molestos NaN
-                            df_render = df_actual.fillna(0)
-                            
-                            # --- EL CAMBIO CLAVE: Ordenamos para que el último folio aparezca primero ---
+                            # Limpieza y orden descendente
+                            df_render = df_render.fillna(0)
                             df_render = df_render.sort_values(by="FOLIO", ascending=False)
-                        
+                            
+                            # --- GENERACIÓN DE CONTENIDO (TU DISEÑO IDENTICO) ---
                             for _, r in df_render.iterrows():
                                 detalle_p = ""
                                 for p in precios.keys():
@@ -4882,36 +4901,30 @@ else:
                                     if cant > 0: 
                                         detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                                 
-                                # Guardamos para el PDF original (Márgenes compactos para impresión amor)
-                                # IMPRESIO DE CONTENIDO DE REPORTE GLOBAL-------
+                                # Tu HTML de FILAS para el reporte de impresión
                                 filas_html += f"""
                                 <tr style="page-break-inside: avoid;">
                                     <td style='border:1px solid black; padding:6px; text-align:center; font-size:10px; width:7%;'>{r['FOLIO']}</td>
-                                    
                                     <td style='border:1px solid black; padding:6px; font-size:10px; width:15%;'>
                                         <b style='color:black;'>{str(r['SOLICITO']).upper()}</b><br>
                                         <small style='font-size:8px; color:#444;'>{r['FECHA']}</small>
                                     </td>
-                                    
                                     <td style='border:1px solid black; padding:6px; font-size:10px; width:25%;'>
                                         <b>{str(r['NOMBRE DEL HOTEL']).upper()}</b><br>
                                         <small style='font-size:8px; color:#333;'>{str(r['DESTINO']).upper()}</small>
                                     </td>
-                                    
                                     <td style='border:1px solid black; padding:6px; font-size:9px; line-height:1.3; width:33%;'>
                                         {detalle_p}
                                     </td>
-                                    
                                     <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
                                         <b>${r['COSTO_TOTAL']:,.2f}</b>
                                     </td>
-                                    
                                     <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
                                         ${r['COSTO_GUIA']:,.2f}
                                     </td>
-                                </tr>
-                                """
-                                # 2. TABLAA--------Tarjetas visuales (Márgenes corregidos para que respiren amor)
+                                </tr>"""
+
+                                # Tu HTML de TARJETAS visuales
                                 tarjetas_html += f"""
                                 <div class="card-reporte" style="padding: 20px 30px; margin-bottom: 15px;">
                                     <div class="col-folio" style="flex: 1;">
@@ -4919,45 +4932,37 @@ else:
                                         <div class="val-folio" style="margin-bottom: 5px;">#{r['FOLIO']}</div>
                                         <div class="val-sub">{r['FECHA']}</div>
                                     </div>
-                                    
                                     <div class="col-info" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
                                         <div class="label-mini">SOLICITANTE / DESTINO</div>
                                         <div class="val-main" style="margin-bottom: 4px;">{str(r['SOLICITO']).upper()}</div>
                                         <div class="val-sub">{str(r['NOMBRE DEL HOTEL']).upper()}</div>
                                         <div class="val-sub" style="opacity: 0.7;">{str(r['DESTINO']).upper()}</div>
                                     </div>
-                                    
                                     <div class="col-detalle" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
                                         <div class="label-mini">DESGLOSE PRODUCTOS</div>
                                         <div class="val-list" style="line-height: 1.6;">{detalle_p if detalle_p else 'SIN DETALLE'}</div>
                                     </div>
-                                    
                                     <div class="col-costos" style="flex: 1.5; text-align: right; padding-left: 25px; border-left: 1px solid rgba(255,255,255,0.08);">
                                         <div class="label-mini">INVERSIÓN</div>
                                         <div class="val-costo" style="font-size: 14px; margin-bottom: 5px;">Prod: ${r['COSTO_TOTAL']:,.2f}</div>
                                         <div class="val-flete" style="font-size: 14px;">Flete: ${r['COSTO_GUIA']:,.2f}</div>
                                     </div>
-                                </div>
-                                """
-                        
-                            # 3. TABLA DE ENVIOS --- Renderizado del visor con Scroll AGC
+                                </div>"""
+
+                            # --- VISOR (TU CSS IDENTICO) ---
                             st.markdown(f"""
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                                    <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>RESUMEN DE INVERSIÓN MUESTRAS JYPESA</p>
-                                    <p style='color:#FFFFFF; font-size:12px; opacity:0.6;'>Total Registros: {len(df_actual)}</p>
+                                    <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>VISTA: {mes_sel}</p>
+                                    <p style='color:#FFFFFF; font-size:12px; opacity:0.6;'>Mostrando {len(df_render)} registros</p>
                                 </div>
                             """, unsafe_allow_html=True)
-                        
+
                             html_final = f"""
                             <div style="font-family: 'Inter', sans-serif;">
                                 <style>
                                     body {{ background: transparent; margin: 0; padding: 0; }}
                                     .container-reporte {{ height: 500px; overflow-y: auto; padding-right: 10px; }}
-                                    .card-reporte {{
-                                        background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;
-                                        padding: 15px 20px; margin-bottom: 12px; display: flex; min-width: 800px;
-                                        justify-content: space-between; align-items: center; transition: 0.3s;
-                                    }}
+                                    .card-reporte {{ background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; min-width: 800px; justify-content: space-between; align-items: center; transition: 0.3s; }}
                                     .card-reporte:hover {{ border-color: #38bdf8; background: #2d3b42; }}
                                     .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }}
                                     .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
@@ -4966,47 +4971,39 @@ else:
                                     .val-list {{ color: #FFFFFF; font-size: 9px; line-height: 1.4; opacity: 0.8; }}
                                     .val-costo {{ color: #38bdf8; font-size: 13px; font-weight: 700; font-family: monospace; }}
                                     .val-flete {{ color: #a855f7; font-size: 13px; font-weight: 700; font-family: monospace; }}
-                                    
-                                    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                    ::-webkit-scrollbar {{ width: 8px; }}
                                     ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
-                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; min-height: 60px; }}
-                                    ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
-                                    
-                                    .col-folio {{ flex: 0.8; }}
-                                    .col-info {{ flex: 2; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05); }}
-                                    .col-detalle {{ flex: 2; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05); }}
-                                    .col-costos {{ flex: 1.2; text-align: right; padding-left: 15px; border-left: 1px solid rgba(255,255,255,0.05); }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
                                 </style>
                                 <div class="container-reporte">{tarjetas_html}</div>
-                            </div>
-                            """
-                            import streamlit.components.v1 as components
+                            </div>"""
                             components.html(html_final, height=520, scrolling=False)
-                        
-                            # Banner de Totales
+
+                            # Banner de Totales (RECALCULADO)
                             st.markdown(f"""
                                 <div style="background:#263238; border-top: 4px solid #00FFAA; border-radius: 0 0 12px 12px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                                     <div style="color:rgba(255,255,255,0.6); font-size:12px;">PRODUCTOS: <span style="color:white; font-weight:bold;">${t_prod:,.2f}</span></div>
                                     <div style="color:rgba(255,255,255,0.6); font-size:12px;">FLETES: <span style="color:white; font-weight:bold;">${t_flete:,.2f}</span></div>
-                                    <div style="color:#00FFAA; font-size:16px; font-weight:800; letter-spacing:1px;">INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</div>
+                                    <div style="color:#00FFAA; font-size:16px; font-weight:800; letter-spacing:1px;">TOTAL FILTRADO: ${(t_prod+t_flete):,.2f}</div>
                                 </div>
                             """, unsafe_allow_html=True)
-                            
-                            # 4. BOTONES DE ACCIÓN (Ahora sí fuera del else amor)
+
+                            # --- BOTONES DE ACCIÓN ---
                             c1, c2, c3 = st.columns(3)
                             with c1:
-                                #CODIGO PARA ENCABEXADO DE REPORTE GLOBAL------------
-                                form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;width:100% !important;font-family:sans-serif;}} .no-print{{display:none;}}}} table{{width:100% !important;border-collapse:collapse;margin-top:15px;table-layout:fixed;}} th{{background:#eee !important;border:1px solid black;padding:8px;font-size:11px;-webkit-print-color-adjust:exact;}} td{{border:1px solid black;padding:6px;font-size:10px;vertical-align:top;word-wrap:break-word;}}</style></head><body><div style='display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid black;padding-bottom:10px;'><div><h1 style='margin:0;font-size:25px;font-weight:900;'>Jabones y Productos Especializados</h1><p style='margin:0;font-size:10px;font-weight:bold;letter-spacing:1px;'>DISTRIBUCIÓN Y LOGÍSTICA | 2026</p></div><div style='text-align:right;'><h2 style='margin:0;font-size:16px;text-decoration:underline;'>REPORTE DE SALIDA DE ENVIOS Y MUESTRAS</h2><p style='margin:5px 0 0 0;font-size:12px;'><b>GENERADO: {date.today().strftime('%d/%m/%Y')}</b></p></div></div><table><thead><tr><th style='width:7%;'>FOLIO</th><th style='width:15%;'>SOLICITANTE</th><th style='width:25%;'>DESTINO / HOTEL</th><th style='width:33%;'>DETALLE DE PRODUCTOS</th><th style='width:10%;'>COSTO PROD.</th><th style='width:10%;'>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:2px solid black;padding-top:10px;'><p style='margin:2px 0;'>TOTAL PRODUCTOS: <b>${t_prod:,.2f}</b></p><p style='margin:2px 0;'>TOTAL FLETES: <b>${t_flete:,.2f}</b></p><h3 style='margin:8px 0;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
+                                # HTML de Impresión Global
+                                form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;font-family:sans-serif;}} }} table{{width:100%;border-collapse:collapse;margin-top:15px;}} th{{background:#eee;border:1px solid black;padding:8px;font-size:11px;}} td{{border:1px solid black;padding:6px;font-size:10px;}}</style></head><body><div style='display:flex;justify-content:space-between;border-bottom:3px solid black;'><div><h1>JYPESA</h1><p>REPORTE DE MUESTRAS - {mes_sel}</p></div><div style='text-align:right;'><h3>Inversión: ${(t_prod+t_flete):,.2f}</h3></div></div><table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>PRODUCTOS</th><th>COSTO</th><th>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table></body></html>"
                                 if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
                                     components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
                             with c2:
-                                from io import BytesIO
                                 output = BytesIO()
-                                with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
-                                st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_{date.today()}.xlsx", use_container_width=True)
+                                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                                    # Descargamos solo lo filtrado
+                                    df_render.drop(columns=['FECHA_DT', 'MES_FILTRO']).to_excel(writer, index=False)
+                                st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
                             with c3:
-                                if st.button(":material/update: ACTUALIZAR DATOS", use_container_width=True): st.rerun()
-                        
+                                if st.button(":material/update: ACTUALIZAR", use_container_width=True): st.rerun()
+
                         else:
                             st.info("No hay registros todavía.")
                 
