@@ -1089,51 +1089,8 @@ else:
                 
                     for index, d in resultados.iterrows():
                         status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
-                        
-                        # Renderizado de la tarjeta
-                        st.markdown(f"""
-                            <div style="
-                                background: rgba(255,255,255,0.04);
-                                border: 1px solid rgba(255,255,255,0.1);
-                                border-left: 5px solid {accent_color};
-                                padding: 16px;
-                                margin-bottom: 12px;
-                                border-radius: 8px;
-                            ">
-                                <table style="width:100%; border-collapse: collapse; border: none; background: transparent;">
-                                    <tr>
-                                        <td style="text-align: left; border: none;">
-                                            <div style="color: {accent_color}; font-size: 10px; font-weight: 800; text-transform: uppercase;">Orden de Venta</div>
-                                            <div style="font-size: 18px; font-weight: 700; color: white;">#{d['NÚMERO DE PEDIDO']}</div>
-                                        </td>
-                                        <td style="text-align: right; border: none;">
-                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 700; text-transform: uppercase;">Tracking / Guía</div>
-                                            <div style="font-size: 14px; font-weight: 600; color: white;">{d['NÚMERO DE GUÍA']}</div>
-                                        </td>
-                                    </tr>
-                                </table>
-                
-                                <div style="margin: 12px 0; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <div style="color: rgba(255,255,255,0.6); font-size: 11px;">CLIENTE <span style="color: {accent_color}; font-weight: 700;">[{d['NO CLIENTE']}]</span></div>
-                                    <div style="font-size: 15px; color: white; font-weight: 500;">{d['NOMBRE DEL CLIENTE']}</div>
-                                </div>
-                
-                                <table style="width:100%; border-collapse: collapse; border: none; background: transparent;">
-                                    <tr>
-                                        <td style="text-align: left; border: none; font-size: 12px; color: rgba(255,255,255,0.8);">
-                                            📍 <b>{d['DESTINO']}</b> &nbsp;&nbsp; 📅 {d['FECHA DE ENVÍO']}
-                                        </td>
-                                        <td style="text-align: right; border: none;">
-                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px; color: {accent_color}; font-weight: 800;">
-                                                📦 {d['CANTIDAD DE CAJAS']} CJ
-                                            </span>
-                                            <span style="font-size: 11px; color: white; opacity: 0.7; font-style: italic; margin-left: 8px;">{status_text}</span>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        """, unsafe_allow_html=True)
-        
+                        st.markdown(f"<div style='background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-left:5px solid {accent_color};padding:15px;margin-bottom:10px;border-radius:8px;'><div style='display:flex;justify-content:space-between;'><div style='line-height:1;'><span style='color:{accent_color};font-size:10px;font-weight:800;text-transform:uppercase;'>Orden</span><br><b style='font-size:17px;color:white;'>#{d['NÚMERO DE PEDIDO']}</b></div><div style='text-align:right;line-height:1;'><span style='color:rgba(255,255,255,0.5);font-size:10px;font-weight:700;text-transform:uppercase;'>Guía</span><br><b style='font-size:14px;color:white;'>{d['NÚMERO DE GUÍA']}</b></div></div><div style='margin:10px 0;padding:8px 0;border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);'><div style='color:rgba(255,255,255,0.6);font-size:11px;'>CLIENTE <span style='color:{accent_color};font-weight:700;'>[{d['NO CLIENTE']}]</span></div><div style='font-size:14px;color:white;font-weight:500;'>{d['NOMBRE DEL CLIENTE']}</div></div><div style='display:flex;justify-content:space-between;align-items:center;'><div style='font-size:12px;color:rgba(255,255,255,0.8);'>📍 <b>{d['DESTINO']}</b> &nbsp; 📅 {d['FECHA DE ENVÍO']}</div><div style='display:flex;align-items:center;gap:8px;'><span style='background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);font-size:11px;color:{accent_color};font-weight:800;'>📦 {d['CANTIDAD DE CAJAS']} CJ</span><span style='font-size:11px;color:white;opacity:0.6;font-style:italic;'>{status_text}</span></div></div></div>", unsafe_allow_html=True)
+                            
         # Línea decorativa final
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
