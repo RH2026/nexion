@@ -4602,12 +4602,15 @@ else:
                         df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
                         
                         if subir_a_github(df_f, sha_actual, f"Folio JYP-{nuevo_num}"):
+                            # MEMORIA: Guardamos el folio que acabamos de usar antes de que cambie
+                            st.session_state.folio_actual = nuevo_num
                             st.session_state.folio_guardado = True 
+                            
                             st.success(f"¡Guardado correctamente! Folio: JYP-{nuevo_num}")
                             time.sleep(1)
                             st.rerun()
 
-                # --- MENSAJE DE ADVERTENCIA (Solo si no han guardado) ---
+                # --- MENSAJE DE ADVERTENCIA ---
                 if not st.session_state.folio_guardado:
                     st.markdown("""
                         <div style="background-color: rgba(255, 165, 0, 0.1); border-left: 5px solid #FFA500; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
@@ -4618,9 +4621,13 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
 
-                # --- BOTÓN GUARDAR PDF (CON CORRECCIONES) ---
+                # --- BOTÓN GUARDAR PDF (REPARADO CON MEMORIA) ---
                 if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
-                    folio_simple = f"JYP-{nuevo_num}" 
+                    
+                    # LOGICA DE ORO: Si ya guardamos, usamos el folio en memoria. 
+                    # Si por algo no está (rerun), usamos nuevo_num - 1.
+                    folio_final = st.session_state.get("folio_actual", nuevo_num - 1)
+                    folio_simple = f"JYP-{folio_final}" 
                     
                     h_print = generar_html_impresion(
                         folio_simple, 
@@ -4643,10 +4650,12 @@ else:
                 # --- BOTÓN BORRAR ---
                 if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
                     st.session_state.folio_guardado = False
+                    # Limpiamos el folio de la memoria para el siguiente registro
+                    if "folio_actual" in st.session_state:
+                        del st.session_state.folio_actual
                     st.session_state.seleccionados_muestras = []
                     st.session_state.reset_key += 1
                     st.rerun()
-                
                 # --- BÚSQUEDA RÁPIDA ---                
                 # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
                 st.write("")
