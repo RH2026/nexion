@@ -4226,11 +4226,13 @@ else:
                                 
 
             elif st.session_state.menu_sub == "ENVIO DE MUESTRAS":
+                # --- 1. LLAVES DE ESTADO ---
                 if "reset_key" not in st.session_state:
                     st.session_state.reset_key = 0
-                # AQUÍ ESTÁ: Inicializamos el candado si no existe
                 if "folio_guardado" not in st.session_state:
                     st.session_state.folio_guardado = False
+    
+                
                 
                 # --- VARIABLES DE GITHUB ---
                 GITHUB_USER = "RH2026"
@@ -4389,12 +4391,20 @@ else:
                     return html
                 
                 # --- CARGA DE DATOS ---
+                # --- CARGA DE DATOS ---
                 df_actual, sha_actual = obtener_datos_github()
-                if not df_actual.empty:
-                    for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL"]:
-                        if col not in df_actual.columns: df_actual[col] = 0.0
                 
-               
+                if not df_actual.empty:
+                    # 1. Primero arreglamos las columnas si faltan
+                    for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL"]:
+                        if col not in df_actual.columns: 
+                            df_actual[col] = 0.0
+                    
+                    # 2. LUEGO calculamos el número (Alineado aquí adentro)
+                    nuevo_num = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1)
+                else:
+                    # 3. Si el archivo está vacío, empezamos en 1
+                    nuevo_num = 1
                 
                 # --- INTERFAZ ---
                 
