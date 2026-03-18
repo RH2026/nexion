@@ -1032,7 +1032,7 @@ else:
                         st.markdown(timeline_html, unsafe_allow_html=True)
                     
                     # --- RENDERIZADO DE DETALLES (TU BLOQUE ORIGINAL) ---
-                    # --- RENDERIZADO DE DETALLES (UN SOLO RESULTADO) ---
+                    # --- RENDERIZADO DE DETALLES (TU BLOQUE ORIGINAL) ---
                     d = resultados.iloc[0]
                     st.markdown(f"""
                         <div class="kpi-ruta-container">
@@ -1075,64 +1075,41 @@ else:
                                 </div>
                             </div>
                         </div>
-                    """, unsafe_allow_html=True)
-                
-                # ── RENDER PREMIUM: MULTIPLE MATCHES DETECTED ────────────────
+                        """, unsafe_allow_html=True)
                 else:
-                    # 1. Cabecera con Estilo Neón
-                    st.markdown(f"""
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                            <div style="width: 12px; height: 12px; background: {accent_color}; border-radius: 50%; box-shadow: 0 0 10px {accent_color};"></div>
-                            <p style='color:{accent_color}; font-size:14px; font-weight:900; margin:0; letter-spacing:2px; text-transform: uppercase;'>
-                                Coincidencias Múltiples Detectadas ({total})
-                            </p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    html_resultados = ""
+                    st.markdown(f"<p style='color:{accent_color}; font-size:14px; font-weight:800; margin-bottom:10px; letter-spacing:1px;'>MULTIPLE MATCHES DETECTED ({total})</p>", unsafe_allow_html=True)
                     for index, d in resultados.iterrows():
-                        status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) and d['COMENTARIOS'] != '' else 'SIN NOVEDAD'
-                        
-                        html_resultados += f"""
-                        <div style="background: rgba(38, 50, 56, 0.6); border: 1px solid rgba(255,255,255,0.05); border-left: 5px solid {accent_color}; padding: 18px 25px; margin-bottom: 12px; border-radius: 10px; min-width: 800px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <div style="flex: 1;">
-                                    <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">PEDIDO</span>
-                                    <span style="font-size:18px; font-family:monospace; font-weight:900; color:{accent_color};">#{d['NÚMERO DE PEDIDO']}</span>
+                        status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
+                        st.markdown(f"""
+                            <div style="background: rgba(255,255,255,0.07); border-left: 4px solid {accent_color}; padding: 12px 15px; margin-bottom: 8px; border-radius: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="flex: 1;">
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">PEDIDO</span>
+                                        <span style="font-size:15px; font-weight:bold; color:white;">{d['NÚMERO DE PEDIDO']}</span>
+                                    </div>
+                                    <div style="flex: 2;">
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">CLIENTE ({d['NO CLIENTE']})</span>
+                                        <span style="font-size:13px; color:white; font-weight:600;">{d['NOMBRE DEL CLIENTE']}</span>
+                                    </div>
+                                    <div style="flex: 1; text-align: right;">
+                                        <span style="color:{accent_color}; font-size:9px; font-weight:900; display:block; letter-spacing:1px;">GUÍA</span>
+                                        <span style="font-size:13px; color:#FFFFFF; font-weight:bold;">{d['NÚMERO DE GUÍA']}</span>
+                                    </div>
                                 </div>
-                                <div style="flex: 2; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.1);">
-                                    <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">CLIENTE ID: {d['NO CLIENTE']}</span>
-                                    <span style="font-size:15px; color:white; font-weight:700; text-transform: uppercase;">{d['NOMBRE DEL CLIENTE']}</span>
-                                </div>
-                                <div style="flex: 1.5; text-align: right;">
-                                    <span style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:800; letter-spacing:1px; display:block;">RASTREO / GUÍA</span>
-                                    <span style="font-size:14px; color:#FFFFFF; font-weight:800; font-family:monospace; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius:4px;">
-                                        {d['NÚMERO DE GUÍA'] if d['NÚMERO DE GUÍA'] != '0' else 'PENDIENTE'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-                                <div style="display: flex; gap: 25px;">
-                                    <div style="font-size:12px; color:white;"><span style="opacity:0.5;">📍</span> <b>{d['DESTINO']}</b></div>
-                                    <div style="font-size:12px; color:white;"><span style="opacity:0.5;">📅</span> {d['FECHA DE ENVÍO']}</div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <span style="font-size:13px; color:{accent_color}; font-weight:900;">{d['CANTIDAD DE CAJAS']} <span style="font-size:10px; opacity:0.7;">BULTOS</span></span>
-                                    <span style="margin: 0 10px; color:rgba(255,255,255,0.2);">|</span>
-                                    <span style="font-size:11px; color:#FFFFFF; opacity:0.8; font-style: italic; background: rgba(0,255,170,0.05); padding: 2px 6px; border-radius:3px;">{status_text}</span>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
+                                    <span style="font-size:11px; color:#FFFFFF;">📍 <b>{d['DESTINO']}</b></span>
+                                    <span style="font-size:11px; color:#FFFFFF;">📅 ENVÍO: <b>{d['FECHA DE ENVÍO']}</b></span>
+                                    <div style="text-align: right;">
+                                        <span style="font-size:11px; color:{accent_color}; font-weight:900;">📦 {d['CANTIDAD DE CAJAS']} CJ | </span>
+                                        <span style="font-size:10px; color:#FFFFFF; opacity:0.8; font-style: italic;">{status_text}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        """
-
-                    st.markdown(f"""
-                        <div style="height: 500px; overflow-y: auto; overflow-x: auto; padding-right: 10px;">
-                            {html_resultados}
-                        </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
         
         # Línea decorativa final
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
@@ -1236,38 +1213,13 @@ else:
                 return components.html(html_content, height=600, scrolling=True)
             
             # --- EJECUCIÓN DEL MÓDULO ---
+            # --- EJECUCIÓN DEL MÓDULO ---
             df_raw = cargar_datos()
-
-            # PRIMERO VERIFICAMOS SI HAY DATOS, AMOR
+                
+            
             if df_raw is not None:
-                
-                # --- 2. CÁLCULO DE MÉTRICAS PARA LAS DONITAS ---
-                total_pedidos = len(df_raw)
-                entregados = len(df_raw[df_raw['FECHA DE ENTREGA REAL'].notna()])
-                en_transito = len(df_raw[df_raw['FECHA DE ENTREGA REAL'].isna()])
-                con_guia = len(df_raw[df_raw['NÚMERO DE GUÍA'].notna() & (df_raw['NÚMERO DE GUÍA'].astype(str) != '0')])
-    
-                # --- 3. RENDERIZADO DE LAS DONITAS EN COLUMNAS ---
-                st.markdown("<br>", unsafe_allow_html=True) 
-                col_d1, col_d2, col_d3, col_d4 = st.columns(4)
-    
-                with col_d1:
-                    render_kpi(total_pedidos, total_pedidos, "TOTAL PEDIDOS", "#FFFFFF")
-                
-                with col_d2:
-                    render_kpi(entregados, total_pedidos, "ENTREGADOS", "#00FFAA")
-                
-                with col_d3:
-                    render_kpi(en_transito, total_pedidos, "EN TRÁNSITO", "#38bdf8")
-                
-                with col_d4:
-                    render_kpi(con_guia, total_pedidos, "CON GUÍA", "#a855f7")
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-            
-            
                 with st.expander("Listado de pedidos completo", expanded=False):
-                                
+                                                                
                     # --- BÚSQUEDA MAESTRA ---
                     #1. Definimos la búsqueda
                     busqueda_manual = st.text_input("", key="bus_maestra_log", placeholder="🔍 Buscar...").strip()
