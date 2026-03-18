@@ -2722,10 +2722,24 @@ else:
                         # Altura fija para forzar el scroll interno y scrolling=True
                         components.html(html_excepciones, height=700, scrolling=True)
                     else:
-                        st.info("No hay pedidos que coincidan con los filtros seleccionados.")
+                        st.markdown(f"""
+                            <div style="background-color: rgba(56, 189, 248, 0.1); border: 1px dashed #38bdf8; border-radius: 10px; padding: 20px; text-align: center;">
+                                <p style="color: #38bdf8; font-size: 18px; margin: 0;"><b>BÚSQUEDA SIN RESULTADOS</b></p>
+                                <p style="color: #94a3b8; font-size: 12px; margin-top: 5px; letter-spacing: 1px;">
+                                    No detectamos pedidos activos bajo los criterios seleccionados. Verifica tus filtros de Transportista o Gravedad.
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
                 else:
-                    st.success("SISTEMA NEXION: SIN RETRASOS DETECTADOS")
-                
+                    st.markdown(f"""
+                        <div style="background: linear-gradient(90deg, rgba(0,255,170,0.1) 0%, rgba(0,0,0,0) 100%); border-left: 5px solid #00FFAA; border-radius: 5px; padding: 25px; margin: 20px 0;">
+                            <h3 style="color: #00FFAA; margin: 0; font-size: 20px; letter-spacing: 2px;">✓ STATUS: OPERACIÓN LIMPIA</h3>
+                            <p style="color: #FFFFFF; font-size: 14px; margin-top: 8px; opacity: 0.8;">
+                                <b>SISTEMA NEXION:</b> No se detectaron anomalías ni entregas fuera de tiempo en el rango analizado. Todo fluye conforme a lo planeado.
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                                
                
                 # --- 6. BOTÓN DE DESCARGA: EXCEPCIONES Y RETRASOS (SOLO FECHAS) ---
                 st.divider()
