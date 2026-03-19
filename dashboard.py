@@ -178,7 +178,7 @@ st.markdown(f"""
 /* --- ESTILOS MAESTROS DE NEXION (SECCIÓN SEMÁFORO ALERTAS) --- */   
 /* Estilo base oscuro para alertas (Negro profundo con glass effect) */
 .base-card-alerta {{
-    background: rgba(10, 15, 20, 0.7); /* Negro Obsidiana ultra oscuro y glass */
+    background: rgba(30, 39, 46, 0.8); /* Negro Obsidiana ultra oscuro y glass */
     border: 1px solid rgba(255, 255, 255, 0.05); /* Borde de luz súper fino */
     border-radius: 12px;
     padding: 15px 20px;
