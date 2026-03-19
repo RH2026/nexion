@@ -34,17 +34,15 @@ import google.generativeai as genai
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
 
 
-#REGISTRAR REGISTROS DE USUARIO
-def registrar_acceso(usuario):
-    import datetime
-    import os
-    import pandas as pd
-    
+def registrar_acceso(usuario):    
     archivo_log = "log_accesos.csv"
-    ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Configuramos la zona horaria de CDMX/Guadalajara
+    zona_horaria = pytz.timezone('America/Mexico_City')
+    ahora = datetime.datetime.now(zona_horaria).strftime("%Y-%m-%d %I:%M %p") # Formato 12h con AM/PM
+    
     nuevo_registro = pd.DataFrame([[usuario, ahora]], columns=["Usuario", "Fecha/Hora"])
     
-    # Si el archivo no existe, lo crea con encabezados; si existe, añade la línea al final
     if not os.path.isfile(archivo_log):
         nuevo_registro.to_csv(archivo_log, index=False)
     else:
@@ -2507,8 +2505,6 @@ else:
                             </div>
                         """, unsafe_allow_html=True)
                         
-                        st.info(f"Hola {st.session_state.nombre_completo}, aquí verás quién entra al sistema.")
-                        # Aquí luego meteremos el log de usuarios que quieres
                         # --- 🕵️ MONITOR DE ACTIVIDAD (LOGS) ---
                         try:
                             # 1. Cargamos el archivo de logs (Asegúrate de haber guardado el CSV antes)
