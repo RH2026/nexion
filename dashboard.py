@@ -772,7 +772,7 @@ if not st.session_state.splash_completado:
             <style>
                 @keyframes spin {{
                     to {{ transform: rotate(360deg); }}
-                }
+                }}
             </style>
             """, unsafe_allow_html=True)
             # Aumentamos un pelín el tiempo para que el ojo humano alcance a leer
