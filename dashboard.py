@@ -184,7 +184,7 @@ st.markdown(f"""
     
     .card-semaforo:hover {{
         transform: translateY(-5px); 
-        background: rgba(30, 39, 46, 0.9) !important;
+        background: rgba(0, 212, 255, 0.15) !important;
         box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         border-color: rgba(255, 255, 255, 0.1) !important;
         filter: brightness(1.1);
