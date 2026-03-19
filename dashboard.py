@@ -2798,24 +2798,24 @@ else:
                 # Alerta LEVE (Amarillo Neón)
                 c_a1.markdown(f"""
                     <div class='base-card-alerta' style='border-left-color: #FDE047;'>
-                        <div style='color: rgba(255,255,255,0.4); font-size: 8px; font-weight: 800; letter-spacing: 1px;'>BAJO RIESGO (1D)</div>
-                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1;'>{a1_v} <span style='font-size: 10px; color: #FDE047; opacity: 0.7;'>PEDIDOS</span></div>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>BAJO RIESGO (1D)</div>
+                        <div style='color: white; font-size: 28px; font-weight: 800; line-height: 1;'>{a1_v} <span style='font-size: 10px; color: #FDE047; opacity: 0.7;'>PEDIDOS</span></div>
                     </div>
                 """, unsafe_allow_html=True)
                 
                 # Alerta MODERADO (Naranja Eléctrico) - ¡¡ESTA ES LA QUE ARREGLAMOS AMOR!!
                 c_a2.markdown(f"""
                     <div class='base-card-alerta' style='border-left-color: #F97316;'>
-                        <div style='color: rgba(255,255,255,0.4); font-size: 8px; font-weight: 800; letter-spacing: 1px;'>DEMORA (2-4D)</div>
-                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1;'>{a2_v} <span style='font-size: 10px; color: #F97316; opacity: 0.7;'>PEDIDOS</span></div>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>DEMORA (2-4D)</div>
+                        <div style='color: white; font-size: 28px; font-weight: 800; line-height: 1;'>{a2_v} <span style='font-size: 10px; color: #F97316; opacity: 0.7;'>PEDIDOS</span></div>
                     </div>
                 """, unsafe_allow_html=True)
                 
                 # Alerta CRÍTICO (Rojo Intenso)
                 c_a3.markdown(f"""
                     <div class='base-card-alerta' style='border-left-color: #FF4B4B;'>
-                        <div style='color: rgba(255,255,255,0.4); font-size: 8px; font-weight: 800; letter-spacing: 1px;'>CRÍTICO (+5D)</div>
-                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1;'>{a5_v} <span style='font-size: 10px; color: #FF4B4B; opacity: 0.7;'>PEDIDOS</span></div>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>CRÍTICO (+5D)</div>
+                        <div style='color: white; font-size: 28px; font-weight: 800; line-height: 1;'>{a5_v} <span style='font-size: 10px; color: #FF4B4B; opacity: 0.7;'>PEDIDOS</span></div>
                     </div>
                 """, unsafe_allow_html=True)
                 
