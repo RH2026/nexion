@@ -33,6 +33,26 @@ import google.generativeai as genai
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
 
+
+#REGISTRAR REGISTROS DE USUARIO
+def registrar_acceso(usuario):
+    import datetime
+    import os
+    import pandas as pd
+    
+    archivo_log = "log_accesos.csv"
+    ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    nuevo_registro = pd.DataFrame([[usuario, ahora]], columns=["Usuario", "Fecha/Hora"])
+    
+    # Si el archivo no existe, lo crea con encabezados; si existe, añade la línea al final
+    if not os.path.isfile(archivo_log):
+        nuevo_registro.to_csv(archivo_log, index=False)
+    else:
+        nuevo_registro.to_csv(archivo_log, mode='a', header=False, index=False)
+
+
+
+
 # --- MOTOR DE INTELIGENCIA LOGÍSTICA (XENOCODE CORE) ---
 def d_local(dir_val):
     """Detecta si una dirección pertenece a la ZMG basada en CPs."""
@@ -660,7 +680,7 @@ def login_screen():
             if submit_button:
                 lista_usuarios = st.secrets.get("usuarios", {})
                 
-                # VALIDACIÓN EXITOSA               
+                             
                 # 1. Diccionario para convertir Operator ID en Nombre Real
                 nombres_reales = {
                     "Rigoberto": "Rigoberto",
@@ -690,6 +710,9 @@ def login_screen():
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
                     st.session_state.usuario_activo = user_input
+
+                    # AQUÍ ACTIVAMOS EL RASTREO, AMOR
+                    registrar_acceso(user_input)
                     
                     # Buscamos el nombre completo
                     nombre_completo = nombres_reales.get(user_input, user_input)
@@ -2480,12 +2503,43 @@ else:
                         st.markdown(f"""
                             <div style='display:flex;align-items:center;gap:10px;margin:20px 0;'>
                                 <div style='background:#FF4B4B;width:5px;height:25px;border-radius:2px;box-shadow:0 0 10px #FF4B4B;'></div>
-                                <span style='color:white;font-size:18px;font-weight:800;letter-spacing:2px;'>NEXION SENSITIVE DATA - ADMIN ONLY</span>
+                                <span style='color:white;font-size:18px;font-weight:500;letter-spacing:2px;'>NEXION SENSITIVE DATA - ADMIN ONLY</span>
                             </div>
                         """, unsafe_allow_html=True)
                         
                         st.info(f"Hola {st.session_state.nombre_completo}, aquí verás quién entra al sistema.")
                         # Aquí luego meteremos el log de usuarios que quieres
+                        # --- 🕵️ MONITOR DE ACTIVIDAD (LOGS) ---
+                        try:
+                            # 1. Cargamos el archivo de logs (Asegúrate de haber guardado el CSV antes)
+                            df_logs = pd.read_csv("log_accesos.csv")
+                            
+                            # 2. Inyectamos el estilo hover para los logs
+                            st.markdown(f"<style>.card-log {{ transition: all 0.3s ease; cursor: pointer; }} .card-log:hover {{ transform: translateX(5px); border-color: #FF4B4B !important; background: rgba(255, 75, 75, 0.05) !important; }}</style>", unsafe_allow_html=True)
+                            
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            
+                            # 3. Mostramos los últimos 10 accesos con estilo pro
+                            # Ponemos los más nuevos arriba (.iloc[::-1])
+                            for index, row in df_logs.iloc[::-1].head(10).iterrows():
+                                st.markdown(f"""
+                                    <div class='card-log' style='background:rgba(30,39,46,0.5); border:1px solid rgba(255,255,255,0.05); border-left:4px solid #FF4B4B; border-radius:8px; padding:10px 20px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;'>
+                                        <div style='flex:1;'>
+                                            <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>OPERADOR</span><br>
+                                            <b style='font-size:14px; color:white; letter-spacing:0.5px;'>{row['Usuario'].upper()}</b>
+                                        </div>
+                                        <div style='flex:2; padding-left:20px; border-left:1px solid rgba(255,255,255,0.08);'>
+                                            <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>FECHA Y HORA DE ACCESO</span><br>
+                                            <span style='font-size:12px; color:#FF4B4B; font-family:monospace; font-weight:700;'>{row['Fecha/Hora']}</span>
+                                        </div>
+                                        <div style='flex:0.5; text-align:right;'>
+                                            <span style='background:rgba(0,255,170,0.1); color:#00FFAA; padding:3px 8px; border-radius:4px; font-size:8px; font-weight:800;'>ENTRY OK</span>
+                                        </div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                                
+                        except Exception as e:
+                            st.warning("Esperando el primer registro de acceso para mostrar el historial...")
 
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
