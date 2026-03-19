@@ -144,6 +144,37 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+#-----RENDER DE MODULO ALERTAS------
+.kpi-card-elite {{
+        background: rgba(30, 39, 46, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        text-align: left;
+        position: relative;
+        overflow: hidden;
+    }}
+    .kpi-card-elite:hover {{
+        transform: translateY(-5px);
+        background: rgba(30, 39, 46, 0.8);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }}
+    .kpi-tag {{
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.4);
+        margin-bottom: 8px;
+        display: block;
+    }}
+    .kpi-main-val {{
+        font-family: 'Inter', sans-serif;
+        line-height: 1;
+    }}
+
 /* 1. Limpieza de Interfaz */
 header, footer, [data-testid="stHeader"] {{
     visibility: hidden;
@@ -2692,13 +2723,44 @@ else:
                 st.markdown("<br>", unsafe_allow_html=True)
                 m1, m2, m3, m4 = st.columns(4)
                 
-                m1.markdown(f"<div class='main-card-kpi' style='border-left-color:#94a3b8;'><div class='kpi-label'>Carga Total {mes_sel}</div><div class='kpi-value' style='font-size:28px; font-weight:800;'>{total_p}</div></div>", unsafe_allow_html=True)
-                m2.markdown(f"<div class='main-card-kpi' style='border-left-color:#38bdf8;'><div class='kpi-label'>En Tránsito</div><div class='kpi-value' style='color:#38bdf8; font-size:28px; font-weight:800;'>{pend_p}</div></div>", unsafe_allow_html=True)
-                m3.markdown(f"<div class='main-card-kpi' style='border-left-color:#a855f7;'><div class='kpi-label'>Entregas {nombre_prox_mes}</div><div class='kpi-value' style='color:#a855f7; font-size:28px; font-weight:800;'>{conteo_proximo}</div></div>", unsafe_allow_html=True)
+                # Tarjeta 1: Carga Total
+                m1.markdown(f"""
+                    <div class='kpi-card-elite' style='border-top: 3px solid #94a3b8;'>
+                        <span class='kpi-tag'>CARGA TOTAL {mes_sel}</span>
+                        <div class='kpi-main-val' style='color: white; font-size: 32px; font-weight: 800;'>{total_p}</div>
+                        <div style='font-size: 10px; color: #94a3b8; margin-top: 5px; font-weight: 600;'>REGISTROS TOTALES</div>
+                    </div>
+                """, unsafe_allow_html=True)
                 
+                # Tarjeta 2: En Tránsito
+                m2.markdown(f"""
+                    <div class='kpi-card-elite' style='border-top: 3px solid #38bdf8;'>
+                        <span class='kpi-tag'>OPERACIONES ACTIVAS</span>
+                        <div class='kpi-main-val' style='color: #38bdf8; font-size: 32px; font-weight: 800;'>{pend_p}</div>
+                        <div style='font-size: 10px; color: rgba(56, 189, 248, 0.5); margin-top: 5px; font-weight: 600;'>EN TRÁNSITO ACTUAL</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Tarjeta 3: Próximo Mes
+                m3.markdown(f"""
+                    <div class='kpi-card-elite' style='border-top: 3px solid #a855f7;'>
+                        <span class='kpi-tag'>PROYECCIÓN {nombre_prox_mes}</span>
+                        <div class='kpi-main-val' style='color: #a855f7; font-size: 32px; font-weight: 800;'>{conteo_proximo}</div>
+                        <div style='font-size: 10px; color: rgba(168, 85, 247, 0.5); margin-top: 5px; font-weight: 600;'>PEDIDOS PROGRAMADOS</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Tarjeta 4: Eficiencia
                 color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
-                m4.markdown(f"<div class='main-card-kpi' style='border-left-color:{color_ef};'><div class='kpi-label'>Porcentaje de Entrega</div><div class='kpi-value' style='color:{color_ef}; font-size:28px; font-weight:800;'>{eficiencia:.1f}%</div></div>", unsafe_allow_html=True)
+                glow_ef = f"text-shadow: 0 0 15px {color_ef}44;"
                 
+                m4.markdown(f"""
+                    <div class='kpi-card-elite' style='border-top: 3px solid {color_ef};'>
+                        <span class='kpi-tag'>EFICIENCIA GLOBAL</span>
+                        <div class='kpi-main-val' style='color: {color_ef}; font-size: 32px; font-weight: 800; {glow_ef}'>{eficiencia:.1f}%</div>
+                        <div style='font-size: 10px; color: {color_ef}88; margin-top: 5px; font-weight: 600;'>GOAL: 95.0%</div>
+                    </div>
+                """, unsafe_allow_html=True)
                 # ── 4. SEMÁFORO DE ALERTAS ──
                 st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; color:{vars_css['sub']}; text-align:center; margin-top:30px;'>S E M Á F O R O DE ALERTAS</p>", unsafe_allow_html=True)
                 
