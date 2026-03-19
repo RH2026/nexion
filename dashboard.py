@@ -177,18 +177,18 @@ st.markdown(f"""
 
 /* --- ESTILOS MAESTROS DE NEXION (SECCIÓN SEMÁFORO ALERTAS) --- */
     
-    .card-semaforo {{
-        transition: all 0.3s ease !important;
-        cursor: pointer;
-    }}
-    
-    .card-semaforo:hover {{
-        transform: translateY(-5px); 
-        background: rgba(0, 212, 255, 0.15) !important;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-        border-color: rgba(255, 255, 255, 0.1) !important;
-        filter: brightness(1.1);
-    }}
+.card-semaforo {{
+    transition: all 0.3s ease !important;
+    cursor: pointer;
+}}
+
+.card-semaforo:hover {{
+    transform: translateY(-5px); 
+    background: rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    filter: brightness(1.1);
+}}
 
 /* 1. Limpieza de Interfaz */
 header, footer, [data-testid="stHeader"] {{
