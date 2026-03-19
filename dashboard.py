@@ -145,35 +145,35 @@ st.markdown(f"""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
 #-----RENDER DE MODULO ALERTAS------
-.kpi-card-elite {{
-        background: rgba(30, 39, 46, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        padding: 20px;
-        transition: all 0.3s ease;
-        text-align: left;
-        position: relative;
-        overflow: hidden;
-    }}
-    .kpi-card-elite:hover {{
-        transform: translateY(-5px);
-        background: rgba(30, 39, 46, 0.8);
-        border-color: rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-    }}
-    .kpi-tag {{
-        font-size: 9px;
-        font-weight: 800;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.4);
-        margin-bottom: 8px;
-        display: block;
-    }}
-    .kpi-main-val {{
-        font-family: 'Inter', sans-serif;
-        line-height: 1;
-    }}
+.kpi-slim-card {{
+    background: rgba(30, 39, 46, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px 18px; /* Más delgada verticalmente */
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left: 4px solid #94a3b8; /* El acento de color lateral */
+}}
+.kpi-slim-card:hover {{
+    transform: translateX(5px); /* Movimiento lateral discreto */
+    background: rgba(30, 39, 46, 0.9);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}}
+.slim-label {{
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}}
+.slim-value {{
+    font-size: 22px; /* Tamaño reducido para elegancia */
+    font-weight: 800;
+    line-height: 1;
+}}
 
 /* 1. Limpieza de Interfaz */
 header, footer, [data-testid="stHeader"] {{
@@ -2722,31 +2722,37 @@ else:
                 # ── 3. RENDERIZADO TARJETAS (4 COLUMNAS) ──
                 st.markdown("<br>", unsafe_allow_html=True)
                 m1, m2, m3, m4 = st.columns(4)
-                
-                # Tarjeta 1: Carga Total
+
+                # Tarjeta 1
                 m1.markdown(f"""
-                    <div class='kpi-card-elite' style='border-top: 3px solid #94a3b8;'>
-                        <span class='kpi-tag'>CARGA TOTAL {mes_sel}</span>
-                        <div class='kpi-main-val' style='color: white; font-size: 32px; font-weight: 800;'>{total_p}</div>
-                        <div style='font-size: 10px; color: #94a3b8; margin-top: 5px; font-weight: 600;'>REGISTROS TOTALES</div>
+                    <div class='kpi-slim-card' style='border-left-color: #94a3b8;'>
+                        <span class='slim-label'>TOTAL {mes_sel}</span>
+                        <div class='slim-value' style='color: white;'>{total_p}</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Tarjeta 2: En Tránsito
+                # Tarjeta 2
                 m2.markdown(f"""
-                    <div class='kpi-card-elite' style='border-top: 3px solid #38bdf8;'>
-                        <span class='kpi-tag'>OPERACIONES ACTIVAS</span>
-                        <div class='kpi-main-val' style='color: #38bdf8; font-size: 32px; font-weight: 800;'>{pend_p}</div>
-                        <div style='font-size: 10px; color: rgba(56, 189, 248, 0.5); margin-top: 5px; font-weight: 600;'>EN TRÁNSITO ACTUAL</div>
+                    <div class='kpi-slim-card' style='border-left-color: #38bdf8;'>
+                        <span class='slim-label'>EN TRÁNSITO</span>
+                        <div class='slim-value' style='color: #38bdf8;'>{pend_p}</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Tarjeta 3: Próximo Mes
+                # Tarjeta 3
                 m3.markdown(f"""
-                    <div class='kpi-card-elite' style='border-top: 3px solid #a855f7;'>
-                        <span class='kpi-tag'>PROYECCIÓN {nombre_prox_mes}</span>
-                        <div class='kpi-main-val' style='color: #a855f7; font-size: 32px; font-weight: 800;'>{conteo_proximo}</div>
-                        <div style='font-size: 10px; color: rgba(168, 85, 247, 0.5); margin-top: 5px; font-weight: 600;'>PEDIDOS PROGRAMADOS</div>
+                    <div class='kpi-slim-card' style='border-left-color: #a855f7;'>
+                        <span class='slim-label'>PRÓXIMO MES</span>
+                        <div class='slim-value' style='color: #a855f7;'>{conteo_proximo}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Tarjeta 4
+                color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
+                m4.markdown(f"""
+                    <div class='kpi-slim-card' style='border-left-color: {color_ef};'>
+                        <span class='slim-label'>EFICIENCIA</span>
+                        <div class='slim-value' style='color: {color_ef};'>{eficiencia:.1f}%</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
