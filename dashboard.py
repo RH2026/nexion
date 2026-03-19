@@ -1384,10 +1384,28 @@ else:
                 total_t = len(df_trans)  
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
-                # Definimos los 4 nombres de las pestañas
-                tab_kpis, tab_tiempos, tab_despachos, tab_participacion, tab_entregas_agc, tab_consignas = st.tabs([
-                    "KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA", "ENTREGAS AGC", "CONSIGNAS"
-                ])
+                # Definimos las pestañas base que todos ven
+                nombres_tabs = ["KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA", "ENTREGAS AGC", "CONSIGNAS"]
+                
+                # Si eres tú, Rigoberto, añadimos la pestaña secreta al final
+                es_admin = st.session_state.get("usuario_activo") == "Rigoberto"
+                if es_admin:
+                    nombres_tabs.append("🔒 ADMIN CONTROL")
+
+                # Creamos las pestañas dinámicamente
+                tabs = st.tabs(nombres_tabs)
+                
+                # Asignamos las variables de siempre
+                tab_kpis = tabs[0]
+                tab_tiempos = tabs[1]
+                tab_despachos = tabs[2]
+                tab_participacion = tabs[3]
+                tab_entregas_agc = tabs[4]
+                tab_consignas = tabs[5]
+                
+                # Si eres admin, creamos la variable para la séptima pestaña
+                if es_admin:
+                    tab_admin = tabs[6]
     
                 # PESTAÑA 1: KPI'S (Tus donitas)
                 with tab_kpis:
@@ -2454,7 +2472,20 @@ else:
                         
                         # Renderizado directo sin buscador amor
                         render_expediente_chingon(df_consignas)
-
+                
+                
+                # NUEVA PESTAÑA SOLO PARA TI
+                if es_admin:
+                    with tab_admin:
+                        st.markdown(f"""
+                            <div style='display:flex;align-items:center;gap:10px;margin:20px 0;'>
+                                <div style='background:#FF4B4B;width:5px;height:25px;border-radius:2px;box-shadow:0 0 10px #FF4B4B;'></div>
+                                <span style='color:white;font-size:18px;font-weight:800;letter-spacing:2px;'>NEXION SENSITIVE DATA - ADMIN ONLY</span>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                        st.info(f"Hola {st.session_state.nombre_completo}, aquí verás quién entra al sistema.")
+                        # Aquí luego meteremos el log de usuarios que quieres
 
         
         elif st.session_state.menu_main == "SEGUIMIENTO":
