@@ -34,18 +34,25 @@ import google.generativeai as genai
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
 
 
-def registrar_acceso(usuario):    
+def registrar_acceso(usuario):
+    # Usamos tus imports globales: os, pandas (pd), datetime y pytz
     archivo_log = "log_accesos.csv"
     
-    # Configuramos la zona horaria de CDMX/Guadalajara
+    # 1. Configuramos la zona horaria de Guadalajara
     zona_horaria = pytz.timezone('America/Mexico_City')
-    ahora = datetime.datetime.now(zona_horaria).strftime("%Y-%m-%d %I:%M %p") # Formato 12h con AM/PM
     
+    # 2. Obtenemos la hora exacta (6:54 PM ahorita)
+    ahora = datetime.now(zona_horaria).strftime("%Y-%m-%d %I:%M %p")
+    
+    # 3. Creamos el DataFrame para el registro
     nuevo_registro = pd.DataFrame([[usuario, ahora]], columns=["Usuario", "Fecha/Hora"])
     
+    # 4. Guardado Forzoso: Si falla aquí, la app se detiene (SIN TRY/EXCEPT)
     if not os.path.isfile(archivo_log):
+        # Crea el archivo por primera vez
         nuevo_registro.to_csv(archivo_log, index=False)
     else:
+        # Añade al archivo existente
         nuevo_registro.to_csv(archivo_log, mode='a', header=False, index=False)
 
 
