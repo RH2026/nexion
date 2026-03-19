@@ -2761,17 +2761,42 @@ else:
                 """, unsafe_allow_html=True)
 
                 # ── 4. SEMÁFORO DE ALERTAS ──
-                st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; color:{vars_css['sub']}; text-align:center; margin-top:30px;'>S E M Á F O R O DE ALERTAS</p>", unsafe_allow_html=True)
+                # ── 4. SEMÁFORO DE ALERTAS (ESTILO SLIM ELITE) ──
+                st.markdown(f"<div style='margin-top:35px; margin-bottom:15px; text-align:center;'><span style='color:{vars_css['sub']}; font-size:10px; font-weight:800; letter-spacing:4px; opacity:0.6; text-transform:uppercase;'>S E M Á F O R O &nbsp; D E &nbsp; A L E R T A S</span></div>", unsafe_allow_html=True)
                 
+                # Lógica de datos (se mantiene igual, no rompemos nada amor)
                 a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
                 a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
                 a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5])
                 
                 c_a1, c_a2, c_a3 = st.columns(3)
-                c_a1.markdown(f"<div class='card-alerta' style='border-top: 4px solid #fde047;'><div style='color:#9CA3AF; font-size:10px;'>LEVE (1D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a1_v}</div></div>", unsafe_allow_html=True)
-                c_a2.markdown(f"<div class='card-alerta' style='border-top: 4px solid #f97316;'><div style='color:#9CA3AF; font-size:10px;'>MODERADO (2-4D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a2_v}</div></div>", unsafe_allow_html=True)
-                c_a3.markdown(f"<div class='card-alerta' style='border-top: 4px solid #ff4b4b;'><div style='color:#9CA3AF; font-size:10px;'>CRÍTICO (+5D)</div><div style='color:white; font-size:28px; font-weight:bold;'>{a5_v}</div></div>", unsafe_allow_html=True)                     
                 
+                # Estilo base para alertas (Glass con borde lateral grueso)
+                style_alerta = "background:rgba(30,39,46,0.5); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px 20px; border-left:5px solid; display:flex; flex-direction:column; justify-content:center; height:65px;"
+                
+                # Alerta LEVE (Amarillo Neón)
+                c_a1.markdown(f"""
+                    <div style='{style_alerta} border-left-color:#FDE047;'>
+                        <div style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px;'>BAJO RIESGO (1D)</div>
+                        <div style='color:white; font-size:22px; font-weight:800; line-height:1;'>{a1_v} <span style='font-size:10px; color:#FDE047; opacity:0.7;'>PEDIDOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Alerta MODERADO (Naranja Eléctrico)
+                c_a2.markdown(f"""
+                    <div style='{style_alerta} border-left-color:#F97316;'>
+                        <div style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px;'>DEMORA (2-4D)</div>
+                        <div style='color:white; font-size:22px; font-weight:800; line-height:1;'>{a2_v} <span style='font-size:10px; color:#F97316; opacity:0.7;'>PEDIDOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Alerta CRÍTICO (Rojo Intenso)
+                c_a3.markdown(f"""
+                    <div style='{style_alerta} border-left-color:#FF4B4B;'>
+                        <div style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px;'>CRÍTICO (+5D)</div>
+                        <div style='color:white; font-size:22px; font-weight:800; line-height:1;'>{a5_v} <span style='font-size:10px; color:#FF4B4B; opacity:0.7;'>PEDIDOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True) 
                 # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM) ---
                 # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM - VERSIÓN FINAL) ---
                 st.divider()
