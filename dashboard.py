@@ -2721,52 +2721,45 @@ else:
                 
                 # ── 3. RENDERIZADO TARJETAS (4 COLUMNAS) ──
                 st.markdown("<br>", unsafe_allow_html=True)
+              
                 m1, m2, m3, m4 = st.columns(4)
-
-                # Tarjeta 1
+                
+                # Estilo base para todas las tarjetas (Slim y Glass)
+                style_base = "background:rgba(30,39,46,0.7); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:15px 20px; border-left:4px solid; display:flex; flex-direction:column; justify-content:center; height:70px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);"
+                
+                # Tarjeta 1: Total
                 m1.markdown(f"""
-                    <div class='kpi-slim-card' style='border-left-color: #94a3b8;'>
-                        <span class='slim-label'>TOTAL {mes_sel}</span>
-                        <div class='slim-value' style='color: white;'>{total_p}</div>
+                    <div style='{style_base} border-left-color:#94a3b8;'>
+                        <div style='font-size:9px; font-weight:800; color:rgba(255,255,255,0.5); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;'>TOTAL {mes_sel}</div>
+                        <div style='font-size:24px; font-weight:800; color:white; line-height:1;'>{total_p}</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Tarjeta 2
+                # Tarjeta 2: En Tránsito
                 m2.markdown(f"""
-                    <div class='kpi-slim-card' style='border-left-color: #38bdf8;'>
-                        <span class='slim-label'>EN TRÁNSITO</span>
-                        <div class='slim-value' style='color: #38bdf8;'>{pend_p}</div>
+                    <div style='{style_base} border-left-color:#38bdf8;'>
+                        <div style='font-size:9px; font-weight:800; color:rgba(255,255,255,0.5); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;'>EN TRÁNSITO</div>
+                        <div style='font-size:24px; font-weight:800; color:#38bdf8; line-height:1;'>{pend_p}</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Tarjeta 3
+                # Tarjeta 3: Próximo Mes
                 m3.markdown(f"""
-                    <div class='kpi-slim-card' style='border-left-color: #a855f7;'>
-                        <span class='slim-label'>PRÓXIMO MES</span>
-                        <div class='slim-value' style='color: #a855f7;'>{conteo_proximo}</div>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                # Tarjeta 4
-                color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
-                m4.markdown(f"""
-                    <div class='kpi-slim-card' style='border-left-color: {color_ef};'>
-                        <span class='slim-label'>EFICIENCIA</span>
-                        <div class='slim-value' style='color: {color_ef};'>{eficiencia:.1f}%</div>
+                    <div style='{style_base} border-left-color:#a855f7;'>
+                        <div style='font-size:9px; font-weight:800; color:rgba(255,255,255,0.5); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;'>PRÓXIMO MES</div>
+                        <div style='font-size:24px; font-weight:800; color:#a855f7; line-height:1;'>{conteo_proximo}</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
                 # Tarjeta 4: Eficiencia
                 color_ef = "#00FFAA" if eficiencia >= 95 else "#f97316"
-                glow_ef = f"text-shadow: 0 0 15px {color_ef}44;"
-                
                 m4.markdown(f"""
-                    <div class='kpi-card-elite' style='border-top: 3px solid {color_ef};'>
-                        <span class='kpi-tag'>EFICIENCIA GLOBAL</span>
-                        <div class='kpi-main-val' style='color: {color_ef}; font-size: 32px; font-weight: 800; {glow_ef}'>{eficiencia:.1f}%</div>
-                        <div style='font-size: 10px; color: {color_ef}88; margin-top: 5px; font-weight: 600;'>GOAL: 95.0%</div>
+                    <div style='{style_base} border-left-color:{color_ef};'>
+                        <div style='font-size:9px; font-weight:800; color:rgba(255,255,255,0.5); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;'>EFICIENCIA</div>
+                        <div style='font-size:24px; font-weight:800; color:{color_ef}; line-height:1;'>{eficiencia:.1f}%</div>
                     </div>
                 """, unsafe_allow_html=True)
+
                 # ── 4. SEMÁFORO DE ALERTAS ──
                 st.markdown(f"<p style='color:#94a3b8; font-size:11px; font-weight:bold; letter-spacing:2px; color:{vars_css['sub']}; text-align:center; margin-top:30px;'>S E M Á F O R O DE ALERTAS</p>", unsafe_allow_html=True)
                 
