@@ -175,19 +175,28 @@ st.markdown(f"""
     line-height: 1;
 }}
 
-/* --- ESTILOS MAESTROS DE NEXION (SECCIÓN SEMÁFORO ALERTAS) --- */
-    
-.card-semaforo {{
+/* --- ESTILOS MAESTROS DE NEXION (SECCIÓN SEMÁFORO ALERTAS) --- */   
+/* Estilo base oscuro para alertas (Negro profundo con glass effect) */
+.base-card-alerta {{
+    background: rgba(10, 15, 20, 0.7); /* Negro Obsidiana ultra oscuro y glass */
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Borde de luz súper fino */
+    border-radius: 12px;
+    padding: 15px 20px;
+    border-left: 5px solid; /* Mantenemos el borde lateral de color */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 70px; /* Misma altura que tus KPIs de arriba para simetría */
     transition: all 0.3s ease !important;
     cursor: pointer;
 }}
 
-.card-semaforo:hover {{
-    transform: translateY(-5px); 
-    background: rgba(0, 212, 255, 0.15) !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    filter: brightness(1.1);
+/* El hover elegante (Solo flota y brilla un poco) */
+.base-card-alerta:hover {{
+    transform: translateY(-5px);
+    background: rgba(10, 15, 20, 0.9) !important;
+    filter: brightness(1.15);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5); /* Sombra de profundidad */
 }}
 
 /* 1. Limpieza de Interfaz */
@@ -2776,40 +2785,37 @@ else:
                 """, unsafe_allow_html=True)
 
                 # ── 4. SEMÁFORO DE ALERTAS ──
-                # ── 4. SEMÁFORO DE ALERTAS (ESTILO SLIM ELITE) ──
-                st.markdown(f"<div style='margin-top:35px; margin-bottom:15px; text-align:center;'><span style='color:{vars_css['sub']}; font-size:10px; font-weight:800; letter-spacing:4px; opacity:0.6; text-transform:uppercase;'>S E M Á F O R O &nbsp; D E &nbsp; A L E R T A S</span></div>", unsafe_allow_html=True)
+                # ── 4. SEMÁFORO DE ALERTAS ──
+                st.markdown(f"<div style='margin-top:40px; margin-bottom:15px; text-align:center;'><span style='color:{vars_css['sub']}; font-size:10px; font-weight:800; letter-spacing:4px; opacity:0.6; text-transform:uppercase;'>S E M Á F O R O &nbsp; D E &nbsp; A L E R T A S</span></div>", unsafe_allow_html=True)
                 
-                # Lógica de datos (se mantiene igual, no rompemos nada amor)
+                # Lógica de datos (se mantiene igual amor)
                 a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
                 a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
                 a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5])
                 
                 c_a1, c_a2, c_a3 = st.columns(3)
                 
-                # Estilo base para alertas (Glass con borde lateral grueso)
-                style_alerta = "background:rgba(30,39,46,0.5); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px 20px; border-left:5px solid; display:flex; flex-direction:column; justify-content:center; height:65px;"
-                
                 # Alerta LEVE (Amarillo Neón)
                 c_a1.markdown(f"""
-                    <div class='card-semaforo' style='{style_alerta} border-left-color:#FDE047;'>
-                        <div style='color:#FFFFFF; font-size:12px; font-weight:800; letter-spacing:1px;'>BAJO RIESGO (1D)</div>
-                        <div style='color:white; font-size:28px; font-weight:800; line-height:1;'>{a1_v} <span style='font-size:10px; color:#FDE047; opacity:0.7;'>PEDIDOS</span></div>
+                    <div class='base-card-alerta' style='border-left-color: #FDE047;'>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 8px; font-weight: 800; letter-spacing: 1px;'>BAJO RIESGO (1D)</div>
+                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1;'>{a1_v} <span style='font-size: 10px; color: #FDE047; opacity: 0.7;'>PEDIDOS</span></div>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Alerta MODERADO (Naranja Eléctrico)
+                # Alerta MODERADO (Naranja Eléctrico) - ¡¡ESTA ES LA QUE ARREGLAMOS AMOR!!
                 c_a2.markdown(f"""
-                    <div class='card-semaforo' style='{style_alerta} border-left-color:#F97316;'>
-                        <div style='color:#FFFFFF; font-size:12px; font-weight:800; letter-spacing:1px;'>DEMORA (2-4D)</div>
-                        <div style='color:white; font-size:28px; font-weight:800; line-height:1;'>{a2_v} <span style='font-size:10px; color:#F97316; opacity:0.7;'>PEDIDOS</span></div>
+                    <div class='base-card-alerta' style='border-left-color: #F97316;'>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 8px; font-weight: 800; letter-spacing: 1px;'>DEMORA (2-4D)</div>
+                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1;'>{a2_v} <span style='font-size: 10px; color: #F97316; opacity: 0.7;'>PEDIDOS</span></div>
                     </div>
                 """, unsafe_allow_html=True)
                 
                 # Alerta CRÍTICO (Rojo Intenso)
                 c_a3.markdown(f"""
-                    <div class='card-semaforo' style='{style_alerta} border-left-color:#FF4B4B;'>
-                        <div style='color:#FFFFFF; font-size:12px; font-weight:800; letter-spacing:1px;'>CRÍTICO (+5D)</div>
-                        <div style='color:white; font-size:28px; font-weight:800; line-height:1;'>{a5_v} <span style='font-size:10px; color:#FF4B4B; opacity:0.7;'>PEDIDOS</span></div>
+                    <div class='base-card-alerta' style='border-left-color: #FF4B4B;'>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 8px; font-weight: 800; letter-spacing: 1px;'>CRÍTICO (+5D)</div>
+                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1;'>{a5_v} <span style='font-size: 10px; color: #FF4B4B; opacity: 0.7;'>PEDIDOS</span></div>
                     </div>
                 """, unsafe_allow_html=True) 
                 
