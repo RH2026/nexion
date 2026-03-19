@@ -1246,17 +1246,12 @@ else:
             
             if df_raw is not None:
                 with st.expander("Listado de pedidos completo", expanded=False):
-                                                                
                     # --- BÚSQUEDA MAESTRA ---
-                    #1. Definimos la búsqueda
                     busqueda_manual = st.text_input("", key="bus_maestra_log", placeholder="🔍 Buscar...").strip()
                     
-                    # 2. ¡AQUÍ ESTÁ EL TRUCO! 
-                    # Creamos df_final por defecto con TODO el contenido
                     df_final = df_raw.copy() 
                     
                     if busqueda_manual:
-                        # Si el usuario escribe algo, entonces SÍ filtramos
                         mask = (
                             df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda_manual, case=False, na=False) |
                             df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda_manual, case=False, na=False) |
@@ -1264,37 +1259,53 @@ else:
                         )
                         df_final = df_raw[mask].copy()
                     
-                        # 3. Ahora esta línea YA NO VA A TRONAR porque df_final siempre existe
-                        st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
                     
-                        if not df_final.empty:
-                            # Preparación de datos para el Timeline
-                            envio = df_final.iloc[0]
-                            f_envio = str(envio.get("FECHA DE ENVÍO", "--"))
-                            f_promesa = str(envio.get("PROMESA DE ENTREGA", "--"))
-                            entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
-                            f_entrega_val = str(envio["FECHA DE ENTREGA REAL"]) if entregado_real else "PENDIENTE"
-                            tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
-                            n_guia = str(envio["NÚMERO DE GUÍA"]) if tiene_guia else "GENERANDO GUÍA..."
-                            
-                            # Colores dinámicos
-                            status_color = "#00FFAA" if entregado_real else "#38bdf8"
-                            status_text = "ENTREGADO" if entregado_real else "EN TRÁNSITO"
-                            v_border = "rgba(255,255,255,0.1)"
-                            v_sub = "rgba(255,255,255,0.6)"
-                            
-                            color_envio = "#38bdf8"
-                            color_guia = "#38bdf8" if tiene_guia else v_border
-                            color_promesa = "#a855f7" if tiene_guia else v_border
-                            linea_1_2 = color_guia
-                            linea_2_3 = color_promesa
-                            linea_3_4 = status_color if entregado_real else v_border
-                            color_entrega = status_color if entregado_real else v_border
-                    
-                            # 2. RENDER DEL TIMELINE EN UNA SOLA LÍNEA (Sin errores de f-string)
-                            timeline_html = f'''<div style="background:#263238; padding:20px; border-radius:12px; border:1px solid {v_border}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;"><h2 style="margin:0; color:white; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="font-size:10px; color:white; font-weight:600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">PROMESA</div><div style="font-size:10px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; z-index:2; box-shadow:0 0 12px {color_entrega if entregado_real else '#00000000'}"></div><div style="font-size:9px; color:{v_sub}; margin-top:8px; font-weight:800; letter-spacing:1px;">ENTREGA</div><div style="font-size:10px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; margin-top:15px;"><div style="text-align:left;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:12px; font-weight:700;">{envio["FLETERA"]}</div></div><div style="text-align:center;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:12px; font-weight:700;">{n_guia}</div></div><div style="text-align:right;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:12px; font-weight:700;">{envio["DESTINO"]}</div></div></div></div>'''
-                            
-                            st.markdown(timeline_html, unsafe_allow_html=True)
+                    if not df_final.empty:
+                        # --- PREPARACIÓN DE DATOS ---
+                        envio = df_final.iloc[0]
+                        f_envio = envio.get("FECHA DE ENVÍO", "N/A")
+                        f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
+                        entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
+                        f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
+                        
+                        trigger_val = str(envio.get("TRIGGER", "")).strip()
+                        tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
+                        
+                        if tiene_guia:
+                            n_guia = envio["NÚMERO DE GUÍA"]
+                        elif trigger_val == "Enviada":
+                            n_guia = "GENERANDO GUÍA..."
+                        else:
+                            n_guia = "EN ESPERA DE SURTIDO"
+                
+                        # --- LÓGICA DE FECHAS (ANTICRASH) ---
+                        f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
+                        if pd.notnull(f_promesa_dt): f_promesa_dt = f_promesa_dt.normalize()
+                        hoy = pd.Timestamp(datetime.now()).normalize()
+                        
+                        v_border = "rgba(255,255,255,0.1)"
+                        v_sub = "rgba(255,255,255,0.6)"
+                
+                        # --- LÓGICA DE ESTATUS Y COLORES ---
+                        if not tiene_guia:
+                            status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
+                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", v_border, v_border, v_border
+                            linea_1_2, linea_2_3, linea_3_4 = v_border, v_border, v_border
+                        elif not entregado_real:
+                            status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
+                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", v_border
+                            linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", v_border
+                        else:
+                            f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors='coerce')
+                            if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
+                            status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", status_color
+                            linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", status_color
+                
+                        # --- RENDERIZADO COMPACTO ---
+                        t_html = f'<div style="background:#263238; padding:20px; border-radius:12px; border:1px solid {v_border}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;"><h2 style="margin:0; color:white; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="font-size:10px; color:white; font-weight:600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">PROMESA</div><div style="font-size:10px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; z-index:2; box-shadow:0 0 12px {color_entrega if entregado_real else "#00000000"}"></div><div style="font-size:9px; color:{v_sub}; margin-top:8px; font-weight:800; letter-spacing:1px;">ENTREGA</div><div style="font-size:10px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; margin-top:15px;"><div style="text-align:left;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:12px; font-weight:700;">{envio["FLETERA"]}</div></div><div style="text-align:center;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:12px; font-weight:700;">{n_guia}</div></div><div style="text-align:right;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:12px; font-weight:700;">{envio["DESTINO"]}</div></div></div></div>'
+                        st.markdown(t_html, unsafe_allow_html=True)
                         
                     # --- RENDER DEL LISTADO CHINGÓN ---
                     st.markdown(f"<p style='color:#00FFAA; font-size:11px; italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
