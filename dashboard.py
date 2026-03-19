@@ -175,6 +175,21 @@ st.markdown(f"""
     line-height: 1;
 }}
 
+/* --- ESTILOS MAESTROS DE NEXION (SECCIÓN SEMÁFORO ALERTAS) --- */
+    
+    .card-semaforo {{
+        transition: all 0.3s ease !important;
+        cursor: pointer;
+    }}
+    
+    .card-semaforo:hover {{
+        transform: translateY(-5px); 
+        background: rgba(30, 39, 46, 0.9) !important;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        filter: brightness(1.1);
+    }}
+
 /* 1. Limpieza de Interfaz */
 header, footer, [data-testid="stHeader"] {{
     visibility: hidden;
@@ -2776,7 +2791,7 @@ else:
                 
                 # Alerta LEVE (Amarillo Neón)
                 c_a1.markdown(f"""
-                    <div style='{style_alerta} border-left-color:#FDE047;'>
+                    <div class='card-semaforo' style='{style_alerta} border-left-color:#FDE047;'>
                         <div style='color:#FFFFFF; font-size:12px; font-weight:800; letter-spacing:1px;'>BAJO RIESGO (1D)</div>
                         <div style='color:white; font-size:28px; font-weight:800; line-height:1;'>{a1_v} <span style='font-size:10px; color:#FDE047; opacity:0.7;'>PEDIDOS</span></div>
                     </div>
@@ -2784,7 +2799,7 @@ else:
                 
                 # Alerta MODERADO (Naranja Eléctrico)
                 c_a2.markdown(f"""
-                    <div style='{style_alerta} border-left-color:#F97316;'>
+                    <div class='card-semaforo' style='{style_alerta} border-left-color:#F97316;'>
                         <div style='color:#FFFFFF; font-size:12px; font-weight:800; letter-spacing:1px;'>DEMORA (2-4D)</div>
                         <div style='color:white; font-size:28px; font-weight:800; line-height:1;'>{a2_v} <span style='font-size:10px; color:#F97316; opacity:0.7;'>PEDIDOS</span></div>
                     </div>
@@ -2792,11 +2807,12 @@ else:
                 
                 # Alerta CRÍTICO (Rojo Intenso)
                 c_a3.markdown(f"""
-                    <div style='{style_alerta} border-left-color:#FF4B4B;'>
+                    <div class='card-semaforo' style='{style_alerta} border-left-color:#FF4B4B;'>
                         <div style='color:#FFFFFF; font-size:12px; font-weight:800; letter-spacing:1px;'>CRÍTICO (+5D)</div>
                         <div style='color:white; font-size:28px; font-weight:800; line-height:1;'>{a5_v} <span style='font-size:10px; color:#FF4B4B; opacity:0.7;'>PEDIDOS</span></div>
                     </div>
                 """, unsafe_allow_html=True) 
+                
                 # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM) ---
                 # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM - VERSIÓN FINAL) ---
                 st.divider()
