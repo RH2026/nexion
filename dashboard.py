@@ -2777,8 +2777,8 @@ else:
                 # Alerta LEVE (Amarillo Neón)
                 c_a1.markdown(f"""
                     <div style='{style_alerta} border-left-color:#FDE047;'>
-                        <div style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px;'>BAJO RIESGO (1D)</div>
-                        <div style='color:white; font-size:22px; font-weight:800; line-height:1;'>{a1_v} <span style='font-size:10px; color:#FDE047; opacity:0.7;'>PEDIDOS</span></div>
+                        <div style='color:rgba(255,255,255,0.4); font-size:12px; font-weight:800; letter-spacing:1px;'>BAJO RIESGO (1D)</div>
+                        <div style='color:white; font-size:28px; font-weight:800; line-height:1;'>{a1_v} <span style='font-size:10px; color:#FDE047; opacity:0.7;'>PEDIDOS</span></div>
                     </div>
                 """, unsafe_allow_html=True)
                 
