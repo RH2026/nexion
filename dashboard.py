@@ -755,29 +755,28 @@ def login_screen():
 # ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
 
 # 1. ¿Falta mostrar el Splash?
+# Busca tu parte del Splash y cámbiala por esto:
 if not st.session_state.splash_completado:
-    # Creamos el contenedor vacío una sola vez
     p = st.empty()
     
-    mensajes = ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]
-    
+    # MENSAJES PERSONALIZADOS
+    if st.session_state.get("usuario_activo") == "Rigoberto":
+        mensajes = ["INITIALIZING MASTER PROTOCOLS...", "BYPASSING STANDARD RESTRICTIONS", "WELCOME COMMANDER RIGOBERTO", "SYSTEM FULLY UNLOCKED"]
+        spinner_color = "#FF4B4B" # Un rojo intenso para ti
+    else:
+        mensajes = ["ESTABLISHING SECURE ACCESS", "PARSING LOGISTICS DATA", "SYSTEM READY"]
+        spinner_color = vars_css['border']
+
     for m in mensajes:
-        # IMPORTANTE: El 'with p.container()' debe estar DENTRO del for
-        # Esto limpia el contenido anterior y pone el nuevo
         with p.container():
             st.markdown(f"""
             <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <div style="width:80px;height:80px;border:2px solid {vars_css['border']}; border-top:2px solid {vars_css['text']};border-radius:50%;animation:spin 1s linear infinite;"></div>
-                <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:{vars_css['text']};">{m}</p>
+                <div style="width:80px;height:80px;border:2px solid {spinner_color}33; border-top:2px solid {spinner_color};border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:{spinner_color};text-transform:uppercase;">{m}</p>
             </div>
-            <style>
-                @keyframes spin {{
-                    to {{ transform: rotate(360deg); }}
-                }}
-            </style>
+            <style>@keyframes spin {{ to {{ transform: rotate(360deg); }} }}</style>
             """, unsafe_allow_html=True)
-            # Aumentamos un pelín el tiempo para que el ojo humano alcance a leer
-            time.sleep(0.6) 
+            time.sleep(0.7)
             
     # Al salir del bucle, limpiamos el espacio por completo
     p.empty()
