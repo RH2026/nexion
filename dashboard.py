@@ -6564,6 +6564,7 @@ else:
                 st.toast("Nexion Core: Active | Nodes: Online", icon="🌐")
                 
                 # ── ESTILO VISUAL PRO "SILICON VALLEY EDITION" (CSS) ──
+                # Limpiado para NO interferir con el CSS Maestro de botones
                 st.markdown("""
                     <style>
                     /* Estilo del Contenedor Principal */
@@ -6603,16 +6604,7 @@ else:
                         color: #F8FAFC;
                     }
                 
-                    /* Botón Primary Estilo Silicon Valley (Sin Hovers para no romper tu CSS maestro) */
-                    div.stButton > button[kind="primary"] {
-                        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
-                        border: none !important;
-                        padding: 10px 24px !important;
-                        font-weight: 700 !important;
-                        letter-spacing: 1px !important;
-                        border-radius: 8px !important;
-                        color: white !important;
-                    }
+                    /* ELIMINADO: Estilo de botones para dejar que el CSS Maestro mande */
                     </style>
                 """, unsafe_allow_html=True)
                 
@@ -6664,6 +6656,7 @@ else:
                             hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
                             commit_msg = st.text_input("Sincronization Log Message", value=f"CORE_UPDATE // {hora_actual_gdl}")
                 
+                            # Botón tipo primary pero sin CSS forzado, usará tu CSS Maestro
                             if st.button("EXECUTE SINCRONIZATION", type="primary", use_container_width=True, icon=":material/cloud_sync:"):
                                 with st.status("Establishing GitHub Handshake...", expanded=True) as status:
                                     try:
@@ -6687,7 +6680,7 @@ else:
                                     except Exception as e:
                                         status.update(label=f"Uplink Failed: {str(e)}", state="error")
                 
-                # ── LÓGICA DE HISTORIAL DE ACTIVIDAD (REPARADA) ──
+                # ── LÓGICA DE HISTORIAL DE ACTIVIDAD ──
                 st.markdown("<br>", unsafe_allow_html=True)
                 with st.expander(":material/terminal: System Audit Logs", expanded=False):
                     if TOKEN:
@@ -6695,18 +6688,13 @@ else:
                             from github import Github
                             g = Github(TOKEN)
                             repo = g.get_repo(REPO_NAME)
-                            
-                            # Obtenemos los últimos 5 commits del archivo específico
                             commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
                             
                             for i, commit in enumerate(commits):
-                                if i >= 5: break # Solo mostramos los últimos 5
-                                
-                                # Convertimos fecha UTC a Guadalajara
+                                if i >= 5: break 
                                 fecha_utc = commit.commit.author.date.replace(tzinfo=pytz.utc)
                                 fecha_local = fecha_utc.astimezone(tz_gdl)
                                 
-                                # Renderizado estilo Terminal
                                 col_h1, col_h2 = st.columns([1, 3])
                                 with col_h1:
                                     st.markdown(f"**{fecha_local.strftime('%H:%M')}**")
