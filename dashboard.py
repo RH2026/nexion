@@ -3325,21 +3325,26 @@ else:
                 
                 with st.expander("➕ Registrar o Editar Actividad / Incidencia", expanded=False):
     
-                    # --- 1. SECCIÓN DE BÚSQUEDA (FILA SUPERIOR) --
+                    # --- 1. SECCIÓN DE BÚSQUEDA (FILA SUPERIOR) ---
+                    st.markdown("<div class='search-container-pro' style='background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
                     c1, c2, c3 = st.columns([2, 1, 1])
                     
                     with c1:
                         n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Escribe pedido para buscar en Matriz...").strip().upper()
                     
+                    # Lógica para el Folio sugerido (Automatico)
+                    sugerencia_folio = f"NEX-{len(st.session_state.df_tareas)+1:03d}"
+                    
                     with c2:
-                        # Aquí escribes el folio si quieres EDITAR uno existente
-                        t_folio_input = st.text_input("Buscar Folio ID", placeholder="Ej: NEX-001").strip().upper()
+                        # Ahora el valor por defecto es la sugerencia automática
+                        t_folio_input = st.text_input("Folio ID (Buscar o Nuevo)", value=sugerencia_folio).strip().upper()
                     
                     # --- LÓGICA DE DETECCIÓN DE EDICIÓN ---
                     tarea_existente = None
+                    mask = None # Inicializamos la mascara
                     if t_folio_input and not st.session_state.df_tareas.empty:
-                        # Buscamos si el folio existe en la base de datos de tareas
-                        mask = st.session_state.df_tareas['TAREA'].str.contains(f"\\[{t_folio_input}\\]", na=False)
+                        # Buscamos el folio exacto dentro de los corchetes en la columna TAREA
+                        mask = st.session_state.df_tareas['TAREA'].str.contains(f"\\b{t_folio_input}\\b", na=False)
                         if mask.any():
                             tarea_existente = st.session_state.df_tareas[mask].iloc[0]
                             st.info(f"✨ Modo Edición: Cargando datos del Folio {t_folio_input}")
@@ -3352,34 +3357,36 @@ else:
                 
                     # --- LÓGICA DE AUTO-RELLENO POR PEDIDO (MATRIZ GLOBAL) ---
                     info_matriz = {"desc": ""}
-                    if n_pedido and 'df_global' in locals() and df_global is not None:
+                    if n_pedido and df_global is not None:
                         res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
                         if not res.empty:
                             fila_m = res.iloc[0]
-                            info_matriz["desc"] = f"DOC: {n_pedido} | GUIA: {fila_m.get('NÚMERO DE GUÍA','N/A')} | CLIENTE: {fila_m.get('NOMBRE DEL CLIENTE','N/A')}"
+                            # --- AQUÍ YA AGREGUÉ EL DESTINO AMOR ---
+                            guia = fila_m.get('NÚMERO DE GUÍA','N/A')
+                            cliente = fila_m.get('NOMBRE DEL CLIENTE','N/A')
+                            destino = fila_m.get('DESTINO','N/A')
+                            info_matriz["desc"] = f"DOC: {n_pedido} | GUIA: {guia} | CLIENTE: {cliente} | DESTINO: {destino}"
                         else:
                             st.error("❌ Pedido no localizado. Pero puedes escribir la tarea manualmente abajo.")
                 
                     # --- 2. FORMULARIO PRINCIPAL DE REGISTRO ---
                     with st.form("form_nexion_pro_edition", clear_on_submit=True):
                         
-                        # FILA 2: DESCRIPCIÓN Y NOTAS
                         f2_c1, f2_c2 = st.columns([1, 1])
                         with f2_c1:
-                            # Prioridad de contenido: 1. Edición, 2. Búsqueda Pedido, 3. Vacío para manual
                             val_desc = ""
                             if tarea_existente is not None:
+                                # Si editamos, limpiamos el folio del texto para que no se duplique
                                 val_desc = tarea_existente['TAREA'].split("] ", 1)[-1]
                             elif info_matriz["desc"]:
                                 val_desc = info_matriz["desc"]
                                 
-                            t_desc = st.text_input("Descripción de la Tarea / Pedido", value=val_desc, placeholder="Escribe aquí la actividad...")
+                            t_desc = st.text_input("Descripción de la Tarea / Pedido", value=val_desc)
                             
                         with f2_c2:
                             val_inc = tarea_existente['ULTIMO ACCION'] if tarea_existente is not None else ""
-                            t_incidencia = st.text_input("Nota Adicional / Última Acción", value=val_inc, placeholder="¿Qué se hizo o qué falta?")
+                            t_incidencia = st.text_input("Nota Adicional / Última Acción", value=val_inc)
                 
-                        # FILA 3: CATEGORÍA Y FECHAS
                         f3_c1, f3_c2, f3_c3 = st.columns(3)
                         with f3_c1:
                             val_grupo = tarea_existente['GRUPO'] if tarea_existente is not None else "ENTREGAS PENDIENTES"
@@ -3391,50 +3398,41 @@ else:
                             val_fin = tarea_existente['FECHA_FIN'] if tarea_existente is not None else (obtener_fecha_mexico() + timedelta(days=1))
                             t_fin = st.date_input("Fecha Compromiso", value=val_fin)
                 
-                        # FILA 4: AVANCE (SLIDER)
-                        st.markdown("<p style='font-size:12px; color:#94a3b8; margin-bottom:-10px;'>PROGRESO DE LA ACTIVIDAD</p>", unsafe_allow_html=True)
+                        st.markdown("<p style='font-size:12px; color:#94a3b8; margin-bottom:-10px;'>PROGRESO</p>", unsafe_allow_html=True)
                         val_av = int(tarea_existente['PROGRESO']) if tarea_existente is not None else 0
                         t_avance = st.slider("", 0, 100, val_av, step=5, format="%d%%")
                 
-                        # BOTÓN DINÁMICO
                         st.markdown("<br>", unsafe_allow_html=True)
                         texto_boton = "ACTUALIZAR FOLIO" if tarea_existente is not None else "GUARDAR ACTIVIDAD"
                         enviar = st.form_submit_button(texto_boton, use_container_width=True)
                         
                         if enviar:
                             if t_desc:
-                                # Si es nuevo, generamos folio. Si es edición, mantenemos el que buscaste.
-                                folio_final = t_folio_input if tarea_existente is not None else f"NEX-{len(st.session_state.df_tareas)+1:03d}"
+                                # Usamos el folio que esté en el input (el automático o el que buscaste)
+                                folio_final = t_folio_input 
                                 
                                 nueva_data = {
                                     "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO'),
-                                    "FECHA": t_ini, 
-                                    "FECHA_FIN": t_fin, 
-                                    "IMPORTANCIA": t_prior,
+                                    "FECHA": t_ini, "FECHA_FIN": t_fin, "IMPORTANCIA": t_prior,
                                     "TAREA": f"[{folio_final}] {t_desc.upper()}",
                                     "ULTIMO ACCION": t_incidencia.upper() if t_incidencia else "SIN NOVEDAD",
-                                    "PROGRESO": t_avance, 
-                                    "DEPENDENCIAS": "",
-                                    "TIPO": "Tarea", 
-                                    "GRUPO": t_grupo.upper()
+                                    "PROGRESO": t_avance, "DEPENDENCIAS": "",
+                                    "TIPO": "Tarea", "GRUPO": t_grupo.upper()
                                 }
                                 
-                                # --- LÓGICA DE GUARDADO ---
-                                if tarea_existente is not None:
-                                    # Quitamos la fila vieja para reemplazarla
+                                if tarea_existente is not None and mask is not None:
                                     df_temp = st.session_state.df_tareas[~mask]
                                     df_final = pd.concat([df_temp, pd.DataFrame([nueva_data])], ignore_index=True)
                                 else:
-                                    # Simplemente agregamos nueva
                                     df_final = pd.concat([st.session_state.df_tareas, pd.DataFrame([nueva_data])], ignore_index=True)
                                 
                                 if guardar_en_github(df_final):
                                     st.session_state.df_tareas = df_final
-                                    st.success(f"✅ ¡Folio {folio_final} procesado correctamente!")
+                                    st.success(f"✅ ¡Procesado correctamente!")
                                     time.sleep(1)
                                     st.rerun()
                             else:
-                                st.warning("Amor, escribe al menos una descripción para poder guardar.")
+                                st.warning("Amor, escribe al menos una descripción.")
 
                 # ── 3. VISUALIZADOR DE TAREAS ÉLITE (DISEÑO SEGMENTADO) ────────────────────────────────
                 # ── 3. VISUALIZADOR DE TAREAS ÉLITE (REDISEÑO TOTAL SEGMENTADO) ────────────────────────
