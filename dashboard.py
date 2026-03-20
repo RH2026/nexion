@@ -995,7 +995,7 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
     # B) Ponemos la imagen AMOR. Ajusta el width a 350 o lo que se vea mejor.
     # Asegúrate de que n2.png esté en el mismo directorio.
     try:
-        st.image("n2.png", width=150) 
+        st.image("n2.png", width=180) 
     except FileNotFoundError:
         # Por si acaso no encuentra la imagen, amor, que muestre un texto sutil
         st.markdown("<h1 style='text-align:center; color:white; letter-spacing:10px;'>NEXION</h1>", unsafe_allow_html=True)
