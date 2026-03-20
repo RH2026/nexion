@@ -3233,21 +3233,22 @@ else:
                 """, unsafe_allow_html=True)
 
                 
-                with st.expander("➕ Registrar actividad o incidencia", expanded=False):
+                with st.expander("➕ Registrar actividad o incidencia", expanded=True):
                     
                     # --- FILA 1: BÚSQUEDA, FOLIO Y PRIORIDAD ---
                     st.markdown("<div class='search-container-pro'>", unsafe_allow_html=True)
                     c1, c2, c3 = st.columns([2, 1, 1])
                     with c1:
-                        n_pedido = st.text_input("📦 Vincular Pedido / Factura", placeholder="Escribe y presiona Enter...").strip().upper()
+                        # Si no tienes factura, simplemente deja esto vacío, vida.
+                        n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Escribe o deja vacío para tarea libre...").strip().upper()
                     with c2:
                         t_folio = st.text_input("Folio ID", value=f"NEX-{len(st.session_state.df_tareas)+1:03d}")
                     with c3:
                         t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
                     st.markdown("</div>", unsafe_allow_html=True)
 
-                    # Lógica de búsqueda (Matriz Global)
-                    info_matriz = {}
+                    # Lógica de búsqueda mejorada
+                    info_matriz = {"desc": ""} # Empezamos vacío por defecto
                     if n_pedido and df_global is not None:
                         res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
                         if not res.empty:
@@ -3255,48 +3256,46 @@ else:
                             guia = fila_m.get('NÚMERO DE GUÍA', 'N/A')
                             cliente = fila_m.get('NOMBRE DEL CLIENTE', 'N/A')
                             destino = fila_m.get('DESTINO', 'N/A')
-                            
-                            # ACTUALIZACIÓN: Ahora incluimos el Pedido/Factura al inicio de la descripción
-                            info_matriz = {
-                                "desc": f"DOC: {n_pedido} | GUIA: {guia} | CLIENTE: {cliente} | DESTINO: {destino}"
-                            }
+                            info_matriz["desc"] = f"DOC: {n_pedido} | GUIA: {guia} | CLIENTE: {cliente} | DESTINO: {destino}"
                         else:
-                            st.error("❌ Pedido no localizado en Matriz Global.")
+                            st.error("❌ Pedido no localizado. Pero puedes escribir la tarea manualmente abajo.")
                 
                     # --- FORMULARIO PRINCIPAL ---
                     with st.form("form_nexion_final_design", clear_on_submit=True):
                         
-                        # FILA 2: LECTURA AUTOMÁTICA Y REPORTE
+                        # FILA 2: DESCRIPCIÓN Y REPORTE
                         f2_c1, f2_c2 = st.columns([1, 1])
                         with f2_c1:
-                            t_desc = st.text_input("Detalles del Pedido (Lectura Automática)", value=info_matriz.get("desc", ""))
+                            # Si info_matriz["desc"] está vacío, tú escribes lo que quieras aquí.
+                            t_desc = st.text_input("Descripción de la Tarea / Pedido", value=info_matriz.get("desc", ""))
                         with f2_c2:
-                            t_incidencia = st.text_input("Reporte de Incidencia / Última Acción", placeholder="¿Qué está pasando con este folio?")
+                            t_incidencia = st.text_input("Nota Adicional / Última Acción", placeholder="¿En qué consiste esta tarea?")
 
                         # FILA 3: CATEGORÍA Y FECHAS
                         f3_c1, f3_c2, f3_c3 = st.columns(3)
                         with f3_c1:
+                            # Aquí puedes cambiar "ENTREGAS PENDIENTES" por "ADMINISTRATIVO", "PERSONAL", etc.
                             t_grupo = st.text_input("Categoría / Grupo", value="ENTREGAS PENDIENTES")
                         with f3_c2:
                             t_ini = st.date_input("Fecha Inicio", value=obtener_fecha_mexico())
                         with f3_c3:
                             t_fin = st.date_input("Fecha Compromiso", value=obtener_fecha_mexico() + timedelta(days=1))
 
-                        # FILA 4: LÍNEA DE AVANCE ESTILIZADA
-                        st.markdown("<p style='font-size:12px; color:#94a3b8; margin-bottom:-10px;'>NIVEL DE SOLUCIÓN / AVANCE</p>", unsafe_allow_html=True)
+                        # FILA 4: AVANCE
+                        st.markdown("<p style='font-size:12px; color:#94a3b8; margin-bottom:-10px;'>PROGRESO DE LA TAREA</p>", unsafe_allow_html=True)
                         t_avance = st.slider("", 0, 100, 0, step=5, format="%d%%")
 
-                        # FILA 5: BOTÓN GRANDE
+                        # FILA 5: BOTÓN
                         st.markdown("<br>", unsafe_allow_html=True)
-                        enviar = st.form_submit_button("GUARDAR Y ACTUALIZAR", use_container_width=True)
+                        enviar = st.form_submit_button("🚀 REGISTRAR EN GANTT", use_container_width=True)
                 
                         if enviar:
-                            if t_desc and t_incidencia:
+                            if t_desc: # Ahora solo obligamos a que tenga descripción
                                 nueva_data = {
                                     "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO'),
                                     "FECHA": t_ini, "FECHA_FIN": t_fin, "IMPORTANCIA": t_prior,
-                                    "TAREA": f"[{t_folio}] {t_desc}",
-                                    "ULTIMO ACCION": t_incidencia.upper(),
+                                    "TAREA": f"[{t_folio}] {t_desc.upper()}",
+                                    "ULTIMO ACCION": t_incidencia.upper() if t_incidencia else "SIN NOVEDAD",
                                     "PROGRESO": t_avance, "DEPENDENCIAS": "",
                                     "TIPO": "Tarea", "GRUPO": t_grupo.upper()
                                 }
@@ -3304,11 +3303,11 @@ else:
                                 df_final = pd.concat([st.session_state.df_tareas, pd.DataFrame([nueva_data])], ignore_index=True)
                                 if guardar_en_github(df_final):
                                     st.session_state.df_tareas = df_final
-                                    st.success("✅ ¡Registro sincronizado con éxito!")
+                                    st.success("✅ ¡Tarea registrada con éxito!")
                                     time.sleep(1)
                                     st.rerun()
                             else:
-                                st.warning("Amor, los campos de descripción e incidencia son obligatorios.")
+                                st.warning("Amor, escribe al menos una descripción para la tarea.")
 
                 # ── 3. VISUALIZADOR DE TAREAS ÉLITE (DISEÑO SEGMENTADO) ────────────────────────────────
                 # ── 3. VISUALIZADOR DE TAREAS ÉLITE (REDISEÑO TOTAL SEGMENTADO) ────────────────────────
