@@ -5458,22 +5458,30 @@ else:
                             # --- BLOQUE DE FILTRADO POR MES ---
                             st.write("")
                             # Preparamos los meses disponibles
-                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'])
-                            df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y')
-                            meses_lista = sorted(df_actual['MES_FILTRO'].unique(), reverse=True)
+                            # 1. Convertimos con errores='coerce' para que datos basura no rompan la app
+                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], errors='coerce')
                             
+                            # 2. Creamos el filtro solo para las filas que sí tienen fecha válida
+                            # Para las que no, ponemos "S/FECHA" para que no de error el .dt.strftime
+                            df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
+                            
+                            # Obtenemos la lista de meses para el selector
+                            meses_lista = sorted([m for m in df_actual['MES_FILTRO'].unique() if m != "SIN FECHA"], reverse=True)
+                            if "SIN FECHA" in df_actual['MES_FILTRO'].values:
+                                meses_lista.append("SIN FECHA")
+                        
                             col_f1, col_f2 = st.columns([1.5, 2.5])
                             mes_sel = col_f1.selectbox(
                                 ":material/calendar_month: FILTRAR PERIODO", 
                                 ["MOSTRAR TODO"] + meses_lista
                             )
-
+                        
                             # Aplicamos el filtro al DataFrame que vamos a renderizar
                             if mes_sel != "MOSTRAR TODO":
                                 df_render = df_actual[df_actual['MES_FILTRO'] == mes_sel].copy()
                             else:
                                 df_render = df_actual.copy()
-
+                        
                             # 1. Cálculos de lógica (Sobre el DF filtrado amor)
                             t_prod = df_render["COSTO_TOTAL"].sum()
                             t_flete = df_render["COSTO_GUIA"].sum()
