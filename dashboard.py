@@ -959,8 +959,8 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
     
     with L2:
         try:
-            # Al estar solo en la columna central, se verá centrado en la pantalla
-            st.image("n2.png", use_container_width=True) 
+            # Borras 'use_container_width=True' y pones 'width=350'
+            st.image("n2.png", width=180) 
         except:
             st.markdown("<h1 style='text-align:center; color:white;'>NEXION</h1>", unsafe_allow_html=True)
     
