@@ -1009,30 +1009,103 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
     # 2. Saludo CEO Discreto
     st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
 
-    # --- CUADRÍCULA DE MÓDULOS (COMPACTA) ---
-    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    # --- ESTILOS GLOBALES ---
+    # Inyectamos el estilo para los botones pequeños y elegantes
+    st.markdown("""
+    <style>
+        div.stButton > button p {
+            font-size: 11px !important;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
+    # --- PANEL DE CONTROL MASIVO (ESTILO SUPER ADMIN) ---
     
-    with m_col1:
+    # --- FILA 1 ---
+    st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
+    fila1_col1, fila1_col2, fila1_col3, fila1_col4 = st.columns(4)
+    
+    with fila1_col1:
         st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-8 35-8 72 0 140 89.5 246T440-162Zm282-192q30-42 44-90t14-96q0-128-78.5-224T520-800v40q0 33-23.5 56.5T440-680h-80v80q0 33-23.5 56.5T280-520h-40v80h200q33 0 56.5 23.5T520-360v80h40q33 0 56.5 23.5T640-233v23q48-26 82-72Z'/></svg></div><div class='ceo-title'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
         if st.button("ACCEDER", key="btn_dash", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "DASHBOARD"; st.rerun()
+            st.session_state.menu_main = "DASHBOARD"; st.rerun()
     
-    with m_col2:
+    with fila1_col2:
+        # Icono: Camión (Seguimiento Entregas)
         st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-160q-33 0-56.5-23.5T160-240v-440q0-33 23.5-56.5T240-760h440l120 160v360q0 33-23.5 56.5T720-160H240Zm0-80h480v-330L655-680H240v440Zm240-100q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z'/></svg></div><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
         if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "SEGUIMIENTO"; st.rerun()
+            st.session_state.menu_main = "SEGUIMIENTO"; st.rerun()
     
-    with m_col3:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520Z'/></svg></div><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
+    with fila1_col3:
+        # Icono: Analytics (Reportes Ejecutivos)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M480-80q-139 0-237-98t-98-237q0-139 98-237t237-98q63 0 119 23t102 65l-58 58q-33-31-76-47t-87-16q-102 0-173.5 71.5T205-480q0 102 71.5 173.5T450-235q84 0 148.5-49.5T687-413H480v-87h300q5 21 7.5 43t2.5 42q0 139-98 237t-237 98Z'/></svg></div><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
         if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "GANTT"; st.rerun()
+            st.session_state.menu_main = "REPORTES"; st.rerun()
     
-    with m_col4:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z'/></svg></div><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
+    with fila1_col4:
+        # Icono: Admin Panel Settings (Config Hub Log)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z'/></svg></div><div class='ceo-title'>Config<br>Hub Log</div></div>", unsafe_allow_html=True)
         if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "HUB LOG"; st.session_state.menu_sub = "SMART ROUTING"; st.rerun()
-
+            st.session_state.menu_main = "HUB LOG"; st.session_state.menu_sub = "SMART ROUTING"; st.rerun()
+    
+    # --- FILA 2 (Submódulos) ---
+    st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
+    fila2_col1, fila2_col2, fila2_col3, fila2_col4 = st.columns(4)
+    
+    with fila2_col1:
+        # Icono: Notifications (Alertas)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80Z'/></svg></div><div class='ceo-title'>Alertas<br>Críticas</div></div>", unsafe_allow_html=True)
+        if st.button("REVISAR", key="btn_alert", use_container_width=True):
+            st.session_state.menu_main = "ALERTAS"; st.rerun()
+    
+    with fila2_col2:
+        # Icono: Event Note (Gantt - Planificación Operativa)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M120-120v-720h720v720H120Zm80-520h120v-120H200v120Zm200 0h360v-120H400v120Zm0 200h360v-120H400v120Zm-200 0h120v-120H200v120Zm0 200h120v-120H200v120Zm200 0h360v-120H400v120Z'/></svg></div><div class='ceo-title'>Gantt<br>Operativo</div></div>", unsafe_allow_html=True)
+        if st.button("VISUALIZAR", key="btn_gantt", use_container_width=True):
+            st.session_state.menu_main = "GANTT"; st.rerun()
+    
+    with fila2_col3:
+        # Icono: Report Problem (Quejas - Servicio al Cliente)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z'/></svg></div><div class='ceo-title'>Quejas y<br>PQR</div></div>", unsafe_allow_html=True)
+        if st.button("GESTIONAR", key="btn_quejas", use_container_width=True):
+            st.session_state.menu_main = "QUEJAS"; st.rerun()
+    
+    with fila2_col4:
+        # Icono: Inventory (Módulo APQ)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm80-80h400v-80H280v80Zm0-160h400v-80H280v80Zm0-160h400v-80H280v80Z'/></svg></div><div class='ceo-title'>Módulo<br>APQ</div></div>", unsafe_allow_html=True)
+        if st.button("ABRIR", key="btn_apq", use_container_width=True):
+            st.session_state.menu_main = "APQ"; st.rerun()
+    
+    # --- FILA 3 ---
+    st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
+    fila3_col1, fila3_col2, fila3_col3, fila3_col4 = st.columns(4)
+    
+    with fila3_col1:
+        # Icono: Percent (Porcentaje Logístico - KPIs)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M300-440q33 0 56.5-23.5T380-520q0-33-23.5-56.5T300-600q-33 0-56.5 23.5T220-520q0 33 23.5 56.5T300-440Zm360 280q33 0 56.5-23.5T740-240q0-33-23.5-56.5T660-320q-33 0-56.5 23.5T580-240q0 33 23.5 56.5T660-160ZM226-140l594-594-86-86-594 594 86 86Z'/></svg></div><div class='ceo-title'>%<br>Logístico</div></div>", unsafe_allow_html=True)
+        if st.button("ANALIZAR", key="btn_perc", use_container_width=True):
+            st.session_state.menu_main = "LOGISTICA"; st.rerun()
+    
+    with fila3_col2:
+        # Icono: Paquete con Alas (Envíos Especiales)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='m814-118-12-10 12 10Zm-21-360h-73L520-278v78h73L814-478ZM520-438v160l220-160H520Zm302-12-88-88L620-640v80h73l120 120 21-2Zm-146-24L520-138l22 22 246-178-20-20L520-322l22 22 134 134Zm3-214L620-302l12 10L794-640l-20-20ZM520-20v200H320L100-20H20v180h200l220-160H520Zm0-160H220l-120-80H20v160l100 80h300v-160H520Z'/></svg></div><div class='ceo-title'>Envíos<br>Especiales</div></div>", unsafe_allow_html=True)
+        if st.button("PROGRAMAR", key="btn_espec", use_container_width=True):
+            st.session_state.menu_main = "ENV_ESPECIALES"; st.rerun()
+    
+    with fila3_col3:
+        # Icono: Package (Envío Muestras)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M200-80q-33 0-56.5-23.5T120-160v-640q0-33 23.5-56.5T200-880h560q33 0 56.5 23.5T840-800v640q0 33-23.5 56.5T760-80H200Zm0-80h560v-640H200v640Zm80-80h160v-80H280v80Zm0-160h160v-80H280v80Zm0-160h160v-80H280v80Zm320 0h160v-80H600v80Zm0-160h160v-80H600v80Zm0 320h160v-80H600v80Z'/></svg></div><div class='ceo-title'>Envío<br>Muestras</div></div>", unsafe_allow_html=True)
+        if st.button("ENVIAR", key="btn_muest", use_container_width=True):
+            st.session_state.menu_main = "ENV_MUESTRAS"; st.rerun()
+    
+    with fila3_col4:
+        # Icono: Description (Formatos Operativos - PDF/Docs)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520Z'/></svg></div><div class='ceo-title'>Módulo<br>Formatos</div></div>", unsafe_allow_html=True)
+        if st.button("GENERAR", key="btn_format", use_container_width=True):
+            st.session_state.menu_main = "FORMATOS"; st.rerun()
+    
     # Espacio final estético
     st.markdown("<div style='margin-top:40px;'></div>", unsafe_allow_html=True)
 
