@@ -918,102 +918,80 @@ elif not st.session_state.get('autenticado', False):
     # Llamamos a tu función de login existente
     login_screen()
 
-# 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (TU PUERTA ÉLITE)
-# ── 3. PANTALLA C.E.O. 2x2 (TARJETAS CLICABLES) ───────────────────────────
+# 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (TU PUERTA ÉLITE
+# ── 3. PANTALLA C.E.O. 2x2 (COMPACTA Y FUNCIONAL) ───────────────────────────
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
 
-    # 💎 CSS DE ALTO IMPACTO (CUADROS CLICABLES)
+    # 💎 CSS AJUSTADO: Módulos más pequeños y botones integrados
     st.markdown("""
         <style>
         .ceo-welcome {
-            text-align: center; font-size: 40px; font-weight: 900; letter-spacing: 12px;
-            color: #ffffff; margin-top: 40px; text-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            text-align: center; font-size: 32px; font-weight: 900; letter-spacing: 10px;
+            color: #ffffff; margin-top: 30px; text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
         }
         
-        /* Contenedor relativo para que el botón se estire adentro */
-        .ceo-container-wrapper {
-            position: relative;
-            height: 280px;
-            margin-bottom: 25px;
-        }
-
-        .ceo-card-new {
-            background: rgba(30, 39, 46, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.4s ease;
-        }
-
-        /* El botón invisible que cubre TODA la tarjeta */
+        /* Ajuste del botón de Streamlit para que PAREZCA una tarjeta */
         .stButton > button {
-            position: absolute !important;
-            top: 0; left: 0; width: 100% !important; height: 100% !important;
-            background: transparent !important;
-            border: none !important;
-            color: transparent !important;
-            z-index: 10;
+            background: rgba(30, 39, 46, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 15px !important;
+            height: 180px !important; /* Más compacto */
+            width: 100% !important;
+            color: white !important;
+            transition: all 0.3s ease !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
 
-        /* Hover efecto sobre la tarjeta cuando el ratón está sobre el contenedor */
-        .ceo-container-wrapper:hover .ceo-card-new {
-            transform: translateY(-10px);
-            border-color: #00D4FF;
-            background: rgba(45, 52, 54, 0.95);
-            box-shadow: 0 15px 30px rgba(0, 212, 255, 0.2);
+        .stButton > button:hover {
+            border-color: #00D4FF !important;
+            background: rgba(45, 52, 54, 0.95) !important;
+            transform: translateY(-5px) !important;
+            box-shadow: 0 10px 20px rgba(0, 212, 255, 0.2) !important;
         }
-        
-        .ceo-icon-new { font-size: 70px; margin-bottom: 15px; }
-        .ceo-title-new { 
-            font-size: 16px; font-weight: 800; color: white; 
-            letter-spacing: 3px; text-transform: uppercase; text-align: center;
+
+        /* Estilo para los textos dentro del botón */
+        .btn-text-big { font-size: 45px; margin-bottom: 10px; display: block; }
+        .btn-text-sub { 
+            font-size: 13px; font-weight: 800; letter-spacing: 2px; 
+            text-transform: uppercase; color: #38bdf8;
         }
         </style>
     """, unsafe_allow_html=True)
 
     st.markdown("<div class='ceo-welcome'>BIENVENIDO C.E.O.</div>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#8fa3b0; letter-spacing:4px; font-size:10px; margin-bottom:40px;'>NEXION CORPORATE OPERATIVE SYSTEM</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#8fa3b0; letter-spacing:3px; font-size:10px; margin-bottom:30px;'>NEXION CORPORATE</p>", unsafe_allow_html=True)
 
-    # --- GRID 2x2 ---
+    # --- GRID 2x2 COMPACTO ---
     # Fila 1
     r1_c1, r1_c2 = st.columns(2)
     with r1_c1:
-        st.markdown("<div class='ceo-container-wrapper'><div class='ceo-card-new'><div class='ceo-icon-new'>📈</div><div class='ceo-title-new'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
-        if st.button("D1", key="btn_d"): # El ID no importa, el CSS lo vuelve invisible y gigante
+        if st.button("📈\n\nDASHBOARD", key="btn_ceo_dash"):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "DASHBOARD"
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with r1_c2:
-        st.markdown("<div class='ceo-container-wrapper'><div class='ceo-card-new'><div class='ceo-icon-new'>🚛</div><div class='ceo-title-new'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
-        if st.button("S1", key="btn_s"):
+        if st.button("🚛\n\nSEGUIMIENTO", key="btn_ceo_seg"):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "SEGUIMIENTO"
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # Fila 2
     r2_c1, r2_c2 = st.columns(2)
     with r2_c1:
-        st.markdown("<div class='ceo-container-wrapper'><div class='ceo-card-new'><div class='ceo-icon-new'>📄</div><div class='ceo-title-new'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
-        if st.button("R1", key="btn_r"):
+        if st.button("📄\n\nREPORTES", key="btn_ceo_rep"):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "REPORTES"
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with r2_c2:
-        st.markdown("<div class='ceo-container-wrapper'><div class='ceo-card-new'><div class='ceo-icon-new'>🔒</div><div class='ceo-title-new'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
-        if st.button("A1", key="btn_a"):
+        if st.button("🔒\n\nHUB LOG", key="btn_ceo_hub"):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "HUB LOG"
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
