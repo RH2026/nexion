@@ -3118,79 +3118,88 @@ else:
 
 
                 # >>> AQUÍ EMPIEZA LO NUEVO AMOR <<<
-                # ── 1. PANEL DE CAPTURA / EDICIÓN AUTOMÁTICA ──
+                # ── 1. PANEL DE CAPTURA / EDICIÓN CON AUTO-RELLENO ──
                 with st.expander("➕ REGISTRAR / ACTUALIZAR ACTIVIDAD", expanded=True):
-                    # Generamos el ID basado en cuántas filas hay, pero filtrando las reales
-                    siguiente_id = len(st.session_state.df_tareas) + 1
                     
+                    # Columna de búsqueda rápida
+                    c_busq, c_vacia = st.columns([1, 3])
+                    with c_busq:
+                        folio_a_buscar = st.text_input("🔍 Buscar Folio (ej: NEX-001)", key="busqueda_folio").strip().upper()
+                    
+                    # Lógica para extraer datos si el folio existe
+                    datos_previos = {}
+                    if folio_a_buscar:
+                        mask_busqueda = st.session_state.df_tareas['TAREA'].str.contains(f"\\[{folio_a_buscar}\\]", na=False)
+                        if mask_busqueda.any():
+                            fila = st.session_state.df_tareas[mask_busqueda].iloc[0]
+                            # Limpiamos la descripción para que no traiga el folio repetido
+                            desc_limpia = fila['TAREA'].split("] ", 1)[-1] if "] " in fila['TAREA'] else fila['TAREA']
+                            
+                            datos_previos = {
+                                "desc": desc_limpia,
+                                "prior": fila['IMPORTANCIA'],
+                                "accion": fila['ULTIMO ACCION'],
+                                "progreso": int(fila['PROGRESO']),
+                                "grupo": fila['GRUPO'],
+                                "inicio": fila['FECHA'],
+                                "fin": fila['FECHA_FIN']
+                            }
+                            st.info(f"Editando: {folio_a_buscar}")
+                        else:
+                            st.warning("Folio no encontrado, se creará uno nuevo.")
+
+                    # Formulario de Captura
                     with st.form("form_nueva_tarea", clear_on_submit=True):
                         c1, c2, c3 = st.columns([1, 3, 1])
                         with c1:
-                            # Se autogenera, pero si escribes uno viejo (ej. NEX-002), el sistema lo reconocerá
-                            t_folio = st.text_input("Folio ID", value=f"NEX-{siguiente_id:03d}")
+                            t_folio = st.text_input("Folio ID", value=folio_a_buscar if folio_a_buscar else f"NEX-{len(st.session_state.df_tareas)+1:03d}")
                         with c2:
-                            t_desc = st.text_input("Descripción de la Tarea", placeholder="Ej: Revisión Guía GLZ-99...")
+                            t_desc = st.text_input("Descripción", value=datos_previos.get("desc", ""))
                         with c3:
-                            t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
+                            t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"], 
+                                                 index=["Media", "Urgente", "Alta", "Baja"].index(datos_previos.get("prior", "Media")))
                         
                         ca, cb = st.columns([3, 2])
                         with ca:
-                            t_accion = st.text_input("Última Acción Realizada", placeholder="Ej: Se envió correo...")
+                            t_accion = st.text_input("Última Acción", value=datos_previos.get("accion", ""))
                         with cb:
-                            t_avance = st.slider("Avance %", 0, 100, 0, step=5)
+                            t_avance = st.slider("Avance %", 0, 100, datos_previos.get("progreso", 0), step=5)
                         
                         c_g, c_i, c_f, c_b = st.columns([1.5, 1.5, 1.5, 1.5])
                         with c_g:
-                            t_grupo = st.text_input("Grupo/Proyecto", value="General")
+                            t_grupo = st.text_input("Grupo", value=datos_previos.get("grupo", "General"))
                         with c_i:
-                            t_ini = st.date_input("Fecha Inicio", value=obtener_fecha_mexico())
+                            t_ini = st.date_input("Inicio", value=datos_previos.get("inicio", obtener_fecha_mexico()))
                         with c_f:
-                            t_fin = st.date_input("Fecha Fin", value=obtener_fecha_mexico() + timedelta(days=1))
+                            t_fin = st.date_input("Fin", value=datos_previos.get("fin", obtener_fecha_mexico() + timedelta(days=1)))
                         with c_b:
                             st.markdown("<br>", unsafe_allow_html=True)
-                            enviar = st.form_submit_button("🚀 GUARDAR EN GANTT", use_container_width=True)
+                            enviar = st.form_submit_button("🚀 GUARDAR CAMBIOS", use_container_width=True)
 
                         if enviar:
-                            if t_desc:
-                                # El folio se guarda dentro de la descripción: [NEX-001] TAREA
-                                folio_format = f"[{t_folio.strip().upper()}]"
-                                
-                                nueva_data = {
-                                    "USUARIO": st.session_state.get('nombre_completo', 'Rigoberto'),
-                                    "FECHA": t_ini,
-                                    "FECHA_FIN": t_fin,
-                                    "IMPORTANCIA": t_prior,
-                                    "TAREA": f"{folio_format} {t_desc.upper()}",
-                                    "ULTIMO ACCION": t_accion.upper() if t_accion else "CAPTURA INICIAL",
-                                    "PROGRESO": t_avance,
-                                    "DEPENDENCIAS": "",
-                                    "TIPO": "Tarea",
-                                    "GRUPO": t_grupo.upper()
-                                }
-                                
-                                df_actual = st.session_state.df_tareas.copy()
-                                
-                                # Buscamos si el folio ya existe en la columna TAREA
-                                # Usamos escape para que los corchetes no rompan el regex
-                                folio_escrito = t_folio.strip().upper()
-                                mask = df_actual['TAREA'].astype(str).str.contains(f"\\[{folio_escrito}\\]", na=False)
-                                
-                                if mask.any():
-                                    idx = df_actual[mask].index[0]
-                                    for col, val in nueva_data.items():
-                                        df_actual.at[idx, col] = val
-                                    msg = f"✅ ¡Tarea {folio_escrito} actualizada!"
-                                else:
-                                    df_actual = pd.concat([df_actual, pd.DataFrame([nueva_data])], ignore_index=True)
-                                    msg = f"✅ ¡Tarea {folio_escrito} creada!"
-                                
-                                if guardar_en_github(df_actual):
-                                    st.session_state.df_tareas = df_actual
-                                    st.success(msg)
-                                    time.sleep(1)
-                                    st.rerun()
+                            # ... (aquí va tu misma lógica de guardar que ya teníamos amor) ...
+                            folio_format = f"[{t_folio.strip().upper()}]"
+                            nueva_data = {
+                                "USUARIO": st.session_state.get('nombre_completo', 'Rigoberto'),
+                                "FECHA": t_ini, "FECHA_FIN": t_fin, "IMPORTANCIA": t_prior,
+                                "TAREA": f"{folio_format} {t_desc.upper()}",
+                                "ULTIMO ACCION": t_accion.upper(), "PROGRESO": t_avance,
+                                "DEPENDENCIAS": "", "TIPO": "Tarea", "GRUPO": t_grupo.upper()
+                            }
+                            df_actual = st.session_state.df_tareas.copy()
+                            mask = df_actual['TAREA'].str.contains(f"\\[{t_folio.strip().upper()}\\]", na=False)
+                            
+                            if mask.any():
+                                idx = df_actual[mask].index[0]
+                                for col, val in nueva_data.items(): df_actual.at[idx, col] = val
                             else:
-                                st.warning("Amor, escribe qué tarea es.")
+                                df_actual = pd.concat([df_actual, pd.DataFrame([nueva_data])], ignore_index=True)
+                            
+                            if guardar_en_github(df_actual):
+                                st.session_state.df_tareas = df_actual
+                                st.success("¡Sincronizado!")
+                                time.sleep(1)
+                                st.rerun()
 
                 
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
