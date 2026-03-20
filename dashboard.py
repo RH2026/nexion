@@ -918,23 +918,19 @@ elif not st.session_state.get('autenticado', False):
     # Llamamos a tu función de login existente
     login_screen()
 
-# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE PROTOCOL) ──
+# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE CON LOGO) ──
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
     
-    # 💎 CSS DE ALTA GAMA: JERARQUÍA INVERTIDA (NEXION PROTAGONISTA)
+    # 💎 CSS DE ALTA GAMA: Ajustes para el centrado del logo
     st.markdown("""
         <style>
-        /* Título NEXION Protagonista (Arriba, Grande, Fuerte) */
-        .brand-title {
-            text-align: center;
-            font-size: 55px; /* Gigante y potente */
-            font-weight: 900;
-            letter-spacing: 25px; /* Ultra espaciado ejecutivo */
-            color: #ffffff;
-            margin-top: 40px;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.15); /* Brillo sutil blanco */
+        /* Contenedor centrado para el logo */
+        .brand-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 40px;  /* Espacio superior */
+            margin-bottom: 5px; /* Espacio antes del subtítulo */
         }
 
         /* Subtítulo Versión Discreto */
@@ -950,7 +946,7 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         /* Saludo CEO Discreto (Abajo, Pequeño, Elegante) */
         .ceo-protocol-greet {
             text-align: center;
-            font-size: 12px; /* Pequeño y sutil */
+            font-size: 12px;
             font-weight: 400;
             letter-spacing: 4px;
             color: #8fa3b0; /* Color sub de NEXION */
@@ -969,7 +965,7 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
             justify-content: center;
             align-items: center;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-            height: 190px; /* Un pelín más compactas */
+            height: 190px;
             margin-bottom: 15px;
         }
         .ceo-card:hover {
