@@ -918,19 +918,27 @@ elif not st.session_state.get('autenticado', False):
     # Llamamos a tu función de login existente
     login_screen()
 
-# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE CON LOGO) ──
+
+# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE LOGO CENTRADO) ──
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
     
-    # 💎 CSS DE ALTA GAMA: Ajustes para el centrado del logo
+    # 💎 CSS DE ALTA GAMA: Ajustes definitivos para el centrado total del logo
     st.markdown("""
         <style>
-        /* Contenedor centrado para el logo */
-        .brand-logo-container {
+        /* Contenedor Flexbox para centrar absolutamente todo adentro */
+        .brand-logo-full-center {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 40px;  /* Espacio superior */
-            margin-bottom: 5px; /* Espacio antes del subtítulo */
+            justify-content: center; /* Centrado horizontal */
+            align-items: center;    /* Centrado vertical si hubiera altura */
+            width: 100%;
+            margin-top: 40px;       /* Espacio superior */
+            margin-bottom: 5px;     /* Espacio antes del subtítulo */
+        }
+
+        /* Estilo para asegurar que la imagen de Streamlit responda al Flexbox */
+        .brand-logo-full-center img {
+            display: block;
+            margin: 0 auto;         /* Centrado extra por seguridad */
         }
 
         /* Subtítulo Versión Discreto */
@@ -981,20 +989,22 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         </style>
     """, unsafe_allow_html=True)
     
-    # --- RENDERIZADO DE LA NUEVA JERARQUÍA ---
-    # 1. MOSTRAR EL LOGO n2.png DESDE EL REPOSITORIO
-    # Creamos un contenedor centrado con columns para que la imagen no se desmadre
-    st.markdown('<div class="brand-logo-container">', unsafe_allow_html=True)
+    # --- RENDERIZADO DE LA IDENTIDAD VISUAL ---
     
-    # Ajusta el width a 300 o lo que se vea más chingón en tu pantalla
-    # Asegúrate de que 'n2.png' esté en la misma carpeta que tu script de Streamlit
+    # 1. MOSTRAR EL LOGO n2.png DESDE EL REPOSITORIO CON CENTRADO FORZADO
+    # Abrimos el contenedor Flexbox
+    st.markdown('<div class="brand-logo-full-center">', unsafe_allow_html=True)
+    
+    # Intentamos cargar la imagen amor, con un width ejecutivo (ej. 350)
     try:
-        st.image("n2.png", width=300) 
+        # Nota: quitamos st.image de las columnas anteriores y lo ponemos directo aquí
+        st.image("n2.png", width=350) 
     except FileNotFoundError:
-        # Por si acaso no encuentra la imagen, amor, que muestre un texto sutil
+        # Por si acaso no encuentra la imagen, que muestre un texto sutil
         st.markdown("<h1 style='text-align:center; color:white; letter-spacing:10px;'>NEXION</h1>", unsafe_allow_html=True)
         st.error("❌ No se encontró el archivo 'n2.png' en el repositorio.")
         
+    # Cerramos el contenedor Flexbox
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Subtítulo Versión Discreto
