@@ -3302,7 +3302,7 @@ else:
                                     time.sleep(1)
                                     st.rerun()
                             else:
-                            st.warning("Amor, los campos de descripción e incidencia son obligatorios.")
+                                st.warning("Amor, los campos de descripción e incidencia son obligatorios.")
 
                 # ── 3. VISUALIZADOR DE TAREAS ÉLITE (DISEÑO SEGMENTADO) ────────────────────────────────
                 # ── 3. VISUALIZADOR DE TAREAS ÉLITE (DISEÑO SEGMENTADO) ────────────────────────────────
