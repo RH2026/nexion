@@ -1022,6 +1022,9 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
     st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
     st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
 
+    # ⚡ REPARACIÓN: Definimos las columnas antes de usarlas
+    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    
     with m_col1:
         st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-8 35-8 72 0 140 89.5 246T440-162Zm282-192q30-42 44-90t14-96q0-128-78.5-224T520-800v40q0 33-23.5 56.5T440-680h-80v80q0 33-23.5 56.5T280-520h-40v80h200q33 0 56.5 23.5T520-360v80h40q33 0 56.5 23.5T640-233v23q48-26 82-72Z'/></svg></div><div class='ceo-title'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
         if st.button("ACCEDER", key="btn_dash", use_container_width=True):
