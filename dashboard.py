@@ -3019,6 +3019,24 @@ else:
                 REPO_NAME = "RH2026/nexion"
                 FILE_PATH = "tareas.csv"
                 CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+
+                # URL de tu Matriz Global para consultas
+                MATRIZ_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/Matriz_Excel_Dashboard.csv"
+
+                @st.cache_data(ttl=600)
+                def cargar_matriz_global():
+                    try:
+                        r = requests.get(f"{MATRIZ_URL}?t={int(time.time())}")
+                        if r.status_code == 200:
+                            df = pd.read_csv(StringIO(r.text))
+                            # Limpiamos nombres de columnas por si traen espacios
+                            df.columns = [c.strip().upper() for c in df.columns]
+                            return df
+                    except:
+                        return None
+                    return None
+
+                df_global = cargar_matriz_global()
                 
                 # ── FUNCIONES DE FECHA Y CARGA REPARADAS ─────────────────────────────────────────────
                 def obtener_fecha_mexico():
@@ -3118,88 +3136,83 @@ else:
 
 
                 # >>> AQUÍ EMPIEZA LO NUEVO AMOR <<<
-                # ── 1. PANEL DE CAPTURA / EDICIÓN CON AUTO-RELLENO ──
-                with st.expander("➕ REGISTRAR / ACTUALIZAR ACTIVIDAD", expanded=True):
+                # ── 1. PANEL DE CAPTURA INTELIGENTE (VINCULADO A MATRIZ) ──
+                with st.expander("➕ REGISTRAR ACTIVIDAD DESDE PEDIDO / FACTURA", expanded=True):
                     
-                    # Columna de búsqueda rápida
-                    c_busq, c_vacia = st.columns([1, 3])
+                    # Fila de búsqueda por Pedido
+                    c_busq, c_msg = st.columns([2, 2])
                     with c_busq:
-                        folio_a_buscar = st.text_input("🔍 Buscar Folio (ej: NEX-001)", key="busqueda_folio").strip().upper()
+                        n_pedido = st.text_input("📦 Número de Pedido / Factura", placeholder="Escribe el número y presiona Enter").strip().upper()
                     
-                    # Lógica para extraer datos si el folio existe
-                    datos_previos = {}
-                    if folio_a_buscar:
-                        mask_busqueda = st.session_state.df_tareas['TAREA'].str.contains(f"\\[{folio_a_buscar}\\]", na=False)
-                        if mask_busqueda.any():
-                            fila = st.session_state.df_tareas[mask_busqueda].iloc[0]
-                            # Limpiamos la descripción para que no traiga el folio repetido
-                            desc_limpia = fila['TAREA'].split("] ", 1)[-1] if "] " in fila['TAREA'] else fila['TAREA']
+                    # Lógica de búsqueda en la Matriz Global
+                    info_matriz = {}
+                    if n_pedido and df_global is not None:
+                        # Buscamos en la columna NÚMERO DE PEDIDO
+                        res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
+                        
+                        if not res.empty:
+                            fila_m = res.iloc[0]
+                            guia = fila_m.get("NÚMERO DE GUÍA", "SIN GUÍA")
+                            cliente = fila_m.get("NOMBRE DEL CLIENTE", "CLIENTE DESCONOCIDO")
+                            destino = fila_m.get("DESTINO", "DESTINO N/A")
                             
-                            datos_previos = {
-                                "desc": desc_limpia,
-                                "prior": fila['IMPORTANCIA'],
-                                "accion": fila['ULTIMO ACCION'],
-                                "progreso": int(fila['PROGRESO']),
-                                "grupo": fila['GRUPO'],
-                                "inicio": fila['FECHA'],
-                                "fin": fila['FECHA_FIN']
+                            info_matriz = {
+                                "desc": f"GUIA: {guia} | CLIENTE: {cliente} | DESTINO: {destino}",
+                                "grupo": destino
                             }
-                            st.info(f"Editando: {folio_a_buscar}")
+                            st.success(f"✅ Pedido encontrado: {cliente}")
                         else:
-                            st.warning("Folio no encontrado, se creará uno nuevo.")
+                            st.error("❌ El pedido no existe en la Matriz Global.")
 
-                    # Formulario de Captura
-                    with st.form("form_nueva_tarea", clear_on_submit=True):
-                        c1, c2, c3 = st.columns([1, 3, 1])
-                        with c1:
-                            t_folio = st.text_input("Folio ID", value=folio_a_buscar if folio_a_buscar else f"NEX-{len(st.session_state.df_tareas)+1:03d}")
-                        with c2:
-                            t_desc = st.text_input("Descripción", value=datos_previos.get("desc", ""))
-                        with c3:
-                            t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"], 
-                                                 index=["Media", "Urgente", "Alta", "Baja"].index(datos_previos.get("prior", "Media")))
-                        
-                        ca, cb = st.columns([3, 2])
-                        with ca:
-                            t_accion = st.text_input("Última Acción", value=datos_previos.get("accion", ""))
-                        with cb:
-                            t_avance = st.slider("Avance %", 0, 100, datos_previos.get("progreso", 0), step=5)
-                        
-                        c_g, c_i, c_f, c_b = st.columns([1.5, 1.5, 1.5, 1.5])
+                    # Formulario de Registro
+                    with st.form("form_nexion_inteligente", clear_on_submit=True):
+                        f1, f2, f3 = st.columns([1, 3, 1])
+                        with f1:
+                            # Folio automático
+                            t_folio = st.text_input("Folio ID", value=f"NEX-{len(st.session_state.df_tareas)+1:03d}")
+                        with f2:
+                            # Se rellena solo con la info de la matriz
+                            t_desc = st.text_input("Detalles del Pedido (Auto)", value=info_matriz.get("desc", ""))
+                        with f3:
+                            t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
+
+                        # Sección para que tú pongas la incidencia
+                        fa, fb = st.columns([3, 2])
+                        with fa:
+                            t_incidencia = st.text_input("🚨 Reporte de Incidencia (Última Acción)", placeholder="Escribe aquí qué pasó con el pedido...")
+                        with fb:
+                            t_avance = st.slider("Avance de Solución %", 0, 100, 0, step=5)
+
+                        c_g, c_i, c_f, c_b = st.columns(4)
                         with c_g:
-                            t_grupo = st.text_input("Grupo", value=datos_previos.get("grupo", "General"))
+                            t_grupo = st.text_input("Zona/Grupo", value=info_matriz.get("grupo", "GENERAL"))
                         with c_i:
-                            t_ini = st.date_input("Inicio", value=datos_previos.get("inicio", obtener_fecha_mexico()))
+                            t_ini = st.date_input("Inicio", value=obtener_fecha_mexico())
                         with c_f:
-                            t_fin = st.date_input("Fin", value=datos_previos.get("fin", obtener_fecha_mexico() + timedelta(days=1)))
+                            t_fin = st.date_input("Compromiso", value=obtener_fecha_mexico() + timedelta(days=1))
                         with c_b:
                             st.markdown("<br>", unsafe_allow_html=True)
-                            enviar = st.form_submit_button("🚀 GUARDAR CAMBIOS", use_container_width=True)
+                            enviar = st.form_submit_button("🚀 SUBIR A GANTT", use_container_width=True)
 
                         if enviar:
-                            # ... (aquí va tu misma lógica de guardar que ya teníamos amor) ...
-                            folio_format = f"[{t_folio.strip().upper()}]"
-                            nueva_data = {
-                                "USUARIO": st.session_state.get('nombre_completo', 'Rigoberto'),
-                                "FECHA": t_ini, "FECHA_FIN": t_fin, "IMPORTANCIA": t_prior,
-                                "TAREA": f"{folio_format} {t_desc.upper()}",
-                                "ULTIMO ACCION": t_accion.upper(), "PROGRESO": t_avance,
-                                "DEPENDENCIAS": "", "TIPO": "Tarea", "GRUPO": t_grupo.upper()
-                            }
-                            df_actual = st.session_state.df_tareas.copy()
-                            mask = df_actual['TAREA'].str.contains(f"\\[{t_folio.strip().upper()}\\]", na=False)
-                            
-                            if mask.any():
-                                idx = df_actual[mask].index[0]
-                                for col, val in nueva_data.items(): df_actual.at[idx, col] = val
+                            if t_desc and t_incidencia:
+                                nueva_data = {
+                                    "USUARIO": st.session_state.get('nombre_completo', 'Rigoberto'),
+                                    "FECHA": t_ini, "FECHA_FIN": t_fin, "IMPORTANCIA": t_prior,
+                                    "TAREA": f"[{t_folio}] {t_desc}",
+                                    "ULTIMO ACCION": t_incidencia.upper(),
+                                    "PROGRESO": t_avance, "DEPENDENCIAS": "",
+                                    "TIPO": "Tarea", "GRUPO": t_grupo.upper()
+                                }
+                                # (Lógica de guardado en GitHub igual a la anterior)
+                                df_final = pd.concat([st.session_state.df_tareas, pd.DataFrame([nueva_data])], ignore_index=True)
+                                if guardar_en_github(df_final):
+                                    st.session_state.df_tareas = df_final
+                                    st.success("¡Incidencia registrada en el Gantt!")
+                                    time.sleep(1)
+                                    st.rerun()
                             else:
-                                df_actual = pd.concat([df_actual, pd.DataFrame([nueva_data])], ignore_index=True)
-                            
-                            if guardar_en_github(df_actual):
-                                st.session_state.df_tareas = df_actual
-                                st.success("¡Sincronizado!")
-                                time.sleep(1)
-                                st.rerun()
+                                st.warning("Amor, escribe el reporte de la incidencia.")
 
                 
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
