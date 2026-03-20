@@ -6561,16 +6561,13 @@ else:
                 tz_gdl = pytz.timezone('America/Mexico_City')
                 
                 # ── ESTADO INICIAL ──
-                # Usamos un toast discreto o un badge en lugar de un st.info grande
                 st.toast("Nexion Core: Active | Nodes: Online", icon="🌐")
                 
                 # ── ESTILO VISUAL PRO "SILICON VALLEY EDITION" (CSS) ──
                 st.markdown("""
                     <style>
                     /* Estilo del Contenedor Principal */
-                    .main {
-                        background-color: #0E1117;
-                    }
+                    .main { background-color: #0E1117; }
                     
                     /* Header Estilo DHL/FedEx */
                     .main-header-pro {
@@ -6583,19 +6580,12 @@ else:
                 
                     /* Tarjetas de Estado "Command Center" */
                     .status-card-pro {
-                        background: rgba(30, 41, 59, 0.5); /* Glassmorphism */
+                        background: rgba(30, 41, 59, 0.5); 
                         border: 1px solid rgba(255, 255, 255, 0.05);
                         border-radius: 12px;
                         padding: 20px;
                         text-align: center;
-                        transition: all 0.3s ease;
                         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                    }
-                    
-                    .status-card-pro:hover {
-                        border-color: #60A5FA;
-                        background: rgba(30, 41, 59, 0.8);
-                        transform: translateY(-2px);
                     }
                 
                     .status-label {
@@ -6613,12 +6603,7 @@ else:
                         color: #F8FAFC;
                     }
                 
-                    /* Zona de Carga Crítica */
-                    .stColumn > div > div > div[data-testid="stVerticalBlock"] {
-                        gap: 1.5rem;
-                    }
-                
-                    /* Botón Primary Estilo Silicon Valley */
+                    /* Botón Primary Estilo Silicon Valley (Sin Hovers para no romper tu CSS maestro) */
                     div.stButton > button[kind="primary"] {
                         background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
                         border: none !important;
@@ -6626,7 +6611,7 @@ else:
                         font-weight: 700 !important;
                         letter-spacing: 1px !important;
                         border-radius: 8px !important;
-                        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3) !important;
+                        color: white !important;
                     }
                     </style>
                 """, unsafe_allow_html=True)
@@ -6636,7 +6621,7 @@ else:
                 REPO_NAME = "RH2026/nexion"
                 NOMBRE_EXCLUSIVO = "Matriz_Excel_Dashboard.csv"
                 
-                # ── DASHBOARD DE ESTADO RÁPIDO (Nivel Centro de Comando) ──
+                # ── DASHBOARD DE ESTADO RÁPIDO ──
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     st.markdown(f'''<div class="status-card-pro">
@@ -6657,8 +6642,7 @@ else:
                 
                 st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
                 
-                # ── ÁREA DE CARGA EXCLUSIVA (GITHUB) ──
-                # Usamos container con border pero con un estilo más limpio
+                # ── ÁREA DE CARGA EXCLUSIVA ──
                 with st.container(border=True):
                     st.markdown("### :material/security: Secure Data Uplink")
                     st.caption(f"Restriction Protocol: Only `{NOMBRE_EXCLUSIVO}` authorized.")
@@ -6669,7 +6653,6 @@ else:
                         if uploaded_file_master.name != NOMBRE_EXCLUSIVO:
                             st.error(f"**Protocol Violation:** Filename mismatch. Rename to `{NOMBRE_EXCLUSIVO}`")
                         else:
-                            # Previsualización estilo Terminal
                             with st.expander(":material/database: Data Stream Preview", expanded=True):
                                 try:
                                     df_preview = pd.read_csv(uploaded_file_master)
@@ -6678,12 +6661,8 @@ else:
                                 except:
                                     st.error("Corrupted Stream Data.")
                             
-                            # Hora GDL
                             hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
-                            
-                            # Input de mensaje más pro
-                            commit_msg = st.text_input("Sincronization Log Message", 
-                                                     value=f"CORE_UPDATE // {hora_actual_gdl}")
+                            commit_msg = st.text_input("Sincronization Log Message", value=f"CORE_UPDATE // {hora_actual_gdl}")
                 
                             if st.button("EXECUTE SINCRONIZATION", type="primary", use_container_width=True, icon=":material/cloud_sync:"):
                                 with st.status("Establishing GitHub Handshake...", expanded=True) as status:
@@ -6693,7 +6672,6 @@ else:
                                         repo = g.get_repo(REPO_NAME)
                                         file_content = uploaded_file_master.getvalue()
                 
-                                        st.write("Verifying remote checksum...")
                                         try:
                                             contents = repo.get_contents(NOMBRE_EXCLUSIVO)
                                             repo.update_file(contents.path, commit_msg, file_content, contents.sha)
@@ -6709,15 +6687,38 @@ else:
                                     except Exception as e:
                                         status.update(label=f"Uplink Failed: {str(e)}", state="error")
                 
-                # ── HISTORIAL DE ACTIVIDAD (Estilo Terminal) ──
+                # ── LÓGICA DE HISTORIAL DE ACTIVIDAD (REPARADA) ──
                 st.markdown("<br>", unsafe_allow_html=True)
-                with st.expander(":material/terminal: System Audit Logs"):
-                    try:
-                        # Aquí iría tu lógica de historial que ya tienes...
-                        st.write("Fetching latest security logs from GitHub...")
-                        # ... (Mantener lógica de commits pero con un diseño más limpio)
-                    except:
-                        st.info("Searching for activity logs...")
+                with st.expander(":material/terminal: System Audit Logs", expanded=False):
+                    if TOKEN:
+                        try:
+                            from github import Github
+                            g = Github(TOKEN)
+                            repo = g.get_repo(REPO_NAME)
+                            
+                            # Obtenemos los últimos 5 commits del archivo específico
+                            commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
+                            
+                            for i, commit in enumerate(commits):
+                                if i >= 5: break # Solo mostramos los últimos 5
+                                
+                                # Convertimos fecha UTC a Guadalajara
+                                fecha_utc = commit.commit.author.date.replace(tzinfo=pytz.utc)
+                                fecha_local = fecha_utc.astimezone(tz_gdl)
+                                
+                                # Renderizado estilo Terminal
+                                col_h1, col_h2 = st.columns([1, 3])
+                                with col_h1:
+                                    st.markdown(f"**{fecha_local.strftime('%H:%M')}**")
+                                    st.caption(fecha_local.strftime('%d/%m/%Y'))
+                                with col_h2:
+                                    st.markdown(f":material/history: {commit.commit.message}")
+                                    st.code(f"USER: {commit.commit.author.name} | SHA: {commit.sha[:7]}", language="bash")
+                                st.divider()
+                        except Exception as e:
+                            st.error(f"Error al conectar con los logs: {e}")
+                    else:
+                        st.warning("Requiere Token Activo para visualizar logs.")
             
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
