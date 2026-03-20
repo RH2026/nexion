@@ -3232,6 +3232,7 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
 
+                
                 with st.expander("➕ Registrar actividad o incidencia", expanded=True):
                     
                     # --- FILA 1: BÚSQUEDA, FOLIO Y PRIORIDAD ---
@@ -3251,8 +3252,13 @@ else:
                         res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
                         if not res.empty:
                             fila_m = res.iloc[0]
+                            guia = fila_m.get('NÚMERO DE GUÍA', 'N/A')
+                            cliente = fila_m.get('NOMBRE DEL CLIENTE', 'N/A')
+                            destino = fila_m.get('DESTINO', 'N/A')
+                            
+                            # ACTUALIZACIÓN: Ahora incluimos el Pedido/Factura al inicio de la descripción
                             info_matriz = {
-                                "desc": f"GUIA: {fila_m.get('NÚMERO DE GUÍA', 'N/A')} | CLIENTE: {fila_m.get('NOMBRE DEL CLIENTE', 'N/A')} | DESTINO: {fila_m.get('DESTINO', 'N/A')}"
+                                "desc": f"DOC: {n_pedido} | GUIA: {guia} | CLIENTE: {cliente} | DESTINO: {destino}"
                             }
                         else:
                             st.error("❌ Pedido no localizado en Matriz Global.")
