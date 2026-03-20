@@ -3349,7 +3349,7 @@ else:
                                 </div>
                                 <div style="flex: 1.5; padding-left: 20px; text-align: right;">
                                     <div style="font-size: 9px; color: {color}; font-weight: 800;">ESTATUS ACTUAL</div>
-                                    <div style="font-size: 11px; color: white; font-style: italic; margin-bottom: 8px;">"{accion}"</div>
+                                    <div style="font-size: 14px; color: white; font-style: italic; margin-bottom: 8px;">"{accion}"</div>
                                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
                                         <div style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 4px; width: 80px;">
                                             <div style="height: 4px; border-radius: 10px; width: {prog}%; background: {color}; box-shadow: 0 0 8px {shd};"></div>
