@@ -3496,124 +3496,126 @@ else:
                             use_container_width=True
                         )
                 
+                # ── 2. VISUALIZADOR GANTT DINÁMICO (ENVUELTO EN EXPANDER) ──
+                with st.expander(":material/stacked_line_chart: Ver Gráfica de Gantt", expanded=False):
                 
-                # ── 1. FILTROS Y CONTROLES ────────────────────────────────
-                c1, c2 = st.columns([1, 2])
-                with c1:
-                    gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_v")
-                
-                with c2:
-                    grupos_disponibles = sorted(df_master["GRUPO"].astype(str).unique())
-                    grupos_sel = st.multiselect("Filtrar por grupo", grupos_disponibles, default=grupos_disponibles, key="gantt_g")
-                
-                df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)].copy()
-                
-                mask_hito = df_gantt["TIPO"].str.lower() == "hito"
-                df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
-                
-                tasks_data = []
-                for i, r in enumerate(df_gantt.itertuples(), start=1):
-                    if not str(r.TAREA).strip(): 
-                        continue
-                
-                    importancia = str(r.IMPORTANCIA).strip().lower()
-                    task_id = f"T{i}"
+                    # ── 1. FILTROS Y CONTROLES ────────────────────────────────
+                    c1, c2 = st.columns([1, 2])
+                    with c1:
+                        gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_v")
                     
-                    dependencias = str(r.DEPENDENCIAS).strip()
-                    if dependencias:
-                        dependencias_ids = []
-                        for d in dependencias.split(','):
-                            d = d.strip()
-                            if d.isdigit():
-                                dependencias_ids.append(f"T{int(d)+1}")
-                            else:
-                                dependencias_ids.append(d)
-                        dependencias = ','.join(dependencias_ids)
+                    with c2:
+                        grupos_disponibles = sorted(df_master["GRUPO"].astype(str).unique())
+                        grupos_sel = st.multiselect("Filtrar por grupo", grupos_disponibles, default=grupos_disponibles, key="gantt_g")
                     
-                    tasks_data.append({
-                        "id": task_id,
-                        "name": f"[{r.GRUPO}] {r.TAREA}",
-                        "start": str(r.FECHA),
-                        "end": str(r.FECHA_FIN),
-                        "progress": int(r.PROGRESO),
-                        "dependencies": dependencias,
-                        "custom_class": f"imp-{importancia}"
-                    })
-                
-                tasks_js_str = json.dumps(tasks_data)
-                
-                # ── 2. RENDERIZADO GANTT ───────────────────────────────
-                components.html(
-                    f"""
-                    <html>
-                    <head>
-                        <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
-                        <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
-                        <style>
-                        html, body {{ background:#384A52; margin:0; padding:0; }}
-                        #gantt {{ background:#384A52; }}
-                        .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
-                        .grid-background {{ fill:#384A52 !important; }}
-                        .grid-header {{ fill:#1E262A !important; }}
-                        .grid-row {{ fill:#384A52 !important; }}
-                        .grid-row:nth-child(even) {{ fill:#3F525B !important; }}
-                        .grid-line {{ stroke: #0F1517 !important; stroke-opacity: 0.1 !important; }}
-                        .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
-                        .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
-                        .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
-                        .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
-                        .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
-                        .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
+                    df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)].copy()
                     
-                        /* --- ESTILO PARA EL SCROLL DARK --- */
-                        ::-webkit-scrollbar {{
-                            width: 10px;
-                            height: 10px;
-                        }}
-                        ::-webkit-scrollbar-track {{
-                            background: #3F525B; /* Fondo del scroll igual al body */
-                        }}
-                        ::-webkit-scrollbar-thumb {{
-                            background: #007076; /* Color de la barrita */
-                            border-radius: 5px;
-                        }}
-                        ::-webkit-scrollbar-thumb:hover {{
-                            background: #00A0A8; /* Color cuando pasas el mouse */
-                        }}
-                    </style>
-                    </head>
-                    <body>
-                        <div id='gantt'></div>
-                        <script>
-                            var tasks = {tasks_js_str};
-                            if(tasks.length){{
-                                var gantt = new Gantt('#gantt', tasks, {{
-                                    view_mode: '{gantt_view}',
-                                    bar_height: 20,
-                                    padding: 40,
-                                    date_format: 'YYYY-MM-DD'
-                                }});
-                                setTimeout(function() {{
-                                    document.querySelectorAll('#gantt svg line').forEach(function(line) {{
-                                        var x1 = parseFloat(line.getAttribute('x1'));
-                                        var x2 = parseFloat(line.getAttribute('x2'));
-                                        var y1 = parseFloat(line.getAttribute('y1'));
-                                        var y2 = parseFloat(line.getAttribute('y2'));
-                                        if(x1 === x2) line.style.display = 'none';
-                                        if(y1 === y2) {{
-                                            line.style.strokeOpacity = '0.1';
-                                            line.style.stroke = '#1e2530';
-                                        }}
-                                    }});
-                                }}, 200);
+                    mask_hito = df_gantt["TIPO"].str.lower() == "hito"
+                    df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
+                    
+                    tasks_data = []
+                    for i, r in enumerate(df_gantt.itertuples(), start=1):
+                        if not str(r.TAREA).strip(): 
+                            continue
+                    
+                        importancia = str(r.IMPORTANCIA).strip().lower()
+                        task_id = f"T{i}"
+                        
+                        dependencias = str(r.DEPENDENCIAS).strip()
+                        if dependencias:
+                            dependencias_ids = []
+                            for d in dependencias.split(','):
+                                d = d.strip()
+                                if d.isdigit():
+                                    dependencias_ids.append(f"T{int(d)+1}")
+                                else:
+                                    dependencias_ids.append(d)
+                            dependencias = ','.join(dependencias_ids)
+                        
+                        tasks_data.append({
+                            "id": task_id,
+                            "name": f"[{r.GRUPO}] {r.TAREA}",
+                            "start": str(r.FECHA),
+                            "end": str(r.FECHA_FIN),
+                            "progress": int(r.PROGRESO),
+                            "dependencies": dependencias,
+                            "custom_class": f"imp-{importancia}"
+                        })
+                    
+                    tasks_js_str = json.dumps(tasks_data)
+                    
+                    # ── 2. RENDERIZADO GANTT ───────────────────────────────
+                    components.html(
+                        f"""
+                        <html>
+                        <head>
+                            <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
+                            <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
+                            <style>
+                            html, body {{ background:#384A52; margin:0; padding:0; }}
+                            #gantt {{ background:#384A52; }}
+                            .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
+                            .grid-background {{ fill:#384A52 !important; }}
+                            .grid-header {{ fill:#1E262A !important; }}
+                            .grid-row {{ fill:#384A52 !important; }}
+                            .grid-row:nth-child(even) {{ fill:#3F525B !important; }}
+                            .grid-line {{ stroke: #0F1517 !important; stroke-opacity: 0.1 !important; }}
+                            .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
+                            .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
+                            .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
+                            .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
+                            .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
+                            .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
+                        
+                            /* --- ESTILO PARA EL SCROLL DARK --- */
+                            ::-webkit-scrollbar {{
+                                width: 10px;
+                                height: 10px;
                             }}
-                        </script>
-                    </body>
-                    </html>
-                    """,
-                    height=620,
-                    scrolling=True
-                )
+                            ::-webkit-scrollbar-track {{
+                                background: #3F525B; /* Fondo del scroll igual al body */
+                            }}
+                            ::-webkit-scrollbar-thumb {{
+                                background: #007076; /* Color de la barrita */
+                                border-radius: 5px;
+                            }}
+                            ::-webkit-scrollbar-thumb:hover {{
+                                background: #00A0A8; /* Color cuando pasas el mouse */
+                            }}
+                        </style>
+                        </head>
+                        <body>
+                            <div id='gantt'></div>
+                            <script>
+                                var tasks = {tasks_js_str};
+                                if(tasks.length){{
+                                    var gantt = new Gantt('#gantt', tasks, {{
+                                        view_mode: '{gantt_view}',
+                                        bar_height: 20,
+                                        padding: 40,
+                                        date_format: 'YYYY-MM-DD'
+                                    }});
+                                    setTimeout(function() {{
+                                        document.querySelectorAll('#gantt svg line').forEach(function(line) {{
+                                            var x1 = parseFloat(line.getAttribute('x1'));
+                                            var x2 = parseFloat(line.getAttribute('x2'));
+                                            var y1 = parseFloat(line.getAttribute('y1'));
+                                            var y2 = parseFloat(line.getAttribute('y2'));
+                                            if(x1 === x2) line.style.display = 'none';
+                                            if(y1 === y2) {{
+                                                line.style.strokeOpacity = '0.1';
+                                                line.style.stroke = '#1e2530';
+                                            }}
+                                        }});
+                                    }}, 200);
+                                }}
+                            </script>
+                        </body>
+                        </html>
+                        """,
+                        height=620,
+                        scrolling=True
+                    )
                 
                    
     
