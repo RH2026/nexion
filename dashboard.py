@@ -3326,7 +3326,6 @@ else:
                 with st.expander("➕ Registrar o Editar Actividad / Incidencia", expanded=False):
     
                     # --- 1. SECCIÓN DE BÚSQUEDA (FILA SUPERIOR) ---
-                    st.markdown("<div class='search-container-pro' style='background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
                     c1, c2, c3 = st.columns([2, 1, 1])
                     
                     with c1:
