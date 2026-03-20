@@ -1012,33 +1012,26 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
     # --- CUADRÍCULA DE MÓDULOS (COMPACTA) ---
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     
+    
     with m_col1:
-        st.markdown(f"<div style='display: flex; align-items: center; background: #f8f9fa; padding: 12px 20px; border-radius: 12px; border: 1px solid #dadce0; width: fit-content; gap: 12px;'><svg xmlns='http://www.w3.org/2000/svg' height='24px' viewBox='0 -960 960 960' width='24px' fill='#1a73e8'><path d='M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-8 35-8 72 0 140 89.5 246T440-162Zm282-192q30-42 44-90t14-96q0-128-78.5-224T520-800v40q0 33-23.5 56.5T440-680h-80v80q0 33-23.5 56.5T280-520h-40v80h200q33 0 56.5 23.5T520-360v80h40q33 0 56.5 23.5T640-233v23q48-26 82-72Z'/></svg><span style='font-family: sans-serif; font-weight: 500; color: #3c4043; font-size: 15px;'>Dashboard Global</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-8 35-8 72 0 140 89.5 246T440-162Zm282-192q30-42 44-90t14-96q0-128-78.5-224T520-800v40q0 33-23.5 56.5T440-680h-80v80q0 33-23.5 56.5T280-520h-40v80h200q33 0 56.5 23.5T520-360v80h40q33 0 56.5 23.5T640-233v23q48-26 82-72Z'/></svg></div><div class='ceo-title'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
         if st.button("ACCEDER", key="btn_dash", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"
-            st.session_state.menu_main = "DASHBOARD"
-            st.rerun()
-
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "DASHBOARD"; st.rerun()
+    
     with m_col2:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'>🚛</div><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-160q-33 0-56.5-23.5T160-240v-440q0-33 23.5-56.5T240-760h440l120 160v360q0 33-23.5 56.5T720-160H240Zm0-80h480v-330L655-680H240v440Zm240-100q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z'/></svg></div><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
         if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"
-            st.session_state.menu_main = "SEGUIMIENTO"
-            st.rerun()
-
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "SEGUIMIENTO"; st.rerun()
+    
     with m_col3:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'>📄</div><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520Z'/></svg></div><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
         if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"
-            st.session_state.menu_main = "REPORTES"
-            st.rerun()
-
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "REPORTES"; st.rerun()
+    
     with m_col4:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'>🔒</div><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z'/></svg></div><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
         if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"
-            st.session_state.menu_main = "HUB LOG"
-            st.rerun()
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "HUB LOG"; st.rerun()
 
     # Espacio final estético
     st.markdown("<div style='margin-top:40px;'></div>", unsafe_allow_html=True)
