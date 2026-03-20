@@ -3136,60 +3136,56 @@ else:
 
 
                 # >>> AQUÍ EMPIEZA LO NUEVO AMOR <<<
-                # ── 1. PANEL DE CAPTURA INTELIGENTE (VINCULADO A MATRIZ) ──
-                with st.expander("➕ REGISTRAR ACTIVIDAD DESDE PEDIDO / FACTURA", expanded=True):
+                # ── 1. PANEL DE CAPTURA INTELIGENTE (REDiseño SIMÉTRICO) ──
+                with st.expander("➕ Registrar actividad o incidencia", expanded=True):
                     
-                    # Fila de búsqueda por Pedido
-                    c_busq, c_msg = st.columns([2, 2])
+                    # Búsqueda inicial integrada
+                    c_busq, c_vacia = st.columns([2, 2])
                     with c_busq:
-                        n_pedido = st.text_input("📦 Número de Pedido / Factura", placeholder="Escribe el número y presiona Enter").strip().upper()
+                        n_pedido = st.text_input("📦 Vincular Número de Pedido / Factura", placeholder="Enter para buscar...").strip().upper()
                     
-                    # Lógica de búsqueda en la Matriz Global
                     info_matriz = {}
                     if n_pedido and df_global is not None:
                         res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
-                        
                         if not res.empty:
                             fila_m = res.iloc[0]
-                            guia = fila_m.get("NÚMERO DE GUÍA", "SIN GUÍA")
-                            cliente = fila_m.get("NOMBRE DEL CLIENTE", "CLIENTE DESCONOCIDO")
-                            destino = fila_m.get("DESTINO", "DESTINO N/A")
-                            
-                            # El destino se queda en la descripción, NO en el grupo
                             info_matriz = {
-                                "desc": f"GUIA: {guia} | CLIENTE: {cliente} | DESTINO: {destino}"
+                                "desc": f"GUIA: {fila_m.get('NÚMERO DE GUÍA', 'N/A')} | CLIENTE: {fila_m.get('NOMBRE DEL CLIENTE', 'N/A')} | DESTINO: {fila_m.get('DESTINO', 'N/A')}"
                             }
-                            st.success(f"✅ Pedido encontrado: {cliente}")
+                            st.success(f"✅ Pedido vinculado: {fila_m.get('NOMBRE DEL CLIENTE')}")
                         else:
-                            st.error("❌ El pedido no existe en la Matriz Global.")
+                            st.error("❌ Pedido no localizado en Matriz Global.")
                 
-                    # Formulario de Registro
-                    with st.form("form_nexion_inteligente", clear_on_submit=True):
-                        f1, f2, f3 = st.columns([1, 3, 1])
-                        with f1:
+                    # Formulario con simetría total
+                    with st.form("form_nexion_pro_design", clear_on_submit=True):
+                        # FILA 1: Identificación y Detalles
+                        f1_c1, f1_c2, f1_c3 = st.columns([1, 3, 1])
+                        with f1_c1:
                             t_folio = st.text_input("Folio ID", value=f"NEX-{len(st.session_state.df_tareas)+1:03d}")
-                        with f2:
-                            t_desc = st.text_input("Detalles del Pedido (Auto)", value=info_matriz.get("desc", ""))
-                        with f3:
+                        with f1_c2:
+                            t_desc = st.text_input("Detalles del Pedido (Lectura Automática)", value=info_matriz.get("desc", ""))
+                        with f1_c3:
                             t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
                 
-                        fa, fb = st.columns([3, 2])
-                        with fa:
-                            t_incidencia = st.text_input("🚨 Reporte de Incidencia (Última Acción)", placeholder="Escribe aquí qué pasó con el pedido...")
-                        with fb:
-                            t_avance = st.slider("Avance de Solución %", 0, 100, 0, step=5)
+                        # FILA 2: Gestión de Incidencia (Simetría 50/50)
+                        f2_c1, f2_c2 = st.columns([3, 2])
+                        with f2_c1:
+                            t_incidencia = st.text_input("Reporte de Incidencia / Última Acción", placeholder="Describe la situación actual...")
+                        with f2_c2:
+                            # CAMBIO A INPUT NUMÉRICO COMO PEDISTE AMOR
+                            t_avance = st.number_input("Avance Solución %", min_value=0, max_value=100, step=5, value=0)
                 
-                        c_g, c_i, c_f, c_b = st.columns(4)
-                        with c_g:
-                            # CORRECCIÓN: Aquí ya no se jala el destino, ahora tú pones el GRUPO/CATEGORÍA
-                            t_grupo = st.text_input("Grupo / Categoría", value="ENTREGAS PENDIENTES")
-                        with c_i:
-                            t_ini = st.date_input("Inicio", value=obtener_fecha_mexico())
-                        with c_f:
-                            t_fin = st.date_input("Compromiso", value=obtener_fecha_mexico() + timedelta(days=1))
-                        with c_b:
+                        # FILA 3: Clasificación y Fechas (4 columnas iguales)
+                        f3_c1, f3_c2, f3_c3, f3_c4 = st.columns(4)
+                        with f3_c1:
+                            t_grupo = st.text_input("Categoría / Grupo", value="ENTREGAS PENDIENTES")
+                        with f3_c2:
+                            t_ini = st.date_input("Fecha Inicio", value=obtener_fecha_mexico())
+                        with f3_c3:
+                            t_fin = st.date_input("Fecha Compromiso", value=obtener_fecha_mexico() + timedelta(days=1))
+                        with f3_c4:
                             st.markdown("<br>", unsafe_allow_html=True)
-                            enviar = st.form_submit_button("🚀 SUBIR A GANTT", use_container_width=True)
+                            enviar = st.form_submit_button("GUARDAR", use_container_width=True)
                 
                         if enviar:
                             if t_desc and t_incidencia:
@@ -3202,15 +3198,14 @@ else:
                                     "TIPO": "Tarea", "GRUPO": t_grupo.upper()
                                 }
                                 
-                                # Lógica de guardado sincronizado
                                 df_final = pd.concat([st.session_state.df_tareas, pd.DataFrame([nueva_data])], ignore_index=True)
                                 if guardar_en_github(df_final):
                                     st.session_state.df_tareas = df_final
-                                    st.success("¡Incidencia registrada con éxito!")
+                                    st.success("✅ Registro sincronizado correctamente.")
                                     time.sleep(1)
                                     st.rerun()
                             else:
-                                st.warning("Amor, escribe el reporte de la incidencia.")
+                                st.warning("Amor, los campos de descripción e incidencia son obligatorios.")
 
                 
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
