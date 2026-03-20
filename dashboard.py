@@ -3136,10 +3136,31 @@ else:
 
 
                 # >>> AQUÍ EMPIEZA LO NUEVO AMOR <<<
-                # ── 1. PANEL DE CAPTURA INTELIGENTE (REDiseño SIMÉTRICO) ──
+                # ── 1. PANEL DE CAPTURA INTELIGENTE (REDiseño SIMÉTRICO & CLEAN) ──
+                
+                # Inyectamos CSS para limpiar el input de avance y darle estilo al buscador
+                st.markdown("""
+                    <style>
+                    /* Quitar flechas del input numérico */
+                    input[type=number]::-webkit-inner-spin-button, 
+                    input[type=number]::-webkit-outer-spin-button { 
+                        -webkit-appearance: none; margin: 0; 
+                    }
+                    input[type=number] { -moz-appearance: textfield; }
+                    
+                    /* Línea decorativa para el buscador */
+                    .search-box-nexion {
+                        border-left: 3px solid #38bdf8;
+                        padding-left: 10px;
+                        margin-bottom: 5px;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+
                 with st.expander("➕ Registrar actividad o incidencia", expanded=True):
                     
-                    # Búsqueda inicial integrada
+                    # Búsqueda inicial con diseño destacado
+                    st.markdown("<div class='search-box-nexion'></div>", unsafe_allow_html=True)
                     c_busq, c_vacia = st.columns([2, 2])
                     with c_busq:
                         n_pedido = st.text_input("📦 Vincular Número de Pedido / Factura", placeholder="Enter para buscar...").strip().upper()
@@ -3152,7 +3173,7 @@ else:
                             info_matriz = {
                                 "desc": f"GUIA: {fila_m.get('NÚMERO DE GUÍA', 'N/A')} | CLIENTE: {fila_m.get('NOMBRE DEL CLIENTE', 'N/A')} | DESTINO: {fila_m.get('DESTINO', 'N/A')}"
                             }
-                            st.success(f"✅ Pedido vinculado: {fila_m.get('NOMBRE DEL CLIENTE')}")
+                            # El aviso de éxito se quitó como pediste, amor
                         else:
                             st.error("❌ Pedido no localizado en Matriz Global.")
                 
@@ -3167,15 +3188,15 @@ else:
                         with f1_c3:
                             t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
                 
-                        # FILA 2: Gestión de Incidencia (Simetría 50/50)
+                        # FILA 2: Gestión de Incidencia
                         f2_c1, f2_c2 = st.columns([3, 2])
                         with f2_c1:
                             t_incidencia = st.text_input("Reporte de Incidencia / Última Acción", placeholder="Describe la situación actual...")
                         with f2_c2:
-                            # CAMBIO A INPUT NUMÉRICO COMO PEDISTE AMOR
-                            t_avance = st.number_input("Avance Solución %", min_value=0, max_value=100, step=5, value=0)
+                            # Input numérico sencillo sin botones +/-
+                            t_avance = st.number_input("Avance Solución %", min_value=0, max_value=100, step=1, value=0)
                 
-                        # FILA 3: Clasificación y Fechas (4 columnas iguales)
+                        # FILA 3: Clasificación y Fechas
                         f3_c1, f3_c2, f3_c3, f3_c4 = st.columns(4)
                         with f3_c1:
                             t_grupo = st.text_input("Categoría / Grupo", value="ENTREGAS PENDIENTES")
