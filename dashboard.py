@@ -985,8 +985,12 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         </style>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div class='ceo-welcome'>BIENVENIDO C.E.O.</div>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#8fa3b0; letter-spacing:4px; font-size:10px; margin-bottom:30px; text-transform:uppercase;'>NEXION CORPORATE v3.0</p>", unsafe_allow_html=True)
+    # 1. NEXION Protagonista
+    st.markdown("<div class='brand-title'>NEXION</div>", unsafe_allow_html=True)
+    st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
+    
+    # 2. Saludo CEO Discreto
+    st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO C.E.O. // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
 
     # Contenedor centrado para los módulos
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
