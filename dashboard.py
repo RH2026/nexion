@@ -3233,7 +3233,7 @@ else:
                 """, unsafe_allow_html=True)
 
                 
-                with st.expander("➕ Registrar actividad o incidencia", expanded=True):
+                with st.expander("➕ Registrar actividad o incidencia", expanded=False):
                     
                     # --- FILA 1: BÚSQUEDA, FOLIO Y PRIORIDAD ---
                     st.markdown("<div class='search-container-pro'>", unsafe_allow_html=True)
