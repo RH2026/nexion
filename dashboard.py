@@ -922,23 +922,20 @@ elif not st.session_state.get('autenticado', False):
 # ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE LOGO CENTRADO) ──
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
     
-    # 💎 CSS DE ALTA GAMA: Ajustes definitivos para el centrado total del logo
+    # 💎 CSS DE ALTA GAMA: Centrado absoluto con Flexbox
     st.markdown("""
         <style>
-        /* Contenedor Flexbox para centrar absolutamente todo adentro */
-        .brand-logo-full-center {
-            display: flex;
-            justify-content: center; /* Centrado horizontal */
-            align-items: center;    /* Centrado vertical si hubiera altura */
-            width: 100%;
-            margin-top: 40px;       /* Espacio superior */
-            margin-bottom: 5px;     /* Espacio antes del subtítulo */
-        }
-
-        /* Estilo para asegurar que la imagen de Streamlit responda al Flexbox */
-        .brand-logo-full-center img {
-            display: block;
-            margin: 0 auto;         /* Centrado extra por seguridad */
+        /* Título NEXION Protagonista (Arriba, Grande, Fuerte) */
+        .brand-title {
+            text-align: center;
+            font-size: 55px; /* Gigante y potente */
+            font-weight: 900;
+            letter-spacing: 25px; /* Ultra espaciado ejecutivo */
+            color: #ffffff;
+            margin-top: 40px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.15); /* Brillo sutil blanco */
         }
 
         /* Subtítulo Versión Discreto */
@@ -954,7 +951,7 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         /* Saludo CEO Discreto (Abajo, Pequeño, Elegante) */
         .ceo-protocol-greet {
             text-align: center;
-            font-size: 12px;
+            font-size: 12px; /* Pequeño y sutil */
             font-weight: 400;
             letter-spacing: 4px;
             color: #8fa3b0; /* Color sub de NEXION */
@@ -973,7 +970,7 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
             justify-content: center;
             align-items: center;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-            height: 190px;
+            height: 190px; /* Un pelín más compactas */
             margin-bottom: 15px;
         }
         .ceo-card:hover {
@@ -989,22 +986,21 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         </style>
     """, unsafe_allow_html=True)
     
-    # --- RENDERIZADO DE LA IDENTIDAD VISUAL ---
+    # --- RENDERIZADO DE LA NUEVA JERARQUÍA VISUAL CON LOGO CENTRADO ---
     
-    # 1. MOSTRAR EL LOGO n2.png DESDE EL REPOSITORIO CON CENTRADO FORZADO
-    # Abrimos el contenedor Flexbox
+    # 1. NEXION Protagonista (LOGO)
+    # A) Creamos un contenedor HTML con Flexbox para centrado total
     st.markdown('<div class="brand-logo-full-center">', unsafe_allow_html=True)
     
-    # Intentamos cargar la imagen amor, con un width ejecutivo (ej. 350)
+    # B) Ponemos la imagen AMOR. Ajusta el width a 350 o lo que se vea mejor.
+    # Asegúrate de que n2.png esté en el mismo directorio.
     try:
-        # Nota: quitamos st.image de las columnas anteriores y lo ponemos directo aquí
         st.image("n2.png", width=350) 
     except FileNotFoundError:
-        # Por si acaso no encuentra la imagen, que muestre un texto sutil
+        # Por si acaso no encuentra la imagen, amor, que muestre un texto sutil
         st.markdown("<h1 style='text-align:center; color:white; letter-spacing:10px;'>NEXION</h1>", unsafe_allow_html=True)
-        st.error("❌ No se encontró el archivo 'n2.png' en el repositorio.")
         
-    # Cerramos el contenedor Flexbox
+    # C) Cerramos el contenedor Flexbox
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Subtítulo Versión Discreto
