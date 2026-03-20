@@ -918,21 +918,47 @@ elif not st.session_state.get('autenticado', False):
     # Llamamos a tu función de login existente
     login_screen()
 
-# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE COMPACTA) ──
+# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE PROTOCOL) ──
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
-    # 💎 CSS DE ALTA GAMA COMPACTO
+    
+    # 💎 CSS DE ALTA GAMA: JERARQUÍA INVERTIDA (NEXION PROTAGONISTA)
     st.markdown("""
         <style>
-        .ceo-welcome {
+        /* Título NEXION Protagonista (Arriba, Grande, Fuerte) */
+        .brand-title {
             text-align: center;
-            font-size: 32px;
+            font-size: 55px; /* Gigante y potente */
             font-weight: 900;
-            letter-spacing: 10px;
+            letter-spacing: 25px; /* Ultra espaciado ejecutivo */
             color: #ffffff;
-            margin-top: 30px;
-            text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+            margin-top: 40px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.15); /* Brillo sutil blanco */
         }
 
+        /* Subtítulo Versión Discreto */
+        .brand-version {
+            text-align: center;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3); /* Muy tenue */
+            letter-spacing: 5px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+
+        /* Saludo CEO Discreto (Abajo, Pequeño, Elegante) */
+        .ceo-protocol-greet {
+            text-align: center;
+            font-size: 12px; /* Pequeño y sutil */
+            font-weight: 400;
+            letter-spacing: 4px;
+            color: #8fa3b0; /* Color sub de NEXION */
+            margin-bottom: 45px; /* Espacio antes de los módulos */
+            text-transform: uppercase;
+        }
+
+        /* --- RESTO DEL CSS DE LAS TARJETAS (Mantenemos el look compacto) --- */
         .ceo-card {
             background: rgba(30, 39, 46, 0.85) !important;
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -943,47 +969,23 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
             justify-content: center;
             align-items: center;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-            height: 200px; /* Tamaño reducido */
+            height: 190px; /* Un pelín más compactas */
             margin-bottom: 15px;
         }
-
         .ceo-card:hover {
             transform: translateY(-8px);
             background: rgba(45, 52, 54, 0.98) !important;
             border-color: #00D4FF !important;
             box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
         }
-
-        .ceo-icon {
-            font-size: 50px; /* Icono más pequeño */
-            margin-bottom: 15px;
-            filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));
-        }
-
-        .ceo-title {
-            font-size: 11px; /* Texto más fino */
-            font-weight: 800;
-            color: #ffffff;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            text-align: center;
-        }
-
-        .stButton>button {
-            border-radius: 8px !important;
-            font-size: 10px !important;
-            padding: 2px 10px !important;
-            background: rgba(255,255,255,0.03) !important;
-            transition: all 0.3s ease !important;
-        }
-        
-        /* Centrar la cuadrícula */
-        [data-testid="stHorizontalBlock"] {
-            max-width: 900px;
-            margin: 0 auto;
-        }
+        .ceo-icon { font-size: 48px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.1)); }
+        .ceo-title { font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+        .stButton>button { border-radius: 8px !important; font-size: 10px !important; padding: 2px 10px !important; background: rgba(255,255,255,0.03) !important; transition: all 0.3s ease !important; }
+        [data-testid="stHorizontalBlock"] { max-width: 900px; margin: 0 auto; }
         </style>
     """, unsafe_allow_html=True)
+    
+    # --- RENDERIZADO DE LA NUEVA JERARQUÍA ---
     
     # 1. NEXION Protagonista
     st.markdown("<div class='brand-title'>NEXION</div>", unsafe_allow_html=True)
@@ -992,7 +994,7 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
     # 2. Saludo CEO Discreto
     st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO C.E.O. // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
 
-    # Contenedor centrado para los módulos
+    # --- CUADRÍCULA DE MÓDULOS (COMPACTA) ---
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     
     with m_col1:
@@ -1000,7 +1002,6 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         if st.button("ACCEDER", key="btn_dash", use_container_width=True):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "DASHBOARD"
-            st.session_state.menu_sub = "GENERAL"
             st.rerun()
 
     with m_col2:
@@ -1008,7 +1009,6 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "SEGUIMIENTO"
-            st.session_state.menu_sub = "ALERTAS"
             st.rerun()
 
     with m_col3:
@@ -1016,7 +1016,6 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "REPORTES"
-            st.session_state.menu_sub = "APQ"
             st.rerun()
 
     with m_col4:
@@ -1024,10 +1023,10 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "HUB LOG"
-            st.session_state.menu_sub = "DATA MANAGEMENT"
             st.rerun()
 
-    st.markdown("<div style='margin-top:50px;'></div>", unsafe_allow_html=True)
+    # Espacio final estético
+    st.markdown("<div style='margin-top:40px;'></div>", unsafe_allow_html=True)
 
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
