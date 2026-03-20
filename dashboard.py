@@ -1370,7 +1370,7 @@ else:
                 
             
             if df_raw is not None:               
-                with st.expander("Listado de pedidos completo", expanded=False):
+                with st.expander("Ver / Ocultar, Listado de pedidos completo", expanded=False):
                     # --- BÚSQUEDA MAESTRA ---
                     busqueda_manual = st.text_input("", key="bus_maestra_log", placeholder="🔍 Buscar por pedido, guía o cliente...").strip()
                     
