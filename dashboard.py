@@ -144,6 +144,47 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+#TARJETAS DEL GANTT--------
+.task-card {{
+    background: rgba(30, 39, 46, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    border-left: 5px solid #94a3b8;
+}}
+.task-card:hover {{
+    transform: translateX(10px);
+    background: rgba(45, 52, 54, 0.9);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    border-left-width: 10px;
+}}
+.task-title {{
+    font-size: 14px;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 5px;
+}}
+.task-info {{
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}}
+.progress-container {{
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    height: 6px;
+    margin-top: 10px;
+}}
+.progress-bar {{
+    height: 6px;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}}
+
+
 #-----RENDER DE MODULO ALERTAS------
 .kpi-slim-card {{
     background: rgba(30, 39, 46, 0.7);
@@ -3236,8 +3277,48 @@ else:
 
                 
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
-                with st.expander(":material/edit_note: Abrir editor de tareas", expanded=False):
-                    st.subheader("Editor de tareas")
+                # ── 3. VISUALIZADOR DE TAREAS ÉLITE ───────────────────────────────────────────────
+                with st.expander(":material/view_list: Ver Listado de Tareas Élite", expanded=True):
+                    # Diccionario de colores por prioridad para el borde izquierdo
+                    prioridad_colores = {
+                        "Urgente": "#ff4b4b",
+                        "Alta": "#f97316",
+                        "Media": "#38bdf8",
+                        "Baja": "#00FFAA"
+                    }
+                
+                    # Iteramos sobre el DataFrame para crear las tarjetas
+                    for index, row in df_master.iterrows():
+                        color_p = prioridad_colores.get(row["IMPORTANCIA"], "#94a3b8")
+                        progreso = int(row["PROGRESO"])
+                        
+                        st.markdown(f"""
+                            <div class="task-card" style="border-left-color: {color_p};">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div class="task-title">{row["TAREA"]}</div>
+                                    <div style="background: {color_p}22; color: {color_p}; font-size: 9px; padding: 2px 8px; border-radius: 10px; font-weight: 800;">
+                                        {row["IMPORTANCIA"].upper()}
+                                    </div>
+                                </div>
+                                <div class="task-info">
+                                    🗓️ {row["FECHA"]} - {row["FECHA_FIN"]} | 👤 {row["USUARIO"]} | 📂 {row["GRUPO"]}
+                                </div>
+                                <div style="margin-top: 8px; font-size: 11px; color: #38bdf8; font-weight: 600;">
+                                    📍 ÚLTIMA ACCIÓN: <span style="color: white; font-weight: 400;">{row["ULTIMO ACCION"]}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                    <div class="progress-container" style="flex-grow: 1;">
+                                        <div class="progress-bar" style="width: {progreso}%; background: {color_p};"></div>
+                                    </div>
+                                    <div style="font-size: 10px; color: white; font-weight: 800;">{progreso}%</div>
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                
+                # ── 3.5 EDITOR TÉCNICO (OCULTO POR DEFECTO PARA EMERGENCIAS) ──────────────────────
+                with st.expander(":material/settings: Editor de datos (Solo Administración)", expanded=False):
+                    st.subheader("Modo edición avanzada")
+                    # Mantenemos tu df_editor y st.data_editor igualitos amor, para no romper lógica
                     df_editor = df_master.copy()
                     for col in ["USUARIO","IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
                         df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
@@ -3249,7 +3330,7 @@ else:
                         hide_index=True,
                         use_container_width=True,
                         num_rows="dynamic",
-                        column_config={
+                        column_config={{
                             "USUARIO": st.column_config.TextColumn("Responsable"),
                             "FECHA": st.column_config.DateColumn("Inicio"),
                             "FECHA_FIN": st.column_config.DateColumn("Fin"),
@@ -3261,7 +3342,7 @@ else:
                             "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
                             "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
                             "GRUPO": st.column_config.TextColumn("Grupo"),
-                        }
+                        }}
                     )
                 
                     # 1. Definimos las columnas y preparamos datos
