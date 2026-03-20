@@ -3302,52 +3302,59 @@ else:
                                     time.sleep(1)
                                     st.rerun()
                             else:
-                                st.warning("Amor, los campos de descripción e incidencia son obligatorios.")
+                            st.warning("Amor, los campos de descripción e incidencia son obligatorios.")
 
-                
-                # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
-                # ── 3. VISUALIZADOR DE TAREAS ÉLITE ───────────────────────────────────────────────
-                with st.expander(":material/view_list: Ver Listado de Tareas Élite", expanded=True):
-                    # Diccionario de colores por prioridad (Sincronizado con tu semáforo)
+                # ── 3. VISUALIZADOR DE TAREAS ÉLITE (DISEÑO SEGMENTADO) ────────────────────────────────
+                # ── 3. VISUALIZADOR DE TAREAS ÉLITE (DISEÑO SEGMENTADO) ────────────────────────────────
+                with st.expander(":material/view_list: Monitor de Pendientes NEXION", expanded=True):
                     prioridad_colores = {
                         "Urgente": "#ff4b4b",
                         "Alta": "#f97316",
                         "Media": "#38bdf8",
                         "Baja": "#00FFAA"
                     }
-                
-                    # Iteramos sobre el DataFrame para crear las tarjetas
+
                     for index, row in df_master.iterrows():
-                        # Verificamos que la tarea no esté vacía para no renderizar tarjetas basura
-                        if not str(row["TAREA"]).strip():
+                        if not str(row["TAREA"]).strip(): 
                             continue
                             
                         color_p = prioridad_colores.get(row["IMPORTANCIA"], "#94a3b8")
                         progreso = int(row["PROGRESO"])
-                        
-                        st.markdown(f"""
-                            <div class="task-card" style="border-left-color: {color_p};">
-                                <div style="display: flex; justify-content: space-between; align-items: start;">
-                                    <div class="task-title">{row["TAREA"]}</div>
-                                    <div style="background: {color_p}22; color: {color_p}; font-size: 9px; padding: 2px 8px; border-radius: 10px; font-weight: 800; border: 1px solid {color_p}44;">
-                                        {row["IMPORTANCIA"].upper()}
+                        folio_display = row["TAREA"].split("]")[0].replace("[", "") if "]" in row["TAREA"] else f"NEX-{index+1:03d}"
+                        desc_limpia = row["TAREA"].split("] ")[1] if "] " in row["TAREA"] else row["TAREA"]
+                        sombra = f"{color_p}88"
+
+                        # Usamos format para evitar errores de llaves de Python vs llaves de CSS
+                        html_card = """
+                        <div class="task-card" style="border-left-color: {color}; padding: 20px; margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="flex: 1; border-right: 1px solid rgba(255,255,255,0.05); padding-right: 15px;">
+                                    <div style="font-size: 10px; color: {color}; font-weight: 800; letter-spacing: 1px;">FOLIO / PEDIDO</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: white;">{folio}</div>
+                                    <div style="font-size: 9px; color: rgba(255,255,255,0.4);">REF: {grupo}</div>
+                                </div>
+                                <div style="flex: 3; padding: 0 20px; border-right: 1px solid rgba(255,255,255,0.05);">
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 800;">CLIENTE / GUÍA / DESTINO</div>
+                                    <div style="font-size: 13px; font-weight: 700; color: #e2e8f0; line-height: 1.2;">{desc}</div>
+                                    <div style="font-size: 10px; color: #38bdf8; margin-top: 5px; font-weight: 600;">
+                                        👤 {user} | 🗓️ {inicio} ➔ {fin}
                                     </div>
                                 </div>
-                                <div class="task-info">
-                                    🗓️ {row["FECHA"]} ➜ {row["FECHA_FIN"]} | 👤 {row["USUARIO"]} | 📂 {row["GRUPO"]}
-                                </div>
-                                <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                                    <div style="font-size: 9px; color: {color_p}; font-weight: 800; letter-spacing: 1px;">ÚLTIMA ACCIÓN:</div>
-                                    <div style="font-size: 11px; color: #e2e8f0; font-weight: 400; margin-top: 2px;">{row["ULTIMO ACCION"]}</div>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
-                                    <div class="progress-container" style="flex-grow: 1; background: rgba(255,255,255,0.05);">
-                                        <div class="progress-bar" style="width: {progreso}%; background: {color_p}; box-shadow: 0 0 10px {color_p}66;"></div>
+                                <div style="flex: 1.5; padding-left: 20px; text-align: right;">
+                                    <div style="font-size: 9px; color: {color}; font-weight: 800;">ESTATUS ACTUAL</div>
+                                    <div style="font-size: 11px; color: white; font-style: italic; margin-bottom: 8px;">"{accion}"</div>
+                                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 4px; width: 80px;">
+                                            <div style="height: 4px; border-radius: 10px; width: {prog}%; background: {color}; box-shadow: 0 0 8px {shd};"></div>
+                                        </div>
+                                        <span style="font-size: 10px; font-weight: 800; color: white;">{prog}%</span>
                                     </div>
-                                    <div style="font-size: 11px; color: white; font-weight: 800; min-width: 35px; text-align: right;">{progreso}%</div>
                                 </div>
                             </div>
-                        """, unsafe_allow_html=True)
+                        </div>
+                        """.format(color=color_p, folio=folio_display, grupo=row['GRUPO'], desc=desc_limpia, user=row['USUARIO'], inicio=row['FECHA'], fin=row['FECHA_FIN'], accion=row['ULTIMO ACCION'], prog=progreso, shd=sombra)
+                        
+                        st.markdown(html_card, unsafe_allow_html=True)
                 
                 # ── 3.5 EDITOR TÉCNICO (OCULTO POR DEFECTO PARA EMERGENCIAS) ──────────────────────
                 with st.expander(":material/settings: Editor de datos (Solo Administración)", expanded=False):
