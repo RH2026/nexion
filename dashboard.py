@@ -913,6 +913,101 @@ elif not st.session_state.autenticado:
     login_screen()
 
 # 3. ¿Todo listo? Mostrar NEXION CORE
+# ==============================================================================
+# ── 3. LÓGICA DE NAVEGACIÓN EJECUTIVA (BIENVENIDA CEO) ──
+# ==============================================================================
+
+# Inicializamos el estado de la elección si no existe
+if 'ejecutivo_modulo' not in st.session_state:
+    st.session_state.ejecutivo_modulo = None
+
+# CSS PARA LOS MÓDULOS GRANDES (DISEÑO ONYX + NEÓN CYAN)
+st.markdown(f"""
+    <style>
+    .ceo-container {{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 30px;
+        padding: 60px 20px;
+        flex-wrap: wrap;
+    }}
+    .ceo-card {{
+        background: rgba(30, 39, 46, 0.7);
+        border: 2px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        width: 260px;
+        height: 280px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: pointer;
+        text-align: center;
+    }}
+    .ceo-card:hover {{
+        transform: translateY(-15px);
+        border-color: #00D4FF;
+        background: rgba(45, 52, 54, 0.9);
+        box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
+    }}
+    .ceo-icon {{ font-size: 70px; margin-bottom: 20px; }}
+    .ceo-title {{
+        font-size: 16px;
+        font-weight: 800;
+        color: white;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+    }}
+    .ceo-welcome {{
+        text-align: center;
+        font-size: 35px;
+        font-weight: 800;
+        letter-spacing: 10px;
+        color: white;
+        margin-top: 50px;
+        text-transform: uppercase;
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
+# SI EL DUEÑO NO HA ELEGIDO MÓDULO, MOSTRAR BIENVENIDA
+if st.session_state.ejecutivo_modulo is None:
+    st.markdown("<div class='ceo-welcome'>BIENVENIDO C.E.O.</div>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#8fa3b0; letter-spacing:4px; font-size:12px; margin-bottom:40px;'>NEXION OPERATIVE SYSTEM v3.0</p>", unsafe_allow_html=True)
+
+    # Grid de Módulos
+    m1, m2, m3, m4 = st.columns(4)
+    
+    with m1:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'>📈</div><div class='ceo-title'>Dashboard</div></div>", unsafe_allow_html=True)
+        if st.button("ACCEDER", key="btn_dash", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "DASHBOARD"
+            st.session_state.menu_main = "DASHBOARD"
+            st.rerun()
+
+    with m2:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'>🚛</div><div class='ceo-title'>Seguimiento</div></div>", unsafe_allow_html=True)
+        if st.button("ACCEDER", key="btn_seg", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "SEGUIMIENTO"
+            st.session_state.menu_main = "SEGUIMIENTO"
+            st.rerun()
+
+    with m3:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'>📄</div><div class='ceo-title'>Reportes</div></div>", unsafe_allow_html=True)
+        if st.button("ACCEDER", key="btn_rep", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "REPORTES"
+            st.session_state.menu_main = "REPORTES"
+            st.rerun()
+
+    with m4:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'>🛠️</div><div class='ceo-title'>Hub Log</div></div>", unsafe_allow_html=True)
+        if st.button("ACCEDER", key="btn_hub", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "HUB LOG"
+            st.session_state.menu_main = "HUB LOG"
+            st.rerun()
+
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
     header_zone = st.container()
