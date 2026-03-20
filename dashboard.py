@@ -795,7 +795,7 @@ def login_screen():
     
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; margin-bottom: 30px;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; margin-bottom: 30px; color: #60A5FA; letter-spacing: 5px; font-weight: 500;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
         
         # Creamos el formulario. El 'clear_on_submit' puede ser False.
         with st.form("login_form", clear_on_submit=False):
