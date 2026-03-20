@@ -3116,62 +3116,87 @@ else:
                 
                 df_master = st.session_state.df_tareas.copy()
 
-                # ── GESTIÓN DE ESTADO ──────────────────────────────────────────────────────
-                if "df_tareas" not in st.session_state:
-                    st.session_state.df_tareas = cargar_datos_seguro()
-                
-                df_master = st.session_state.df_tareas.copy()
 
                 # >>> AQUÍ EMPIEZA LO NUEVO AMOR <<<
-                # ── 1. PANEL DE CAPTURA RÁPIDA (SLIM ELITE) ──
-                with st.expander("➕ REGISTRAR NUEVA ACTIVIDAD", expanded=True):
+                # ── 1. PANEL DE CAPTURA / EDICIÓN (CON FOLIO, AVANCE Y ÚLTIMA ACCIÓN) ──
+                with st.expander("➕ Registrar / Actualizar actividad", expanded=True):
+                    # Sugerimos el siguiente folio basado en el conteo actual
+                    siguiente_id = len(st.session_state.df_tareas) + 1
+                    
                     with st.form("form_nueva_tarea", clear_on_submit=True):
-                        c1, c2, c3 = st.columns([3, 1, 1])
+                        c1, c2, c3 = st.columns([1, 3, 1])
                         with c1:
-                            t_desc = st.text_input("Descripción de la Tarea", placeholder="Ej: Revisión Guía GLZ-99...")
+                            # Si quieres editar una, escribes el folio manualmente (ej. NEX-005)
+                            t_folio = st.text_input("Folio ID", value=f"NEX-{siguiente_id:03d}", help="Usa un folio existente para actualizarlo")
                         with c2:
-                            t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
+                            t_desc = st.text_input("Descripción de la Tarea", placeholder="Ej: Revisión Guía GLZ-99...")
                         with c3:
-                            t_grupo = st.text_input("Grupo/Proyecto", value="General")
+                            t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
                         
-                        ca, cb, cc = st.columns(3)
+                        # FILA 2: Acciones y Progreso
+                        ca, cb = st.columns([3, 2])
                         with ca:
-                            t_ini = st.date_input("Fecha Inicio", value=obtener_fecha_mexico())
+                            t_accion = st.text_input("Última Acción Realizada", placeholder="Ej: Se envió correo a logística...")
                         with cb:
+                            t_avance = st.slider("Avance %", 0, 100, 0, step=5)
+                        
+                        # FILA 3: Fechas y Grupo
+                        c_g, c_i, c_f, c_b = st.columns([1.5, 1.5, 1.5, 1.5])
+                        with c_g:
+                            t_grupo = st.text_input("Grupo/Proyecto", value="General")
+                        with c_i:
+                            t_ini = st.date_input("Fecha Inicio", value=obtener_fecha_mexico())
+                        with c_f:
                             t_fin = st.date_input("Fecha Fin", value=obtener_fecha_mexico() + timedelta(days=1))
-                        with cc:
+                        with c_b:
                             st.markdown("<br>", unsafe_allow_html=True)
-                            enviar = st.form_submit_button("🚀 AGREGAR AL GANTT", use_container_width=True)
+                            enviar = st.form_submit_button("🚀 GUARDAR EN GANTT", use_container_width=True)
 
                         if enviar:
                             if t_desc:
-                                nueva_fila = {
+                                # Preparamos la data con Folio y Última Acción
+                                nueva_data = {
                                     "USUARIO": st.session_state.get('nombre_completo', 'Rigoberto'),
                                     "FECHA": t_ini,
                                     "FECHA_FIN": t_fin,
                                     "IMPORTANCIA": t_prior,
-                                    "TAREA": t_desc.upper(),
-                                    "ULTIMO ACCION": "Captura Rápida",
-                                    "PROGRESO": 0,
+                                    "TAREA": f"[{t_folio}] {t_desc.upper()}",
+                                    "ULTIMO ACCION": t_accion.upper() if t_accion else "CAPTURA INICIAL",
+                                    "PROGRESO": t_avance,
                                     "DEPENDENCIAS": "",
                                     "TIPO": "Tarea",
                                     "GRUPO": t_grupo.upper()
                                 }
-                                # Actualizamos memoria
-                                df_nuevo = pd.concat([st.session_state.df_tareas, pd.DataFrame([nueva_fila])], ignore_index=True)
-                                # Guardamos en GitHub con tu función
-                                if guardar_en_github(df_nuevo):
-                                    st.session_state.df_tareas = df_nuevo
-                                    st.success("¡Tarea capturada y sincronizada!")
+                                
+                                df_actual = st.session_state.df_tareas.copy()
+                                
+                                # LÓGICA INTELIGENTE: ¿El folio ya existe en la columna TAREA?
+                                mask = df_actual['TAREA'].str.contains(f"\\[{t_folio}\\]", na=False)
+                                
+                                if mask.any():
+                                    # ACTUALIZAR: Reemplazamos la fila existente
+                                    idx = df_actual[mask].index[0]
+                                    for col, val in nueva_data.items():
+                                        df_actual.at[idx, col] = val
+                                    msg = f"¡Tarea {t_folio} actualizada con éxito!"
+                                else:
+                                    # AGREGAR: Es un folio nuevo
+                                    df_actual = pd.concat([df_actual, pd.DataFrame([nueva_data])], ignore_index=True)
+                                    msg = f"¡Tarea {t_folio} registrada en el sistema!"
+                                
+                                # Sincronizamos con GitHub
+                                if guardar_en_github(df_actual):
+                                    st.session_state.df_tareas = df_actual
+                                    st.success(msg)
                                     time.sleep(1)
                                     st.rerun()
                             else:
-                                st.warning("Escribe la tarea, vida.")
+                                st.warning("Amor, la descripción es obligatoria.")
 
                 
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
                 with st.expander(":material/edit_note: Abrir editor de tareas", expanded=False):
-                    st.subheader("EDITOR DE TAREAS")
+                    st.subheader("Editor de tareas")
                     df_editor = df_master.copy()
                     for col in ["USUARIO","IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
                         df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
