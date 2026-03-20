@@ -3282,7 +3282,7 @@ else:
 
                         # FILA 5: BOTÓN GRANDE
                         st.markdown("<br>", unsafe_allow_html=True)
-                        enviar = st.form_submit_button("🚀 GUARDAR Y ACTUALIZAR GANTT GLOBAL", use_container_width=True)
+                        enviar = st.form_submit_button("GUARDAR Y ACTUALIZAR", use_container_width=True)
                 
                         if enviar:
                             if t_desc and t_incidencia:
@@ -3320,13 +3320,15 @@ else:
                             
                         color_p = prioridad_colores.get(row["IMPORTANCIA"], "#94a3b8")
                         progreso = int(row["PROGRESO"])
+                        
+                        # Extracción de Folio y Descripción
                         folio_display = row["TAREA"].split("]")[0].replace("[", "") if "]" in row["TAREA"] else f"NEX-{index+1:03d}"
                         desc_limpia = row["TAREA"].split("] ")[1] if "] " in row["TAREA"] else row["TAREA"]
                         sombra = f"{color_p}88"
 
-                        # Usamos format para evitar errores de llaves de Python vs llaves de CSS
+                        # HTML con la clase 'task-card' para recuperar el fondo oscuro y hover
                         html_card = """
-                        <div class="task-card" style="border-left-color: {color}; padding: 20px; margin-bottom: 20px;">
+                        <div class="task-card" style="border-left-color: {color}; padding: 20px; margin-bottom: 20px; background: rgba(30, 39, 46, 0.7); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
                             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                                 <div style="flex: 1; border-right: 1px solid rgba(255,255,255,0.05); padding-right: 15px;">
                                     <div style="font-size: 10px; color: {color}; font-weight: 800; letter-spacing: 1px;">FOLIO / PEDIDO</div>
