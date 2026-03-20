@@ -3318,19 +3318,20 @@ else:
                 # ── 3.5 EDITOR TÉCNICO (OCULTO POR DEFECTO PARA EMERGENCIAS) ──────────────────────
                 with st.expander(":material/settings: Editor de datos (Solo Administración)", expanded=False):
                     st.subheader("Modo edición avanzada")
-                    # Mantenemos tu df_editor y st.data_editor igualitos amor, para no romper lógica
+                    
                     df_editor = df_master.copy()
                     for col in ["USUARIO","IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
                         df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
                     
                     df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
                     
+                    # AQUÍ ESTÁ EL FIX: Usamos llaves simples { } porque no es un f-string
                     df_editado = st.data_editor(
                         df_editor,
                         hide_index=True,
                         use_container_width=True,
                         num_rows="dynamic",
-                        column_config={{
+                        column_config={
                             "USUARIO": st.column_config.TextColumn("Responsable"),
                             "FECHA": st.column_config.DateColumn("Inicio"),
                             "FECHA_FIN": st.column_config.DateColumn("Fin"),
@@ -3342,7 +3343,7 @@ else:
                             "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
                             "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
                             "GRUPO": st.column_config.TextColumn("Grupo"),
-                        }}
+                        }
                     )
                 
                     # 1. Definimos las columnas y preparamos datos
