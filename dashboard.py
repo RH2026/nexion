@@ -918,80 +918,130 @@ elif not st.session_state.get('autenticado', False):
     # Llamamos a tu función de login existente
     login_screen()
 
-# 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (TU PUERTA ÉLITE
-# ── 3. PANTALLA C.E.O. 2x2 (COMPACTA Y FUNCIONAL) ───────────────────────────
+# 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (TU PUERTA ÉLITE)
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
-
-    # 💎 CSS AJUSTADO: Módulos más pequeños y botones integrados
+    # 💎 CSS DE ALTA GAMA PARA LA PUERTA ÉLITE DEL C.E.O.
     st.markdown("""
         <style>
+        /* Contenedor de bienvenida */
         .ceo-welcome {
-            text-align: center; font-size: 32px; font-weight: 900; letter-spacing: 10px;
-            color: #ffffff; margin-top: 30px; text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+            text-align: center;
+            font-size: 45px;
+            font-weight: 900;
+            letter-spacing: 15px;
+            color: #ffffff;
+            margin-top: 60px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
         }
-        
-        /* Ajuste del botón de Streamlit para que PAREZCA una tarjeta */
-        .stButton > button {
+
+        /* La Tarjeta Ejecutiva */
+        .ceo-card {
             background: rgba(30, 39, 46, 0.8) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 15px !important;
-            height: 180px !important; /* Más compacto */
-            width: 100% !important;
-            color: white !important;
-            transition: all 0.3s ease !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            height: 300px;
+            margin-bottom: 20px;
         }
 
-        .stButton > button:hover {
-            border-color: #00D4FF !important;
+        /* Efecto Hover: Elevación y Brillo Neón Cyan */
+        .ceo-card:hover {
+            transform: translateY(-15px) scale(1.02);
             background: rgba(45, 52, 54, 0.95) !important;
-            transform: translateY(-5px) !important;
-            box-shadow: 0 10px 20px rgba(0, 212, 255, 0.2) !important;
+            border-color: #00D4FF !important;
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.25);
         }
 
-        /* Estilo para los textos dentro del botón */
-        .btn-text-big { font-size: 45px; margin-bottom: 10px; display: block; }
-        .btn-text-sub { 
-            font-size: 13px; font-weight: 800; letter-spacing: 2px; 
-            text-transform: uppercase; color: #38bdf8;
+        /* Iconos Neón */
+        .ceo-icon {
+            font-size: 75px;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
+            transition: transform 0.3s ease;
+        }
+        .ceo-card:hover .ceo-icon {
+            transform: scale(1.1);
+        }
+
+        /* Títulos de los Módulos */
+        .ceo-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        /* Estilo del botón de Streamlit para que no rompa el diseño */
+        .stButton>button {
+            border-radius: 10px !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            background: rgba(255,255,255,0.05) !important;
+            color: white !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            transition: all 0.3s ease !important;
+        }
+        .stButton>button:hover {
+            border-color: #00D4FF !important;
+            color: #00D4FF !important;
+            background: rgba(0, 212, 255, 0.1) !important;
         }
         </style>
     """, unsafe_allow_html=True)
-
+    
+    # Títulos con diseño NEXION CORPORATE
     st.markdown("<div class='ceo-welcome'>BIENVENIDO C.E.O.</div>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#8fa3b0; letter-spacing:3px; font-size:10px; margin-bottom:30px;'>NEXION CORPORATE</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#8fa3b0; letter-spacing:4px; font-size:12px; margin-bottom:50px; text-transform:uppercase;'>NEXION CORPORATE OPERATIVE SYSTEM v3.0</p>", unsafe_allow_html=True)
 
-    # --- GRID 2x2 COMPACTO ---
-    # Fila 1
-    r1_c1, r1_c2 = st.columns(2)
-    with r1_c1:
-        if st.button("📈\n\nDASHBOARD", key="btn_ceo_dash"):
-            st.session_state.ejecutivo_modulo = "CORE"
+    # --- GRID DE MÓDULOS EJECUTIVOS (LOS 4 CUADROS GRANDES) ---
+    m1, m2, m3, m4 = st.columns(4)
+    
+    # MÓDULO 1: DASHBOARD
+    with m1:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'>📈</div><div class='ceo-title'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
+        if st.button("ACCEDER", key="btn_dash", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "CORE" # Marcamos que ya entró al Core
             st.session_state.menu_main = "DASHBOARD"
+            st.session_state.menu_sub = "GENERAL"
             st.rerun()
 
-    with r1_c2:
-        if st.button("🚛\n\nSEGUIMIENTO", key="btn_ceo_seg"):
+    # MÓDULO 2: SEGUIMIENTO
+    with m2:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'>🚛</div><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
+        if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "SEGUIMIENTO"
+            st.session_state.menu_sub = "ALERTAS"
             st.rerun()
 
-    # Fila 2
-    r2_c1, r2_c2 = st.columns(2)
-    with r2_c1:
-        if st.button("📄\n\nREPORTES", key="btn_ceo_rep"):
+    # MÓDULO 3: REPORTES
+    with m3:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'>📄</div><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
+        if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "REPORTES"
+            st.session_state.menu_sub = "APQ"
             st.rerun()
 
-    with r2_c2:
-        if st.button("🔒\n\nHUB LOG", key="btn_ceo_hub"):
+    # MÓDULO 4: HUB LOG
+    with m4:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'>🔒</div><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
+        if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
             st.session_state.ejecutivo_modulo = "CORE"
             st.session_state.menu_main = "HUB LOG"
+            st.session_state.menu_sub = "DATA MANAGEMENT"
             st.rerun()
+
+    # Pausa decorativa final
+    st.markdown("<div style='margin-top:100px;'></div>", unsafe_allow_html=True)
 
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
