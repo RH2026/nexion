@@ -3115,6 +3115,59 @@ else:
                     st.session_state.df_tareas = cargar_datos_seguro()
                 
                 df_master = st.session_state.df_tareas.copy()
+
+                # ── GESTIÓN DE ESTADO ──────────────────────────────────────────────────────
+                if "df_tareas" not in st.session_state:
+                    st.session_state.df_tareas = cargar_datos_seguro()
+                
+                df_master = st.session_state.df_tareas.copy()
+
+                # >>> AQUÍ EMPIEZA LO NUEVO AMOR <<<
+                # ── 1. PANEL DE CAPTURA RÁPIDA (SLIM ELITE) ──
+                with st.expander("➕ REGISTRAR NUEVA ACTIVIDAD", expanded=True):
+                    with st.form("form_nueva_tarea", clear_on_submit=True):
+                        c1, c2, c3 = st.columns([3, 1, 1])
+                        with c1:
+                            t_desc = st.text_input("Descripción de la Tarea", placeholder="Ej: Revisión Guía GLZ-99...")
+                        with c2:
+                            t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
+                        with c3:
+                            t_grupo = st.text_input("Grupo/Proyecto", value="General")
+                        
+                        ca, cb, cc = st.columns(3)
+                        with ca:
+                            t_ini = st.date_input("Fecha Inicio", value=obtener_fecha_mexico())
+                        with cb:
+                            t_fin = st.date_input("Fecha Fin", value=obtener_fecha_mexico() + timedelta(days=1))
+                        with cc:
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            enviar = st.form_submit_button("🚀 AGREGAR AL GANTT", use_container_width=True)
+
+                        if enviar:
+                            if t_desc:
+                                nueva_fila = {
+                                    "USUARIO": st.session_state.get('nombre_completo', 'Rigoberto'),
+                                    "FECHA": t_ini,
+                                    "FECHA_FIN": t_fin,
+                                    "IMPORTANCIA": t_prior,
+                                    "TAREA": t_desc.upper(),
+                                    "ULTIMO ACCION": "Captura Rápida",
+                                    "PROGRESO": 0,
+                                    "DEPENDENCIAS": "",
+                                    "TIPO": "Tarea",
+                                    "GRUPO": t_grupo.upper()
+                                }
+                                # Actualizamos memoria
+                                df_nuevo = pd.concat([st.session_state.df_tareas, pd.DataFrame([nueva_fila])], ignore_index=True)
+                                # Guardamos en GitHub con tu función
+                                if guardar_en_github(df_nuevo):
+                                    st.session_state.df_tareas = df_nuevo
+                                    st.success("¡Tarea capturada y sincronizada!")
+                                    time.sleep(1)
+                                    st.rerun()
+                            else:
+                                st.warning("Escribe la tarea, vida.")
+
                 
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
                 with st.expander(":material/edit_note: Abrir editor de tareas", expanded=False):
