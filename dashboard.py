@@ -986,9 +986,22 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
     """, unsafe_allow_html=True)
     
     # --- RENDERIZADO DE LA NUEVA JERARQUÍA ---
+    # 1. MOSTRAR EL LOGO n2.png DESDE EL REPOSITORIO
+    # Creamos un contenedor centrado con columns para que la imagen no se desmadre
+    st.markdown('<div class="brand-logo-container">', unsafe_allow_html=True)
     
-    # 1. NEXION Protagonista
-    st.markdown("<div class='brand-title'>NEXION</div>", unsafe_allow_html=True)
+    # Ajusta el width a 300 o lo que se vea más chingón en tu pantalla
+    # Asegúrate de que 'n2.png' esté en la misma carpeta que tu script de Streamlit
+    try:
+        st.image("n2.png", width=300) 
+    except FileNotFoundError:
+        # Por si acaso no encuentra la imagen, amor, que muestre un texto sutil
+        st.markdown("<h1 style='text-align:center; color:white; letter-spacing:10px;'>NEXION</h1>", unsafe_allow_html=True)
+        st.error("❌ No se encontró el archivo 'n2.png' en el repositorio.")
+        
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Subtítulo Versión Discreto
     st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
     
     # 2. Saludo CEO Discreto
