@@ -919,7 +919,7 @@ elif not st.session_state.get('autenticado', False):
     login_screen()
 
 
-# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (LOGICA DE COLUMNAS) ──
+# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (TRUCO DE COLUMNAS CON TAMAÑO) ──
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
     
     # 💎 CSS DE ALTA GAMA (Mantenemos el estilo de las tarjetas y textos)
@@ -953,14 +953,17 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         </style>
     """, unsafe_allow_html=True)
     
-    # ── 1. EL TRUCO DE LAS COLUMNAS PARA EL LOGO ──
+    # ── 1. EL TRUCO DE LAS COLUMNAS PARA EL LOGO CENTRADO ──
     # Creamos 3 columnas: la del centro (L2) es donde vive el logo
-    L1, L2, L3 = st.columns([1, 2, 1]) # La central es el doble de ancha
+    # Ajusté las proporciones [1.2, 1.6, 1.2] para que la columna central sea más estrecha y se vea más fino
+    L1, L2, L3 = st.columns([1.2, 1.6, 1.2]) 
     
     with L2:
         try:
-            # Borras 'use_container_width=True' y pones 'width=350'
-            st.image("n2.png", width=180) 
+            # 💎 AQUÍ ESTÁ EL CONTROL DE TAMAÑO, AMOR
+            # Cambié use_container_width por width. 
+            # Ponle 300, 350, o lo que se vea más chingón en tu pantalla.
+            st.image("n2.png", width=350) 
         except:
             st.markdown("<h1 style='text-align:center; color:white;'>NEXION</h1>", unsafe_allow_html=True)
     
