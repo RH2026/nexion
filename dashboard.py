@@ -919,59 +919,27 @@ elif not st.session_state.get('autenticado', False):
     login_screen()
 
 
-# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE LOGO CENTRADO) ──
+# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (LOGICA DE COLUMNAS) ──
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
     
-    # 💎 CSS DE ALTA GAMA: Centrado absoluto con Flexbox
+    # 💎 CSS DE ALTA GAMA (Mantenemos el estilo de las tarjetas y textos)
     st.markdown("""
         <style>
-        /* Título NEXION Protagonista (Arriba, Grande, Fuerte) */
-        .brand-title {
-            text-align: center;
-            font-size: 55px; /* Gigante y potente */
-            font-weight: 900;
-            letter-spacing: 25px; /* Ultra espaciado ejecutivo */
-            color: #ffffff;
-            margin-top: 40px;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.15); /* Brillo sutil blanco */
-        }
-
-        /* Subtítulo Versión Discreto */
         .brand-version {
-            text-align: center;
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.3); /* Muy tenue */
-            letter-spacing: 5px;
-            margin-bottom: 25px;
-            text-transform: uppercase;
+            text-align: center; font-size: 10px; color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 5px; margin-bottom: 10px; text-transform: uppercase;
         }
-
-        /* Saludo CEO Discreto (Abajo, Pequeño, Elegante) */
         .ceo-protocol-greet {
-            text-align: center;
-            font-size: 12px; /* Pequeño y sutil */
-            font-weight: 400;
-            letter-spacing: 4px;
-            color: #8fa3b0; /* Color sub de NEXION */
-            margin-bottom: 45px; /* Espacio antes de los módulos */
-            text-transform: uppercase;
+            text-align: center; font-size: 12px; font-weight: 400; letter-spacing: 4px;
+            color: #8fa3b0; margin-bottom: 45px; text-transform: uppercase;
         }
-
-        /* --- RESTO DEL CSS DE LAS TARJETAS (Mantenemos el look compacto) --- */
         .ceo-card {
             background: rgba(30, 39, 46, 0.85) !important;
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 18px;
-            padding: 20px 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            border-radius: 18px; padding: 20px 10px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-            height: 190px; /* Un pelín más compactas */
-            margin-bottom: 15px;
+            height: 190px; margin-bottom: 15px;
         }
         .ceo-card:hover {
             transform: translateY(-8px);
@@ -979,37 +947,28 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
             border-color: #00D4FF !important;
             box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
         }
-        .ceo-icon { font-size: 48px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.1)); }
+        .ceo-icon { font-size: 48px; margin-bottom: 12px; }
         .ceo-title { font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
-        .stButton>button { border-radius: 8px !important; font-size: 10px !important; padding: 2px 10px !important; background: rgba(255,255,255,0.03) !important; transition: all 0.3s ease !important; }
-        [data-testid="stHorizontalBlock"] { max-width: 900px; margin: 0 auto; }
+        .stButton>button { border-radius: 8px !important; font-size: 10px !important; background: rgba(255,255,255,0.03) !important; }
         </style>
     """, unsafe_allow_html=True)
     
-    # --- RENDERIZADO DE LA NUEVA JERARQUÍA VISUAL CON LOGO CENTRADO ---
+    # ── 1. EL TRUCO DE LAS COLUMNAS PARA EL LOGO ──
+    # Creamos 3 columnas: la del centro (L2) es donde vive el logo
+    L1, L2, L3 = st.columns([1, 2, 1]) # La central es el doble de ancha
     
-    # 1. NEXION Protagonista (LOGO)
-    # A) Creamos un contenedor HTML con Flexbox para centrado total
-    st.markdown('<div class="brand-logo-full-center">', unsafe_allow_html=True)
+    with L2:
+        try:
+            # Al estar solo en la columna central, se verá centrado en la pantalla
+            st.image("n2.png", use_container_width=True) 
+        except:
+            st.markdown("<h1 style='text-align:center; color:white;'>NEXION</h1>", unsafe_allow_html=True)
     
-    # B) Ponemos la imagen AMOR. Ajusta el width a 350 o lo que se vea mejor.
-    # Asegúrate de que n2.png esté en el mismo directorio.
-    try:
-        st.image("n2.png", width=350) 
-    except FileNotFoundError:
-        # Por si acaso no encuentra la imagen, amor, que muestre un texto sutil
-        st.markdown("<h1 style='text-align:center; color:white; letter-spacing:10px;'>NEXION</h1>", unsafe_allow_html=True)
-        
-    # C) Cerramos el contenedor Flexbox
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Subtítulo Versión Discreto
+    # Subtítulo y Saludo (estos sí se centran fácil con text-align)
     st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
-    
-    # 2. Saludo CEO Discreto
     st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO C.E.O. // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
 
-    # --- CUADRÍCULA DE MÓDULOS (COMPACTA) ---
+    # ── 2. CUADRÍCULA DE MÓDULOS ──
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     
     with m_col1:
