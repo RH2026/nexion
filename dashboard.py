@@ -144,44 +144,73 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-#TARJETAS DEL GANTT--------
-.task-card {{
-    background: rgba(30, 39, 46, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 15px;
+/* Diccionario de colores de acento por prioridad */
+:root {{
+    --color-urgente: #ff4b4b; /* Rojo Intenso */
+    --color-alta: #f97316;    /* Naranja Eléctrico */
+    --color-media: #38bdf8;   /* Azul Neón */
+    --color-baja: #00FFAA;    /* Verde Esmeralda */
+}}
+
+.nexion-task-card {{
+    background: rgba(30, 39, 46, 0.6); /* Fondo Glass traslúcido */
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Borde de luz sutil */
+    border-radius: 12px;
+    padding: 18px;
     margin-bottom: 15px;
     transition: all 0.3s ease;
-    border-left: 5px solid #94a3b8;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    border-left: 5px solid #94a3b8; /* Borde de acento por defecto */
+    height: auto;
 }}
-.task-card:hover {{
-    transform: translateX(10px);
-    background: rgba(45, 52, 54, 0.9);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-    border-left-width: 10px;
+
+/* EFECTO HOVER DISCRETO Y PRO */
+.nexion-task-card:hover {{
+    transform: translateX(8px); /* Desplazamiento sutil a la derecha */
+    background: rgba(45, 52, 54, 0.8); /* Se aclara un poco */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3); /* Sombra de profundidad */
 }}
-.task-title {{
+
+/* Variaciones de color por prioridad */
+.task-urgente {{ border-left-color: var(--color-urgente) !important; }}
+.task-alta {{ border-left-color: var(--color-alta) !important; }}
+.task-media {{ border-left-color: var(--color-media) !important; }}
+.task-baja {{ border-left-color: var(--color-baja) !important; }}
+
+/* Tipografía Elite */
+.task-header-folio {{
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: white;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}}
+.task-client-title {{
     font-size: 14px;
     font-weight: 800;
     color: white;
-    margin-bottom: 5px;
+    line-height: 1.2;
 }}
-.task-info {{
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.5);
+.task-sub-info {{
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
+    margin-top: 4px;
 }}
-.progress-container {{
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    height: 6px;
+.task-status-label {{
+    background: rgba(255,255,255,0.05);
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
     margin-top: 10px;
-}}
-.progress-bar {{
-    height: 6px;
-    border-radius: 10px;
-    transition: width 0.5s ease;
+    align-self: flex-start;
 }}
 
 
@@ -3279,7 +3308,7 @@ else:
                 # ── 3. DATA EDITOR (DENTRO DE EXPANDER) ───────────────────────────────────────────────
                 # ── 3. VISUALIZADOR DE TAREAS ÉLITE ───────────────────────────────────────────────
                 with st.expander(":material/view_list: Ver Listado de Tareas Élite", expanded=True):
-                    # Diccionario de colores por prioridad para el borde izquierdo
+                    # Diccionario de colores por prioridad (Sincronizado con tu semáforo)
                     prioridad_colores = {
                         "Urgente": "#ff4b4b",
                         "Alta": "#f97316",
@@ -3289,6 +3318,10 @@ else:
                 
                     # Iteramos sobre el DataFrame para crear las tarjetas
                     for index, row in df_master.iterrows():
+                        # Verificamos que la tarea no esté vacía para no renderizar tarjetas basura
+                        if not str(row["TAREA"]).strip():
+                            continue
+                            
                         color_p = prioridad_colores.get(row["IMPORTANCIA"], "#94a3b8")
                         progreso = int(row["PROGRESO"])
                         
@@ -3296,21 +3329,22 @@ else:
                             <div class="task-card" style="border-left-color: {color_p};">
                                 <div style="display: flex; justify-content: space-between; align-items: start;">
                                     <div class="task-title">{row["TAREA"]}</div>
-                                    <div style="background: {color_p}22; color: {color_p}; font-size: 9px; padding: 2px 8px; border-radius: 10px; font-weight: 800;">
+                                    <div style="background: {color_p}22; color: {color_p}; font-size: 9px; padding: 2px 8px; border-radius: 10px; font-weight: 800; border: 1px solid {color_p}44;">
                                         {row["IMPORTANCIA"].upper()}
                                     </div>
                                 </div>
                                 <div class="task-info">
-                                    🗓️ {row["FECHA"]} - {row["FECHA_FIN"]} | 👤 {row["USUARIO"]} | 📂 {row["GRUPO"]}
+                                    🗓️ {row["FECHA"]} ➜ {row["FECHA_FIN"]} | 👤 {row["USUARIO"]} | 📂 {row["GRUPO"]}
                                 </div>
-                                <div style="margin-top: 8px; font-size: 11px; color: #38bdf8; font-weight: 600;">
-                                    📍 ÚLTIMA ACCIÓN: <span style="color: white; font-weight: 400;">{row["ULTIMO ACCION"]}</span>
+                                <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                                    <div style="font-size: 9px; color: {color_p}; font-weight: 800; letter-spacing: 1px;">ÚLTIMA ACCIÓN:</div>
+                                    <div style="font-size: 11px; color: #e2e8f0; font-weight: 400; margin-top: 2px;">{row["ULTIMO ACCION"]}</div>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                                    <div class="progress-container" style="flex-grow: 1;">
-                                        <div class="progress-bar" style="width: {progreso}%; background: {color_p};"></div>
+                                <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+                                    <div class="progress-container" style="flex-grow: 1; background: rgba(255,255,255,0.05);">
+                                        <div class="progress-bar" style="width: {progreso}%; background: {color_p}; box-shadow: 0 0 10px {color_p}66;"></div>
                                     </div>
-                                    <div style="font-size: 10px; color: white; font-weight: 800;">{progreso}%</div>
+                                    <div style="font-size: 11px; color: white; font-weight: 800; min-width: 35px; text-align: right;">{progreso}%</div>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
