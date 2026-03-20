@@ -1434,9 +1434,7 @@ else:
                             st.markdown(t_html, unsafe_allow_html=True)
                         else:
                             st.warning("No se encontraron resultados para tu búsqueda.")
-                    else:
-                        # Mensaje opcional cuando no han buscado nada aún
-                        st.info("Escribe arriba para visualizar el estatus detallado de un pedido.")
+                    
                         
                     # --- RENDER DEL LISTADO CHINGÓN ---
                     st.markdown(f"<p style='color:#00FFAA; font-size:11px; italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
