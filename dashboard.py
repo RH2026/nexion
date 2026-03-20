@@ -3138,33 +3138,44 @@ else:
                 # >>> AQUÍ EMPIEZA LO NUEVO AMOR <<<
                 # ── 1. PANEL DE CAPTURA INTELIGENTE (REDiseño SIMÉTRICO & CLEAN) ──
                 
-                # Inyectamos CSS para limpiar el input de avance y darle estilo al buscador
+                # ── 1. PANEL DE CAPTURA INTELIGENTE (ESTRUCTURA ELITE) ──
+                
+                # Inyectamos el CSS para el diseño de buscador y limpieza de inputs
                 st.markdown("""
                     <style>
-                    /* Quitar flechas del input numérico */
+                    /* Quitar flechas del input numérico si se usa */
                     input[type=number]::-webkit-inner-spin-button, 
                     input[type=number]::-webkit-outer-spin-button { 
                         -webkit-appearance: none; margin: 0; 
                     }
-                    input[type=number] { -moz-appearance: textfield; }
                     
-                    /* Línea decorativa para el buscador */
-                    .search-box-nexion {
-                        border-left: 3px solid #38bdf8;
-                        padding-left: 10px;
-                        margin-bottom: 5px;
+                    /* Línea decorativa pro para el buscador */
+                    .search-container-pro {
+                        border-left: 4px solid #38bdf8;
+                        padding-left: 15px;
+                        margin-bottom: 20px;
+                        background: rgba(56, 189, 248, 0.05);
+                        padding-top: 10px;
+                        padding-bottom: 1px;
+                        border-radius: 0 10px 10px 0;
                     }
                     </style>
                 """, unsafe_allow_html=True)
 
                 with st.expander("➕ Registrar actividad o incidencia", expanded=True):
                     
-                    # Búsqueda inicial con diseño destacado
-                    st.markdown("<div class='search-box-nexion'></div>", unsafe_allow_html=True)
-                    c_busq, c_vacia = st.columns([2, 2])
-                    with c_busq:
-                        n_pedido = st.text_input("📦 Vincular Número de Pedido / Factura", placeholder="Enter para buscar...").strip().upper()
-                    
+                    # --- FILA 1: BÚSQUEDA, FOLIO Y PRIORIDAD ---
+                    st.markdown("<div class='search-container-pro'>", unsafe_allow_html=True)
+                    c1, c2, c3 = st.columns([2, 1, 1])
+                    with c1:
+                        n_pedido = st.text_input("📦 Vincular Pedido / Factura", placeholder="Escribe y presiona Enter...").strip().upper()
+                    with c2:
+                        t_folio = st.text_input("Folio ID", value=f"NEX-{len(st.session_state.df_tareas)+1:03d}")
+                    with c3:
+                        t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+                    # Lógica de búsqueda (Matriz Global)
                     info_matriz = {}
                     if n_pedido and df_global is not None:
                         res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
@@ -3173,40 +3184,35 @@ else:
                             info_matriz = {
                                 "desc": f"GUIA: {fila_m.get('NÚMERO DE GUÍA', 'N/A')} | CLIENTE: {fila_m.get('NOMBRE DEL CLIENTE', 'N/A')} | DESTINO: {fila_m.get('DESTINO', 'N/A')}"
                             }
-                            # El aviso de éxito se quitó como pediste, amor
                         else:
                             st.error("❌ Pedido no localizado en Matriz Global.")
                 
-                    # Formulario con simetría total
-                    with st.form("form_nexion_pro_design", clear_on_submit=True):
-                        # FILA 1: Identificación y Detalles
-                        f1_c1, f1_c2, f1_c3 = st.columns([1, 3, 1])
-                        with f1_c1:
-                            t_folio = st.text_input("Folio ID", value=f"NEX-{len(st.session_state.df_tareas)+1:03d}")
-                        with f1_c2:
-                            t_desc = st.text_input("Detalles del Pedido (Lectura Automática)", value=info_matriz.get("desc", ""))
-                        with f1_c3:
-                            t_prior = st.selectbox("Prioridad", ["Media", "Urgente", "Alta", "Baja"])
-                
-                        # FILA 2: Gestión de Incidencia
-                        f2_c1, f2_c2 = st.columns([3, 2])
+                    # --- FORMULARIO PRINCIPAL ---
+                    with st.form("form_nexion_final_design", clear_on_submit=True):
+                        
+                        # FILA 2: LECTURA AUTOMÁTICA Y REPORTE
+                        f2_c1, f2_c2 = st.columns([1, 1])
                         with f2_c1:
-                            t_incidencia = st.text_input("Reporte de Incidencia / Última Acción", placeholder="Describe la situación actual...")
+                            t_desc = st.text_input("Detalles del Pedido (Lectura Automática)", value=info_matriz.get("desc", ""))
                         with f2_c2:
-                            # Input numérico sencillo sin botones +/-
-                            t_avance = st.number_input("Avance Solución %", min_value=0, max_value=100, step=1, value=0)
-                
-                        # FILA 3: Clasificación y Fechas
-                        f3_c1, f3_c2, f3_c3, f3_c4 = st.columns(4)
+                            t_incidencia = st.text_input("Reporte de Incidencia / Última Acción", placeholder="¿Qué está pasando con este folio?")
+
+                        # FILA 3: CATEGORÍA Y FECHAS
+                        f3_c1, f3_c2, f3_c3 = st.columns(3)
                         with f3_c1:
                             t_grupo = st.text_input("Categoría / Grupo", value="ENTREGAS PENDIENTES")
                         with f3_c2:
                             t_ini = st.date_input("Fecha Inicio", value=obtener_fecha_mexico())
                         with f3_c3:
                             t_fin = st.date_input("Fecha Compromiso", value=obtener_fecha_mexico() + timedelta(days=1))
-                        with f3_c4:
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            enviar = st.form_submit_button("GUARDAR", use_container_width=True)
+
+                        # FILA 4: LÍNEA DE AVANCE ESTILIZADA
+                        st.markdown("<p style='font-size:12px; color:#94a3b8; margin-bottom:-10px;'>NIVEL DE SOLUCIÓN / AVANCE</p>", unsafe_allow_html=True)
+                        t_avance = st.slider("", 0, 100, 0, step=5, format="%d%%")
+
+                        # FILA 5: BOTÓN GRANDE
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        enviar = st.form_submit_button("🚀 GUARDAR Y ACTUALIZAR GANTT GLOBAL", use_container_width=True)
                 
                         if enviar:
                             if t_desc and t_incidencia:
@@ -3222,7 +3228,7 @@ else:
                                 df_final = pd.concat([st.session_state.df_tareas, pd.DataFrame([nueva_data])], ignore_index=True)
                                 if guardar_en_github(df_final):
                                     st.session_state.df_tareas = df_final
-                                    st.success("✅ Registro sincronizado correctamente.")
+                                    st.success("✅ ¡Registro sincronizado con éxito!")
                                     time.sleep(1)
                                     st.rerun()
                             else:
