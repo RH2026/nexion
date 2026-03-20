@@ -942,7 +942,7 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
         .brand-version {
             text-align: center;
             font-size: 10px;
-            color: rgba(255, 255, 255, 0.3); /* Muy tenue */
+            color: #FFFFFF; /* Muy tenue */
             letter-spacing: 5px;
             margin-bottom: 25px;
             text-transform: uppercase;
