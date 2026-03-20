@@ -3338,7 +3338,7 @@ else:
                                 <div style="flex: 1; border-right: 1px solid rgba(255,255,255,0.05); padding-right: 15px;">
                                     <div style="font-size: 10px; color: {color}; font-weight: 800; letter-spacing: 1px;">FOLIO / PEDIDO</div>
                                     <div style="font-size: 18px; font-weight: 800; color: white;">{folio}</div>
-                                    <div style="font-size: 9px; color: rgba(255,255,255,0.4);">REF: {grupo}</div>
+                                    <div style="font-size: 9px; color: #FFFFFF;">REF: {grupo}</div>
                                 </div>
                                 <div style="flex: 3; padding: 0 20px; border-right: 1px solid rgba(255,255,255,0.05);">
                                     <div style="font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 800;">CLIENTE / GUÍA / DESTINO</div>
