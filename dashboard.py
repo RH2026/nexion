@@ -887,9 +887,9 @@ if not st.session_state.get('splash_completado', False):
     # Mensajes ejecutivos y técnicos para JYPESA
     mensajes = [
         "ESTABLISHING SECURE ACCESS...",
-        "PARSING LOGISTICS DATA MATRIX...",
+        "LOADING LOGISTICS DATA...",
         "SYNCHRONIZING WITH GITHUB REPO...",
-        "SYSTEM READY. WELCOME C.E.O."
+        "SYSTEM READY..."
     ]
     
     for m in mensajes:
@@ -920,6 +920,83 @@ elif not st.session_state.get('autenticado', False):
 
 # 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (TU PUERTA ÉLITE)
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
+    
+    # 💎 CSS DE ALTA GAMA PARA LA PUERTA ÉLITE DEL C.E.O.
+    st.markdown("""
+        <style>
+        /* Contenedor de bienvenida */
+        .ceo-welcome {
+            text-align: center;
+            font-size: 45px;
+            font-weight: 900;
+            letter-spacing: 15px;
+            color: #ffffff;
+            margin-top: 60px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        /* La Tarjeta Ejecutiva */
+        .ceo-card {
+            background: rgba(30, 39, 46, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+
+        /* Efecto Hover: Elevación y Brillo Neón Cyan */
+        .ceo-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            background: rgba(45, 52, 54, 0.95) !important;
+            border-color: #00D4FF !important;
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.25);
+        }
+
+        /* Iconos Neón */
+        .ceo-icon {
+            font-size: 75px;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
+            transition: transform 0.3s ease;
+        }
+        .ceo-card:hover .ceo-icon {
+            transform: scale(1.1);
+        }
+
+        /* Títulos de los Módulos */
+        .ceo-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        /* Estilo del botón de Streamlit para que no rompa el diseño */
+        .stButton>button {
+            border-radius: 10px !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            background: rgba(255,255,255,0.05) !important;
+            color: white !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            transition: all 0.3s ease !important;
+        }
+        .stButton>button:hover {
+            border-color: #00D4FF !important;
+            color: #00D4FF !important;
+            background: rgba(0, 212, 255, 0.1) !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     # Títulos con diseño NEXION CORPORATE
     st.markdown("<div class='ceo-welcome'>BIENVENIDO C.E.O.</div>", unsafe_allow_html=True)
