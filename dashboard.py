@@ -4061,7 +4061,7 @@ else:
                 
                 /* Esto cambia específicamente el tamaño del texto del Delta */
                 div[data-testid="stMetricDelta"] {
-                    font-size: 1.1rem !important; /* Aquí ajustas el tamaño (ejemplo: 0.9rem, 1.2rem, etc.) */
+                    font-size: 0.7rem !important; /* Aquí ajustas el tamaño (ejemplo: 0.9rem, 1.2rem, etc.) */
                     font-weight: bold;
                 }                
                 </style>
@@ -4194,13 +4194,6 @@ else:
                     else:
                         var_fact_mensual = 0
                     
-                    # --- 5. RENDERIZADO (ADIÓS AL ROJO, HOLA AL VERDE) ---
-                    st.metric(
-                        label="FACTURACIÓN (COBRO REGRESO)",
-                        value=f"${total_fact_actual:,.2f}",
-                        delta=f"{var_fact_mensual:+.1f}% vs {mes_anterior_nombre}",
-                        delta_color="normal" 
-                    )
                     
                     # --- LÓGICA DELTA EFICIENCIA ---
                     # (Mantenemos tu lógica de eficiencia aquí...)
