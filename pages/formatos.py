@@ -19,19 +19,20 @@ def cargar_datos():
         content = repo.get_contents(BD_FILE)
         df = pd.read_csv(content.download_url)
         
-        # LIMPIEZA DE FILAS FANTASMA (nan/vacías)
-        # Solo mantenemos filas que tengan un número de pedido real
+        # --- LIMPIEZA DE DOCNUM (QUITAR DECIMALES) ---
         if 'DocNum' in df.columns:
+            # Primero quitamos filas vacías
             df = df.dropna(subset=['DocNum'])
-            df['DocNum'] = df['DocNum'].astype(str).str.strip()
-            df = df[df['DocNum'] != ""]
+            # Convertimos a número, luego a entero (quita el .0) y finalmente a texto
+            df['DocNum'] = pd.to_numeric(df['DocNum'], errors='coerce').fillna(0).astype(int).astype(str)
+            # Filtramos si quedó algún "0" por error de conversión
+            df = df[df['DocNum'] != "0"]
         
         # Asegurar columnas de edición y limpiar textos feos
         cols_edit = ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']
         for col in cols_edit:
             if col not in df.columns:
                 df[col] = ""
-            # Convertimos a string y quitamos los "nan" visuales
             df[col] = df[col].astype(str).replace(['nan', 'None', 'NaN', 'NaT'], '')
             
         return df, content.sha
@@ -44,7 +45,6 @@ def guardar_datos(df_save, sha_save):
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
         
-        # Limpieza final antes de enviar a GitHub para no guardar basura
         if 'DocNum' in df_save.columns:
             df_save = df_save.dropna(subset=['DocNum'])
             df_save = df_save[df_save['DocNum'].astype(str).str.strip() != ""]
@@ -64,7 +64,7 @@ def guardar_datos(df_save, sha_save):
         st.error(f"Error al guardar: {e}")
         return False
 
-# --- LÓGICA DE ESTADO (Session State) ---
+# --- LÓGICA DE ESTADO ---
 if 'df_nexion' not in st.session_state:
     df_init, sha_init = cargar_datos()
     st.session_state.df_nexion = df_init
@@ -73,13 +73,11 @@ if 'df_nexion' not in st.session_state:
 # --- INTERFAZ ---
 st.title("📦 Panel de Control de Envíos - JYPESA")
 
-# Botones de Acción
 col_btn, col_info = st.columns([1, 4])
 with col_btn:
     if st.button("💾 GUARDAR CAMBIOS", use_container_width=True, type="primary"):
         exito = guardar_datos(st.session_state.df_nexion, st.session_state.sha_nexion)
         if exito:
-            # Refrescamos datos y SHA para la siguiente vuelta
             df_up, sha_up = cargar_datos()
             st.session_state.df_nexion = df_up
             st.session_state.sha_nexion = sha_up
@@ -91,7 +89,6 @@ with col_info:
 st.markdown("---")
 
 # --- EL EDITOR DE DATOS ---
-# Usamos una copia para que el editor trabaje fluido
 df_para_editar = st.session_state.df_nexion.copy()
 
 df_editado = st.data_editor(
@@ -109,10 +106,9 @@ df_editado = st.data_editor(
     },
     hide_index=True,
     use_container_width=True,
-    num_rows="fixed" # Esto evita que se creen filas nan manualmente
+    num_rows="fixed"
 )
 
-# Sincronizamos lo que escribes con el estado de la sesión
 st.session_state.df_nexion = df_editado
 
 
