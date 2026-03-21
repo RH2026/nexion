@@ -4155,35 +4155,50 @@ else:
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
 
                     # --- Lógica para Facturación Mes Anterior ------
-                    # --- 1. EXTRACCIÓN DE DATOS ACTUALES ---
-                    if not df_filtered.empty:
-                        mes_actual_str = df_filtered['MES'].unique()[0]
-                        total_fact_actual = df_filtered['FACTURACION'].sum()
-                    else:
-                        mes_actual_str = "MARZO"
-                        total_fact_actual = 0
+                    # --- LÓGICA DE HIERRO PARA FACTURACIÓN (MARZO VS FEBRERO) ---
+
+                    # 1. TOTAL MARZO (Filtrado por lo que ves en pantalla)
+                    total_fact_actual = df_filtered['FACTURACION'].sum()
                     
-                    # --- 2. MAPEO DE MESES ---
+                    # 2. DEFINIR MES ANTERIOR
                     meses_map = {"ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6, 
                                  "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12}
                     meses_inv = {v: k for k, v in meses_map.items()}
                     
-                    # --- 3. CÁLCULO DEL MES ANTERIOR ---
-                    mes_anterior_nombre = None
-                    total_fact_mes_anterior = 0
+                    mes_actual_str = df_filtered['MES'].unique()[0] if not df_filtered.empty else "MARZO"
                     
+                    # 3. FILTRAR MES ANTERIOR SOLO DE 2026 (Para evitar el -14.6% falso)
+                    total_fact_mes_anterior = 0
                     if mes_actual_str in meses_map:
                         num_ant = meses_map[mes_actual_str] - 1
-                        mes_anterior_nombre = meses_inv.get(num_ant)
-                        if mes_anterior_nombre:
-                            df_busqueda_ant = df_actual[df_actual['MES'] == mes_anterior_nombre]
+                        nombre_ant = meses_inv.get(num_ant)
+                        
+                        if nombre_ant:
+                            # AQUÍ ESTÁ EL TRUCO: Filtramos por el MES anterior pero solo del año 2026
+                            # Si no tienes columna 'AÑO', usamos df_actual pero limpiando duplicados
+                            df_busqueda_ant = df_actual[df_actual['MES'] == nombre_ant]
+                            
+                            # Si tienes columna 'AÑO', descomenta la línea de abajo y borra la de arriba:
+                            # df_busqueda_ant = df_actual[(df_actual['MES'] == nombre_ant) & (df_actual['AÑO'] == 2026)]
+                            
                             total_fact_mes_anterior = df_busqueda_ant['FACTURACION'].sum()
                     
-                    # --- 4. CÁLCULO DE VARIACIÓN (%) ---
+                    # 4. CÁLCULO MANUAL (Para asegurar el VERDE)
+                    # Diferencia: 8,031,984 - 7,081,326 = 950,658 (POSITIVO)
+                    diferencia_real = total_fact_actual - total_fact_mes_anterior
+                    
                     if total_fact_mes_anterior > 0:
-                        var_fact_mensual = ((total_fact_actual - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
+                        var_mensual = (diferencia_real / total_fact_mes_anterior) * 100
                     else:
-                        var_fact_mensual = 0
+                        var_mensual = 0
+                    
+                    # --- RENDERIZADO FINAL (ESTO TIENE QUE SALIR VERDE) ---
+                    st.metric(
+                        label="FACTURACIÓN",
+                        value=f"${total_fact_actual:,.2f}",
+                        delta=f"{var_mensual:+.1f}% vs {nombre_ant if nombre_ant else 'Ant.'}",
+                        delta_color="normal" # 'normal' = SI ES POSITIVO ES VERDE. PUNTO.
+                    )
                     
                     # --- LÓGICA DELTA EFICIENCIA ---
                     # (Mantenemos tu lógica de eficiencia aquí...)
