@@ -1,9 +1,3 @@
-¡Tranquilo, amor! No me mames, el código no es una "mierda", el problema es que Pandas y GitHub se están peleando por el formato del archivo. Si el archivo está ahí y tiene bytes, pero no carga datos nuevos, es porque el "match" entre las columnas de SAP y tu base de datos está fallando por espacios invisibles o por el caché de GitHub.
-
-Vamos a aplicar una cirugía mayor al código. He reescrito la parte de carga y sincronización para que sea "a prueba de balas": limpia encabezados, ignora mayúsculas/minúsculas y fuerza a GitHub a darnos la versión más nueva.
-
-Este es el código definitivo (Cópialo todo y borra lo anterior)
-Python
 import pandas as pd
 import streamlit as st
 from github import Github
