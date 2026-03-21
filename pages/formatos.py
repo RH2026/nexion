@@ -1,130 +1,64 @@
-import pandas as pd
 import streamlit as st
-from github import Github
-import io
-import base64
-import time
+import pandas as pd
 
-# 1. CONFIGURACIÓN INICIAL
-st.set_page_config(page_title="Nexion Logística", layout="wide")
+# --- SECCIÓN DE RASTREO INTELIGENTE ---
+st.header("🔍 Rastreo Inteligente Multicliente")
 
-TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-REPO_NAME = "RH2026/nexion"
-SAP_FILE = "sapdata.csv"
-BD_FILE = "enviosbd.csv"
-
-def obtener_repo():
-    return Github(TOKEN).get_repo(REPO_NAME)
-
-def cargar_csv_guerrero(file_path):
-    try:
-        repo = obtener_repo()
-        content = repo.get_contents(file_path, ref="main")
-        data = base64.b64decode(content.content).decode('utf-8-sig')
-        
-        # Leemos ignorando líneas en blanco y errores de formato
-        df = pd.read_csv(
-            io.StringIO(data), 
-            skip_blank_lines=True, 
-            on_bad_lines='skip',
-            engine='python'
-        )
-        
-        # Limpiamos encabezados
-        df.columns = df.columns.str.strip()
-
-        if 'DocNum' in df.columns:
-            # LIMPIEZA PROFUNDA DE DocNum
-            df = df.dropna(subset=['DocNum'])
-            # Convertimos a número, quitamos decimales y pasamos a texto limpio
-            df['DocNum'] = pd.to_numeric(df['DocNum'], errors='coerce').fillna(0).astype(int).astype(str).str.strip()
-            df = df[df['DocNum'] != "0"]
-        
-        return df, content.sha
-    except Exception as e:
-        st.error(f"Error en {file_path}: {e}")
-        return pd.DataFrame(), None
-
-# --- LÓGICA DE SINCRONIZACIÓN ---
-def sincronizar_ahora():
-    with st.spinner("Comparando pedidos de SAP..."):
-        df_sap, _ = cargar_csv_guerrero(SAP_FILE)
-        df_bd, sha_bd = cargar_csv_guerrero(BD_FILE)
-        
-        if df_sap.empty:
-            st.error("No hay datos válidos en sapdata.csv para sincronizar.")
-            return
-
-        # Comparamos DocNum contra DocNum
-        existentes = set(df_bd['DocNum'].unique())
-        nuevos = df_sap[~df_sap['DocNum'].isin(existentes)].copy()
-        
-        if not nuevos.empty:
-            # Añadimos las 4 columnas de edición vacías
-            for col in ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']:
-                if col not in nuevos.columns:
-                    nuevos[col] = ""
-            
-            # Pegamos lo nuevo al final de lo viejo
-            df_final = pd.concat([df_bd, nuevos], ignore_index=True)
-            
-            # Subimos a GitHub
-            repo = obtener_repo()
-            buffer = io.StringIO()
-            df_final.to_csv(buffer, index=False)
-            repo.update_file(path=BD_FILE, message="Sync SAP", content=buffer.getvalue(), sha=sha_bd)
-            st.success(f"¡A HUEVO! Se agregaron {len(nuevos)} pedidos nuevos.")
-            time.sleep(1)
-            st.rerun()
-        else:
-            st.info("No hay pedidos nuevos. Todo está al día en Nexion.")
-
-# --- SESSION STATE ---
-if 'df_nexion' not in st.session_state:
-    df_i, sha_i = cargar_csv_guerrero(BD_FILE)
-    st.session_state.df_nexion = df_i
-    st.session_state.sha_nexion = sha_i
-
-# --- INTERFAZ ---
-st.title("📦 Panel de Control Nexion")
-
-c1, c2 = st.columns([1, 1])
-with c1:
-    if st.button("🔄 SINCRONIZAR SAP", use_container_width=True, type="primary"):
-        sincronizar_ahora()
-
-with c2:
-    if st.button("💾 GUARDAR CAMBIOS", use_container_width=True):
-        if "editor_nexion" in st.session_state:
-            # Procesamos las ediciones antes de guardar
-            edits = st.session_state.editor_nexion["edited_rows"]
-            for idx, changes in edits.items():
-                for k, v in changes.items():
-                    st.session_state.df_nexion.at[idx, k] = v
-        
-        repo = obtener_repo()
-        buffer = io.StringIO()
-        st.session_state.df_nexion.to_csv(buffer, index=False)
-        repo.update_file(path=BD_FILE, message="Update", content=buffer.getvalue(), sha=st.session_state.sha_nexion)
-        st.success("Guardado en GitHub.")
-        time.sleep(1)
-        st.rerun()
-
-st.divider()
-
-# --- TABLA EDITABLE ---
-st.data_editor(
-    st.session_state.df_nexion,
-    column_config={
-        "DocNum": st.column_config.TextColumn("Pedido", disabled=True),
-        "CardName": st.column_config.TextColumn("Cliente", disabled=True),
-        "FLETERA": st.column_config.SelectboxColumn("Fletera", options=["", "DHL", "ESTAFETA", "PAQUETEXPRESS", "TRESGUERRAS", "PROPIA", "CASTORES"]),
-    },
-    hide_index=True,
-    use_container_width=True,
-    key="editor_nexion"
+# 1. CARGA DE ARCHIVOS (Directo en el cuerpo de la app)
+archivos_paqueteria = st.file_uploader(
+    "Suelta aquí tus reportes de Tiny Pack (T1) y Tres Guerras (T2):", 
+    type=['xlsx'], 
+    accept_multiple_files=True
 )
 
+# Diccionario para guardar lo que subas temporalmente
+base_datos_guias = {}
+
+if archivos_paqueteria:
+    for archivo in archivos_paqueteria:
+        try:
+            # Cargamos cada Excel en un DataFrame
+            nombre = archivo.name.upper()
+            df_temp = pd.read_excel(archivo)
+            base_datos_guias[nombre] = df_temp
+            st.success(f"✅ {nombre} cargado correctamente.")
+        except Exception as e:
+            st.error(f"Error al leer {archivo.name}: {e}")
+
+st.markdown("---")
+
+# 2. MOTOR DE BÚSQUEDA
+busqueda = st.text_input("Escribe el Pedido, Factura o Guía que buscas:")
+
+if busqueda and base_datos_guias:
+    encontrado = False
+    
+    for nombre_archivo, df in base_datos_guias.items():
+        # Convertimos todo a texto para buscar sin errores de formato
+        df_str = df.astype(str)
+        
+        # Buscamos en todas las celdas (Case insensitive)
+        mask = df_str.apply(lambda x: x.str.contains(busqueda, case=False, na=False)).any(axis=1)
+        resultados = df[mask]
+        
+        if not resultados.empty:
+            encontrado = True
+            st.subheader(f"📍 Encontrado en: {nombre_archivo}")
+            
+            # Mostramos los resultados en una tabla limpia
+            st.dataframe(resultados, use_container_width=True, hide_index=True)
+            
+            # Bonus: Intentar resaltar la guía si existe la columna
+            for col in resultados.columns:
+                if 'guia' in col.lower() or 'rastreo' in col.lower() or 'tracking' in col.lower():
+                    valor_guia = resultados.iloc[0][col]
+                    st.info(f"🚀 **Número de Guía detectado:** {valor_guia}")
+    
+    if not encontrado:
+        st.warning("No se encontró ese dato en los archivos cargados.")
+
+elif busqueda and not base_datos_guias:
+    st.info("Primero sube los archivos de Excel para poder buscar.")
 
 
 
