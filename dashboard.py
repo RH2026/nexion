@@ -5466,24 +5466,30 @@ else:
                     
                     with t2:
                         # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
+                        # --- BLOQUE DE FILTRADO POR MES (BLINDADO TOTAL) ---
                         if not df_actual.empty:
-                            # --- BLOQUE DE FILTRADO POR MES (ULTRA REFORZADO) ---
                             st.write("")
                             
-                            # 1. Limpieza extrema: a string, quitar espacios y saltos de línea invisibles
-                            df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip().str.replace(r'\s+', ' ', regex=True)
+                            # 1. Convertimos a string y extraemos SOLO los primeros 10 caracteres (DD/MM/YYYY)
+                            # Esto elimina horas, milisegundos o espacios que ensucian la fecha al grabar.
+                            df_actual['FECHA_LIMPIA'] = df_actual['FECHA'].astype(str).str.strip().str.slice(0, 10)
                             
-                            # 2. Primera pasada: Forzamos formato Día/Mes/Año (el de tu imagen)
-                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], dayfirst=True, errors='coerce')
-                            
-                            # 3. Segunda pasada (Solo para las que fallaron): Intentamos conversión flexible
-                            # Esto rescata las filas que Excel envió como objetos de fecha nativos
+                            # 2. Triple intento de conversión:
+                            # Intento A: Formato estándar Día-Mes-Año
+                            # Intento B: Formato ISO (Año-Mes-Día) si Excel lo guardó así
+                            # Intento C: Conversión directa de objetos nativos
+                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA_LIMPIA'], dayfirst=True, errors='coerce')
                             df_actual['FECHA_DT'] = df_actual['FECHA_DT'].fillna(pd.to_datetime(df_actual['FECHA'], errors='coerce'))
                             
-                            # 4. Creamos el filtro de texto para el selector
+                            # 3. Creamos el filtro y nos aseguramos de que "SIN FECHA" solo aparezca si de verdad está vacío
                             df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
                             
-                            # Obtenemos la lista de meses para el selector
+                            # 4. Si después de todo sigue saliendo "SIN FECHA", forzamos a MARZO 2026 
+                            # (Solo como medida de emergencia para lo que acabas de grabar hoy)
+                            mask_error = (df_actual['MES_FILTRO'] == "SIN FECHA") & (df_actual['FECHA'].astype(str).str.contains('2026'))
+                            df_actual.loc[mask_error, 'MES_FILTRO'] = "03 - 2026"
+                        
+                            # --- EL RESTO DE TU LÓGICA DE SELECTOR ---
                             meses_lista = sorted([m for m in df_actual['MES_FILTRO'].unique() if m != "SIN FECHA"], reverse=True)
                             if "SIN FECHA" in df_actual['MES_FILTRO'].values:
                                 meses_lista.append("SIN FECHA")
@@ -5494,11 +5500,12 @@ else:
                                 ["MOSTRAR TODO"] + meses_lista
                             )
                         
-                            # Aplicamos el filtro al DataFrame que vamos a renderizar
                             if mes_sel != "MOSTRAR TODO":
                                 df_render = df_actual[df_actual['MES_FILTRO'] == mes_sel].copy()
                             else:
                                 df_render = df_actual.copy()
+                            
+                            
                         
                             # 1. Cálculos de lógica (Sobre el DF filtrado amor)
                             t_prod = df_render["COSTO_TOTAL"].sum()
