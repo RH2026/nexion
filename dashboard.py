@@ -4155,39 +4155,48 @@ else:
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
 
                     # --- Lógica para Facturación Mes Anterior ------
-                    # --- 1. EXTRAER EL MES ACTUAL (Para que no marque error de 'not defined') ---
+                    # --- 1. EXTRACCIÓN DE DATOS ACTUALES (Seguridad Total) ---
                     if not df_filtered.empty:
+                        # Definimos el mes actual
                         mes_actual_str = df_filtered['MES'].unique()[0]
                         total_fact_actual = df_filtered['FACTURACION'].sum()
                     else:
-                        mes_actual_str = "MARZO" # Valor de seguridad
+                        mes_actual_str = "MARZO" # Valor de respaldo
                         total_fact_actual = 0
                     
-                    # --- 2. MAPEO RÁPIDO ---
-                    meses_map = {"ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6, 
-                                 "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12}
+                    # --- 2. MAPEO Y TRADUCCIÓN DE MESES ---
+                    meses_map = {
+                        "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, 
+                        "MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, 
+                        "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
+                    }
                     meses_inv = {v: k for k, v in meses_map.items()}
                     
-                    # --- 3. BUSCAR MES ANTERIOR DIRECTO ---
+                    # --- 3. CÁLCULO DEL MES ANTERIOR (Definiendo variables desde el inicio) ---
+                    mes_anterior_nombre = None
                     total_fact_mes_anterior = 0
+                    
                     if mes_actual_str in meses_map:
                         num_ant = meses_map[mes_actual_str] - 1
-                        nombre_ant = meses_inv.get(num_ant)
-                        if nombre_ant:
-                            # Sumamos directo de la base maestra
-                            total_fact_mes_anterior = df_actual[df_actual['MES'] == nombre_ant]['FACTURACION'].sum()
+                        mes_anterior_nombre = meses_inv.get(num_ant)
+                        
+                        if mes_anterior_nombre:
+                            # Buscamos en el DataFrame maestro 'df_actual'
+                            df_busqueda_ant = df_actual[df_actual['MES'] == mes_anterior_nombre]
+                            total_fact_mes_anterior = df_busqueda_ant['FACTURACION'].sum()
                     
-                    # --- 4. CÁLCULO DE VARIACIÓN (Matemática pura, amor) ---
+                    # --- 4. CÁLCULO DE VARIACIÓN (%) ---
                     if total_fact_mes_anterior > 0:
                         var_fact_mensual = ((total_fact_actual - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
                     else:
                         var_fact_mensual = 0
                     
-                    # --- 5. RENDERIZADO ÚNICO (Sin duplicados y en VERDE) ---
+                    # --- 5. RENDERIZADO ÚNICO Y EN VERDE (Normal) ---
+                    # Asegúrate de BORRAR cualquier otra línea de st.metric de Facturación
                     st.metric(
                         label="FACTURACIÓN TOTAL",
                         value=f"${total_fact_actual:,.2f}",
-                        delta=f"{var_fact_mensual:+.1f}% vs mes anterior",
+                        delta=f"{var_fact_mensual:+.1f}% vs {mes_anterior_nombre if mes_anterior_nombre else 'mes ant.'}",
                         delta_color="normal" 
                     )
 
