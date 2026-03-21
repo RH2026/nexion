@@ -1713,7 +1713,7 @@ else:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
                 
                 with col_busqueda:
-                    query = st.text_input("🔍 BUSCAR GUÍA O FACTURA (NEXION):", placeholder="Escribe aquí...")
+                    query = st.text_input("BUSQUEDA AUXILIAR DE GUIAS):", placeholder="Captura el numero de factura...")
             
                 if query:
                     encontrado = False
