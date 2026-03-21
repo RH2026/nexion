@@ -17,17 +17,27 @@ def cargar_datos():
     content = repo.get_contents(BD_FILE)
     df = pd.read_csv(content.download_url)
     
-    # --- LA SOLUCIÓN AQUÍ ---
-    # Lista de columnas que NECESITAS para editar
-    columnas_edicion = ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']
-    
-    for col in columnas_edicion:
-        if col not in df.columns:
-            df[col] = ""  # Si no existe, la crea vacía para que aparezca en el editor
-    
-    # Aseguramos que DocNum sea texto
+    # 1. Asegurar que las columnas existan con el TIPO DE DATO correcto
+    if 'FECHA DE ENVIO' not in df.columns:
+        df['FECHA DE ENVIO'] = pd.to_datetime(None) # Formato fecha
+    else:
+        df['FECHA DE ENVIO'] = pd.to_datetime(df['FECHA DE ENVIO'])
+
+    if 'FLETERA' not in df.columns:
+        df['FLETERA'] = "" # Texto/Categoría
+        
+    if 'SURTIDOR' not in df.columns:
+        df['SURTIDOR'] = ""
+
+    if 'INCIDENCIA' not in df.columns:
+        df['INCIDENCIA'] = ""
+
+    # 2. Forzar que DocNum sea siempre texto para evitar errores de comparación
     if 'DocNum' in df.columns:
         df['DocNum'] = df['DocNum'].astype(str)
+        
+    # Limpieza de nulos para que el editor no falle
+    df = df.fillna("")
         
     return df, content.sha
 
