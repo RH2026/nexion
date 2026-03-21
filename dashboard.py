@@ -4155,33 +4155,27 @@ else:
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
 
                     # --- Lógica para Facturación Mes Anterior ------
-                    # --- 1. EXTRACCIÓN DE DATOS ACTUALES (Seguridad Total) ---
+                    # --- 1. EXTRACCIÓN DE DATOS ACTUALES ---
                     if not df_filtered.empty:
-                        # Definimos el mes actual
                         mes_actual_str = df_filtered['MES'].unique()[0]
                         total_fact_actual = df_filtered['FACTURACION'].sum()
                     else:
-                        mes_actual_str = "MARZO" # Valor de respaldo
+                        mes_actual_str = "MARZO"
                         total_fact_actual = 0
                     
-                    # --- 2. MAPEO Y TRADUCCIÓN DE MESES ---
-                    meses_map = {
-                        "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, 
-                        "MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, 
-                        "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
-                    }
+                    # --- 2. MAPEO DE MESES ---
+                    meses_map = {"ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6, 
+                                 "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12}
                     meses_inv = {v: k for k, v in meses_map.items()}
                     
-                    # --- 3. CÁLCULO DEL MES ANTERIOR (Definiendo variables desde el inicio) ---
+                    # --- 3. CÁLCULO DEL MES ANTERIOR ---
                     mes_anterior_nombre = None
                     total_fact_mes_anterior = 0
                     
                     if mes_actual_str in meses_map:
                         num_ant = meses_map[mes_actual_str] - 1
                         mes_anterior_nombre = meses_inv.get(num_ant)
-                        
                         if mes_anterior_nombre:
-                            # Buscamos en el DataFrame maestro 'df_actual'
                             df_busqueda_ant = df_actual[df_actual['MES'] == mes_anterior_nombre]
                             total_fact_mes_anterior = df_busqueda_ant['FACTURACION'].sum()
                     
@@ -4191,36 +4185,18 @@ else:
                     else:
                         var_fact_mensual = 0
                     
-                    # --- 5. RENDERIZADO ÚNICO Y EN VERDE (Normal) ---
-                    # Asegúrate de BORRAR cualquier otra línea de st.metric de Facturación
-                    st.metric(
-                        label="FACTURACIÓN TOTAL",
-                        value=f"${total_fact_actual:,.2f}",
-                        delta=f"{var_fact_mensual:+.1f}% vs {mes_anterior_nombre if mes_anterior_nombre else 'mes ant.'}",
-                        delta_color="normal" 
-                    )
-
-                    # --- LÓGICA DELTA EFICIENCIA (MES ANTERIOR 2026) ---
-                    if mes_actual_str in meses_map:
-                        # Filtramos el DataFrame original para el mes anterior (ya tenemos mes_anterior_nombre arriba)
+                    # --- LÓGICA DELTA EFICIENCIA ---
+                    # (Mantenemos tu lógica de eficiencia aquí...)
+                    if mes_actual_str in meses_map and mes_anterior_nombre:
                         df_eval_ant = df_actual[df_actual['MES'] == mes_anterior_nombre]
-                        
-                        # Aplicamos la misma máscara de evaluable para el mes pasado
                         mask_eval_ant = df_eval_ant['PROMESA DE ENTREGA'].notna() & df_eval_ant['FECHA DE ENTREGA REAL'].notna()
                         df_eval_ant = df_eval_ant[mask_eval_ant]
-                        
-                        # Calculamos el porcentaje de eficiencia del mes anterior
-                        pct_eficiencia_ant = (
-                            (df_eval_ant['FECHA DE ENTREGA REAL'] <= df_eval_ant['PROMESA DE ENTREGA']).sum() / len(df_eval_ant) * 100 
-                        ) if len(df_eval_ant) > 0 else 0
-                        
-                        # La variación son puntos porcentuales (Ej: 95% - 90% = +5%)
+                        pct_eficiencia_ant = ((df_eval_ant['FECHA DE ENTREGA REAL'] <= df_eval_ant['PROMESA DE ENTREGA']).sum() / len(df_eval_ant) * 100) if len(df_eval_ant) > 0 else 0
                         var_eficiencia_mensual = pct_eficiencia - pct_eficiencia_ant
                     else:
                         var_eficiencia_mensual = 0
-                                        
-                
-                    # --- BOTONES DE CAMBIO DE VISTA ---
+                    
+                    # --- BOTONES DE VISTA ---
                     c_btn1, c_btn2 = st.columns(2)
                     with c_btn1:
                         if st.button("VER MÉTRICAS Y TARJETAS", use_container_width=True):
@@ -4228,15 +4204,24 @@ else:
                     with c_btn2:
                         if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
                             st.session_state.ver_grafico = True
-                
-                    # --- 5, 6 y 7. VISTA DE TARJETAS ---
+                    
+                    # --- 5. VISTA DE TARJETAS (AQUÍ ESTABA EL DESMADRE) ---
                     if not st.session_state.ver_grafico:
                         st.markdown("### RESUMEN DE RENDIMIENTO")
-                        k1, k2, k3 = st.columns(3)
-                        with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
-                        with k2: st.metric("FACTURACIÓN", f"${total_fact_2026:,.2f}", delta=f"{var_fact_mensual:.1f}% vs mes ant.")
-                        with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="normal")
                         
+                        # --- FILA 1 ---
+                        k1, k2, k3 = st.columns(3)
+                        with k1: 
+                            st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
+                        
+                        with k2: 
+                            # CORRECCIÓN: Usamos 'total_fact_actual' y 'var_fact_mensual' que calculamos arriba
+                            st.metric("FACTURACIÓN", f"${total_fact_actual:,.2f}", delta=f"{var_fact_mensual:+.1f}% vs {mes_anterior_nombre if mes_anterior_nombre else 'ant.'}", delta_color="normal")
+                        
+                        with k3: 
+                            st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="normal")
+                        
+                        # --- FILA 2 ---
                         k4, k5, k6 = st.columns(3)
                         with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
                         with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
