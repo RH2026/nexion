@@ -5466,28 +5466,24 @@ else:
                     
                     with t2:
                         # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
-                        # --- BLOQUE DE FILTRADO POR MES (BLINDADO TOTAL) ---
+                        # --- BLOQUE DE FILTRADO POR MES (DETECTOR DE FORMATO MIXTO) ---
                         if not df_actual.empty:
                             st.write("")
                             
-                            # 1. Convertimos a string y extraemos SOLO los primeros 10 caracteres (DD/MM/YYYY)
-                            # Esto elimina horas, milisegundos o espacios que ensucian la fecha al grabar.
-                            df_actual['FECHA_LIMPIA'] = df_actual['FECHA'].astype(str).str.strip().str.slice(0, 10)
-                            
-                            # 2. Triple intento de conversión:
-                            # Intento A: Formato estándar Día-Mes-Año
-                            # Intento B: Formato ISO (Año-Mes-Día) si Excel lo guardó así
-                            # Intento C: Conversión directa de objetos nativos
-                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA_LIMPIA'], dayfirst=True, errors='coerce')
-                            df_actual['FECHA_DT'] = df_actual['FECHA_DT'].fillna(pd.to_datetime(df_actual['FECHA'], errors='coerce'))
-                            
-                            # 3. Creamos el filtro y nos aseguramos de que "SIN FECHA" solo aparezca si de verdad está vacío
+                            # 1. Limpieza inicial
+                            df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip()
+                        
+                            # 2. INTENTO 1: Formato Año-Mes-Día (Lo nuevo: 2026-03-20)
+                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], format='%Y-%m-%d', errors='coerce')
+                        
+                            # 3. INTENTO 2: Si falló, buscar formato Día/Mes/Año (Lo viejo: 18/03/2026)
+                            # El .fillna() solo llena las que el paso anterior no pudo convertir
+                            df_actual['FECHA_DT'] = df_actual['FECHA_DT'].fillna(
+                                pd.to_datetime(df_actual['FECHA'], dayfirst=True, errors='coerce')
+                            )
+                        
+                            # 4. Generar el filtro de mes
                             df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
-                            
-                            # 4. Si después de todo sigue saliendo "SIN FECHA", forzamos a MARZO 2026 
-                            # (Solo como medida de emergencia para lo que acabas de grabar hoy)
-                            mask_error = (df_actual['MES_FILTRO'] == "SIN FECHA") & (df_actual['FECHA'].astype(str).str.contains('2026'))
-                            df_actual.loc[mask_error, 'MES_FILTRO'] = "03 - 2026"
                         
                             # --- EL RESTO DE TU LÓGICA DE SELECTOR ---
                             meses_lista = sorted([m for m in df_actual['MES_FILTRO'].unique() if m != "SIN FECHA"], reverse=True)
