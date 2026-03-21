@@ -5468,13 +5468,15 @@ else:
                         # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
                         if not df_actual.empty:
                             # --- BLOQUE DE FILTRADO POR MES ---
+                            # --- BLOQUE DE FILTRADO POR MES (CORREGIDO) ---
                             st.write("")
-                            # Preparamos los meses disponibles
-                            # 1. Convertimos con errores='coerce' para que datos basura no rompan la app
-                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], errors='coerce')
+                            # 1. Limpieza previa de la columna
+                            df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip()
                             
-                            # 2. Creamos el filtro solo para las filas que sí tienen fecha válida
-                            # Para las que no, ponemos "S/FECHA" para que no de error el .dt.strftime
+                            # 2. Conversión forzando el orden de día primero
+                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], dayfirst=True, errors='coerce')
+                            
+                            # 3. Creamos el filtro
                             df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
                             
                             # Obtenemos la lista de meses para el selector
