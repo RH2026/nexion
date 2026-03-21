@@ -813,13 +813,13 @@ def login_screen():
                              
                 # 1. Diccionario para convertir Operator ID en Nombre Real
                 nombres_reales = {
-                    "Rigoberto": "Rigoberto Hdz",
+                    "Rigoberto": "Rigoberto Hernández",
                     "AGomez": "Ale Gomez",
                     "JMoreno": "Jesus Moreno",
                     "Cynthia": "Cynthia",
                     "Brenda": "Brenda",
                     "Fialko": "Fialko",
-                    "Atencion3G": "Yaneli",
+                    "Atencion3G": "Sandra Yaneli",
                     "Claudia": "Claudia"
                 }
                 
