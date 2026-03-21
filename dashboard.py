@@ -4155,47 +4155,39 @@ else:
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
 
                     # --- Lógica para Facturación Mes Anterior ------
-                    # --- LÓGICA RUDE & DIRECTA (SOLO 2026) ---
-
-                    # 1. TOTAL MARZO (O el mes que tengas filtrado)
-                    total_fact_actual = df_filtered['FACTURACION'].sum()
+                    # --- 1. EXTRAER EL MES ACTUAL (Para que no marque error de 'not defined') ---
+                    if not df_filtered.empty:
+                        mes_actual_str = df_filtered['MES'].unique()[0]
+                        total_fact_actual = df_filtered['FACTURACION'].sum()
+                    else:
+                        mes_actual_str = "MARZO" # Valor de seguridad
+                        total_fact_actual = 0
                     
-                    # 2. MAPEO DE MESES
-                    meses_map = {
-                        "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, 
-                        "MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, 
-                        "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
-                    }
+                    # --- 2. MAPEO RÁPIDO ---
+                    meses_map = {"ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6, 
+                                 "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12}
                     meses_inv = {v: k for k, v in meses_map.items()}
                     
-                    # 3. EXTRAER MES ACTUAL
-                    mes_actual_nombre = df_filtered['MES'].unique()[0] if not df_filtered.empty else None
-                    
-                    # 4. BUSCAR MES ANTERIOR
-                    if mes_actual_nombre in meses_map:
-                        num_ant = meses_map[mes_actual_nombre] - 1
+                    # --- 3. BUSCAR MES ANTERIOR DIRECTO ---
+                    total_fact_mes_anterior = 0
+                    if mes_actual_str in meses_map:
+                        num_ant = meses_map[mes_actual_str] - 1
                         nombre_ant = meses_inv.get(num_ant)
-                        
-                        # Sumamos DIRECTO del dataframe maestro 'df_actual'
-                        total_fact_mes_anterior = df_actual[df_actual['MES'] == nombre_ant]['FACTURACION'].sum()
-                    else:
-                        total_fact_mes_anterior = 0
+                        if nombre_ant:
+                            # Sumamos directo de la base maestra
+                            total_fact_mes_anterior = df_actual[df_actual['MES'] == nombre_ant]['FACTURACION'].sum()
                     
-                    # 5. EL DELTA (Diferencia Real)
-                    # Si Marzo (8M) > Febrero (7M), esto TIENE que ser positivo por pura matemática
-                    diferencia_neta = total_fact_actual - total_fact_mes_anterior
-                    
+                    # --- 4. CÁLCULO DE VARIACIÓN (Matemática pura, amor) ---
                     if total_fact_mes_anterior > 0:
-                        porcentaje_var = (diferencia_neta / total_fact_mes_anterior) * 100
+                        var_fact_mensual = ((total_fact_actual - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
                     else:
-                        porcentaje_var = 0
+                        var_fact_mensual = 0
                     
-                    # --- RENDERIZADO ÚNICO ---
-                    # (Asegúrate de que no haya otro st.metric de Facturación en tu código)
+                    # --- 5. RENDERIZADO ÚNICO (Sin duplicados y en VERDE) ---
                     st.metric(
-                        label="FACTURACIÓN MES ACTUAL",
+                        label="FACTURACIÓN TOTAL",
                         value=f"${total_fact_actual:,.2f}",
-                        delta=f"{porcentaje_var:+.1f}% vs mes anterior",
+                        delta=f"{var_fact_mensual:+.1f}% vs mes anterior",
                         delta_color="normal" 
                     )
 
