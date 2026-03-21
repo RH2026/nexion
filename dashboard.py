@@ -4155,16 +4155,12 @@ else:
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
 
                     # --- Lógica para Facturación Mes Anterior ------
-                    # --- LÓGICA DELTA FACTURACIÓN CORREGIDA (Nivel Pro) ------------------------------------------------
-                    if not df_filtered.empty:
-                        mes_actual_str = df_filtered['MES'].unique()[0] 
-                    else:
-                        mes_actual_str = None
-                    
-                    # 2. DEFINIMOS EL TOTAL ACTUAL (Lo que facturaste este mes)
+                    # --- LÓGICA RUDE & DIRECTA (SOLO 2026) ---
+
+                    # 1. TOTAL MARZO (O el mes que tengas filtrado)
                     total_fact_actual = df_filtered['FACTURACION'].sum()
                     
-                    # 3. TRADUCTOR Y CÁLCULO DEL MES ANTERIOR
+                    # 2. MAPEO DE MESES
                     meses_map = {
                         "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, 
                         "MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, 
@@ -4172,28 +4168,35 @@ else:
                     }
                     meses_inv = {v: k for k, v in meses_map.items()}
                     
-                    if mes_actual_str in meses_map:
-                        mes_anterior_num = meses_map[mes_actual_str] - 1
-                        mes_anterior_nombre = meses_inv.get(mes_anterior_num)
+                    # 3. EXTRAER MES ACTUAL
+                    mes_actual_nombre = df_filtered['MES'].unique()[0] if not df_filtered.empty else None
+                    
+                    # 4. BUSCAR MES ANTERIOR
+                    if mes_actual_nombre in meses_map:
+                        num_ant = meses_map[mes_actual_nombre] - 1
+                        nombre_ant = meses_inv.get(num_ant)
                         
-                        # Filtramos el mes anterior del DataFrame maestro
-                        df_mes_ant = df_actual[df_actual['MES'] == mes_anterior_nombre] 
-                        total_fact_mes_anterior = df_mes_ant['FACTURACION'].sum()
+                        # Sumamos DIRECTO del dataframe maestro 'df_actual'
+                        total_fact_mes_anterior = df_actual[df_actual['MES'] == nombre_ant]['FACTURACION'].sum()
                     else:
                         total_fact_mes_anterior = 0
                     
-                    # 4. CÁLCULO DEL DELTA (%) - Actual vs Anterior
-                    if total_fact_mes_anterior > 0:
-                        var_fact_mensual = ((total_fact_actual - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
-                    else:
-                        var_fact_mensual = 0
+                    # 5. EL DELTA (Diferencia Real)
+                    # Si Marzo (8M) > Febrero (7M), esto TIENE que ser positivo por pura matemática
+                    diferencia_neta = total_fact_actual - total_fact_mes_anterior
                     
-                    # --- RENDERIZADO EN LA MÉTRICA ---
+                    if total_fact_mes_anterior > 0:
+                        porcentaje_var = (diferencia_neta / total_fact_mes_anterior) * 100
+                    else:
+                        porcentaje_var = 0
+                    
+                    # --- RENDERIZADO ÚNICO ---
+                    # (Asegúrate de que no haya otro st.metric de Facturación en tu código)
                     st.metric(
-                        label="FACTURACIÓN",
+                        label="FACTURACIÓN MES ACTUAL",
                         value=f"${total_fact_actual:,.2f}",
-                        delta=f"{var_fact_mensual:+.1f}% vs mes ant.",
-                        delta_color="normal" # 'normal' = Subir es VERDE (Ventas)
+                        delta=f"{porcentaje_var:+.1f}% vs mes anterior",
+                        delta_color="normal" 
                     )
 
                     # --- LÓGICA DELTA EFICIENCIA (MES ANTERIOR 2026) ---
