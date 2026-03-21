@@ -6,7 +6,7 @@ import io
 # Configuración de acceso
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
-SAP_FILE = "sapdata.xlsx"  # Tu matriz principal de SAP
+SAP_FILE = "sapdata.csv"  # Tu matriz principal de SAP
 BD_FILE = "enviosbd.csv"   # Tu matriz editable
 
 def actualizar_base_datos():
