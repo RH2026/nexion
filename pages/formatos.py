@@ -11,7 +11,7 @@ def cargar_desde_repo(archivo):
         try:
             df_preview = pd.read_excel(archivo, nrows=50, header=None)
             # Claves actualizadas para detectar T3 por sus nuevas columnas
-            claves = ['CARTA_PORTE', 'FACTURA_INTERNA', 'TALON', 'OBSERVACION 1', 'GUIA', 'PAQUETES_AMPARA', 'SUB TOTAL _ GUIA']
+            claves = ['CARTA_PORTE', 'FACTURA_INTERNA', 'TALON', 'OBSERVACION 1', 'GUIA', 'PAQUETES_AMPARA', 'Sub total _ Guia']
             fila_head = -1
             for i, row in df_preview.iterrows():
                 row_str = row.astype(str).str.upper().tolist()
