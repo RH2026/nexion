@@ -73,7 +73,18 @@ if query:
                 st.markdown(f'<div style="background-color:#1e262c; border-radius:10px; padding:20px; border-left:5px solid {"#004d40" if "ENTREGADO" in estatus else "#00ffcc"}; margin-bottom:20px; color:white; font-family:sans-serif;"><div style="background-color:#004d40; color:#00ffcc; padding:4px 12px; border-radius:15px; font-size:0.85rem; font-weight:bold; float:right; text-transform:uppercase;">{estatus}</div><div style="display:flex; justify-content:space-between; align-items:flex-start;"><div style="flex:1;"><div style="color:#00ffcc; font-size:0.7rem; font-weight:bold; letter-spacing:1.5px; margin-bottom:5px;">{nombre_f}</div><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;">TALÓN / FOLIO</div><div style="color:#00ffcc; font-size:1.6rem; font-weight:bold; line-height:1.2;">{guia}</div><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase; margin-top:5px;">REF: <span style="color:white; font-size:1rem;">{factura}</span></div></div><div style="flex:2; margin:0 30px;"><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase;">DESTINATARIO / RUTA</div><div style="color:white; font-weight:bold; font-size:1.2rem;">{cliente}</div><div style="font-size:0.9rem; color:#8899a6; margin-top:5px;"><span style="color:#00ffcc;">📍</span> {origen} ➔ {destino}</div></div><div style="flex:1; border-left:1px solid #3d464d; padding-left:20px;"><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase;">RESUMEN FINANCIERO</div><div style="color:white; font-weight:bold; font-size:0.95rem;">BULTOS: <span style="color:#00ffcc;">{bultos}</span></div><div style="color:#00ffcc; font-weight:bold; font-size:1.2rem; margin-top:10px;">$ {importe}</div></div></div></div>', unsafe_allow_html=True)
 
     if not encontrado:
-        st.warning(f"No se encontró información para: {query}")
+        st.markdown(f"""
+            <div style="background-color: #1e262c; border-radius: 10px; padding: 30px; border: 1px dashed #ff4b4b; text-align: center; margin-top: 20px;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🔍</div>
+                <div style="color: #ff4b4b; font-weight: bold; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px;">Sin Coincidencias</div>
+                <div style="color: #8899a6; font-size: 1rem; margin-top: 5px;">
+                    No encontramos información para: <span style="color: white; font-weight: bold;">{query}</span>
+                </div>
+                <div style="color: #8899a6; font-size: 0.8rem; margin-top: 15px; font-style: italic;">
+                    Verifica que el número sea correcto o que el reporte esté actualizado en el sistema.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
 
 
