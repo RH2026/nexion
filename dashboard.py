@@ -1666,7 +1666,7 @@ else:
                 meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
                 
                 # --- ZONA DE CONTROL (FILTROS + BUSCADOR) ---
-                col_f1, col_busqueda = st.columns([1, 3])
+                col_f1, col_busqueda, _ = st.columns([1, 1.5, 2]) 
                 
                 with col_f1:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
