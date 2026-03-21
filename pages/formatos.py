@@ -3,75 +3,63 @@ import streamlit as st
 from github import Github
 import io
 
-# Configuración (Asegúrate de que los nombres coincidan en tu GitHub)
+# --- CONFIGURACIÓN ---
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
-SAP_FILE = "sapdata.csv"   # Tu matriz principal (la que no se edita)
-BD_FILE = "enviosbd.csv"    # Tu matriz de trabajo (la editable)
+BD_FILE = "enviosbd.csv"
 
-def actualizar_base_datos():
-    try:
-        g = Github(TOKEN)
-        repo = g.get_repo(REPO_NAME)
-        
-        # 1. LEER SAPDATA.CSV (La fuente de datos)
-        try:
-            content_sap = repo.get_contents(SAP_FILE)
-            # Usamos download_url para evitar errores de archivos grandes
-            df_sap = pd.read_csv(content_sap.download_url)
-        except Exception as e:
-            return f"Error: No se pudo leer '{SAP_FILE}'. Revisa si existe en GitHub."
+def cargar_base_datos():
+    g = Github(TOKEN)
+    repo = g.get_repo(REPO_NAME)
+    content = repo.get_contents(BD_FILE)
+    df = pd.read_csv(content.download_url)
+    return df, content.sha
 
-        # 2. LEER ENVIOSBD.CSV (Tu base editable)
-        try:
-            content_bd = repo.get_contents(BD_FILE)
-            df_bd = pd.read_csv(content_bd.download_url)
-            sha_bd = content_bd.sha
-        except:
-            # Si no existe todavía, la creamos con las columnas de SAP + las 4 nuevas
-            st.warning("Creando 'enviosbd.csv' por primera vez...")
-            columnas_finales = list(df_sap.columns) + ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']
-            df_bd = pd.DataFrame(columns=columnas_finales)
-            sha_bd = None
+def guardar_cambios_github(df_editado, sha_original):
+    g = Github(TOKEN)
+    repo = g.get_repo(REPO_NAME)
+    csv_buffer = io.StringIO()
+    df_editado.to_csv(csv_buffer, index=False)
+    
+    repo.update_file(
+        path=BD_FILE,
+        message="Nexion: Edición manual de envíos",
+        content=csv_buffer.getvalue(),
+        sha=sha_original
+    )
+    st.success("¡Cambios guardados en GitHub con éxito!")
 
-        # 3. CRUCE DE DATOS (BUSCARV)
-        # Convertimos DocNum a texto para que el cruce sea exacto
-        df_sap['DocNum'] = df_sap['DocNum'].astype(str)
-        df_bd['DocNum'] = df_bd['DocNum'].astype(str)
+# --- INTERFAZ DE NEXION ---
+st.title("📦 Gestión de Envíos - Nexion")
 
-        # Filtramos: "Dame los de SAP que NO estén en mi BD editable"
-        nuevos_registros = df_sap[~df_sap['DocNum'].isin(df_bd['DocNum'])].copy()
+# 1. Cargar los datos
+if 'df_trabajo' not in st.session_state:
+    df, sha = cargar_base_datos()
+    st.session_state.df_trabajo = df
+    st.session_state.sha_actual = sha
 
-        if not nuevos_registros.empty:
-            # Agregamos las 4 columnas de edición vacías a los nuevos
-            for col in ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']:
-                nuevos_registros[col] = ""
-            
-            # Concatenamos (pegamos abajo) sin tocar lo que ya habías editado
-            df_final = pd.concat([df_bd, nuevos_registros], ignore_index=True)
-            
-            # 4. SUBIR CAMBIOS A GITHUB
-            csv_buffer = io.StringIO()
-            df_final.to_csv(csv_buffer, index=False)
-            
-            repo.update_file(
-                path=BD_FILE,
-                message=f"Nexion: Agregados {len(nuevos_registros)} pedidos nuevos",
-                content=csv_buffer.getvalue(),
-                sha=sha_bd
-            )
-            return f"¡Hecho amor! Se sumaron {len(nuevos_registros)} filas nuevas a tu base de envíos."
-        else:
-            return "Tu base ya está al día, no hay pedidos nuevos en SAP."
+# 2. RENDERIZAR LA MATRIZ EDITABLE
+st.subheader("Panel de Edición")
+# Aquí bloqueamos las columnas de SAP y solo dejamos editar las 4 tuyas
+df_editado = st.data_editor(
+    st.session_state.df_trabajo,
+    column_config={
+        "DocNum": st.column_config.Column(disabled=True),
+        "CardName": st.column_config.Column(disabled=True),
+        "FECHA DE ENVIO": st.column_config.DateColumn("Fecha de Envío"),
+        "FLETERA": st.column_config.SelectboxColumn("Fletera", options=["DHL", "FedEx", "Propia", "Otro"]),
+        "SURTIDOR": st.column_config.TextColumn("Surtidor"),
+        "INCIDENCIA": st.column_config.TextColumn("Incidencia")
+    },
+    hide_index=True,
+    use_container_width=True
+)
 
-    except Exception as e:
-        return f"Ocurrió un detalle: {str(e)}"
-
-# Botón en tu página de Formatos
-if st.button("🔄 Sincronizar Matrices"):
-    with st.spinner("Buscando pedidos nuevos..."):
-        resultado = actualizar_base_datos()
-        st.info(resultado)
+# 3. BOTÓN PARA GUARDAR
+if st.button("💾 Guardar Cambios en GitHub"):
+    guardar_cambios_github(df_editado, st.session_state.sha_actual)
+    # Actualizamos el estado para la siguiente edición
+    st.session_state.df_trabajo = df_editado
 
 
 
