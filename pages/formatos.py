@@ -11,14 +11,24 @@ TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
 BD_FILE = "enviosbd.csv"
 
-# Función para leer de GitHub
 def cargar_datos():
     g = Github(TOKEN)
     repo = g.get_repo(REPO_NAME)
     content = repo.get_contents(BD_FILE)
     df = pd.read_csv(content.download_url)
-    # Aseguramos que DocNum sea texto para evitar problemas de formato
-    df['DocNum'] = df['DocNum'].astype(str)
+    
+    # --- LA SOLUCIÓN AQUÍ ---
+    # Lista de columnas que NECESITAS para editar
+    columnas_edicion = ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']
+    
+    for col in columnas_edicion:
+        if col not in df.columns:
+            df[col] = ""  # Si no existe, la crea vacía para que aparezca en el editor
+    
+    # Aseguramos que DocNum sea texto
+    if 'DocNum' in df.columns:
+        df['DocNum'] = df['DocNum'].astype(str)
+        
     return df, content.sha
 
 # Función para guardar en GitHub
