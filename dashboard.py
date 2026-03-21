@@ -4155,50 +4155,41 @@ else:
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
 
                     # --- Lógica para Facturación Mes Anterior ------
-                    # --- LÓGICA DE HIERRO PARA FACTURACIÓN (MARZO VS FEBRERO) ---
+                    # --- LÓGICA DE HIERRO: COMPARATIVA EXCLUSIVA COBRO REGRESO ---
 
-                    # 1. TOTAL MARZO (Filtrado por lo que ves en pantalla)
+                    # 1. TOTAL MARZO (Lo que tienes filtrado en pantalla)
+                    # Asumiendo que df_filtered ya tiene el filtro de "COBRO REGRESO" aplicado por tu usuario
                     total_fact_actual = df_filtered['FACTURACION'].sum()
                     
-                    # 2. DEFINIR MES ANTERIOR
+                    # 2. CONFIGURACIÓN DE MESES
                     meses_map = {"ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6, 
                                  "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12}
                     meses_inv = {v: k for k, v in meses_map.items()}
                     
                     mes_actual_str = df_filtered['MES'].unique()[0] if not df_filtered.empty else "MARZO"
                     
-                    # 3. FILTRAR MES ANTERIOR SOLO DE 2026 (Para evitar el -14.6% falso)
+                    # 3. BUSCAR MES ANTERIOR (Filtrando EXACTAMENTE lo mismo)
                     total_fact_mes_anterior = 0
                     if mes_actual_str in meses_map:
                         num_ant = meses_map[mes_actual_str] - 1
                         nombre_ant = meses_inv.get(num_ant)
                         
                         if nombre_ant:
-                            # AQUÍ ESTÁ EL TRUCO: Filtramos por el MES anterior pero solo del año 2026
-                            # Si no tienes columna 'AÑO', usamos df_actual pero limpiando duplicados
-                            df_busqueda_ant = df_actual[df_actual['MES'] == nombre_ant]
-                            
-                            # Si tienes columna 'AÑO', descomenta la línea de abajo y borra la de arriba:
-                            # df_busqueda_ant = df_actual[(df_actual['MES'] == nombre_ant) & (df_actual['AÑO'] == 2026)]
-                            
+                            # 🔥 AQUÍ ESTÁ LA CORRECCIÓN: Filtramos Mes Anterior Y que sea COBRO REGRESO
+                            df_busqueda_ant = df_actual[
+                                (df_actual['MES'] == nombre_ant) & 
+                                (df_actual['TIPO_OPERACION'] == 'COBRO REGRESO') # <-- Asegúrate que el nombre de la columna sea correcto
+                            ]
                             total_fact_mes_anterior = df_busqueda_ant['FACTURACION'].sum()
                     
-                    # 4. CÁLCULO MANUAL (Para asegurar el VERDE)
-                    # Diferencia: 8,031,984 - 7,081,326 = 950,658 (POSITIVO)
+                    # 4. CÁLCULO DE VARIACIÓN REAL
+                    # Ahora sí: Marzo (8M) - Febrero (7M) = POSITIVO
                     diferencia_real = total_fact_actual - total_fact_mes_anterior
                     
                     if total_fact_mes_anterior > 0:
                         var_mensual = (diferencia_real / total_fact_mes_anterior) * 100
                     else:
                         var_mensual = 0
-                    
-                    # --- RENDERIZADO FINAL (ESTO TIENE QUE SALIR VERDE) ---
-                    st.metric(
-                        label="FACTURACIÓN",
-                        value=f"${total_fact_actual:,.2f}",
-                        delta=f"{var_mensual:+.1f}% vs {nombre_ant if nombre_ant else 'Ant.'}",
-                        delta_color="normal" # 'normal' = SI ES POSITIVO ES VERDE. PUNTO.
-                    )
                     
                     # --- LÓGICA DELTA EFICIENCIA ---
                     # (Mantenemos tu lógica de eficiencia aquí...)
