@@ -5467,16 +5467,20 @@ else:
                     with t2:
                         # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
                         if not df_actual.empty:
-                            # --- BLOQUE DE FILTRADO POR MES ---
-                            # --- BLOQUE DE FILTRADO POR MES (CORREGIDO) ---
+                            # --- BLOQUE DE FILTRADO POR MES (ULTRA REFORZADO) ---
                             st.write("")
-                            # 1. Limpieza previa de la columna
-                            df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip()
                             
-                            # 2. Conversión forzando el orden de día primero
+                            # 1. Limpieza extrema: a string, quitar espacios y saltos de línea invisibles
+                            df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip().str.replace(r'\s+', ' ', regex=True)
+                            
+                            # 2. Primera pasada: Forzamos formato Día/Mes/Año (el de tu imagen)
                             df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], dayfirst=True, errors='coerce')
                             
-                            # 3. Creamos el filtro
+                            # 3. Segunda pasada (Solo para las que fallaron): Intentamos conversión flexible
+                            # Esto rescata las filas que Excel envió como objetos de fecha nativos
+                            df_actual['FECHA_DT'] = df_actual['FECHA_DT'].fillna(pd.to_datetime(df_actual['FECHA'], errors='coerce'))
+                            
+                            # 4. Creamos el filtro de texto para el selector
                             df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
                             
                             # Obtenemos la lista de meses para el selector
