@@ -21,32 +21,34 @@ def obtener_repo():
 def cargar_csv(file_path):
     try:
         repo = obtener_repo()
-        content = repo.get_contents(file_path)
-        # Decodificar contenido crudo para evitar caché y errores de archivo vacío
+        # Forzamos la lectura de la rama main explícitamente
+        content = repo.get_contents(file_path, ref="main")
+        
+        # LOG DE DIAGNÓSTICO (Lo verás en tu app)
+        st.write(f"DEBUG: Leyendo {file_path}. Tamaño reportado: {content.size} bytes")
+        
+        if content.size == 0:
+            st.error(f"¡El archivo {file_path} pesa 0 bytes en GitHub! Súbelo de nuevo.")
+            return pd.DataFrame(), None
+
         data = base64.b64decode(content.content).decode('utf-8')
         
+        # Si data llega vacío aquí, es un tema de codificación
         if not data.strip():
+            st.error("DEBUG: El contenido decodificado está vacío.")
             return pd.DataFrame(), None
             
         df = pd.read_csv(io.StringIO(data))
         
-        # LIMPIEZA DE DOCNUM (Quitar decimales .0)
+        # Limpieza de DocNum
         if 'DocNum' in df.columns:
             df = df.dropna(subset=['DocNum'])
-            # Forzamos conversión a entero para quitar el .0 y luego a string
             df['DocNum'] = pd.to_numeric(df['DocNum'], errors='coerce').fillna(0).astype(int).astype(str)
             df = df[df['DocNum'] != "0"]
         
-        # Asegurar que existan las columnas de edición
-        cols_edit = ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']
-        for col in cols_edit:
-            if col not in df.columns:
-                df[col] = ""
-            df[col] = df[col].astype(str).replace(['nan', 'None', 'NaN', 'NaT'], '')
-            
         return df, content.sha
     except Exception as e:
-        st.error(f"Error cargando {file_path}: {e}")
+        st.error(f"Error fatal en {file_path}: {str(e)}")
         return pd.DataFrame(), None
 
 # --- LÓGICA DE SINCRONIZACIÓN ---
