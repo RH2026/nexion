@@ -1,9 +1,3 @@
-¡Hecho, cielo! Vamos a poner la aplicación en modo "Wide" (ancho completo) para que esa matriz de logística se vea increíble y no tengas que estar desplazándote de izquierda a derecha.
-
-En Streamlit, esto se hace con layout="wide". Aquí tienes el código integrado y optimizado para que sea una herramienta de trabajo real:
-
-Código Maestro: Nexion en Pantalla Completa
-Python
 import pandas as pd
 import streamlit as st
 from github import Github
