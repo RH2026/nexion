@@ -11,35 +11,38 @@ TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
 BD_FILE = "enviosbd.csv"
 
-def cargar_datos():
-    g = Github(TOKEN)
-    repo = g.get_repo(REPO_NAME)
-    content = repo.get_contents(BD_FILE)
-    df = pd.read_csv(content.download_url)
-    
-    # 1. Asegurar columnas de edición y LIMPIAR TIPOS
-    # Fecha: Forzamos a que sea datetime, lo que no sirva será NaT (nulo de fecha)
-    if 'FECHA DE ENVIO' in df.columns:
-        df['FECHA DE ENVIO'] = pd.to_datetime(df['FECHA DE ENVIO'], errors='coerce')
-    else:
-        df['FECHA DE ENVIO'] = pd.to_datetime(None)
+# 1. LIMPIEZA TOTAL ANTES DEL EDITOR
+# Convertimos TODO a string para que Streamlit no tenga nada que reclamar
+df_para_editor = st.session_state.df_nexion.copy()
 
-    # Texto: Forzamos a que sean strings y quitamos los NaN (nulos) que rompen el Selectbox
-    cols_texto = ['FLETERA', 'SURTIDOR', 'INCIDENCIA']
-    for col in cols_texto:
-        if col not in df.columns:
-            df[col] = ""
-        else:
-            df[col] = df[col].astype(str).replace(['nan', 'None', 'NaN'], '')
+# Aseguramos que las columnas existan como texto
+for col in ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']:
+    if col not in df_para_editor.columns:
+        df_para_editor[col] = ""
+    df_para_editor[col] = df_para_editor[col].astype(str).replace(['nan', 'None', 'NaN', 'NaT'], '')
 
-    # 2. Identificador: DocNum siempre como texto
-    if 'DocNum' in df.columns:
-        df['DocNum'] = df['DocNum'].astype(str)
+# 2. RENDERIZADO SEGURO (Sin DateColumn por ahora para debug)
+df_editado = st.data_editor(
+    df_para_editor,
+    column_config={
+        "DocNum": st.column_config.TextColumn("Pedido", disabled=True),
+        "CardName": st.column_config.TextColumn("Cliente", disabled=True),
+        # Usamos TextColumn para la fecha para que no truene por el formato
+        "FECHA DE ENVIO": st.column_config.TextColumn("Fecha (YYYY-MM-DD)"), 
+        "FLETERA": st.column_config.SelectboxColumn(
+            "Fletera", 
+            options=["", "PAQUETEXPRESS", "TRESGUERRAS", "CASTORES", "ESTAFETA", "RECOLECCION"]
+        ),
+        "SURTIDOR": st.column_config.TextColumn("Surtidor"),
+        "INCIDENCIA": st.column_config.TextColumn("Notas / Incidencia")
+    },
+    hide_index=True,
+    use_container_width=True,
+    num_rows="fixed"
+)
 
-    # 3. TRUCO FINAL: Reemplazar cualquier nulo restante para que el editor no sufra
-    df = df.fillna("")
-        
-    return df, content.sha
+# Actualizamos el estado
+st.session_state.df_nexion = df_editado
 
 # Función para guardar en GitHub
 def guardar_datos(df_save, sha_save):
