@@ -10,7 +10,7 @@ def cargar_desde_repo(archivo):
     if os.path.exists(archivo):
         try:
             df_preview = pd.read_excel(archivo, nrows=50, header=None)
-            claves = ['CARTA_PORTE', 'FACTURA_INTERNA', 'TALON', 'OBSERVACION 1', 'OBSERVACION 1', 'GUIA', 'PAQUETES_AMPARA', 'SUB TOTAL _ GUIA']
+            claves = ['CARTA_PORTE', 'FACTURA_INTERNA', 'TALON', 'OBSERVACION 1', 'OBSERVACIONES', 'GUIA', 'PAQUETES_AMPARA', 'SUB TOTAL _ GUIA']
             fila_head = -1
             for i, row in df_preview.iterrows():
                 row_str = row.astype(str).str.upper().tolist()
