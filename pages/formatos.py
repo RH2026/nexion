@@ -37,13 +37,25 @@ if query:
     encontrado = False
     for df_source, nombre_f in [(df_t1, "TRES GUERRAS"), (df_t2, "TINY PACK"), (df_t3, "ONE")]:
         if df_source is not None:
-            df_str = df_source.astype(str)
-            mask = df_str.apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
-            res = df_source[mask]
+            # --- BÚSQUEDA RESTRINGIDA (SOLO EN FACTURAS O GUÍAS) ---
+            # Definimos en qué columnas permitimos buscar
+            cols_busqueda = ['OBSERVACION 1', 'FACTURA_INTERNA', 'Observaciones', 'TALON', 'CARTA_PORTE', 'Guia']
+            
+            # Solo buscamos en las columnas que REALMENTE existen en este archivo
+            cols_presentes = [c for c in cols_busqueda if c in df_source.columns]
+            
+            if cols_presentes:
+                # Creamos una máscara que solo busque en esas columnas específicas
+                mask = df_source[cols_presentes].astype(str).apply(
+                    lambda x: x.str.contains(query, case=False, na=False)
+                ).any(axis=1)
+                res = df_source[mask]
+            else:
+                res = pd.DataFrame() # Si no hay columnas de búsqueda, no hay resultados
             
             if not res.empty:
                 encontrado = True
-                f = res.iloc[0] 
+                f = res.iloc[0]
                 
                 # --- LÓGICA DE ESTATUS POR FECHA (TUS REGLAS) ---
                 col_fechas = ['F.ENTREGA', 'FECHA_ENTREGA', 'FECHA DE ENTREGA']
