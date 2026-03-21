@@ -3,7 +3,7 @@ import streamlit as st
 from github import Github
 import io
 
-# 1. CONFIGURACIÓN DE PÁGINA (DEBE SER LO PRIMERO)
+# 1. CONFIGURACIÓN DE PÁGINA (SIEMPRE PRIMERO)
 st.set_page_config(page_title="Nexion Logística", layout="wide")
 
 # --- PARÁMETROS DE ACCESO ---
@@ -19,14 +19,20 @@ def cargar_datos():
         content = repo.get_contents(BD_FILE)
         df = pd.read_csv(content.download_url)
         
-        # Limpieza de datos para que el editor no chille
-        for col in ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']:
+        # LIMPIEZA DE FILAS FANTASMA (nan/vacías)
+        # Solo mantenemos filas que tengan un número de pedido real
+        if 'DocNum' in df.columns:
+            df = df.dropna(subset=['DocNum'])
+            df['DocNum'] = df['DocNum'].astype(str).str.strip()
+            df = df[df['DocNum'] != ""]
+        
+        # Asegurar columnas de edición y limpiar textos feos
+        cols_edit = ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']
+        for col in cols_edit:
             if col not in df.columns:
                 df[col] = ""
+            # Convertimos a string y quitamos los "nan" visuales
             df[col] = df[col].astype(str).replace(['nan', 'None', 'NaN', 'NaT'], '')
-        
-        if 'DocNum' in df.columns:
-            df['DocNum'] = df['DocNum'].astype(str)
             
         return df, content.sha
     except Exception as e:
@@ -37,42 +43,55 @@ def guardar_datos(df_save, sha_save):
     try:
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
+        
+        # Limpieza final antes de enviar a GitHub para no guardar basura
+        if 'DocNum' in df_save.columns:
+            df_save = df_save.dropna(subset=['DocNum'])
+            df_save = df_save[df_save['DocNum'].astype(str).str.strip() != ""]
+            
         csv_buffer = io.StringIO()
         df_save.to_csv(csv_buffer, index=False)
+        
         repo.update_file(
             path=BD_FILE,
-            message="Nexion: Actualización manual",
+            message="Nexion: Actualización de matriz",
             content=csv_buffer.getvalue(),
             sha=sha_save
         )
-        st.success("¡Guardado correctamente en GitHub!")
+        st.success("¡Datos guardados en GitHub!")
+        return True
     except Exception as e:
         st.error(f"Error al guardar: {e}")
+        return False
 
-# --- LÓGICA DE DATOS ---
+# --- LÓGICA DE ESTADO (Session State) ---
 if 'df_nexion' not in st.session_state:
-    df_inicial, sha_inicial = cargar_datos()
-    st.session_state.df_nexion = df_inicial
-    st.session_state.sha_nexion = sha_inicial
+    df_init, sha_init = cargar_datos()
+    st.session_state.df_nexion = df_init
+    st.session_state.sha_nexion = sha_init
 
 # --- INTERFAZ ---
 st.title("📦 Panel de Control de Envíos - JYPESA")
 
-# Botones superiores
-col1, col2 = st.columns([1, 4])
-with col1:
+# Botones de Acción
+col_btn, col_info = st.columns([1, 4])
+with col_btn:
     if st.button("💾 GUARDAR CAMBIOS", use_container_width=True, type="primary"):
-        guardar_datos(st.session_state.df_nexion, st.session_state.sha_nexion)
-        # Recargamos para actualizar el SHA y evitar errores de colisión
-        df_update, sha_update = cargar_datos()
-        st.session_state.df_nexion = df_update
-        st.session_state.sha_nexion = sha_update
-        st.rerun()
+        exito = guardar_datos(st.session_state.df_nexion, st.session_state.sha_nexion)
+        if exito:
+            # Refrescamos datos y SHA para la siguiente vuelta
+            df_up, sha_up = cargar_datos()
+            st.session_state.df_nexion = df_up
+            st.session_state.sha_nexion = sha_up
+            st.rerun()
 
-# --- EL EDITOR (UNA SOLA VEZ Y AL FINAL) ---
-st.subheader("Matriz Editable")
+with col_info:
+    st.info(f"Total de registros: {len(st.session_state.df_nexion)} | Editando archivo: {BD_FILE}")
 
-# Creamos una copia para el editor
+st.markdown("---")
+
+# --- EL EDITOR DE DATOS ---
+# Usamos una copia para que el editor trabaje fluido
 df_para_editar = st.session_state.df_nexion.copy()
 
 df_editado = st.data_editor(
@@ -80,7 +99,7 @@ df_editado = st.data_editor(
     column_config={
         "DocNum": st.column_config.TextColumn("Pedido", disabled=True),
         "CardName": st.column_config.TextColumn("Cliente", disabled=True),
-        "FECHA DE ENVIO": st.column_config.TextColumn("Fecha (AAAA-MM-DD)"), # Texto para evitar error de tipos
+        "FECHA DE ENVIO": st.column_config.TextColumn("Fecha (AAAA-MM-DD)"),
         "FLETERA": st.column_config.SelectboxColumn(
             "Fletera", 
             options=["", "PAQUETEXPRESS", "TRESGUERRAS", "CASTORES", "ESTAFETA", "RECOLECCION"]
@@ -90,10 +109,10 @@ df_editado = st.data_editor(
     },
     hide_index=True,
     use_container_width=True,
-    num_rows="fixed"
+    num_rows="fixed" # Esto evita que se creen filas nan manualmente
 )
 
-# Guardamos lo que el usuario escribe en el state
+# Sincronizamos lo que escribes con el estado de la sesión
 st.session_state.df_nexion = df_editado
 
 
