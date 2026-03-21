@@ -2,8 +2,9 @@ import pandas as pd
 import streamlit as st
 from github import Github
 import io
+import base64
 
-# 1. CONFIGURACIÓN DE PÁGINA (SIEMPRE PRIMERO)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Nexion Logística", layout="wide")
 
 # --- PARÁMETROS DE ACCESO ---
@@ -11,24 +12,24 @@ TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
 BD_FILE = "enviosbd.csv"
 
-# --- FUNCIONES ---
 def cargar_datos():
     try:
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
         content = repo.get_contents(BD_FILE)
-        df = pd.read_csv(content.download_url)
         
-        # --- LIMPIEZA DE DOCNUM (QUITAR DECIMALES) ---
+        # --- CAMBIO CLAVE: LEER DIRECTO DEL CONTENIDO, NO DE LA URL ---
+        # Esto evita el caché de GitHub y lee la versión REAL del momento
+        data = base64.b64decode(content.content).decode('utf-8')
+        df = pd.read_csv(io.StringIO(data))
+        
+        # Limpieza de DocNum (Quitar decimales .0)
         if 'DocNum' in df.columns:
-            # Primero quitamos filas vacías
             df = df.dropna(subset=['DocNum'])
-            # Convertimos a número, luego a entero (quita el .0) y finalmente a texto
             df['DocNum'] = pd.to_numeric(df['DocNum'], errors='coerce').fillna(0).astype(int).astype(str)
-            # Filtramos si quedó algún "0" por error de conversión
             df = df[df['DocNum'] != "0"]
         
-        # Asegurar columnas de edición y limpiar textos feos
+        # Columnas de edición
         cols_edit = ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']
         for col in cols_edit:
             if col not in df.columns:
@@ -45,6 +46,7 @@ def guardar_datos(df_save, sha_save):
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
         
+        # Limpiar antes de guardar
         if 'DocNum' in df_save.columns:
             df_save = df_save.dropna(subset=['DocNum'])
             df_save = df_save[df_save['DocNum'].astype(str).str.strip() != ""]
@@ -54,11 +56,10 @@ def guardar_datos(df_save, sha_save):
         
         repo.update_file(
             path=BD_FILE,
-            message="Nexion: Actualización de matriz",
+            message="Nexion: Actualización instantánea",
             content=csv_buffer.getvalue(),
             sha=sha_save
         )
-        st.success("¡Datos guardados en GitHub!")
         return True
     except Exception as e:
         st.error(f"Error al guardar: {e}")
@@ -76,23 +77,25 @@ st.title("📦 Panel de Control de Envíos - JYPESA")
 col_btn, col_info = st.columns([1, 4])
 with col_btn:
     if st.button("💾 GUARDAR CAMBIOS", use_container_width=True, type="primary"):
-        exito = guardar_datos(st.session_state.df_nexion, st.session_state.sha_nexion)
-        if exito:
-            df_up, sha_up = cargar_datos()
-            st.session_state.df_nexion = df_up
-            st.session_state.sha_nexion = sha_up
-            st.rerun()
+        # Usamos un spinner para que sepa que está trabajando
+        with st.spinner("Guardando en GitHub..."):
+            exito = guardar_datos(st.session_state.df_nexion, st.session_state.sha_nexion)
+            if exito:
+                # Forzamos la recarga inmediata del estado
+                df_up, sha_up = cargar_datos()
+                st.session_state.df_nexion = df_up
+                st.session_state.sha_nexion = sha_up
+                st.success("¡Guardado!")
+                st.rerun()
 
 with col_info:
-    st.info(f"Total de registros: {len(st.session_state.df_nexion)} | Editando archivo: {BD_FILE}")
+    st.info(f"Registros: {len(st.session_state.df_nexion)} | Refresco: Instantáneo")
 
 st.markdown("---")
 
-# --- EL EDITOR DE DATOS ---
-df_para_editar = st.session_state.df_nexion.copy()
-
+# --- EL EDITOR ---
 df_editado = st.data_editor(
-    df_para_editar,
+    st.session_state.df_nexion, # Editamos directo el session_state
     column_config={
         "DocNum": st.column_config.TextColumn("Pedido", disabled=True),
         "CardName": st.column_config.TextColumn("Cliente", disabled=True),
@@ -106,9 +109,11 @@ df_editado = st.data_editor(
     },
     hide_index=True,
     use_container_width=True,
-    num_rows="fixed"
+    num_rows="fixed",
+    key="editor_nexion" # Añadimos llave para estabilidad
 )
 
+# Sincronizamos cambios al state
 st.session_state.df_nexion = df_editado
 
 
