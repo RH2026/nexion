@@ -1665,9 +1665,14 @@ else:
                 hoy_dt = pd.Timestamp(hoy_gdl)
                 meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
                 
-                col_f1, _ = st.columns([1, 4])
+                # --- ZONA DE CONTROL (FILTROS + BUSCADOR) ---
+                col_f1, col_busqueda = st.columns([1, 3])
+                
                 with col_f1:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
+                
+                with col_busqueda:
+                    query = st.text_input("🔍 BUSCAR GUÍA O FACTURA (NEXION):", placeholder="Escribe aquí...")
             
                 df = df_raw.copy()
                 for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
