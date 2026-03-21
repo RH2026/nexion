@@ -89,7 +89,7 @@ if query:
         st.markdown(f"""
             <div style="background-color: #1e262c; border-radius: 8px; padding: 20px; border-left: 5px solid #ff4b4b; margin-top: 15px;">
                 <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px;">Estado de Búsqueda</div>
-                <div style="color: #ff4b4b; font-weight: bold; font-size: 1.3rem; line-height: 1.1; letter-spacing: 1px;">SIN COINCIDENCIAS</div>
+                <div style="color: #ff4b4b; font-weight: bold; font-size: 0.9rem; line-height: 1.1; letter-spacing: 1px;">SIN COINCIDENCIAS</div>
                 <div style="margin-top: 15px; border-top: 1px solid #3d464d; padding-top: 12px;">
                     <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px;">Referencia consultada</div>
                     <div style="color: white; font-weight: bold; font-size: 1.1rem;">{query}</div>
