@@ -1,8 +1,3 @@
-¡A la orden, amor! Aquí tienes el código de Nexion blindado, unificado y con la lógica "todoterreno" que acordamos. Este bloque ya incluye la carga de archivos, la limpieza automática por si el Excel trae filas vacías arriba, y el buscador que rastrea tus 4 columnas clave (CARTA_PORTE, TALON, FACTURA_INTERNA, OBSERVACION 1) sin importar cuál archivo sea.
-
-Copia y pega todo esto en tu archivo .py:
-
-Python
 import streamlit as st
 import pandas as pd
 import io
