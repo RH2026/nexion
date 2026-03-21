@@ -17,19 +17,14 @@ def cargar_datos():
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
         content = repo.get_contents(BD_FILE)
-        
-        # --- CAMBIO CLAVE: LEER DIRECTO DEL CONTENIDO, NO DE LA URL ---
-        # Esto evita el caché de GitHub y lee la versión REAL del momento
         data = base64.b64decode(content.content).decode('utf-8')
         df = pd.read_csv(io.StringIO(data))
         
-        # Limpieza de DocNum (Quitar decimales .0)
         if 'DocNum' in df.columns:
             df = df.dropna(subset=['DocNum'])
             df['DocNum'] = pd.to_numeric(df['DocNum'], errors='coerce').fillna(0).astype(int).astype(str)
             df = df[df['DocNum'] != "0"]
         
-        # Columnas de edición
         cols_edit = ['FECHA DE ENVIO', 'FLETERA', 'SURTIDOR', 'INCIDENCIA']
         for col in cols_edit:
             if col not in df.columns:
@@ -45,21 +40,13 @@ def guardar_datos(df_save, sha_save):
     try:
         g = Github(TOKEN)
         repo = g.get_repo(REPO_NAME)
-        
-        # Limpiar antes de guardar
         if 'DocNum' in df_save.columns:
             df_save = df_save.dropna(subset=['DocNum'])
             df_save = df_save[df_save['DocNum'].astype(str).str.strip() != ""]
             
         csv_buffer = io.StringIO()
         df_save.to_csv(csv_buffer, index=False)
-        
-        repo.update_file(
-            path=BD_FILE,
-            message="Nexion: Actualización instantánea",
-            content=csv_buffer.getvalue(),
-            sha=sha_save
-        )
+        repo.update_file(path=BD_FILE, message="Nexion: Sync", content=csv_buffer.getvalue(), sha=sha_save)
         return True
     except Exception as e:
         st.error(f"Error al guardar: {e}")
@@ -76,12 +63,19 @@ st.title("📦 Panel de Control de Envíos - JYPESA")
 
 col_btn, col_info = st.columns([1, 4])
 with col_btn:
+    # EL CAMBIO: Ahora guardamos lo que esté en el editor al momento del clic
     if st.button("💾 GUARDAR CAMBIOS", use_container_width=True, type="primary"):
-        # Usamos un spinner para que sepa que está trabajando
-        with st.spinner("Guardando en GitHub..."):
+        with st.spinner("Guardando..."):
+            # Usamos los datos actuales del editor que Streamlit guarda en su memoria interna
+            df_a_guardar = st.session_state.editor_nexion["edited_rows"]
+            
+            # Aplicamos los cambios del editor al dataframe original antes de subir
+            for index, changes in df_a_guardar.items():
+                for key, value in changes.items():
+                    st.session_state.df_nexion.at[index, key] = value
+            
             exito = guardar_datos(st.session_state.df_nexion, st.session_state.sha_nexion)
             if exito:
-                # Forzamos la recarga inmediata del estado
                 df_up, sha_up = cargar_datos()
                 st.session_state.df_nexion = df_up
                 st.session_state.sha_nexion = sha_up
@@ -89,13 +83,15 @@ with col_btn:
                 st.rerun()
 
 with col_info:
-    st.info(f"Registros: {len(st.session_state.df_nexion)} | Refresco: Instantáneo")
+    st.info(f"Registros: {len(st.session_state.df_nexion)} | Modo: Edición Fluida")
 
 st.markdown("---")
 
-# --- EL EDITOR ---
-df_editado = st.data_editor(
-    st.session_state.df_nexion, # Editamos directo el session_state
+# --- EL EDITOR (TRUCO DE ESTABILIDAD) ---
+# NO asignamos el resultado a una variable directamente. 
+# Streamlit manejará los cambios internamente a través de la 'key'.
+st.data_editor(
+    st.session_state.df_nexion, 
     column_config={
         "DocNum": st.column_config.TextColumn("Pedido", disabled=True),
         "CardName": st.column_config.TextColumn("Cliente", disabled=True),
@@ -110,11 +106,8 @@ df_editado = st.data_editor(
     hide_index=True,
     use_container_width=True,
     num_rows="fixed",
-    key="editor_nexion" # Añadimos llave para estabilidad
+    key="editor_nexion" # LA KEY ES SAGRADA
 )
-
-# Sincronizamos cambios al state
-st.session_state.df_nexion = df_editado
 
 
 
