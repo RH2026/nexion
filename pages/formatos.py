@@ -1,106 +1,110 @@
 import streamlit as st
 import pandas as pd
-import io
+import os
 
-# --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Nexion - Rastreo Inteligente", layout="wide")
-
-# --- FUNCIÓN DE LIMPIEZA DE EXCEL (PARA QUITAR FILAS VACÍAS ARRIBA) ---
-def limpiar_excel_logistica(file_bytes):
-    try:
-        # Cargamos el archivo para explorar las primeras filas
-        df_sucio = pd.read_excel(file_bytes, header=None)
-        
-        # Estas son tus palabras clave sagradas para encontrar el encabezado
-        claves = ['CARTA_PORTE', 'FACTURA_INTERNA', 'TALON', 'OBSERVACION 1']
-        fila_encabezado = -1
-        
-        for i, row in df_sucio.head(50).iterrows():
-            row_str = row.astype(str).str.upper().tolist()
-            # Si la fila contiene alguna de tus palabras clave, ahí es
-            if any(clave in str(celda) for celda in row_str for clave in claves):
-                fila_encabezado = i
-                break
-        
-        if fila_encabezado != -1:
-            return pd.read_excel(file_bytes, header=fila_encabezado)
-        else:
-            return pd.read_excel(file_bytes) # Si no halla nada, lo abre normal
-    except Exception as e:
-        st.error(f"Error al limpiar archivo: {e}")
-        return None
-
-# --- INTERFAZ PRINCIPAL ---
-st.title("📦 Nexion: Rastreo Inteligente Multicliente")
-st.markdown("---")
-
-# 1. CARGA DE ARCHIVOS (T1, T2 o cualquier reporte)
-archivos_subidos = st.file_uploader(
-    "Arrastra aquí tus reportes de Tiny Pack y Tres Guerras:", 
-    type=['xlsx'], 
-    accept_multiple_files=True
-)
-
-base_datos = {}
-
-if archivos_subidos:
-    for archivo in archivos_subidos:
-        nombre = archivo.name.upper()
-        # Limpieza y carga
-        file_bytes = io.BytesIO(archivo.read())
-        df_limpio = limpiar_excel_logistica(file_bytes)
-        
-        if df_limpio is not None:
-            base_datos[nombre] = df_limpio
-            st.success(f"✅ {nombre} listo para búsqueda.")
-
-st.markdown("---")
-
-# 2. MOTOR DE BÚSQUEDA TODOTERRENO
-query = st.text_input("🔍 Ingresa número de Pedido, Factura o Guía:")
-
-if query and base_datos:
-    hallado = False
-    
-    for nombre_archivo, df in base_datos.items():
-        # Convertimos todo a texto para buscar sin errores de formato
-        df_str = df.astype(str)
-        mask = df_str.apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
-        resultados = df[mask]
-        
-        if not resultados.empty:
-            hallado = True
-            fila = resultados.iloc[0] # Tomamos el primer resultado
+# --- FUNCIÓN PARA CARGAR DESDE REPOSITORIO ---
+def cargar_desde_repo(archivo):
+    if os.path.exists(archivo):
+        try:
+            # Intentamos detectar la fila de encabezados automáticamente
+            df_preview = pd.read_excel(archivo, nrows=50, header=None)
+            claves = ['CARTA_PORTE', 'FACTURA_INTERNA', 'TALON', 'OBSERVACION 1']
+            fila_head = -1
+            for i, row in df_preview.iterrows():
+                if any(clave in str(celda).upper() for celda in row for clave in claves):
+                    fila_head = i
+                    break
             
-            st.subheader(f"📍 Resultado en: {nombre_archivo}")
+            return pd.read_excel(archivo, header=fila_head if fila_head != -1 else 0)
+        except:
+            return None
+    return None
+
+# --- ESTILOS CSS PARA EL RENDER "PERRO" ---
+st.markdown("""
+    <style>
+    .nexion-card {
+        background-color: #1e262c;
+        border-radius: 10px;
+        padding: 20px;
+        border-left: 5px solid #00ffcc;
+        margin-bottom: 20px;
+        color: white;
+        font-family: 'sans-serif';
+    }
+    .label { color: #8899a6; font-size: 0.8rem; text-transform: uppercase; }
+    .value { color: #ffffff; font-weight: bold; font-size: 1.1rem; }
+    .guia-destacada { color: #00ffcc; font-size: 1.5rem; font-weight: bold; }
+    .estatus-badge {
+        background-color: #004d40;
+        color: #00ffcc;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        float: right;
+    }
+    .resumen-fin { border-left: 1px solid #3d464d; padding-left: 15px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- LÓGICA DE DATOS ---
+# Cargamos los archivos que ya deben estar en tu repo
+df_t1 = cargar_desde_repo("T1.xlsx")
+df_t2 = cargar_desde_repo("T2.xlsx")
+
+# --- INTERFAZ ---
+st.title("📦 Rastreo Inteligente")
+query = st.text_input("Ingresa Factura o Pedido para buscar Guía:", placeholder="Ej. 235225")
+
+if query:
+    encontrado = False
+    # Buscamos en ambos DataFrames
+    for df_source, nombre_f in [(df_t1, "Tiny Pack"), (df_t2, "Tres Guerras")]:
+        if df_source is not None:
+            df_str = df_source.astype(str)
+            mask = df_str.apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
+            res = df_source[mask]
             
-            # --- LÓGICA UNIFICADA (T1 + T2) ---
-            # Buscamos columnas de GUÍA (CARTA_PORTE o TALON)
-            col_guia = [c for c in df.columns if 'CARTA_PORTE' in str(c).upper() or 'TALON' in str(c).upper()]
-            # Buscamos columnas de FACTURA (FACTURA_INTERNA o OBSERVACION 1)
-            col_fact = [c for c in df.columns if 'FACTURA_INTERNA' in str(c).upper() or 'OBSERVACION 1' in str(c).upper()]
-            
-            # Extraemos los datos finales
-            guia_final = fila.get(col_guia[0]) if col_guia else "No encontrada"
-            factura_final = fila.get(col_fact[0]) if col_fact else "No encontrada"
-            
-            # Mostramos los resultados en grande (Métricas)
-            c1, c2 = st.columns(2)
-            with c1:
-                st.metric("📦 NÚMERO DE GUÍA", guia_final)
-            with c2:
-                # Si es de Tres Guerras, esto será lo que hay en OBSERVACION 1
-                st.metric("📄 FACTURA / REFERENCIA", factura_final)
-            
-            # Tabla completa por si quieres ver surtidor, fecha, etc.
-            with st.expander("Ver detalles completos del envío"):
-                st.dataframe(df[mask], use_container_width=True, hide_index=True)
+            if not res.empty:
+                encontrado = True
+                f = res.iloc[0] # Tomamos la fila
                 
-    if not hallado:
-        st.warning("No se encontró ninguna coincidencia en los archivos cargados.")
+                # Mapeo de columnas según tus reglas
+                guia = f.get("TALON") or f.get("CARTA_PORTE") or "S/N"
+                factura = f.get("OBSERVACION 1") or f.get("FACTURA_INTERNA") or "S/N"
+                cliente = f.get("DESTINATARIO") or f.get("NOMBRE_CLIENTE") or "CLIENTE NO REGISTRADO"
+                origen = f.get("ORIGEN") or "PLANTA"
+                destino = f.get("DESTINO") or f.get("CIUDAD") or "N/A"
+                estatus = f.get("ESTATUS") or f.get("ESTATUS ENTREGA") or "EN TRÁNSITO"
+                bultos = f.get("BULTOS") or f.get("PIEZAS") or "0"
+                importe = f.get("TOTAL_CARGO") or f.get("IMPORTE") or "0.00"
 
-elif query and not base_datos:
-    st.info("Por favor, sube primero los archivos de Excel.")
+                # --- RENDERIZADO TIPO DASHBOARD ---
+                st.markdown(f"""
+                <div class="nexion-card">
+                    <div class="estatus-badge">{estatus}</div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <div>
+                            <div class="label">TALÓN / FOLIO</div>
+                            <div class="guia-destacada">{guia}</div>
+                            <div class="label">REF: <span style="color:white;">{factura}</span></div>
+                        </div>
+                        <div style="flex-grow: 1; margin: 0 40px;">
+                            <div class="label">DESTINATARIO / ORIGEN-DEST</div>
+                            <div class="value">{cliente}</div>
+                            <div style="font-size: 0.9rem;">{origen} → {destino}</div>
+                        </div>
+                        <div class="resumen-fin">
+                            <div class="label">RESUMEN FINANCIERO</div>
+                            <div class="value">BULTOS: {bultos}</div>
+                            <div class="value" style="color: #00ffcc;">TOTAL: ${importe}</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    if not encontrado:
+        st.error("No se encontró registro con ese número.")
 
 
 
