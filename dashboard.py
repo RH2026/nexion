@@ -6788,6 +6788,27 @@ else:
 
     
             elif st.session_state.menu_sub == "DATA MANAGEMENT":
+                # ── VALIDACIÓN DE ACCESO EXCLUSIVO (CONECTADO A TU LOGIN) ──
+                # Usamos 'usuario_activo' porque es la que definiste en tu login_screen()
+                current_user = st.session_state.get("usuario_activo", "UNKNOWN")
+                AUTHORIZED_USERS = ["JMoreno", "Rigoberto"]
+        
+                if current_user not in AUTHORIZED_USERS:
+                    st.markdown(f"""
+                        <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid #EF4444; border-radius: 12px; padding: 60px; text-align: center; margin-top: 50px;">
+                            <div style="font-size: 50px; margin-bottom: 20px;">🚫</div>
+                            <h2 style="color: #EF4444; margin:0; letter-spacing: 3px;">ACCESO RESTRINGIDO</h2>
+                            <p style="color: #F8FAFC; font-family: 'Courier New'; margin-top: 20px; font-size: 14px;">
+                                EL OPERADOR <span style="color: #EF4444; font-weight: bold;">{current_user.upper()}</span> NO CUENTA CON <br>
+                                PRIVILEGIOS DE NIVEL "ADMIN" PARA MODIFICAR MATRICES.
+                            </p>
+                            <div style="margin-top: 30px; border-top: 1px dashed rgba(239, 68, 68, 0.3); padding-top: 20px;">
+                                <small style="color: #94A3B8; text-transform: uppercase;">Protocolo Nexion Core // Nodo de Seguridad JYPESA</small>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    st.stop() # Aquí se detiene todo para los demás
+                
                 # 1. Definir la zona horaria de Guadalajara
                 tz_gdl = pytz.timezone('America/Mexico_City')
                 
