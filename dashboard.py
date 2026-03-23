@@ -6794,14 +6794,10 @@ else:
                 # ── ESTADO INICIAL ──
                 st.toast("Nexion Core: Active | Nodes: Online", icon="🌐")
                 
-                # ── ESTILO VISUAL PRO "SILICON VALLEY EDITION" (CSS) ──
-                # Limpiado para NO interferir con el CSS Maestro de botones
+                # ── ESTILO VISUAL PRO (CSS) ──
                 st.markdown("""
                     <style>
-                    /* Estilo del Contenedor Principal */
                     .main { background-color: #0E1117; }
-                    
-                    /* Header Estilo DHL/FedEx */
                     .main-header-pro {
                         background: linear-gradient(90deg, rgba(96, 165, 250, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
                         border-left: 4px solid #60A5FA;
@@ -6809,8 +6805,6 @@ else:
                         border-radius: 8px;
                         margin-bottom: 25px;
                     }
-                
-                    /* Tarjetas de Estado "Command Center" */
                     .status-card-pro {
                         background: rgba(30, 41, 59, 0.5); 
                         border: 1px solid rgba(255, 255, 255, 0.05);
@@ -6819,7 +6813,6 @@ else:
                         text-align: center;
                         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
                     }
-                
                     .status-label {
                         font-size: 10px;
                         color: #94A3B8;
@@ -6828,98 +6821,86 @@ else:
                         margin-bottom: 8px;
                         text-transform: uppercase;
                     }
-                
                     .status-value {
                         font-size: 16px;
                         font-weight: 800;
                         color: #F8FAFC;
                     }
-                
-                    /* ELIMINADO: Estilo de botones para dejar que el CSS Maestro mande */
                     </style>
                 """, unsafe_allow_html=True)
                 
                 # ── CONFIGURACIÓN DE SEGURIDAD ──
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
-                NOMBRE_EXCLUSIVO = "Matriz_Excel_Dashboard.csv"
                 
-                # ── DASHBOARD DE ESTADO RÁPIDO ──
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.markdown(f'''<div class="status-card-pro">
-                        <div class="status-label">Repository Node</div>
-                        <div class="status-value" style="color:#60A5FA;">{REPO_NAME.split("/")[1].upper()}</div>
-                    </div>''', unsafe_allow_html=True)
-                with c2:
-                    st.markdown(f'''<div class="status-card-pro">
-                        <div class="status-label">Master Source</div>
-                        <div class="status-value">DATA_STREAM // CSV</div>
-                    </div>''', unsafe_allow_html=True)
-                with c3:
-                    color_token = "#10B981" if TOKEN else "#EF4444"
-                    st.markdown(f'''<div class="status-card-pro">
-                        <div class="status-label">Token Auth</div>
-                        <div class="status-value" style="color:{color_token};">{"ENCRYPTED" if TOKEN else "MISSING"}</div>
-                    </div>''', unsafe_allow_html=True)
-                
-                st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
+                # DEFINICIÓN DE ARCHIVOS AUTORIZADOS
+                DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
+                MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
+                TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME] + MATRICES_EXCEL
                 
                 # ── ÁREA DE CARGA EXCLUSIVA ──
                 with st.container(border=True):
-                    st.markdown("### :material/security: Secure Data Uplink")
-                    st.caption(f"Restriction Protocol: Only `{NOMBRE_EXCLUSIVO}` authorized.")
+                    st.markdown("### :material/security: SECURE DATA UPLINK")
+                    st.caption(f"Allowed: `{DASHBOARD_NAME}` (CSV) | `T1, T2, T3` (XLSX)")
                     
-                    uploaded_file_master = st.file_uploader("", type=["csv"], help="Upload Master Data", key="master_uploader")
+                    # Acepta ambos tipos de extensiones
+                    uploaded_file = st.file_uploader("", type=["csv", "xlsx"], help="Upload authorized files only", key="universal_uploader")
                 
-                    if uploaded_file_master is not None:
-                        if uploaded_file_master.name != NOMBRE_EXCLUSIVO:
-                            st.error(f"**Protocol Violation:** Filename mismatch. Rename to `{NOMBRE_EXCLUSIVO}`")
+                    if uploaded_file is not None:
+                        # VALIDACIÓN DE NOMBRE Y EXTENSIÓN
+                        if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
+                            st.error(f"**Protocol Violation:** File `{uploaded_file.name}` is NOT authorized.")
                         else:
                             with st.expander(":material/database: Data Stream Preview", expanded=True):
                                 try:
-                                    df_preview = pd.read_csv(uploaded_file_master)
-                                    st.dataframe(df_preview.head(5), use_container_width=True)
-                                    uploaded_file_master.seek(0)
-                                except:
-                                    st.error("Corrupted Stream Data.")
-                            
-                            hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
-                            commit_msg = st.text_input("Sincronization Log Message", value=f"CORE_UPDATE // {hora_actual_gdl}")
-                
-                            # Botón tipo primary pero sin CSS forzado, usará tu CSS Maestro
-                            if st.button("EXECUTE SINCRONIZATION", type="primary", use_container_width=True, icon=":material/cloud_sync:"):
-                                with st.status("Establishing GitHub Handshake...", expanded=True) as status:
-                                    try:
-                                        from github import Github
-                                        g = Github(TOKEN)
-                                        repo = g.get_repo(REPO_NAME)
-                                        file_content = uploaded_file_master.getvalue()
-                
-                                        try:
-                                            contents = repo.get_contents(NOMBRE_EXCLUSIVO)
-                                            repo.update_file(contents.path, commit_msg, file_content, contents.sha)
-                                            status.update(label="Uplink Complete: GitHub Synced", state="complete", expanded=False)
-                                        except:
-                                            repo.create_file(NOMBRE_EXCLUSIVO, commit_msg, file_content)
-                                            status.update(label="New Node Created: File Initialized", state="complete", expanded=False)
+                                    # Lógica inteligente: Si es CSV usa read_csv, si es XLSX usa read_excel
+                                    if uploaded_file.name.endswith('.csv'):
+                                        df_preview = pd.read_csv(uploaded_file)
+                                    else:
+                                        df_preview = pd.read_excel(uploaded_file)
                                         
-                                        st.toast("System Updated Successfully", icon="🛡️")
-                                        st.cache_data.clear()
-                                        time.sleep(1)
-                                        st.rerun()
-                                    except Exception as e:
-                                        status.update(label=f"Uplink Failed: {str(e)}", state="error")
+                                    st.dataframe(df_preview.head(5), use_container_width=True)
+                                    uploaded_file.seek(0)
+                                    
+                                    # Preparar Commit
+                                    hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
+                                    commit_msg = st.text_input("Sincronization Log Message", value=f"CORE_UPDATE // {uploaded_file.name} // {hora_actual_gdl}")
+                        
+                                    if st.button("EXECUTE SINCRONIZATION", type="primary", use_container_width=True, icon=":material/cloud_sync:"):
+                                        with st.status(f"Syncing {uploaded_file.name}...", expanded=True) as status:
+                                            try:
+                                                from github import Github
+                                                g = Github(TOKEN)
+                                                repo = g.get_repo(REPO_NAME)
+                                                file_content = uploaded_file.getvalue()
+                                                
+                                                # Buscar si el archivo ya existe para actualizarlo o crearlo
+                                                try:
+                                                    contents = repo.get_contents(uploaded_file.name)
+                                                    repo.update_file(contents.path, commit_msg, file_content, contents.sha)
+                                                except:
+                                                    repo.create_file(uploaded_file.name, commit_msg, file_content)
+                                                    
+                                                status.update(label="Uplink Complete: GitHub Synced", state="complete", expanded=False)
+                                                st.toast(f"Success: {uploaded_file.name} is live", icon="🛡️")
+                                                st.cache_data.clear()
+                                                time.sleep(1)
+                                                st.rerun()
+                                            except Exception as e:
+                                                status.update(label=f"Uplink Failed: {str(e)}", state="error")
+                                except Exception as e:
+                                    st.error(f"Error reading file: {e}")
                 
-                # ── LÓGICA DE HISTORIAL DE ACTIVIDAD ──
+                # ── LÓGICA DE HISTORIAL DE ACTIVIDAD (Audit Logs) ──
                 st.markdown("<br>", unsafe_allow_html=True)
-                with st.expander(":material/terminal: System Audit Logs", expanded=False):
+                with st.expander(":material/terminal: System Audit Logs (Global)", expanded=False):
                     if TOKEN:
                         try:
                             from github import Github
                             g = Github(TOKEN)
                             repo = g.get_repo(REPO_NAME)
-                            commits = repo.get_commits(path=NOMBRE_EXCLUSIVO)
+                            # Muestra los últimos commits del repositorio
+                            commits = repo.get_commits()
                             
                             for i, commit in enumerate(commits):
                                 if i >= 5: break 
