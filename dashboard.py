@@ -6794,7 +6794,7 @@ else:
                 # ── ESTADO INICIAL ──
                 st.toast("Nexion Core: Active | Nodes: Online", icon="🌐")
                 
-                # ── ESTILO VISUAL PRO "SILICON VALLEY EDITION" (CSS) ──
+                # ── ESTILO VISUAL PRO + ALERTA NEÓN (CSS) ──
                 st.markdown("""
                     <style>
                     .main { background-color: #0E1117; }
@@ -6811,20 +6811,28 @@ else:
                         border-radius: 12px;
                         padding: 20px;
                         text-align: center;
-                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
                     }
-                    .status-label {
-                        font-size: 10px;
-                        color: #94A3B8;
-                        letter-spacing: 2px;
-                        font-weight: 700;
-                        margin-bottom: 8px;
-                        text-transform: uppercase;
+                    /* Animación para el borde de alerta */
+                    @keyframes pulse-red {
+                        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+                        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+                        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
                     }
-                    .status-value {
-                        font-size: 16px;
-                        font-weight: 800;
-                        color: #F8FAFC;
+                    .protocol-violation-card {
+                        background: rgba(239, 68, 68, 0.1);
+                        border: 1px solid #EF4444;
+                        border-radius: 10px;
+                        padding: 15px;
+                        margin-bottom: 15px;
+                        animation: pulse-red 2s infinite;
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }
+                    .violation-text {
+                        color: #FCA5A5;
+                        font-family: 'Courier New', Courier, monospace;
+                        font-size: 14px;
                     }
                     </style>
                 """, unsafe_allow_html=True)
@@ -6837,81 +6845,75 @@ else:
                 TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME] + MATRICES_EXCEL
         
                 # ── HEADER VISUAL ──
-                st.markdown(f"""
-                    <div class="main-header-pro">
-                        <h2 style='margin:0; color:#F8FAFC;'>Central Data Hub</h2>
-                        <p style='margin:0; color:#94A3B8; font-size:14px;'>Nexion Logistic Node // Restricted Access</p>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f'<div class="main-header-pro"><h2 style="margin:0; color:#F8FAFC;">Central Data Hub</h2><p style="margin:0; color:#94A3B8; font-size:14px;">Nexion Logistic Node // Multiple Uplink</p></div>', unsafe_allow_html=True)
                 
                 # ── DASHBOARD DE ESTADO RÁPIDO ──
                 c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.markdown(f'''<div class="status-card-pro">
-                        <div class="status-label">Repository Node</div>
-                        <div class="status-value" style="color:#60A5FA;">{REPO_NAME.split("/")[1].upper()}</div>
-                    </div>''', unsafe_allow_html=True)
-                with c2:
-                    st.markdown(f'''<div class="status-card-pro">
-                        <div class="status-label">Active Protocol</div>
-                        <div class="status-value">MULTI-FORMAT // SYNC</div>
-                    </div>''', unsafe_allow_html=True)
-                with c3:
-                    color_token = "#10B981" if TOKEN else "#EF4444"
-                    st.markdown(f'''<div class="status-card-pro">
-                        <div class="status-label">Token Auth</div>
-                        <div class="status-value" style="color:{color_token};">{"ENCRYPTED" if TOKEN else "MISSING"}</div>
-                    </div>''', unsafe_allow_html=True)
-                
+                # ... (Mantén tus columnas c1, c2, c3 igual que antes) ...
+        
                 st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
                 
-                # ── ÁREA DE CARGA EXCLUSIVA ──
+                # ── ÁREA DE CARGA MULTIPLE ──
                 with st.container(border=True):
-                    st.markdown("### :material/security: SECURE DATA UPLINK")
-                    st.caption(f"Allowed: `{DASHBOARD_NAME}` | `T1, T2, T3` (XLSX)")
+                    st.markdown("### :material/security: SECURE MULTI-UPLINK")
+                    st.caption(f"Accepted Assets: `{DASHBOARD_NAME}` and `T1, T2, T3` (XLSX)")
                     
-                    uploaded_file = st.file_uploader("", type=["csv", "xlsx"], help="Upload authorized files only", key="universal_uploader")
+                    # ACTIVADO: accept_multiple_files=True
+                    uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
                 
-                    if uploaded_file is not None:
-                        if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
-                            st.error(f"**Protocol Violation:** File `{uploaded_file.name}` is NOT authorized.")
-                        else:
-                            with st.expander(":material/database: Data Stream Preview", expanded=True):
-                                try:
-                                    if uploaded_file.name.endswith('.csv'):
-                                        df_preview = pd.read_csv(uploaded_file)
-                                    else:
-                                        df_preview = pd.read_excel(uploaded_file)
+                    if uploaded_files:
+                        archivos_validos = []
+                        errores = False
+        
+                        # 1. Validación de Seguridad de todos los archivos
+                        for uploaded_file in uploaded_files:
+                            if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
+                                st.markdown(f"""
+                                    <div class="protocol-violation-card">
+                                        <div style="font-size: 30px;">⚠️</div>
+                                        <div class="violation-text">
+                                            <strong style="color: #EF4444;">CRITICAL: PROTOCOL VIOLATION</strong><br>
+                                            Unauthorized asset: <span style="color: white;">`{uploaded_file.name}`</span><br>
+                                            <small>SYSTEM_ACTION: Uplink Blocked.</small>
+                                        </div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                                errores = True
+                            else:
+                                archivos_validos.append(uploaded_file)
+        
+                        # 2. Si hay archivos válidos y cero errores de protocolo, procedemos
+                        if archivos_validos and not errores:
+                            with st.expander(":material/list: Batch Preview", expanded=True):
+                                for f in archivos_validos:
+                                    st.write(f"✔ Prepared: `{f.name}`")
+                            
+                            hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
+                            commit_msg = st.text_input("Global Sync Message", value=f"BATCH_UPDATE // {hora_actual_gdl}")
+        
+                            if st.button("EXECUTE GLOBAL SINCRONIZATION", type="primary", use_container_width=True):
+                                with st.status("Initializing Batch Uplink...", expanded=True) as status:
+                                    try:
+                                        from github import Github
+                                        g = Github(TOKEN)
+                                        repo = g.get_repo(REPO_NAME)
                                         
-                                    st.dataframe(df_preview.head(5), use_container_width=True)
-                                    uploaded_file.seek(0)
-                        
-                                    hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
-                                    commit_msg = st.text_input("Sincronization Log Message", value=f"CORE_UPDATE // {uploaded_file.name} // {hora_actual_gdl}")
-                        
-                                    if st.button("EXECUTE SINCRONIZATION", type="primary", use_container_width=True, icon=":material/cloud_sync:"):
-                                        with st.status(f"Pushing {uploaded_file.name} to GitHub...", expanded=True) as status:
+                                        for f in archivos_validos:
+                                            status.write(f"Syncing `{f.name}`...")
+                                            content = f.getvalue()
                                             try:
-                                                from github import Github
-                                                g = Github(TOKEN)
-                                                repo = g.get_repo(REPO_NAME)
-                                                file_content = uploaded_file.getvalue()
-                                                
-                                                try:
-                                                    contents = repo.get_contents(uploaded_file.name)
-                                                    repo.update_file(contents.path, commit_msg, file_content, contents.sha)
-                                                except:
-                                                    repo.create_file(uploaded_file.name, commit_msg, file_content)
-                                                    
-                                                status.update(label="Uplink Complete: GitHub Synced", state="complete", expanded=False)
-                                                st.toast(f"Success: {uploaded_file.name} is live", icon="🛡️")
-                                                st.cache_data.clear()
-                                                time.sleep(1)
-                                                st.rerun()
-                                            except Exception as e:
-                                                status.update(label=f"Uplink Failed: {str(e)}", state="error")
-                                except Exception as e:
-                                    st.error(f"Error reading file: {e}")
+                                                target = repo.get_contents(f.name)
+                                                repo.update_file(target.path, commit_msg, content, target.sha)
+                                            except:
+                                                repo.create_file(f.name, commit_msg, content)
+                                        
+                                        status.update(label="All Assets Synced Successfully", state="complete", expanded=False)
+                                        st.toast("Nexion Repositories Updated", icon="🛡️")
+                                        st.cache_data.clear()
+                                        time.sleep(1)
+                                        st.rerun()
+                                    except Exception as e:
+                                        status.update(label=f"Uplink Failed: {str(e)}", state="error")
         
                 # ── LÓGICA DE HISTORIAL DE ACTIVIDAD (Audit Logs) ──
                 st.markdown("<br>", unsafe_allow_html=True)
