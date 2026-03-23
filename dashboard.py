@@ -6795,19 +6795,20 @@ else:
         
                 if current_user not in AUTHORIZED_USERS:
                     st.markdown(f"""
-                        <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid #EF4444; border-radius: 12px; padding: 60px; text-align: center; margin-top: 50px;">
-                            <div style="font-size: 50px; margin-bottom: 20px;">🚫</div>
-                            <h2 style="color: #EF4444; margin:0; letter-spacing: 3px;">ACCESO RESTRINGIDO</h2>
-                            <p style="color: #F8FAFC; font-family: 'Courier New'; margin-top: 20px; font-size: 14px;">
-                                EL OPERADOR <span style="color: #EF4444; font-weight: bold;">{current_user.upper()}</span> NO CUENTA CON <br>
-                                PRIVILEGIOS DE NIVEL "ADMIN" PARA MODIFICAR MATRICES.
+                        <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid #EF4444; border-radius: 8px; padding: 20px; text-align: center; margin-top: 20px;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                                <span style="font-size: 24px;">🚫</span>
+                                <h3 style="color: #EF4444; margin:0; letter-spacing: 2px; font-size: 18px;">ACCESO RESTRINGIDO</h3>
+                            </div>
+                            <p style="color: #F8FAFC; font-family: 'Courier New'; margin-top: 10px; font-size: 13px; margin-bottom: 10px;">
+                                EL OPERADOR <span style="color: #EF4444; font-weight: bold;">{current_user.upper()}</span> NO CUENTA CON PRIVILEGIOS "ADMIN".
                             </p>
-                            <div style="margin-top: 30px; border-top: 1px dashed rgba(239, 68, 68, 0.3); padding-top: 20px;">
-                                <small style="color: #94A3B8; text-transform: uppercase;">Protocolo Nexion Core // Nodo de Seguridad JYPESA</small>
+                            <div style="border-top: 1px dashed rgba(239, 68, 68, 0.2); padding-top: 10px;">
+                                <small style="color: #94A3B8; text-transform: uppercase; font-size: 10px;">Nexion Core // Nodo de Seguridad JYPESA</small>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-                    st.stop() # Aquí se detiene todo para los demás
+                    st.stop()
                 
                 # 1. Definir la zona horaria de Guadalajara
                 tz_gdl = pytz.timezone('America/Mexico_City')
