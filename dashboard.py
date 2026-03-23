@@ -6794,7 +6794,7 @@ else:
                 # ── ESTADO INICIAL ──
                 st.toast("Nexion Core: Active | Nodes: Online", icon="🌐")
                 
-                # ── ESTILO VISUAL PRO (CSS) ──
+                # ── ESTILO VISUAL PRO "SILICON VALLEY EDITION" (CSS) ──
                 st.markdown("""
                     <style>
                     .main { background-color: #0E1117; }
@@ -6832,28 +6832,52 @@ else:
                 # ── CONFIGURACIÓN DE SEGURIDAD ──
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
-                
-                # DEFINICIÓN DE ARCHIVOS AUTORIZADOS
                 DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
                 MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
                 TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME] + MATRICES_EXCEL
+        
+                # ── HEADER VISUAL ──
+                st.markdown(f"""
+                    <div class="main-header-pro">
+                        <h2 style='margin:0; color:#F8FAFC;'>Central Data Hub</h2>
+                        <p style='margin:0; color:#94A3B8; font-size:14px;'>Nexion Logistic Node // Restricted Access</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # ── DASHBOARD DE ESTADO RÁPIDO ──
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Repository Node</div>
+                        <div class="status-value" style="color:#60A5FA;">{REPO_NAME.split("/")[1].upper()}</div>
+                    </div>''', unsafe_allow_html=True)
+                with c2:
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Active Protocol</div>
+                        <div class="status-value">MULTI-FORMAT // SYNC</div>
+                    </div>''', unsafe_allow_html=True)
+                with c3:
+                    color_token = "#10B981" if TOKEN else "#EF4444"
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Token Auth</div>
+                        <div class="status-value" style="color:{color_token};">{"ENCRYPTED" if TOKEN else "MISSING"}</div>
+                    </div>''', unsafe_allow_html=True)
+                
+                st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
                 
                 # ── ÁREA DE CARGA EXCLUSIVA ──
                 with st.container(border=True):
                     st.markdown("### :material/security: SECURE DATA UPLINK")
-                    st.caption(f"Allowed: `{DASHBOARD_NAME}` (CSV) | `T1, T2, T3` (XLSX)")
+                    st.caption(f"Allowed: `{DASHBOARD_NAME}` | `T1, T2, T3` (XLSX)")
                     
-                    # Acepta ambos tipos de extensiones
                     uploaded_file = st.file_uploader("", type=["csv", "xlsx"], help="Upload authorized files only", key="universal_uploader")
                 
                     if uploaded_file is not None:
-                        # VALIDACIÓN DE NOMBRE Y EXTENSIÓN
                         if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
                             st.error(f"**Protocol Violation:** File `{uploaded_file.name}` is NOT authorized.")
                         else:
                             with st.expander(":material/database: Data Stream Preview", expanded=True):
                                 try:
-                                    # Lógica inteligente: Si es CSV usa read_csv, si es XLSX usa read_excel
                                     if uploaded_file.name.endswith('.csv'):
                                         df_preview = pd.read_csv(uploaded_file)
                                     else:
@@ -6861,20 +6885,18 @@ else:
                                         
                                     st.dataframe(df_preview.head(5), use_container_width=True)
                                     uploaded_file.seek(0)
-                                    
-                                    # Preparar Commit
+                        
                                     hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
                                     commit_msg = st.text_input("Sincronization Log Message", value=f"CORE_UPDATE // {uploaded_file.name} // {hora_actual_gdl}")
                         
                                     if st.button("EXECUTE SINCRONIZATION", type="primary", use_container_width=True, icon=":material/cloud_sync:"):
-                                        with st.status(f"Syncing {uploaded_file.name}...", expanded=True) as status:
+                                        with st.status(f"Pushing {uploaded_file.name} to GitHub...", expanded=True) as status:
                                             try:
                                                 from github import Github
                                                 g = Github(TOKEN)
                                                 repo = g.get_repo(REPO_NAME)
                                                 file_content = uploaded_file.getvalue()
                                                 
-                                                # Buscar si el archivo ya existe para actualizarlo o crearlo
                                                 try:
                                                     contents = repo.get_contents(uploaded_file.name)
                                                     repo.update_file(contents.path, commit_msg, file_content, contents.sha)
@@ -6890,16 +6912,15 @@ else:
                                                 status.update(label=f"Uplink Failed: {str(e)}", state="error")
                                 except Exception as e:
                                     st.error(f"Error reading file: {e}")
-                
+        
                 # ── LÓGICA DE HISTORIAL DE ACTIVIDAD (Audit Logs) ──
                 st.markdown("<br>", unsafe_allow_html=True)
-                with st.expander(":material/terminal: System Audit Logs (Global)", expanded=False):
+                with st.expander(":material/terminal: System Audit Logs", expanded=False):
                     if TOKEN:
                         try:
                             from github import Github
                             g = Github(TOKEN)
                             repo = g.get_repo(REPO_NAME)
-                            # Muestra los últimos commits del repositorio
                             commits = repo.get_commits()
                             
                             for i, commit in enumerate(commits):
@@ -6917,8 +6938,6 @@ else:
                                 st.divider()
                         except Exception as e:
                             st.error(f"Error al conectar con los logs: {e}")
-                    else:
-                        st.warning("Requiere Token Activo para visualizar logs.")
             
             
             elif st.session_state.menu_sub == "ORDER STAGING":                
