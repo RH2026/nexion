@@ -6811,6 +6811,20 @@ else:
                         border-radius: 12px;
                         padding: 20px;
                         text-align: center;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    }
+                    .status-label {
+                        font-size: 10px;
+                        color: #94A3B8;
+                        letter-spacing: 2px;
+                        font-weight: 700;
+                        margin-bottom: 8px;
+                        text-transform: uppercase;
+                    }
+                    .status-value {
+                        font-size: 16px;
+                        font-weight: 800;
+                        color: #F8FAFC;
                     }
                     /* Animación para el borde de alerta */
                     @keyframes pulse-red {
@@ -6847,9 +6861,24 @@ else:
                 # ── HEADER VISUAL ──
                 st.markdown(f'<div class="main-header-pro"><h2 style="margin:0; color:#F8FAFC;">Central Data Hub</h2><p style="margin:0; color:#94A3B8; font-size:14px;">Nexion Logistic Node // Multiple Uplink</p></div>', unsafe_allow_html=True)
                 
-                # ── DASHBOARD DE ESTADO RÁPIDO ──
+                # ── DASHBOARD DE ESTADO RÁPIDO (RESTAURADO) ──
                 c1, c2, c3 = st.columns(3)
-                # ... (Mantén tus columnas c1, c2, c3 igual que antes) ...
+                with c1:
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Repository Node</div>
+                        <div class="status-value" style="color:#60A5FA;">{REPO_NAME.split("/")[1].upper()}</div>
+                    </div>''', unsafe_allow_html=True)
+                with c2:
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Active Protocol</div>
+                        <div class="status-value">BATCH // SYNC</div>
+                    </div>''', unsafe_allow_html=True)
+                with c3:
+                    color_token = "#10B981" if TOKEN else "#EF4444"
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Token Auth</div>
+                        <div class="status-value" style="color:{color_token};">{"ENCRYPTED" if TOKEN else "MISSING"}</div>
+                    </div>''', unsafe_allow_html=True)
         
                 st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
                 
@@ -6858,14 +6887,12 @@ else:
                     st.markdown("### :material/security: SECURE MULTI-UPLINK")
                     st.caption(f"Accepted Assets: `{DASHBOARD_NAME}` and `T1, T2, T3` (XLSX)")
                     
-                    # ACTIVADO: accept_multiple_files=True
                     uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
                 
                     if uploaded_files:
                         archivos_validos = []
                         errores = False
         
-                        # 1. Validación de Seguridad de todos los archivos
                         for uploaded_file in uploaded_files:
                             if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
                                 st.markdown(f"""
@@ -6882,11 +6909,10 @@ else:
                             else:
                                 archivos_validos.append(uploaded_file)
         
-                        # 2. Si hay archivos válidos y cero errores de protocolo, procedemos
                         if archivos_validos and not errores:
                             with st.expander(":material/list: Batch Preview", expanded=True):
                                 for f in archivos_validos:
-                                    st.write(f"✔ Prepared: `{f.name}`")
+                                    st.write(f"✔ Prepared for Uplink: `{f.name}`")
                             
                             hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
                             commit_msg = st.text_input("Global Sync Message", value=f"BATCH_UPDATE // {hora_actual_gdl}")
