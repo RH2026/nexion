@@ -2636,6 +2636,7 @@ else:
                 with tab_entregas_agc:
                     st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>PROGRAMA DE ENTREGAS AGC</h3>", unsafe_allow_html=True)
                     def render_logistica_flow_responsive(data):
+                        # Usamos llaves dobles {{ }} para el CSS y f-strings limpios para las variables
                         html_content = f"""
                         <!DOCTYPE html>
                         <html lang="es">
@@ -2649,100 +2650,78 @@ else:
                                     background-color: #384A52; 
                                     color: #e2e8f0; 
                                     margin: 0;
-                                    padding: 8px;
+                                    padding: 10px;
                                 }}
-                
-                                /* ───────── SCROLLBAR PERSONALIZADO AGC ───────── */
-                                ::-webkit-scrollbar {{
-                                    width: 8px;
-                                    height: 8px;
-                                }}
-                                ::-webkit-scrollbar-track {{
-                                    background: rgba(0, 0, 0, 0.1);
-                                    border-radius: 10px;
-                                }}
-                                ::-webkit-scrollbar-thumb {{
-                                    /* Estado Natural: Azul sutil (como tu primera imagen) */
-                                    background: #3498db; 
-                                    border-radius: 10px;
-                                    border: 2px solid #384A52; /* Efecto de separación */
-                                }}
-                                ::-webkit-scrollbar-thumb:hover {{
-                                    /* Estado Activo: Verde brillante (como tu segunda imagen) */
-                                    background: #2ecc71; 
-                                    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-                                }}
-                
+                                
+                                /* SCROLLBAR AGC STYLE */
+                                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                    
                                 .list-row {{
                                     background-color: #263238;
                                     border: 1px solid rgba(255, 255, 255, 0.05);
                                     transition: all 0.2s ease;
-                                    margin-bottom: 8px;
+                                    margin-bottom: 12px;
                                     border-radius: 12px;
                                     overflow: hidden;
-                                    width: 100%;
                                 }}
                                 
                                 .list-row:hover {{
                                     background-color: #2c3b42;
                                     border-color: rgba(56, 189, 248, 0.3);
+                                    transform: translateX(4px);
                                 }}
-                
-                                .status-indicator {{
-                                    width: 4px;
-                                    min-height: 100%;
-                                }}
-                                
-                                .bg-pending {{ background-color: #f59e0b; box-shadow: 2px 0 10px rgba(245, 158, 11, 0.2); }}
-                                .bg-delivered {{ background-color: #10b981; box-shadow: 2px 0 10px rgba(16, 185, 129, 0.2); }}
-                                
+                    
                                 .label-mini {{
-                                    font-size: 8px;
+                                    font-size: 9px;
                                     text-transform: uppercase;
                                     font-weight: 800;
                                     color: rgba(255,255,255,0.4);
                                     letter-spacing: 0.5px;
+                                    margin-bottom: 2px;
                                 }}
                             </style>
                         </head>
                         <body>
-                            <div class="w-full space-y-2">
+                            <div class="w-full max-w-5xl mx-auto space-y-3">
                                 {"".join([f'''
                                 <div class="list-row flex items-stretch">
-                                    <div class="status-indicator {"bg-delivered" if item['estatus'] == "ENTREGADA" else "bg-pending"}"></div>
+                                    <div class="w-1.5 sm:w-2 {"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                                     
-                                    <div class="flex flex-col sm:flex-row flex-1 p-3 sm:items-center gap-3 sm:gap-6">
+                                    <div class="flex flex-col md:flex-row flex-1 p-4 items-start md:items-center gap-4">
                                         
-                                        <div class="flex-1 min-w-[120px]">
+                                        <div class="w-full md:w-40 shrink-0">
                                             <div class="label-mini">{item['semana']}</div>
-                                            <div class="text-base sm:text-lg font-black text-white italic tracking-tighter leading-none">
+                                            <div class="text-lg font-black text-white italic tracking-tighter leading-tight">
                                                 {item['oc']}
                                             </div>
                                         </div>
-                
-                                        <div class="hidden lg:block flex-[2]">
-                                            <div class="label-mini">Referencia</div>
-                                            <div class="text-[10px] text-white/60 italic truncate">
+                    
+                                        <div class="w-full md:flex-1">
+                                            <div class="label-mini">Referencia / Destino</div>
+                                            <div class="text-xs text-slate-300 italic line-clamp-2 md:line-clamp-1">
                                                 {item['entrega_texto']}
                                             </div>
                                         </div>
-                
-                                        <div class="grid grid-cols-2 sm:flex sm:gap-12 gap-4 py-2 sm:py-0 border-t sm:border-t-0 sm:border-x border-white/5 sm:px-8">
+                    
+                                        <div class="grid grid-cols-2 gap-6 w-full md:w-auto md:flex md:gap-10 py-3 md:py-0 border-y md:border-y-0 md:border-x border-white/10 md:px-8">
                                             <div>
                                                 <div class="label-mini">Volumen</div>
                                                 <div class="text-sm font-bold text-white">{item['cantidad']}</div>
                                             </div>
                                             <div>
                                                 <div class="label-mini">Cita</div>
-                                                <div class="text-sm font-mono font-bold {"text-slate-400 opacity-50" if "PENDIENTE" in item['cita'].upper() else "text-blue-400"}">
+                                                <div class="text-sm font-mono font-bold {"text-slate-400 opacity-60" if "PENDIENTE" in item['cita'].upper() else "text-sky-400"}">
                                                     {item['cita']}
                                                 </div>
                                             </div>
                                         </div>
-                
-                                        <div class="flex justify-between sm:block sm:w-32 text-right border-t sm:border-t-0 pt-2 sm:pt-0">
-                                            <div class="label-mini sm:hidden">Estatus</div>
-                                            <div class="text-[10px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tight">
+                    
+                                        <div class="w-full md:w-32 flex justify-between md:block text-right">
+                                            <div class="label-mini md:mb-1">Estatus</div>
+                                            <div class="text-xs font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-widest">
                                                 {item['estatus']}
                                             </div>
                                         </div>
