@@ -3209,6 +3209,8 @@ else:
                                     margin-bottom: 12px;
                                     padding: 18px 25px;
                                     display: flex;
+                                    flex-wrap: wrap; /* MAGIA RESPONSIVE */
+                                    gap: 15px;
                                     justify-content: space-between;
                                     align-items: center;
                                     transition: all 0.3s ease;
@@ -3238,29 +3240,36 @@ else:
                                 .info-sub {{ color: #FFFFFF; font-size: 11px; font-style: italic; }}
                                 .moderado {{ border-left-color: #FFA500; border-color: rgba(255, 165, 0, 0.2); }}
                                 .badge-moderado {{ color: #FFA500; background: rgba(255, 165, 0, 0.1); border-color: rgba(255, 165, 0, 0.3); }}
+                        
+                                /* AJUSTES PARA MÓVIL */
+                                @media (max-width: 600px) {{
+                                    .card-excepcion {{ padding: 15px; }}
+                                    .section-box {{ border-left: none !important; padding-left: 0 !important; min-width: 100% !important; }}
+                                    .badge-retraso {{ width: 100%; }}
+                                }}
                             </style>
                             {"".join([f'''
                             <div class="card-excepcion {'moderado' if item['DIAS_ATRASO'] < 5 else ''}">
-                                <div style="flex: 1.5;">
+                                <div class="section-box" style="flex: 1.5; min-width: 200px;">
                                     <div class="label-mini">No. Factura / Pedido</div>
                                     <div class="factura-destacada">{item['NÚMERO DE PEDIDO']}</div>
                                     <div class="info-sub" style="margin-top:5px;">Cliente: {str(item['NOMBRE DEL CLIENTE'])[:35]}</div>
                                 </div>
                         
-                                <div style="flex: 1.5; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                <div class="section-box" style="flex: 1.5; min-width: 180px; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05);">
                                     <div class="label-mini">Transporte / Estatus</div>
                                     <div class="info-main" style="color:#38bdf8;">{item['FLETERA']}</div>
                                     <div class="info-sub" style="color: #FFFFFF !important;">Guía: {item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] else 'SIN ASIGNAR'}</div>
                                 </div>
                         
-                                <div style="flex: 1.2; text-align: right; padding-right: 25px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                <div class="section-box" style="flex: 1.2; min-width: 150px; text-align: left; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05);">
                                     <div class="label-mini">Días en Ruta</div>
                                     <div class="info-main" style="margin-bottom: 5px;">{item['DIAS_TRANS']} d.</div>
                                     <div class="label-mini" style="font-size: 7px; color: #FFA500;">P. Entrega</div>
                                     <div class="info-sub" style="font-size: 10px; font-style: normal;">{item['PROMESA DE ENTREGA'].strftime('%d/%m/%Y') if hasattr(item['PROMESA DE ENTREGA'], 'strftime') else item['PROMESA DE ENTREGA']}</div>
                                 </div>
                         
-                                <div>
+                                <div style="flex: 0.5; min-width: 100px;">
                                     <div class="label-mini" style="text-align:center;">Retraso</div>
                                     <div class="badge-retraso {'badge-moderado' if item['DIAS_ATRASO'] < 5 else ''}">+{item['DIAS_ATRASO']}</div>
                                 </div>
