@@ -1735,17 +1735,27 @@ else:
                                 encontrado = True
                                 f = res.iloc[0]
                                 
-                                # --- LÓGICA DE ESTATUS ---
+                                # --- LÓGICA DE ESTATUS CORREGIDA ---
                                 col_fechas = ['F.ENTREGA', 'FECHA_ENTREGA', 'FECHA DE ENTREGA']
-                                existe_col_fecha = any(col in df_source.columns for col in col_fechas)
-                                fecha_valor = None
-                                if existe_col_fecha:
-                                    for col in col_fechas:
-                                        if col in f and pd.notnull(f[col]) and str(f[col]).strip() != "":
-                                            fecha_valor = f[col]
+                                # Identificamos si alguna de las columnas objetivo existe en el DataFrame
+                                columnas_presentes = [col for col in col_fechas if col in df_source.columns]
+                                
+                                fecha_valida = False
+                                
+                                if columnas_presentes:
+                                    for col in columnas_presentes:
+                                        valor = f[col]
+                                        # Intentamos convertir el valor a fecha. errors='coerce' pone NaT si no es fecha (como "---" o 0)
+                                        fecha_dt = pd.to_datetime(valor, errors='coerce')
+                                        
+                                        # Verificamos que no sea nulo y que la conversión haya sido exitosa
+                                        if pd.notnull(fecha_dt):
+                                            fecha_valida = True
                                             break
-                                    estatus = f"ESTATUS: ENTREGADO" if fecha_valor else "ESTATUS: EN TRANSITO"
+                                    
+                                    estatus = "ESTATUS: ENTREGADO" if fecha_valida else "ESTATUS: EN TRANSITO"
                                 else:
+                                    # Si ni siquiera existen las columnas en el archivo
                                     estatus = "ESTATUS: ACTUALIZANDO DATOS"
                                 
                                 # --- MAPEO DATOS ---
