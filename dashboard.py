@@ -3636,6 +3636,52 @@ else:
                         sombra = f"{color_p}88"
 
                         # HTML con la clase 'task-card' para recuperar el fondo oscuro y hover
+                        st.markdown("""
+                        <style>
+                        
+                        /* Responsive para task-card */
+                        @media (max-width: 768px) {
+                            .task-card > div {
+                                flex-direction: column !important;
+                                align-items: flex-start !important;
+                                gap: 12px;
+                            }
+                        
+                            .task-card div[style*="border-right"] {
+                                border-right: none !important;
+                                padding-right: 0 !important;
+                            }
+                        
+                            .task-card div[style*="padding: 0 20px"] {
+                                padding: 0 !important;
+                            }
+                        
+                            .task-card div[style*="padding-left: 20px"] {
+                                padding-left: 0 !important;
+                                text-align: left !important;
+                                width: 100%;
+                            }
+                        
+                            .task-card div[style*="justify-content: space-between"] {
+                                gap: 10px;
+                            }
+                        
+                            .task-card div[style*="text-align: right"] {
+                                text-align: left !important;
+                            }
+                        
+                            .task-card div[style*="width: 80px"] {
+                                width: 100% !important;
+                            }
+                        
+                            .task-card span {
+                                font-size: 11px !important;
+                            }
+                        }
+                        
+                        </style>
+                        """, unsafe_allow_html=True)
+                        
                         html_card = """
                         <div class="task-card" style="border-left-color: {color}; padding: 20px; margin-bottom: 20px; background: rgba(30, 39, 46, 0.7); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
                             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
