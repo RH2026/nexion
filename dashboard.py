@@ -2636,7 +2636,7 @@ else:
                 with tab_entregas_agc:
                     st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>PROGRAMA DE ENTREGAS AGC</h3>", unsafe_allow_html=True)
                     def render_logistica_flow_responsive(data):
-                        # Usamos llaves dobles {{ }} para el CSS y f-strings limpios para las variables
+                        # Ajustamos el contenedor para que sea full width
                         html_content = f"""
                         <!DOCTYPE html>
                         <html lang="es">
@@ -2650,7 +2650,8 @@ else:
                                     background-color: #384A52; 
                                     color: #e2e8f0; 
                                     margin: 0;
-                                    padding: 10px;
+                                    padding: 5px; /* Reducimos padding para ganar espacio */
+                                    width: 100%;
                                 }}
                                 
                                 /* SCROLLBAR AGC STYLE */
@@ -2663,65 +2664,64 @@ else:
                                     background-color: #263238;
                                     border: 1px solid rgba(255, 255, 255, 0.05);
                                     transition: all 0.2s ease;
-                                    margin-bottom: 12px;
-                                    border-radius: 12px;
+                                    margin-bottom: 8px;
+                                    border-radius: 10px;
                                     overflow: hidden;
+                                    width: 100%; /* Asegura que la fila ocupe el 100% */
                                 }}
                                 
                                 .list-row:hover {{
                                     background-color: #2c3b42;
                                     border-color: rgba(56, 189, 248, 0.3);
-                                    transform: translateX(4px);
                                 }}
                     
                                 .label-mini {{
                                     font-size: 9px;
                                     text-transform: uppercase;
                                     font-weight: 800;
-                                    color: rgba(255,255,255,0.4);
+                                    color: rgba(255,255,255,0.3);
                                     letter-spacing: 0.5px;
-                                    margin-bottom: 2px;
                                 }}
                             </style>
                         </head>
                         <body>
-                            <div class="w-full max-w-5xl mx-auto space-y-3">
+                            <div class="w-full space-y-2">
                                 {"".join([f'''
                                 <div class="list-row flex items-stretch">
-                                    <div class="w-1.5 sm:w-2 {"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                                    <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                                     
-                                    <div class="flex flex-col md:flex-row flex-1 p-4 items-start md:items-center gap-4">
+                                    <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
                                         
-                                        <div class="w-full md:w-40 shrink-0">
+                                        <div class="w-full md:w-44 shrink-0">
                                             <div class="label-mini">{item['semana']}</div>
-                                            <div class="text-lg font-black text-white italic tracking-tighter leading-tight">
+                                            <div class="text-lg font-black text-white italic tracking-tighter leading-none">
                                                 {item['oc']}
                                             </div>
                                         </div>
                     
-                                        <div class="w-full md:flex-1">
+                                        <div class="w-full md:flex-1 md:min-w-[300px]">
                                             <div class="label-mini">Referencia / Destino</div>
-                                            <div class="text-xs text-slate-300 italic line-clamp-2 md:line-clamp-1">
+                                            <div class="text-xs text-slate-300 italic truncate">
                                                 {item['entrega_texto']}
                                             </div>
                                         </div>
                     
-                                        <div class="grid grid-cols-2 gap-6 w-full md:w-auto md:flex md:gap-10 py-3 md:py-0 border-y md:border-y-0 md:border-x border-white/10 md:px-8">
-                                            <div>
+                                        <div class="grid grid-cols-2 gap-8 w-full md:w-auto md:flex md:gap-12 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-10">
+                                            <div class="shrink-0">
                                                 <div class="label-mini">Volumen</div>
                                                 <div class="text-sm font-bold text-white">{item['cantidad']}</div>
                                             </div>
-                                            <div>
+                                            <div class="shrink-0">
                                                 <div class="label-mini">Cita</div>
-                                                <div class="text-sm font-mono font-bold {"text-slate-400 opacity-60" if "PENDIENTE" in item['cita'].upper() else "text-sky-400"}">
+                                                <div class="text-sm font-mono font-bold {"text-slate-500" if "PENDIENTE" in item['cita'].upper() else "text-sky-400"}">
                                                     {item['cita']}
                                                 </div>
                                             </div>
                                         </div>
                     
-                                        <div class="w-full md:w-32 flex justify-between md:block text-right">
-                                            <div class="label-mini md:mb-1">Estatus</div>
-                                            <div class="text-xs font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-widest">
+                                        <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
+                                            <div class="label-mini md:mb-1">Estatus de Logística</div>
+                                            <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter">
                                                 {item['estatus']}
                                             </div>
                                         </div>
@@ -2732,6 +2732,7 @@ else:
                         </body>
                         </html>
                         """
+                        # Importante: Streamlit a veces limita el ancho del componente, con esto cubrimos el máximo
                         return components.html(html_content, height=800, scrolling=True)
                 
                     # Dataset corregido
