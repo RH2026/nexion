@@ -6794,46 +6794,7 @@ else:
                 AUTHORIZED_USERS = ["JMoreno", "Rigoberto"]
         
                 if current_user not in AUTHORIZED_USERS:
-                    st.markdown(f"""
-                        <div style="
-                            background: linear-gradient(90deg, #1A1F2A 0%, #11141B 100%);
-                            border-radius: 8px;
-                            padding: 12px 20px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            margin-top: 20px;
-                            border-left: 6px solid #EF4444;
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        ">
-                            <div style="display: flex; align-items: center; gap: 18px;">
-                                <div style="font-size: 24px; filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.4));">🔐</div>
-                                <div style="display: flex; flex-direction: column;">
-                                    <span style="color: #EF4444; font-weight: 800; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 0;">
-                                        ÁREA RESTRINGIDA
-                                    </span>
-                                    <span style="color: #F8FAFC; font-size: 14px; margin-top: 2px;">
-                                        El perfil de operador <strong style="color: #EF4444;">{current_user}</strong> no cuenta con privilegios de nivel Logística.
-                                    </span>
-                                </div>
-                            </div>
-                    
-                            <div style="
-                                border: 1px solid rgba(239, 68, 68, 0.5);
-                                border-radius: 4px;
-                                padding: 4px 12px;
-                                color: #EF4444;
-                                font-family: 'Courier New', monospace;
-                                font-size: 12px;
-                                font-weight: 700;
-                                background: rgba(239, 68, 68, 0.05);
-                                letter-spacing: 1px;
-                            ">
-                                ID ACCESO: {current_user}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f'<div style="background: linear-gradient(90deg, #1A1F2A 0%, #11141B 100%); border-radius: 8px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 20px; border-left: 6px solid #EF4444; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: sans-serif;"><div style="display: flex; align-items: center; gap: 18px;"><div style="font-size: 24px;">🔐</div><div style="display: flex; flex-direction: column;"><span style="color: #EF4444; font-weight: 800; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 0;">ÁREA RESTRINGIDA</span><span style="color: #F8FAFC; font-size: 14px; margin-top: 2px;">El perfil de operador <strong style="color: #EF4444;">{current_user}</strong> no cuenta con privilegios de nivel Logística.</span></div></div><div style="border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 4px; padding: 4px 12px; color: #EF4444; font-family: monospace; font-size: 12px; font-weight: 700; background: rgba(239, 68, 68, 0.05); letter-spacing: 1px;">ID ACCESO: {current_user}</div></div>', unsafe_allow_html=True)
                     st.stop()
                 
                 # 1. Definir la zona horaria de Guadalajara
