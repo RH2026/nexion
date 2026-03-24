@@ -6795,16 +6795,42 @@ else:
         
                 if current_user not in AUTHORIZED_USERS:
                     st.markdown(f"""
-                        <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid #EF4444; border-radius: 8px; padding: 20px; text-align: center; margin-top: 20px;">
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-                                <span style="font-size: 24px;">🚫</span>
-                                <h3 style="color: #EF4444; margin:0; letter-spacing: 2px; font-size: 18px;">ACCESO RESTRINGIDO</h3>
+                        <div style="
+                            background: linear-gradient(90deg, #1A1F2A 0%, #11141B 100%);
+                            border-radius: 8px;
+                            padding: 12px 20px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            margin-top: 20px;
+                            border-left: 6px solid #EF4444;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        ">
+                            <div style="display: flex; align-items: center; gap: 18px;">
+                                <div style="font-size: 24px; filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.4));">🔐</div>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="color: #EF4444; font-weight: 800; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 0;">
+                                        ÁREA RESTRINGIDA
+                                    </span>
+                                    <span style="color: #F8FAFC; font-size: 14px; margin-top: 2px;">
+                                        El perfil de operador <strong style="color: #EF4444;">{current_user}</strong> no cuenta con privilegios de nivel Logística.
+                                    </span>
+                                </div>
                             </div>
-                            <p style="color: #F8FAFC; font-family: 'Courier New'; margin-top: 10px; font-size: 13px; margin-bottom: 10px;">
-                                EL OPERADOR <span style="color: #EF4444; font-weight: bold;">{current_user.upper()}</span> NO CUENTA CON PRIVILEGIOS "ADMIN".
-                            </p>
-                            <div style="border-top: 1px dashed rgba(239, 68, 68, 0.2); padding-top: 10px;">
-                                <small style="color: #94A3B8; text-transform: uppercase; font-size: 10px;">Nexion Core // Nodo de Seguridad JYPESA</small>
+                    
+                            <div style="
+                                border: 1px solid rgba(239, 68, 68, 0.5);
+                                border-radius: 4px;
+                                padding: 4px 12px;
+                                color: #EF4444;
+                                font-family: 'Courier New', monospace;
+                                font-size: 12px;
+                                font-weight: 700;
+                                background: rgba(239, 68, 68, 0.05);
+                                letter-spacing: 1px;
+                            ">
+                                ID ACCESO: {current_user}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
