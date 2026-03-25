@@ -3492,7 +3492,19 @@ else:
                         n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Escribe pedido para buscar en Matriz...").strip().upper()
                     
                     # Lógica para el Folio sugerido (Automatico)
-                    sugerencia_folio = f"NEX-{len(st.session_state.df_tareas)+1:03d}"
+                    # --- Lógica para el Folio sugerido (Persistente) ---
+                    if not st.session_state.df_tareas.empty:
+                        # 1. Extraemos todos los números de los folios existentes [NEX-001], [NEX-002]...
+                        # Usamos una expresión regular para sacar solo los números de la columna TAREA
+                        folios_numeros = st.session_state.df_tareas['TAREA'].str.extract(r'NEX-(\d+)')[0].dropna().astype(int)
+                        
+                        if not folios_numeros.empty:
+                            ultimo_folio = folios_numeros.max() # Buscamos el número más alto registrado
+                            sugerencia_folio = f"NEX-{ultimo_folio + 1:03d}"
+                        else:
+                            sugerencia_folio = "NEX-001"
+                    else:
+                        sugerencia_folio = "NEX-001"
                     
                     with c2:
                         # Ahora el valor por defecto es la sugerencia automática
@@ -3567,8 +3579,9 @@ else:
                         
                         if enviar:
                             if t_desc:
-                                # Usamos el folio que esté en el input (el automático o el que buscaste)
-                                folio_final = t_folio_input 
+                                # Si es edición, usamos el que puso en el buscador. 
+                                # Si es nuevo, usamos la sugerencia que calculamos arriba.
+                                folio_final = t_folio_input if tarea_existente is not None else sugerencia_folio
                                 
                                 nueva_data = {
                                     "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO'),
