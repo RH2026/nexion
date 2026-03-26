@@ -2963,36 +2963,43 @@ else:
                                 df[col] = df[col].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
                 
                             # --- SECCIÓN DE TOTALES ---
-                            st.markdown("### RESUMEN GENERAL DE ENTREGAS AMAZON")
+                            st.markdown("### RESUMEN GENERAL DE OPERACIONES")
+                            
+                            # Calculamos los totales usando los nombres reales de tus columnas
+                            total_cajas = df['CAJAS'].sum()
+                            inversion_total = df['TOTAL'].sum() # Cambiado de 'TOTAL INVERSIÓN' a 'TOTAL'
+                            costo_promedio = df['COSTO DE DISTRIBUCION'].mean()
+                
                             c1, c2, c3 = st.columns(3)
                             with c1:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">CAJAS TOTALES</p><h2 style="color:white;margin:0;">{int(df["CAJAS"].sum())}</h2></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">CAJAS TOTALES</p><h2 style="color:white;margin:0;">{int(total_cajas):,} u</h2></div>', unsafe_allow_html=True)
                             with c2:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">INVERSIÓN TOTAL</p><h2 style="color:#2ecc71;margin:0;">$ {df["TOTAL"].sum():,.2f}</h2></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">INVERSIÓN TOTAL</p><h2 style="color:#2ecc71;margin:0;">$ {inversion_total:,.2f}</h2></div>', unsafe_allow_html=True)
                             with c3:
-                                eficiencia = df['COSTO DE DISTRIBUCION'].mean()
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">COSTO PROMEDIO X CAJA</p><h2 style="color:white;margin:0;">$ {eficiencia:.2f}</h2></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">COSTO PROMEDIO X CAJA</p><h2 style="color:white;margin:0;">$ {costo_promedio:.2f}</h2></div>', unsafe_allow_html=True)
                 
                             st.divider()
                 
                             # --- SECCIÓN MENSUAL ---
-                            df['MES'] = df['FECHA'].dt.strftime('%B %Y')
+                            # Ordenamos por fecha para que lo más reciente aparezca primero
+                            df = df.sort_values(by='FECHA', ascending=False)
                             
-                            # Creamos la lista de meses y le añadimos "TODOS LOS MESES" al principio
+                            df['MES'] = df['FECHA'].dt.strftime('%B %Y')
                             opciones_mes = ["TODOS LOS MESES"] + list(df['MES'].unique())
                             
                             st.markdown("### DESGLOSE OPERATIVO")
                             mes_sel = st.selectbox("Selecciona el mes para revisar detalle:", opciones_mes)
                             
-                            # LÓGICA POR DEFAUL: Si elige TODOS, mostramos todo el dataframe, si no, filtramos
+                            # Filtro por default: TODOS
                             if mes_sel == "TODOS LOS MESES":
                                 df_mes = df
                             else:
                                 df_mes = df[df['MES'] == mes_sel]
                 
-                            # Renderizado de filas en una sola línea (HTML COMPACTO)
+                            # Renderizado de filas...
                             st.markdown('<div class="amz-dashboard">', unsafe_allow_html=True)
                             for _, r in df_mes.iterrows():
+                                # HTML en una sola línea para evitar errores de renderizado
                                 row_html = f'<div class="amz-row"><div><p class="amz-lbl">FECHA</p><p class="amz-val">{r["FECHA"].strftime("%d/%m/%Y")}</p></div><div><p class="amz-lbl">DESTINO</p><p class="amz-val-v">{r["AMAZON"]}</p></div><div><p class="amz-lbl">CAJAS</p><p class="amz-val">{int(r["CAJAS"])} u</p></div><div><p class="amz-lbl">COSTO X CAJA</p><p class="amz-val-v">$ {r["COSTO DE DISTRIBUCION"]:.2f}</p></div><div style="text-align:right;"><p class="amz-lbl">TOTAL</p><p class="amz-val">$ {r["TOTAL"]:.2f}</p></div></div>'
                                 st.markdown(row_html, unsafe_allow_html=True)
                             st.markdown('</div>', unsafe_allow_html=True)
