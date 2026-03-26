@@ -5,17 +5,16 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
 from reportlab.lib.utils import simpleSplit
 import io
-import re  # Importamos para limpiar los paréntesis
+import re
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(layout="wide", page_title="NEXION - Etiquetas Clean")
+st.set_page_config(layout="wide", page_title="NEXION - Etiquetas High-Impact")
 
 # --- FUNCIÓN PARA LIMPIAR PARÉNTESIS ---
 def limpiar_parentesis(texto):
-    # Esta línea borra todo lo que esté entre ( ) incluyendo los paréntesis
     return re.sub(r'\(.*?\)', '', str(texto)).strip()
 
-# --- FUNCIÓN PARA TEXTO MULTILÍNEA DE ALTO IMPACTO ---
+# --- FUNCIÓN PARA TEXTO MULTILÍNEA CON AIRE ---
 def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado, max_lineas=3):
     texto = str(texto).upper()
     lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
@@ -27,10 +26,10 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
 
     c.setFont(fuente, tamano_actual)
     y_actual = y_inicio
-    for line in lineas[:3]: 
+    for line in lineas[:max_lineas]: 
         c.drawCentredString(x_centro, y_actual, line)
         y_actual -= interlineado
-    return y_actual
+    return y_actual # Este valor es clave para saber dónde terminó el nombre
 
 def generar_etiquetas_nexion(df):
     output = io.BytesIO()
@@ -46,12 +45,8 @@ def generar_etiquetas_nexion(df):
             iteraciones = cantidad_real + 1 
         except: continue 
 
-        # --- LIMPIEZA DEL NOMBRE ---
-        # Primero agarramos el dato del Excel
         nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', 'SIN NOMBRE')))
-        # ¡Aquí le quitamos los paréntesis, amor!
         nombre_final = limpiar_parentesis(nombre_crudo)
-        
         direccion_final = row.get('DIRECCION', 'DIRECCIÓN NO DISPONIBLE')
         transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', 'TRES GUERRAS')))
 
@@ -82,12 +77,20 @@ def generar_etiquetas_nexion(df):
                 c.drawCentredString(x_offset + (w_rec/2), y_offset + (h_rec/2) - 1*cm, "ARCHIVO")
                 c.setFillColorRGB(0, 0, 0)
 
-            # NOMBRE (Sin paréntesis y en gigante)
-            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.5*cm, 10*cm, "Helvetica-Bold", 26, 0.8*cm, max_lineas=3)
+            # NOMBRE (Ajustamos el interlineado a 0.75 para que no ocupe tanto)
+            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
 
-            # DIRECCIÓN (Bajada para espacio vital)
-            y_inicio_direccion = y_termino_nombre - 0.8*cm
-            if y_inicio_direccion < y_offset + 2.8*cm: y_inicio_direccion = y_offset + 3.0*cm 
+            # --- AQUÍ ESTÁ EL AIRE, AMOR ---
+            # Le sumamos un margen de "aire" de 0.6 cm extra después de donde terminó el nombre
+            y_inicio_direccion = y_termino_nombre - 0.6*cm
+            
+            # Si el nombre fue muy corto, forzamos que la dirección no suba demasiado
+            if y_inicio_direccion > y_offset + 4.2*cm:
+                y_inicio_direccion = y_offset + 4.2*cm
+            
+            # Si el nombre fue muy largo, nos aseguramos que no choque con el pie
+            if y_inicio_direccion < y_offset + 2.8*cm:
+                y_inicio_direccion = y_offset + 2.8*cm
 
             dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 12, 0.45*cm, max_lineas=3)
 
@@ -115,15 +118,14 @@ def generar_etiquetas_nexion(df):
     return output.getvalue()
 
 # INTERFAZ
-st.header("📦 NEXION - Etiquetas Clean")
+st.header("📦 NEXION - Etiquetas con Aire")
 archivo = st.file_uploader("Sube tu Excel", type=["xlsx"])
 if archivo:
     df = pd.read_excel(archivo, sheet_name=0)
-    st.dataframe(df.head(), use_container_width=True)
-    if st.button("🚀 Generar Etiquetas"):
+    if st.button("🚀 Generar Etiquetas con Aire"):
         pdf_bytes = generar_etiquetas_nexion(df)
-        st.success("¡Etiquetas generadas sin paréntesis!")
-        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_clean.pdf", "application/pdf")
+        st.success("¡Etiquetas generadas con espacio perfecto!")
+        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_aire.pdf", "application/pdf")
 
 
 
