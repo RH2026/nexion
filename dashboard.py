@@ -2899,7 +2899,7 @@ else:
                 # PESTAÑA 6: CONSIGNAS
                 with tab_amazon:
                     # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
-                
+                    pass
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
