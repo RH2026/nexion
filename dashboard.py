@@ -27,6 +27,7 @@ from fpdf import FPDF
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 
+
 import google.generativeai as genai
 
 
@@ -2915,23 +2916,22 @@ else:
                             if response.status_code == 200:
                                 content = response.json()
                                 csv_bytes = base64.b64decode(content['content'])
-                                return pd.read_csv(io.BytesIO(csv_bytes))
+                                # Usamos engine='python' por si el CSV tiene caracteres especiales
+                                return pd.read_csv(io.BytesIO(csv_bytes), engine='python')
                             else:
-                                st.error(f"Error de conexión: {response.status_code}")
                                 return None
-                        except Exception as e:
-                            st.error(f"Error al conectar con GitHub: {e}")
+                        except Exception:
                             return None
                 
                     # 3. Procesamiento de Datos
                     df_raw = fetch_github_csv(API_URL, TOKEN)
                 
                     if df_raw is not None:
-                        # Copiamos para no afectar el original y limpiamos nombres de columnas
                         df_amazon = df_raw.copy()
+                        # Limpieza de nombres de columnas (quitar espacios invisibles)
                         df_amazon.columns = df_amazon.columns.str.strip()
                 
-                        # --- LIMPIEZA CRÍTICA: Convertir texto "$ 32.00" a número 32.00 ---
+                        # --- LIMPIEZA DE DATOS: Convertir texto a números reales ---
                         cols_numericas = [
                             'PICKING (30 MIN)', 'PREPARACION (20 MIN)', 'CHOFER (2 HORAS)', 
                             'TRANSPORTE', 'TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS'
@@ -2939,7 +2939,7 @@ else:
                         
                         for col in cols_numericas:
                             if col in df_amazon.columns:
-                                # Quitamos $, comas y espacios, luego convertimos a float
+                                # Quitamos $, comas y convertimos a número
                                 df_amazon[col] = (df_amazon[col]
                                                   .astype(str)
                                                   .str.replace(r'[\$, ]', '', regex=True)
@@ -2955,37 +2955,45 @@ else:
                             total_cajas = df_amazon['CAJAS'].sum()
                             st.metric("Total Cajas Movidas", f"{int(total_cajas)} u")
                         with col3:
-                            # Eficiencia: porcentaje de envíos con costo menor a $6
-                            if len(df_amazon) > 0:
+                            if not df_amazon.empty:
                                 eficientes = (df_amazon[df_amazon['COSTO DE DISTRIBUCION'] < 6].shape[0] / len(df_amazon)) * 100
-                                st.metric("Eficiencia Logística", f"{eficientes:.0f}%", help="Envíos con costo optimizado")
+                                st.metric("Eficiencia Logística", f"{eficientes:.0f}%")
                 
                         st.divider()
                 
-                        # --- RENDERIZADO DE LA MATRIZ ---
+                        # --- RENDERIZADO DE LA MATRIZ CON PROTECCIÓN ---
                         st.write("### 📊 Matriz de Operaciones GDL")
                         
-                        # Aplicamos el Styler para que se vea "chingón"
-                        styled_df = df_amazon.style.background_gradient(
-                            subset=['COSTO DE DISTRIBUCION'], 
-                            cmap='RdYlGn_r' # Rojo (Caro) -> Verde (Barato)
-                        ).format({
-                            'PICKING (30 MIN)': '$ {:,.2f}',
-                            'PREPARACION (20 MIN)': '$ {:,.2f}',
-                            'CHOFER (2 HORAS)': '$ {:,.2f}',
-                            'TRANSPORTE': '$ {:,.2f}',
-                            'TOTAL': '$ {:,.2f}',
-                            'COSTO DE DISTRIBUCION': '$ {:,.2f}',
-                            'CAJAS': '{:,.0f}'
-                        }).highlight_max(subset=['CAJAS'], color='#2ecc71')
+                        try:
+                            # Renderizado "Chingón" con degradados
+                            styled_df = df_amazon.style.background_gradient(
+                                subset=['COSTO DE DISTRIBUCION'], 
+                                cmap='RdYlGn_r'
+                            ).format({
+                                'PICKING (30 MIN)': '$ {:,.2f}',
+                                'PREPARACION (20 MIN)': '$ {:,.2f}',
+                                'CHOFER (2 HORAS)': '$ {:,.2f}',
+                                'TRANSPORTE': '$ {:,.2f}',
+                                'TOTAL': '$ {:,.2f}',
+                                'COSTO DE DISTRIBUCION': '$ {:,.2f}',
+                                'CAJAS': '{:,.0f}'
+                            }).highlight_max(subset=['CAJAS'], color='#2ecc71')
                 
-                        # Mostrar tabla
-                        st.dataframe(styled_df, use_container_width=True, height=450)
+                            st.dataframe(styled_df, use_container_width=True, height=450)
+                            
+                        except ImportError:
+                            # Si matplotlib no está listo, mostramos la tabla normal sin que truene la app
+                            st.info("💡 Tip: Para ver los colores de eficiencia, asegúrate de añadir 'matplotlib' en tu requirements.txt")
+                            st.dataframe(df_amazon, use_container_width=True, height=450)
+                        except Exception as e:
+                            # Por cualquier otro error visual
+                            st.dataframe(df_amazon, use_container_width=True, height=450)
                         
-                        st.caption("💡 *Nota: Los colores indican la eficiencia basada en el volumen de cajas cargadas.*")
+                        st.caption("✨ *NEXION detecta automáticamente la rentabilidad de cada envío.*")
                 
                     else:
-                        st.warning(f"Esperando datos de '{FILE_PATH}'... Verifica tu conexión a GitHub.")
+                        st.error("❌ No se pudo cargar 'amazon.csv'.")
+                        st.info("Revisa que el archivo esté en tu GitHub y que el TOKEN tenga permisos.")
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
