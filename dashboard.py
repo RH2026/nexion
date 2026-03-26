@@ -873,18 +873,28 @@ def login_screen():
                 else:
                     st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
                     
-# ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
+
+# --- 0. INICIALIZACIÓN DE VARIABLES (Evita que la app truene al inicio) ---
+if 'splash_completado' not in st.session_state:
+    st.session_state.splash_completado = False
+
+if 'autenticado' not in st.session_state:
+    st.session_state.autenticado = False
+
+if 'usuario_activo' not in st.session_state:
+    st.session_state.usuario_activo = ""
+
+if 'ejecutivo_modulo' not in st.session_state:
+    st.session_state.ejecutivo_modulo = None
 
 # ==============================================================================
 # ── FLUJO DE CONTROL MAESTRO (SPLASH -> LOGIN -> CEO GATE -> CORE) ──
 # ==============================================================================
 
 # 1. ¿FALTA MOSTRAR EL SPLASH?
-if not st.session_state.get('splash_completado', False):
-    # Creamos el contenedor vacío una sola vez
+if not st.session_state.splash_completado:
     p = st.empty()
     
-    # Mensajes ejecutivos y técnicos para JYPESA
     mensajes = [
         "ESTABLISHING SECURE ACCESS...",
         "LOADING LOGISTICS DATA...",
@@ -900,150 +910,84 @@ if not st.session_state.get('splash_completado', False):
                 <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:white;text-transform:uppercase;">{m}</p>
             </div>
             <style>
-                @keyframes spin {{
-                    to {{ transform: rotate(360deg); }}
-                }}
+                @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
             </style>
             """, unsafe_allow_html=True)
-            # Tiempo estético para lectura
             time.sleep(0.7)
             
-    # Limpiamos y marcamos como completado
     p.empty()
     st.session_state.splash_completado = True
     st.rerun()
 
 # 2. ¿SPLASH LISTO PERO NO SE HA LOGGEADO?
-elif not st.session_state.get('autenticado', False):
-    # Llamamos a tu función de login existente
+elif not st.session_state.autenticado:
+    # Asegúrate de que la función login_screen() esté definida arriba de este flujo
     login_screen()
 
+# 3. ¿YA SE LOGUEÓ? (DENTRO DEL SISTEMA)
+else:
+    # Caso especial: Rigoberto (Filtro por nombre y si no ha elegido módulo)
+    user = st.session_state.usuario_activo.upper()
+    
+    if user == "RIGOBERTO" and st.session_state.ejecutivo_modulo is None:
+        
+        # 💎 CSS DE TU PANTALLA ÉLITE (Mantenemos todo tu diseño igual)
+        st.markdown("""
+            <style>
+            .brand-title { text-align: center; font-size: 55px; font-weight: 900; letter-spacing: 25px; color: #ffffff; margin-top: 40px; text-transform: uppercase; }
+            .brand-version { text-align: center; font-size: 10px; color: #FFFFFF; letter-spacing: 5px; margin-bottom: 25px; text-transform: uppercase; }
+            .ceo-protocol-greet { text-align: center; font-size: 12px; font-weight: 400; letter-spacing: 4px; color: #8fa3b0; margin-bottom: 45px; text-transform: uppercase; }
+            .ceo-card { background: rgba(30, 39, 46, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 18px; padding: 20px 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: all 0.3s ease; height: 190px; margin-bottom: 15px; }
+            .ceo-card:hover { transform: translateY(-8px); border-color: #00D4FF !important; box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2); }
+            .ceo-title { font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        try:
+            st.image("n2.png", width=180) 
+        except:
+            st.markdown("<h1 class='brand-title'>NEXION</h1>", unsafe_allow_html=True)
+            
+        st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
+        st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
 
-# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE LOGO CENTRADO) ──
-elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
-    
-    # 💎 CSS DE ALTA GAMA: Centrado absoluto con Flexbox
-    st.markdown("""
-        <style>
-        /* Título NEXION Protagonista (Arriba, Grande, Fuerte) */
-        .brand-title {
-            text-align: center;
-            font-size: 55px; /* Gigante y potente */
-            font-weight: 900;
-            letter-spacing: 25px; /* Ultra espaciado ejecutivo */
-            color: #ffffff;
-            margin-top: 40px;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.15); /* Brillo sutil blanco */
-        }
-    
-        /* Subtítulo Versión Discreto */
-        .brand-version {
-            text-align: center;
-            font-size: 10px;
-            color: #FFFFFF; /* Muy tenue */
-            letter-spacing: 5px;
-            margin-bottom: 25px;
-            text-transform: uppercase;
-        }
-    
-        /* Saludo CEO Discreto (Abajo, Pequeño, Elegante) */
-        .ceo-protocol-greet {
-            text-align: center;
-            font-size: 12px; /* Pequeño y sutil */
-            font-weight: 400;
-            letter-spacing: 4px;
-            color: #8fa3b0; /* Color sub de NEXION */
-            margin-bottom: 45px; /* Espacio antes de los módulos */
-            text-transform: uppercase;
-        }
-    
-        /* --- RESTO DEL CSS DE LAS TARJETAS (Mantenemos el look compacto) --- */
-        .ceo-card {
-            background: rgba(30, 39, 46, 0.85) !important;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 18px;
-            padding: 20px 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-            height: 190px; /* Un pelín más compactas */
-            margin-bottom: 15px;
-        }
-    
-        .ceo-card:hover {
-            transform: translateY(-8px);
-            background: rgba(45, 52, 54, 0.98) !important;
-            border-color: #00D4FF !important;
-            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
-        }
-    
-        .ceo-icon { 
-            font-size: 48px; 
-            margin-bottom: 12px; 
-            filter: drop-shadow(0 0 8px rgba(255,255,255,0.1)); 
-        }
-    
-        .ceo-title { 
-            font-size: 11px; 
-            font-weight: 800; 
-            color: #ffffff; 
-            letter-spacing: 2px; 
-            text-transform: uppercase; 
-            text-align: center; 
-        }
-    
-        .stButton>button { 
-            border-radius: 8px !important; 
-            font-size: 10px !important; 
-            padding: 2px 10px !important; 
-            background: rgba(255,255,255,0.03) !important; 
-            transition: all 0.3s ease !important; 
-        }
-    
-        [data-testid="stHorizontalBlock"] { 
-            max-width: 900px; 
-            margin: 0 auto; 
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # --- LOGO Y SALUDOS ---
-    st.markdown('<div class="brand-logo-full-center">', unsafe_allow_html=True)
-    try:
-        st.image("n2.png", width=180) 
-    except:
-        st.markdown("<h1 style='text-align:center; color:white; letter-spacing:10px;'>NEXION</h1>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
-    st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
+        # Columnas de Módulos
+        m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+        
+        with m_col1:
+            st.markdown("<div class='ceo-card'><div class='ceo-title'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
+            if st.button("ACCEDER", key="btn_dash", use_container_width=True):
+                st.session_state.ejecutivo_modulo = "CORE"
+                st.session_state.menu_main = "DASHBOARD"
+                st.rerun()
 
-    # ⚡ REPARACIÓN: Definimos las columnas antes de usarlas
-    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
-    
-    with m_col1:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-8 35-8 72 0 140 89.5 246T440-162Zm282-192q30-42 44-90t14-96q0-128-78.5-224T520-800v40q0 33-23.5 56.5T440-680h-80v80q0 33-23.5 56.5T280-520h-40v80h200q33 0 56.5 23.5T520-360v80h40q33 0 56.5 23.5T640-233v23q48-26 82-72Z'/></svg></div><div class='ceo-title'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
-        if st.button("ACCEDER", key="btn_dash", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "DASHBOARD"; st.rerun()
+        with m_col2:
+            st.markdown("<div class='ceo-card'><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
+            if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
+                st.session_state.ejecutivo_modulo = "CORE"
+                st.session_state.menu_main = "SEGUIMIENTO"
+                st.session_state.menu_sub = "ALERTAS"
+                st.rerun()
+        
+        with m_col3:
+            st.markdown("<div class='ceo-card'><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
+            if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
+                st.session_state.ejecutivo_modulo = "CORE"
+                st.session_state.menu_main = "REPORTES"
+                st.session_state.menu_sub = "% LOGISTICO"
+                st.rerun()
+        
+        with m_col4:
+            st.markdown("<div class='ceo-card'><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
+            if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
+                st.session_state.ejecutivo_modulo = "CORE"
+                st.session_state.menu_main = "HUB LOG"
+                st.session_state.menu_sub = "SMART ROUTING"
+                st.rerun()
 
-    with m_col2:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-160q-33 0-56.5-23.5T160-240v-440q0-33 23.5-56.5T240-760h440l120 160v360q0 33-23.5 56.5T720-160H240Zm0-80h480v-330L655-680H240v440Zm240-100q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z'/></svg></div><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
-        if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "SEGUIMIENTO"; st.session_state.menu_sub = "ALERTAS"; st.rerun()
-    
-    with m_col3:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520Z'/></svg></div><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
-        if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "REPORTES"; st.session_state.menu_sub = "% LOGISTICO"; st.rerun()
-    
-    with m_col4:
-        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z'/></svg></div><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
-        if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "HUB LOG"; st.session_state.menu_sub = "SMART ROUTING"; st.rerun()
+    # 4. RESTO DE USUARIOS O SI YA SE ELIGIÓ MÓDULO
+    else:
+        st.write(f"Accediendo al sistema NEXION como: {st.session_state.usuario_activo}")
 
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
