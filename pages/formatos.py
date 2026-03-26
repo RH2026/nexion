@@ -7,7 +7,7 @@ from reportlab.lib.utils import simpleSplit
 import io
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(layout="wide", page_title="NEXION - Etiquetas Centradas Pro")
+st.set_page_config(layout="wide", page_title="NEXION - Etiquetas High End Pro")
 
 # --- FUNCIÓN PARA TEXTO MULTILÍNEA CENTRADO ---
 def dibujar_texto_bloque(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado):
@@ -55,12 +55,11 @@ def generar_etiquetas_nexion(df):
             c.setDash([])
             c.setStrokeColorRGB(0, 0, 0)
 
-            # --- CABECERA (DATOS DE TU EMPRESA - CORREGIDOS Y CENTRADOS) ---
+            # --- CABECERA (DATOS DE TU EMPRESA - CENTRADOS Y CON LÍNEA) ---
             
-            # Línea 1: Nombre de la empresa (AQUÍ ESTÁ LA CORRECCIÓN DE CENTRADO)
+            # Línea 1: Nombre de la empresa (Perfectamente centrado)
             c.setFont("Helvetica-Bold", 7)
             nombre_empresa = "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV"
-            # Ahora usamos drawCentredString
             c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.4*cm, nombre_empresa)
             
             # Línea 2: Dirección y Teléfono (Sigue centrada)
@@ -73,6 +72,13 @@ def generar_etiquetas_nexion(df):
                 y_offset + h_rec - 0.8*cm, 
                 10*cm, "Helvetica", 6, 0.3*cm
             )
+            
+            # --- CORRECCIÓN: LÍNEA DIVISORIA DE ALTO IMPACTO ---
+            # Dibujamos una línea sutil pero clara para separar
+            c.setLineWidth(0.3)
+            c.setStrokeColorRGB(0.7, 0.7, 0.7) # Gris sutil para no "gritar"
+            c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.25*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.25*cm)
+            c.setStrokeColorRGB(0, 0, 0) # Volver a negro para el resto
 
             # --- DESTINATARIO (DATOS DEL CLIENTE) ---
             # 1. NOMBRE (PROTAGONISTA 1 - Centrado)
@@ -80,7 +86,7 @@ def generar_etiquetas_nexion(df):
             y_termino_nombre = dibujar_texto_bloque(
                 c, nombre_final, 
                 x_offset + (w_rec/2), 
-                y_offset + h_rec - 1.8*cm, 
+                y_offset + h_rec - 1.9*cm, # Ajustado un pelín por la línea
                 10*cm, "Helvetica-Bold", 18, 0.7*cm
             )
 
@@ -106,7 +112,6 @@ def generar_etiquetas_nexion(df):
             c.drawString(x_offset + 0.5*cm, y_offset + 0.4*cm, str(row.get('Factura', '')))
             
             texto_cajas = f"{i + 1}  /  {cantidad}"
-            # Centramos también las cajas
             c.drawCentredString(x_offset + 5.0*cm, y_offset + 0.4*cm, texto_cajas)
             
             c.setFont("Helvetica-Bold", 8)
@@ -118,8 +123,8 @@ def generar_etiquetas_nexion(df):
     return output.getvalue()
 
 # --- INTERFAZ ---
-st.header("📦 NEXION - Etiquetas Premium (Centrado Pro)")
-st.info("Sube tu Excel y tus datos ya están integrados automáticamente y perfectamente CENTRADOS en la cabecera.")
+st.header("📦 NEXION - Etiquetas Premium High End")
+st.info("Sube tu Excel y tus datos ya están integrados automáticamente, perfectamente centrados y con una elegante línea divisoria en la cabecera.")
 
 archivo = st.file_uploader("Sube tu Excel de Logística", type=["xlsx"])
 
@@ -129,10 +134,10 @@ if archivo:
         st.dataframe(df.head(), use_container_width=True)
         
         if st.button("🚀 Generar PDF"):
-            with st.spinner("Creando etiquetas perfectas..."):
+            with st.spinner("Creando etiquetas perfectas y elegantes..."):
                 pdf_bytes = generar_etiquetas_nexion(df)
-                st.success("¡Etiquetas perfectamente centradas listas para descargar!")
-                st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_centradas_pro.pdf", "application/pdf")
+                st.success("¡Etiquetas perfectamente centradas y elegantes listas para descargar!")
+                st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_pro_con_linea.pdf", "application/pdf")
     except Exception as e:
         st.error(f"Error: {e}")
 
