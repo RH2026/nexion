@@ -2901,7 +2901,55 @@ else:
                 # PESTAÑA 7: AMAZON
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
                 with tab_amazon:                  
-                    # 1. CARGA Y LIMPIEZA DE DATOS (Mismo motor funcional)
+                    # 1. CSS LIMPIO: TARJETAS FLOTANTES (ESTILO BARCELO) SIN CONTENEDORES NEGROS
+                    st.markdown("""
+                    <style>
+                        /* Eliminamos fondos de contenedores para que las tarjetas floten */
+                        [data-testid="stVerticalBlock"] > div:has(div.amz-row-v2) {
+                            background-color: transparent !important;
+                        }
+                
+                        /* DISEÑO DE LA TARJETA (Copiado exacto de tu imagen 1) */
+                        .amz-row-v2 {
+                            background-color: #1c252c !important; /* El gris azulado de Barcelo */
+                            border: 1px solid rgba(255, 255, 255, 0.08);
+                            border-radius: 12px;
+                            margin-bottom: 15px;
+                            padding: 20px 25px;
+                            display: grid;
+                            grid-template-columns: 1.2fr 1.5fr 1.2fr 1fr 0.8fr;
+                            align-items: center;
+                            transition: all 0.3s ease;
+                            width: 100%;
+                        }
+                
+                        /* Hover: Solo el borde brilla en verde neón */
+                        .amz-row-v2:hover {
+                            border-color: #2ecc71 !important;
+                            background-color: #232e37 !important;
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                        }
+                
+                        /* Textos internos */
+                        .lbl-mini { color: #95a5a6; font-size: 9px; text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; margin:0; }
+                        .val-txt { color: #ffffff; font-size: 15px; font-weight: 700; margin:0; }
+                        .val-neon { color: #2ecc71; font-family: monospace; font-weight: 800; }
+                        
+                        /* Divisores verticales */
+                        .sep-v { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px; height: 40px; display: flex; flex-direction: column; justify-content: center; }
+                
+                        /* Métrica superior Gigante */
+                        .metric-v2 {
+                            background: #1c252c;
+                            padding: 20px;
+                            border-radius: 10px;
+                            border-bottom: 4px solid #2ecc71;
+                            text-align: center;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
+                
+                    # 2. CARGA Y LIMPIEZA (MOTOR ESTABLE)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2924,18 +2972,12 @@ else:
                             
                             df = df.sort_values(by='FECHA', ascending=False)
                 
-                            # --- MÉTRICAS GIGANTES (DISEÑO RESPONSIVE) ---
-                            st.markdown("<h3 style='text-align:center; color:white; font-size:16px; letter-spacing:3px; font-weight:900; margin-bottom:20px;'>PERFORMANCE GLOBAL AMAZON</h3>", unsafe_allow_html=True)
-                            
+                            # --- MÉTRICAS SUPERIORES ---
                             m1, m2, m3, m4 = st.columns(4)
-                            card_style = "background:#1c252c; border-radius:10px; padding:20px; border-bottom:4px solid #2ecc71; text-align:center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"
-                            lbl_style = "color:#95a5a6; font-size:10px; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:8px;"
-                            num_style = "color:white; font-size:28px; font-weight:900; margin:0; line-height:1;"
-                            
-                            m1.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Cajas Totales</div><div style="{num_style}">{int(df["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
-                            m2.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Valor Carga</div><div style="{num_style}">${df["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
-                            m3.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Costo Flete</div><div style="{num_style}; color:#2ecc71;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
-                            m4.markdown(f'<div style="{card_style}"><div style="{lbl_style}">% Logístico</div><div style="{num_style}; color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
+                            m1.markdown(f'<div class="metric-v2"><p class="lbl-mini">Cajas Totales</p><p style="font-size:24px; font-weight:900; color:white; margin:0;">{int(df["CAJAS"].sum()):,}</p></div>', unsafe_allow_html=True)
+                            m2.markdown(f'<div class="metric-v2"><p class="lbl-mini">Valor Carga</p><p style="font-size:24px; font-weight:900; color:white; margin:0;">${df["VALOR MERCANCIA"].sum():,.0f}</p></div>', unsafe_allow_html=True)
+                            m3.markdown(f'<div class="metric-v2"><p class="lbl-mini">Costo Flete</p><p style="font-size:24px; font-weight:900; color:#2ecc71; margin:0;">${df["TOTAL"].sum():,.0f}</p></div>', unsafe_allow_html=True)
+                            m4.markdown(f'<div class="metric-v2"><p class="lbl-mini">% Logístico</p><p style="font-size:24px; font-weight:900; color:#2ecc71; margin:0;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</p></div>', unsafe_allow_html=True)
                 
                             st.divider()
                 
@@ -2945,107 +2987,43 @@ else:
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- RENDER CHINGÓN (ESTILO BARCELO) ---
-                            df_html = df_mes.fillna('')
-                            data_dict = df_html.to_dict('records')
-                
-                            html_content = f"""
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <script src="https://cdn.tailwindcss.com"></script>
-                                <style>
-                                    body {{ background-color: #101820; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 5px; }}
-                                    
-                                    /* CONTENEDOR CON SCROLL INTELIGENTE */
-                                    .scroll-container {{
-                                        height: 520px; /* ALTURA FIJA */
-                                        overflow-y: auto;
-                                        border: 2px solid #3498db; /* AZUL POR DEFECTO */
-                                        border-radius: 12px;
-                                        padding: 15px;
-                                        transition: all 0.4s ease;
-                                        background: #101820;
-                                    }}
-                                    .scroll-container:hover {{
-                                        border-color: #2ecc71; /* VERDE NEÓN AL PASAR EL MOUSE */
-                                        box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
-                                    }}
-                
-                                    /* Scrollbar Personalizado */
-                                    ::-webkit-scrollbar {{ width: 8px; }}
-                                    ::-webkit-scrollbar-track {{ background: transparent; }}
-                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
-                                    .scroll-container:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
-                
-                                    /* DISEÑO DE BARRITA ESTILO BARCELO */
-                                    .row-amz {{
-                                        background: #1c252c;
-                                        border: 1px solid rgba(255,255,255,0.08);
-                                        border-radius: 12px;
-                                        margin-bottom: 12px;
-                                        padding: 18px 24px;
-                                        display: grid;
-                                        grid-template-columns: 1.2fr 1.5fr 1.2fr 1fr 1fr;
-                                        align-items: center;
-                                        transition: all 0.3s ease;
-                                    }}
-                                    .row-amz:hover {{
-                                        border-color: #2ecc71;
-                                        background-color: #232e37;
-                                        transform: scale(1.002);
-                                    }}
-                                    .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1.5px; }}
-                                    .valor {{ font-size: 14px; font-weight: 700; color: #FFFFFF; }}
-                                    .highlight {{ color: #2ecc71; font-family: monospace; }}
-                                </style>
-                            </head>
-                            <body>
-                                <div class="scroll-container">
-                                    {"".join([f'''
-                                    <div class="row-amz">
-                                        <div>
-                                            <div class="label-mini">ID / FECHA</div>
-                                            <div class="valor highlight text-lg">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
-                                            <div class="text-[10px] text-blue-300 mt-1 italic">{item.get('FECHA').strftime('%d/%m/%Y') if not isinstance(item.get('FECHA'), str) else item.get('FECHA')}</div>
-                                        </div>
-                                        
-                                        <div class="border-l border-white/10 pl-6">
-                                            <div class="label-mini">Valor Mercancía / Destino</div>
-                                            <div class="valor">$ {float(item.get('VALOR MERCANCIA', 0)):,.2f}</div>
-                                            <div class="text-[10px] text-emerald-400 font-bold uppercase">{item.get('AMAZON', '')}</div>
-                                        </div>
-                
-                                        <div class="border-l border-white/10 pl-6">
-                                            <div class="label-mini">Bultos / Costo Caja</div>
-                                            <div class="valor">{int(item.get('CAJAS', 0))} u</div>
-                                            <div class="valor text-xs highlight">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f}</div>
-                                        </div>
-                
-                                        <div class="border-l border-white/10 pl-6">
-                                            <div class="label-mini">Eficiencia Logística</div>
-                                            <div class="valor text-emerald-400 text-lg">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}%</div>
-                                            <div class="label-mini">{item.get('ESTATUS', 'PENDIENTE')}</div>
-                                        </div>
-                
-                                        <div class="text-right border-l border-white/10 pl-6">
-                                            <div class="label-mini">Total Flete</div>
-                                            <div class="valor text-emerald-400 text-xl">$ {float(item.get('TOTAL', 0)):,.2f}</div>
-                                        </div>
+                            # --- RENDER DE FILAS (SIN CONTENEDOR NEGRO ESTORBOSO) ---
+                            for _, r in df_mes.iterrows():
+                                row_html = f"""
+                                <div class="amz-row-v2">
+                                    <div>
+                                        <p class="lbl-mini">ID / FECHA</p>
+                                        <p class="val-neon" style="font-size:18px;">{r['IDENTIFICADOR ENVIO']}</p>
+                                        <p class="val-txt" style="font-size:11px; opacity:0.7;">{r['FECHA'].strftime('%d/%m/%Y')}</p>
                                     </div>
-                                    ''' for item in data_dict])}
+                                    <div class="sep-v">
+                                        <p class="lbl-mini">Mercancía / Destino</p>
+                                        <p class="val-txt">$ {r['VALOR MERCANCIA']:,.2f}</p>
+                                        <p class="val-neon" style="font-size:11px;">{r['AMAZON']}</p>
+                                    </div>
+                                    <div class="sep-v">
+                                        <p class="lbl-mini">Bultos / Costo Caja</p>
+                                        <p class="val-txt">{int(r['CAJAS'])} u</p>
+                                        <p class="val-neon" style="font-size:12px;">$ {r['COSTO DE DISTRIBUCION POR CAJA']:.2f}</p>
+                                    </div>
+                                    <div class="sep-v">
+                                        <p class="lbl-mini">Eficiencia</p>
+                                        <p class="val-neon" style="font-size:20px;">{r['PORCENTAJE LOGISTICO']:.2f}%</p>
+                                        <p class="lbl-mini">{r['ESTATUS']}</p>
+                                    </div>
+                                    <div style="text-align:right;">
+                                        <p class="lbl-mini">Total Flete</p>
+                                        <p class="val-txt" style="font-size:22px; color:#2ecc71;">$ {r['TOTAL']:,.2f}</p>
+                                    </div>
                                 </div>
-                            </body>
-                            </html>
-                            """
-                            # El height del componente debe ser un poco mayor al del contenedor interno
-                            components.html(html_content, height=580, scrolling=False)
+                                """
+                                st.markdown(row_html, unsafe_allow_html=True)
                 
                         else:
                             st.error("Error al conectar con GitHub.")
                     except Exception as e:
-                        st.error(f"Error crítico en Amazon: {e}")
-                
+                        st.error(f"Error: {e}")
+                                
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
