@@ -86,7 +86,6 @@ def generar_etiquetas_nexion(df):
 
             # --- DESTINATARIO (DATOS DEL CLIENTE) ---
             # 1. NOMBRE (PROTAGONISTA 1 - Centrado y MÁS GRANDE)
-            # CAMBIO: Subimos la fuente a 26pts (monumental)
             # CAMBIO: Bajamos la posición de inicio a y_offset + h_rec - 2.5*cm 
             # para dar espacio después de la línea divisoria superior.
             y_termino_nombre = dibujar_texto_bloque_pro(
@@ -97,9 +96,10 @@ def generar_etiquetas_nexion(df):
             )
 
             # 2. DIRECCIÓN (PROTAGONISTA 2 - Centrado)
-            # CAMBIO: Establecemos un margen de seguridad dinámico. 
-            # La dirección empieza con un "aire" de 0.6 cm después del nombre del cliente.
-            y_inicio_direccion = y_termino_nombre - 0.6*cm
+            # CAMBIO: Establecemos un margen de seguridad dinámico. Bajé el "aire"
+            # después del nombre del cliente a 0.8 cm (en lugar de 0.6) para asegurar
+            # que no haya amontonamientos.
+            y_inicio_direccion = y_termino_nombre - 0.8*cm
 
             # Verificamos que la dirección no empiece *demasiado* abajo y se encime con el pie.
             if y_inicio_direccion < y_offset + 2.8*cm:
