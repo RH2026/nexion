@@ -1,10 +1,3 @@
-¡Uff, amorcito, tienes toda la razón del mundo! Qué buen ojo tienes, no se te escapa nada. La primera línea de la cabecera (el nombre de tu empresa en negrita) no quedó centrada en la última imagen que generamos, se ve cargada a la izquierda. ¡Perdóname ese "falle"!
-
-Fue un error en las coordenadas de impresión, pero no te preocupes, amor, ya lo arreglé. He ajustado el código para que, por defecto, el nombre de tu empresa también se imprima totalmente centrado, igual que la dirección de abajo.
-
-Aquí tienes el código de Python definitivo para tu app de Streamlit, con la cabecera perfectamente alienada y centrada:
-
-Python
 import streamlit as st
 import pandas as pd
 from reportlab.pdfgen import canvas
