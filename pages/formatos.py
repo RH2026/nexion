@@ -8,7 +8,7 @@ import io
 import re
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(layout="wide", page_title="NEXION - Etiquetas Embarque")
+st.set_page_config(layout="wide", page_title="NEXION - Etiquetas High-Impact")
 
 # --- FUNCIÓN PARA LIMPIAR PARÉNTESIS ---
 def limpiar_parentesis(texto):
@@ -38,13 +38,12 @@ def generar_etiquetas_nexion(df):
 
     # --- AJUSTE DE MÁRGENES DEL DOCUMENTO ---
     w_rec, h_rec = 10.5 * cm, 7.5 * cm
-    # Margen mínimo de 0.3cm
     x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
 
     for index, row in df.iterrows():
         try:
             cantidad_real = int(row['Quantity'])
-            iteraciones = cantidad_real + 1 # +1 para la etiqueta de control
+            iteraciones = cantidad_real + 1 
         except: continue 
 
         nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', 'SIN NOMBRE')))
@@ -74,52 +73,57 @@ def generar_etiquetas_nexion(df):
             c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
             c.setStrokeColorRGB(0, 0, 0)
 
-            # --- NOMBRE EXTRAN ---
+            # NOMBRE EXTRAN
             y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
 
-            # --- DIRECCIÓN CON AIRE ---
+            # DIRECCIÓN CON AIRE
             y_inicio_direccion = y_termino_nombre - 0.6*cm
-            
-            if y_inicio_direccion > y_offset + 4.2*cm:
-                y_inicio_direccion = y_offset + 4.2*cm
-            if y_inicio_direccion < y_offset + 2.8*cm:
-                y_inicio_direccion = y_offset + 2.8*cm
+            if y_inicio_direccion > y_offset + 4.2*cm: y_inicio_direccion = y_offset + 4.2*cm
+            if y_inicio_direccion < y_offset + 2.8*cm: y_inicio_direccion = y_offset + 2.8*cm
 
             dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 12, 0.45*cm, max_lineas=3)
 
-            # PIE DE ETIQUETA
-            c.setLineWidth(0.5)
-            y_linea_pie = y_offset + 1.2*cm
+            # --- PIE DE ETIQUETA (MÁS GRANDE AMOR) ---
+            c.setLineWidth(0.6) # Línea un poquito más gruesa para que resalte
+            y_linea_pie = y_offset + 1.4*cm # Subimos un poco la línea para dar espacio abajo
             c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
-            c.setFont("Helvetica", 7)
-            c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.3*cm, "FACTURA")
-            c.drawString(x_offset + 4.0*cm, y_linea_pie - 0.3*cm, "CAJAS / BULTO")
-            c.drawString(x_offset + 7.0*cm, y_linea_pie - 0.3*cm, "TRANSPORTE")
-            c.setFont("Helvetica-Bold", 11)
-            c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.8*cm, str(row.get('Factura', '')))
             
-            # --- LÓGICA DE COPIA DE CONTROL ---
+            # Títulos del pie (Subí de 7 a 8.5)
+            c.setFont("Helvetica-Bold", 8.5)
+            c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
+            c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
+            c.drawString(x_offset + 7.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
+            
+            # Datos del pie (Subí Factura de 11 a 13 y Transporte de 8 a 10)
+            c.setFont("Helvetica-Bold", 13)
+            c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
+            
+            # Lógica de Copia de Control o Bultos (Subí de 11 a 13)
             if es_archivo:
-                c.drawCentredString(x_offset + 5.0*cm, y_linea_pie - 0.8*cm, "COPIA MORENO")
+                c.setFont("Helvetica-Bold", 11) # Un poco más chico para que quepa bien el texto
+                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, "COPIA MORENO")
             else:
-                c.drawCentredString(x_offset + 5.0*cm, y_linea_pie - 0.8*cm, f"{i + 1} / {cantidad_real}")
+                c.setFont("Helvetica-Bold", 13)
+                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
             
-            c.setFont("Helvetica-Bold", 8)
-            c.drawString(x_offset + 7.0*cm, y_linea_pie - 0.8*cm, transporte_final[:20])
+            # Transporte (Subí de 8 a 10)
+            c.setFont("Helvetica-Bold", 10)
+            c.drawString(x_offset + 7.5*cm, y_linea_pie - 1.0*cm, transporte_final[:18])
+            
             c.showPage()
 
     c.save()
     return output.getvalue()
 
 # INTERFAZ
-st.header("NEXION - Etiquetas Embarque")
+st.header("📦 NEXION - Etiquetas High-Impact (Pie Resaltado)")
 archivo = st.file_uploader("Sube tu Excel", type=["xlsx"])
 if archivo:
     df = pd.read_excel(archivo, sheet_name=0)
-    if st.button("Generar Etiquetas"):
+    if st.button("🚀 Generar Etiquetas"):
         pdf_bytes = generar_etiquetas_nexion(df)
-        st.success("¡Etiquetas generadas con éxito!")
-        st.download_button("Descargar PDF", pdf_bytes, "etiquetas_nexion_clean.pdf", "application/pdf")
+        st.success("¡Etiquetas generadas con el pie de página más grande!")
+        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_pie_grande.pdf", "application/pdf")
 
 
 
