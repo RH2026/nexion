@@ -2900,137 +2900,58 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 with tab_amazon:
-                    # 1. ESTILOS CSS (Diseño NEXION - Negro y Verde)
+                    # 1. CSS MAESTRO - DISEÑO COMPACTO Y HOVER
                     st.markdown("""
                     <style>
-                        .contenedor-tarjetas {
-                            display: flex;
-                            flex-direction: column;
-                            gap: 15px;
-                            padding: 10px;
-                            background-color: #1a252f;
+                        .contenedor-amazon { display: flex; flex-direction: column; gap: 8px; padding: 10px 0; }
+                        .tarjeta-amz-row { 
+                            background-color: #2c3e50; border-radius: 6px; padding: 12px 20px; color: white; 
+                            font-family: 'Segoe UI', sans-serif; border: 1px solid rgba(255,255,255,0.05); 
+                            transition: all 0.2s ease; display: grid; grid-template-columns: 1.2fr 1.2fr 1fr 0.8fr; 
+                            gap: 15px; align-items: center;
                         }
-                        .tarjeta-nexion {
-                            background-color: #2c3e50;
-                            border-radius: 8px;
-                            padding: 15px 20px;
-                            color: white;
-                            margin-bottom: 10px;
-                            font-family: 'Segoe UI', sans-serif;
-                            border: 1px solid rgba(255,255,255,0.05);
-                        }
-                        .fila-nexion {
-                            display: grid;
-                            grid-template-columns: 1.5fr 1.5fr 1fr 0.8fr;
-                            gap: 15px;
-                            align-items: center;
-                        }
-                        .etiqueta-nexion {
-                            color: #95a5a6;
-                            font-size: 0.7rem;
-                            text-transform: uppercase;
-                            letter-spacing: 1px;
-                            margin-bottom: 3px;
-                        }
-                        .valor-folio { color: #2ecc71; font-size: 1.1rem; font-weight: bold; }
-                        .valor-blanco { color: white; font-size: 0.95rem; font-weight: bold; }
-                        .monto-verde { color: #2ecc71; font-size: 1.1rem; font-weight: bold; }
-                        .monto-total { color: white; font-size: 1.1rem; font-weight: bold; }
-                        
-                        .linea-div {
-                            height: 1px;
-                            background-color: rgba(255,255,255,0.1);
-                            margin: 10px 0;
-                        }
-                        .pie-tarjeta {
-                            display: flex;
-                            justify-content: space-between;
-                            color: #95a5a6;
-                            font-size: 0.75rem;
-                        }
+                        .tarjeta-amz-row:hover { border: 1px solid #2ecc71; box-shadow: 0 0 10px rgba(46,204,113,0.2); transform: scale(1.01); cursor: pointer; }
+                        .et-gris { color: #95a5a6; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+                        .val-verde { color: #2ecc71; font-size: 1rem; font-weight: bold; margin: 0; }
+                        .val-blanco { color: white; font-size: 0.9rem; font-weight: bold; margin: 0; }
+                        .val-monto { color: #2ecc71; font-size: 1rem; font-weight: bold; }
+                        .txt-right { text-align: right; }
+                        .sep-izq { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; }
                     </style>
                     """, unsafe_allow_html=True)
                 
-                    st.subheader("📦 MOVIMIENTOS LOGÍSTICOS AMAZON")
-                
-                    # 2. CONFIGURACIÓN DE GITHUB
+                    # 2. CONFIGURACIÓN GITHUB
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
                     API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
                 
-                    # 3. CARGA Y LIMPIEZA DE DATOS
+                    # 3. LÓGICA DE CARGA
                     headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
-                    response = requests.get(API_URL, headers=headers)
+                    try:
+                        response = requests.get(API_URL, headers=headers)
+                        if response.status_code == 200:
+                            csv_bytes = base64.b64decode(response.json()['content'])
+                            df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
+                            df.columns = df.columns.str.strip()
                 
-                    if response.status_code == 200:
-                        content = response.json()
-                        csv_bytes = base64.b64decode(content['content'])
-                        df_amz = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
-                        df_amz.columns = df_amz.columns.str.strip()
+                            # Limpieza de números
+                            for c in ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS']:
+                                if c in df.columns:
+                                    df[c] = df[c].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
                 
-                        # Limpiamos los signos de $ para que no truene nada
-                        cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS', 'CHOFER (2 HORAS)']
-                        for col in cols_num:
-                            if col in df_amz.columns:
-                                df_amz[col] = df_amz[col].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
-                
-                        # 4. RENDER DE TARJETAS (LOOP)
-                        st.markdown('<div class="contenedor-tarjetas">', unsafe_allow_html=True)
-                        
-                        for _, row in df_amz.iterrows():
-                            # Lógica de color de estatus
-                            color_estatus = "#2ecc71" if row['ESTATUS'] == "ENTREGADO" else "#f39c12"
+                            # 4. RENDERIZADO EN UNA SOLA LÍNEA (EVITA SALTOS DE LÍNEA)
+                            st.markdown('<div class="contenedor-amazon">', unsafe_allow_html=True)
+                            for _, r in df.iterrows():
+                                # Formateamos el HTML en una sola cadena sin saltos de línea físicos
+                                html_row = f'<div class="tarjeta-amz-row"><div><p class="et-gris">DESTINO / FECHA</p><p class="val-verde">{r["AMAZON"]} / {r["FECHA"]}</p></div><div class="sep-izq"><p class="et-gris">ESTATUS</p><p class="val-blanco">{r["ESTATUS"]}</p></div><div class="sep-izq"><p class="et-gris">BULTOS / COSTO</p><div style="display:flex;justify-content:space-between;"><span class="val-blanco">{int(r["CAJAS"])} u</span><span class="val-verde">$ {r["COSTO DE DISTRIBUCION"]:.2f}</span></div></div><div class="txt-right"><p class="et-gris">TOTAL ENVÍO</p><p class="val-blanco" style="font-size:1.1rem;">$ {r["TOTAL"]:.2f}</p></div></div>'
+                                st.markdown(html_row, unsafe_allow_html=True)
+                            st.markdown('</div>', unsafe_allow_html=True)
                             
-                            card_html = f"""
-                            <div class="tarjeta-nexion">
-                                <div class="fila-nexion">
-                                    <div>
-                                        <div class="etiqueta-nexion">DESTINO / FECHA</div>
-                                        <div class="valor-folio">{row['AMAZON']} / {row['FECHA']}</div>
-                                        <div class="etiqueta-nexion" style="margin-top:8px;">DOMICILIO: <span style="color:white;">CEDI GDL</span></div>
-                                    </div>
-                                    
-                                    <div>
-                                        <div class="etiqueta-nexion">DESTINATARIO / ORIGEN</div>
-                                        <div class="valor-blanco">AMAZON {row['AMAZON']}</div>
-                                        <div style="color:{color_estatus}; font-size:0.8rem; font-weight:bold;">{row['ESTATUS']}</div>
-                                    </div>
-                
-                                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left:15px;">
-                                        <div class="etiqueta-nexion">RESUMEN FINANCIERO</div>
-                                        <div style="display:flex; justify-content:space-between;">
-                                            <span class="etiqueta-nexion">BULTOS:</span>
-                                            <span class="valor-blanco">{int(row['CAJAS'])}</span>
-                                        </div>
-                                        <div style="display:flex; justify-content:space-between;">
-                                            <span class="etiqueta-nexion">COSTO/CAJA:</span>
-                                            <span class="monto-verde">$ {row['COSTO DE DISTRIBUCION']:.2f}</span>
-                                        </div>
-                                    </div>
-                
-                                    <div style="text-align:right;">
-                                        <div class="etiqueta-nexion">ESTATUS ENTREGA</div>
-                                        <div class="valor-blanco" style="font-size:1.1rem;">{row['FECHA'] if row['ESTATUS'] == "ENTREGADO" else "----"}</div>
-                                        <div class="monto-total">$ {row['TOTAL']:.2f}</div>
-                                    </div>
-                                </div>
-                
-                                <div class="linea-div"></div>
-                
-                                <div class="pie-tarjeta">
-                                    <span>REF: <span style="color:white;">AMZ-{row['AMAZON']}</span></span>
-                                    <span>NOTAS: <span style="color:white;">Logística GDL</span></span>
-                                    <span>CHOFER: <span style="color:#2ecc71;">$ {row['CHOFER (2 HORAS)']:.2f}</span></span>
-                                </div>
-                            </div>
-                            """
-                            st.markdown(card_html, unsafe_allow_html=True)
-                            
-                        st.markdown('</div>', unsafe_allow_html=True)
-                
-                    else:
-                        st.error("No se pudo conectar con el archivo de Amazon en GitHub.")
+                        else:
+                            st.error("Error al cargar datos")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
