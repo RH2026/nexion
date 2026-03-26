@@ -2901,73 +2901,8 @@ else:
                 # PESTAÑA 7: AMAZON
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
                 with tab_amazon:
-                    # 1. CSS MAESTRO: FIX DE SCROLL, ALTURA FIJA Y TARJETAS GIGANTES
-                    st.markdown("""
-                    <style>
-                        /* Contenedor de las métricas (4 tarjetas superiores) */
-                        .amz-metrics-grid {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                            gap: 15px;
-                            margin-bottom: 20px;
-                        }
-                        .amz-metric-card {
-                            background-color: #1a1f26;
-                            border-radius: 10px;
-                            padding: 25px 15px;
-                            border-bottom: 5px solid #2ecc71;
-                            text-align: center;
-                            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-                        }
-                        .amz-big-lbl { color: #8b949e; font-size: 0.8rem; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; }
-                        .amz-big-num { font-size: 2.2rem; font-weight: 800; color: white; margin: 0; }
-                        
-                        /* CONTENEDOR CON SCROLL FORZADO Y ALTURA FIJA */
-                        .amz-scroll-area {
-                            height: 500px !important; /* ALTURA FIJA PARA EVITAR PANTALLA INFINITA */
-                            overflow-y: auto !important;
-                            padding: 15px;
-                            border: 2px solid #3498db; /* AZUL POR DEFAULT */
-                            border-radius: 12px;
-                            background-color: #0d1117;
-                            transition: all 0.3s ease-in-out;
-                        }
-                        .amz-scroll-area:hover {
-                            border: 2px solid #2ecc71; /* VERDE NEÓN AL PASAR MOUSE */
-                            box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
-                        }
-                
-                        /* Scrollbar Neón */
-                        .amz-scroll-area::-webkit-scrollbar { width: 8px; }
-                        .amz-scroll-area::-webkit-scrollbar-track { background: #0d1117; }
-                        .amz-scroll-area::-webkit-scrollbar-thumb { background: #3498db; border-radius: 10px; }
-                        .amz-scroll-area:hover::-webkit-scrollbar-thumb { background: #2ecc71; }
-                
-                        /* Filas de la tabla (Barras) */
-                        .amz-item-row {
-                            display: grid;
-                            grid-template-columns: 1.2fr 1.5fr 1.2fr 1fr 1fr;
-                            background-color: #161b22;
-                            margin-bottom: 10px;
-                            padding: 15px;
-                            border-radius: 8px;
-                            border: 1px solid #30363d;
-                            align-items: center;
-                        }
-                        .amz-item-row:hover { border-color: #2ecc71; background-color: #1c2128; }
-                        
-                        .lbl-m { color: #8b949e; font-size: 0.65rem; text-transform: uppercase; margin: 0; }
-                        .val-b { color: white; font-size: 0.95rem; font-weight: bold; margin: 0; }
-                        .val-n { color: #2ecc71; font-size: 0.95rem; font-weight: bold; margin: 0; }
-                
-                        @media (max-width: 1024px) {
-                            .amz-item-row { grid-template-columns: 1fr 1fr; gap: 10px; }
-                        }
-                    </style>
-                    """, unsafe_allow_html=True)
-                
-                    # 2. CARGA DE DATOS (GITHUB)
-                    TOKEN = st.secrets.get("GITHUB_TOKEN")
+                    # 2. CONFIGURACIÓN Y CARGA DESDE GITHUB
+                    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
                     API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
@@ -2980,7 +2915,7 @@ else:
                             df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
                             df.columns = df.columns.str.strip()
                 
-                            # Limpieza
+                            # --- LIMPIEZA REFORZADA ---
                             df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True, errors='coerce')
                             df = df.dropna(subset=['FECHA'])
                             cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION POR CAJA', 'CAJAS', 'VALOR MERCANCIA', 'PORCENTAJE LOGISTICO']
@@ -2990,59 +2925,115 @@ else:
                             
                             df = df.sort_values(by='FECHA', ascending=False)
                 
-                            # --- RENDER DASHBOARD ---
-                            st.write("### 🚀 PERFORMANCE GLOBAL")
+                            # --- MÉTRICAS GIGANTES (DISEÑO RESPONSIVE) ---
+                            st.markdown("### 📊 PERFORMANCE LOGÍSTICO AMAZON")
+                            m1, m2, m3, m4 = st.columns(4)
+                            # Nota: Usamos HTML directo para que los números sean REALMENTE grandes
+                            card_style = "background:#161b22; border-radius:12px; padding:20px; border-bottom:4px solid #2ecc71; text-align:center; box-shadow: 0 4px 10px rgba(0,0,0,0.5);"
+                            lbl_style = "color:#8b949e; font-size:10px; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:5px;"
+                            num_style = "color:white; font-size:32px; font-weight:900; margin:0;"
                             
-                            # 4 TARJETAS SUPERIORES
-                            m_col1, m_col2, m_col3, m_col4 = st.columns(4)
-                            m_col1.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">Cajas Totales</p><p class="amz-big-num">{int(df["CAJAS"].sum()):,}</p></div>', unsafe_allow_html=True)
-                            m_col2.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">Valor Carga</p><p class="amz-big-num">${df["VALOR MERCANCIA"].sum():,.0f}</p></div>', unsafe_allow_html=True)
-                            m_col3.markdown(f'<div class="amz-metric-card"><p class="amz-lbl" style="color:#8b949e;font-size:0.8rem;font-weight:bold;">COSTO FLETE</p><p class="amz-big-num" style="color:#2ecc71;">${df["TOTAL"].sum():,.0f}</p></div>', unsafe_allow_html=True)
-                            m_col4.markdown(f'<div class="amz-metric-card"><p class="amz-lbl" style="color:#8b949e;font-size:0.8rem;font-weight:bold;">% LOGÍSTICO</p><p class="amz-big-num" style="color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</p></div>', unsafe_allow_html=True)
+                            m1.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Cajas Totales</div><div style="{num_style}">{int(df["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
+                            m2.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Valor Carga</div><div style="{num_style}">${df["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m3.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Costo Flete</div><div style="{num_style}; color:#2ecc71;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m4.markdown(f'<div style="{card_style}"><div style="{lbl_style}">% Logístico</div><div style="{num_style}; color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
                 
-                            # FILTRO MENSUAL
+                            st.divider()
+                
+                            # --- FILTRO ---
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
                             opciones_mes = ["TODO EL HISTÓRICO"] + list(df['MES'].unique())
                             mes_sel = st.selectbox("📅 FILTRAR OPERACIÓN:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- ÁREA DE SCROLL FORZADO ---
-                            # Usamos un solo st.markdown para todo el bloque de filas para evitar cuadros negros
-                            rows_html = '<div class="amz-scroll-area">'
-                            for _, r in df_mes.iterrows():
-                                rows_html += f"""
-                                <div class="amz-item-row">
-                                    <div>
-                                        <p class="lbl-m">ID / FECHA</p>
-                                        <p class="val-n">{r['IDENTIFICADOR ENVIO']}</p>
-                                        <p class="val-b" style="font-size:0.8rem;">{r['FECHA'].strftime('%d/%m/%Y')}</p>
+                            # --- EL RENDER CHINGÓN CON SCROLL AZUL/NEÓN ---
+                            df_html = df_mes.fillna('')
+                            data_dict = df_html.to_dict('records')
+                
+                            html_content = f"""
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <script src="https://cdn.tailwindcss.com"></script>
+                                <style>
+                                    body {{ background-color: #0d1117; color: #c9d1d9; font-family: 'Inter', sans-serif; margin: 0; padding: 10px; }}
+                                    
+                                    /* SCROLL DINÁMICO AZUL -> VERDE NEÓN */
+                                    .scroll-container {{
+                                        height: 550px;
+                                        overflow-y: auto;
+                                        border: 2px solid #3498db;
+                                        border-radius: 12px;
+                                        padding: 15px;
+                                        transition: all 0.4s ease;
+                                        background: #0d1117;
+                                    }}
+                                    .scroll-container:hover {{
+                                        border-color: #2ecc71;
+                                        box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+                                    }}
+                
+                                    /* Scrollbar Style */
+                                    ::-webkit-scrollbar {{ width: 8px; }}
+                                    ::-webkit-scrollbar-track {{ background: #0d1117; }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                    .scroll-container:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
+                
+                                    .bar-row {{
+                                        background: #161b22;
+                                        border: 1px solid #30363d;
+                                        border-radius: 8px;
+                                        margin-bottom: 10px;
+                                        padding: 15px;
+                                        display: grid;
+                                        grid-template-columns: 1.2fr 1.5fr 1.2fr 1fr 1fr;
+                                        align-items: center;
+                                        transition: transform 0.2s;
+                                    }}
+                                    .bar-row:hover {{ transform: scale(1.005); border-color: #2ecc71; background: #1c2128; }}
+                                    .lbl {{ color: #8b949e; font-size: 9px; text-transform: uppercase; font-weight: 800; }}
+                                    .val {{ color: #ffffff; font-size: 14px; font-weight: 700; }}
+                                    .neon {{ color: #2ecc71; font-weight: 800; }}
+                                </style>
+                            </head>
+                            <body>
+                                <div class="scroll-container">
+                                    {"".join([f'''
+                                    <div class="bar-row">
+                                        <div>
+                                            <div class="lbl">ID / FECHA</div>
+                                            <div class="neon">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
+                                            <div class="val" style="font-size:11px;">{item.get('FECHA').strftime('%d/%m/%Y') if not isinstance(item.get('FECHA'), str) else item.get('FECHA')}</div>
+                                        </div>
+                                        <div class="pl-4 border-l border-white/10">
+                                            <div class="lbl">VALOR / DESTINO</div>
+                                            <div class="val">$ {float(item.get('VALOR MERCANCIA', 0)):,.2f}</div>
+                                            <div class="neon text-xs">{item.get('AMAZON', '')}</div>
+                                        </div>
+                                        <div class="pl-4 border-l border-white/10">
+                                            <div class="lbl">BULTOS / COSTO CAJA</div>
+                                            <div class="val">{int(item.get('CAJAS', 0))} u</div>
+                                            <div class="neon">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f}</div>
+                                        </div>
+                                        <div class="pl-4 border-l border-white/10">
+                                            <div class="lbl">EFICIENCIA</div>
+                                            <div class="neon text-lg">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}%</div>
+                                            <div class="lbl">{item.get('ESTATUS', '')}</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="lbl">TOTAL FLETE</div>
+                                            <div class="val text-emerald-400 text-lg">$ {float(item.get('TOTAL', 0)):,.2f}</div>
+                                        </div>
                                     </div>
-                                    <div style="border-left: 1px solid #30363d; padding-left:15px;">
-                                        <p class="lbl-m">VALOR / DESTINO</p>
-                                        <p class="val-b">$ {r['VALOR MERCANCIA']:,.2f}</p>
-                                        <p class="val-n">{r['AMAZON']}</p>
-                                    </div>
-                                    <div style="border-left: 1px solid #30363d; padding-left:15px;">
-                                        <p class="lbl-m">BULTOS / COSTO CAJA</p>
-                                        <p class="val-b">{int(r['CAJAS'])} u</p>
-                                        <p class="val-n">$ {r['COSTO DE DISTRIBUCION POR CAJA']:.2f}</p>
-                                    </div>
-                                    <div style="border-left: 1px solid #30363d; padding-left:15px;">
-                                        <p class="lbl-m">KPI EFICIENCIA</p>
-                                        <p class="val-n" style="font-size:1.1rem;">{r['PORCENTAJE LOGISTICO']:.2f}%</p>
-                                        <p class="lbl-m">{r['ESTATUS']}</p>
-                                    </div>
-                                    <div style="text-align:right;">
-                                        <p class="lbl-m">TOTAL FLETE</p>
-                                        <p class="val-b" style="font-size:1.2rem; color:#2ecc71;">$ {r['TOTAL']:,.2f}</p>
-                                    </div>
+                                    ''' for item in data_dict])}
                                 </div>
-                                """
-                            rows_html += '</div>'
-                            st.markdown(rows_html.replace('\n', ''), unsafe_allow_html=True)
+                            </body>
+                            </html>
+                            """
+                            components.html(html_content, height=600, scrolling=False)
                 
                         else:
-                            st.error("Error al cargar amazon.csv.")
+                            st.error("Error al conectar con el CSV en GitHub.")
                     except Exception as e:
                         st.error(f"Error crítico: {e}")
                 
