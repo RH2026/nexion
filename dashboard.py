@@ -2898,8 +2898,59 @@ else:
                         render_expediente_chingon(df_consignas)
                 # PESTAÑA 6: CONSIGNAS
                 with tab_amazon:
+                    st.subheader("📦 Análisis de Costos de Distribución - Amazon")
                     # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
-                    pass
+                    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                    REPO_NAME = "RH2026/nexion"
+                    FILE_PATH = "amazon.csv"  # Cambiado a amazon.csv como pediste
+                    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+                
+                    try:
+                        # Lectura del CSV (usando caché para que sea veloz)
+                        @st.cache_data(ttl=600)
+                        def load_amazon_data(url):
+                            # Si el repo es privado, aquí añadiríamos los headers con el TOKEN
+                            return pd.read_csv(url)
+                
+                        df = load_amazon_data(CSV_URL)
+                
+                        # --- RENDER CHINGÓN (EL "STYLING") ---
+                        
+                        # 1. Convertimos la columna de FECHA a formato fecha real para que ordene bien
+                        df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True).dt.strftime('%d/%m/%Y')
+                
+                        # 2. Aplicamos el diseño
+                        st.write("### Matriz de Eficiencia Logística")
+                        
+                        # Creamos el render con degradados
+                        styled_df = df.style.background_gradient(
+                            subset=['COSTO DE DISTRIBUCION'], 
+                            cmap='RdYlGn_r' # Rojo (caro) a Verde (barato)
+                        ).format({
+                            'PICKING (30 MIN)': '$ {:,.2f}',
+                            'PREPARACION (20 MIN)': '$ {:,.2f}',
+                            'CHOFER (2 HORAS)': '$ {:,.2f}',
+                            'TRANSPORTE': '$ {:,.2f}',
+                            'TOTAL': '$ {:,.2f}',
+                            'COSTO DE DISTRIBUCION': '$ {:,.2f}'
+                        }).highlight_max(subset=['CAJAS'], color='#2ecc71') # Resalta en verde el envío con más cajas
+                
+                        # 3. Mostrar en Streamlit con ancho completo
+                        st.dataframe(styled_df, use_container_width=True, height=400)
+                
+                        # --- MÉTRICAS DE RESUMEN ---
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Costo Promedio / Caja", f"$ {df['COSTO DE DISTRIBUCION'].mean():.2f}")
+                        with col2:
+                            st.metric("Total Cajas Movidas", f"{df['CAJAS'].sum()} u")
+                        with col3:
+                            eficiencia = (df[df['COSTO DE DISTRIBUCION'] < 5].shape[0] / len(df)) * 100
+                            st.metric("Envíos Optimizados", f"{eficiencia:.0f}%", help="Envíos con costo menor a $5 por caja")
+                
+                    except Exception as e:
+                        st.error(f"No pude cargar la matriz de Amazon. Revisa que el archivo '{FILE_PATH}' exista en el repo.")
+                        st.info("Tip: Asegúrate de que el CSV en GitHub tenga los mismos nombres de columna que me mostraste.")
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
