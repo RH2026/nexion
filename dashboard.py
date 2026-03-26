@@ -985,9 +985,7 @@ else:
                 st.session_state.menu_sub = "SMART ROUTING"
                 st.rerun()
 
-    # 4. RESTO DE USUARIOS O SI YA SE ELIGIÓ MÓDULO
-    else:
-        st.write(f"Accediendo al sistema NEXION como: {st.session_state.usuario_activo}")
+   
 
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
