@@ -1858,7 +1858,7 @@ else:
     
                 # --- 4. SUBMENÚ Y RENDERIZADO ---
                 # Definimos las pestañas base que todos ven
-                nombres_tabs = ["KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA", "ENTREGAS AGC", "CONSIGNAS"]
+                nombres_tabs = ["KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA", "ENTREGAS AGC", "CONSIGNAS", "AMAZON"]
                 
                 # Si eres tú, Rigoberto, añadimos la pestaña secreta al final
                 es_admin = st.session_state.get("usuario_activo") == "Rigoberto"
@@ -1875,10 +1875,11 @@ else:
                 tab_participacion = tabs[3]
                 tab_entregas_agc = tabs[4]
                 tab_consignas = tabs[5]
+                tab_amazon = tabs[6]
                 
                 # Si eres admin, creamos la variable para la séptima pestaña
                 if es_admin:
-                    tab_admin = tabs[6]
+                    tab_admin = tabs[7]
     
                 # PESTAÑA 1: KPI'S (Tus donitas)
                 with tab_kpis:
@@ -2895,6 +2896,10 @@ else:
                         
                         # Renderizado directo sin buscador amor
                         render_expediente_chingon(df_consignas)
+                # PESTAÑA 6: CONSIGNAS
+                with tab_amazon:
+                    # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
+                
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
