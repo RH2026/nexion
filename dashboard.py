@@ -2955,14 +2955,26 @@ else:
                             df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
                             df.columns = df.columns.str.strip()
                 
-                            # --- LIMPIEZA DE DATOS (Agregamos las nuevas columnas) ---
-                            df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True)
+                            # --- LIMPIEZA DE DATOS (REFORZADA PARA EVITAR ERRORES) ---            
+                            # 1. Convertimos fecha y "coordinamos" errores (lo que no sea fecha se vuelve vacío)
+                            df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True, errors='coerce')
+                            
+                            # 2. Eliminamos filas que tengan la fecha vacía (esto quita el error NaTType)
+                            df = df.dropna(subset=['FECHA'])
+                
+                            # 3. Limpiamos las columnas numéricas de signos $, % y comas
                             cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION POR CAJA', 'CAJAS', 'VALOR MERCANCIA', 'PORCENTAJE LOGISTICO']
                             
                             for col in cols_num:
                                 if col in df.columns:
-                                    # Quitamos $, % y comas para que Python pueda sumar
-                                    df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).astype(float)
+                                    # Convertimos a string, quitamos basura, y si queda vacío ponemos '0' antes de convertir a float
+                                    df[col] = (df[col].astype(str)
+                                               .str.replace(r'[\$,%, ]', '', regex=True)
+                                               .replace(['nan', '', 'None'], '0') 
+                                               .astype(float))
+                            
+                            # 4. Ordenamos por fecha (lo más nuevo arriba)
+                            df = df.sort_values(by='FECHA', ascending=False)
                 
                             # --- SECCIÓN DE TOTALES (MÉTRICAS) ---
                             st.markdown("### 📊 DASHBOARD DE RENDIMIENTO LOGÍSTICO")
