@@ -2518,16 +2518,20 @@ else:
                             )
                 
                             # --- EXPANDER: DESGLOSE POR DESTINO ---
-                            # --- EXPLORADOR DE RUTAS Y DESTINOS (DISEÑO PREMIUM CON SCROLL AGC) ---
+                            # --- EXPANDER: DESGLOSE POR DESTINO ---
                             st.markdown("<h3 style='color:white; font-size:16px; letter-spacing:2px; font-weight:800; border-left:4px solid #38bdf8; padding-left:10px; margin-bottom:20px;'>🌐 EXPLORADOR DE RUTAS Y DESTINOS</h3>", unsafe_allow_html=True)
                             
                             lista_carriers = ["TODOS"] + sorted(df_log_filtrado['TRANSPORTE'].unique())
                             
-                            carrier_sel = st.selectbox(
-                                "Selecciona un Carrier para detallar:", 
-                                options=lista_carriers,
-                                key=f"select_carrier_{mes_sel}_{tipo_mov}"
-                            )
+                            # --- COLUMNAS PARA SELECTOR Y BOTÓN (Alineados) ---
+                            col_sel, col_dl = st.columns([3, 1])
+                            
+                            with col_sel:
+                                carrier_sel = st.selectbox(
+                                    "Selecciona un Carrier para detallar:", 
+                                    options=lista_carriers,
+                                    key=f"select_carrier_{mes_sel}_{tipo_mov}"
+                                )
                             
                             # Lógica de filtrado
                             if carrier_sel != "TODOS":
@@ -2538,92 +2542,42 @@ else:
                             if not df_dest_filtered.empty:
                                 df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO', 'FORMA DE ENVIO'])['CAJAS'].sum().reset_index()
                                 df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
-                            
                                 total_sel = df_dest_sum['CAJAS'].sum()
-                                
-                                # --- COLUMNAS PARA MÉTRICAS Y BOTÓN DE IMPRESIÓN ---
-                                col_info, col_btn = st.columns([3, 1])
-                                
-                                with col_info:
-                                    st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px; margin-bottom:15px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
-                                
-                                with col_btn:
-                                    # Convertimos el DF a CSV para la descarga
+                            
+                                # Ponemos el botón en la columna de la derecha (col_dl) para que suba al nivel del filtro
+                                with col_dl:
+                                    st.write("##") # Un pequeño espacio para alinear con el input
                                     csv_data = df_dest_sum.to_csv(index=False).encode('utf-8')
                                     st.download_button(
-                                        label="📥 DESCARGAR FILTRADO",
+                                        label="📥 DESCARGAR",
                                         data=csv_data,
                                         file_name=f"reporte_{carrier_sel}_{mes_sel}.csv",
                                         mime="text/csv",
-                                        help="Descarga los datos actuales en formato CSV para impresión o Excel"
+                                        use_container_width=True # Para que ocupe todo el ancho de su columna
                                     )
+                                
+                                # Métrica de unidades justo debajo de los controles
+                                st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px; margin-bottom:15px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
                             
                                 data_rutas = df_dest_sum.to_dict('records')
                             
+                                # --- TU DISEÑO HTML PREMIUM SIGUE IGUAL ABAJO ---
                                 html_rutas = f"""
                                 <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
                                     <style>
                                         body {{ background: transparent; margin: 0; padding: 0; }}
-                                        
-                                        /* ───────── SCROLLBAR AGC STYLE ───────── */
                                         ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
                                         ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
-                                        ::-webkit-scrollbar-thumb {{ 
-                                            background: #3498db; 
-                                            border-radius: 10px; 
-                                            border: 2px solid #384A52; 
-                                        }}
-                                        ::-webkit-scrollbar-thumb:hover {{ 
-                                            background: #2ecc71; 
-                                            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
-                                        }}
-                            
-                                        .carrier-group {{
-                                            background: #263238;
-                                            border: 1px solid rgba(255,255,255,0.05);
-                                            border-radius: 12px;
-                                            margin-bottom: 12px;
-                                            overflow: hidden;
-                                            width: 100%;
-                                            transition: all 0.3s ease;
-                                        }}
+                                        ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
+                                        ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }}
+                                        .carrier-group {{ background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 12px; overflow: hidden; width: 100%; transition: all 0.3s ease; }}
                                         .carrier-group:hover {{ border-color: rgba(0, 255, 170, 0.3); }}
-                                        
-                                        .carrier-header {{
-                                            background: rgba(56, 189, 248, 0.1);
-                                            padding: 10px 15px;
-                                            border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-                                            display: flex;
-                                            justify-content: space-between;
-                                            align-items: center;
-                                        }}
+                                        .carrier-header {{ background: rgba(56, 189, 248, 0.1); padding: 10px 15px; border-bottom: 1px solid rgba(56, 189, 248, 0.2); display: flex; justify-content: space-between; align-items: center; }}
                                         .carrier-name {{ color: #38bdf8; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }}
-                                        .route-row {{
-                                            display: flex;
-                                            justify-content: space-between;
-                                            padding: 12px 15px;
-                                            align-items: center;
-                                        }}
+                                        .route-row {{ display: flex; justify-content: space-between; padding: 12px 15px; align-items: center; }}
                                         .dest-name {{ color: #FFFFFF; font-size: 12px; font-weight: 600; }}
-                                        .method-tag {{ 
-                                            background: rgba(168, 85, 247, 0.1); 
-                                            color: #a855f7; 
-                                            padding: 2px 6px; 
-                                            border-radius: 4px; 
-                                            font-size: 9px; 
-                                            font-weight: 700;
-                                            margin-left: 8px;
-                                        }}
-                                        .unit-badge {{ 
-                                            background: rgba(0, 255, 170, 0.1); 
-                                            color: #00FFAA; 
-                                            padding: 5px 12px; 
-                                            border-radius: 8px; 
-                                            font-family: monospace; 
-                                            font-weight: 800; 
-                                            font-size: 13px;
-                                            border: 1px solid rgba(0, 255, 170, 0.2);
-                                        }}
+                                        .method-tag {{ background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; margin-left: 8px; }}
+                                        .unit-badge {{ background: rgba(0, 255, 170, 0.1); color: #00FFAA; padding: 5px 12px; border-radius: 8px; font-family: monospace; font-weight: 800; font-size: 13px; border: 1px solid rgba(0, 255, 170, 0.2); }}
                                     </style>
                                     {"".join([f'''
                                     <div class="carrier-group">
@@ -2642,7 +2596,7 @@ else:
                                     ''' for item in data_rutas])}
                                 </div>
                                 """
-                                # Le dejamos scrolling=True para usar nuestro scroll personalizado amor
+                                import streamlit.components.v1 as components
                                 components.html(html_rutas, height=500, scrolling=True)
                                 
                             else:
