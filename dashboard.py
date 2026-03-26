@@ -2538,10 +2538,26 @@ else:
                             if not df_dest_filtered.empty:
                                 df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO', 'FORMA DE ENVIO'])['CAJAS'].sum().reset_index()
                                 df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
-                                
+                            
                                 total_sel = df_dest_sum['CAJAS'].sum()
-                                st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px; margin-bottom:15px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
                                 
+                                # --- COLUMNAS PARA MÉTRICAS Y BOTÓN DE IMPRESIÓN ---
+                                col_info, col_btn = st.columns([3, 1])
+                                
+                                with col_info:
+                                    st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px; margin-bottom:15px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
+                                
+                                with col_btn:
+                                    # Convertimos el DF a CSV para la descarga
+                                    csv_data = df_dest_sum.to_csv(index=False).encode('utf-8')
+                                    st.download_button(
+                                        label="📥 DESCARGAR FILTRADO",
+                                        data=csv_data,
+                                        file_name=f"reporte_{carrier_sel}_{mes_sel}.csv",
+                                        mime="text/csv",
+                                        help="Descarga los datos actuales en formato CSV para impresión o Excel"
+                                    )
+                            
                                 data_rutas = df_dest_sum.to_dict('records')
                             
                                 html_rutas = f"""
