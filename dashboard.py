@@ -2899,44 +2899,71 @@ else:
                         render_expediente_chingon(df_consignas)
                 
                 # PESTAÑA 7: AMAZON
-                with tab_amazon:
-                    # 1. CSS BLINDADO Y ACTUALIZADO (5 COLUMNAS PARA EL NUEVO RENDER)
+                # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
+                with tab_amazon:        
                     st.markdown("""
                     <style>
-                        .amz-dashboard { background-color: #1a252f; padding: 10px; font-family: 'Segoe UI', sans-serif; }
+                        /* Contenedor principal con Scroll */
+                        .amz-scroll-container {
+                            max-height: 500px; /* Altura máxima antes de activar scroll */
+                            overflow-y: auto;
+                            padding: 10px;
+                            border-radius: 8px;
+                            background-color: #1a252f;
+                            border: 1px solid #3498db; /* Azul por default */
+                            transition: border 0.3s ease;
+                        }
                         
+                        /* Cambio a Verde Neón si hay scroll activo o hover */
+                        .amz-scroll-container:hover, .amz-scroll-container:active {
+                            border: 1px solid #2ecc71; 
+                            box-shadow: 0 0 10px rgba(46, 204, 113, 0.2);
+                        }
+                
+                        /* Scrollbar personalizado */
+                        .amz-scroll-container::-webkit-scrollbar { width: 6px; }
+                        .amz-scroll-container::-webkit-scrollbar-track { background: #1a252f; }
+                        .amz-scroll-container::-webkit-scrollbar-thumb { background: #3498db; border-radius: 10px; }
+                        .amz-scroll-container:hover::-webkit-scrollbar-thumb { background: #2ecc71; }
+                
+                        /* Métricas Gigantes */
                         .amz-metric-card {
                             background-color: #2c3e50;
-                            border-radius: 10px;
-                            padding: 15px;
-                            border-left: 5px solid #2ecc71;
-                            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+                            border-radius: 12px;
+                            padding: 20px;
+                            border-bottom: 4px solid #2ecc71;
                             text-align: center;
+                            transition: transform 0.3s;
                         }
-                        
+                        .amz-metric-card:hover { transform: translateY(-5px); }
+                        .amz-big-num { font-size: 1.8rem; font-weight: 800; margin: 0; line-height: 1; }
+                        .amz-big-lbl { color: #95a5a6; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; }
+                
+                        /* Filas Detalle Responsive */
                         .amz-row {
                             display: grid;
-                            grid-template-columns: 1fr 1.2fr 1fr 1fr 0.8fr; /* 5 Columnas equilibradas */
+                            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
                             background-color: #2c3e50;
-                            margin-bottom: 8px;
-                            padding: 12px 20px;
-                            border-radius: 6px;
-                            align-items: center;
-                            border: 1px solid rgba(255,255,255,0.05);
+                            margin-bottom: 10px;
+                            padding: 15px;
+                            border-radius: 8px;
+                            border-left: 3px solid transparent;
                             transition: all 0.3s ease;
                         }
-                        
                         .amz-row:hover {
-                            border: 1px solid #2ecc71;
-                            box-shadow: 0 0 10px rgba(46,204,113,0.2);
-                            transform: scale(1.005);
+                            border-left: 3px solid #2ecc71;
+                            background-color: #34495e;
                             cursor: pointer;
                         }
                 
-                        .amz-lbl { color: #95a5a6; font-size: 0.65rem; text-transform: uppercase; margin: 0; letter-spacing: 0.5px; }
+                        .amz-lbl { color: #95a5a6; font-size: 0.65rem; text-transform: uppercase; margin: 0; }
                         .amz-val { color: white; font-size: 0.95rem; font-weight: bold; margin: 0; }
                         .amz-val-v { color: #2ecc71; font-size: 0.95rem; font-weight: bold; margin: 0; }
-                        .amz-sep-v { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; }
+                
+                        @media (max-width: 768px) {
+                            .amz-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+                            .amz-big-num { font-size: 1.4rem; }
+                        }
                     </style>
                     """, unsafe_allow_html=True)
                 
@@ -2945,9 +2972,8 @@ else:
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
                     API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
-                
                     headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
-                    
+                
                     try:
                         response = requests.get(API_URL, headers=headers)
                         if response.status_code == 200:
@@ -2955,83 +2981,64 @@ else:
                             df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
                             df.columns = df.columns.str.strip()
                 
-                            # --- LIMPIEZA DE DATOS (REFORZADA PARA EVITAR ERRORES) ---            
-                            # 1. Convertimos fecha y "coordinamos" errores (lo que no sea fecha se vuelve vacío)
+                            # LIMPIEZA
                             df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True, errors='coerce')
-                            
-                            # 2. Eliminamos filas que tengan la fecha vacía (esto quita el error NaTType)
                             df = df.dropna(subset=['FECHA'])
-                
-                            # 3. Limpiamos las columnas numéricas de signos $, % y comas
                             cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION POR CAJA', 'CAJAS', 'VALOR MERCANCIA', 'PORCENTAJE LOGISTICO']
-                            
                             for col in cols_num:
                                 if col in df.columns:
-                                    # Convertimos a string, quitamos basura, y si queda vacío ponemos '0' antes de convertir a float
-                                    df[col] = (df[col].astype(str)
-                                               .str.replace(r'[\$,%, ]', '', regex=True)
-                                               .replace(['nan', '', 'None'], '0') 
-                                               .astype(float))
+                                    df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).replace(['nan', '', 'None'], '0').astype(float)
                             
-                            # 4. Ordenamos por fecha (lo más nuevo arriba)
                             df = df.sort_values(by='FECHA', ascending=False)
                 
-                            # --- SECCIÓN DE TOTALES (MÉTRICAS) ---
-                            st.markdown("### 📊 DASHBOARD DE RENDIMIENTO LOGÍSTICO")
-                            
+                            # --- MÉTRICAS GIGANTES ---
+                            st.markdown("### 🚀 PERFORMANCE NEXION AMAZON")
                             m1, m2, m3, m4 = st.columns(4)
                             with m1:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">CAJAS TOTALES</p><h3 style="color:white;margin:0;">{int(df["CAJAS"].sum()):,}</h3></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">Cajas Totales</p><p class="amz-big-num" style="color:white;">{int(df["CAJAS"].sum()):,}</p></div>', unsafe_allow_html=True)
                             with m2:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">VALOR MERCANCÍA</p><h3 style="color:white;margin:0;">$ {df["VALOR MERCANCIA"].sum():,.0f}</h3></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">Valor Carga</p><p class="amz-big-num" style="color:white;">${df["VALOR MERCANCIA"].sum():,.0f}</p></div>', unsafe_allow_html=True)
                             with m3:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">COSTO LOGÍSTICO</p><h3 style="color:#2ecc71;margin:0;">$ {df["TOTAL"].sum():,.2f}</h3></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">Costo Flete</p><p class="amz-big-num" style="color:#2ecc71;">${df["TOTAL"].sum():,.0f}</p></div>', unsafe_allow_html=True)
                             with m4:
-                                pct_promedio = df['PORCENTAJE LOGISTICO'].mean()
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">% LOGÍSTICO PROM.</p><h3 style="color:#2ecc71;margin:0;">{pct_promedio:.2f}%</h3></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">% Logístico</p><p class="amz-big-num" style="color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</p></div>', unsafe_allow_html=True)
                 
                             st.divider()
                 
-                            # --- FILTROS Y ORDEN ---
-                            df = df.sort_values(by='FECHA', ascending=False)
+                            # --- FILTROS ---
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
-                            opciones_mes = ["TODOS LOS MESES"] + list(df['MES'].unique())
-                            
-                            col_f1, col_f2 = st.columns([2, 1])
-                            with col_f1:
-                                mes_sel = st.selectbox("📅 Selecciona periodo:", opciones_mes)
-                            
-                            df_mes = df if mes_sel == "TODOS LOS MESES" else df[df['MES'] == mes_sel]
+                            opciones_mes = ["TODO EL HISTÓRICO"] + list(df['MES'].unique())
+                            mes_sel = st.selectbox("📅 Filtrar Operación:", opciones_mes)
+                            df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- RENDERIZADO DE FILAS (VISTA COMPACTA 5 COLUMNAS) ---
-                            st.markdown('<div class="amz-dashboard">', unsafe_allow_html=True)
+                            # --- CONTENEDOR CON SCROLL Y RENDER ---
+                            st.markdown(f'<div class="amz-scroll-container">', unsafe_allow_html=True)
                             
                             for _, r in df_mes.iterrows():
-                                # HTML en una sola línea para evitar errores de renderizado en Streamlit Cloud
                                 row_html = f"""
                                 <div class="amz-row">
                                     <div>
-                                        <p class="amz-lbl">ID / FECHA</p>
+                                        <p class="amz-lbl">ENVÍO / FECHA</p>
                                         <p class="amz-val-v">{r['IDENTIFICADOR ENVIO']}</p>
-                                        <p class="amz-val" style="font-size:0.8rem;">{r['FECHA'].strftime('%d/%m/%Y')}</p>
+                                        <p class="amz-val">{r['FECHA'].strftime('%d/%m/%Y')}</p>
                                     </div>
-                                    <div class="amz-sep-v">
-                                        <p class="amz-lbl">MERCANCÍA / DESTINO</p>
+                                    <div>
+                                        <p class="amz-lbl">VALOR MERCANCÍA</p>
                                         <p class="amz-val">$ {r['VALOR MERCANCIA']:,.2f}</p>
-                                        <p class="amz-val-v" style="font-size:0.8rem;">{r['AMAZON']}</p>
+                                        <p class="amz-val-v">{r['AMAZON']}</p>
                                     </div>
-                                    <div class="amz-sep-v">
+                                    <div>
                                         <p class="amz-lbl">BULTOS / COSTO CAJA</p>
                                         <p class="amz-val">{int(r['CAJAS'])} u</p>
                                         <p class="amz-val-v">$ {r['COSTO DE DISTRIBUCION POR CAJA']:.2f}</p>
                                     </div>
-                                    <div class="amz-sep-v">
-                                        <p class="amz-lbl">EFICIENCIA</p>
-                                        <p class="amz-val-v" style="font-size:1.1rem;">{r['PORCENTAJE LOGISTICO']:.2f}%</p>
+                                    <div>
+                                        <p class="amz-lbl">KPI LOGÍSTICO</p>
+                                        <p class="amz-val-v">{r['PORCENTAJE LOGISTICO']:.2f}%</p>
                                         <p class="amz-lbl">{r['ESTATUS']}</p>
                                     </div>
-                                    <div class="amz-right amz-sep-v" style="text-align:right;">
-                                        <p class="amz-lbl">TOTAL ENVÍO</p>
+                                    <div style="text-align:right;">
+                                        <p class="amz-lbl">TOTAL FLETE</p>
                                         <p class="amz-val" style="font-size:1.1rem;">$ {r['TOTAL']:,.2f}</p>
                                     </div>
                                 </div>
@@ -3041,9 +3048,9 @@ else:
                             st.markdown('</div>', unsafe_allow_html=True)
                 
                         else:
-                            st.error("Error: No se pudo leer el archivo amazon.csv de GitHub.")
+                            st.error("Error al conectar con GitHub.")
                     except Exception as e:
-                        st.error(f"Error en la aplicación: {e}")
+                        st.error(f"Error: {e}")
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
