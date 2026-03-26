@@ -73,40 +73,39 @@ def generar_etiquetas_nexion(df):
             c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
             c.setStrokeColorRGB(0, 0, 0)
 
-            # NOMBRE EXTRAN
+            # NOMBRE EXTRAN (GIGANTE 26pt)
             y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
 
-            # DIRECCIÓN CON AIRE
-            y_inicio_direccion = y_termino_nombre - 0.6*cm
-            if y_inicio_direccion > y_offset + 4.2*cm: y_inicio_direccion = y_offset + 4.2*cm
-            if y_inicio_direccion < y_offset + 2.8*cm: y_inicio_direccion = y_offset + 2.8*cm
+            # --- DIRECCIÓN (MÁS GRANDE AMORCITO - SUBE A 14.5) ---
+            y_inicio_direccion = y_termino_nombre - 0.7*cm # Un pelín más de aire inicial
+            
+            # Ajustes de topes para que no baile la dirección
+            if y_inicio_direccion > y_offset + 4.3*cm: y_inicio_direccion = y_offset + 4.3*cm
+            if y_inicio_direccion < y_offset + 2.9*cm: y_inicio_direccion = y_offset + 2.9*cm
 
-            dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 12, 0.45*cm, max_lineas=3)
+            # Dibujamos la dirección con 14.5pt y un interlineado un poco más amplio (0.5)
+            dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 14.5, 0.5*cm, max_lineas=3)
 
-            # --- PIE DE ETIQUETA (MÁS GRANDE AMOR) ---
-            c.setLineWidth(0.6) # Línea un poquito más gruesa para que resalte
-            y_linea_pie = y_offset + 1.4*cm # Subimos un poco la línea para dar espacio abajo
+            # --- PIE DE ETIQUETA ---
+            c.setLineWidth(0.6)
+            y_linea_pie = y_offset + 1.4*cm
             c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
             
-            # Títulos del pie (Subí de 7 a 8.5)
             c.setFont("Helvetica-Bold", 8.5)
             c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
             c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
             c.drawString(x_offset + 7.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
             
-            # Datos del pie (Subí Factura de 11 a 13 y Transporte de 8 a 10)
             c.setFont("Helvetica-Bold", 13)
             c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
             
-            # Lógica de Copia de Control o Bultos (Subí de 11 a 13)
             if es_archivo:
-                c.setFont("Helvetica-Bold", 11) # Un poco más chico para que quepa bien el texto
+                c.setFont("Helvetica-Bold", 11)
                 c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, "COPIA MORENO")
             else:
                 c.setFont("Helvetica-Bold", 13)
                 c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
             
-            # Transporte (Subí de 8 a 10)
             c.setFont("Helvetica-Bold", 10)
             c.drawString(x_offset + 7.5*cm, y_linea_pie - 1.0*cm, transporte_final[:18])
             
@@ -116,14 +115,14 @@ def generar_etiquetas_nexion(df):
     return output.getvalue()
 
 # INTERFAZ
-st.header("📦 NEXION - Etiquetas High-Impact (Pie Resaltado)")
+st.header("NEXION - Etiquetas de Embarque Jypesa")
 archivo = st.file_uploader("Sube tu Excel", type=["xlsx"])
 if archivo:
     df = pd.read_excel(archivo, sheet_name=0)
-    if st.button("🚀 Generar Etiquetas"):
+    if st.button("Generar Etiquetas"):
         pdf_bytes = generar_etiquetas_nexion(df)
-        st.success("¡Etiquetas generadas con el pie de página más grande!")
-        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_pie_grande.pdf", "application/pdf")
+        st.success("¡Listo amor! Dirección más grande y legible.")
+        st.download_button("Descargar PDF", pdf_bytes, "etiquetas_nexion_final.pdf", "application/pdf")
 
 
 
