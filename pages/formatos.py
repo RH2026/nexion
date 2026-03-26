@@ -7,36 +7,21 @@ from reportlab.lib.utils import simpleSplit
 import io
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(layout="wide", page_title="NEXION - Etiquetas Giga-Dirección")
+st.set_page_config(layout="wide", page_title="NEXION - Etiquetas High-Space")
 
-# --- FUNCIÓN PARA TEXTO MULTILÍNEA DE ALTO IMPACTO (MEJORADA) ---
-def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado, max_lineas=3):
-    """
-    Dibuja texto centrado y multilínea, ajustando la fuente *solo si es necesario* para que quepa en max_lineas.
-    """
+# --- FUNCIÓN PARA TEXTO MULTILÍNEA DE ALTO IMPACTO ---
+def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado):
     texto = str(texto).upper()
-    
-    # Primero intentamos con el tamaño máximo
     lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
     
-    # Si salen más líneas de las permitidas, bajamos la fuente poco a poco
-    tamano_actual = tamano_max
-    while len(lineas) > max_lineas and tamano_actual > 8:
-        tamano_actual -= 0.5
-        lineas = simpleSplit(texto, fuente, tamano_actual, ancho_max)
-        # Reducimos proporcionalmente el interlineado si bajamos la fuente
-        # interlineado = (tamano_actual / tamano_max) * interlineado
+    # Si salen muchas líneas, bajamos un poco la fuente
+    if len(lineas) >= 3:
+        tamano_max -= 2
+        lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
 
-    # Si aún con la fuente mínima sale más de lo que cabe verticalmente en el bloque,
-    # cortamos las líneas para evitar encimamientos.
-    if len(lineas) > max_lineas:
-        lineas = lineas[:max_lineas]
-
-    c.setFont(fuente, tamano_actual)
+    c.setFont(fuente, tamano_max)
     y_actual = y_inicio
-    
-    # Dibujamos las líneas centradas
-    for line in lineas: 
+    for line in lineas[:3]: 
         c.drawCentredString(x_centro, y_actual, line)
         y_actual -= interlineado
     return y_actual # Devolvemos dónde terminó de escribir
@@ -46,7 +31,6 @@ def generar_etiquetas_nexion(df):
     c = canvas.Canvas(output, pagesize=letter)
     width_carta, height_carta = letter
 
-    # Medidas de 1/4 de media carta (Aprox 10.5 x 7.5 cm)
     w_rec, h_rec = 10.5 * cm, 7.5 * cm
     x_offset, y_offset = 1.0 * cm, height_carta - h_rec - 1.0 * cm
 
@@ -55,7 +39,7 @@ def generar_etiquetas_nexion(df):
             cantidad = int(row['Quantity'])
         except: continue 
 
-        # Datos limpios y normalizados
+        # Datos limpios
         nombre_final = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', 'SIN NOMBRE')))
         direccion_final = row.get('DIRECCION', 'DIRECCIÓN NO DISPONIBLE')
         transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', 'TRES GUERRAS')))
@@ -68,16 +52,17 @@ def generar_etiquetas_nexion(df):
             c.setDash([])
             c.setStrokeColorRGB(0, 0, 0)
 
-            # --- CABECERA (DATOS JYPESA - COMPRIMIDOS) ---
-            # Reducimos los espacios para ganar milímetros
+            # --- CABECERA (DATOS JYPESA) ---
+            # Nombre de la empresa (Perfectamente centrado)
             c.setFont("Helvetica-Bold", 7)
-            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+            nombre_empresa = "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV"
+            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, nombre_empresa)
             
             c.setFont("Helvetica", 6)
             info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
             dibujar_texto_bloque_pro(
-                c, info_contacto, x_offset + (w_rec/2), y_offset + h_rec - 0.6*cm, 
-                10*cm, "Helvetica", 6, 0.25*cm, max_lineas=1
+                c, info_contacto, x_offset + (w_rec/2), y_offset + h_rec - 0.7*cm, 
+                10*cm, "Helvetica", 6, 0.25*cm
             )
             
             # Línea divisoria superior sutil
@@ -86,22 +71,23 @@ def generar_etiquetas_nexion(df):
             c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
             c.setStrokeColorRGB(0, 0, 0)
 
-            # --- DESTINATARIO (NOMBRE CLIENTE - COMPRIMIDO) ---
-            # Empezamos el nombre justo después de la línea
+            # --- DESTINATARIO (DATOS DEL CLIENTE) ---
+            # 1. NOMBRE (PROTAGONISTA 1 - Centrado)
+            # CAMBIO: Bajamos el nombre 0.5 cm (y_offset + h_rec - 2.0*cm en lugar de 1.5)
+            # para dar espacio después de la cabecera.
             y_termino_nombre = dibujar_texto_bloque_pro(
                 c, nombre_final, 
                 x_offset + (w_rec/2), 
-                y_offset + h_rec - 1.5*cm, # Empezamos más arriba
-                10*cm, "Helvetica-Bold", 17, 0.65*cm, max_lineas=2 # Máximo 2 líneas para el nombre
+                y_offset + h_rec - 2.0*cm, 
+                10*cm, "Helvetica-Bold", 18, 0.7*cm
             )
 
             # --- LA REINA: GIGA-DIRECCIÓN (MEJORADA) ---
-            # Ocupamos el centro de la etiqueta.
-            # Fuente base gigante (16pt), hasta 4 líneas, con interlineado dinámico.
-            
+            # CAMBIO: La dirección gigante (fuente base 16pt) ocupa el centro.
+            # Fuente base 16pt, hasta 4 líneas, con interlineado dinámico.
             # Margen de seguridad dinámico: Empezamos la dirección con un "aire"
             # después del nombre del cliente, pero no muy lejos.
-            y_inicio_direccion = y_termino_nombre - 0.3*cm
+            y_inicio_direccion = y_termino_nombre - 0.4*cm
 
             # Verificamos que la dirección no empiece *demasiado* abajo
             if y_inicio_direccion < y_offset + 2.8*cm:
@@ -111,33 +97,27 @@ def generar_etiquetas_nexion(df):
                 c, direccion_final, 
                 x_offset + (w_rec/2), 
                 y_inicio_direccion, 
-                10.0 * cm, # Usamos casi todo el ancho
+                10.0 * cm, 
                 "Helvetica-Bold", 
                 16, # Fuente gigante
                 0.55*cm, # Interlineado proporcional
                 max_lineas=4 # Máximo 4 líneas para la dirección
             )
 
-            # --- PIE DE ETIQUETA (COMPRIMIDO) ---
+            # --- PIE DE ETIQUETA ---
             c.setLineWidth(0.5)
-            # Subimos el pie para que ocupe menos espacio vertical
             y_linea_pie = y_offset + 1.2*cm
             c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
 
-            # Textos de referencia
             c.setFont("Helvetica", 7)
             c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.3*cm, "FACTURA")
             c.drawString(x_offset + 4.0*cm, y_linea_pie - 0.3*cm, "CAJAS / BULTO")
             c.drawString(x_offset + 7.0*cm, y_linea_pie - 0.3*cm, "TRANSPORTE")
 
-            # Datos reales
             c.setFont("Helvetica-Bold", 11)
             c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.8*cm, str(row.get('Factura', '')))
-            
-            # Cajas
             c.drawCentredString(x_offset + 5.0*cm, y_linea_pie - 0.8*cm, f"{i + 1} / {cantidad}")
             
-            # Transporte
             c.setFont("Helvetica-Bold", 8)
             c.drawString(x_offset + 7.0*cm, y_linea_pie - 0.8*cm, transporte_final[:20])
 
@@ -147,21 +127,21 @@ def generar_etiquetas_nexion(df):
     return output.getvalue()
 
 # --- INTERFAZ ---
-st.header("📦 NEXION - Etiquetas Premium 'Giga-Dirección'")
-st.markdown("Hemos **maximizado la dirección** al máximo nivel legible (**fuente base 16pt**) en un bloque central de **hasta 4 líneas**, comprimiendo el resto de la etiqueta para evitar encimamientos. ¡Pruébala con tus direcciones más largas!")
+st.header("📦 NEXION - Etiquetas con Espacio Inteligente")
+st.markdown("Hemos corregido el amontonamiento. El **Nombre** y la **Dirección** (con su fuente monumental) ahora están bajados para dar espacio vital y no amontonarse con las líneas divisoria.")
 
-archivo = st.file_uploader("Sube tu Excel de Logística", type=["xlsx"])
+archivo = st.file_uploader("Sube tu Excel", type=["xlsx"])
 
 if archivo:
     try:
         df = pd.read_excel(archivo, sheet_name=0)
         st.dataframe(df.head(), use_container_width=True)
         
-        if st.button("🚀 Generar Etiquetas High-Impact"):
-            with st.spinner("Diseñando etiquetas monumentales..."):
+        if st.button("🚀 Generar Etiquetas"):
+            with st.spinner("Creando etiquetas monumentales y ordenadas..."):
                 pdf_bytes = generar_etiquetas_nexion(df)
-                st.success("¡Etiquetas con dirección monumental listas para descargar!")
-                st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_giga_direccion.pdf", "application/pdf")
+                st.success("¡Etiquetas con espacio perfecto listas para descargar!")
+                st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_espacio_pro.pdf", "application/pdf")
     except Exception as e:
         st.error(f"Error: {e}")
 
