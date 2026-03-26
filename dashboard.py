@@ -2900,100 +2900,137 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 with tab_amazon:
-                    st.subheader("📦 Análisis de Costos de Distribución - Amazon")
-                    
-                    # 1. Configuración de Credenciales y Ruta
+                    # 1. ESTILOS CSS (Diseño NEXION - Negro y Verde)
+                    st.markdown("""
+                    <style>
+                        .contenedor-tarjetas {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 15px;
+                            padding: 10px;
+                            background-color: #1a252f;
+                        }
+                        .tarjeta-nexion {
+                            background-color: #2c3e50;
+                            border-radius: 8px;
+                            padding: 15px 20px;
+                            color: white;
+                            margin-bottom: 10px;
+                            font-family: 'Segoe UI', sans-serif;
+                            border: 1px solid rgba(255,255,255,0.05);
+                        }
+                        .fila-nexion {
+                            display: grid;
+                            grid-template-columns: 1.5fr 1.5fr 1fr 0.8fr;
+                            gap: 15px;
+                            align-items: center;
+                        }
+                        .etiqueta-nexion {
+                            color: #95a5a6;
+                            font-size: 0.7rem;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            margin-bottom: 3px;
+                        }
+                        .valor-folio { color: #2ecc71; font-size: 1.1rem; font-weight: bold; }
+                        .valor-blanco { color: white; font-size: 0.95rem; font-weight: bold; }
+                        .monto-verde { color: #2ecc71; font-size: 1.1rem; font-weight: bold; }
+                        .monto-total { color: white; font-size: 1.1rem; font-weight: bold; }
+                        
+                        .linea-div {
+                            height: 1px;
+                            background-color: rgba(255,255,255,0.1);
+                            margin: 10px 0;
+                        }
+                        .pie-tarjeta {
+                            display: flex;
+                            justify-content: space-between;
+                            color: #95a5a6;
+                            font-size: 0.75rem;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
+                
+                    st.subheader("📦 MOVIMIENTOS LOGÍSTICOS AMAZON")
+                
+                    # 2. CONFIGURACIÓN DE GITHUB
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
                     API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
                 
-                    # 2. Función para obtener y decodificar el CSV desde GitHub API
-                    def fetch_github_csv(url, token):
-                        headers = {"Authorization": f"token {token}"} if token else {}
-                        try:
-                            response = requests.get(url, headers=headers)
-                            if response.status_code == 200:
-                                content = response.json()
-                                csv_bytes = base64.b64decode(content['content'])
-                                # Usamos engine='python' por si el CSV tiene caracteres especiales
-                                return pd.read_csv(io.BytesIO(csv_bytes), engine='python')
-                            else:
-                                return None
-                        except Exception:
-                            return None
+                    # 3. CARGA Y LIMPIEZA DE DATOS
+                    headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+                    response = requests.get(API_URL, headers=headers)
                 
-                    # 3. Procesamiento de Datos
-                    df_raw = fetch_github_csv(API_URL, TOKEN)
+                    if response.status_code == 200:
+                        content = response.json()
+                        csv_bytes = base64.b64decode(content['content'])
+                        df_amz = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
+                        df_amz.columns = df_amz.columns.str.strip()
                 
-                    if df_raw is not None:
-                        df_amazon = df_raw.copy()
-                        # Limpieza de nombres de columnas (quitar espacios invisibles)
-                        df_amazon.columns = df_amazon.columns.str.strip()
+                        # Limpiamos los signos de $ para que no truene nada
+                        cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS', 'CHOFER (2 HORAS)']
+                        for col in cols_num:
+                            if col in df_amz.columns:
+                                df_amz[col] = df_amz[col].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
                 
-                        # --- LIMPIEZA DE DATOS: Convertir texto a números reales ---
-                        cols_numericas = [
-                            'PICKING (30 MIN)', 'PREPARACION (20 MIN)', 'CHOFER (2 HORAS)', 
-                            'TRANSPORTE', 'TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS'
-                        ]
+                        # 4. RENDER DE TARJETAS (LOOP)
+                        st.markdown('<div class="contenedor-tarjetas">', unsafe_allow_html=True)
                         
-                        for col in cols_numericas:
-                            if col in df_amazon.columns:
-                                # Quitamos $, comas y convertimos a número
-                                df_amazon[col] = (df_amazon[col]
-                                                  .astype(str)
-                                                  .str.replace(r'[\$, ]', '', regex=True)
-                                                  .replace('', '0')
-                                                  .astype(float))
-                
-                        # --- MÉTRICAS SUPERIORES ---
-                        col1, col2, col3 = st.columns(3)
-                        with col1:
-                            promedio = df_amazon['COSTO DE DISTRIBUCION'].mean()
-                            st.metric("Costo Promedio / Caja", f"$ {promedio:.2f}")
-                        with col2:
-                            total_cajas = df_amazon['CAJAS'].sum()
-                            st.metric("Total Cajas Movidas", f"{int(total_cajas)} u")
-                        with col3:
-                            if not df_amazon.empty:
-                                eficientes = (df_amazon[df_amazon['COSTO DE DISTRIBUCION'] < 6].shape[0] / len(df_amazon)) * 100
-                                st.metric("Eficiencia Logística", f"{eficientes:.0f}%")
-                
-                        st.divider()
-                
-                        # --- RENDERIZADO DE LA MATRIZ CON PROTECCIÓN ---
-                        st.write("### 📊 Matriz de Operaciones GDL")
-                        
-                        try:
-                            # Renderizado "Chingón" con degradados
-                            styled_df = df_amazon.style.background_gradient(
-                                subset=['COSTO DE DISTRIBUCION'], 
-                                cmap='RdYlGn_r'
-                            ).format({
-                                'PICKING (30 MIN)': '$ {:,.2f}',
-                                'PREPARACION (20 MIN)': '$ {:,.2f}',
-                                'CHOFER (2 HORAS)': '$ {:,.2f}',
-                                'TRANSPORTE': '$ {:,.2f}',
-                                'TOTAL': '$ {:,.2f}',
-                                'COSTO DE DISTRIBUCION': '$ {:,.2f}',
-                                'CAJAS': '{:,.0f}'
-                            }).highlight_max(subset=['CAJAS'], color='#2ecc71')
-                
-                            st.dataframe(styled_df, use_container_width=True, height=450)
+                        for _, row in df_amz.iterrows():
+                            # Lógica de color de estatus
+                            color_estatus = "#2ecc71" if row['ESTATUS'] == "ENTREGADO" else "#f39c12"
                             
-                        except ImportError:
-                            # Si matplotlib no está listo, mostramos la tabla normal sin que truene la app
-                            st.info("💡 Tip: Para ver los colores de eficiencia, asegúrate de añadir 'matplotlib' en tu requirements.txt")
-                            st.dataframe(df_amazon, use_container_width=True, height=450)
-                        except Exception as e:
-                            # Por cualquier otro error visual
-                            st.dataframe(df_amazon, use_container_width=True, height=450)
-                        
-                        st.caption("✨ *NEXION detecta automáticamente la rentabilidad de cada envío.*")
+                            card_html = f"""
+                            <div class="tarjeta-nexion">
+                                <div class="fila-nexion">
+                                    <div>
+                                        <div class="etiqueta-nexion">DESTINO / FECHA</div>
+                                        <div class="valor-folio">{row['AMAZON']} / {row['FECHA']}</div>
+                                        <div class="etiqueta-nexion" style="margin-top:8px;">DOMICILIO: <span style="color:white;">CEDI GDL</span></div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="etiqueta-nexion">DESTINATARIO / ORIGEN</div>
+                                        <div class="valor-blanco">AMAZON {row['AMAZON']}</div>
+                                        <div style="color:{color_estatus}; font-size:0.8rem; font-weight:bold;">{row['ESTATUS']}</div>
+                                    </div>
+                
+                                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left:15px;">
+                                        <div class="etiqueta-nexion">RESUMEN FINANCIERO</div>
+                                        <div style="display:flex; justify-content:space-between;">
+                                            <span class="etiqueta-nexion">BULTOS:</span>
+                                            <span class="valor-blanco">{int(row['CAJAS'])}</span>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between;">
+                                            <span class="etiqueta-nexion">COSTO/CAJA:</span>
+                                            <span class="monto-verde">$ {row['COSTO DE DISTRIBUCION']:.2f}</span>
+                                        </div>
+                                    </div>
+                
+                                    <div style="text-align:right;">
+                                        <div class="etiqueta-nexion">ESTATUS ENTREGA</div>
+                                        <div class="valor-blanco" style="font-size:1.1rem;">{row['FECHA'] if row['ESTATUS'] == "ENTREGADO" else "----"}</div>
+                                        <div class="monto-total">$ {row['TOTAL']:.2f}</div>
+                                    </div>
+                                </div>
+                
+                                <div class="linea-div"></div>
+                
+                                <div class="pie-tarjeta">
+                                    <span>REF: <span style="color:white;">AMZ-{row['AMAZON']}</span></span>
+                                    <span>NOTAS: <span style="color:white;">Logística GDL</span></span>
+                                    <span>CHOFER: <span style="color:#2ecc71;">$ {row['CHOFER (2 HORAS)']:.2f}</span></span>
+                                </div>
+                            </div>
+                            """
+                            st.markdown(card_html, unsafe_allow_html=True)
+                            
+                        st.markdown('</div>', unsafe_allow_html=True)
                 
                     else:
-                        st.error("❌ No se pudo cargar 'amazon.csv'.")
-                        st.info("Revisa que el archivo esté en tu GitHub y que el TOKEN tenga permisos.")
+                        st.error("No se pudo conectar con el archivo de Amazon en GitHub.")
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
