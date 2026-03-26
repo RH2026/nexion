@@ -1,109 +1,87 @@
 import streamlit as st
 import pandas as pd
-import os
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import cm
+import io
 
-# --- 1. CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Nexion - Rastreo JYPESA", layout="wide")
+def generar_pdf_en_memoria(df):
+    output = io.BytesIO()
+    # Tamaño carta: 21.59 x 27.94 cm
+    c = canvas.Canvas(output, pagesize=letter)
+    width_carta, height_carta = letter
 
-# --- CSS GLOBAL PARA EL EFECTO HOVER ---
-st.markdown("""
-    <style>
-    /* Efecto Hover para las tarjetas Nexion */
-    .nexion-hover-card {
-        transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-        cursor: pointer;
-    }
-    .nexion-hover-card:hover {
-        transform: translateY(-5px); /* Se levanta un poquito */
-        background-color: #252e35 !important; /* Se aclara el fondo */
-        box-shadow: 0px 10px 20px rgba(0, 255, 204, 0.1); /* Brillo neón sutil */
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # Definimos el cuarto de media carta (aprox 10.5 x 7 cm)
+    w_rec, h_rec = 10.5 * cm, 7.0 * cm
+    
+    # Lo posicionamos en la parte superior izquierda de la hoja carta
+    x_offset = 0.5 * cm
+    y_offset = height_carta - h_rec - 0.5 * cm
 
-# --- 2. FUNCIÓN PARA CARGAR DESDE REPOSITORIO ---
-def cargar_desde_repo(archivo):
-    if os.path.exists(archivo):
+    for _, row in df.iterrows():
         try:
-            df_preview = pd.read_excel(archivo, nrows=50, header=None)
-            claves = ['CARTA_PORTE', 'FACTURA_INTERNA', 'TALON', 'OBSERVACION 1', 'OBSERVACIONES', 'GUIA', 'PAQUETES_AMPARA', 'SUB TOTAL _ GUIA']
-            fila_head = -1
-            for i, row in df_preview.iterrows():
-                row_str = row.astype(str).str.upper().tolist()
-                if any(clave in s for s in row_str for clave in claves):
-                    fila_head = i
-                    break
-            df = pd.read_excel(archivo, header=fila_head if fila_head != -1 else 0)
-            df.columns = df.columns.astype(str).str.strip()
-            return df
+            cantidad = int(row['Quantity'])
         except:
-            return None
-    return None
+            continue
 
-# --- 3. CARGA DE DATOS ---
-df_t1 = cargar_desde_repo("T1.xlsx")
-df_t2 = cargar_desde_repo("T2.xlsx")
-df_t3 = cargar_desde_repo("T3.xlsx")
+        for i in range(cantidad):
+            # Dibujamos el contorno del cuarto de hoja
+            c.setDash(1, 2) # Línea punteada para corte
+            c.rect(x_offset, y_offset, w_rec, h_rec)
+            c.setDash([]) # Volver a línea sólida
 
-# --- 4. INTERFAZ ---
-st.title("📦 Rastreo Inteligente JYPESA")
-query = st.text_input("🔍 Ingresa Factura o Pedido para buscar Guía:", placeholder="Escribe aquí...")
+            # --- DATOS ESTILO TU IMAGEN ---
+            # Encabezado "Cliente"
+            c.setFont("Helvetica", 7)
+            c.drawString(x_offset + 0.2*cm, y_offset + h_rec - 0.4*cm, "Cliente")
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(x_offset + 0.2*cm, y_offset + h_rec - 0.8*cm, str(row['Nombre_Cliente'])[:30])
 
-if query:
-    encontrado = False
-    for df_source, nombre_f in [(df_t1, "TRES GUERRAS"), (df_t2, "TINY PACK"), (df_t3, "ONE")]:
-        if df_source is not None:
-            cols_busqueda = ['OBSERVACION 1', 'FACTURA_INTERNA', 'Observaciones', 'TALON', 'CARTA_PORTE', 'Guia']
-            cols_presentes = [c for c in cols_busqueda if c in df_source.columns]
+            # Nombre_Ext (Grande como en tu foto)
+            c.setFont("Helvetica-Bold", 18)
+            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 2.2*cm, str(row['Nombre_Ext'])[:20])
+
+            # Dirección
+            c.setFont("Helvetica-Bold", 10)
+            # Dividimos la dirección en dos líneas si es muy larga
+            dir_completa = str(row['DIRECCION'])
+            c.drawString(x_offset + 0.2*cm, y_offset + h_rec - 3.5*cm, dir_completa[:45])
+            c.drawString(x_offset + 0.2*cm, y_offset + h_rec - 4.0*cm, dir_completa[45:90])
+
+            # Pie de etiqueta: Factura y Cajas
+            c.setFont("Helvetica", 7)
+            c.drawString(x_offset + 0.5*cm, y_offset + 1.2*cm, "Factura")
+            c.drawString(x_offset + 4.0*cm, y_offset + 1.2*cm, "Cajas")
             
-            if cols_presentes:
-                mask = df_source[cols_presentes].astype(str).apply(
-                    lambda x: x.str.contains(query, case=False, na=False)
-                ).any(axis=1)
-                res = df_source[mask]
-            else:
-                res = pd.DataFrame()
-            
-            if not res.empty:
-                encontrado = True
-                f = res.iloc[0]
-                
-                # --- LÓGICA DE ESTATUS ---
-                col_fechas = ['F.ENTREGA', 'FECHA_ENTREGA', 'FECHA DE ENTREGA']
-                existe_col_fecha = any(col in df_source.columns for col in col_fechas)
-                fecha_valor = None
-                if existe_col_fecha:
-                    for col in col_fechas:
-                        if col in f and pd.notnull(f[col]) and str(f[col]).strip() != "":
-                            fecha_valor = f[col]
-                            break
-                    estatus = f"ESTATUS: ENTREGADO" if fecha_valor else "ESTATUS: EN TRANSITO"
-                else:
-                    estatus = "ESTATUS: ACTUALIZANDO DATOS"
+            c.setFont("Helvetica-Bold", 11)
+            c.drawString(x_offset + 0.5*cm, y_offset + 0.6*cm, str(row['Factura']))
+            c.drawString(x_offset + 4.0*cm, y_offset + 0.6*cm, f"{i+1} / {cantidad}")
 
-                # --- MAPEO DATOS ---
-                guia = f.get("TALON") or f.get("CARTA_PORTE") or f.get("Guia") or "S/N"
-                factura = f.get("OBSERVACION 1") or f.get("FACTURA_INTERNA") or f.get("Observaciones") or "S/N"
-                cliente = f.get("CLIENTE_DESTINO") or f.get("DESTINATARIO") or f.get("Destinatario") or "CLIENTE NO REGISTRADO"
-                origen = f.get("ORIGEN") or "PLANTA GDL"
-                destino = f.get("DESTINO") or f.get("CIUDAD") or f.get("Oficina_Destino") or "N/A"
-                bultos = f.get("BULTOS") or f.get("PIEZAS") or f.get("Paquetes_Ampara") or "0"
-                importe = f.get("Sub total _ Guia") or f.get("TOTAL") or f.get("SUBTOTAL") or "0.00"
+            c.showPage() # Nueva hoja por cada etiqueta (o puedes acomodar 8 por hoja si prefieres)
 
-                # --- RENDERIZADO NEXION CON CLASE HOVER ---
-                st.markdown(f'<div class="nexion-hover-card" style="background-color:#1e262c; border-radius:10px; padding:20px; border-left:5px solid {"#004d40" if "ENTREGADO" in estatus else "#00ffcc"}; margin-bottom:20px; color:white; font-family:sans-serif;"><div style="background-color:#004d40; color:#00ffcc; padding:4px 12px; border-radius:15px; font-size:0.85rem; font-weight:bold; float:right; text-transform:uppercase;">{estatus}</div><div style="display:flex; justify-content:space-between; align-items:flex-start;"><div style="flex:1;"><div style="color:#00ffcc; font-size:0.7rem; font-weight:bold; letter-spacing:1.5px; margin-bottom:5px;">{nombre_f}</div><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;">TALÓN / FOLIO</div><div style="color:#00ffcc; font-size:1.6rem; font-weight:bold; line-height:1.2;">{guia}</div><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase; margin-top:5px;">REF: <span style="color:white; font-size:1rem;">{factura}</span></div></div><div style="flex:2; margin:0 30px;"><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase;">DESTINATARIO / RUTA</div><div style="color:white; font-weight:bold; font-size:1.2rem;">{cliente}</div><div style="font-size:0.9rem; color:#8899a6; margin-top:5px;"><span style="color:#00ffcc;">📍</span> GDL ➔ {destino}</div></div><div style="flex:1; border-left:1px solid #3d464d; padding-left:20px;"><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase;">RESUMEN FINANCIERO</div><div style="color:white; font-weight:bold; font-size:0.95rem;">BULTOS: <span style="color:#00ffcc;">{bultos}</span></div><div style="color:#00ffcc; font-weight:bold; font-size:1.2rem; margin-top:10px;">$ {importe}</div></div></div></div>', unsafe_allow_html=True)
+    c.save()
+    return output.getvalue()
 
-    if not encontrado:
-        st.markdown(f"""
-            <div class="nexion-hover-card" style="background-color: #1e262c; border-radius: 8px; padding: 20px; border-left: 5px solid #ff4b4b; margin-top: 15px;">
-                <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px;">Estado de Búsqueda</div>
-                <div style="color: #ff4b4b; font-weight: bold; font-size: 1.3rem; line-height: 1.1; letter-spacing: 1px;">SIN COINCIDENCIAS</div>
-                <div style="margin-top: 15px; border-top: 1px solid #3d464d; padding-top: 12px;">
-                    <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px;">Referencia consultada</div>
-                    <div style="color: white; font-weight: bold; font-size: 1.1rem;">{query}</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+# --- INTERFAZ EN STREAMLIT ---
+st.title("Generador de Etiquetas NEXION 🚀")
+
+uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
+
+if uploaded_file:
+    # Leer específicamente la pestaña que me dijiste
+    df = pd.read_excel(uploaded_file, sheet_name='Analisis_Final')
+    st.success("¡Archivo cargado correctamente!")
+    st.write("Vista previa de datos:", df.head())
+
+    if st.button("Generar PDF de Etiquetas"):
+        pdf_data = generar_pdf_en_memoria(df)
+        
+        st.download_button(
+            label="📥 Descargar Etiquetas PDF",
+            data=pdf_data,
+            file_name="etiquetas_logistica.pdf",
+            mime="application/pdf"
+        )
 
 
 
