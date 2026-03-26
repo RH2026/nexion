@@ -2959,7 +2959,7 @@ else:
                 
                             # Limpieza y conversión de tipos
                             df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True)
-                            for col in ['TOTAL INVERSIÓN', 'COSTO DE DISTRIBUCION', 'CAJAS']:
+                            for col in ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS']:
                                 df[col] = df[col].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
                 
                             # --- SECCIÓN DE TOTALES ---
@@ -2967,7 +2967,7 @@ else:
                             
                             # Calculamos los totales usando los nombres reales de tus columnas
                             total_cajas = df['CAJAS'].sum()
-                            inversion_total = df['TOTAL INVERSIÓN'].sum() # Cambiado de 'TOTAL INVERSIÓN' a 'TOTAL'
+                            inversion_total = df['TOTAL'].sum() # Cambiado de 'TOTAL INVERSIÓN' a 'TOTAL'
                             costo_promedio = df['COSTO DE DISTRIBUCION'].mean()
                 
                             c1, c2, c3 = st.columns(3)
