@@ -2959,11 +2959,11 @@ else:
                 
                             # Limpieza y conversión de tipos
                             df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True)
-                            for col in ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS']:
+                            for col in ['TOTAL INVERSIÓN', 'COSTO DE DISTRIBUCION', 'CAJAS']:
                                 df[col] = df[col].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
                 
                             # --- SECCIÓN DE TOTALES ---
-                            st.markdown("### 📊 Resumen General de Operaciones")
+                            st.markdown("### RESUMEN GENERAL DE ENTREGAS AMAZON")
                             c1, c2, c3 = st.columns(3)
                             with c1:
                                 st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">CAJAS TOTALES</p><h2 style="color:white;margin:0;">{int(df["CAJAS"].sum())}</h2></div>', unsafe_allow_html=True)
@@ -2977,12 +2977,18 @@ else:
                 
                             # --- SECCIÓN MENSUAL ---
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
-                            meses = df['MES'].unique()
                             
-                            st.markdown("### 📅 Desglose Mensual")
-                            mes_sel = st.selectbox("Selecciona el mes para revisar detalle:", meses)
+                            # Creamos la lista de meses y le añadimos "TODOS LOS MESES" al principio
+                            opciones_mes = ["TODOS LOS MESES"] + list(df['MES'].unique())
                             
-                            df_mes = df[df['MES'] == mes_sel]
+                            st.markdown("### DESGLOSE OPERATIVO")
+                            mes_sel = st.selectbox("Selecciona el mes para revisar detalle:", opciones_mes)
+                            
+                            # LÓGICA POR DEFAUL: Si elige TODOS, mostramos todo el dataframe, si no, filtramos
+                            if mes_sel == "TODOS LOS MESES":
+                                df_mes = df
+                            else:
+                                df_mes = df[df['MES'] == mes_sel]
                 
                             # Renderizado de filas en una sola línea (HTML COMPACTO)
                             st.markdown('<div class="amz-dashboard">', unsafe_allow_html=True)
