@@ -2900,25 +2900,23 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 with tab_amazon:
-                    # 1. CSS BLINDADO - Solo para esta pestaña
+                    # 1. CSS BLINDADO Y ACTUALIZADO (5 COLUMNAS PARA EL NUEVO RENDER)
                     st.markdown("""
                     <style>
                         .amz-dashboard { background-color: #1a252f; padding: 10px; font-family: 'Segoe UI', sans-serif; }
                         
-                        /* Tarjetas de métricas superiores */
                         .amz-metric-card {
                             background-color: #2c3e50;
                             border-radius: 10px;
-                            padding: 20px;
+                            padding: 15px;
                             border-left: 5px solid #2ecc71;
                             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
                             text-align: center;
                         }
                         
-                        /* Estilo de la fila de datos (Render en una sola línea) */
                         .amz-row {
                             display: grid;
-                            grid-template-columns: 1fr 1fr 1fr 1.2fr 1fr;
+                            grid-template-columns: 1fr 1.2fr 1fr 1fr 0.8fr; /* 5 Columnas equilibradas */
                             background-color: #2c3e50;
                             margin-bottom: 8px;
                             padding: 12px 20px;
@@ -2928,21 +2926,21 @@ else:
                             transition: all 0.3s ease;
                         }
                         
-                        /* Efecto Hover con borde verde */
                         .amz-row:hover {
                             border: 1px solid #2ecc71;
                             box-shadow: 0 0 10px rgba(46,204,113,0.2);
-                            transform: scale(1.01);
+                            transform: scale(1.005);
                             cursor: pointer;
                         }
                 
-                        .amz-lbl { color: #95a5a6; font-size: 0.65rem; text-transform: uppercase; margin: 0; }
-                        .amz-val { color: white; font-size: 1rem; font-weight: bold; margin: 0; }
-                        .amz-val-v { color: #2ecc71; font-size: 1rem; font-weight: bold; margin: 0; }
+                        .amz-lbl { color: #95a5a6; font-size: 0.65rem; text-transform: uppercase; margin: 0; letter-spacing: 0.5px; }
+                        .amz-val { color: white; font-size: 0.95rem; font-weight: bold; margin: 0; }
+                        .amz-val-v { color: #2ecc71; font-size: 0.95rem; font-weight: bold; margin: 0; }
+                        .amz-sep-v { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; }
                     </style>
                     """, unsafe_allow_html=True)
                 
-                    # 2. CARGA DE DATOS DESDE GITHUB
+                    # 2. CONFIGURACIÓN GITHUB
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2957,55 +2955,81 @@ else:
                             df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
                             df.columns = df.columns.str.strip()
                 
-                            # Limpieza y conversión de tipos
+                            # --- LIMPIEZA DE DATOS (Agregamos las nuevas columnas) ---
                             df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True)
-                            for col in ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS']:
-                                df[col] = df[col].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
-                
-                            # --- SECCIÓN DE TOTALES ---
-                            st.markdown("### RESUMEN GENERAL DE OPERACIONES")
+                            cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION POR CAJA', 'CAJAS', 'VALOR MERCANCIA', 'PORCENTAJE LOGISTICO']
                             
-                            # Calculamos los totales usando los nombres reales de tus columnas
-                            total_cajas = df['CAJAS'].sum()
-                            inversion_total = df['TOTAL'].sum() # Cambiado de 'TOTAL INVERSIÓN' a 'TOTAL'
-                            costo_promedio = df['COSTO DE DISTRIBUCION'].mean()
+                            for col in cols_num:
+                                if col in df.columns:
+                                    # Quitamos $, % y comas para que Python pueda sumar
+                                    df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).astype(float)
                 
-                            c1, c2, c3 = st.columns(3)
-                            with c1:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">CAJAS TOTALES</p><h2 style="color:white;margin:0;">{int(total_cajas):,} u</h2></div>', unsafe_allow_html=True)
-                            with c2:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">INVERSIÓN TOTAL</p><h2 style="color:#2ecc71;margin:0;">$ {inversion_total:,.2f}</h2></div>', unsafe_allow_html=True)
-                            with c3:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">COSTO PROMEDIO X CAJA</p><h2 style="color:white;margin:0;">$ {costo_promedio:.2f}</h2></div>', unsafe_allow_html=True)
+                            # --- SECCIÓN DE TOTALES (MÉTRICAS) ---
+                            st.markdown("### 📊 DASHBOARD DE RENDIMIENTO LOGÍSTICO")
+                            
+                            m1, m2, m3, m4 = st.columns(4)
+                            with m1:
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">CAJAS TOTALES</p><h3 style="color:white;margin:0;">{int(df["CAJAS"].sum()):,}</h3></div>', unsafe_allow_html=True)
+                            with m2:
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">VALOR MERCANCÍA</p><h3 style="color:white;margin:0;">$ {df["VALOR MERCANCIA"].sum():,.0f}</h3></div>', unsafe_allow_html=True)
+                            with m3:
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">COSTO LOGÍSTICO</p><h3 style="color:#2ecc71;margin:0;">$ {df["TOTAL"].sum():,.2f}</h3></div>', unsafe_allow_html=True)
+                            with m4:
+                                pct_promedio = df['PORCENTAJE LOGISTICO'].mean()
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">% LOGÍSTICO PROM.</p><h3 style="color:#2ecc71;margin:0;">{pct_promedio:.2f}%</h3></div>', unsafe_allow_html=True)
                 
                             st.divider()
                 
-                            # --- SECCIÓN MENSUAL ---
-                            # Ordenamos por fecha para que lo más reciente aparezca primero
+                            # --- FILTROS Y ORDEN ---
                             df = df.sort_values(by='FECHA', ascending=False)
-                            
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
                             opciones_mes = ["TODOS LOS MESES"] + list(df['MES'].unique())
                             
-                            st.markdown("### DESGLOSE OPERATIVO")
-                            mes_sel = st.selectbox("Selecciona el mes para revisar detalle:", opciones_mes)
+                            col_f1, col_f2 = st.columns([2, 1])
+                            with col_f1:
+                                mes_sel = st.selectbox("📅 Selecciona periodo:", opciones_mes)
                             
-                            # Filtro por default: TODOS
-                            if mes_sel == "TODOS LOS MESES":
-                                df_mes = df
-                            else:
-                                df_mes = df[df['MES'] == mes_sel]
+                            df_mes = df if mes_sel == "TODOS LOS MESES" else df[df['MES'] == mes_sel]
                 
-                            # Renderizado de filas...
+                            # --- RENDERIZADO DE FILAS (VISTA COMPACTA 5 COLUMNAS) ---
                             st.markdown('<div class="amz-dashboard">', unsafe_allow_html=True)
+                            
                             for _, r in df_mes.iterrows():
-                                # HTML en una sola línea para evitar errores de renderizado
-                                row_html = f'<div class="amz-row"><div><p class="amz-lbl">FECHA</p><p class="amz-val">{r["FECHA"].strftime("%d/%m/%Y")}</p></div><div><p class="amz-lbl">DESTINO</p><p class="amz-val-v">{r["AMAZON"]}</p></div><div><p class="amz-lbl">CAJAS</p><p class="amz-val">{int(r["CAJAS"])} u</p></div><div><p class="amz-lbl">COSTO X CAJA</p><p class="amz-val-v">$ {r["COSTO DE DISTRIBUCION"]:.2f}</p></div><div style="text-align:right;"><p class="amz-lbl">TOTAL</p><p class="amz-val">$ {r["TOTAL"]:.2f}</p></div></div>'
-                                st.markdown(row_html, unsafe_allow_html=True)
+                                # HTML en una sola línea para evitar errores de renderizado en Streamlit Cloud
+                                row_html = f"""
+                                <div class="amz-row">
+                                    <div>
+                                        <p class="amz-lbl">ID / FECHA</p>
+                                        <p class="amz-val-v">{r['IDENTIFICADOR ENVIO']}</p>
+                                        <p class="amz-val" style="font-size:0.8rem;">{r['FECHA'].strftime('%d/%m/%Y')}</p>
+                                    </div>
+                                    <div class="amz-sep-v">
+                                        <p class="amz-lbl">MERCANCÍA / DESTINO</p>
+                                        <p class="amz-val">$ {r['VALOR MERCANCIA']:,.2f}</p>
+                                        <p class="amz-val-v" style="font-size:0.8rem;">{r['AMAZON']}</p>
+                                    </div>
+                                    <div class="amz-sep-v">
+                                        <p class="amz-lbl">BULTOS / COSTO CAJA</p>
+                                        <p class="amz-val">{int(r['CAJAS'])} u</p>
+                                        <p class="amz-val-v">$ {r['COSTO DE DISTRIBUCION POR CAJA']:.2f}</p>
+                                    </div>
+                                    <div class="amz-sep-v">
+                                        <p class="amz-lbl">EFICIENCIA</p>
+                                        <p class="amz-val-v" style="font-size:1.1rem;">{r['PORCENTAJE LOGISTICO']:.2f}%</p>
+                                        <p class="amz-lbl">{r['ESTATUS']}</p>
+                                    </div>
+                                    <div class="amz-right amz-sep-v" style="text-align:right;">
+                                        <p class="amz-lbl">TOTAL ENVÍO</p>
+                                        <p class="amz-val" style="font-size:1.1rem;">$ {r['TOTAL']:,.2f}</p>
+                                    </div>
+                                </div>
+                                """
+                                st.markdown(row_html.replace('\n', ''), unsafe_allow_html=True)
+                            
                             st.markdown('</div>', unsafe_allow_html=True)
                 
                         else:
-                            st.error("Error al conectar con la base de datos de Amazon.")
+                            st.error("Error: No se pudo leer el archivo amazon.csv de GitHub.")
                     except Exception as e:
                         st.error(f"Error en la aplicación: {e}")
                 
