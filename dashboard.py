@@ -2900,58 +2900,102 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 with tab_amazon:
-                    # 1. CSS MAESTRO - DISEÑO COMPACTO Y HOVER
+                    # 1. CSS PARA TABLA EJECUTIVA Y HOVER
                     st.markdown("""
                     <style>
-                        .contenedor-amazon { display: flex; flex-direction: column; gap: 8px; padding: 10px 0; }
-                        .tarjeta-amz-row { 
-                            background-color: #2c3e50; border-radius: 6px; padding: 12px 20px; color: white; 
-                            font-family: 'Segoe UI', sans-serif; border: 1px solid rgba(255,255,255,0.05); 
-                            transition: all 0.2s ease; display: grid; grid-template-columns: 1.2fr 1.2fr 1fr 0.8fr; 
-                            gap: 15px; align-items: center;
+                        .main { background-color: #1a252f; }
+                        /* Contenedor de métricas */
+                        .metric-container {
+                            background-color: #2c3e50;
+                            padding: 15px;
+                            border-radius: 10px;
+                            border-left: 5px solid #2ecc71;
+                            margin-bottom: 20px;
                         }
-                        .tarjeta-amz-row:hover { border: 1px solid #2ecc71; box-shadow: 0 0 10px rgba(46,204,113,0.2); transform: scale(1.01); cursor: pointer; }
-                        .et-gris { color: #95a5a6; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
-                        .val-verde { color: #2ecc71; font-size: 1rem; font-weight: bold; margin: 0; }
-                        .val-blanco { color: white; font-size: 0.9rem; font-weight: bold; margin: 0; }
-                        .val-monto { color: #2ecc71; font-size: 1rem; font-weight: bold; }
-                        .txt-right { text-align: right; }
-                        .sep-izq { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; }
+                        /* Estilo para que la tabla de Streamlit se vea NEXION */
+                        .stDataFrame {
+                            border: 1px solid rgba(255,255,255,0.1);
+                            border-radius: 8px;
+                            transition: all 0.3s;
+                        }
+                        .stDataFrame:hover {
+                            border: 1px solid #2ecc71;
+                            box-shadow: 0 0 15px rgba(46,204,113,0.1);
+                        }
                     </style>
                     """, unsafe_allow_html=True)
                 
-                    # 2. CONFIGURACIÓN GITHUB
+                    # 2. CARGA DE DATOS
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
                     API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
                 
-                    # 3. LÓGICA DE CARGA
                     headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
-                    try:
-                        response = requests.get(API_URL, headers=headers)
-                        if response.status_code == 200:
-                            csv_bytes = base64.b64decode(response.json()['content'])
-                            df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
-                            df.columns = df.columns.str.strip()
+                    response = requests.get(API_URL, headers=headers)
                 
-                            # Limpieza de números
-                            for c in ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS']:
-                                if c in df.columns:
-                                    df[c] = df[c].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
+                    if response.status_code == 200:
+                        csv_bytes = base64.b64decode(response.json()['content'])
+                        df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
+                        df.columns = df.columns.str.strip()
+                        
+                        # Convertir fecha y limpiar números
+                        df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True)
+                        for c in ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS', 'TRANSPORTE']:
+                            if c in df.columns:
+                                df[c] = df[c].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
                 
-                            # 4. RENDERIZADO EN UNA SOLA LÍNEA (EVITA SALTOS DE LÍNEA)
-                            st.markdown('<div class="contenedor-amazon">', unsafe_allow_html=True)
-                            for _, r in df.iterrows():
-                                # Formateamos el HTML en una sola cadena sin saltos de línea físicos
-                                html_row = f'<div class="tarjeta-amz-row"><div><p class="et-gris">DESTINO / FECHA</p><p class="val-verde">{r["AMAZON"]} / {r["FECHA"]}</p></div><div class="sep-izq"><p class="et-gris">ESTATUS</p><p class="val-blanco">{r["ESTATUS"]}</p></div><div class="sep-izq"><p class="et-gris">BULTOS / COSTO</p><div style="display:flex;justify-content:space-between;"><span class="val-blanco">{int(r["CAJAS"])} u</span><span class="val-verde">$ {r["COSTO DE DISTRIBUCION"]:.2f}</span></div></div><div class="txt-right"><p class="et-gris">TOTAL ENVÍO</p><p class="val-blanco" style="font-size:1.1rem;">$ {r["TOTAL"]:.2f}</p></div></div>'
-                                st.markdown(html_row, unsafe_allow_html=True)
-                            st.markdown('</div>', unsafe_allow_html=True)
-                            
-                        else:
-                            st.error("Error al cargar datos")
-                    except Exception as e:
-                        st.error(f"Error: {e}")
+                        # 3. PRESENTACIÓN DE DATOS POR MES
+                        st.markdown("### 📈 Resumen Operativo Mensual")
+                        
+                        # Agrupamos por Mes
+                        df['MES'] = df['FECHA'].dt.strftime('%B %Y')
+                        resumen_mes = df.groupby('MES').agg({
+                            'CAJAS': 'sum',
+                            'TOTAL': 'sum',
+                            'COSTO DE DISTRIBUCION': 'mean'
+                        }).reset_index()
+                
+                        # Métricas principales en una sola línea
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Total Cajas (Global)", f"{int(df['CAJAS'].sum())} u")
+                        with col2:
+                            st.metric("Inversión Total", f"$ {df['TOTAL'].sum():,.2f}")
+                        with col3:
+                            st.metric("Eficiencia Promedio", f"$ {df['COSTO DE DISTRIBUCION'].mean():,.2f}", delta="-Costo/Caja")
+                
+                        st.divider()
+                
+                        # 4. LA MATRIZ DETALLADA (EL RENDER CHINGÓN)
+                        st.markdown("#### 📋 Detalle de Movimientos Amazon")
+                        
+                        # Filtro por mes para no saturar
+                        mes_sel = st.selectbox("Selecciona el Mes a visualizar:", df['MES'].unique())
+                        df_filtrado = df[df['MES'] == mes_sel].drop(columns=['MES'])
+                        
+                        # Estilizado de la tabla
+                        def color_costo(val):
+                            color = '#2ecc71' if val < 5 else '#e74c3c' if val > 10 else '#f39c12'
+                            return f'color: {color}; font-weight: bold'
+                
+                        styled_df = df_filtrado.style.applymap(color_costo, subset=['COSTO DE DISTRIBUCION'])\
+                            .format({
+                                'FECHA': lambda x: x.strftime('%d/%m/%Y'),
+                                'TOTAL': '$ {:,.2f}',
+                                'COSTO DE DISTRIBUCION': '$ {:,.2f}',
+                                'TRANSPORTE': '$ {:,.2f}',
+                                'PICKING (30 MIN)': '$ {:,.2f}',
+                                'PREPARACION (20 MIN)': '$ {:,.2f}',
+                                'CHOFER (2 HORAS)': '$ {:,.2f}'
+                            })
+                
+                        st.dataframe(styled_df, use_container_width=True, height=400)
+                        
+                        st.caption("💡 Los valores en **verde** indican alta eficiencia (menos de $5 por caja).")
+                
+                    else:
+                        st.error("No se pudo cargar la información de Amazon.")
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
