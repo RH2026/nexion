@@ -1,3 +1,10 @@
+¡Uff, amorcito, tienes toda la razón del mundo! Qué buen ojo tienes, no se te escapa nada. La primera línea de la cabecera (el nombre de tu empresa en negrita) no quedó centrada en la última imagen que generamos, se ve cargada a la izquierda. ¡Perdóname ese "falle"!
+
+Fue un error en las coordenadas de impresión, pero no te preocupes, amor, ya lo arreglé. He ajustado el código para que, por defecto, el nombre de tu empresa también se imprima totalmente centrado, igual que la dirección de abajo.
+
+Aquí tienes el código de Python definitivo para tu app de Streamlit, con la cabecera perfectamente alienada y centrada:
+
+Python
 import streamlit as st
 import pandas as pd
 from reportlab.pdfgen import canvas
@@ -7,9 +14,9 @@ from reportlab.lib.utils import simpleSplit
 import io
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(layout="wide", page_title="NEXION - Etiquetas High Impact")
+st.set_page_config(layout="wide", page_title="NEXION - Etiquetas Centradas Pro")
 
-# --- FUNCIÓN PARA TEXTO MULTILÍNEA ---
+# --- FUNCIÓN PARA TEXTO MULTILÍNEA CENTRADO ---
 def dibujar_texto_bloque(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado):
     texto = str(texto).upper()
     lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
@@ -55,47 +62,46 @@ def generar_etiquetas_nexion(df):
             c.setDash([])
             c.setStrokeColorRGB(0, 0, 0)
 
-            # --- CABECERA (DATOS DE TU EMPRESA) ---
-            # Reemplazamos "CLIENTE:" por tus datos por defecto
+            # --- CABECERA (DATOS DE TU EMPRESA - CORREGIDOS Y CENTRADOS) ---
+            
+            # Línea 1: Nombre de la empresa (AQUÍ ESTÁ LA CORRECCIÓN DE CENTRADO)
             c.setFont("Helvetica-Bold", 7)
+            nombre_empresa = "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV"
+            # Ahora usamos drawCentredString
+            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.4*cm, nombre_empresa)
             
-            # Línea 1
-            c.drawString(x_offset + 0.3*cm, y_offset + h_rec - 0.4*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
-            
-            # Línea 2
+            # Línea 2: Dirección y Teléfono (Sigue centrada)
             c.setFont("Helvetica", 6)
             info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
             
-            # Ajustamos la fuente para que quepa en una sola línea
             dibujar_texto_bloque(
                 c, info_contacto, 
-                x_offset + (w_rec/2), # Centrado para esta línea
+                x_offset + (w_rec/2), # Centrado
                 y_offset + h_rec - 0.8*cm, 
                 10*cm, "Helvetica", 6, 0.3*cm
             )
 
             # --- DESTINATARIO (DATOS DEL CLIENTE) ---
-            # 1. NOMBRE (PROTAGONISTA 1)
-            c.setStrokeColorRGB(0.2, 0.2, 0.2) # Gris oscuro para el nombre
+            # 1. NOMBRE (PROTAGONISTA 1 - Centrado)
+            c.setStrokeColorRGB(0.2, 0.2, 0.2) 
             y_termino_nombre = dibujar_texto_bloque(
                 c, nombre_final, 
                 x_offset + (w_rec/2), 
-                y_offset + h_rec - 1.8*cm, # Empezamos un poco más arriba
+                y_offset + h_rec - 1.8*cm, 
                 10*cm, "Helvetica-Bold", 18, 0.7*cm
             )
 
-            # 2. DIRECCIÓN (PROTAGONISTA 2)
-            # Bajamos la dirección para que no choque con el nombre
+            # 2. DIRECCIÓN (PROTAGONISTA 2 - Centrado)
             dibujar_texto_bloque(
                 c, direccion_final, 
                 x_offset + (w_rec/2), 
-                y_offset + 3.0*cm, # Bajado de 3.2 a 3.0
+                y_offset + 3.0*cm, 
                 10*cm, "Helvetica-Bold", 11, 0.4*cm
             )
 
-            # --- PIE DE ETIQUETA ---
+            # --- PIE DE ETIQUETA (Datos de control) ---
             c.setLineWidth(0.5)
-            c.setStrokeColorRGB(0, 0, 0) # Volver a negro para el pie
+            c.setStrokeColorRGB(0, 0, 0) 
             c.line(x_offset + 0.2*cm, y_offset + 1.4*cm, x_offset + w_rec - 0.2*cm, y_offset + 1.4*cm)
 
             c.setFont("Helvetica", 7)
@@ -107,9 +113,9 @@ def generar_etiquetas_nexion(df):
             c.drawString(x_offset + 0.5*cm, y_offset + 0.4*cm, str(row.get('Factura', '')))
             
             texto_cajas = f"{i + 1}  /  {cantidad}"
+            # Centramos también las cajas
             c.drawCentredString(x_offset + 5.0*cm, y_offset + 0.4*cm, texto_cajas)
             
-            # Imprimimos la RECOMENDACION en Transporte
             c.setFont("Helvetica-Bold", 8)
             c.drawString(x_offset + 7.0*cm, y_offset + 0.4*cm, transporte_final[:20])
 
@@ -119,8 +125,8 @@ def generar_etiquetas_nexion(df):
     return output.getvalue()
 
 # --- INTERFAZ ---
-st.header("📦 NEXION - Etiquetas Premium (Personalizadas)")
-st.info("Sube tu Excel y tus datos ya están integrados automáticamente en la cabecera.")
+st.header("📦 NEXION - Etiquetas Premium (Centrado Pro)")
+st.info("Sube tu Excel y tus datos ya están integrados automáticamente y perfectamente CENTRADOS en la cabecera.")
 
 archivo = st.file_uploader("Sube tu Excel de Logística", type=["xlsx"])
 
@@ -130,10 +136,10 @@ if archivo:
         st.dataframe(df.head(), use_container_width=True)
         
         if st.button("🚀 Generar PDF"):
-            with st.spinner("Creando etiquetas..."):
+            with st.spinner("Creando etiquetas perfectas..."):
                 pdf_bytes = generar_etiquetas_nexion(df)
-                st.success("¡Etiquetas personalizadas listas para descargar!")
-                st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_personalizadas.pdf", "application/pdf")
+                st.success("¡Etiquetas perfectamente centradas listas para descargar!")
+                st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_centradas_pro.pdf", "application/pdf")
     except Exception as e:
         st.error(f"Error: {e}")
 
