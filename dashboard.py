@@ -2900,7 +2900,76 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 with tab_amazon:
-                    pass
+                    # 1. CSS BLINDADO (Solo afecta a esta pestaña)
+                    st.markdown("""
+                    <style>
+                        .amz-container { display: flex; flex-direction: column; gap: 10px; padding: 10px 0; }
+                        
+                        .amz-card-row { 
+                            background-color: #2c3e50; 
+                            border-radius: 8px; 
+                            padding: 12px 20px; 
+                            color: white; 
+                            font-family: 'Segoe UI', sans-serif; 
+                            border: 1px solid rgba(255,255,255,0.05); 
+                            transition: all 0.3s ease; 
+                            display: grid; 
+                            grid-template-columns: 1.2fr 1fr 1.5fr 0.8fr; /* Una sola línea */
+                            gap: 15px; 
+                            align-items: center;
+                        }
+                
+                        /* Hover con borde verde - Solo para Amazon */
+                        .amz-card-row:hover { 
+                            border: 1px solid #2ecc71; 
+                            box-shadow: 0 0 12px rgba(46,204,113,0.15); 
+                            transform: scale(1.005); 
+                            cursor: pointer; 
+                        }
+                
+                        .amz-label { color: #95a5a6; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+                        .amz-folio { color: #2ecc71; font-size: 1rem; font-weight: bold; margin: 0; }
+                        .amz-value { color: white; font-size: 0.9rem; font-weight: bold; margin: 0; }
+                        .amz-monto { color: #2ecc71; font-size: 1rem; font-weight: bold; }
+                        .amz-right { text-align: right; }
+                        .amz-sep { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+                    </style>
+                    """, unsafe_allow_html=True)
+                
+                    # 2. CONFIGURACIÓN GITHUB
+                    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                    REPO_NAME = "RH2026/nexion"
+                    FILE_PATH = "amazon.csv"
+                    API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+                
+                    # 3. LÓGICA DE CARGA
+                    headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+                    try:
+                        response = requests.get(API_URL, headers=headers)
+                        if response.status_code == 200:
+                            csv_bytes = base64.b64decode(response.json()['content'])
+                            df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
+                            df.columns = df.columns.str.strip()
+                
+                            # Limpieza rápida de números para las métricas
+                            for c in ['TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS']:
+                                if c in df.columns:
+                                    df[c] = df[c].astype(str).str.replace(r'[\$, ]', '', regex=True).astype(float)
+                
+                            # 4. RENDERIZADO EN UNA SOLA LÍNEA (HTML COMPRIMIDO)
+                            st.markdown('<div class="amz-container">', unsafe_allow_html=True)
+                            
+                            for _, r in df.iterrows():
+                                # HTML en una sola línea para evitar errores de render
+                                html_row = f'<div class="amz-card-row"><div><p class="amz-label">FOLIO / FECHA</p><p class="amz-folio">{r["AMAZON"]} / {r["FECHA"]}</p><p class="amz-label">CEDI GDL</p></div><div class="amz-sep"><p class="amz-label">ESTATUS</p><p class="amz-value">{r["ESTATUS"]}</p></div><div class="amz-sep"><p class="amz-label">BULTOS / COSTO X CAJA</p><div style="display:flex;justify-content:space-between;padding-right:10px;"><span class="amz-value">{int(r["CAJAS"])} u</span><span class="amz-monto">$ {r["COSTO DE DISTRIBUCION"]:.2f}</span></div></div><div class="amz-right"><p class="amz-label">TOTAL ENVÍO</p><p class="amz-value" style="font-size:1.1rem;">$ {r["TOTAL"]:.2f}</p></div></div>'
+                                st.markdown(html_row, unsafe_allow_html=True)
+                            
+                            st.markdown('</div>', unsafe_allow_html=True)
+                            
+                        else:
+                            st.error("No pude conectar con GitHub para esta pestaña.")
+                    except Exception as e:
+                        st.error(f"Error en el render: {e}")
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
