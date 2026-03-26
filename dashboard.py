@@ -2523,17 +2523,19 @@ else:
                             
                             lista_carriers = ["TODOS"] + sorted(df_log_filtrado['TRANSPORTE'].unique())
                             
-                            # --- COLUMNAS PARA SELECTOR Y BOTÓN (Alineados) ---
+                            # --- AQUÍ ESTÁ EL TRUCO PARA LA ALINEACIÓN PERFECTA ---
+                            # Usamos label_visibility="collapsed" para que el selectbox no tenga espacio arriba
                             col_sel, col_dl = st.columns([3, 1])
                             
                             with col_sel:
                                 carrier_sel = st.selectbox(
-                                    "Selecciona un Carrier para detallar:", 
+                                    "Selecciona un Carrier:", # Este texto no se verá pero es necesario
                                     options=lista_carriers,
-                                    key=f"select_carrier_{mes_sel}_{tipo_mov}"
+                                    key=f"select_carrier_{mes_sel}_{tipo_mov}",
+                                    label_visibility="collapsed" # <--- Esto quita el espacio de arriba
                                 )
                             
-                            # Lógica de filtrado
+                            # Lógica de filtrado (se mantiene igual)
                             if carrier_sel != "TODOS":
                                 df_dest_filtered = df_log_filtrado[df_log_filtrado['TRANSPORTE'] == carrier_sel].copy()
                             else:
@@ -2544,21 +2546,19 @@ else:
                                 df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
                                 total_sel = df_dest_sum['CAJAS'].sum()
                             
-                                # Ponemos el botón en la columna de la derecha (col_dl) para que suba al nivel del filtro
                                 with col_dl:
-                                    st.write("##") # Un pequeño espacio para alinear con el input
                                     csv_data = df_dest_sum.to_csv(index=False).encode('utf-8')
                                     st.download_button(
                                         label="📥 DESCARGAR",
                                         data=csv_data,
                                         file_name=f"reporte_{carrier_sel}_{mes_sel}.csv",
                                         mime="text/csv",
-                                        use_container_width=True # Para que ocupe todo el ancho de su columna
+                                        use_container_width=True
                                     )
                                 
-                                # Métrica de unidades justo debajo de los controles
-                                st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px; margin-bottom:15px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
-                            
+                                # Bajamos la métrica para que no estorbe la fila de arriba
+                                st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px; margin-top:10px; margin-bottom:15px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
+                                                        
                                 data_rutas = df_dest_sum.to_dict('records')
                             
                                 # --- TU DISEÑO HTML PREMIUM SIGUE IGUAL ABAJO ---
