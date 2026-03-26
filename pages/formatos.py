@@ -29,15 +29,17 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
     for line in lineas[:max_lineas]: 
         c.drawCentredString(x_centro, y_actual, line)
         y_actual -= interlineado
-    return y_actual # Este valor es clave para saber dónde terminó el nombre
+    return y_actual 
 
 def generar_etiquetas_nexion(df):
     output = io.BytesIO()
     c = canvas.Canvas(output, pagesize=letter)
     width_carta, height_carta = letter
 
+    # --- AJUSTE DE MÁRGENES DEL DOCUMENTO ---
     w_rec, h_rec = 10.5 * cm, 7.5 * cm
-    x_offset, y_offset = 1.0 * cm, height_carta - h_rec - 1.0 * cm
+    # Reducimos a 0.3cm para que el margen sea mínimo
+    x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
 
     for index, row in df.iterrows():
         try:
@@ -52,6 +54,8 @@ def generar_etiquetas_nexion(df):
 
         for i in range(iteraciones):
             es_archivo = (i == cantidad_real)
+            
+            # Dibujar contorno de etiqueta
             c.setDash(1, 2)
             c.setStrokeColorRGB(0.7, 0.7, 0.7)
             c.rect(x_offset, y_offset, w_rec, h_rec)
@@ -77,18 +81,14 @@ def generar_etiquetas_nexion(df):
                 c.drawCentredString(x_offset + (w_rec/2), y_offset + (h_rec/2) - 1*cm, "ARCHIVO")
                 c.setFillColorRGB(0, 0, 0)
 
-            # NOMBRE (Ajustamos el interlineado a 0.75 para que no ocupe tanto)
+            # NOMBRE EXTRAN
             y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
 
-            # --- AQUÍ ESTÁ EL AIRE, AMOR ---
-            # Le sumamos un margen de "aire" de 0.6 cm extra después de donde terminó el nombre
+            # DIRECCIÓN CON AIRE
             y_inicio_direccion = y_termino_nombre - 0.6*cm
             
-            # Si el nombre fue muy corto, forzamos que la dirección no suba demasiado
             if y_inicio_direccion > y_offset + 4.2*cm:
                 y_inicio_direccion = y_offset + 4.2*cm
-            
-            # Si el nombre fue muy largo, nos aseguramos que no choque con el pie
             if y_inicio_direccion < y_offset + 2.8*cm:
                 y_inicio_direccion = y_offset + 2.8*cm
 
@@ -118,14 +118,14 @@ def generar_etiquetas_nexion(df):
     return output.getvalue()
 
 # INTERFAZ
-st.header("📦 NEXION - Etiquetas con Aire")
+st.header("📦 NEXION - Etiquetas con Aire y Margen Ajustado")
 archivo = st.file_uploader("Sube tu Excel", type=["xlsx"])
 if archivo:
     df = pd.read_excel(archivo, sheet_name=0)
-    if st.button("🚀 Generar Etiquetas con Aire"):
+    if st.button("🚀 Generar Etiquetas"):
         pdf_bytes = generar_etiquetas_nexion(df)
-        st.success("¡Etiquetas generadas con espacio perfecto!")
-        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_aire.pdf", "application/pdf")
+        st.success("¡Documento generado con márgenes optimizados!")
+        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_ajustadas.pdf", "application/pdf")
 
 
 
