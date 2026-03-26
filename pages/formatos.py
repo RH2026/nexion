@@ -5,82 +5,107 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
 import io
 
-def generar_pdf_en_memoria(df):
+# --- FUNCIÓN PARA GENERAR EL PDF ---
+def generar_etiquetas_nexion(df):
     output = io.BytesIO()
-    # Tamaño carta: 21.59 x 27.94 cm
+    # Tamaño carta estándar
     c = canvas.Canvas(output, pagesize=letter)
     width_carta, height_carta = letter
 
-    # Definimos el cuarto de media carta (aprox 10.5 x 7 cm)
-    w_rec, h_rec = 10.5 * cm, 7.0 * cm
+    # Definimos el área de impresión (1/4 de media carta aprox: 10.5 x 7.5 cm)
+    w_rec, h_rec = 10.5 * cm, 7.5 * cm
     
-    # Lo posicionamos en la parte superior izquierda de la hoja carta
-    x_offset = 0.5 * cm
-    y_offset = height_carta - h_rec - 0.5 * cm
+    # Margen para que no quede pegado a la orilla
+    x_offset = 1.0 * cm
+    y_offset = height_carta - h_rec - 1.0 * cm
 
-    for _, row in df.iterrows():
+    for index, row in df.iterrows():
+        # Validar que Quantity sea un número
         try:
             cantidad = int(row['Quantity'])
         except:
-            continue
+            continue # Si no hay número, salta a la siguiente fila
 
         for i in range(cantidad):
-            # Dibujamos el contorno del cuarto de hoja
-            c.setDash(1, 2) # Línea punteada para corte
+            # 1. Dibujar el recuadro de la etiqueta (opcional, ayuda a cortar)
+            c.setDash(1, 2) 
+            c.setStrokeColorRGB(0.7, 0.7, 0.7) # Gris clarito
             c.rect(x_offset, y_offset, w_rec, h_rec)
-            c.setDash([]) # Volver a línea sólida
+            c.setDash([]) 
+            c.setStrokeColorRGB(0, 0, 0) # Volver a negro
 
-            # --- DATOS ESTILO TU IMAGEN ---
-            # Encabezado "Cliente"
-            c.setFont("Helvetica", 7)
-            c.drawString(x_offset + 0.2*cm, y_offset + h_rec - 0.4*cm, "Cliente")
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(x_offset + 0.2*cm, y_offset + h_rec - 0.8*cm, str(row['Nombre_Cliente'])[:30])
-
-            # Nombre_Ext (Grande como en tu foto)
-            c.setFont("Helvetica-Bold", 18)
-            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 2.2*cm, str(row['Nombre_Ext'])[:20])
-
-            # Dirección
-            c.setFont("Helvetica-Bold", 10)
-            # Dividimos la dirección en dos líneas si es muy larga
-            dir_completa = str(row['DIRECCION'])
-            c.drawString(x_offset + 0.2*cm, y_offset + h_rec - 3.5*cm, dir_completa[:45])
-            c.drawString(x_offset + 0.2*cm, y_offset + h_rec - 4.0*cm, dir_completa[45:90])
-
-            # Pie de etiqueta: Factura y Cajas
-            c.setFont("Helvetica", 7)
-            c.drawString(x_offset + 0.5*cm, y_offset + 1.2*cm, "Factura")
-            c.drawString(x_offset + 4.0*cm, y_offset + 1.2*cm, "Cajas")
+            # 2. Encabezado: "Cliente" y el ID/Nombre
+            c.setFont("Helvetica", 8)
+            c.drawString(x_offset + 0.3*cm, y_offset + h_rec - 0.5*cm, "Cliente")
             
-            c.setFont("Helvetica-Bold", 11)
-            c.drawString(x_offset + 0.5*cm, y_offset + 0.6*cm, str(row['Factura']))
-            c.drawString(x_offset + 4.0*cm, y_offset + 0.6*cm, f"{i+1} / {cantidad}")
+            c.setFont("Helvetica-Bold", 10)
+            cliente_texto = f"{row.get('Nombre_Cliente', 'N/A')}"
+            c.drawString(x_offset + 0.3*cm, y_offset + h_rec - 1.0*cm, cliente_texto[:40])
 
-            c.showPage() # Nueva hoja por cada etiqueta (o puedes acomodar 8 por hoja si prefieres)
+            # 3. Nombre_Ext (EL TITULO GRANDE de la foto)
+            # Usamos un tamaño de fuente grande para que resalte
+            c.setFont("Helvetica-Bold", 18)
+            nombre_ext = str(row.get('Nombre_Ext', 'SIN NOMBRE'))
+            # Centramos el texto en el recuadro
+            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 2.5*cm, nombre_ext[:25])
+
+            # 4. Dirección (Bloque central)
+            c.setFont("Helvetica-Bold", 11)
+            direccion = str(row.get('DIRECCION', 'Dirección no disponible'))
+            # Dividir en dos líneas si es muy larga para que no se salga
+            c.drawString(x_offset + 0.3*cm, y_offset + h_rec - 4.2*cm, direccion[:48])
+            c.drawString(x_offset + 0.3*cm, y_offset + h_rec - 4.7*cm, direccion[48:96])
+
+            # 5. Pie de etiqueta: Factura y Cajas (como en tu imagen)
+            c.setFont("Helvetica", 8)
+            c.drawString(x_offset + 0.5*cm, y_offset + 1.2*cm, "Factura")
+            c.drawString(x_offset + 4.5*cm, y_offset + 1.2*cm, "Cajas")
+            c.drawString(x_offset + 7.5*cm, y_offset + 1.2*cm, "Transporte")
+
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(x_offset + 0.5*cm, y_offset + 0.6*cm, str(row.get('Factura', '000000')))
+            
+            # Formato: 1 / 40, 2 / 40...
+            texto_cajas = f"{i + 1}  /  {cantidad}"
+            c.drawString(x_offset + 4.5*cm, y_offset + 0.6*cm, texto_cajas)
+            
+            c.setFont("Helvetica-Bold", 9)
+            transporte = str(row.get('Transporte', 'TRES GUERRAS'))
+            c.drawString(x_offset + 7.5*cm, y_offset + 0.6*cm, transporte[:15])
+
+            # Finalizar página (una etiqueta por hoja para evitar líos de alineación en esta versión)
+            c.showPage()
 
     c.save()
     return output.getvalue()
 
-# --- INTERFAZ EN STREAMLIT ---
-st.title("Generador de Etiquetas NEXION 🚀")
+# --- INTERFAZ DE USUARIO EN STREAMLIT ---
+st.header("📦 Generador de Etiquetas de Logística")
+st.info("Sube tu Excel y generaré un PDF con el número de etiquetas exacto según la columna 'Quantity'.")
 
-uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
+archivo = st.file_uploader("Selecciona el archivo Excel", type=["xlsx"])
 
-# Cambiamos 'Analisis_Final' por 'Sheet1'
-try:
-    df = pd.read_excel(uploaded_file, sheet_name='Sheet1')
-    st.success("¡Pestaña 'Sheet1' cargada con éxito! Preparando tus etiquetas...")
-except Exception as e:
-    st.error(f"No se pudo leer la hoja 'Sheet1'. Revisa el archivo. Error: {e}")
-    st.stop()
+if archivo:
+    try:
+        # Usamos sheet_name=0 para que lea la PRIMERA pestaña siempre
+        df = pd.read_excel(archivo, sheet_name=0)
         
-        st.download_button(
-            label="📥 Descargar Etiquetas PDF",
-            data=pdf_data,
-            file_name="etiquetas_logistica.pdf",
-            mime="application/pdf"
-        )
+        st.write("### Vista previa de los datos")
+        st.dataframe(df.head(10)) # Mostramos las primeras 10 filas
+
+        if st.button("🚀 Generar PDF de Etiquetas"):
+            with st.spinner("Procesando etiquetas... esto puede tardar si son muchas"):
+                pdf_bytes = generar_etiquetas_nexion(df)
+                
+                st.success("¡Etiquetas generadas con éxito!")
+                st.download_button(
+                    label="📥 Descargar PDF para Imprimir",
+                    data=pdf_bytes,
+                    file_name="etiquetas_embarque_nexion.pdf",
+                    mime="application/pdf"
+                )
+    except Exception as e:
+        st.error(f"Ocurrió un error al leer el archivo: {e}")
 
 
 
