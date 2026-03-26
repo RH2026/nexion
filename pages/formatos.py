@@ -8,7 +8,7 @@ import io
 import re
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(layout="wide", page_title="NEXION - Etiquetas High-Impact")
+st.set_page_config(layout="wide", page_title="NEXION - Etiquetas Embarque")
 
 # --- FUNCIÓN PARA LIMPIAR PARÉNTESIS ---
 def limpiar_parentesis(texto):
@@ -100,7 +100,7 @@ def generar_etiquetas_nexion(df):
             
             # --- LÓGICA DE COPIA DE CONTROL ---
             if es_archivo:
-                c.drawCentredString(x_offset + 5.0*cm, y_linea_pie - 0.8*cm, "COPIA CONTROL")
+                c.drawCentredString(x_offset + 5.0*cm, y_linea_pie - 0.8*cm, "COPIA MORENO")
             else:
                 c.drawCentredString(x_offset + 5.0*cm, y_linea_pie - 0.8*cm, f"{i + 1} / {cantidad_real}")
             
@@ -112,14 +112,14 @@ def generar_etiquetas_nexion(df):
     return output.getvalue()
 
 # INTERFAZ
-st.header("📦 NEXION - Etiquetas Clean (Sin marca de agua)")
+st.header("NEXION - Etiquetas Embarque")
 archivo = st.file_uploader("Sube tu Excel", type=["xlsx"])
 if archivo:
     df = pd.read_excel(archivo, sheet_name=0)
-    if st.button("🚀 Generar Etiquetas"):
+    if st.button("Generar Etiquetas"):
         pdf_bytes = generar_etiquetas_nexion(df)
         st.success("¡Etiquetas generadas con éxito!")
-        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_clean.pdf", "application/pdf")
+        st.download_button("Descargar PDF", pdf_bytes, "etiquetas_nexion_clean.pdf", "application/pdf")
 
 
 
