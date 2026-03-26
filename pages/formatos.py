@@ -67,14 +67,13 @@ st.title("Generador de Etiquetas NEXION 🚀")
 
 uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
-if uploaded_file:
-    # Leer específicamente la pestaña que me dijiste
-    df = pd.read_excel(uploaded_file, sheet_name='Analisis_Final')
-    st.success("¡Archivo cargado correctamente!")
-    st.write("Vista previa de datos:", df.head())
-
-    if st.button("Generar PDF de Etiquetas"):
-        pdf_data = generar_pdf_en_memoria(df)
+# Cambiamos 'Analisis_Final' por 'Sheet1'
+try:
+    df = pd.read_excel(uploaded_file, sheet_name='Sheet1')
+    st.success("¡Pestaña 'Sheet1' cargada con éxito! Preparando tus etiquetas...")
+except Exception as e:
+    st.error(f"No se pudo leer la hoja 'Sheet1'. Revisa el archivo. Error: {e}")
+    st.stop()
         
         st.download_button(
             label="📥 Descargar Etiquetas PDF",
