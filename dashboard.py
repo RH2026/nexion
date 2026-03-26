@@ -2900,74 +2900,92 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
-                with tab_amazon:        
+                with tab_amazon:
+                    # 1. CSS REFORZADO: SCROLL DINÁMICO (AZUL -> VERDE NEÓN) Y MÉTRICAS GIGANTES
                     st.markdown("""
                     <style>
-                        /* Contenedor principal con Scroll */
+                        /* Contenedor con altura fija y scroll */
                         .amz-scroll-container {
-                            max-height: 500px; /* Altura máxima antes de activar scroll */
-                            overflow-y: auto;
-                            padding: 10px;
-                            border-radius: 8px;
+                            max-height: 450px; 
+                            overflow-y: scroll;
+                            overflow-x: hidden;
+                            padding: 15px;
+                            border-radius: 10px;
                             background-color: #1a252f;
-                            border: 1px solid #3498db; /* Azul por default */
-                            transition: border 0.3s ease;
+                            border: 2px solid #3498db; /* Azul inicial */
+                            transition: all 0.4s ease;
                         }
                         
-                        /* Cambio a Verde Neón si hay scroll activo o hover */
+                        /* Cambio a Verde Neón al interactuar */
                         .amz-scroll-container:hover, .amz-scroll-container:active {
-                            border: 1px solid #2ecc71; 
-                            box-shadow: 0 0 10px rgba(46, 204, 113, 0.2);
+                            border: 2px solid #2ecc71; 
+                            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
                         }
                 
-                        /* Scrollbar personalizado */
-                        .amz-scroll-container::-webkit-scrollbar { width: 6px; }
+                        /* Scrollbar Personalizado - Estilo Neón */
+                        .amz-scroll-container::-webkit-scrollbar { width: 8px; }
                         .amz-scroll-container::-webkit-scrollbar-track { background: #1a252f; }
-                        .amz-scroll-container::-webkit-scrollbar-thumb { background: #3498db; border-radius: 10px; }
-                        .amz-scroll-container:hover::-webkit-scrollbar-thumb { background: #2ecc71; }
+                        .amz-scroll-container::-webkit-scrollbar-thumb { 
+                            background: #3498db; 
+                            border-radius: 10px; 
+                        }
+                        .amz-scroll-container:hover::-webkit-scrollbar-thumb { 
+                            background: #2ecc71; 
+                            box-shadow: 0 0 5px #2ecc71;
+                        }
                 
-                        /* Métricas Gigantes */
+                        /* Métricas más grandes y llamativas */
                         .amz-metric-card {
                             background-color: #2c3e50;
                             border-radius: 12px;
-                            padding: 20px;
-                            border-bottom: 4px solid #2ecc71;
+                            padding: 22px 15px;
+                            border-bottom: 5px solid #2ecc71;
                             text-align: center;
-                            transition: transform 0.3s;
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
                         }
-                        .amz-metric-card:hover { transform: translateY(-5px); }
-                        .amz-big-num { font-size: 1.8rem; font-weight: 800; margin: 0; line-height: 1; }
-                        .amz-big-lbl { color: #95a5a6; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; }
+                        .amz-big-num { 
+                            font-size: 2.2rem; /* ¡Más grande! */
+                            font-weight: 800; 
+                            margin: 0; 
+                            line-height: 1.1;
+                        }
+                        .amz-big-lbl { 
+                            color: #95a5a6; 
+                            font-size: 0.8rem; 
+                            text-transform: uppercase; 
+                            font-weight: bold; 
+                            margin-bottom: 10px;
+                            letter-spacing: 1px;
+                        }
                 
-                        /* Filas Detalle Responsive */
+                        /* Filas de la tabla horizontal */
                         .amz-row {
                             display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                            background-color: #2c3e50;
+                            grid-template-columns: 1.2fr 1.5fr 1.2fr 1fr 1fr;
+                            background-color: #34495e;
                             margin-bottom: 10px;
                             padding: 15px;
                             border-radius: 8px;
-                            border-left: 3px solid transparent;
-                            transition: all 0.3s ease;
+                            align-items: center;
+                            transition: transform 0.2s;
                         }
                         .amz-row:hover {
-                            border-left: 3px solid #2ecc71;
-                            background-color: #34495e;
-                            cursor: pointer;
+                            transform: scale(1.01);
+                            background-color: #3e5871;
                         }
                 
-                        .amz-lbl { color: #95a5a6; font-size: 0.65rem; text-transform: uppercase; margin: 0; }
-                        .amz-val { color: white; font-size: 0.95rem; font-weight: bold; margin: 0; }
-                        .amz-val-v { color: #2ecc71; font-size: 0.95rem; font-weight: bold; margin: 0; }
+                        .amz-lbl-mini { color: #bdc3c7; font-size: 0.65rem; text-transform: uppercase; margin: 0; }
+                        .amz-val-bold { color: white; font-size: 1rem; font-weight: bold; margin: 0; }
+                        .amz-val-neon { color: #2ecc71; font-size: 1rem; font-weight: bold; margin: 0; }
                 
-                        @media (max-width: 768px) {
-                            .amz-row { grid-template-columns: 1fr 1fr; gap: 10px; }
-                            .amz-big-num { font-size: 1.4rem; }
+                        @media (max-width: 1024px) {
+                            .amz-row { grid-template-columns: 1fr 1fr; gap: 15px; }
+                            .amz-big-num { font-size: 1.6rem; }
                         }
                     </style>
                     """, unsafe_allow_html=True)
                 
-                    # 2. CONFIGURACIÓN GITHUB
+                    # 2. CONFIGURACIÓN Y CARGA (GITHUB)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2981,7 +2999,7 @@ else:
                             df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
                             df.columns = df.columns.str.strip()
                 
-                            # LIMPIEZA
+                            # --- LIMPIEZA ---
                             df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True, errors='coerce')
                             df = df.dropna(subset=['FECHA'])
                             cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION POR CAJA', 'CAJAS', 'VALOR MERCANCIA', 'PORCENTAJE LOGISTICO']
@@ -2991,55 +3009,55 @@ else:
                             
                             df = df.sort_values(by='FECHA', ascending=False)
                 
-                            # --- MÉTRICAS GIGANTES ---
-                            st.markdown("### 🚀 PERFORMANCE NEXION AMAZON")
+                            # --- RENDER MÉTRICAS GIGANTES ---
+                            st.markdown("### 📈 PERFORMANCE GLOBAL")
                             m1, m2, m3, m4 = st.columns(4)
                             with m1:
                                 st.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">Cajas Totales</p><p class="amz-big-num" style="color:white;">{int(df["CAJAS"].sum()):,}</p></div>', unsafe_allow_html=True)
                             with m2:
                                 st.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">Valor Carga</p><p class="amz-big-num" style="color:white;">${df["VALOR MERCANCIA"].sum():,.0f}</p></div>', unsafe_allow_html=True)
                             with m3:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">Costo Flete</p><p class="amz-big-num" style="color:#2ecc71;">${df["TOTAL"].sum():,.0f}</p></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">Costo Flete</p><p class="amz-big-num" style="color:#2ecc71;">${df["TOTAL"].sum():,.0f}</p></div>', unsafe_allow_html=True)
                             with m4:
-                                st.markdown(f'<div class="amz-metric-card"><p class="amz-big-lbl">% Logístico</p><p class="amz-big-num" style="color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</p></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="amz-metric-card"><p class="amz-lbl">% Logístico</p><p class="amz-big-num" style="color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</p></div>', unsafe_allow_html=True)
                 
                             st.divider()
                 
                             # --- FILTROS ---
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
                             opciones_mes = ["TODO EL HISTÓRICO"] + list(df['MES'].unique())
-                            mes_sel = st.selectbox("📅 Filtrar Operación:", opciones_mes)
+                            mes_sel = st.selectbox("📅 Seleccionar Periodo:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- CONTENEDOR CON SCROLL Y RENDER ---
-                            st.markdown(f'<div class="amz-scroll-container">', unsafe_allow_html=True)
+                            # --- CONTENEDOR CON SCROLL ACTIVO ---
+                            st.markdown('<div class="amz-scroll-container">', unsafe_allow_html=True)
                             
                             for _, r in df_mes.iterrows():
                                 row_html = f"""
                                 <div class="amz-row">
                                     <div>
-                                        <p class="amz-lbl">ENVÍO / FECHA</p>
-                                        <p class="amz-val-v">{r['IDENTIFICADOR ENVIO']}</p>
-                                        <p class="amz-val">{r['FECHA'].strftime('%d/%m/%Y')}</p>
+                                        <p class="amz-lbl-mini">IDENTIFICADOR / FECHA</p>
+                                        <p class="amz-val-neon">{r['IDENTIFICADOR ENVIO']}</p>
+                                        <p class="amz-val-bold" style="font-size:0.85rem;">{r['FECHA'].strftime('%d/%m/%Y')}</p>
                                     </div>
                                     <div>
-                                        <p class="amz-lbl">VALOR MERCANCÍA</p>
-                                        <p class="amz-val">$ {r['VALOR MERCANCIA']:,.2f}</p>
-                                        <p class="amz-val-v">{r['AMAZON']}</p>
+                                        <p class="amz-lbl-mini">MERCANCÍA / DESTINO</p>
+                                        <p class="amz-val-bold">$ {r['VALOR MERCANCIA']:,.2f}</p>
+                                        <p class="amz-val-neon">{r['AMAZON']}</p>
                                     </div>
                                     <div>
-                                        <p class="amz-lbl">BULTOS / COSTO CAJA</p>
-                                        <p class="amz-val">{int(r['CAJAS'])} u</p>
-                                        <p class="amz-val-v">$ {r['COSTO DE DISTRIBUCION POR CAJA']:.2f}</p>
+                                        <p class="amz-lbl-mini">BULTOS / COSTO CAJA</p>
+                                        <p class="amz-val-bold">{int(r['CAJAS'])} u</p>
+                                        <p class="amz-val-neon">$ {r['COSTO DE DISTRIBUCION POR CAJA']:.2f}</p>
                                     </div>
                                     <div>
-                                        <p class="amz-lbl">KPI LOGÍSTICO</p>
-                                        <p class="amz-val-v">{r['PORCENTAJE LOGISTICO']:.2f}%</p>
-                                        <p class="amz-lbl">{r['ESTATUS']}</p>
+                                        <p class="amz-lbl-mini">EFICIENCIA</p>
+                                        <p class="amz-val-neon" style="font-size:1.1rem;">{r['PORCENTAJE LOGISTICO']:.2f}%</p>
+                                        <p class="amz-lbl-mini">{r['ESTATUS']}</p>
                                     </div>
                                     <div style="text-align:right;">
-                                        <p class="amz-lbl">TOTAL FLETE</p>
-                                        <p class="amz-val" style="font-size:1.1rem;">$ {r['TOTAL']:,.2f}</p>
+                                        <p class="amz-lbl-mini">COSTO TOTAL</p>
+                                        <p class="amz-val-bold" style="font-size:1.2rem; color:#2ecc71;">$ {r['TOTAL']:,.2f}</p>
                                     </div>
                                 </div>
                                 """
@@ -3048,7 +3066,7 @@ else:
                             st.markdown('</div>', unsafe_allow_html=True)
                 
                         else:
-                            st.error("Error al conectar con GitHub.")
+                            st.error("No se pudo conectar con GitHub.")
                     except Exception as e:
                         st.error(f"Error: {e}")
                 
