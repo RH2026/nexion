@@ -5,6 +5,9 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
 import io
 
+# --- CONFIGURACIÓN DE PÁGINA (PANTALLA ANCHA) ---
+st.set_page_config(layout="wide", page_title="Generador de Etiquetas NEXION")
+
 # --- FUNCIÓN PARA GENERAR EL PDF ---
 def generar_etiquetas_nexion(df):
     output = io.BytesIO()
@@ -26,6 +29,16 @@ def generar_etiquetas_nexion(df):
         except:
             continue # Si no hay número, salta a la siguiente fila
 
+        # --- CORRECCIÓN DE DATOS TOLERANTE ---
+        # Buscamos Nombre_Extran (con 'n' final como tu Excel) o Nombre_Ext
+        nombre_ext_val = row.get('Nombre_Extran', row.get('Nombre_Ext', ''))
+        
+        # Si de plano está vacío en ambas columnas, usamos Nombre_Cliente
+        if pd.isna(nombre_ext_val) or str(nombre_ext_val).strip() == '':
+            nombre_grande_final = str(row.get('Nombre_Cliente', 'SIN NOMBRE'))
+        else:
+            nombre_grande_final = str(nombre_ext_val)
+
         for i in range(cantidad):
             # 1. Dibujar el recuadro de la etiqueta (opcional, ayuda a cortar)
             c.setDash(1, 2) 
@@ -45,9 +58,10 @@ def generar_etiquetas_nexion(df):
             # 3. Nombre_Ext (EL TITULO GRANDE de la foto)
             # Usamos un tamaño de fuente grande para que resalte
             c.setFont("Helvetica-Bold", 18)
-            nombre_ext = str(row.get('Nombre_Ext', 'SIN NOMBRE'))
+            
+            # --- USAMOS LA VARIABLE CORREGIDA AQUÍ ---
             # Centramos el texto en el recuadro
-            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 2.5*cm, nombre_ext[:25])
+            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 2.5*cm, nombre_grande_final[:25])
 
             # 4. Dirección (Bloque central)
             c.setFont("Helvetica-Bold", 11)
@@ -91,7 +105,8 @@ if archivo:
         df = pd.read_excel(archivo, sheet_name=0)
         
         st.write("### Vista previa de los datos")
-        st.dataframe(df.head(10)) # Mostramos las primeras 10 filas
+        # Mostramos la tabla al ancho completo de la pantalla
+        st.dataframe(df.head(10), use_container_width=True) 
 
         if st.button("🚀 Generar PDF de Etiquetas"):
             with st.spinner("Procesando etiquetas... esto puede tardar si son muchas"):
