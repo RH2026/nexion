@@ -2901,73 +2901,91 @@ else:
                 with tab_amazon:
                     st.subheader("📦 Análisis de Costos de Distribución - Amazon")
                     
-                    # 1. Configuración de Credenciales
+                    # 1. Configuración de Credenciales y Ruta
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
                     API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
                 
-                    # 2. Función para obtener datos desde GitHub API (Maneja archivos privados)
+                    # 2. Función para obtener y decodificar el CSV desde GitHub API
                     def fetch_github_csv(url, token):
                         headers = {"Authorization": f"token {token}"} if token else {}
-                        response = requests.get(url, headers=headers)
-                        
-                        if response.status_code == 200:
-                            content = response.json()
-                            # GitHub envía el contenido en base64, hay que decodificarlo
-                            csv_bytes = base64.b64decode(content['content'])
-                            return pd.read_csv(io.BytesIO(csv_bytes))
-                        else:
+                        try:
+                            response = requests.get(url, headers=headers)
+                            if response.status_code == 200:
+                                content = response.json()
+                                csv_bytes = base64.b64decode(content['content'])
+                                return pd.read_csv(io.BytesIO(csv_bytes))
+                            else:
+                                st.error(f"Error de conexión: {response.status_code}")
+                                return None
+                        except Exception as e:
+                            st.error(f"Error al conectar con GitHub: {e}")
                             return None
                 
-                    # 3. Ejecución y Renderizado
-                    df_amazon = fetch_github_csv(API_URL, TOKEN)
+                    # 3. Procesamiento de Datos
+                    df_raw = fetch_github_csv(API_URL, TOKEN)
                 
-                    if df_amazon is not None:
-                        # Limpieza rápida: quitar espacios en nombres de columnas si los hay
+                    if df_raw is not None:
+                        # Copiamos para no afectar el original y limpiamos nombres de columnas
+                        df_amazon = df_raw.copy()
                         df_amazon.columns = df_amazon.columns.str.strip()
                 
-                        # --- MÉTRICAS DE RESUMEN ---
+                        # --- LIMPIEZA CRÍTICA: Convertir texto "$ 32.00" a número 32.00 ---
+                        cols_numericas = [
+                            'PICKING (30 MIN)', 'PREPARACION (20 MIN)', 'CHOFER (2 HORAS)', 
+                            'TRANSPORTE', 'TOTAL', 'COSTO DE DISTRIBUCION', 'CAJAS'
+                        ]
+                        
+                        for col in cols_numericas:
+                            if col in df_amazon.columns:
+                                # Quitamos $, comas y espacios, luego convertimos a float
+                                df_amazon[col] = (df_amazon[col]
+                                                  .astype(str)
+                                                  .str.replace(r'[\$, ]', '', regex=True)
+                                                  .replace('', '0')
+                                                  .astype(float))
+                
+                        # --- MÉTRICAS SUPERIORES ---
                         col1, col2, col3 = st.columns(3)
                         with col1:
                             promedio = df_amazon['COSTO DE DISTRIBUCION'].mean()
                             st.metric("Costo Promedio / Caja", f"$ {promedio:.2f}")
                         with col2:
                             total_cajas = df_amazon['CAJAS'].sum()
-                            st.metric("Total Cajas Movidas", f"{total_cajas} u")
+                            st.metric("Total Cajas Movidas", f"{int(total_cajas)} u")
                         with col3:
-                            # Calculamos eficiencia: envíos donde el costo es bajo (ej. < $6.00)
-                            eficientes = (df_amazon[df_amazon['COSTO DE DISTRIBUCION'] < 6].shape[0] / len(df_amazon)) * 100
-                            st.metric("Eficiencia Logística", f"{eficientes:.0f}%", help="Porcentaje de envíos con costo optimizado")
+                            # Eficiencia: porcentaje de envíos con costo menor a $6
+                            if len(df_amazon) > 0:
+                                eficientes = (df_amazon[df_amazon['COSTO DE DISTRIBUCION'] < 6].shape[0] / len(df_amazon)) * 100
+                                st.metric("Eficiencia Logística", f"{eficientes:.0f}%", help="Envíos con costo optimizado")
                 
                         st.divider()
                 
-                        # --- EL RENDER CHINGÓN (ESTILIZADO) ---
+                        # --- RENDERIZADO DE LA MATRIZ ---
                         st.write("### 📊 Matriz de Operaciones GDL")
                         
-                        # Aplicamos estilos: 
-                        # - Degradado de Rojo a Verde en la columna de Costo
-                        # - Formato de moneda en las columnas de dinero
+                        # Aplicamos el Styler para que se vea "chingón"
                         styled_df = df_amazon.style.background_gradient(
                             subset=['COSTO DE DISTRIBUCION'], 
-                            cmap='RdYlGn_r' # Invertido: Rojo es alto, Verde es bajo
+                            cmap='RdYlGn_r' # Rojo (Caro) -> Verde (Barato)
                         ).format({
                             'PICKING (30 MIN)': '$ {:,.2f}',
                             'PREPARACION (20 MIN)': '$ {:,.2f}',
                             'CHOFER (2 HORAS)': '$ {:,.2f}',
                             'TRANSPORTE': '$ {:,.2f}',
                             'TOTAL': '$ {:,.2f}',
-                            'COSTO DE DISTRIBUCION': '$ {:,.2f}'
-                        }).highlight_max(subset=['CAJAS'], color='#2ecc71') # Resalta en verde el envío con más carga
+                            'COSTO DE DISTRIBUCION': '$ {:,.2f}',
+                            'CAJAS': '{:,.0f}'
+                        }).highlight_max(subset=['CAJAS'], color='#2ecc71')
                 
-                        # Mostrar tabla interactiva
+                        # Mostrar tabla
                         st.dataframe(styled_df, use_container_width=True, height=450)
                         
-                        st.caption("💡 *Tip: El color rojo indica que el costo por caja es elevado debido a bajo volumen de carga.*")
+                        st.caption("💡 *Nota: Los colores indican la eficiencia basada en el volumen de cajas cargadas.*")
                 
                     else:
-                        st.error(f"❌ No pude conectar con '{FILE_PATH}'.")
-                        st.info("Revisa que el archivo esté en la raíz de tu repo y que el GITHUB_TOKEN sea correcto en tus Secrets.")
+                        st.warning(f"Esperando datos de '{FILE_PATH}'... Verifica tu conexión a GitHub.")
                 
                 
                 # NUEVA PESTAÑA SOLO PARA TI
