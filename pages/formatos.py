@@ -38,13 +38,13 @@ def generar_etiquetas_nexion(df):
 
     # --- AJUSTE DE MÁRGENES DEL DOCUMENTO ---
     w_rec, h_rec = 10.5 * cm, 7.5 * cm
-    # Reducimos a 0.3cm para que el margen sea mínimo
+    # Margen mínimo de 0.3cm
     x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
 
     for index, row in df.iterrows():
         try:
             cantidad_real = int(row['Quantity'])
-            iteraciones = cantidad_real + 1 
+            iteraciones = cantidad_real + 1 # +1 para la etiqueta de control
         except: continue 
 
         nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', 'SIN NOMBRE')))
@@ -74,17 +74,10 @@ def generar_etiquetas_nexion(df):
             c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
             c.setStrokeColorRGB(0, 0, 0)
 
-            if es_archivo:
-                c.setFont("Helvetica-Bold", 35)
-                c.setStrokeColorRGB(0.9, 0.9, 0.9)
-                c.setFillColorRGB(0.9, 0.9, 0.9)
-                c.drawCentredString(x_offset + (w_rec/2), y_offset + (h_rec/2) - 1*cm, "ARCHIVO")
-                c.setFillColorRGB(0, 0, 0)
-
-            # NOMBRE EXTRAN
+            # --- NOMBRE EXTRAN ---
             y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
 
-            # DIRECCIÓN CON AIRE
+            # --- DIRECCIÓN CON AIRE ---
             y_inicio_direccion = y_termino_nombre - 0.6*cm
             
             if y_inicio_direccion > y_offset + 4.2*cm:
@@ -105,6 +98,7 @@ def generar_etiquetas_nexion(df):
             c.setFont("Helvetica-Bold", 11)
             c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.8*cm, str(row.get('Factura', '')))
             
+            # --- LÓGICA DE COPIA DE CONTROL ---
             if es_archivo:
                 c.drawCentredString(x_offset + 5.0*cm, y_linea_pie - 0.8*cm, "COPIA CONTROL")
             else:
@@ -118,14 +112,14 @@ def generar_etiquetas_nexion(df):
     return output.getvalue()
 
 # INTERFAZ
-st.header("📦 NEXION - Etiquetas con Aire y Margen Ajustado")
+st.header("📦 NEXION - Etiquetas Clean (Sin marca de agua)")
 archivo = st.file_uploader("Sube tu Excel", type=["xlsx"])
 if archivo:
     df = pd.read_excel(archivo, sheet_name=0)
     if st.button("🚀 Generar Etiquetas"):
         pdf_bytes = generar_etiquetas_nexion(df)
-        st.success("¡Documento generado con márgenes optimizados!")
-        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_ajustadas.pdf", "application/pdf")
+        st.success("¡Etiquetas generadas con éxito!")
+        st.download_button("📥 Descargar PDF", pdf_bytes, "etiquetas_nexion_clean.pdf", "application/pdf")
 
 
 
