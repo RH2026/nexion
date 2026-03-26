@@ -874,120 +874,120 @@ def login_screen():
                     st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
                     
 
-    # --- 0. INICIALIZACIÓN DE VARIABLES (Evita que la app truene al inicio) ---
-    if 'splash_completado' not in st.session_state:
-        st.session_state.splash_completado = False
+# --- 0. INICIALIZACIÓN DE VARIABLES (Evita que la app truene al inicio) ---
+if 'splash_completado' not in st.session_state:
+    st.session_state.splash_completado = False
+
+if 'autenticado' not in st.session_state:
+    st.session_state.autenticado = False
+
+if 'usuario_activo' not in st.session_state:
+    st.session_state.usuario_activo = ""
+
+if 'ejecutivo_modulo' not in st.session_state:
+    st.session_state.ejecutivo_modulo = None
+
+# ==============================================================================
+# ── FLUJO DE CONTROL MAESTRO (SPLASH -> LOGIN -> CEO GATE -> CORE) ──
+# ==============================================================================
+
+# 1. ¿FALTA MOSTRAR EL SPLASH?
+if not st.session_state.splash_completado:
+    p = st.empty()
     
-    if 'autenticado' not in st.session_state:
-        st.session_state.autenticado = False
+    mensajes = [
+        "ESTABLISHING SECURE ACCESS...",
+        "LOADING LOGISTICS DATA...",
+        "SYNCHRONIZING WITH GITHUB REPO...",
+        "SYSTEM READY..."
+    ]
     
-    if 'usuario_activo' not in st.session_state:
-        st.session_state.usuario_activo = ""
-    
-    if 'ejecutivo_modulo' not in st.session_state:
-        st.session_state.ejecutivo_modulo = None
-    
-    # ==============================================================================
-    # ── FLUJO DE CONTROL MAESTRO (SPLASH -> LOGIN -> CEO GATE -> CORE) ──
-    # ==============================================================================
-    
-    # 1. ¿FALTA MOSTRAR EL SPLASH?
-    if not st.session_state.splash_completado:
-        p = st.empty()
-        
-        mensajes = [
-            "ESTABLISHING SECURE ACCESS...",
-            "LOADING LOGISTICS DATA...",
-            "SYNCHRONIZING WITH GITHUB REPO...",
-            "SYSTEM READY..."
-        ]
-        
-        for m in mensajes:
-            with p.container():
-                st.markdown(f"""
-                <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                    <div style="width:80px;height:80px;border:2px solid rgba(255,255,255,0.05); border-top:2px solid #00D4FF; border-radius:50%;animation:spin 1s linear infinite; box-shadow: 0 0 15px rgba(0,212,255,0.3);"></div>
-                    <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:white;text-transform:uppercase;">{m}</p>
-                </div>
-                <style>
-                    @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
-                </style>
-                """, unsafe_allow_html=True)
-                time.sleep(0.7)
-                
-        p.empty()
-        st.session_state.splash_completado = True
-        st.rerun()
-    
-    # 2. ¿SPLASH LISTO PERO NO SE HA LOGGEADO?
-    elif not st.session_state.autenticado:
-        # Asegúrate de que la función login_screen() esté definida arriba de este flujo
-        login_screen()
-    
-    # 3. ¿YA SE LOGUEÓ? (DENTRO DEL SISTEMA)
-    else:
-        # Caso especial: Rigoberto (Filtro por nombre y si no ha elegido módulo)
-        user = st.session_state.usuario_activo.upper()
-        
-        if user == "RIGOBERTO" and st.session_state.ejecutivo_modulo is None:
-            
-            # 💎 CSS DE TU PANTALLA ÉLITE (Mantenemos todo tu diseño igual)
-            st.markdown("""
-                <style>
-                .brand-title { text-align: center; font-size: 55px; font-weight: 900; letter-spacing: 25px; color: #ffffff; margin-top: 40px; text-transform: uppercase; }
-                .brand-version { text-align: center; font-size: 10px; color: #FFFFFF; letter-spacing: 5px; margin-bottom: 25px; text-transform: uppercase; }
-                .ceo-protocol-greet { text-align: center; font-size: 12px; font-weight: 400; letter-spacing: 4px; color: #8fa3b0; margin-bottom: 45px; text-transform: uppercase; }
-                .ceo-card { background: rgba(30, 39, 46, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 18px; padding: 20px 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: all 0.3s ease; height: 190px; margin-bottom: 15px; }
-                .ceo-card:hover { transform: translateY(-8px); border-color: #00D4FF !important; box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2); }
-                .ceo-title { font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
-                </style>
+    for m in mensajes:
+        with p.container():
+            st.markdown(f"""
+            <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                <div style="width:80px;height:80px;border:2px solid rgba(255,255,255,0.05); border-top:2px solid #00D4FF; border-radius:50%;animation:spin 1s linear infinite; box-shadow: 0 0 15px rgba(0,212,255,0.3);"></div>
+                <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:white;text-transform:uppercase;">{m}</p>
+            </div>
+            <style>
+                @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+            </style>
             """, unsafe_allow_html=True)
+            time.sleep(0.7)
             
-            try:
-                st.image("n2.png", width=180) 
-            except:
-                st.markdown("<h1 class='brand-title'>NEXION</h1>", unsafe_allow_html=True)
-                
-            st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
-            st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
+    p.empty()
+    st.session_state.splash_completado = True
+    st.rerun()
+
+# 2. ¿SPLASH LISTO PERO NO SE HA LOGGEADO?
+elif not st.session_state.autenticado:
+    # Asegúrate de que la función login_screen() esté definida arriba de este flujo
+    login_screen()
+
+# 3. ¿YA SE LOGUEÓ? (DENTRO DEL SISTEMA)
+else:
+    # Caso especial: Rigoberto (Filtro por nombre y si no ha elegido módulo)
+    user = st.session_state.usuario_activo.upper()
     
-            # Columnas de Módulos
-            m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    if user == "RIGOBERTO" and st.session_state.ejecutivo_modulo is None:
+        
+        # 💎 CSS DE TU PANTALLA ÉLITE (Mantenemos todo tu diseño igual)
+        st.markdown("""
+            <style>
+            .brand-title { text-align: center; font-size: 55px; font-weight: 900; letter-spacing: 25px; color: #ffffff; margin-top: 40px; text-transform: uppercase; }
+            .brand-version { text-align: center; font-size: 10px; color: #FFFFFF; letter-spacing: 5px; margin-bottom: 25px; text-transform: uppercase; }
+            .ceo-protocol-greet { text-align: center; font-size: 12px; font-weight: 400; letter-spacing: 4px; color: #8fa3b0; margin-bottom: 45px; text-transform: uppercase; }
+            .ceo-card { background: rgba(30, 39, 46, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 18px; padding: 20px 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: all 0.3s ease; height: 190px; margin-bottom: 15px; }
+            .ceo-card:hover { transform: translateY(-8px); border-color: #00D4FF !important; box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2); }
+            .ceo-title { font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        try:
+            st.image("n2.png", width=180) 
+        except:
+            st.markdown("<h1 class='brand-title'>NEXION</h1>", unsafe_allow_html=True)
             
-            with m_col1:
-                st.markdown("<div class='ceo-card'><div class='ceo-title'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
-                if st.button("ACCEDER", key="btn_dash", use_container_width=True):
-                    st.session_state.ejecutivo_modulo = "CORE"
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.rerun()
-    
-            with m_col2:
-                st.markdown("<div class='ceo-card'><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
-                if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
-                    st.session_state.ejecutivo_modulo = "CORE"
-                    st.session_state.menu_main = "SEGUIMIENTO"
-                    st.session_state.menu_sub = "ALERTAS"
-                    st.rerun()
-            
-            with m_col3:
-                st.markdown("<div class='ceo-card'><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
-                if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
-                    st.session_state.ejecutivo_modulo = "CORE"
-                    st.session_state.menu_main = "REPORTES"
-                    st.session_state.menu_sub = "% LOGISTICO"
-                    st.rerun()
-            
-            with m_col4:
-                st.markdown("<div class='ceo-card'><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
-                if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
-                    st.session_state.ejecutivo_modulo = "CORE"
-                    st.session_state.menu_main = "HUB LOG"
-                    st.session_state.menu_sub = "SMART ROUTING"
-                    st.rerun()
-    
-        # 4. RESTO DE USUARIOS O SI YA SE ELIGIÓ MÓDULO
-        else:
-            st.write(f"Accediendo al sistema NEXION como: {st.session_state.usuario_activo}")
+        st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
+        st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
+
+        # Columnas de Módulos
+        m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+        
+        with m_col1:
+            st.markdown("<div class='ceo-card'><div class='ceo-title'>Dashboard<br>Global</div></div>", unsafe_allow_html=True)
+            if st.button("ACCEDER", key="btn_dash", use_container_width=True):
+                st.session_state.ejecutivo_modulo = "CORE"
+                st.session_state.menu_main = "DASHBOARD"
+                st.rerun()
+
+        with m_col2:
+            st.markdown("<div class='ceo-card'><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
+            if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
+                st.session_state.ejecutivo_modulo = "CORE"
+                st.session_state.menu_main = "SEGUIMIENTO"
+                st.session_state.menu_sub = "ALERTAS"
+                st.rerun()
+        
+        with m_col3:
+            st.markdown("<div class='ceo-card'><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
+            if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
+                st.session_state.ejecutivo_modulo = "CORE"
+                st.session_state.menu_main = "REPORTES"
+                st.session_state.menu_sub = "% LOGISTICO"
+                st.rerun()
+        
+        with m_col4:
+            st.markdown("<div class='ceo-card'><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
+            if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
+                st.session_state.ejecutivo_modulo = "CORE"
+                st.session_state.menu_main = "HUB LOG"
+                st.session_state.menu_sub = "SMART ROUTING"
+                st.rerun()
+
+    # 4. RESTO DE USUARIOS O SI YA SE ELIGIÓ MÓDULO
+    else:
+        st.write(f"Accediendo al sistema NEXION como: {st.session_state.usuario_activo}")
 
 else:
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
