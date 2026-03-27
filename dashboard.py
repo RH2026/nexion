@@ -2956,54 +2956,55 @@ else:
                                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
                                     body {{ background-color: transparent; color: #eceff1; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
                                     
+                                    /* CONTENEDOR CON SCROLL */
                                     .scroller {{
                                         height: 550px; 
                                         overflow-y: auto;
-                                        padding-right: 8px;
+                                        padding-right: 12px;
                                     }}
                                     
-                                    /* Scrollbar sutil */
-                                    ::-webkit-scrollbar {{ width: 5px; }}
-                                    ::-webkit-scrollbar-track {{ background: rgba(255,255,255,0.05); }}
-                                    ::-webkit-scrollbar-thumb {{ background: #455a64; border-radius: 10px; }}
+                                    /* SCROLLBAR: Azul inactivo, Verde activo */
+                                    ::-webkit-scrollbar {{ width: 6px; }}
+                                    ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.05); }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
                                     .scroller:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
-                
+                            
+                                    /* TARJETAS: Fondo pizarra de tu imagen */
                                     .card-row {{
-                                        background: #1c252c; /* Fondo Gris Pizarra (Tono Ref Original) */
-                                        border: 1px solid rgba(255,255,255,0.03);
-                                        border-radius: 10px;
-                                        margin-bottom: 10px;
-                                        padding: 12px 20px;
+                                        background: #243038; 
+                                        border: 1px solid rgba(255,255,255,0.05);
+                                        border-radius: 12px;
+                                        margin-bottom: 12px;
+                                        padding: 15px 25px;
                                         display: grid;
                                         grid-template-columns: 1fr 1.8fr 1fr 1fr;
-                                        gap: 12px;
+                                        gap: 15px;
                                         align-items: center;
-                                        transition: all 0.2s ease;
+                                        transition: border-color 0.2s ease, box-shadow 0.2s ease;
                                         position: relative;
-                                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
                                     }}
-                
-                                    /* SOLUCIÓN AL HOVER: No cambia fondo ni escala, solo añade borde neón */
+                            
+                                    /* HOVER: Solo color de borde, sin escalar para no desbordar */
                                     .card-row:hover {{
                                         border-color: #2ecc71;
-                                        box-shadow: 0 4px 10px rgba(46, 204, 113, 0.15);
+                                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                                     }}
-                
+                            
                                     .label {{
                                         font-size: 8px; 
                                         color: #90a4ae;
-                                        font-weight: 700;
+                                        font-weight: 800;
                                         text-transform: uppercase;
                                         letter-spacing: 0.5px;
                                         margin-bottom: 2px;
                                     }}
-                
-                                    .value-main {{ font-size: 15px; font-weight: 800; color: #f1f5f9; }} 
-                                    .value-sub {{ font-size: 12px; font-weight: 600; color: #eceff1; }} 
+                            
+                                    .value-main {{ font-size: 15px; font-weight: 800; color: #2ecc71; }} 
+                                    .value-sub {{ font-size: 12px; font-weight: 600; color: #ffffff; }} 
                                     .value-small {{ font-size: 10px; color: #b0bec5; }}
                                     
                                     .destinatario {{ font-size: 12px; font-weight: 700; color: #f1f5f9; text-transform: uppercase; }}
-                                    .kpi-badge {{ color: #2ecc71; font-weight: 800; font-size: 14px; }}
+                                    .kpi-badge {{ color: #ffffff; font-weight: 800; font-size: 15px; }}
                                 </style>
                             </head>
                             <body>
@@ -3013,25 +3014,25 @@ else:
                                         <div>
                                             <div class="label">TALON / FOLIO</div>
                                             <div class="value-main">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
-                                            <div class="value-small">{item.get('FECHA').strftime('%d/%m/%y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</div>
+                                            <div class="value-small">F. Doc: {item.get('FECHA').strftime('%d/%m/%y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</div>
                                         </div>
-                
-                                        <div style="border-left: 1px solid rgba(255,255,255,0.05); padding-left: 15px;">
+                            
+                                        <div style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 15px;">
                                             <div class="label">DESTINATARIO</div>
                                             <div class="destinatario">{item.get('AMAZON', 'AMAZON MEXICO')}</div>
-                                            <div class="value-small" style="color:#78909c;">{item.get('ESTATUS', 'PROCESADO')}</div>
+                                            <div class="value-small" style="color:#78909c; font-style: italic;">{item.get('ESTATUS', 'PROCESADO')}</div>
                                         </div>
-                
-                                        <div style="border-left: 1px solid rgba(255,255,255,0.05); padding-left: 15px;">
-                                            <div class="label">BULTOS / VALOR</div>
+                            
+                                        <div style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 15px;">
+                                            <div class="label">RESUMEN BULTOS</div>
                                             <div class="value-sub">{int(item.get('CAJAS', 0))} BULTOS</div>
-                                            <div class="value-small">${float(item.get('VALOR MERCANCIA', 0)):,.0f}</div>
+                                            <div class="value-small">Mcia: ${float(item.get('VALOR MERCANCIA', 0)):,.0f}</div>
                                         </div>
-                
+                            
                                         <div style="text-align: right;">
-                                            <div class="label">FLETE TOTAL</div>
-                                            <div class="kpi-badge">${float(item.get('TOTAL', 0)):,.0f}</div>
-                                            <div class="label" style="color:#2ecc71;">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}% KPI</div>
+                                            <div class="label">TOTAL CARGO</div>
+                                            <div class="kpi-badge">${float(item.get('TOTAL', 0)):,.2f}</div>
+                                            <div class="label" style="color:#2ecc71; margin-top:2px;">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}% KPI</div>
                                         </div>
                                     </div>
                                     ''' for item in data_dict])}
