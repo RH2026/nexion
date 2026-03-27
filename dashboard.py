@@ -2923,28 +2923,29 @@ else:
                                     df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).replace(['nan', '', 'None'], '0').astype(float)
                             df = df.sort_values(by='FECHA', ascending=False)
                 
-                            # --- FILTRO ---
+                            # --- 1. DASHBOARD PANTALLA (LAS 4 MÉTRICAS PRIMERO) ---
+                            st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
+                            
+                            # Cálculos globales iniciales para las métricas
+                            m1, m2, m3, m4 = st.columns(4)
+                            card_style = "background:#1c252c; border-radius:8px; padding:15px 10px; border-bottom:3px solid #2ecc71; text-align:center;"
+                            
+                            m1.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Cajas Totales</div><div style="color:white; font-size:22px; font-weight:800;">{int(df["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
+                            m2.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Valor Carga</div><div style="color:white; font-size:22px; font-weight:800;">${df["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m3.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Costo Flete</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m4.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">% Logístico</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
+                
+                            # --- 2. FILTRO (DESPUÉS DE LAS MÉTRICAS) ---
+                            st.divider()
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
                             opciones_mes = ["TODO EL HISTÓRICO"] + list(df['MES'].unique())
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- CÁLCULOS PARA REPORTE ---
-                            costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
-                            pct_cumplimiento = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
-                            fecha_reporte = datetime.now().strftime('%d/%m/%Y')
-                
-                            # --- DASHBOARD PANTALLA ---
-                            st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
-                            m1, m2, m3, m4 = st.columns(4)
-                            card_style = "background:#1c252c; border-radius:8px; padding:15px 10px; border-bottom:3px solid #2ecc71; text-align:center;"
-                            m1.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px;">Cajas Totales</div><div style="color:white; font-size:22px; font-weight:800;">{int(df_mes["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
-                            m2.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px;">Valor Carga</div><div style="color:white; font-size:22px; font-weight:800;">${df_mes["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
-                            m3.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px;">Costo Flete</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">${df_mes["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
-                            m4.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px;">% Logístico</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">{costo_log_real:.2f}%</div></div>', unsafe_allow_html=True)
-                
-                            # --- HTML MAESTRO (PANTALLA + IMPRESIÓN) ---
+                            # --- 3. TARJETAS DE REGISTROS ---
                             data_dict = df_mes.fillna('').to_dict('records')
+                            costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
+                            fecha_reporte = datetime.now().strftime('%d/%m/%Y')
                             
                             html_content = f"""
                             <!DOCTYPE html>
@@ -2955,7 +2956,6 @@ else:
                                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
                                     body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
                                     
-                                    /* DISEÑO PANTALLA */
                                     #screen-view {{ display: block; }}
                                     #print-view {{ display: none; }}
                                     
@@ -2966,25 +2966,27 @@ else:
                 
                                     .card-row {{
                                         background: #243038; border-radius: 12px; margin-bottom: 10px; padding: 15px 25px;
-                                        display: grid; grid-template-columns: 1fr 1.8fr 1fr 1fr; gap: 15px; align-items: center;
+                                        display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr; gap: 15px; align-items: center;
                                         border: 1px solid rgba(255,255,255,0.05);
                                     }}
                                     .label {{ font-size: 8px; color: #90a4ae; font-weight: 800; text-transform: uppercase; }}
-                                    .v-main {{ font-size: 15px; font-weight: 800; color: #2ecc71; }}
+                                    .v-main {{ font-size: 14px; font-weight: 800; color: #2ecc71; }}
+                                    .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; }}
+                                    
                                     .btn-print {{
                                         width: 100%; background: #1c252c; color: white; border: 1px solid #2ecc71;
-                                        padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 800; margin-top: 15px;
+                                        padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 800; margin-top: 10px;
+                                        font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
                                     }}
                 
-                                    /* CONFIGURACIÓN DE IMPRESIÓN */
                                     @media print {{
-                                        @page {{ size: A4; margin: 15mm; }}
+                                        @page {{ size: A4; margin: 10mm; }}
                                         #screen-view {{ display: none !important; }}
                                         #print-view {{ display: block !important; color: black !important; background: white !important; }}
-                                        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-                                        th {{ background: #f0f0f0 !important; border: 1px solid #000; padding: 8px; font-size: 10px; }}
-                                        td {{ border: 1px solid #ddd; padding: 8px; font-size: 10px; }}
-                                        .header-print {{ border-bottom: 4px solid #000; padding-bottom: 10px; margin-bottom: 20px; }}
+                                        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+                                        th {{ background: #f0f0f0 !important; border: 1px solid #000; padding: 6px; font-size: 9px; text-transform: uppercase; }}
+                                        td {{ border: 1px solid #ddd; padding: 6px; font-size: 9px; }}
+                                        .header-print {{ border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 15px; }}
                                     }}
                                 </style>
                             </head>
@@ -2993,54 +2995,68 @@ else:
                                     <div class="scroller">
                                         {"".join([f'''
                                         <div class="card-row">
-                                            <div><div class="label">FOLIO</div><div class="v-main">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div></div>
-                                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
-                                                <div class="label">DESTINO</div><div style="color:white; font-size:12px; font-weight:700;">{item.get('AMAZON', 'AMAZON')}</div>
+                                            <div>
+                                                <div class="label">FOLIO</div>
+                                                <div class="v-main">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
+                                                <div style="font-size:10px; color:#94a3b8;">{item.get('FECHA').strftime('%d/%m/%Y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</div>
                                             </div>
                                             <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
-                                                <div class="label">BULTOS</div><div style="color:white; font-size:12px;">{int(item.get('CAJAS', 0))} Uds</div>
+                                                <div class="label">DESTINO / ESTATUS</div>
+                                                <div class="v-txt">{item.get('AMAZON', 'AMAZON')}</div>
+                                                <div style="font-size:10px; color:#3498db;">{item.get('ESTATUS', 'PROCESADO')}</div>
+                                            </div>
+                                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                                                <div class="label">BULTOS / COSTO CAJA</div>
+                                                <div class="v-txt">{int(item.get('CAJAS', 0))} BULTOS</div>
+                                                <div style="font-size:10px; color:#94a3b8;">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f} c/u</div>
+                                            </div>
+                                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                                                <div class="label">VALOR CARGA / KPI</div>
+                                                <div style="color:white; font-size:11px;">$ {float(item.get('VALOR MERCANCIA', 0)):,.0f}</div>
+                                                <div style="color:#2ecc71; font-weight:800; font-size:12px;">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}%</div>
                                             </div>
                                             <div style="text-align: right;">
-                                                <div class="label">TOTAL</div><div style="color:white; font-weight:800;">${float(item.get('TOTAL', 0)):,.2f}</div>
+                                                <div class="label">TOTAL FLETE</div>
+                                                <div style="color:white; font-size:16px; font-weight:900;">$ {float(item.get('TOTAL', 0)):,.2f}</div>
                                             </div>
                                         </div>
                                         ''' for item in data_dict])}
                                     </div>
-                                    <button class="btn-print" onclick="window.print()">🖨️ GENERAR REPORTE EJECUTIVO PDF</button>
+                                    <button class="btn-print" onclick="window.print()">🖨️ GENERAR REPORTE PDF EJECUTIVO</button>
                                 </div>
                 
                                 <div id="print-view">
                                     <div class="header-print">
                                         <table style="border:none;">
                                             <tr style="border:none;">
-                                                <td style="border:none; width:60%;">
-                                                    <h1 style="margin:0; font-size:18px;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
-                                                    <p style="margin:0; font-size:12px; color:#666;">Distribución y Logística Nacional | JYPESA</p>
+                                                <td style="border:none; width:65%;">
+                                                    <h1 style="margin:0; font-size:16px; font-weight:900;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
+                                                    <p style="margin:0; font-size:11px; color:#444;">Distribución y Logística Nacional | JYPESA 2026</p>
                                                 </td>
-                                                <td style="border:none; text-align:right;">
-                                                    <b>FECHA:</b> {fecha_reporte}<br>
-                                                    <b>ANÁLISIS:</b> {mes_sel.upper()}<br>
-                                                    <b>ESTATUS:</b> {"DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"}
+                                                <td style="border:none; text-align:right; font-size:10px;">
+                                                    <b>FECHA EMISIÓN:</b> {fecha_reporte}<br>
+                                                    <b>PERIODO:</b> {mes_sel.upper()}<br>
+                                                    <b>RESULTADO:</b> {"DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"}
                                                 </td>
                                             </tr>
                                         </table>
                                     </div>
                                     
-                                    <h2 style="text-align:center; text-decoration:underline;">REPORTE OPERATIVO DE CONSIGNAS</h2>
+                                    <h2 style="text-align:center; text-decoration:underline; font-size:16px;">REPORTE OPERATIVO DE CONSIGNAS AMAZON</h2>
                                     
-                                    <div style="margin: 20px 0; border: 2px solid #000; padding: 10px;">
-                                        <b>RESUMEN MENSUAL:</b><br>
-                                        KPI Logístico Actual: {costo_log_real:.2f}% | Target Objetivo: 7.50% | Cajas Totales: {int(df_mes["CAJAS"].sum())}
+                                    <div style="margin: 15px 0; border: 1.5px solid #000; padding: 10px; font-size:11px;">
+                                        <b>RESUMEN EJECUTIVO:</b> El KPI logístico promedio del periodo es de <b>{costo_log_real:.2f}%</b> contra un target objetivo del <b>7.50%</b>. 
+                                        Se movilizaron un total de <b>{int(df_mes["CAJAS"].sum()):,}</b> cajas con un valor de mercancía de <b>${df_mes["VALOR MERCANCIA"].sum():,.2f}</b>.
                                     </div>
                 
                                     <table>
                                         <thead>
                                             <tr>
-                                                <th>FOLIO / TALÓN</th>
+                                                <th>FOLIO</th>
                                                 <th>FECHA</th>
                                                 <th>DESTINATARIO</th>
+                                                <th>ESTATUS</th>
                                                 <th>BULTOS</th>
-                                                <th>VALOR CARGA</th>
                                                 <th>TOTAL FLETE</th>
                                                 <th>KPI %</th>
                                             </tr>
@@ -3048,11 +3064,11 @@ else:
                                         <tbody>
                                             {"".join([f'''
                                             <tr>
-                                                <td>{item.get('IDENTIFICADOR ENVIO')}</td>
+                                                <td style="font-weight:bold;">{item.get('IDENTIFICADOR ENVIO')}</td>
                                                 <td>{item.get('FECHA').strftime('%d/%m/%Y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</td>
                                                 <td>{item.get('AMAZON')}</td>
+                                                <td>{item.get('ESTATUS')}</td>
                                                 <td style="text-align:center;">{int(item.get('CAJAS'))}</td>
-                                                <td style="text-align:right;">${float(item.get('VALOR MERCANCIA')):,.2f}</td>
                                                 <td style="text-align:right;">${float(item.get('TOTAL')):,.2f}</td>
                                                 <td style="text-align:center; font-weight:bold;">{float(item.get('PORCENTAJE LOGISTICO')):,.2f}%</td>
                                             </tr>
@@ -3060,12 +3076,12 @@ else:
                                         </tbody>
                                     </table>
                 
-                                    <div style="margin-top: 50px; display: flex; justify-content: space-between;">
-                                        <div style="width: 200px; border-top: 1px solid #000; text-align: center; font-size: 10px;">
-                                            <br>Rigoberto Hernández<br>Coordinador Logística
+                                    <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+                                        <div style="width: 220px; border-top: 1.5px solid #000; text-align: center; font-size: 10px;">
+                                            <br><b>Rigoberto Hernández</b><br>Coordinador Logística Nacional
                                         </div>
-                                        <div style="width: 200px; border-top: 1px solid #000; text-align: center; font-size: 10px;">
-                                            <br>Dirección General<br>Autorización
+                                        <div style="width: 220px; border-top: 1.5px solid #000; text-align: center; font-size: 10px;">
+                                            <br><b>Dirección General</b><br>Autorización JYPESA
                                         </div>
                                     </div>
                                 </div>
