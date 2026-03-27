@@ -2902,6 +2902,8 @@ else:
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
                 with tab_amazon:
                     # 1. CARGA Y LIMPIEZA DE DATOS (Mantenemos tu lógica de GitHub)
+                    
+                    # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2914,15 +2916,25 @@ else:
                             csv_bytes = base64.b64decode(response.json()['content'])
                             df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
                             df.columns = df.columns.str.strip()
-                
                             df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True, errors='coerce')
                             df = df.dropna(subset=['FECHA'])
                             cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION POR CAJA', 'CAJAS', 'VALOR MERCANCIA', 'PORCENTAJE LOGISTICO']
                             for col in cols_num:
                                 if col in df.columns:
                                     df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).replace(['nan', '', 'None'], '0').astype(float)
-                            
                             df = df.sort_values(by='FECHA', ascending=False)
+                
+                            # --- MÉTRICAS SUPERIORES ---
+                            st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
+                            m1, m2, m3, m4 = st.columns(4)
+                            card_style_metrics = "background:#1c252c; border-radius:8px; padding:15px 10px; border-bottom:3px solid #2ecc71; text-align:center;"
+                            lbl_style_metrics = "color:#90a4ae; font-size:9px; text-transform:uppercase; font-weight:700; letter-spacing:1px;"
+                            num_style_metrics = "color:#f1f5f9; font-size:22px; font-weight:800; margin:0;"
+                            
+                            m1.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Cajas Totales</div><div style="{num_style_metrics}">{int(df["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
+                            m2.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Valor Carga</div><div style="{num_style_metrics}">${df["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m3.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Costo Flete</div><div style="{num_style_metrics}; color:#2ecc71;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m4.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">% Logístico</div><div style="{num_style_metrics}; color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
                 
                             # --- FILTRO ---
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
@@ -2930,32 +2942,8 @@ else:
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- CÁLCULOS PARA EL REPORTE TÉCNICO ---
-                            costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
-                            total_flete_2026 = df_mes["TOTAL"].sum()
-                            total_fact_2026 = df_mes["VALOR MERCANCIA"].sum()
-                            total_cajas_2026 = df_mes["CAJAS"].sum()
-                            costo_caja_2026 = df_mes["COSTO DE DISTRIBUCION POR CAJA"].mean()
-                            
-                            # Variables de comparación (Ejemplos basados en tu lógica, ajusta si tienes df_2025)
-                            estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
-                            pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
-                
-                            # --- MÉTRICAS VISUALES ---
-                            st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
-                            m1, m2, m3, m4 = st.columns(4)
-                            card_style_metrics = "background:#1c252c; border-radius:8px; padding:15px 10px; border-bottom:3px solid #2ecc71; text-align:center;"
-                            lbl_style_metrics = "color:#90a4ae; font-size:9px; text-transform:uppercase; font-weight:700; letter-spacing:1px;"
-                            num_style_metrics = "color:#f1f5f9; font-size:22px; font-weight:800; margin:0;"
-                            
-                            m1.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Cajas Totales</div><div style="{num_style_metrics}">{int(total_cajas_2026):,}</div></div>', unsafe_allow_html=True)
-                            m2.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Valor Carga</div><div style="{num_style_metrics}">${total_fact_2026:,.0f}</div></div>', unsafe_allow_html=True)
-                            m3.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Costo Flete</div><div style="{num_style_metrics}; color:#2ecc71;">${total_flete_2026:,.0f}</div></div>', unsafe_allow_html=True)
-                            m4.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">% Logístico</div><div style="{num_style_metrics}; color:#2ecc71;">{costo_log_real:.2f}%</div></div>', unsafe_allow_html=True)
-                
-                            # --- HTML/CSS INTEGRADO CON REPORTE DE IMPRESIÓN ---
+                            # --- RENDERIZADO DE TARJETAS ---
                             data_dict = df_mes.fillna('').to_dict('records')
-                            ahora_gdl = datetime.now() # O tu ajuste de timedelta
                             
                             html_content = f"""
                             <!DOCTYPE html>
@@ -2966,36 +2954,54 @@ else:
                                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
                                     body {{ background-color: transparent; color: #eceff1; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
                                     
-                                    /* ESTILOS PARA PANTALLA */
-                                    .scroller {{ height: 500px; overflow-y: auto; padding-right: 12px; }}
+                                    .scroller {{
+                                        height: 500px; 
+                                        overflow-y: auto;
+                                        padding-right: 12px;
+                                    }}
+                                    
+                                    /* Scrollbar: Azul acero -> Verde neón */
                                     ::-webkit-scrollbar {{ width: 6px; }}
+                                    ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.05); }}
                                     ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
                                     .scroller:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
                 
                                     .card-row {{
-                                        background: #243038; border-radius: 12px; margin-bottom: 10px; padding: 15px 25px;
-                                        display: grid; grid-template-columns: 1fr 1.8fr 1fr 1fr; gap: 15px; align-items: center;
+                                        background: #243038; 
+                                        border: 1px solid rgba(255,255,255,0.05);
+                                        border-radius: 12px;
+                                        margin-bottom: 12px;
+                                        padding: 15px 25px;
+                                        display: grid;
+                                        grid-template-columns: 1fr 1.8fr 1fr 1fr;
+                                        gap: 15px;
+                                        align-items: center;
+                                        transition: border-color 0.2s ease;
+                                        position: relative;
                                     }}
+                
+                                    .card-row:hover {{ border-color: #2ecc71; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }}
+                
                                     .label {{ font-size: 8px; color: #90a4ae; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }}
-                                    .value-main {{ font-size: 15px; font-weight: 800; color: #2ecc71; }}
+                                    .value-main {{ font-size: 15px; font-weight: 800; color: #2ecc71; }} 
+                                    .value-sub {{ font-size: 12px; font-weight: 600; color: #ffffff; }} 
+                                    .destinatario {{ font-size: 12px; font-weight: 700; color: #f1f5f9; text-transform: uppercase; }}
                                     .kpi-badge {{ color: #ffffff; font-weight: 800; font-size: 15px; }}
                 
                                     /* BOTÓN DE IMPRESIÓN */
-                                    .print-btn {{
-                                        background: #2ecc71; color: #101820; border: none; padding: 12px 25px;
-                                        border-radius: 8px; font-weight: 900; cursor: pointer; width: 100%;
-                                        margin-top: 20px; text-transform: uppercase; letter-spacing: 1px;
+                                    .btn-container {{ display: flex; justify-content: center; padding: 20px 0; }}
+                                    .btn-print {{
+                                        background: #1c252c; color: #eceff1; border: 1px solid rgba(255,255,255,0.1);
+                                        padding: 10px 25px; border-radius: 8px; font-weight: 800; font-size: 11px;
+                                        text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.3s;
                                     }}
-                                    .print-btn:hover {{ background: #27ae60; }}
-                
-                                    /* OCULTAR REPORTE EN PANTALLA, MOSTRAR EN IMPRESIÓN */
-                                    #printable-report {{ display: none; }}
+                                    .btn-print:hover {{ border-color: #2ecc71; color: #2ecc71; box-shadow: 0 0 10px rgba(46,204,113,0.2); }}
                 
                                     @media print {{
-                                        body * {{ visibility: hidden; }}
-                                        #printable-report, #printable-report * {{ visibility: visible; }}
-                                        #printable-report {{ display: block !important; position: absolute; left: 0; top: 0; width: 100%; }}
-                                        .scroller, .print-btn, .card-row {{ display: none !important; }}
+                                        .scroller, .btn-container, body {{ background: white !important; color: black !important; }}
+                                        .btn-container, ::-webkit-scrollbar {{ display: none !important; }}
+                                        .card-row {{ background: white !important; border: 1px solid #eee !important; color: black !important; page-break-inside: avoid; }}
+                                        .value-main, .label, .destinatario {{ color: black !important; }}
                                     }}
                                 </style>
                             </head>
@@ -3003,55 +3009,32 @@ else:
                                 <div class="scroller">
                                     {"".join([f'''
                                     <div class="card-row">
-                                        <div><div class="label">FOLIO</div><div class="value-main">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div></div>
-                                        <div style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 15px;">
-                                            <div class="label">DESTINATARIO</div><div style="font-size:12px; font-weight:700;">{item.get('AMAZON', 'AMAZON MEXICO')}</div>
+                                        <div>
+                                            <div class="label">FOLIO</div>
+                                            <div class="value-main">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
                                         </div>
                                         <div style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 15px;">
-                                            <div class="label">BULTOS</div><div style="font-size:12px;">{int(item.get('CAJAS', 0))} BULTOS</div>
+                                            <div class="label">DESTINATARIO</div>
+                                            <div class="destinatario">{item.get('AMAZON', 'AMAZON MEXICO')}</div>
+                                        </div>
+                                        <div style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 15px;">
+                                            <div class="label">BULTOS</div>
+                                            <div class="value-sub">{int(item.get('CAJAS', 0))} BULTOS</div>
                                         </div>
                                         <div style="text-align: right;">
-                                            <div class="label">TOTAL</div><div class="kpi-badge">${float(item.get('TOTAL', 0)):,.2f}</div>
+                                            <div class="label">TOTAL</div>
+                                            <div class="kpi-badge">${float(item.get('TOTAL', 0)):,.2f}</div>
                                         </div>
                                     </div>
                                     ''' for item in data_dict])}
                                 </div>
-                
-                                <button class="print-btn" onclick="window.print()">🖨️ Generar Reporte de Impresión Ejecutivo</button>
-                
-                                <div id="printable-report" style="font-family: 'Segoe UI', Arial; padding: 40px; color: #000; background: #fff;">
-                                    <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
-                                        <tr>
-                                            <td>
-                                                <h1 style="margin:0; font-size:16px; font-weight:900;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
-                                                <p style="margin:0; font-size:12px; color:#666;">COORDINACIÓN DE LOGÍSTICA | NEXION 2026</p>
-                                            </td>
-                                            <td style="text-align:right; font-size:11px;">
-                                                <b>REPORTE:</b> {mes_sel.upper()}<br>
-                                                <b>EMISIÓN:</b> {ahora_gdl.strftime('%d/%m/%Y %H:%M')}<br>
-                                                <span style="border:2px solid #000; padding:5px; font-weight:bold; display:inline-block; margin-top:5px;">{estatus_rep}</span>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    <h2 style="text-align:center; text-decoration:underline;">ANÁLISIS OPERATIVO: {mes_sel}</h2>
-                                    <div style="margin:20px 0; border:1px solid #000; padding:15px;">
-                                        <p><b>RESUMEN DE DESEMPEÑO:</b></p>
-                                        <table style="width:100%; font-size:13px;">
-                                            <tr><td>Facturación Bruta:</td><td style="text-align:right;"><b>${total_fact_2026:,.2f}</b></td></tr>
-                                            <tr><td>Gasto Flete Total:</td><td style="text-align:right;"><b>${total_flete_2026:,.2f}</b></td></tr>
-                                            <tr><td>Cajas Enviadas:</td><td style="text-align:right;">{int(total_cajas_2026):,} Unidades</td></tr>
-                                            <tr><td><b>KPI LOGÍSTICO FINAL:</b></td><td style="text-align:right; font-size:16px;"><b>{costo_log_real:.2f}%</b></td></tr>
-                                        </table>
-                                    </div>
-                                    <div style="margin-top:100px; display:flex; justify-content:space-between; text-align:center; font-size:12px;">
-                                        <div style="width:40%; border-top:1px solid #000; padding-top:10px;"><b>Rigoberto Hernández</b><br>Logística Nacional</div>
-                                        <div style="width:40%; border-top:1px solid #000; padding-top:10px;"><b>Dirección General</b><br>Autorización</div>
-                                    </div>
+                                <div class="btn-container">
+                                    <button class="btn-print" onclick="window.print()">🖨️ Generar Reporte</button>
                                 </div>
                             </body>
                             </html>
                             """
-                            components.html(html_content, height=650, scrolling=False)
+                            components.html(html_content, height=620, scrolling=False)
                 
                         else:
                             st.error("Error al conectar con GitHub.")
