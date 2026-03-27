@@ -26,7 +26,8 @@ from pypdf import PdfReader, PdfWriter
 from fpdf import FPDF
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-
+from reportlab.lib.units import cm
+from reportlab.lib.utils import simpleSplit
 
 import google.generativeai as genai
 
