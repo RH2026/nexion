@@ -2900,8 +2900,7 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
-                with tab_amazon:                  
-
+                with tab_amazon:  
                     # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
@@ -2941,7 +2940,7 @@ else:
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- 3. TARJETAS Y REPORTE ---
+                            # --- 3. CONTENIDO HTML (PANTALLA + IMPRESIÓN COMPLETA) ---
                             data_dict = df_mes.fillna('').to_dict('records')
                             costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
                             fecha_reporte = datetime.now().strftime('%d/%m/%Y')
@@ -3016,7 +3015,7 @@ else:
                                         ''' for item in data_dict])}
                                     </div>
                                     <div style="display: flex; justify-content: center; padding: 15px;">
-                                        <button class="btn-print" onclick="window.print()">🖨️ Generar Reporte</button>
+                                        <button class="btn-print" onclick="window.print()">🖨️ GENERAR REPORTE</button>
                                     </div>
                                 </div>
                 
@@ -3026,23 +3025,31 @@ else:
                                             <tr style="border:none;">
                                                 <td style="border:none; width:65%;">
                                                     <h1 style="margin:0; font-size:16px; font-weight:900;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
-                                                    <p style="margin:0; font-size:10px; color:#444;">Logística Nacional | JYPESA 2026</p>
+                                                    <p style="margin:0; font-size:11px; color:#444;">Distribución y Logística Nacional | JYPESA 2026</p>
                                                 </td>
-                                                <td style="border:none; text-align:right; font-size:9px;">
-                                                    <b>FECHA:</b> {fecha_reporte}<br>
+                                                <td style="border:none; text-align:right; font-size:10px;">
+                                                    <b>FECHA EMISIÓN:</b> {fecha_reporte}<br>
                                                     <b>PERIODO:</b> {mes_sel.upper()}<br>
-                                                    <b>KPI:</b> {costo_log_real:.2f}%
+                                                    <b>RESULTADO:</b> {"DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"}
                                                 </td>
                                             </tr>
                                         </table>
                                     </div>
                                     
+                                    <h2 style="text-align:center; text-decoration:underline; font-size:16px;">REPORTE OPERATIVO DE CONSIGNAS AMAZON</h2>
+                                    
+                                    <div style="margin: 15px 0; border: 1.5px solid #000; padding: 10px; font-size:11px;">
+                                        <b>RESUMEN EJECUTIVO:</b> El KPI logístico promedio del periodo es de <b>{costo_log_real:.2f}%</b> contra un target objetivo del <b>7.50%</b>. 
+                                        Se movilizaron un total de <b>{int(df_mes["CAJAS"].sum()):,}</b> cajas con un valor de mercancía de <b>${df_mes["VALOR MERCANCIA"].sum():,.2f}</b>.
+                                    </div>
+                
                                     <table>
                                         <thead>
                                             <tr>
                                                 <th>FOLIO</th>
                                                 <th>FECHA</th>
                                                 <th>DESTINATARIO</th>
+                                                <th>ESTATUS</th>
                                                 <th>BULTOS</th>
                                                 <th>$ ECaja</th>
                                                 <th>TOTAL FLETE</th>
@@ -3053,10 +3060,11 @@ else:
                                             {"".join([f'''
                                             <tr>
                                                 <td style="font-weight:bold;">{item.get('IDENTIFICADOR ENVIO')}</td>
-                                                <td>{item.get('FECHA').strftime('%d/%m/%y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</td>
+                                                <td>{item.get('FECHA').strftime('%d/%m/%Y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</td>
                                                 <td>{item.get('AMAZON')}</td>
-                                                <td style="text-align:center;">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f}</td>
+                                                <td>{item.get('ESTATUS')}</td>
                                                 <td style="text-align:center;">{int(item.get('CAJAS'))}</td>
+                                                <td style="text-align:right;">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f}</td>
                                                 <td style="text-align:right;">${float(item.get('TOTAL')):,.2f}</td>
                                                 <td style="text-align:center; font-weight:bold;">{float(item.get('PORCENTAJE LOGISTICO')):,.2f}%</td>
                                             </tr>
@@ -3064,11 +3072,11 @@ else:
                                         </tbody>
                                     </table>
                 
-                                    <div style="margin-top: 50px; display: flex; justify-content: space-between;">
-                                        <div style="width: 200px; border-top: 1px solid #000; text-align: center; font-size: 9px;">
-                                            <br><b>Rigoberto Hernández</b><br>Logística Nacional
+                                    <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+                                        <div style="width: 220px; border-top: 1.5px solid #000; text-align: center; font-size: 10px;">
+                                            <br><b>Rigoberto Hernández</b><br>Coordinador Logística Nacional
                                         </div>
-                                        <div style="width: 200px; border-top: 1px solid #000; text-align: center; font-size: 9px;">
+                                        <div style="width: 220px; border-top: 1.5px solid #000; text-align: center; font-size: 10px;">
                                             <br><b>Dirección General</b><br>Autorización JYPESA
                                         </div>
                                     </div>
