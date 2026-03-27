@@ -2902,6 +2902,7 @@ else:
                 with tab_amazon:
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
                 # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
+                    # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
