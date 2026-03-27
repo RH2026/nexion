@@ -2956,7 +2956,10 @@ else:
                                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
                                     body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
                                     
-                                    .scroller {{ height: 480px; overflow-y: auto; padding-right: 10px; }}
+                                    #screen-view {{ display: block; }}
+                                    #print-view {{ display: none; }}
+                                    
+                                    .scroller {{ height: 480px; overflow-y: auto; padding-right: 10px; margin-bottom: 10px; }}
                                     ::-webkit-scrollbar {{ width: 6px; }}
                                     ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
                                     .scroller:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
@@ -2970,15 +2973,15 @@ else:
                                     .v-main {{ font-size: 14px; font-weight: 800; color: #2ecc71; }}
                                     .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; }}
                 
-                                    /* BOTÓN AJUSTADO: MÁS DELGADO Y MENOS BOLD */
+                                    /* BOTÓN AJUSTADO: DELGADO, SIN BOLD Y HOVER #00A0A8 */
                                     .btn-print-master {{
                                         background-color: #243038;
                                         color: #ffffff;
                                         border: 1px solid rgba(255,255,255,0.1);
                                         border-radius: 8px;
-                                        padding: 6px 20px; /* Padding vertical reducido para hacerlo más delgado */
+                                        padding: 6px 20px;
                                         font-size: 12px;
-                                        font-weight: 400; /* Letra menos bold (normal) */
+                                        font-weight: 400; 
                                         cursor: pointer;
                                         width: 100%;
                                         transition: all 0.3s ease;
@@ -3002,6 +3005,7 @@ else:
                                         th {{ background: #f0f0f0 !important; border: 1px solid #000; padding: 6px; font-size: 8px; text-transform: uppercase; }}
                                         td {{ border: 1px solid #ddd; padding: 6px; font-size: 8px; }}
                                         .header-print {{ border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 15px; }}
+                                        .resumen-caja {{ border: 1.5px solid #000; padding: 10px; margin: 15px 0; font-size: 11px; }}
                                     }}
                                 </style>
                             </head>
@@ -3037,7 +3041,7 @@ else:
                                         </div>
                                         ''' for item in data_dict])}
                                     </div>
-                                    <div style="padding-top: 20px;">
+                                    <div style="padding: 10px 0;">
                                         <button class="btn-print-master" onclick="window.print()">
                                             GENERAR REPORTE DE OPERACIÓN (PDF)
                                         </button>
@@ -3061,9 +3065,9 @@ else:
                                         </table>
                                     </div>
                                     
-                                    <h2 style="text-align:center; text-decoration:underline; font-size:16px;">REPORTE OPERATIVO DE CONSIGNAS AMAZON</h2>
+                                    <h2 style="text-align:center; text-decoration:underline; font-size:16px; margin: 15px 0;">REPORTE OPERATIVO DE CONSIGNAS AMAZON</h2>
                                     
-                                    <div style="margin: 15px 0; border: 1.5px solid #000; padding: 10px; font-size:11px;">
+                                    <div class="resumen-caja">
                                         <b>RESUMEN EJECUTIVO:</b> El KPI logístico promedio del periodo es de <b>{costo_log_real:.2f}%</b> contra un target objetivo del <b>7.50%</b>. 
                                         Se movilizaron un total de <b>{int(df_mes["CAJAS"].sum()):,}</b> cajas con un valor de mercancía de <b>${df_mes["VALOR MERCANCIA"].sum():,.2f}</b>.
                                     </div>
