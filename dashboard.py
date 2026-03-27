@@ -2901,7 +2901,7 @@ else:
                 # PESTAÑA 7: AMAZON
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
                 with tab_amazon:
-                    # 1. CARGA Y LIMPIEZA DE DATOS (Se mantiene tu lógica intacta)
+                    # 1. CARGA Y LIMPIEZA DE DATOS (Lógica intacta y funcional)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2925,12 +2925,12 @@ else:
                             df = df.sort_values(by='FECHA', ascending=False)
                 
                             # --- MÉTRICAS SUPERIORES ---
-                            st.markdown("<h3 style='text-align:center; color:#94a3b8; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
+                            st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
                             
                             m1, m2, m3, m4 = st.columns(4)
-                            # Fondo Gris Pizarra Claro para las métricas (#37474f es un tono cercano a la ref)
-                            card_style_metrics = "background:#37474f; border-radius:8px; padding:15px 10px; border-bottom:3px solid #3b82f6; text-align:center;"
-                            lbl_style_metrics = "color:#b0bec5; font-size:9px; text-transform:uppercase; font-weight:700; letter-spacing:1px;"
+                            # Fondo Gris Pizarra para las métricas (#1c252c es el tono de la ref original)
+                            card_style_metrics = "background:#1c252c; border-radius:8px; padding:15px 10px; border-bottom:3px solid #2ecc71; text-align:center;"
+                            lbl_style_metrics = "color:#90a4ae; font-size:9px; text-transform:uppercase; font-weight:700; letter-spacing:1px;"
                             num_style_metrics = "color:#f1f5f9; font-size:22px; font-weight:800; margin:0;"
                             
                             m1.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Cajas Totales</div><div style="{num_style_metrics}">{int(df["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
@@ -2944,7 +2944,7 @@ else:
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- RENDERIZADO DE TARJETAS (ESTILO BARCELO CON FONDO CORREGIDO) ---
+                            # --- RENDERIZADO DE TARJETAS (ESTILO BARCELO CORREGIDO) ---
                             data_dict = df_mes.fillna('').to_dict('records')
                 
                             html_content = f"""
@@ -2954,7 +2954,7 @@ else:
                                 <script src="https://cdn.tailwindcss.com"></script>
                                 <style>
                                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-                                    body {{ background-color: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
+                                    body {{ background-color: transparent; color: #eceff1; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
                                     
                                     .scroller {{
                                         height: 550px; 
@@ -2962,15 +2962,14 @@ else:
                                         padding-right: 8px;
                                     }}
                                     
-                                    /* Scrollbar Azul por defecto */
+                                    /* Scrollbar sutil */
                                     ::-webkit-scrollbar {{ width: 5px; }}
-                                    ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
-                                    ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 10px; }}
-                                    /* Cambio a Verde en Hover */
+                                    ::-webkit-scrollbar-track {{ background: rgba(255,255,255,0.05); }}
+                                    ::-webkit-scrollbar-thumb {{ background: #455a64; border-radius: 10px; }}
                                     .scroller:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
                 
                                     .card-row {{
-                                        background: #2a3b47; /* Fondo Gris Pizarra Oscuro (Tono Ref: image_4.png) */
+                                        background: #1c252c; /* Fondo Gris Pizarra (Tono Ref Original) */
                                         border: 1px solid rgba(255,255,255,0.03);
                                         border-radius: 10px;
                                         margin-bottom: 10px;
@@ -2980,26 +2979,28 @@ else:
                                         gap: 12px;
                                         align-items: center;
                                         transition: all 0.2s ease;
+                                        position: relative;
+                                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
                                     }}
                 
+                                    /* SOLUCIÓN AL HOVER: No cambia fondo ni escala, solo añade borde neón */
                                     .card-row:hover {{
                                         border-color: #2ecc71;
-                                        background: #37474f; /* Fondo ligeramente más claro en hover */
-                                        transform: scale(1.01);
+                                        box-shadow: 0 4px 10px rgba(46, 204, 113, 0.15);
                                     }}
                 
                                     .label {{
-                                        font-size: 8px; /* Texto más pequeño y sutil */
-                                        color: #78909c; /* Color de etiqueta más claro */
+                                        font-size: 8px; 
+                                        color: #90a4ae;
                                         font-weight: 700;
                                         text-transform: uppercase;
                                         letter-spacing: 0.5px;
                                         margin-bottom: 2px;
                                     }}
                 
-                                    .value-main {{ font-size: 15px; font-weight: 800; color: #3b82f6; }} /* Azul para Folios */
-                                    .value-sub {{ font-size: 12px; font-weight: 600; color: #eceff1; }} /* Color de valor más claro */
-                                    .value-small {{ font-size: 10px; color: #90a4ae; }}
+                                    .value-main {{ font-size: 15px; font-weight: 800; color: #f1f5f9; }} 
+                                    .value-sub {{ font-size: 12px; font-weight: 600; color: #eceff1; }} 
+                                    .value-small {{ font-size: 10px; color: #b0bec5; }}
                                     
                                     .destinatario {{ font-size: 12px; font-weight: 700; color: #f1f5f9; text-transform: uppercase; }}
                                     .kpi-badge {{ color: #2ecc71; font-weight: 800; font-size: 14px; }}
@@ -3018,7 +3019,7 @@ else:
                                         <div style="border-left: 1px solid rgba(255,255,255,0.05); padding-left: 15px;">
                                             <div class="label">DESTINATARIO</div>
                                             <div class="destinatario">{item.get('AMAZON', 'AMAZON MEXICO')}</div>
-                                            <div class="value-small" style="color:#546e7a;">{item.get('ESTATUS', 'PROCESADO')}</div>
+                                            <div class="value-small" style="color:#78909c;">{item.get('ESTATUS', 'PROCESADO')}</div>
                                         </div>
                 
                                         <div style="border-left: 1px solid rgba(255,255,255,0.05); padding-left: 15px;">
