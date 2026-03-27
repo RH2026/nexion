@@ -2899,9 +2899,9 @@ else:
                         render_expediente_chingon(df_consignas)
                 
                 # PESTAÑA 7: AMAZON
+                with tab_amazon:
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
-                with tab_amazon:  
-                    # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
+                # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2940,7 +2940,7 @@ else:
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- 3. CONTENIDO HTML (PANTALLA + IMPRESIÓN COMPLETA) ---
+                            # --- 3. CONTENIDO HTML (CON TU BOTÓN SIN CSS) ---
                             data_dict = df_mes.fillna('').to_dict('records')
                             costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
                             fecha_reporte = datetime.now().strftime('%d/%m/%Y')
@@ -3014,7 +3014,7 @@ else:
                                         </div>
                                         ''' for item in data_dict])}
                                     </div>
-                                    <div style="display: flex; justify-content: center; padding: 15px;">
+                                    <div style="display: flex; justify-content: center; padding-top: 20px;">
                                         <button class="btn-print" onclick="window.print()">🖨️ GENERAR REPORTE</button>
                                     </div>
                                 </div>
