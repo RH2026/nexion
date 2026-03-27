@@ -2941,7 +2941,7 @@ else:
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- 3. CONTENIDO HTML (CON TU BOTÓN SIN CSS) ---
+                            # --- 3. CONTENIDO HTML ---
                             data_dict = df_mes.fillna('').to_dict('records')
                             costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
                             fecha_reporte = datetime.now().strftime('%d/%m/%Y')
@@ -2971,6 +2971,29 @@ else:
                                     .label {{ font-size: 8px; color: #90a4ae; font-weight: 800; text-transform: uppercase; }}
                                     .v-main {{ font-size: 14px; font-weight: 800; color: #2ecc71; }}
                                     .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; }}
+                
+                                    /* ESTILO DEL BOTÓN IGUAL AL MAESTRO */
+                                    .btn-print-master {{
+                                        background-color: #243038;
+                                        color: #ffffff;
+                                        border: 1px solid rgba(255,255,255,0.1);
+                                        border-radius: 8px;
+                                        padding: 10px 20px;
+                                        font-size: 13px;
+                                        font-weight: 600;
+                                        cursor: pointer;
+                                        width: 100%;
+                                        transition: all 0.3s ease;
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        text-transform: uppercase;
+                                    }}
+                                    .btn-print-master:hover {{
+                                        background-color: #2ecc71;
+                                        color: #1c252c;
+                                        border-color: #2ecc71;
+                                    }}
                 
                                     @media print {{
                                         @page {{ size: A4; margin: 10mm; }}
@@ -3015,8 +3038,10 @@ else:
                                         </div>
                                         ''' for item in data_dict])}
                                     </div>
-                                    <div style="display: flex; justify-content: center; padding-top: 20px;">
-                                        <button class="btn-print" onclick="window.print()">🖨️ GENERAR REPORTE</button>
+                                    <div style="padding-top: 20px;">
+                                        <button class="btn-print-master" onclick="window.print()">
+                                            🖨️ GENERAR REPORTE DE OPERACIÓN (PDF)
+                                        </button>
                                     </div>
                                 </div>
                 
