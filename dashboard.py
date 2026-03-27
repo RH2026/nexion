@@ -2903,6 +2903,7 @@ else:
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
                 # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
                    
+                    # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2923,7 +2924,7 @@ else:
                                     df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).replace(['nan', '', 'None'], '0').astype(float)
                             df = df.sort_values(by='FECHA', ascending=False)
                 
-                            # --- 1. DASHBOARD PANTALLA (LAS 4 MÉTRICAS PRIMERO) ---
+                            # --- 1. DASHBOARD PANTALLA ---
                             st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
                             
                             m1, m2, m3, m4 = st.columns(4)
@@ -2934,7 +2935,7 @@ else:
                             m3.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Costo Flete</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
                             m4.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">% Logístico</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
                 
-                            # --- 2. FILTRO (DESPUÉS DE LAS MÉTRICAS) ---
+                            # --- 2. FILTRO ---
                             st.divider()
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
                             opciones_mes = ["TODO EL HISTÓRICO"] + list(df['MES'].unique())
@@ -2952,11 +2953,8 @@ else:
                             <head>
                                 <script src="https://cdn.tailwindcss.com"></script>
                                 <style>
-                                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+                                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
                                     body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
-                                    
-                                    #screen-view {{ display: block; }}
-                                    #print-view {{ display: none; }}
                                     
                                     .scroller {{ height: 480px; overflow-y: auto; padding-right: 10px; }}
                                     ::-webkit-scrollbar {{ width: 6px; }}
@@ -2972,15 +2970,15 @@ else:
                                     .v-main {{ font-size: 14px; font-weight: 800; color: #2ecc71; }}
                                     .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; }}
                 
-                                    /* BOTÓN AJUSTADO CON HOVER #00A0A8 */
+                                    /* BOTÓN AJUSTADO: MÁS DELGADO Y MENOS BOLD */
                                     .btn-print-master {{
                                         background-color: #243038;
                                         color: #ffffff;
                                         border: 1px solid rgba(255,255,255,0.1);
                                         border-radius: 8px;
-                                        padding: 10px 20px;
-                                        font-size: 13px;
-                                        font-weight: 600;
+                                        padding: 6px 20px; /* Padding vertical reducido para hacerlo más delgado */
+                                        font-size: 12px;
+                                        font-weight: 400; /* Letra menos bold (normal) */
                                         cursor: pointer;
                                         width: 100%;
                                         transition: all 0.3s ease;
@@ -2988,6 +2986,7 @@ else:
                                         justify-content: center;
                                         align-items: center;
                                         text-transform: uppercase;
+                                        letter-spacing: 1px;
                                     }}
                                     .btn-print-master:hover {{
                                         background-color: #00A0A8;
@@ -3040,7 +3039,7 @@ else:
                                     </div>
                                     <div style="padding-top: 20px;">
                                         <button class="btn-print-master" onclick="window.print()">
-                                            🖨️ GENERAR REPORTE DE OPERACIÓN (PDF)
+                                            GENERAR REPORTE DE OPERACIÓN (PDF)
                                         </button>
                                     </div>
                                 </div>
