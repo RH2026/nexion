@@ -7290,16 +7290,16 @@ else:
                     return output.getvalue()
             
                 # --- 2. INTERFAZ DE USUARIO ---
-                archivo = st.file_uploader("📂 Cargar Excel de Pedidos", type=["xlsx"])
+                archivo = st.file_uploader("Cargar Excel de Pedidos", type=["xlsx"])
                 
                 if archivo:
                     df = pd.read_excel(archivo, sheet_name=0)
                     
                     # Mostrar tabla para que no se vea vacío
-                    st.subheader("👀 Vista previa de datos")
+                    st.subheader("Vista previa de datos")
                     st.dataframe(df[['Quantity', 'DIRECCION', 'Factura']].head(5), use_container_width=True)
             
-                    if st.button("🛠️ Generar Etiquetas y Previsualizar", use_container_width=True):
+                    if st.button("Generar Etiquetas", use_container_width=True):
                         with st.spinner("Generando documento..."):
                             pdf_data = generar_etiquetas_nexion(df)
                             
@@ -7308,22 +7308,16 @@ else:
                                 
                                 # Botón de descarga llamativo
                                 st.download_button(
-                                    label="⬇️ Descargar PDF para Imprimir",
+                                    label="Descargar PDF para Imprimir",
                                     data=pdf_data,
-                                    file_name="etiquetas_nexion_final.pdf",
+                                    file_name="etiquetas_nexion.pdf",
                                     mime="application/pdf",
                                     use_container_width=True
                                 )
             
-                                # Previsualización incrustada
-                                try:
-                                    base64_pdf = base64.b64encode(pdf_data).decode('utf-8')
-                                    pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf">'
-                                    st.markdown("---")
-                                    st.subheader("📄 Previsualización del PDF")
-                                    st.components.v1.html(pdf_display, height=650)
-                                except Exception:
-                                    st.info("La vista previa no es compatible con tu navegador actual, pero puedes descargar el archivo arriba.")
+                                # Un pequeño mensaje de ayuda extra
+                                st.info("El archivo se guardará en tu carpeta de descargas.")# Previsualización incrustada
+                               
     
     
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
