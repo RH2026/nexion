@@ -1214,7 +1214,7 @@ else:
                 # --- HUB LOG: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
                     with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "ORDER STAGING"]:
+                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "LABEL CREATOR"]:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
                                 st.session_state.menu_main = "HUB LOG"
@@ -7187,7 +7187,7 @@ else:
                             st.error(f"Error al conectar con los logs: {e}")
             
             
-            elif st.session_state.menu_sub == "ORDER STAGING":                
+            elif st.session_state.menu_sub == "LABEL CREATOR":                
                 # --- 1. CONFIGURACIÓN DE PODER ---
                 st.markdown("<h1>ORDER STAGING</h1>", unsafe_allow_html=True)
                 
