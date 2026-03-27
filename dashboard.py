@@ -7190,17 +7190,19 @@ else:
             
             elif st.session_state.menu_sub == "LABEL CREATOR":                
                 # --- 1. CONFIGURACIÓN DE PODER ---
-                # --- 1. FUNCIONES DE APOYO ---
+                # --- 1. FUNCIONES DE PROCESAMIENTO ---
                 def limpiar_parentesis(texto):
                     return re.sub(r'\(.*?\)', '', str(texto)).strip()
-                
+            
                 def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado, max_lineas=3):
                     texto = str(texto).upper()
                     lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
+                    
                     tamano_actual = tamano_max
                     while len(lineas) > max_lineas and tamano_actual > 8:
                         tamano_actual -= 0.5
                         lineas = simpleSplit(texto, fuente, tamano_actual, ancho_max)
+                    
                     c.setFont(fuente, tamano_actual)
                     y_actual = y_inicio
                     for line in lineas[:max_lineas]: 
@@ -7212,6 +7214,8 @@ else:
                     output = io.BytesIO()
                     c = canvas.Canvas(output, pagesize=letter)
                     width_carta, height_carta = letter
+                    
+                    # AJUSTE DE MÁRGENES DEL DOCUMENTO
                     w_rec, h_rec = 10.5 * cm, 7.5 * cm
                     x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
                 
@@ -7219,7 +7223,8 @@ else:
                         try:
                             cantidad_real = int(row['Quantity'])
                             iteraciones = cantidad_real + 1 
-                        except: continue 
+                        except: 
+                            continue 
             
                         nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', 'SIN NOMBRE')))
                         nombre_final = limpiar_parentesis(nombre_crudo)
@@ -7228,31 +7233,40 @@ else:
             
                         for i in range(iteraciones):
                             es_archivo = (i == cantidad_real)
+                            
+                            # Dibujar contorno de etiqueta
                             c.setDash(1, 2)
                             c.setStrokeColorRGB(0.7, 0.7, 0.7)
                             c.rect(x_offset, y_offset, w_rec, h_rec)
                             c.setDash([])
                             c.setStrokeColorRGB(0, 0, 0)
-                            
-                            # CABECERA
+            
+                            # CABECERA JYPESA
                             c.setFont("Helvetica-Bold", 7)
                             c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
                             c.setFont("Helvetica", 6)
                             info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
                             dibujar_texto_bloque_pro(c, info_contacto, x_offset + (w_rec/2), y_offset + h_rec - 0.7*cm, 10*cm, "Helvetica", 6, 0.25*cm, max_lineas=1)
                             
-                            c.setLineWidth(0.3); c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                            c.setLineWidth(0.3)
+                            c.setStrokeColorRGB(0.7, 0.7, 0.7)
                             c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
                             c.setStrokeColorRGB(0, 0, 0)
             
+                            # NOMBRE CLIENTE (GIGANTE)
                             y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
+                            
+                            # DIRECCIÓN (14.5pt)
                             y_inicio_direccion = y_termino_nombre - 0.7*cm
                             if y_inicio_direccion > y_offset + 4.3*cm: y_inicio_direccion = y_offset + 4.3*cm
                             if y_inicio_direccion < y_offset + 2.9*cm: y_inicio_direccion = y_offset + 2.9*cm
                             dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 14.5, 0.5*cm, max_lineas=3)
             
+                            # PIE DE ETIQUETA
+                            c.setLineWidth(0.6)
                             y_linea_pie = y_offset + 1.4*cm
                             c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
+                            
                             c.setFont("Helvetica-Bold", 8.5)
                             c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
                             c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
@@ -7260,6 +7274,7 @@ else:
             
                             c.setFont("Helvetica-Bold", 13)
                             c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
+                            
                             if es_archivo:
                                 c.setFont("Helvetica-Bold", 11)
                                 c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, "COPIA MORENO")
@@ -7274,36 +7289,41 @@ else:
                     c.save()
                     return output.getvalue()
             
-                # --- 2. INTERFAZ MEJORADA ---
-                st.title("🏷️ Creador de Etiquetas Pro")
-                archivo = st.file_uploader("Cargar Excel de pedidos", type=["xlsx"])
+                # --- 2. INTERFAZ DE USUARIO ---
+                archivo = st.file_uploader("📂 Cargar Excel de Pedidos", type=["xlsx"])
                 
                 if archivo:
                     df = pd.read_excel(archivo, sheet_name=0)
                     
-                    # Vista previa de los datos
-                    with st.expander("👀 Ver datos cargados", expanded=True):
-                        st.dataframe(df.head(10), use_container_width=True)
-                        st.info(f"Se detectaron {len(df)} registros para procesar.")
+                    # Mostrar tabla para que no se vea vacío
+                    st.subheader("👀 Vista previa de datos")
+                    st.dataframe(df[['Quantity', 'DIRECCION', 'Factura']].head(5), use_container_width=True)
             
-                    if st.button("🚀 Generar y Previsualizar Etiquetas", use_container_width=True):
-                        with st.spinner("Construyendo el PDF..."):
-                            pdf_bytes = generar_etiquetas_nexion(df)
+                    if st.button("🛠️ Generar Etiquetas y Previsualizar", use_container_width=True):
+                        with st.spinner("Generando documento..."):
+                            pdf_data = generar_etiquetas_nexion(df)
                             
-                            # Convertir PDF a Base64 para mostrarlo en un iframe
-                            base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-                            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
-                            
-                            st.success("¡Etiquetas listas!")
-                            
-                            # Columnas para acciones
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.download_button("📥 Descargar PDF Final", pdf_bytes, "etiquetas_nexion.pdf", "application/pdf")
-                            
-                            # Mostrar el PDF directamente
-                            st.markdown("### 📄 Previsualización")
-                            st.markdown(pdf_display, unsafe_allow_code=True)
+                            if pdf_data:
+                                st.success("¡Documento generado con éxito!")
+                                
+                                # Botón de descarga llamativo
+                                st.download_button(
+                                    label="⬇️ Descargar PDF para Imprimir",
+                                    data=pdf_data,
+                                    file_name="etiquetas_nexion_final.pdf",
+                                    mime="application/pdf",
+                                    use_container_width=True
+                                )
+            
+                                # Previsualización incrustada
+                                try:
+                                    base64_pdf = base64.b64encode(pdf_data).decode('utf-8')
+                                    pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf">'
+                                    st.markdown("---")
+                                    st.subheader("📄 Previsualización del PDF")
+                                    st.components.v1.html(pdf_display, height=650)
+                                except Exception:
+                                    st.info("La vista previa no es compatible con tu navegador actual, pero puedes descargar el archivo arriba.")
     
     
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
