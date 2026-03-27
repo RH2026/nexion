@@ -7293,8 +7293,7 @@ else:
                     c.save()
                     return output.getvalue()
                 
-                # INTERFAZ
-                st.header("NEXION - Etiquetas de Embarque Jypesa")
+                # INTERFAZ                
                 archivo = st.file_uploader("Cargar Excel", type=["xlsx"])
                 if archivo:
                     df = pd.read_excel(archivo, sheet_name=0)
