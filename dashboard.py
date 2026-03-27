@@ -2900,9 +2900,8 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
-                with tab_amazon:
-                    # 1. CARGA Y LIMPIEZA DE DATOS (Mantenemos tu lógica de GitHub)
-                    
+                with tab_amazon:                  
+
                     # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
@@ -2924,25 +2923,27 @@ else:
                                     df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).replace(['nan', '', 'None'], '0').astype(float)
                             df = df.sort_values(by='FECHA', ascending=False)
                 
-                            # --- MÉTRICAS SUPERIORES ---
-                            st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
-                            m1, m2, m3, m4 = st.columns(4)
-                            card_style_metrics = "background:#1c252c; border-radius:8px; padding:15px 10px; border-bottom:3px solid #2ecc71; text-align:center;"
-                            lbl_style_metrics = "color:#90a4ae; font-size:9px; text-transform:uppercase; font-weight:700; letter-spacing:1px;"
-                            num_style_metrics = "color:#f1f5f9; font-size:22px; font-weight:800; margin:0;"
-                            
-                            m1.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Cajas Totales</div><div style="{num_style_metrics}">{int(df["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
-                            m2.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Valor Carga</div><div style="{num_style_metrics}">${df["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
-                            m3.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">Costo Flete</div><div style="{num_style_metrics}; color:#2ecc71;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
-                            m4.markdown(f'<div style="{card_style_metrics}"><div style="{lbl_style_metrics}">% Logístico</div><div style="{num_style_metrics}; color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
-                
                             # --- FILTRO ---
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
                             opciones_mes = ["TODO EL HISTÓRICO"] + list(df['MES'].unique())
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- RENDERIZADO DE TARJETAS ---
+                            # --- CÁLCULOS PARA REPORTE ---
+                            costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
+                            pct_cumplimiento = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
+                            fecha_reporte = datetime.now().strftime('%d/%m/%Y')
+                
+                            # --- DASHBOARD PANTALLA ---
+                            st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
+                            m1, m2, m3, m4 = st.columns(4)
+                            card_style = "background:#1c252c; border-radius:8px; padding:15px 10px; border-bottom:3px solid #2ecc71; text-align:center;"
+                            m1.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px;">Cajas Totales</div><div style="color:white; font-size:22px; font-weight:800;">{int(df_mes["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
+                            m2.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px;">Valor Carga</div><div style="color:white; font-size:22px; font-weight:800;">${df_mes["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m3.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px;">Costo Flete</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">${df_mes["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m4.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px;">% Logístico</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">{costo_log_real:.2f}%</div></div>', unsafe_allow_html=True)
+                
+                            # --- HTML MAESTRO (PANTALLA + IMPRESIÓN) ---
                             data_dict = df_mes.fillna('').to_dict('records')
                             
                             html_content = f"""
@@ -2951,90 +2952,127 @@ else:
                             <head>
                                 <script src="https://cdn.tailwindcss.com"></script>
                                 <style>
-                                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-                                    body {{ background-color: transparent; color: #eceff1; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
+                                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+                                    body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
                                     
-                                    .scroller {{
-                                        height: 500px; 
-                                        overflow-y: auto;
-                                        padding-right: 12px;
-                                    }}
+                                    /* DISEÑO PANTALLA */
+                                    #screen-view {{ display: block; }}
+                                    #print-view {{ display: none; }}
                                     
-                                    /* Scrollbar: Azul acero -> Verde neón */
+                                    .scroller {{ height: 480px; overflow-y: auto; padding-right: 10px; }}
                                     ::-webkit-scrollbar {{ width: 6px; }}
-                                    ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.05); }}
                                     ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
                                     .scroller:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
                 
                                     .card-row {{
-                                        background: #243038; 
+                                        background: #243038; border-radius: 12px; margin-bottom: 10px; padding: 15px 25px;
+                                        display: grid; grid-template-columns: 1fr 1.8fr 1fr 1fr; gap: 15px; align-items: center;
                                         border: 1px solid rgba(255,255,255,0.05);
-                                        border-radius: 12px;
-                                        margin-bottom: 12px;
-                                        padding: 15px 25px;
-                                        display: grid;
-                                        grid-template-columns: 1fr 1.8fr 1fr 1fr;
-                                        gap: 15px;
-                                        align-items: center;
-                                        transition: border-color 0.2s ease;
-                                        position: relative;
                                     }}
-                
-                                    .card-row:hover {{ border-color: #2ecc71; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }}
-                
-                                    .label {{ font-size: 8px; color: #90a4ae; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }}
-                                    .value-main {{ font-size: 15px; font-weight: 800; color: #2ecc71; }} 
-                                    .value-sub {{ font-size: 12px; font-weight: 600; color: #ffffff; }} 
-                                    .destinatario {{ font-size: 12px; font-weight: 700; color: #f1f5f9; text-transform: uppercase; }}
-                                    .kpi-badge {{ color: #ffffff; font-weight: 800; font-size: 15px; }}
-                
-                                    /* BOTÓN DE IMPRESIÓN */
-                                    .btn-container {{ display: flex; justify-content: center; padding: 20px 0; }}
+                                    .label {{ font-size: 8px; color: #90a4ae; font-weight: 800; text-transform: uppercase; }}
+                                    .v-main {{ font-size: 15px; font-weight: 800; color: #2ecc71; }}
                                     .btn-print {{
-                                        background: #1c252c; color: #eceff1; border: 1px solid rgba(255,255,255,0.1);
-                                        padding: 10px 25px; border-radius: 8px; font-weight: 800; font-size: 11px;
-                                        text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.3s;
+                                        width: 100%; background: #1c252c; color: white; border: 1px solid #2ecc71;
+                                        padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 800; margin-top: 15px;
                                     }}
-                                    .btn-print:hover {{ border-color: #2ecc71; color: #2ecc71; box-shadow: 0 0 10px rgba(46,204,113,0.2); }}
                 
+                                    /* CONFIGURACIÓN DE IMPRESIÓN */
                                     @media print {{
-                                        .scroller, .btn-container, body {{ background: white !important; color: black !important; }}
-                                        .btn-container, ::-webkit-scrollbar {{ display: none !important; }}
-                                        .card-row {{ background: white !important; border: 1px solid #eee !important; color: black !important; page-break-inside: avoid; }}
-                                        .value-main, .label, .destinatario {{ color: black !important; }}
+                                        @page {{ size: A4; margin: 15mm; }}
+                                        #screen-view {{ display: none !important; }}
+                                        #print-view {{ display: block !important; color: black !important; background: white !important; }}
+                                        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+                                        th {{ background: #f0f0f0 !important; border: 1px solid #000; padding: 8px; font-size: 10px; }}
+                                        td {{ border: 1px solid #ddd; padding: 8px; font-size: 10px; }}
+                                        .header-print {{ border-bottom: 4px solid #000; padding-bottom: 10px; margin-bottom: 20px; }}
                                     }}
                                 </style>
                             </head>
                             <body>
-                                <div class="scroller">
-                                    {"".join([f'''
-                                    <div class="card-row">
-                                        <div>
-                                            <div class="label">FOLIO</div>
-                                            <div class="value-main">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
+                                <div id="screen-view">
+                                    <div class="scroller">
+                                        {"".join([f'''
+                                        <div class="card-row">
+                                            <div><div class="label">FOLIO</div><div class="v-main">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div></div>
+                                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                                                <div class="label">DESTINO</div><div style="color:white; font-size:12px; font-weight:700;">{item.get('AMAZON', 'AMAZON')}</div>
+                                            </div>
+                                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                                                <div class="label">BULTOS</div><div style="color:white; font-size:12px;">{int(item.get('CAJAS', 0))} Uds</div>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div class="label">TOTAL</div><div style="color:white; font-weight:800;">${float(item.get('TOTAL', 0)):,.2f}</div>
+                                            </div>
                                         </div>
-                                        <div style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 15px;">
-                                            <div class="label">DESTINATARIO</div>
-                                            <div class="destinatario">{item.get('AMAZON', 'AMAZON MEXICO')}</div>
+                                        ''' for item in data_dict])}
+                                    </div>
+                                    <button class="btn-print" onclick="window.print()">🖨️ GENERAR REPORTE EJECUTIVO PDF</button>
+                                </div>
+                
+                                <div id="print-view">
+                                    <div class="header-print">
+                                        <table style="border:none;">
+                                            <tr style="border:none;">
+                                                <td style="border:none; width:60%;">
+                                                    <h1 style="margin:0; font-size:18px;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
+                                                    <p style="margin:0; font-size:12px; color:#666;">Distribución y Logística Nacional | JYPESA</p>
+                                                </td>
+                                                <td style="border:none; text-align:right;">
+                                                    <b>FECHA:</b> {fecha_reporte}<br>
+                                                    <b>ANÁLISIS:</b> {mes_sel.upper()}<br>
+                                                    <b>ESTATUS:</b> {"DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    
+                                    <h2 style="text-align:center; text-decoration:underline;">REPORTE OPERATIVO DE CONSIGNAS</h2>
+                                    
+                                    <div style="margin: 20px 0; border: 2px solid #000; padding: 10px;">
+                                        <b>RESUMEN MENSUAL:</b><br>
+                                        KPI Logístico Actual: {costo_log_real:.2f}% | Target Objetivo: 7.50% | Cajas Totales: {int(df_mes["CAJAS"].sum())}
+                                    </div>
+                
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>FOLIO / TALÓN</th>
+                                                <th>FECHA</th>
+                                                <th>DESTINATARIO</th>
+                                                <th>BULTOS</th>
+                                                <th>VALOR CARGA</th>
+                                                <th>TOTAL FLETE</th>
+                                                <th>KPI %</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {"".join([f'''
+                                            <tr>
+                                                <td>{item.get('IDENTIFICADOR ENVIO')}</td>
+                                                <td>{item.get('FECHA').strftime('%d/%m/%Y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</td>
+                                                <td>{item.get('AMAZON')}</td>
+                                                <td style="text-align:center;">{int(item.get('CAJAS'))}</td>
+                                                <td style="text-align:right;">${float(item.get('VALOR MERCANCIA')):,.2f}</td>
+                                                <td style="text-align:right;">${float(item.get('TOTAL')):,.2f}</td>
+                                                <td style="text-align:center; font-weight:bold;">{float(item.get('PORCENTAJE LOGISTICO')):,.2f}%</td>
+                                            </tr>
+                                            ''' for item in data_dict])}
+                                        </tbody>
+                                    </table>
+                
+                                    <div style="margin-top: 50px; display: flex; justify-content: space-between;">
+                                        <div style="width: 200px; border-top: 1px solid #000; text-align: center; font-size: 10px;">
+                                            <br>Rigoberto Hernández<br>Coordinador Logística
                                         </div>
-                                        <div style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 15px;">
-                                            <div class="label">BULTOS</div>
-                                            <div class="value-sub">{int(item.get('CAJAS', 0))} BULTOS</div>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <div class="label">TOTAL</div>
-                                            <div class="kpi-badge">${float(item.get('TOTAL', 0)):,.2f}</div>
+                                        <div style="width: 200px; border-top: 1px solid #000; text-align: center; font-size: 10px;">
+                                            <br>Dirección General<br>Autorización
                                         </div>
                                     </div>
-                                    ''' for item in data_dict])}
-                                </div>
-                                <div class="btn-container">
-                                    <button class="btn-print" onclick="window.print()">🖨️ Generar Reporte</button>
                                 </div>
                             </body>
                             </html>
                             """
-                            components.html(html_content, height=620, scrolling=False)
+                            components.html(html_content, height=650, scrolling=False)
                 
                         else:
                             st.error("Error al conectar con GitHub.")
