@@ -2902,7 +2902,7 @@ else:
                 with tab_amazon:
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
                 # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
-                    # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
+                   
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2972,7 +2972,7 @@ else:
                                     .v-main {{ font-size: 14px; font-weight: 800; color: #2ecc71; }}
                                     .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; }}
                 
-                                    /* ESTILO DEL BOTÓN IGUAL AL MAESTRO */
+                                    /* BOTÓN AJUSTADO CON HOVER #00A0A8 */
                                     .btn-print-master {{
                                         background-color: #243038;
                                         color: #ffffff;
@@ -2990,9 +2990,9 @@ else:
                                         text-transform: uppercase;
                                     }}
                                     .btn-print-master:hover {{
-                                        background-color: #2ecc71;
-                                        color: #1c252c;
-                                        border-color: #2ecc71;
+                                        background-color: #00A0A8;
+                                        color: #ffffff;
+                                        border-color: #00A0A8;
                                     }}
                 
                                     @media print {{
@@ -3116,7 +3116,7 @@ else:
                             st.error("Error al conectar con GitHub.")
                     except Exception as e:
                         st.error(f"Error crítico: {e}")
-                                                
+                                                                
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
