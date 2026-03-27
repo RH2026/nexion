@@ -2900,8 +2900,8 @@ else:
                 
                 # PESTAÑA 7: AMAZON
                 # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
-                with tab_amazon:                  
-                    # 1. CARGA Y LIMPIEZA DE DATOS
+                with tab_amazon:
+                    # 1. CARGA Y LIMPIEZA DE DATOS (Se mantiene tu lógica que ya funciona)
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "amazon.csv"
@@ -2924,20 +2924,18 @@ else:
                             
                             df = df.sort_values(by='FECHA', ascending=False)
                 
-                            # --- MÉTRICAS GIGANTES ---
-                            st.markdown("<h3 style='text-align:center; color:white; font-size:14px; letter-spacing:4px; font-weight:900;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
+                            # --- MÉTRICAS (Estilo limpio) ---
+                            st.markdown("<h3 style='text-align:center; color:white; font-size:14px; letter-spacing:4px; font-weight:900; margin-bottom:20px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
                             
                             m1, m2, m3, m4 = st.columns(4)
-                            card_style = "background:#1c252c; border-radius:10px; padding:25px 10px; border-bottom:5px solid #2ecc71; text-align:center; box-shadow: 0 4px 10px rgba(0,0,0,0.5);"
-                            lbl_style = "color:#95a5a6; font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:10px;"
-                            num_style = "color:white; font-size:35px; font-weight:900; margin:0; line-height:1;"
+                            card_style = "background:#1c252c; border-radius:10px; padding:20px 10px; border-bottom:4px solid #2ecc71; text-align:center;"
+                            lbl_style = "color:#95a5a6; font-size:10px; text-transform:uppercase; font-weight:800; letter-spacing:1px;"
+                            num_style = "color:white; font-size:28px; font-weight:900; margin:0;"
                             
                             m1.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Cajas Totales</div><div style="{num_style}">{int(df["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
                             m2.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Valor Carga</div><div style="{num_style}">${df["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
                             m3.markdown(f'<div style="{card_style}"><div style="{lbl_style}">Costo Flete</div><div style="{num_style}; color:#2ecc71;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
                             m4.markdown(f'<div style="{card_style}"><div style="{lbl_style}">% Logístico</div><div style="{num_style}; color:#2ecc71;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
-                
-                            st.divider()
                 
                             # --- FILTRO ---
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
@@ -2945,7 +2943,7 @@ else:
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
                 
-                            # --- RENDER CON SCROLL FORZADO (ESTILO NEÓN) ---
+                            # --- RENDERIZADO ESTILO "CONSIGNAS BARCELO" ---
                             data_dict = df_mes.fillna('').to_dict('records')
                 
                             html_content = f"""
@@ -2954,48 +2952,58 @@ else:
                             <head>
                                 <script src="https://cdn.tailwindcss.com"></script>
                                 <style>
-                                    body {{ background-color: #101820; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 5px; }}
+                                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+                                    body {{ background-color: transparent; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
                                     
-                                    /* CONTENEDOR CON ALTURA FIJA Y SCROLL */
+                                    /* CONTENEDOR CON SCROLL */
                                     .scroller {{
-                                        height: 500px; 
-                                        overflow-y: scroll;
-                                        border: 2px solid #3498db; /* AZUL INACTIVO */
-                                        border-radius: 15px;
-                                        padding: 20px;
-                                        background: #0d1117;
-                                        transition: all 0.4s ease;
+                                        height: 600px; 
+                                        overflow-y: auto;
+                                        padding-right: 10px;
                                     }}
                                     
-                                    /* CAMBIO A VERDE NEÓN EN HOVER */
-                                    .scroller:hover {{
-                                        border-color: #2ecc71;
-                                        box-shadow: 0 0 20px rgba(46, 204, 113, 0.25);
-                                    }}
-                
-                                    /* Scrollbar Estilo Neón */
-                                    ::-webkit-scrollbar {{ width: 8px; }}
-                                    ::-webkit-scrollbar-track {{ background: transparent; }}
-                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
-                                    .scroller:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
+                                    /* Scrollbar minimalista */
+                                    ::-webkit-scrollbar {{ width: 6px; }}
+                                    ::-webkit-scrollbar-track {{ background: rgba(255,255,255,0.05); }}
+                                    ::-webkit-scrollbar-thumb {{ background: #34495e; border-radius: 10px; }}
+                                    ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
                 
                                     .card-row {{
                                         background: #1c252c;
-                                        border: 1px solid rgba(255,255,255,0.08);
-                                        border-radius: 10px;
-                                        margin-bottom: 10px;
-                                        padding: 12px 20px;
+                                        border: 1px solid rgba(255,255,255,0.05);
+                                        border-radius: 12px;
+                                        margin-bottom: 12px;
+                                        padding: 15px 25px;
                                         display: grid;
-                                        grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr;
+                                        grid-template-columns: 1.2fr 2fr 1.2fr 1fr;
+                                        gap: 15px;
                                         align-items: center;
-                                        transition: all 0.2s ease;
+                                        position: relative;
+                                        transition: all 0.3s ease;
                                     }}
-                                    .card-row:hover {{ border-color: #2ecc71; transform: scale(1.005); }}
+                
+                                    /* Efecto de borde neón al pasar el mouse */
+                                    .card-row:hover {{
+                                        border-color: #2ecc71;
+                                        box-shadow: 0 0 15px rgba(46, 204, 113, 0.15);
+                                        transform: translateX(5px);
+                                    }}
+                
+                                    /* Etiquetas superiores (Labels) */
+                                    .label {{
+                                        font-size: 9px;
+                                        color: #7f8c8d;
+                                        font-weight: 800;
+                                        text-transform: uppercase;
+                                        letter-spacing: 1px;
+                                        margin-bottom: 4px;
+                                    }}
+                
+                                    .value-main {{ font-size: 18px; font-weight: 900; color: #2ecc71; }}
+                                    .value-sub {{ font-size: 14px; font-weight: 700; color: #ffffff; }}
+                                    .value-small {{ font-size: 11px; color: #bdc3c7; }}
                                     
-                                    /* TEXTO PEQUEÑO PARA LAS TARJETAS */
-                                    .mini-lbl {{ font-size: 7px; text-transform: uppercase; color: #8b949e; font-weight: 800; letter-spacing: 1px; }}
-                                    .v-txt {{ font-size: 13px; font-weight: 700; color: #ffffff; }}
-                                    .v-neon {{ color: #2ecc71; font-weight: 800; font-family: monospace; }}
+                                    .destinatario {{ font-size: 14px; font-weight: 800; color: #ffffff; text-transform: uppercase; }}
                                 </style>
                             </head>
                             <body>
@@ -3003,28 +3011,27 @@ else:
                                     {"".join([f'''
                                     <div class="card-row">
                                         <div>
-                                            <div class="mini-lbl">ID / FECHA</div>
-                                            <div class="v-neon">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
-                                            <div style="font-size:10px; opacity:0.6;">{item.get('FECHA').strftime('%d/%m/%Y') if not isinstance(item.get('FECHA'), str) else item.get('FECHA')}</div>
+                                            <div class="label">TALON / FOLIO</div>
+                                            <div class="value-main" style="color:#2ecc71;">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
+                                            <div class="value-small">F. Doc: {item.get('FECHA').strftime('%d/%m/%Y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</div>
                                         </div>
-                                        <div class="border-l border-white/10 pl-4">
-                                            <div class="mini-lbl">MERCANCÍA / DESTINO</div>
-                                            <div class="v-txt">$ {float(item.get('VALOR MERCANCIA', 0)):,.2f}</div>
-                                            <div class="v-neon" style="font-size:10px;">{item.get('AMAZON', '')}</div>
+                
+                                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                            <div class="label">DESTINATARIO / REFERENCIA</div>
+                                            <div class="destinatario">{item.get('AMAZON', 'AMAZON MEXICO')}</div>
+                                            <div class="value-small" style="font-style: italic; color:#3498db;">Ref: {item.get('ESTATUS', 'PROCESADO')}</div>
                                         </div>
-                                        <div class="border-l border-white/10 pl-4">
-                                            <div class="mini-lbl">BULTOS / COSTO CAJA</div>
-                                            <div class="v-txt">{int(item.get('CAJAS', 0))} u</div>
-                                            <div class="v-neon" style="font-size:10px;">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f}</div>
+                
+                                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                            <div class="label">BULTOS / VALOR</div>
+                                            <div class="value-sub">{int(item.get('CAJAS', 0))} BULTOS</div>
+                                            <div class="value-small">Mcia: ${float(item.get('VALOR MERCANCIA', 0)):,.2f}</div>
                                         </div>
-                                        <div class="border-l border-white/10 pl-4">
-                                            <div class="mini-lbl">KPI LOGÍSTICO</div>
-                                            <div class="v-neon text-lg">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}%</div>
-                                            <div class="mini-lbl">{item.get('ESTATUS', '')}</div>
-                                        </div>
-                                        <div class="text-right border-l border-white/10 pl-4">
-                                            <div class="mini-lbl">TOTAL FLETE</div>
-                                            <div class="v-txt" style="color:#2ecc71; font-size:18px;">$ {float(item.get('TOTAL', 0)):,.2f}</div>
+                
+                                        <div style="text-align: right;">
+                                            <div class="label">TOTAL CARGO</div>
+                                            <div class="value-main">${float(item.get('TOTAL', 0)):,.2f}</div>
+                                            <div class="value-small" style="color:#2ecc71; font-weight:bold;">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}% KPI</div>
                                         </div>
                                     </div>
                                     ''' for item in data_dict])}
@@ -3032,13 +3039,13 @@ else:
                             </body>
                             </html>
                             """
-                            components.html(html_content, height=560, scrolling=False)
+                            components.html(html_content, height=620, scrolling=False)
                 
                         else:
                             st.error("Error al conectar con GitHub.")
                     except Exception as e:
                         st.error(f"Error crítico: {e}")
-                                
+                                                
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
