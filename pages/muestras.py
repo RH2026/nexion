@@ -1,10 +1,3 @@
-Entendido perfectamente. Quieres que el dashboard respire esa estética de Silicon Valley: limpio, minimalista, con tipografía nítida, paleta de colores moderna (modo oscuro con acentos neón) y un layout hiper-eficiente donde la información es la protagonista absoluta. Nada de "diseños de Excel".
-
-He rediseñado completamente la interfaz visual usando CSS personalizado inyectado en Streamlit y he cambiado las gráficas de Plotly a un estilo más elegante y sobrio.
-
-Aquí tienes el código de "Nexion, Silicon Valley Edition":
-
-Python
 import streamlit as st
 import pandas as pd
 import plotly.express as px
