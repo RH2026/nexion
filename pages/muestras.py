@@ -11,13 +11,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilos personalizados para reducir márgenes y que todo quepa mejor
+# Cambia 'unsafe_allow_stdio' por 'unsafe_allow_html'
 st.markdown("""
     <style>
     .block-container { padding-top: 1rem; padding-bottom: 0rem; }
     [data-testid="stMetricValue"] { font-size: 24px; }
     </style>
-    """, unsafe_allow_stdio=True)
+    """, unsafe_allow_html=True)
 
 @st.cache_data
 def get_nexion_data():
