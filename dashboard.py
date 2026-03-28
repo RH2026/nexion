@@ -5357,7 +5357,7 @@ else:
                     
                         <div style="display:flex; gap:10px; margin-bottom:15px;">
                             <div style="flex:1; border:1px solid black;">
-                                <div style="background:black; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">REMITENTE</div>
+                                <div style="background:withe; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">REMITENTE</div>
                                 <div style="padding:8px; font-size:11px; line-height:1.4;">
                                     <b>JABONES Y PRODUCTOS ESPECIALIZADOS</b><br>
                                     C. Cernícalo 155, La Aurora C.P.: 44460<br>
@@ -5367,7 +5367,7 @@ else:
                                 </div>
                             </div>
                             <div style="flex:1; border:1px solid black;">
-                                <div style="background:#b30000; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
+                                <div style="background:#ffffff; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
                                 <div style="padding:8px; font-size:11px; line-height:1.4;">
                                     <b>{str(hotel).upper()}</b><br>
                                     {f"{str(calle).upper()}<br>" if calle and calle != "-" else ""}
@@ -5382,7 +5382,7 @@ else:
                     
                         <div style="flex-grow: 1;">
                             <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:12px;">
-                                <tr style="background:#444; color:black;">
+                                <tr style="background:#ffffff; color:black;">
                                     <th style="padding: 8px; border: 1px solid black;">DESCRIPCIÓN DEL PRODUCTO</th>
                                     <th style="border: 1px solid black; width: 100px;">CÓDIGO</th>
                                     <th style="border: 1px solid black; width: 80px;">U.M.</th>
