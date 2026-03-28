@@ -1,62 +1,148 @@
 import streamlit as st
-import cv2
-import numpy as np
-from pyzbar.pyzbar import decode
-import pytesseract
+import pandas as pd
+import plotly.express as px
+import requests
+from io import StringIO
 
-st.set_page_config(page_title="Nexion - Lector JYPESA", layout="centered")
+# 1. CONFIGURACIÓN DE PÁGINA (Fundamental para que quepa en una pantalla)
+st.set_page_config(
+    page_title="Nexion Logística Dashboard",
+    layout="wide", # Esto expande el contenido a todo lo ancho
+    initial_sidebar_state="collapsed"
+)
 
-st.title("🚀 Scanner Inteligente Nexion")
-st.write("Usa la cámara para leer códigos de barras o texto de las etiquetas.")
+# Estilos personalizados para reducir márgenes y que todo quepa mejor
+st.markdown("""
+    <style>
+    .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    [data-testid="stMetricValue"] { font-size: 24px; }
+    </style>
+    """, unsafe_allow_stdio=True)
 
-# 1. Entrada de cámara
-img_file_buffer = st.camera_input("Captura la etiqueta")
+@st.cache_data
+def get_nexion_data():
+    """Carga y limpia los datos desde el repositorio privado"""
+    GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+    REPO_NAME = "RH2026/nexion"
+    # Actualizado al nuevo nombre de archivo que me diste
+    FILE_PATH = "Matriz_Excel_Dashboard.csv" 
+    URL_RAW = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
 
-if img_file_buffer is not None:
-    # Convertir el buffer de la imagen a un formato que OpenCV entienda
-    bytes_data = img_file_buffer.getvalue()
-    cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-    
-    # --- PARTE 1: LECTURA DE CÓDIGO DE BARRAS ---
-    st.subheader("📦 Resultado Código de Barras")
-    codigos = decode(cv2_img)
-    
-    if codigos:
-        for obj in codigos:
-            puntos = obj.polygon
-            codigo_data = obj.data.decode('utf-8')
-            tipo_codigo = obj.type
-            st.success(f"**Detectado:** {codigo_data} ({tipo_codigo})")
-    else:
-        st.warning("No se encontró ningún código de barras.")
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3.raw"
+    }
 
-    # --- PARTE 2: LECTURA DE TEXTO (OCR MEJORADO) ---
-    st.subheader("📝 Resultado de Texto")
-    
-    # Preprocesamiento para evitar que salga "mocho"
-    gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY) # Pasar a gris
-    # Aumentar contraste y nitidez
-    filtro = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    
-    # Configuración para que lea bloques de texto más completos
-    custom_config = r'--oem 3 --psm 6'
-    texto = pytesseract.image_to_string(filtro, lang='spa', config=custom_config)
-
-    if texto.strip():
-        # Limpiamos un poco el texto de saltos de línea raros
-        texto_limpio = texto.replace("\n", " ")
-        st.info("Texto encontrado:")
-        st.write(texto_limpio)
+    try:
+        response = requests.get(URL_RAW, headers=headers)
+        response.raise_for_status()
+        df = pd.read_csv(StringIO(response.text))
         
-        # Opcional: Botón para copiar el texto
-        st.button("Copiar texto leído")
-    else:
-        st.error("No se pudo leer texto claro. Intenta con más luz.")
+        # Limpieza de Fechas
+        date_cols = ['FECHA DE ENVÍO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'EMISION']
+        for col in date_cols:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], errors='coerce')
+        
+        # Limpieza de Numéricos
+        cols_num = ['COSTO DE LA GUÍA', 'COSTOS ADICIONALES', 'FACTURACION', 'CANTIDAD DE CAJAS']
+        for col in cols_num:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+        
+        # Cálculo de OTIF (On Time In Full - A tiempo)
+        # Es 1 si se entregó antes o el mismo día que la promesa
+        df['A_TIEMPO'] = (df['FECHA DE ENTREGA REAL'] <= df['PROMESA DE ENTREGA']).astype(int)
+        
+        return df
+    except Exception as e:
+        st.error(f"Error de conexión: {e}")
+        return pd.DataFrame()
 
-    # --- VISUALIZACIÓN DE APOYO ---
-    with st.expander("Ver qué está leyendo el sistema"):
-        st.image(filtro, caption="Imagen procesada para OCR")
+# --- INICIO DE LA APP ---
+df = get_nexion_data()
 
+if not df.empty:
+    # FILTROS EN BARRA LATERAL (Para no estorbar en el dashboard principal)
+    st.sidebar.header("🔍 Filtros Globales")
+    meses = sorted(df['MES'].dropna().unique())
+    mes_sel = st.sidebar.multiselect("Mes", meses, default=meses)
+    
+    fleteras = sorted(df['FLETERA'].dropna().unique())
+    fletera_sel = st.sidebar.multiselect("Fletera", fleteras, default=fleteras)
+
+    # Aplicar Filtros
+    df_f = df[df['MES'].isin(mes_sel) & df['FLETERA'].isin(fletera_sel)]
+
+    st.title("🚚 Panel de Control Nexion")
+
+    # --- FILA 1: KPIs (Cintillo superior) ---
+    kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+    
+    total_fact = df_f['FACTURACION'].sum()
+    total_costo = df_f['COSTO DE LA GUÍA'].sum() + df_f['COSTOS ADICIONALES'].sum()
+    porc_gasto = (total_costo / total_fact * 100) if total_fact > 0 else 0
+    cumplimiento = (df_f['A_TIEMPO'].mean() * 100)
+    cajas = df_f['CANTIDAD DE CAJAS'].sum()
+
+    kpi1.metric("Facturación Total", f"${total_fact:,.0f}")
+    kpi2.metric("Costo Total Flete", f"${total_costo:,.0f}")
+    kpi3.metric("% Gasto Envío", f"{porc_gasto:.1f}%")
+    kpi4.metric("Nivel OTIF", f"{cumplimiento:.1f}%")
+    kpi5.metric("Total Cajas", f"{cajas:,.0f}")
+
+    st.markdown("---")
+
+    # --- FILA 2: Análisis de Costos e Incidencias ---
+    col_a, col_b = st.columns([2, 1])
+
+    with col_a:
+        # Gráfico comparativo de Facturación vs Costo por Mes
+        df_mes = df_f.groupby('MES')[['FACTURACION', 'COSTO DE LA GUÍA']].sum().reset_index()
+        fig_evol = px.line(df_mes, x='MES', y=['FACTURACION', 'COSTO DE LA GUÍA'], 
+                           title="Evolución: Venta vs Gasto Logístico", markers=True,
+                           color_discrete_sequence=["#2ECC71", "#E74C3C"])
+        fig_evol.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20))
+        st.plotly_chart(fig_evol, use_container_width=True)
+
+    with col_b:
+        # Donut chart de incidencias
+        fig_inc = px.pie(df_f, names='INCIDENCIAS', title="Estado de Incidencias", hole=0.5)
+        fig_inc.update_layout(height=300, margin=dict(l=10, r=10, t=40, b=10))
+        st.plotly_chart(fig_inc, use_container_width=True)
+
+    # --- FILA 3: Destinos y Transporte ---
+    col_c, col_d, col_e = st.columns(3)
+
+    with col_c:
+        # Top 10 Destinos
+        df_dest = df_f.groupby('DESTINO')['CANTIDAD DE CAJAS'].sum().sort_values(ascending=False).head(10).reset_index()
+        fig_dest = px.bar(df_dest, y='DESTINO', x='CANTIDAD DE CAJAS', orientation='h', 
+                          title="Top 10 Destinos", color='CANTIDAD DE CAJAS')
+        fig_dest.update_layout(height=300)
+        st.plotly_chart(fig_dest, use_container_width=True)
+
+    with col_d:
+        # Gasto por Fletera
+        df_flet = df_f.groupby('FLETERA')['COSTO DE LA GUÍA'].sum().reset_index()
+        fig_flet = px.bar(df_flet, x='FLETERA', y='COSTO DE LA GUÍA', title="Gasto por Fletera")
+        fig_flet.update_layout(height=300)
+        st.plotly_chart(fig_flet, use_container_width=True)
+
+    with col_e:
+        # Volumen por Forma de Envío
+        df_env = df_f.groupby('FORMA DE ENVIO')['CANTIDAD DE CAJAS'].sum().reset_index()
+        fig_env = px.bar(df_env, x='FORMA DE ENVIO', y='CANTIDAD DE CAJAS', title="Cajas por Forma de Envío")
+        fig_env.update_layout(height=300)
+        st.plotly_chart(fig_env, use_container_width=True)
+
+    # --- FILA 4: Tabla de detalle (Pequeña al final) ---
+    with st.expander("🔍 Ver detalle de pedidos y comentarios"):
+        st.dataframe(df_f[['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'DESTINO', 'FECHA DE ENTREGA REAL', 'COMENTARIOS', 'TRIGGER']], 
+                     use_container_width=True)
+
+else:
+    st.error("No se pudo cargar la matriz. Revisa que el nombre del archivo en GitHub sea 'Matriz_Excel_Dashboard.csv'.")
 
 
 
