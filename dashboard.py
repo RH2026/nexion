@@ -6107,28 +6107,43 @@ else:
                             st.warning("No se encontraron coincidencias en el inventario.")
                 
                 
+                # ── C. INICIALIZACIÓN DE FILAS (CANTIDAD como número 0, no string "0") ──
+                if 'rows' not in st.session_state:
+                    st.session_state.rows = pd.DataFrame([
+                        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0} 
+                    ] * 10)
+                
                 # ── D. MOTOR DE BÚSQUEDA INTERNO (LOOKUP) ──────────────────────────
                 def lookup_pt():
+                    # 1. Capturamos lo que el usuario escribió en el editor
                     edits = st.session_state["editor_pt"].get("edited_rows", {})
                     added = st.session_state["editor_pt"].get("added_rows", [])
                     
+                    # 2. Procesamos filas nuevas si el usuario le dio al botón "+"
                     for row in added:
                         new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
                         new_row.update(row)
                         st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
                     
+                    # 3. Procesamos las ediciones en las celdas existentes
                     for idx_str, info in edits.items():
                         idx = int(idx_str)
+                        
+                        # Actualizamos el valor en el DataFrame original de la sesión para cada columna editada
                         for col, val in info.items():
                             st.session_state.rows.at[idx, col] = val
-                        
-                        if "CODIGO" in info:
-                            val_codigo = str(info["CODIGO"]).strip().upper()
-                            if not df_inv.empty:
-                                match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val_codigo]
-                                if not match.empty:
-                                    st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
-                                    st.session_state.rows.at[idx, "CODIGO"] = val_codigo
+                            
+                            # Si el usuario editó la columna CÓDIGO, disparamos la búsqueda automática
+                            if col == "CODIGO":
+                                val_codigo = str(val).strip().upper()
+                                if not df_inv.empty:
+                                    # Buscamos coincidencia exacta en el inventario
+                                    match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val_codigo]
+                                    if not match.empty:
+                                        st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
+                                        st.session_state.rows.at[idx, "CODIGO"] = val_codigo # Normaliza a mayúsculas
+                                    else:
+                                        st.session_state.rows.at[idx, "DESCRIPCION"] = "⚠️ CÓDIGO NO ENCONTRADO"
                 
                 # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
                 st.markdown("<p style='font-size:12px; font-weight:normal; color:#FFFFFF; letter-spacing:2px; margin-bottom:10px;'>EDICIÓN SOLICITUD DE MATERIALES</p>", unsafe_allow_html=True)
@@ -6138,27 +6153,26 @@ else:
                     num_rows="dynamic", 
                     use_container_width=True, 
                     key="editor_pt", 
-                    on_change=lookup_pt,
+                    on_change=lookup_pt, # Esta función ahora es robusta para cualquier fila
                     column_config={
                         "CODIGO": st.column_config.TextColumn(
                             "CÓDIGO", 
                             help="Escribe el código para buscar el producto",
-                            validate=r"^[a-zA-Z0-9_-]+$" # Validación para que no metan caracteres raros
+                            validate=r"^[a-zA-Z0-9_-]+$"
                         ),
                         "DESCRIPCION": st.column_config.TextColumn(
                             "DESCRIPCIÓN DEL PRODUCTO",
                             width="large",
-                            disabled=True # Si tienes una función lookup, que no la editen a mano para no romper tu base
+                            disabled=True # Bloqueado para que el lookup mande
                         ),
                         "CANTIDAD": st.column_config.NumberColumn(
                             "CANT.", 
                             min_value=0,
-                            max_value=1000,
+                            max_value=10000,
                             step=1,
-                            format="%d", # Sin decimales para que se vea limpio
+                            format="%d",
                             width="small"
                         ),
-                        # TRUCO PRO: Añade una columna de estatus visual aunque no esté en tu DF original
                         "DISPONIBILIDAD": st.column_config.CheckboxColumn(
                             "✅ LISTO",
                             help="Marca si ya tienes el material físicamente",
@@ -6326,8 +6340,10 @@ else:
                         components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
                 with c2:
                     if st.button(":material/refresh: BORRAR", use_container_width=True):
-                        if 'folio_nexion' in st.session_state: del st.session_state.folio_nexion
-                        st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"}] * 10)
+                        if 'folio_nexion' in st.session_state: 
+                            del st.session_state.folio_nexion
+                        # Reiniciamos con ceros numéricos para mantener la compatibilidad
+                        st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
                         st.rerun()
     
             # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
