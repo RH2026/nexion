@@ -6164,33 +6164,123 @@ else:
 
                 coment_val = st.text_area("NOTAS DE LOGÍSTICA", placeholder="¿Instrucciones?", key="coment_in_pt")
 
-                # --- HTML PARA IMPRESIÓN PT ---
+               # --- HTML PARA IMPRESIÓN PT ---
+                # Importante: Usamos df_final_pt que es el resultado directo del editor
                 filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
+                
                 tabla_html = "".join([
                     f"<tr><td style='border:1px solid black;padding:6px; font-size:10px;'>{r['CODIGO']}</td>"
                     f"<td style='border:1px solid black;padding:6px; font-size:10px;'>{r['DESCRIPCION']}</td>"
                     f"<td style='border:1px solid black;padding:6px;text-align:center; font-size:10px;'>{r['CANTIDAD']}</td></tr>" 
                     for _, r in filas_print.iterrows()
                 ])
-
+                
                 form_pt_html = f"""
                 <html>
-                <body style='font-family:sans-serif;'>
-                    <div style='display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:5px;'>
-                        <div><h2>Jabones y Productos Especializados</h2><p>Distribución y Logística | 2026</p></div>
-                        <div style='text-align:right;'><b>FOLIO:</b> {fol_val}<br><b>FECHA:</b> {f_val}</div>
-                    </div>
-                    <h3 style='text-align:center;'>ENTREGA DE MATERIALES PT</h3>
-                    <p><b>TURNO:</b> {t_val}</p>
-                    <table style='width:100%; border-collapse:collapse; margin-top:10px;'>
-                        <thead><tr style='background:#eee;'><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr></thead>
-                        <tbody>{tabla_html}</tbody>
-                    </table>
-                    <div style='margin-top:15px; border:1px solid black; padding:8px;'><b>COMENTARIOS:</b> {coment_val}</div>
-                    <div style='margin-top:40px; display:flex; justify-content:space-between; text-align:center; font-size:10px;'>
-                        <div style='width:30%; border-top:1px solid black;'>ENTREGÓ<br>Analista de Inventario</div>
-                        <div style='width:30%; border-top:1px solid black;'>AUTORIZÓ<br>Carlos Fialko / Dir. Ops</div>
-                        <div style='width:30%; border-top:1px solid black;'>RECIBIÓ<br>Rigoberto Hernandez</div>
+                <head>
+                    <style>
+                        @page {{ 
+                            size: letter; 
+                            margin: 1cm; 
+                        }}
+                        @media print {{
+                            body {{ margin: 0; padding: 0; }}
+                            .print-container {{ min-height: 95vh; display: flex; flex-direction: column; }}
+                        }}
+                        body {{ 
+                            font-family: sans-serif; 
+                            color: black; 
+                            background: white; 
+                            margin: 0;
+                        }}
+                        .print-container {{
+                            display: flex;
+                            flex-direction: column;
+                            min-height: 95vh;
+                            width: 100%;
+                        }}
+                        .main-content {{
+                            flex-grow: 1;
+                        }}
+                        table {{ 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 10px; 
+                        }}
+                        th {{ 
+                            background: #eee; 
+                            border: 1px solid black; 
+                            padding: 6px; 
+                            text-align: left; 
+                            font-size: 11px;
+                        }}
+                        .comments-section {{
+                            margin-top: 15px;
+                            font-size: 10px;
+                            border: 1px solid black;
+                            padding: 8px;
+                            min-height: 30px;
+                        }}
+                        .signature-section {{
+                            margin-top: 30px;
+                            display: flex;
+                            justify-content: space-between;
+                            text-align: center;
+                            font-size: 9px;
+                            padding-bottom: 10px;
+                        }}
+                        .sig-box {{
+                            width: 30%;
+                            border-top: 1px solid black;
+                            padding-top: 5px;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="print-container">
+                        <div class="main-content">
+                            <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:5px; margin-bottom:15px;">
+                                <div>
+                                    <h2 style="margin:0; font-size: 16px; letter-spacing:1px;">Jabones y Productos Especializados</h2>
+                                    <p style="margin:0; font-size:9px; letter-spacing:1px;">Distribución y Logística | 2026</p>
+                                </div>
+                                <div style="text-align:right; font-size:11px;">
+                                    <b>FOLIO:</b> {fol_val}<br>
+                                    <b>FECHA:</b> {f_val}
+                                </div>
+                            </div>
+                
+                            <h3 style="text-align:center; font-size: 14px; letter-spacing:1px; margin: 10px 0;">ENTREGA DE MATERIALES PT</h3>
+                            <p style="font-size:11px;"><b>TURNO:</b> {t_val}</p>
+                            
+                            <table>
+                                <thead>
+                                    <tr><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
+                                </thead>
+                                <tbody>
+                                    {tabla_html}
+                                </tbody>
+                            </table>
+                
+                            <div class="comments-section">
+                                <b>COMENTARIOS:</b> {coment_val}
+                            </div>
+                        </div>
+                
+                        <div class="signature-section">
+                            <div class="sig-box">
+                                <b>ENTREGÓ</b><br>
+                                Analista de Inventario
+                            </div>
+                            <div class="sig-box">
+                                <b>AUTORIZACIÓN</b><br>
+                                Carlos Fialko / Dir. Operaciones
+                            </div>
+                            <div class="sig-box">
+                                <b>RECIBIÓ</b><br>
+                                Rigoberto Hernandez / Cord. Logística
+                            </div>
+                        </div>
                     </div>
                 </body>
                 </html>
