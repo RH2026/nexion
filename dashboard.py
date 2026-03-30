@@ -6064,7 +6064,7 @@ else:
                     now_gdl = datetime.now(tz_gdl)
                     st.session_state.folio_nexion = f"F-{now_gdl.strftime('%Y%m%d-%H%M')}"
                 
-                # ── B. CARGA DE INVENTARIO (RAÍZ) ──────────────────────
+                # ── B. CARGA DE INVENTARIO ──────────────────────
                 @st.cache_data
                 def load_inventory():
                     ruta = os.path.join(os.getcwd(), "inventario.csv")
@@ -6079,23 +6079,25 @@ else:
                 
                 df_inv = load_inventory()
                 
-                # Inicialización única de las filas en el session_state
+                # ── C. INICIALIZACIÓN DE FILAS (CANTIDAD siempre como número) ──
                 if 'rows' not in st.session_state:
                     st.session_state.rows = pd.DataFrame([
-                        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": "0"} 
+                        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0} 
                     ] * 10)
                 
-                # ── C. CUERPO DE ENTRADA (ESTRUCTURA CON ICONOS MATERIAL) ────────────────
+                # Aseguramos que CANTIDAD sea numérica para que el editor no se trabe
+                st.session_state.rows["CANTIDAD"] = pd.to_numeric(st.session_state.rows["CANTIDAD"], errors='coerce').fillna(0).astype(int)
+                
+                # ── D. CUERPO DE ENTRADA (ESTRUCTURA CON ICONOS) ────────────────
                 with st.container(border=True):
                     h1, h2, h3 = st.columns(3)
                     f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in_pt")
                     t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in_pt")
                     fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
-                                        
                 
-                # ── NUEVA SECCIÓN: BÚSQUEDA AUXILIAR ──────────────────────────
+                # ── E. BÚSQUEDA AUXILIAR ──────────────────────────
                 with st.expander(":material/search: Buscar Codigo", expanded=False):
-                    busqueda = st.text_input("Escribe el nombre del producto o código (ej. Cepillo, Gorra, Elemnts, Cava):").strip().upper()
+                    busqueda = st.text_input("Escribe el nombre del producto o código:").strip().upper()
                     if busqueda:
                         resultados = df_inv[
                             df_inv['CODIGO'].astype(str).str.contains(busqueda, na=False) | 
@@ -6105,47 +6107,37 @@ else:
                             st.dataframe(resultados, use_container_width=True, hide_index=True)
                         else:
                             st.warning("No se encontraron coincidencias en el inventario.")
-                
-                
-                # ── C. INICIALIZACIÓN DE FILAS (CANTIDAD como número 0, no string "0") ──
-                if 'rows' not in st.session_state:
-                    st.session_state.rows = pd.DataFrame([
-                        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0} 
-                    ] * 10)
-                
-                # ── D. MOTOR DE BÚSQUEDA INTERNO (LOOKUP) ──────────────────────────
+
+                # ── F. MOTOR DE BÚSQUEDA INTERNO (LOOKUP CORREGIDO) ──────────────────────────
                 def lookup_pt():
-                    # 1. Capturamos lo que el usuario escribió en el editor
+                    # Obtenemos los cambios del estado del editor
                     edits = st.session_state["editor_pt"].get("edited_rows", {})
                     added = st.session_state["editor_pt"].get("added_rows", [])
                     
-                    # 2. Procesamos filas nuevas si el usuario le dio al botón "+"
+                    # 1. Filas nuevas
                     for row in added:
                         new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
                         new_row.update(row)
                         st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
                     
-                    # 3. Procesamos las ediciones en las celdas existentes
+                    # 2. Ediciones (La clave: Actualizar solo lo necesario para no interrumpir el tipeo)
                     for idx_str, info in edits.items():
                         idx = int(idx_str)
-                        
-                        # Actualizamos el valor en el DataFrame original de la sesión para cada columna editada
                         for col, val in info.items():
                             st.session_state.rows.at[idx, col] = val
                             
-                            # Si el usuario editó la columna CÓDIGO, disparamos la búsqueda automática
-                            if col == "CODIGO":
+                            # Solo buscamos descripción si lo que cambió fue el CÓDIGO
+                            if col == "CODIGO" and val:
                                 val_codigo = str(val).strip().upper()
                                 if not df_inv.empty:
-                                    # Buscamos coincidencia exacta en el inventario
                                     match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val_codigo]
                                     if not match.empty:
                                         st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
-                                        st.session_state.rows.at[idx, "CODIGO"] = val_codigo # Normaliza a mayúsculas
+                                        st.session_state.rows.at[idx, "CODIGO"] = val_codigo
                                     else:
-                                        st.session_state.rows.at[idx, "DESCRIPCION"] = "⚠️ CÓDIGO NO ENCONTRADO"
-                
-                # ── E. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
+                                        st.session_state.rows.at[idx, "DESCRIPCION"] = "⚠️ NO ENCONTRADO"
+
+                # ── G. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
                 st.markdown("<p style='font-size:12px; font-weight:normal; color:#FFFFFF; letter-spacing:2px; margin-bottom:10px;'>EDICIÓN SOLICITUD DE MATERIALES</p>", unsafe_allow_html=True)
                 
                 df_final_pt = st.data_editor(
@@ -6153,66 +6145,25 @@ else:
                     num_rows="dynamic", 
                     use_container_width=True, 
                     key="editor_pt", 
-                    on_change=lookup_pt, # Esta función ahora es robusta para cualquier fila
+                    on_change=lookup_pt,
                     column_config={
-                        "CODIGO": st.column_config.TextColumn(
-                            "CÓDIGO", 
-                            help="Escribe el código para buscar el producto",
-                            validate=r"^[a-zA-Z0-9_-]+$"
-                        ),
-                        "DESCRIPCION": st.column_config.TextColumn(
-                            "DESCRIPCIÓN DEL PRODUCTO",
-                            width="large",
-                            disabled=True # Bloqueado para que el lookup mande
-                        ),
-                        "CANTIDAD": st.column_config.NumberColumn(
-                            "CANT.", 
-                            min_value=0,
-                            max_value=10000,
-                            step=1,
-                            format="%d",
-                            width="small"
-                        ),
-                        "DISPONIBILIDAD": st.column_config.CheckboxColumn(
-                            "✅ LISTO",
-                            help="Marca si ya tienes el material físicamente",
-                            default=False
-                        )
+                        "CODIGO": st.column_config.TextColumn("CÓDIGO", help="Escribe el código", validate=r"^[a-zA-Z0-9_-]+$"),
+                        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN DEL PRODUCTO", width="large", disabled=True),
+                        "CANTIDAD": st.column_config.NumberColumn("CANT.", min_value=0, step=1, format="%d", width="small", required=True),
+                        "DISPONIBILIDAD": st.column_config.CheckboxColumn("✅ LISTO", default=False)
                     }
                 )
-                
-                # --- EL TOQUE FINAL: INYECTANDO ESTILO AL EDITOR ---
-                # Esto va a cambiar el color de las cabeceras del editor para que combinen con tu Dashboard
+
+                # ── H. ESTILOS Y SECCIÓN FINAL ────────────────────────────────────
                 st.markdown("""
                     <style>
-                    /* Cambiamos el color de fondo de las cabeceras del editor */
-                    [data-testid="stDataEditor"] div[role="columnheader"] {
-                        background-color: #263238 !important;
-                        color: #00FFAA !important;
-                        font-weight: bold !important;
-                    }
-                    
-                    /* Cambiamos el color de la fila seleccionada */
-                    [data-testid="stDataEditor"] div[role="row"]:hover {
-                        background-color: rgba(56, 189, 248, 0.05) !important;
-                    }
-                
-                    /* El TextArea de comentarios con tu Onyx pero con un borde neón */
-                    div[data-testid="stTextArea"] textarea {
-                        background-color: #465B66 !important;
-                        color: white !important;
-                        border-radius: 15px !important;
-                        border: 1px solid rgba(0, 255, 170, 0.3) !important;
-                    }
+                    [data-testid="stDataEditor"] div[role="columnheader"] { background-color: #263238 !important; color: #00FFAA !important; font-weight: bold !important; }
+                    div[data-testid="stTextArea"] textarea { background-color: #465B66 !important; color: white !important; border-radius: 15px !important; border: 1px solid rgba(0,255,170,0.3) !important; }
                     </style>
-                    """, unsafe_allow_html=True)
-                
-                coment_val = st.text_area(
-                    "NOTAS DE LOGÍSTICA", 
-                    placeholder="¿Alguna instrucción especial para esta solicitud?", 
-                    key="coment_in_pt"
-                )
-                
+                """, unsafe_allow_html=True)
+
+                coment_val = st.text_area("NOTAS DE LOGÍSTICA", placeholder="¿Instrucciones?", key="coment_in_pt")
+
                 # --- HTML PARA IMPRESIÓN PT ---
                 filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
                 tabla_html = "".join([
@@ -6221,118 +6172,30 @@ else:
                     f"<td style='border:1px solid black;padding:6px;text-align:center; font-size:10px;'>{r['CANTIDAD']}</td></tr>" 
                     for _, r in filas_print.iterrows()
                 ])
-                
+
                 form_pt_html = f"""
                 <html>
-                <head>
-                    <style>
-                        @page {{ 
-                            size: letter; 
-                            margin: 1cm; 
-                        }}
-                        @media print {{
-                            body {{ margin: 0; padding: 0; }}
-                            .print-container {{ min-height: 95vh; display: flex; flex-direction: column; }}
-                        }}
-                        body {{ 
-                            font-family: sans-serif; 
-                            color: black; 
-                            background: white; 
-                            margin: 0;
-                        }}
-                        .print-container {{
-                            display: flex;
-                            flex-direction: column;
-                            min-height: 95vh; /* Esto empuja el contenido hacia abajo */
-                            width: 100%;
-                        }}
-                        .main-content {{
-                            flex-grow: 1; /* Esta sección crece para ocupar el espacio libre */
-                        }}
-                        table {{ 
-                            width: 100%; 
-                            border-collapse: collapse; 
-                            margin-top: 10px; 
-                        }}
-                        th {{ 
-                            background: #eee; 
-                            border: 1px solid black; 
-                            padding: 6px; 
-                            text-align: left; 
-                            font-size: 11px;
-                        }}
-                        .comments-section {{
-                            margin-top: 15px;
-                            font-size: 10px;
-                            border: 1px solid black;
-                            padding: 8px;
-                            min-height: 30px;
-                        }}
-                        .signature-section {{
-                            margin-top: 30px;
-                            display: flex;
-                            justify-content: space-between;
-                            text-align: center;
-                            font-size: 9px;
-                            padding-bottom: 10px;
-                        }}
-                        .sig-box {{
-                            width: 30%;
-                            border-top: 1px solid black;
-                            padding-top: 5px;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="print-container">
-                        <div class="main-content">
-                            <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:5px; margin-bottom:15px;">
-                                <div>
-                                    <h2 style="margin:0; font-size: 16px; letter-spacing:1px;">Jabones y Productos Especializados</h2>
-                                    <p style="margin:0; font-size:9px; letter-spacing:1px;">Distribución y Logística | 2026</p>
-                                </div>
-                                <div style="text-align:right; font-size:11px;">
-                                    <b>FOLIO:</b> {fol_val}<br>
-                                    <b>FECHA:</b> {f_val}
-                                </div>
-                            </div>
-                
-                            <h3 style="text-align:center; font-size: 14px; letter-spacing:1px; margin: 10px 0;">ENTREGA DE MATERIALES PT</h3>
-                            <p style="font-size:11px;"><b>TURNO:</b> {t_val}</p>
-                            
-                            <table>
-                                <thead>
-                                    <tr><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
-                                </thead>
-                                <tbody>
-                                    {tabla_html}
-                                </tbody>
-                            </table>
-                
-                            <div class="comments-section">
-                                <b>COMENTARIOS:</b> {coment_val}
-                            </div>
-                        </div>
-                
-                        <div class="signature-section">
-                            <div class="sig-box">
-                                <b>ENTREGÓ</b><br>
-                                Analista de Inventario
-                            </div>
-                            <div class="sig-box">
-                                <b>AUTORIZACIÓN</b><br>
-                                Carlos Fialko / Dir. Operaciones
-                            </div>
-                            <div class="sig-box">
-                                <b>RECIBIÓ</b><br>
-                                Rigoberto Hernandez / Cord. Logística
-                            </div>
-                        </div>
+                <body style='font-family:sans-serif;'>
+                    <div style='display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:5px;'>
+                        <div><h2>Jabones y Productos Especializados</h2><p>Distribución y Logística | 2026</p></div>
+                        <div style='text-align:right;'><b>FOLIO:</b> {fol_val}<br><b>FECHA:</b> {f_val}</div>
+                    </div>
+                    <h3 style='text-align:center;'>ENTREGA DE MATERIALES PT</h3>
+                    <p><b>TURNO:</b> {t_val}</p>
+                    <table style='width:100%; border-collapse:collapse; margin-top:10px;'>
+                        <thead><tr style='background:#eee;'><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr></thead>
+                        <tbody>{tabla_html}</tbody>
+                    </table>
+                    <div style='margin-top:15px; border:1px solid black; padding:8px;'><b>COMENTARIOS:</b> {coment_val}</div>
+                    <div style='margin-top:40px; display:flex; justify-content:space-between; text-align:center; font-size:10px;'>
+                        <div style='width:30%; border-top:1px solid black;'>ENTREGÓ<br>Analista de Inventario</div>
+                        <div style='width:30%; border-top:1px solid black;'>AUTORIZÓ<br>Carlos Fialko / Dir. Ops</div>
+                        <div style='width:30%; border-top:1px solid black;'>RECIBIÓ<br>Rigoberto Hernandez</div>
                     </div>
                 </body>
                 </html>
                 """
-                
+
                 st.markdown("<br>", unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
                 with c1:
@@ -6340,9 +6203,7 @@ else:
                         components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
                 with c2:
                     if st.button(":material/refresh: BORRAR", use_container_width=True):
-                        if 'folio_nexion' in st.session_state: 
-                            del st.session_state.folio_nexion
-                        # Reiniciamos con ceros numéricos para mantener la compatibilidad
+                        if 'folio_nexion' in st.session_state: del st.session_state.folio_nexion
                         st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
                         st.rerun()
     
