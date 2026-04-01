@@ -4493,9 +4493,13 @@ else:
                     return texto.strip().upper()
                 
                 def limpiar_dinero(col):
-                    if col.dtype == object:
-                        return pd.to_numeric(col.str.replace('$', '').str.replace(',', '').str.strip(), errors='coerce').fillna(0)
-                    return col.fillna(0)
+                    return pd.to_numeric(
+                        col.astype(str)
+                           .str.replace('$', '', regex=False)
+                           .str.replace(',', '', regex=False)
+                           .str.strip(),
+                        errors='coerce'
+                    ).fillna(0)
                 
                 # 2. CARGA Y PROCESAMIENTO
                 try:
@@ -4523,8 +4527,8 @@ else:
                     df_2025['MES'] = df_2025['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
                 
                     df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
-                    df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos.get('COSTOS ADICIONALES', 0)
-                
+                    df_gastos['COSTOS ADICIONALES'] = limpiar_dinero(df_gastos.get('COSTOS ADICIONALES', 0))
+                    df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
                     # 3. INTERFAZ
                     meses_nombres = {1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"}
                     mes_actual_txt = meses_nombres[datetime.now().month]
@@ -4538,7 +4542,10 @@ else:
                     df_filtered = df_gastos.copy()
                     if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
                     if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
-                
+
+                    # 👇 AQUÍ LO METES
+                    st.write("DEBUG TIPOS:")
+                    st.write(df_filtered[['COSTO DE FLETE','FACTURACION','CAJAS']].dtypes)
                     # 4. CÁLCULOS
                     mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
                     df_eval = df_filtered[mask_evaluable]
