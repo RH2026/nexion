@@ -4505,17 +4505,22 @@ else:
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
                     df_2025.columns = [limpiar_columnas(c) for c in df_2025.columns]
                 
-                    columnas_dinero = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES']
+                    columnas_dinero = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES', 'CAJAS'] # <--- AGREGAMOS 'CAJAS'
                     for col in columnas_dinero:
-                        if col in df_actual.columns: df_actual[col] = limpiar_dinero(df_actual[col])
-                    if 'COSTO DE LA GUIA' in df_2025.columns: df_2025['COSTO DE LA GUIA'] = limpiar_dinero(df_2025['COSTO DE LA GUIA'])
+                        if col in df_actual.columns: 
+                            df_actual[col] = limpiar_dinero(df_actual[col])
+                    # Limpiamos las dos columnas clave del 2025
+                    for col in ['COSTO DE LA GUIA', 'CAJAS']:
+                        if col in df_2025.columns: 
+                            df_2025[col] = limpiar_dinero(df_2025[col])
                 
                     for f_col in ['FECHA DE ENVIO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL']:
                         if f_col in df_actual.columns:
                             df_actual[f_col] = pd.to_datetime(df_actual[f_col], errors='coerce')
                 
-                    df_actual['MES'] = df_actual['MES'].astype(str).str.strip().str.upper()
-                    df_2025['MES'] = df_2025['MES'].astype(str).str.strip().str.upper()
+                    # Con esto, si hay un hueco, le pone "SIN MES" en lugar de tronar
+                    df_actual['MES'] = df_actual['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
+                    df_2025['MES'] = df_2025['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
                 
                     df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
                     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos.get('COSTOS ADICIONALES', 0)
@@ -4612,14 +4617,29 @@ else:
                         var_fact_mensual = 0
                     
                     
-                    # --- LÓGICA DELTA EFICIENCIA ---
-                    # (Mantenemos tu lógica de eficiencia aquí...)
+                    # --- LÓGICA DELTA EFICIENCIA ---                   
+                    # --- LÓGICA DELTA EFICIENCIA (CORREGIDA Y BLINDADA) ---
                     if mes_actual_str in meses_map and mes_anterior_nombre:
-                        df_eval_ant = df_actual[df_actual['MES'] == mes_anterior_nombre]
-                        mask_eval_ant = df_eval_ant['PROMESA DE ENTREGA'].notna() & df_eval_ant['FECHA DE ENTREGA REAL'].notna()
-                        df_eval_ant = df_eval_ant[mask_eval_ant]
-                        pct_eficiencia_ant = ((df_eval_ant['FECHA DE ENTREGA REAL'] <= df_eval_ant['PROMESA DE ENTREGA']).sum() / len(df_eval_ant) * 100) if len(df_eval_ant) > 0 else 0
-                        var_eficiencia_mensual = pct_eficiencia - pct_eficiencia_ant
+                        # 1. Filtramos el mes anterior Y aseguramos que sea la misma forma de envío (COBRO REGRESO)
+                        df_ant_raw = df_actual[
+                            (df_actual['MES'] == mes_anterior_nombre) & 
+                            (df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False))
+                        ]
+                        
+                        # 2. Creamos la máscara asegurando que AMBAS columnas tengan fechas válidas
+                        mask_ant = df_ant_raw['PROMESA DE ENTREGA'].notna() & df_ant_raw['FECHA DE ENTREGA REAL'].notna()
+                        df_eval_ant = df_ant_raw[mask_ant]
+                        
+                        # 3. Calculamos eficiencia solo si hay datos evaluables
+                        if not df_eval_ant.empty:
+                            # Usamos .values para evitar conflictos de índices de NumPy si fuera necesario
+                            cumplidos_ant = (df_eval_ant['FECHA DE ENTREGA REAL'] <= df_eval_ant['PROMESA DE ENTREGA']).sum()
+                            pct_eficiencia_ant = (cumplidos_ant / len(df_eval_ant)) * 100
+                            var_eficiencia_mensual = pct_eficiencia - pct_eficiencia_ant
+                        else:
+                            # Si el mes anterior no tiene entregas registradas, la variación es 0 o basada solo en el actual
+                            pct_eficiencia_ant = 0
+                            var_eficiencia_mensual = 0
                     else:
                         var_eficiencia_mensual = 0
                     
