@@ -4543,9 +4543,9 @@ else:
                     if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
                     if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
 
-                    # 👇 AQUÍ LO METES
-                    st.write("DEBUG TIPOS:")
-                    st.write(df_filtered[['COSTO DE FLETE','FACTURACION','CAJAS']].dtypes)
+                    #-----# 👇 AQUÍ LO METES
+                    #st.write("DEBUG TIPOS:")
+                    #st.write(df_filtered[['COSTO DE FLETE','FACTURACION','CAJAS']].dtypes)
                     # 4. CÁLCULOS
                     mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
                     df_eval = df_filtered[mask_evaluable]
