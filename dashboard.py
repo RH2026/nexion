@@ -4825,6 +4825,10 @@ else:
                             ahora_gdl = datetime.utcnow() - timedelta(hours=6)
                             fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
                             hora_hoy = ahora_gdl.strftime('%H:%M')
+
+                            # --- LÓGICA DINÁMICA (Pon esto justo antes del bloque HTML) ---
+                            txt_volumen = "alza" if var_volumen >= 0 else "baja"
+                            txt_gasto = "alza" if var_flete_total >= 0 else "baja"
                             
                             return f"""
                             <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px; color: #333; max-width: 800px; margin: auto; background-color: #fff;">
@@ -4906,7 +4910,7 @@ else:
                                 </div>
                         
                                 <div style="margin-top: 15px; padding: 10px; background: #fffde7; border-left: 5px solid #fbc02d; font-size: 9px; line-height: 1.3;">
-                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre la baja de volumen ({var_volumen:+.1f}%) y el alza del gasto ({var_flete_total:+.1f}%) confirma un incremento en la tarifa unitaria por caja. Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo.
+                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre la {txt_volumen} de volumen ({var_volumen:+.1f}%) y la {txt_gasto} del gasto ({var_flete_total:+.1f}%) confirma un incremento en la tarifa unitaria por caja. Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo.
                                 </div>
                         
                                 <div style="margin-top: 30px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
