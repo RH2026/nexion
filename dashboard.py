@@ -3125,35 +3125,42 @@ else:
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
 
-                    # 1. TRABAJAMOS DIRECTO CON DF_RAW (Tu matriz segura)
+                    # 1. TRABAJAMOS DIRECTO CON DF_RAW
                     df_retrasos = df_raw.copy()
                     
-                    # Limpiamos nombres de columnas y convertimos fechas (Formato Donitas)
+                    # Limpieza de nombres de columnas
                     df_retrasos.columns = df_retrasos.columns.str.strip()
-                    cols_f = ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]
-                    for col in cols_f:
+                
+                    # 2. Convertimos fechas (dayfirst=True para que no se maree con el formato)
+                    for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
                         df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
                 
-                    # 2. FILTRO DE MES INTELIGENTE
-                    mes_buscado = str(mes_sel).strip().upper()
+                    # 3. FILTRO DE MES (Convertimos todo a minúsculas para que coincidan)
+                    # mes_sel viene del selectbox (ej. "ABRIL"), lo pasamos a minúsculas para buscarlo
+                    mes_buscado_min = str(mes_sel).strip().lower()
                 
-                    # Si NO es histórico, filtramos por el número de mes
-                    if mes_buscado in [m.upper() for m in meses]:
-                        mes_n = meses.index(mes_buscado) + 1
+                    # Creamos una lista de meses en minúsculas para comparar
+                    meses_min = [m.lower() for m in meses]
+                
+                    if mes_buscado_min in meses_min:
+                        # Obtenemos el número de mes basándonos en la posición
+                        mes_n = meses_min.index(mes_buscado_min) + 1
+                        
+                        # Filtramos df_raw por el número de mes de la columna FECHA DE ENVÍO
                         df_retrasos = df_retrasos[df_retrasos["FECHA DE ENVÍO"].dt.month == mes_n].copy()
                         
-                        # 3. CÁLCULO DE DÍAS DE RETRASO
+                        # 4. CÁLCULO DE DÍAS DE RETRASO
                         mask_calc = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
                         
-                        # Calculamos la resta (Real - Promesa)
+                        # Calculamos la resta: (Real - Promesa)
                         df_retrasos.loc[mask_calc, 'DIAS_DIFERENCIA'] = (
                             df_retrasos['FECHA DE ENTREGA REAL'] - df_retrasos['PROMESA DE ENTREGA']
                         ).dt.days
                 
-                        # Solo pedidos entregados con retraso real (> 0 días)
+                        # Solo los que de verdad llegaron tarde (> 0 días)
                         df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
                 
-                        # 4. RENDERIZADO DE KPIs
+                        # 5. RENDERIZADO DE KPIs
                         total_e = len(df_retrasos[mask_calc])
                         atrasados_n = len(df_solo_retrasos)
                         porcentaje = (atrasados_n / total_e * 100) if total_e > 0 else 0
@@ -3164,7 +3171,7 @@ else:
                         with c2: st.metric("Pedidos con Retraso", atrasados_n, delta=f"{porcentaje:.1f}%", delta_color="inverse")
                         with c3: st.metric("Promedio de Atraso", f"{promedio:.1f} días")
                 
-                        # 5. GRÁFICO Y TABLA
+                        # 6. GRÁFICO Y TABLA
                         if not df_solo_retrasos.empty:
                             st.markdown("### 📊 Retrasos por Fletera")
                             resumen_f = df_solo_retrasos.groupby('FLETERA').size().reset_index(name='CANTIDAD')
@@ -3182,10 +3189,8 @@ else:
                             )
                         else:
                             st.success(f"✅ ¡Felicidades! No hay retrasos detectados en {mes_sel}.")
-                
                     else:
-                        # Si seleccionas "TODO EL HISTÓRICO", te pedimos elegir un mes (para evitar el error)
-                        st.info("💡 Por favor, selecciona un mes específico en el filtro de arriba para analizar los retrasos por fletera.")
+                        st.info("💡 Selecciona un mes específico para ver el reporte de retrasos.")
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
