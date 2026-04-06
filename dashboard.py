@@ -3126,8 +3126,8 @@ else:
                     st.subheader("REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
 
                     # 1. Filtramos df_raw manualmente por el mes seleccionado en el buscador (mes_sel)
-                    # Esto asegura que jales la matriz correcta Y que respete el filtro de mes
-                    df_retrasos = df_raw[df_raw['MES'] == mes_sel].copy()
+                    # 1. Filtro ultra-seguro (quita espacios y pone todo en mayúsculas para comparar)
+                    df_retrasos = df_raw[df_raw['MES'].astype(str).str.strip().str.upper() == str(mes_sel).strip().upper()].copy()
                     
                     # 2. Conversión de fechas (Igual que ya lo tienes)
                     df_retrasos['PROMESA DE ENTREGA'] = pd.to_datetime(df_retrasos['PROMESA DE ENTREGA'], errors='coerce')
