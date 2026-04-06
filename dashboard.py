@@ -3124,12 +3124,12 @@ else:
 
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("🚩 REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
-                    # 1. CARGA DE DATOS (Usando tu función load_data_logistica que ya tienes arriba)
+                    # 1. CARGA DE DATOS (Usando tu función load_data_logistica que ya funciona arriba)
                     df_retrasos_base = load_data_logistica()
                 
                     if df_retrasos_base is not None:
                         # 2. FILTRADO POR MES (Directo al valor de mes_sel)
-                        # Esto ignora cualquier otra condición, busca el mes tal cual viene del selector
+                        # Aquí ya no hay filtros de "histórico", busca el mes tal cual del selector
                         df_r_filtrado = df_retrasos_base[df_retrasos_base["MES"] == mes_sel].copy()
                 
                         if not df_r_filtrado.empty:
@@ -3137,10 +3137,10 @@ else:
                             df_r_filtrado['PROMESA DE ENTREGA'] = pd.to_datetime(df_r_filtrado['PROMESA DE ENTREGA'], dayfirst=True, errors='coerce')
                             df_r_filtrado['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_r_filtrado['FECHA DE ENTREGA REAL'], dayfirst=True, errors='coerce')
                 
-                            # Máscara de filas que tienen ambas fechas para poder restar
+                            # Máscara de filas con ambas fechas para calcular
                             mask_val = df_r_filtrado['PROMESA DE ENTREGA'].notna() & df_r_filtrado['FECHA DE ENTREGA REAL'].notna()
                             
-                            # 4. CÁLCULO DE DIFERENCIA EN DÍAS
+                            # 4. CÁLCULO DE DIFERENCIA
                             df_r_filtrado.loc[mask_val, 'DIAS_DIFERENCIA'] = (
                                 df_r_filtrado['FECHA DE ENTREGA REAL'] - df_r_filtrado['PROMESA DE ENTREGA']
                             ).dt.days
@@ -3187,6 +3187,7 @@ else:
                             else:
                                 st.success(f"✅ Sin retrasos detectados en {mes_sel}.")
                         else:
+                            # Este mensaje solo saldrá si el mes elegido no tiene filas en el CSV
                             st.warning(f"No hay registros en la matriz para {mes_sel}.")
                 
                 # NUEVA PESTAÑA SOLO PARA TI
