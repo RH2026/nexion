@@ -3125,65 +3125,65 @@ else:
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
 
-                    # 1. Copia y LIMPIEZA OBLIGATORIA de columnas
-                    df_retrasos = df_mes.copy()
+                    # 1. TRABAJAMOS DIRECTO CON DF_RAW (Para no agarrar otra matriz)
+                    # Pero lo filtramos por el mes seleccionado para que el dashboard sea congruente
+                    df_retrasos = df_raw.copy()
                     
-                    # Esto quita espacios invisibles al principio o final de los nombres de las columnas
+                    # Limpiamos nombres de columnas por si acaso hay espacios locos
                     df_retrasos.columns = df_retrasos.columns.str.strip()
                 
-                    # 2. Conversión segura de fechas
-                    # Definimos las columnas que necesitamos para no escribir el nombre mil veces
-                    col_promesa = "PROMESA DE ENTREGA"
-                    col_real = "FECHA DE ENTREGA REAL"
+                    # 2. Convertimos fechas con el formato que ya te funcionó (dayfirst=True)
+                    cols_fechas = ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]
+                    for col in cols_fechas:
+                        df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
                 
-                    # Verificamos que existan antes de intentar convertirlas
-                    if col_promesa in df_retrasos.columns and col_real in df_retrasos.columns:
-                        for col in [col_promesa, col_real]:
-                            df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
+                    # 3. APLICAMOS EL FILTRO DE MES (Igual que tus donitas para que se conecte)
+                    # Buscamos el número de mes según lo que elegiste en el selectbox (mes_sel)
+                    mes_n = meses.index(mes_sel) + 1
+                    df_retrasos = df_retrasos[df_retrasos["FECHA DE ENVÍO"].dt.month == mes_n].copy()
                 
-                        # 3. Cálculo de Días de Retraso
-                        mask_entregados = df_retrasos[col_promesa].notna() & df_retrasos[col_real].notna()
+                    # 4. Cálculo de Días de Retraso (Solo si existen ambas fechas)
+                    mask_calc = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
+                    
+                    # Calculamos la resta
+                    df_retrasos.loc[mask_calc, 'DIAS_DIFERENCIA'] = (
+                        df_retrasos['FECHA DE ENTREGA REAL'] - df_retrasos['PROMESA DE ENTREGA']
+                    ).dt.days
+                
+                    # Filtramos los que de verdad llegaron tarde (> 0)
+                    df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
+                
+                    # 5. Renderizado de KPIs
+                    total_entregas = len(df_retrasos[mask_calc])
+                    atrasados_n = len(df_solo_retrasos)
+                    porcentaje = (atrasados_n / total_entregas * 100) if total_entregas > 0 else 0
+                    promedio = df_solo_retrasos['DIAS_DIFERENCIA'].mean() if not df_solo_retrasos.empty else 0
+                
+                    c1, c2, c3 = st.columns(3)
+                    with c1: st.metric("Entregas Analizadas", total_entregas)
+                    with c2: st.metric("Pedidos con Retraso", atrasados_n, delta=f"{porcentaje:.1f}%", delta_color="inverse")
+                    with c3: st.metric("Promedio de Atraso", f"{promedio:.1f} días")
+                
+                    # 6. Gráfico y Tabla
+                    if not df_solo_retrasos.empty:
+                        st.markdown("### 📊 Retrasos por Fletera")
+                        resumen_f = df_solo_retrasos.groupby('FLETERA').size().reset_index(name='CANTIDAD')
                         
-                        # Calculamos la diferencia
-                        df_retrasos.loc[mask_entregados, 'DIAS_DIFERENCIA'] = (
-                            df_retrasos[col_real] - df_retrasos[col_promesa]
-                        ).dt.days
-                
-                        # Filtramos solo los retrasos reales (> 0 días)
-                        df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
-                
-                        # --- De aquí para abajo sigue igual tu código de KPIs y gráficas ---
-                        # (Asegúrate de usar las variables col_promesa y col_real si las necesitas)
+                        chart = alt.Chart(resumen_f).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, color="#fb7185").encode(
+                            x=alt.X("CANTIDAD:Q", title="Retrasos"),
+                            y=alt.Y("FLETERA:N", sort='-x', title=None)
+                        ).properties(height=300)
                         
-                        total_con_datos = len(df_retrasos[mask_entregados])
-                        total_retrasos = len(df_solo_retrasos)
-                        porcentaje_retraso = (total_retrasos / total_con_datos * 100) if total_con_datos > 0 else 0
-                        promedio_atraso = df_solo_retrasos['DIAS_DIFERENCIA'].mean() if not df_solo_retrasos.empty else 0
+                        st.altair_chart(chart, use_container_width=True)
                 
-                        c1, c2, c3 = st.columns(3)
-                        with c1: st.metric("Entregas Analizadas", total_con_datos)
-                        with c2: st.metric("Pedidos con Retraso", total_retrasos, delta=f"{porcentaje_retraso:.1f}%", delta_color="inverse")
-                        with c3: st.metric("Días Promedio Atraso", f"{promedio_atraso:.1f} días")
-                
-                        if not df_solo_retrasos.empty:
-                            st.markdown("### 📊 Volumen de Retrasos por Fletera")
-                            resumen_f = df_solo_retrasos.groupby('FLETERA').size().reset_index(name='CANTIDAD')
-                            chart_retrasos = alt.Chart(resumen_f).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, color="#fb7185").encode(
-                                x=alt.X("CANTIDAD:Q", title="Número de Retrasos"),
-                                y=alt.Y("FLETERA:N", title=None, sort='-x'),
-                                tooltip=['FLETERA', 'CANTIDAD']
-                            ).properties(height=300)
-                            st.altair_chart(chart_retrasos, use_container_width=True)
-                            
-                            st.markdown("### 📝 Listado de Pedidos Fuera de Tiempo")
-                            st.dataframe(df_solo_retrasos[['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', col_promesa, col_real, 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False), use_container_width=True)
-                        else:
-                            st.success(f"✅ ¡Excelente servicio! No hay retrasos registrados.")
-                
+                        st.markdown("### 📝 Detalle de Pedidos")
+                        # Mostramos la tabla con las columnas que quieres
+                        st.dataframe(
+                            df_solo_retrasos[['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False),
+                            use_container_width=True
+                        )
                     else:
-                        # Si sigue fallando, esto nos dirá qué nombres de columnas está viendo Python
-                        st.error("No se encontraron las columnas de fecha.")
-                        st.write("Columnas disponibles:", list(df_retrasos.columns))
+                        st.success(f"✅ Sin retrasos detectados en {mes_sel} (usando matriz principal).")
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
