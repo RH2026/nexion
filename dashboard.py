@@ -7269,13 +7269,15 @@ else:
                             c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
                             c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
                             c.drawString(x_offset + 7.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
-            
+                            
                             c.setFont("Helvetica-Bold", 13)
                             c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
                             
                             if es_archivo:
                                 c.setFont("Helvetica-Bold", 11)
-                                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, "COPIA MORENO")
+                                # Aquí unimos "MORENO" con el total de cajas
+                                texto_moreno = f"MORENO / {cantidad_real}"
+                                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, texto_moreno)
                             else:
                                 c.setFont("Helvetica-Bold", 13)
                                 c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
