@@ -3125,10 +3125,11 @@ else:
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
 
-                    # 1. Copia fresca del filtro principal
-                    df_retrasos = df_raw.copy()
+                    # 1. Filtramos df_raw manualmente por el mes seleccionado en el buscador (mes_sel)
+                    # Esto asegura que jales la matriz correcta Y que respete el filtro de mes
+                    df_retrasos = df_raw[df_raw['MES'] == mes_sel].copy()
                     
-                    # Convertimos a datetime las columnas críticas para este reporte
+                    # 2. Conversión de fechas (Igual que ya lo tienes)
                     df_retrasos['PROMESA DE ENTREGA'] = pd.to_datetime(df_retrasos['PROMESA DE ENTREGA'], errors='coerce')
                     df_retrasos['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_retrasos['FECHA DE ENTREGA REAL'], errors='coerce')
                     
