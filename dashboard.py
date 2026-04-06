@@ -3125,72 +3125,77 @@ else:
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
 
-                    # 1. TRABAJAMOS DIRECTO CON DF_RAW
-                    df_retrasos = df_raw.copy()
+                    # 1. Copia y limpieza inmediata (Calca de tu módulo de Despachos)
+                    df_retrasos = df_mes.copy()
                     
-                    # Limpieza de nombres de columnas
-                    df_retrasos.columns = df_retrasos.columns.str.strip()
+                    # Forzamos la lectura de fechas ignorando errores (Igual que en Despachos)
+                    # Aquí usamos las columnas de PROMESA y ENTREGA REAL que son las de este análisis
+                    df_retrasos['PROMESA DE ENTREGA'] = pd.to_datetime(df_retrasos['PROMESA DE ENTREGA'], errors='coerce')
+                    df_retrasos['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_retrasos['FECHA DE ENTREGA REAL'], errors='coerce')
                 
-                    # 2. Convertimos fechas (dayfirst=True para que no se maree con el formato)
-                    for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                        df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
-                
-                    # 3. FILTRO DE MES (Convertimos todo a minúsculas para que coincidan)
-                    # mes_sel viene del selectbox (ej. "ABRIL"), lo pasamos a minúsculas para buscarlo
-                    mes_buscado_min = str(mes_sel).strip().lower()
-                
-                    # Creamos una lista de meses en minúsculas para comparar
-                    meses_min = [m.lower() for m in meses]
-                
-                    if mes_buscado_min in meses_min:
-                        # Obtenemos el número de mes basándonos en la posición
-                        mes_n = meses_min.index(mes_buscado_min) + 1
+                    # 2. Función de Cálculo de Retraso (Sin rodeos)
+                    def calcular_dias_atraso(row):
+                        promesa = row['PROMESA DE ENTREGA']
+                        real = row['FECHA DE ENTREGA REAL']
                         
-                        # Filtramos df_raw por el número de mes de la columna FECHA DE ENVÍO
-                        df_retrasos = df_retrasos[df_retrasos["FECHA DE ENVÍO"].dt.month == mes_n].copy()
+                        if pd.isna(promesa) or pd.isna(real):
+                            return np.nan
                         
-                        # 4. CÁLCULO DE DÍAS DE RETRASO
-                        mask_calc = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
+                        # Calculamos la diferencia
+                        diferencia = (real - promesa).days
+                        return diferencia
+                
+                    # 3. Ejecución del cálculo
+                    df_retrasos['DIAS_DIFERENCIA'] = df_retrasos.apply(calcular_dias_atraso, axis=1)
+                
+                    # Filtramos solo los que tienen datos válidos y son retrasos (> 0)
+                    df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
+                    validos_atraso = df_retrasos[df_retrasos['DIAS_DIFERENCIA'].notna()]
+                
+                    # 4. Métricas para las tarjetas (Mismo estilo que Despachos)
+                    tot_r = len(validos_atraso)
+                    num_retrasos = len(df_solo_retrasos)
+                    promedio_dias = df_solo_retrasos['DIAS_DIFERENCIA'].mean() if not df_solo_retrasos.empty else 0
+                
+                    # 5. Interfaz Visual
+                    st.markdown(f'<div style="text-align:center;margin-bottom:30px;"><p style="color:{vars_css["sub"]};font-size:11px;letter-spacing:3px;font-weight:700;text-transform:uppercase;">Análisis de Retrasos Paquetería — {mes_sel}</p></div>', unsafe_allow_html=True)
+                
+                    c_r1, c_r2, c_r3 = st.columns(3)
+                
+                    # Usamos tu misma función render_modern_bar para que se vea igual de perrón
+                    with c_r1: render_modern_bar(tot_r, tot_r, "Entregas Analizadas", "#5a8dee")
+                    with c_r2: render_modern_bar(num_retrasos, tot_r, "Pedidos con Retraso", "#ff5b5c")
+                    with c_r3: 
+                        # Esta es una métrica simple para el promedio
+                        st.markdown(f"""
+                            <div style="background: rgba(26, 37, 47, 0.6); padding: 20px; border-radius: 15px; border: 1px solid #243441; text-align: center;">
+                                <p style="color: #A4B9C8; font-size: 10px; margin-bottom: 5px; font-weight: bold;">PROMEDIO ATRASO</p>
+                                <h2 style="color: white; margin: 0; font-size: 24px;">{promedio_dias:.1f}</h2>
+                                <p style="color: #f6c23e; font-size: 16px; margin-top: 5px; font-weight: bold;">Días</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                
+                    # 6. Gráfico de Fleteras (Solo si hay datos)
+                    if not df_solo_retrasos.empty:
+                        st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px; margin-top:20px; margin-bottom:15px;'>📊 RANKING DE RETRASOS POR FLETERA</p>", unsafe_allow_html=True)
                         
-                        # Calculamos la resta: (Real - Promesa)
-                        df_retrasos.loc[mask_calc, 'DIAS_DIFERENCIA'] = (
-                            df_retrasos['FECHA DE ENTREGA REAL'] - df_retrasos['PROMESA DE ENTREGA']
-                        ).dt.days
+                        resumen_f = df_solo_retrasos.groupby('FLETERA').size().reset_index(name='CANTIDAD').sort_values('CANTIDAD', ascending=False)
+                        
+                        # Gráfico rápido estilo Streamlit
+                        st.bar_chart(data=resumen_f.set_index('FLETERA'), color="#ff5b5c")
                 
-                        # Solo los que de verdad llegaron tarde (> 0 días)
-                        df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
-                
-                        # 5. RENDERIZADO DE KPIs
-                        total_e = len(df_retrasos[mask_calc])
-                        atrasados_n = len(df_solo_retrasos)
-                        porcentaje = (atrasados_n / total_e * 100) if total_e > 0 else 0
-                        promedio = df_solo_retrasos['DIAS_DIFERENCIA'].mean() if not df_solo_retrasos.empty else 0
-                
-                        c1, c2, c3 = st.columns(3)
-                        with c1: st.metric("Entregas Analizadas", total_e)
-                        with c2: st.metric("Pedidos con Retraso", atrasados_n, delta=f"{porcentaje:.1f}%", delta_color="inverse")
-                        with c3: st.metric("Promedio de Atraso", f"{promedio:.1f} días")
-                
-                        # 6. GRÁFICO Y TABLA
-                        if not df_solo_retrasos.empty:
-                            st.markdown("### 📊 Retrasos por Fletera")
-                            resumen_f = df_solo_retrasos.groupby('FLETERA').size().reset_index(name='CANTIDAD')
-                            
-                            chart = alt.Chart(resumen_f).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, color="#fb7185").encode(
-                                x=alt.X("CANTIDAD:Q", title="Número de Retrasos"),
-                                y=alt.Y("FLETERA:N", sort='-x', title=None)
-                            ).properties(height=300)
-                            st.altair_chart(chart, use_container_width=True)
-                
-                            st.markdown("### 📝 Detalle de Pedidos")
-                            st.dataframe(
-                                df_solo_retrasos[['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False),
-                                use_container_width=True
-                            )
-                        else:
-                            st.success(f"✅ ¡Felicidades! No hay retrasos detectados en {mes_sel}.")
+                        # 7. Detalle en Tabla (Mismo estilo que el de Despachos)
+                        st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px; margin-top:20px; margin-bottom:15px;'>📝 LISTADO DETALLADO</p>", unsafe_allow_html=True)
+                        
+                        df_detalle_r = df_solo_retrasos[['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'DIAS_DIFERENCIA']].copy()
+                        
+                        # Formateo de fechas para que se vean bien
+                        df_detalle_r['PROMESA DE ENTREGA'] = df_detalle_r['PROMESA DE ENTREGA'].dt.strftime('%d/%m/%Y')
+                        df_detalle_r['FECHA DE ENTREGA REAL'] = df_detalle_r['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
+                        
+                        st.dataframe(df_detalle_r.sort_values('DIAS_DIFERENCIA', ascending=False), use_container_width=True)
                     else:
-                        st.info("💡 Selecciona un mes específico para ver el reporte de retrasos.")
+                        st.info("No se detectaron retrasos en las entregas de este período, amor.")
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
