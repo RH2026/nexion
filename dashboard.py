@@ -3123,23 +3123,34 @@ else:
                         st.error(f"Error crítico: {e}")
 
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
-                    st.subheader("Reporte de Entregas con Retraso por Fletera")
-                
-                    # 1. Copia y limpieza de fechas
+                    st.subheader("REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
+
+                    # 1. Copia y LIMPIEZA EXTREMA de nombres de columnas
                     df_retrasos = df_mes.copy()
                     
-                    # Convertimos a datetime las columnas críticas para este reporte
-                    df_retrasos['PROMESA DE ENTREGA'] = pd.to_datetime(df_retrasos['PROMESA DE ENTREGA'], errors='coerce')
-                    df_retrasos['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_retrasos['FECHA DE ENTREGA REAL'], errors='coerce')
+                    # Esto elimina espacios en blanco al inicio/final de los nombres de las columnas
+                    # y asegura que Python las reconozca bien
+                    df_retrasos.columns = df_retrasos.columns.str.strip()
+                
+                    # 2. Validación de columnas (Para que no truene la app)
+                    columnas_necesarias = ['PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'FLETERA']
                     
-                    # 2. Cálculo de Días de Retraso
-                    # Solo calculamos si ambas fechas existen
-                    mask_fechas = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
+                    # Revisamos si existen, si no, te avisamos en pantalla
+                    missing = [col for col in columnas_necesarias if col not in df_retrasos.columns]
                     
-                    # Calculamos la diferencia en días
-                    df_retrasos.loc[mask_fechas, 'DIAS_DIFERENCIA'] = (
-                        df_retrasos['FECHA DE ENTREGA REAL'] - df_retrasos['PROMESA DE ENTREGA']
-                    ).dt.days
+                    if missing:
+                        st.error(f"⚠️ ¡Amor, no encontré estas columnas en la matriz!: {missing}")
+                        st.info("Revisa que en tu Excel los nombres estén escritos exactamente igual.")
+                    else:
+                        # 3. Conversión de fechas (Ahora sí, sin errores)
+                        df_retrasos['PROMESA DE ENTREGA'] = pd.to_datetime(df_retrasos['PROMESA DE ENTREGA'], errors='coerce')
+                        df_retrasos['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_retrasos['FECHA DE ENTREGA REAL'], errors='coerce')
+                        
+                        # ... (aquí sigue el resto del código que te pasé antes: cálculos, métricas y gráficos)
+                        mask_fechas = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
+                        df_retrasos.loc[mask_fechas, 'DIAS_DIFERENCIA'] = (
+                            df_retrasos['FECHA DE ENTREGA REAL'] - df_retrasos['PROMESA DE ENTREGA']
+                        ).dt.days
                 
                     # Definimos retraso: si la entrega real fue después de la promesa (> 0 días)
                     df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
