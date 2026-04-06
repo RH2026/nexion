@@ -3126,7 +3126,7 @@ else:
                     st.subheader("REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
 
                     # 1. Copia fresca del filtro principal
-                    df_retrasos = df_mes.copy()
+                    df_retrasos = df_raw.copy()
                     
                     # Limpieza de nombres de columnas (Quita espacios y saltos de línea ocultos)
                     df_retrasos.columns = [str(c).strip().upper() for c in df_retrasos.columns]
