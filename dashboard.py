@@ -3123,7 +3123,6 @@ else:
                         st.error(f"Error crítico: {e}")
 
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
-                    with tab_retrasos:
                     st.subheader("🚩 REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
                 
                     try:
