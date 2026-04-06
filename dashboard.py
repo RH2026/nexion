@@ -3124,32 +3124,32 @@ else:
 
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("🚩 REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
-                    # 1. CARGA DE DATOS (Usando tu función load_data_logistica que ya funciona arriba)
+                    # 1. CARGA DE DATOS (Usando la función que ya tienes con caché)
                     df_retrasos_base = load_data_logistica()
                 
                     if df_retrasos_base is not None:
-                        # 2. FILTRADO POR MES (Directo al valor de mes_sel)
-                        # Aquí ya no hay filtros de "histórico", busca el mes tal cual del selector
+                        # 2. FILTRADO POR MES (Usando mes_sel de tu Zona de Control)
+                        # Filtramos la columna 'MES' de la matriz Dashboard
                         df_r_filtrado = df_retrasos_base[df_retrasos_base["MES"] == mes_sel].copy()
                 
                         if not df_r_filtrado.empty:
-                            # 3. CONVERSIÓN DE FECHAS
+                            # 3. CONVERSIÓN DE FECHAS (Día/Mes/Año)
                             df_r_filtrado['PROMESA DE ENTREGA'] = pd.to_datetime(df_r_filtrado['PROMESA DE ENTREGA'], dayfirst=True, errors='coerce')
                             df_r_filtrado['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_r_filtrado['FECHA DE ENTREGA REAL'], dayfirst=True, errors='coerce')
                 
-                            # Máscara de filas con ambas fechas para calcular
-                            mask_val = df_r_filtrado['PROMESA DE ENTREGA'].notna() & df_r_filtrado['FECHA DE ENTREGA REAL'].notna()
+                            # Máscara de datos válidos (que tengan ambas fechas)
+                            mask_v = df_r_filtrado['PROMESA DE ENTREGA'].notna() & df_r_filtrado['FECHA DE ENTREGA REAL'].notna()
                             
                             # 4. CÁLCULO DE DIFERENCIA
-                            df_r_filtrado.loc[mask_val, 'DIAS_DIFERENCIA'] = (
+                            df_r_filtrado.loc[mask_v, 'DIAS_DIFERENCIA'] = (
                                 df_r_filtrado['FECHA DE ENTREGA REAL'] - df_r_filtrado['PROMESA DE ENTREGA']
                             ).dt.days
                 
-                            # Filtramos solo los retrasos reales (> 0 días)
+                            # Solo retrasos reales (> 0 días)
                             df_solo_atraso = df_r_filtrado[df_r_filtrado['DIAS_DIFERENCIA'] > 0].copy()
                 
-                            # 5. TARJETAS MÉTRICAS (Usando tus clases de CSS metric-card-agc)
-                            total_analizado = len(df_r_filtrado[mask_val])
+                            # 5. TARJETAS MÉTRICAS (Estilo AGC)
+                            total_analizado = len(df_r_filtrado[mask_v])
                             total_retrasos = len(df_solo_atraso)
                             porcentaje = (total_retrasos / total_analizado * 100) if total_analizado > 0 else 0
                             promedio_d = df_solo_atraso['DIAS_DIFERENCIA'].mean() if not df_solo_atraso.empty else 0
@@ -3164,7 +3164,7 @@ else:
                             with c_r3:
                                 st.markdown(f'<div class="metric-card-agc"><p class="op-query-text">PROMEDIO DÍAS</p><p class="valor-volumen" style="color:#f6c23e !important;">{promedio_d:.1f}</p><p style="color:#f6c23e;font-size:12px;font-weight:bold;">DEMORA</p></div>', unsafe_allow_html=True)
                 
-                            # 6. GRÁFICO POR TRANSPORTE
+                            # 6. GRÁFICO POR TRANSPORTE (Usa la columna 'TRANSPORTE' de tu matriz)
                             if not df_solo_atraso.empty:
                                 st.markdown("<br>", unsafe_allow_html=True)
                                 resumen_f = df_solo_atraso.groupby('TRANSPORTE').size().reset_index(name='CANTIDAD').sort_values('CANTIDAD', ascending=True)
@@ -3187,7 +3187,6 @@ else:
                             else:
                                 st.success(f"✅ Sin retrasos detectados en {mes_sel}.")
                         else:
-                            # Este mensaje solo saldrá si el mes elegido no tiene filas en el CSV
                             st.warning(f"No hay registros en la matriz para {mes_sel}.")
                 
                 # NUEVA PESTAÑA SOLO PARA TI
