@@ -3127,7 +3127,7 @@ else:
                 
                     try:
                                         
-                        # 1. CARGA FORZADA DESDE GITHUB (Para no mezclar con otras matrices)
+                        # 1. CARGA DIRECTA DESDE GITHUB (Tus tokens y tu matriz real)
                         TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                         REPO_NAME = "RH2026/nexion"
                         FILE_PATH_MATRIZ = "Matriz_Excel_Dashboard.csv"
@@ -3139,36 +3139,35 @@ else:
                         if response.status_code == 200:
                             content = response.json()['content']
                             decoded_data = base64.b64decode(content)
-                            # Cargamos la matriz limpia
-                            df_retrasos_ind = pd.read_csv(io.BytesIO(decoded_data))
+                            df_retrasos_raw = pd.read_csv(io.BytesIO(decoded_data))
                             
-                            # LIMPIEZA RADICAL DE COLUMNAS (Quita espacios invisibles y basura)
-                            df_retrasos_ind.columns = df_retrasos_ind.columns.str.strip()
+                            # Limpieza radical de nombres de columnas
+                            df_retrasos_raw.columns = df_retrasos_raw.columns.str.strip().upper()
                 
-                            # 2. FILTRADO POR MES (Lógica blindada para minúsculas del Excel)
-                            # mes_sel es lo que eliges arriba (ej. "ABRIL")
-                            if mes_sel != "TODO EL HISTÓRICO":
-                                # Filtramos la columna 'MES' pasando todo a minúsculas
-                                mes_puro = str(mes_sel).strip().lower()
-                                df_retrasos = df_retrasos_ind[df_retrasos_ind['MES'].astype(str).str.strip().str.lower() == mes_puro].copy()
+                            # 2. FILTRADO INTELIGENTE (A prueba de errores de escritura)
+                            # Pasamos lo que seleccionas a Mayúsculas y quitamos espacios
+                            mes_comparar = str(mes_sel).strip().upper()
+                            
+                            if mes_comparar != "TODO EL HISTÓRICO":
+                                # Forzamos la columna MES del Excel a Mayúsculas también para que peguen sí o sí
+                                df_retrasos = df_retrasos_raw[df_retrasos_raw['MES'].astype(str).str.strip().str.upper() == mes_comparar].copy()
                 
                                 if not df_retrasos.empty:
-                                    # 3. CONVERSIÓN DE FECHAS (Formato día/mes/año)
-                                    for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                                    # 3. CONVERSIÓN DE FECHAS (Día/Mes/Año)
+                                    for col in ["PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
                                         df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
                 
-                                    # 4. CÁLCULO DE DÍAS DE RETRASO
-                                    # Solo pedidos que tienen ambas fechas
+                                    # 4. CÁLCULO DE RETRASO
                                     mask_calc = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
                                     
                                     df_retrasos.loc[mask_calc, 'DIAS_DIFERENCIA'] = (
                                         df_retrasos['FECHA DE ENTREGA REAL'] - df_retrasos['PROMESA DE ENTREGA']
                                     ).dt.days
                 
-                                    # Solo los que de verdad llegaron tarde (> 0 días)
+                                    # Solo retrasos reales (> 0 días)
                                     df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
                 
-                                    # 5. KPIs MODERNOS (Tus tarjetas)
+                                    # 5. KPIs (Usando tus tarjetas modernas)
                                     total_e = len(df_retrasos[mask_calc])
                                     atrasados_n = len(df_solo_retrasos)
                                     porcentaje = (atrasados_n / total_e * 100) if total_e > 0 else 0
@@ -3186,33 +3185,25 @@ else:
                                             </div>
                                         """, unsafe_allow_html=True)
                 
-                                    # 6. GRÁFICO Y TABLA
+                                    # 6. TABLA DETALLE
                                     if not df_solo_retrasos.empty:
-                                        st.markdown("### 📊 Retrasos por Fletera")
-                                        resumen_f = df_solo_retrasos.groupby('FLETERA').size().reset_index(name='CANTIDAD')
-                                        chart = alt.Chart(resumen_f).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, color="#fb7185").encode(
-                                            x=alt.X("CANTIDAD:Q", title="Número de Retrasos"),
-                                            y=alt.Y("FLETERA:N", sort='-x', title=None)
-                                        ).properties(height=300)
-                                        st.altair_chart(chart, use_container_width=True)
-                
-                                        st.markdown("### 📝 Detalle de Pedidos")
-                                        # Formateo para la tabla
-                                        df_solo_retrasos['PROMESA'] = df_solo_retrasos['PROMESA DE ENTREGA'].dt.strftime('%d/%m/%Y')
-                                        df_solo_retrasos['REAL'] = df_solo_retrasos['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
+                                        st.markdown("### 📝 Detalle de Pedidos Fuera de Tiempo")
+                                        df_table = df_solo_retrasos.copy()
+                                        df_table['PROMESA'] = df_table['PROMESA DE ENTREGA'].dt.strftime('%d/%m/%Y')
+                                        df_table['REAL'] = df_table['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
                                         
                                         st.dataframe(
-                                            df_solo_retrasos[['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', 'PROMESA', 'REAL', 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False),
+                                            df_table[['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', 'PROMESA', 'REAL', 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False),
                                             use_container_width=True
                                         )
                                     else:
                                         st.success(f"✅ ¡Todo a tiempo en {mes_sel}!")
                                 else:
-                                    st.warning(f"⚠️ No hay datos para el mes de {mes_sel} en esta matriz.")
+                                    st.warning(f"⚠️ No hay datos para: {mes_sel}")
                             else:
                                 st.info("💡 Por favor, selecciona un mes específico para analizar los retrasos.")
                         else:
-                            st.error("No se pudo descargar la matriz 'Matriz_Excel_Dashboard.csv' de GitHub.")
+                            st.error("No se pudo descargar la matriz de GitHub.")
                 
                     except Exception as e:
                         st.error(f"Error al procesar la matriz: {e}")
