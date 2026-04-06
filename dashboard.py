@@ -3125,89 +3125,113 @@ else:
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("🚩 REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
                 
-                    try:
-                                        
-                        # 1. CARGA DIRECTA DESDE GITHUB (Tus tokens)
-                        TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-                        REPO_NAME = "RH2026/nexion"
-                        FILE_PATH_MATRIZ = "Matriz_Excel_Dashboard.csv"
-                        API_URL_MATRIZ = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH_MATRIZ}"
-                        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+                    # 1. CARGA DE DATOS (Usando tu función infalible)
+                    # Reutilizamos la función que ya definiste o la declaramos igual
+                    df_retrasos_base = load_data_logistica()
                 
-                        response = requests.get(API_URL_MATRIZ, headers=headers)
-                        
-                        if response.status_code == 200:
-                            content = response.json()['content']
-                            decoded_data = base64.b64decode(content)
-                            df_retrasos_raw = pd.read_csv(io.BytesIO(decoded_data))
+                    if df_retrasos_base is not None:
+                        # 2. FILTRADO POR MES (Igualito a como lo tienes en Participación)
+                        # Esto asegura que responda al filtro principal 'mes_sel'
+                        df_r_filtrado = df_retrasos_base[df_retrasos_base["MES"] == mes_sel].copy()
+                
+                        if not df_r_filtrado.empty:
+                            # 3. CONVERSIÓN DE FECHAS
+                            # Usamos las columnas de tu matriz principal
+                            df_r_filtrado['PROMESA DE ENTREGA'] = pd.to_datetime(df_r_filtrado['PROMESA DE ENTREGA'], dayfirst=True, errors='coerce')
+                            df_r_filtrado['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_r_filtrado['FECHA DE ENTREGA REAL'], dayfirst=True, errors='coerce')
+                
+                            # 4. CÁLCULO DE DÍAS DE RETRASO
+                            # Solo si tiene ambas fechas
+                            mask_fechas = df_r_filtrado['PROMESA DE ENTREGA'].notna() & df_r_filtrado['FECHA DE ENTREGA REAL'].notna()
                             
-                            # --- CORRECCIÓN DEL ERROR 'INDEX' ---
-                            # Limpiamos nombres de columnas correctamente
-                            df_retrasos_raw.columns = df_retrasos_raw.columns.str.strip().str.upper()
+                            df_r_filtrado.loc[mask_fechas, 'DIAS_DIFERENCIA'] = (
+                                df_r_filtrado['FECHA DE ENTREGA REAL'] - df_r_filtrado['PROMESA DE ENTREGA']
+                            ).dt.days
                 
-                            # 2. FILTRADO POR MES (Seguro contra mayúsculas/minúsculas)
-                            mes_comparar = str(mes_sel).strip().upper()
-                            
-                            if mes_comparar != "TODO EL HISTÓRICO":
-                                # Filtramos comparando todo en Mayúsculas
-                                df_retrasos = df_retrasos_raw[df_retrasos_raw['MES'].astype(str).str.strip().str.upper() == mes_comparar].copy()
+                            # Filtramos solo los que llegaron después de la promesa (> 0 días)
+                            df_solo_atraso = df_r_filtrado[df_r_filtrado['DIAS_DIFERENCIA'] > 0].copy()
                 
-                                if not df_retrasos.empty:
-                                    # 3. CONVERSIÓN DE FECHAS
-                                    for col in ["PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                                        if col in df_retrasos.columns:
-                                            df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
+                            # 5. MÉTRICAS (Usando tus tarjetas modernas)
+                            total_analizado = len(df_r_filtrado[mask_fechas])
+                            total_con_retraso = len(df_solo_atraso)
+                            porcentaje = (total_con_retraso / total_analizado * 100) if total_analizado > 0 else 0
+                            promedio_d = df_solo_atraso['DIAS_DIFERENCIA'].mean() if not df_solo_atraso.empty else 0
                 
-                                    # 4. CÁLCULO DE RETRASO
-                                    # Solo pedidos que tengan ambas fechas
-                                    mask_calc = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
-                                    
-                                    df_retrasos.loc[mask_calc, 'DIAS_DIFERENCIA'] = (
-                                        df_retrasos['FECHA DE ENTREGA REAL'] - df_retrasos['PROMESA DE ENTREGA']
-                                    ).dt.days
+                            # Espaciado estético
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            col_r1, col_r2, col_r3 = st.columns(3)
                 
-                                    # Solo retrasos reales (> 0 días)
-                                    df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
+                            with col_r1:
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text">ENTREGAS ANALIZADAS</p>
+                                        <p class="valor-volumen">{total_analizado:,}</p>
+                                    </div>
+                                """, unsafe_allow_html=True)
                 
-                                    # 5. KPIs (Usando tus tarjetas modernas)
-                                    total_e = len(df_retrasos[mask_calc])
-                                    atrasados_n = len(df_solo_retrasos)
-                                    promedio = df_solo_retrasos['DIAS_DIFERENCIA'].mean() if not df_solo_retrasos.empty else 0
+                            with col_r2:
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text">PEDIDOS CON RETRASO</p>
+                                        <p class="valor-volumen" style="color: #fb7185 !important;">{total_con_retraso:,}</p>
+                                        <p style="color: #fb7185; font-size: 14px; font-weight: bold; margin:0;">{porcentaje:.1f}%</p>
+                                    </div>
+                                """, unsafe_allow_html=True)
                 
-                                    c1, c2, c3 = st.columns(3)
-                                    with c1: render_modern_bar(total_e, total_e, "Entregas Analizadas", "#5a8dee")
-                                    with c2: render_modern_bar(atrasados_n, total_e, "Pedidos con Retraso", "#ff5b5c")
-                                    with c3: 
-                                        st.markdown(f"""
-                                            <div style="background: rgba(26, 37, 47, 0.6); padding: 20px; border-radius: 15px; border: 1px solid #243441; text-align: center;">
-                                                <p style="color: #A4B9C8; font-size: 10px; margin-bottom: 5px; font-weight: bold;">PROMEDIO ATRASO</p>
-                                                <h2 style="color: white; margin: 0; font-size: 24px;">{promedio:.1f}</h2>
-                                                <p style="color: #f6c23e; font-size: 14px; margin-top: 5px; font-weight: bold;">Días de demora</p>
-                                            </div>
-                                        """, unsafe_allow_html=True)
+                            with col_r3:
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text">PROMEDIO ATRASO</p>
+                                        <p class="valor-volumen" style="color: #f6c23e !important;">{promedio_d:.1f}</p>
+                                        <p style="color: #f6c23e; font-size: 14px; font-weight: bold; margin:0;">DÍAS</p>
+                                    </div>
+                                """, unsafe_allow_html=True)
                 
-                                    # 6. TABLA DETALLE
-                                    if not df_solo_retrasos.empty:
-                                        st.markdown("### 📝 Detalle de Pedidos Fuera de Tiempo")
-                                        df_table = df_solo_retrasos.copy()
-                                        df_table['PROMESA'] = df_table['PROMESA DE ENTREGA'].dt.strftime('%d/%m/%Y')
-                                        df_table['REAL'] = df_table['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
-                                        
-                                        st.dataframe(
-                                            df_table[['NÚMERO DE PEDIDO', 'FLETERA', 'PROMESA', 'REAL', 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False),
-                                            use_container_width=True
-                                        )
-                                    else:
-                                        st.success(f"✅ ¡Todo a tiempo en {mes_sel}!")
-                                else:
-                                    st.warning(f"⚠️ No hay datos para: {mes_sel}")
+                            # 6. GRÁFICO DE BARRAS POR FLETERA (Estilo AGC)
+                            if not df_solo_atraso.empty:
+                                st.markdown("<br>", unsafe_allow_html=True)
+                                st.markdown("<p class='op-query-text' style='text-align:center;'>RETRASOS POR PAQUETERÍA</p>", unsafe_allow_html=True)
+                                
+                                resumen_f = df_solo_atraso.groupby('TRANSPORTE').size().reset_index(name='CANTIDAD').sort_values('CANTIDAD', ascending=True)
+                                
+                                fig_retraso = go.Figure(go.Bar(
+                                    x=resumen_f['CANTIDAD'],
+                                    y=resumen_f['TRANSPORTE'],
+                                    orientation='h',
+                                    marker=dict(color='#fb7185', line=dict(color='rgba(255, 255, 255, 0.1)', width=1)),
+                                    text=resumen_f['CANTIDAD'],
+                                    textposition='outside',
+                                    cliponaxis=False
+                                ))
+                
+                                fig_retraso.update_layout(
+                                    height=max(400, len(resumen_f) * 40),
+                                    paper_bgcolor='#263238',
+                                    plot_bgcolor='#263238',
+                                    font=dict(family="Inter", size=12, color="#FFFFFF"),
+                                    margin=dict(l=200, r=60, t=30, b=20),
+                                    xaxis=dict(showgrid=False, zeroline=False),
+                                    yaxis=dict(showgrid=False, automargin=True, tickfont=dict(color='#FFFFFF', size=11)),
+                                    showlegend=False
+                                )
+                
+                                st.plotly_chart(fig_retraso, use_container_width=True, config={'displayModeBar': False})
+                
+                                # 7. TABLA DE DETALLE (Usando tu diseño premium)
+                                st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px; margin-top:20px; margin-bottom:15px;'>🔍 LISTADO DE INCIDENCIAS</p>", unsafe_allow_html=True)
+                                
+                                df_det = df_solo_atraso[['NÚMERO DE PEDIDO', 'TRANSPORTE', 'DESTINO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'DIAS_DIFERENCIA']].copy()
+                                df_det['PROMESA'] = df_det['PROMESA DE ENTREGA'].dt.strftime('%d/%m/%Y')
+                                df_det['REAL'] = df_det['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
+                                
+                                st.dataframe(
+                                    df_det[['NÚMERO DE PEDIDO', 'TRANSPORTE', 'DESTINO', 'PROMESA', 'REAL', 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False),
+                                    use_container_width=True
+                                )
                             else:
-                                st.info("💡 Por favor, selecciona un mes específico para analizar los retrasos.")
+                                st.success(f"✅ ¡Increíble! Cero retrasos detectados para {mes_sel}.")
                         else:
-                            st.error("No se pudo descargar la matriz de GitHub.")
-                
-                    except Exception as e:
-                        st.error(f"Error al procesar la matriz: {e}")
+                            st.warning(f"No hay registros para el mes de {mes_sel}.")
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
