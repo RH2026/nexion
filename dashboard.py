@@ -3124,17 +3124,15 @@ else:
 
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("🚩 REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
-                    # 1. CARGA DE DATOS (Usando la función que ya tienes y que SÍ funciona)
+                    # 1. CARGA DE DATOS (Usando tu función con caché que ya te funciona)
                     df_retrasos_base = load_data_logistica()
                 
                     if df_retrasos_base is not None:
                         # 2. FILTRADO POR MES (Usando mes_sel de tu Zona de Control)
-                        # Importante: Aquí usamos mes_sel tal cual, porque load_data_logistica ya limpia la columna MES
                         df_r_filtrado = df_retrasos_base[df_retrasos_base["MES"] == mes_sel].copy()
                 
                         if not df_r_filtrado.empty:
-                            # 3. CONVERSIÓN DE FECHAS (Formato día/mes/año)
-                            # Asegúrate que estos nombres de columna estén IGUALES en tu Excel
+                            # 3. CONVERSIÓN DE FECHAS
                             df_r_filtrado['PROMESA DE ENTREGA'] = pd.to_datetime(df_r_filtrado['PROMESA DE ENTREGA'], dayfirst=True, errors='coerce')
                             df_r_filtrado['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_r_filtrado['FECHA DE ENTREGA REAL'], dayfirst=True, errors='coerce')
                 
@@ -3165,7 +3163,7 @@ else:
                             with c_r3:
                                 st.markdown(f'<div class="metric-card-agc"><p class="op-query-text">PROMEDIO DÍAS</p><p class="valor-volumen" style="color:#f6c23e !important;">{promedio_d:.1f}</p><p style="color:#f6c23e;font-size:12px;font-weight:bold;">DEMORA</p></div>', unsafe_allow_html=True)
                 
-                            # 6. GRÁFICO POR TRANSPORTE (Usando la columna TRANSPORTE que sí existe)
+                            # 6. GRÁFICO POR TRANSPORTE
                             if not df_solo_atraso.empty:
                                 st.markdown("<br>", unsafe_allow_html=True)
                                 resumen_f = df_solo_atraso.groupby('TRANSPORTE').size().reset_index(name='CANTIDAD').sort_values('CANTIDAD', ascending=True)
@@ -3181,7 +3179,6 @@ else:
                 
                                 # 7. TABLA DE DETALLE
                                 st.markdown("<p class='op-query-text' style='margin-top:20px; border-left:4px solid #54AFE7; padding-left:10px;'>🔍 LISTADO DE RETRASOS</p>", unsafe_allow_html=True)
-                                # OJO: Aquí usa 'TRANSPORTE' en lugar de 'FLETERA'
                                 df_det = df_solo_atraso[['NÚMERO DE PEDIDO', 'TRANSPORTE', 'DESTINO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'DIAS_DIFERENCIA']].copy()
                                 df_det['PROMESA'] = df_det['PROMESA DE ENTREGA'].dt.strftime('%d/%m/%Y')
                                 df_det['REAL'] = df_det['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
@@ -3189,8 +3186,7 @@ else:
                             else:
                                 st.success(f"✅ Sin retrasos detectados en {mes_sel}.")
                         else:
-                            # Si esto sale, es que mes_sel no coincide con la columna MES del CSV
-                            st.warning(f"No hay registros en la matriz para {mes_sel}. Verifica que el nombre del mes en el Excel sea igual.")
+                            st.warning(f"No hay registros en la matriz para {mes_sel}.")
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
