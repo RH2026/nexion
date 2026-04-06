@@ -3127,7 +3127,7 @@ else:
                 
                     try:
                                         
-                        # 1. CARGA DIRECTA DESDE GITHUB (Tus tokens y tu matriz real)
+                        # 1. CARGA DIRECTA DESDE GITHUB (Tus tokens)
                         TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                         REPO_NAME = "RH2026/nexion"
                         FILE_PATH_MATRIZ = "Matriz_Excel_Dashboard.csv"
@@ -3141,23 +3141,25 @@ else:
                             decoded_data = base64.b64decode(content)
                             df_retrasos_raw = pd.read_csv(io.BytesIO(decoded_data))
                             
-                            # Limpieza radical de nombres de columnas
-                            df_retrasos_raw.columns = df_retrasos_raw.columns.str.strip().upper()
+                            # --- CORRECCIÓN DEL ERROR 'INDEX' ---
+                            # Limpiamos nombres de columnas correctamente
+                            df_retrasos_raw.columns = df_retrasos_raw.columns.str.strip().str.upper()
                 
-                            # 2. FILTRADO INTELIGENTE (A prueba de errores de escritura)
-                            # Pasamos lo que seleccionas a Mayúsculas y quitamos espacios
+                            # 2. FILTRADO POR MES (Seguro contra mayúsculas/minúsculas)
                             mes_comparar = str(mes_sel).strip().upper()
                             
                             if mes_comparar != "TODO EL HISTÓRICO":
-                                # Forzamos la columna MES del Excel a Mayúsculas también para que peguen sí o sí
+                                # Filtramos comparando todo en Mayúsculas
                                 df_retrasos = df_retrasos_raw[df_retrasos_raw['MES'].astype(str).str.strip().str.upper() == mes_comparar].copy()
                 
                                 if not df_retrasos.empty:
-                                    # 3. CONVERSIÓN DE FECHAS (Día/Mes/Año)
+                                    # 3. CONVERSIÓN DE FECHAS
                                     for col in ["PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                                        df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
+                                        if col in df_retrasos.columns:
+                                            df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
                 
                                     # 4. CÁLCULO DE RETRASO
+                                    # Solo pedidos que tengan ambas fechas
                                     mask_calc = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
                                     
                                     df_retrasos.loc[mask_calc, 'DIAS_DIFERENCIA'] = (
@@ -3170,7 +3172,6 @@ else:
                                     # 5. KPIs (Usando tus tarjetas modernas)
                                     total_e = len(df_retrasos[mask_calc])
                                     atrasados_n = len(df_solo_retrasos)
-                                    porcentaje = (atrasados_n / total_e * 100) if total_e > 0 else 0
                                     promedio = df_solo_retrasos['DIAS_DIFERENCIA'].mean() if not df_solo_retrasos.empty else 0
                 
                                     c1, c2, c3 = st.columns(3)
@@ -3193,7 +3194,7 @@ else:
                                         df_table['REAL'] = df_table['FECHA DE ENTREGA REAL'].dt.strftime('%d/%m/%Y')
                                         
                                         st.dataframe(
-                                            df_table[['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', 'PROMESA', 'REAL', 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False),
+                                            df_table[['NÚMERO DE PEDIDO', 'FLETERA', 'PROMESA', 'REAL', 'DIAS_DIFERENCIA']].sort_values('DIAS_DIFERENCIA', ascending=False),
                                             use_container_width=True
                                         )
                                     else:
