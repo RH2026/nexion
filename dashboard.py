@@ -3125,66 +3125,68 @@ else:
                 with tab_retrasos: # Asegúrate de haber definido este tab arriba: tab_despachos, tab_retrasos = st.tabs(...)
                     st.subheader("REPORTE DE ENTREGAS CON RETRASO POR FLETERA")
 
-                    # 1. Filtramos df_raw manualmente por el mes seleccionado en el buscador (mes_sel)
-                    # 1. Filtro ultra-seguro (quita espacios y pone todo en mayúsculas para comparar)
-                    df_retrasos = df_raw[df_raw['MES'].astype(str).str.strip().str.upper() == str(mes_sel).strip().upper()].copy()
+                    # 1. Usamos df_mes que ya tienes filtrado arriba por el mes seleccionado
+                    # Si por algo no llega la variable, la recalculamos igual que en tus donitas:
+                    df_retrasos = df_mes.copy()
+                
+                    # 2. Aseguramos que las fechas sean comparables (como en tus donitas)
+                    for col in ["PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                        df_retrasos[col] = pd.to_datetime(df_retrasos[col], dayfirst=True, errors='coerce')
+                
+                    # 3. Cálculo de Días de Retraso
+                    # Solo pedidos que ya tienen FECHA DE ENTREGA REAL
+                    mask_entregados = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
                     
-                    # 2. Conversión de fechas (Igual que ya lo tienes)
-                    df_retrasos['PROMESA DE ENTREGA'] = pd.to_datetime(df_retrasos['PROMESA DE ENTREGA'], errors='coerce')
-                    df_retrasos['FECHA DE ENTREGA REAL'] = pd.to_datetime(df_retrasos['FECHA DE ENTREGA REAL'], errors='coerce')
-                    
-                    # 2. Cálculo de Días de Retraso
-                    # Solo calculamos si ambas fechas existen
-                    mask_fechas = df_retrasos['PROMESA DE ENTREGA'].notna() & df_retrasos['FECHA DE ENTREGA REAL'].notna()
-                    
-                    # Calculamos la diferencia en días
-                    df_retrasos.loc[mask_fechas, 'DIAS_DIFERENCIA'] = (
+                    # Calculamos la diferencia: (Real - Promesa)
+                    df_retrasos.loc[mask_entregados, 'DIAS_DIFERENCIA'] = (
                         df_retrasos['FECHA DE ENTREGA REAL'] - df_retrasos['PROMESA DE ENTREGA']
                     ).dt.days
                 
-                    # Definimos retraso: si la entrega real fue después de la promesa (> 0 días)
+                    # Filtramos solo los que llegaron tarde (diferencia mayor a 0 días)
                     df_solo_retrasos = df_retrasos[df_retrasos['DIAS_DIFERENCIA'] > 0].copy()
                 
-                    # 3. KPIs Rápidos
-                    col1, col2, col3 = st.columns(3)
-                    total_pedidos = len(df_retrasos[mask_fechas])
+                    # 4. KPIs Rápidos
+                    total_con_datos = len(df_retrasos[mask_entregados])
                     total_retrasos = len(df_solo_retrasos)
-                    porcentaje_retraso = (total_retrasos / total_pedidos * 100) if total_pedidos > 0 else 0
+                    porcentaje_retraso = (total_retrasos / total_con_datos * 100) if total_con_datos > 0 else 0
                     promedio_atraso = df_solo_retrasos['DIAS_DIFERENCIA'].mean() if not df_solo_retrasos.empty else 0
                 
-                    with col1:
-                        st.metric("Total Entregas (con datos)", total_pedidos)
-                    with col2:
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.metric("Entregas Analizadas", total_con_datos)
+                    with c2:
                         st.metric("Pedidos con Retraso", total_retrasos, delta=f"{porcentaje_retraso:.1f}%", delta_color="inverse")
-                    with col3:
-                        st.metric("Promedio de Atraso", f"{promedio_atraso:.1f} días")
+                    with c3:
+                        st.metric("Días Promedio Atraso", f"{promedio_atraso:.1f} días")
                 
-                    # 4. Visualización por Fletera
+                    # 5. Gráfico de Barras (Estilo Nexion)
                     if not df_solo_retrasos.empty:
-                        st.markdown("### Retrasos por Fletera")
+                        st.markdown("### Volumen de Retrasos por Fletera")
                         
-                        # Agrupamos para ver quién tiene más incidencias
-                        resumen_fletera = df_solo_retrasos.groupby('FLETERA').agg({
-                            'NÚMERO DE PEDIDO': 'count',
-                            'DIAS_DIFERENCIA': 'mean'
-                        }).rename(columns={
-                            'NÚMERO DE PEDIDO': 'Cantidad de Retrasos',
-                            'DIAS_DIFERENCIA': 'Promedio Días de Retraso'
-                        }).sort_values('Cantidad de Retrasos', ascending=False)
-                
-                        # Gráfico de barras para visualizar volumen de retrasos
-                        st.bar_chart(resumen_fletera['Cantidad de Retrasos'])
-                
-                        # 5. Tabla de Detalle
-                        st.markdown("### Detalle de Pedidos Retrasados")
-                        cols_mostrar = [
-                            'NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', 
-                            'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'DIAS_DIFERENCIA'
-                        ]
-                        st.dataframe(df_solo_retrasos[cols_mostrar].sort_values('DIAS_DIFERENCIA', ascending=False), use_container_width=True)
+                        # Agrupamos
+                        resumen_f = df_solo_retrasos.groupby('FLETERA').size().reset_index(name='CANTIDAD')
                         
+                        # Gráfico con el color rojo coral que usas en la donita de retraso
+                        chart_retrasos = alt.Chart(resumen_f).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, color="#fb7185").encode(
+                            x=alt.X("CANTIDAD:Q", title="Número de Retrasos"),
+                            y=alt.Y("FLETERA:N", title=None, sort='-x'),
+                            tooltip=['FLETERA', 'CANTIDAD']
+                        ).properties(height=300)
+                        
+                        st.altair_chart(chart_retrasos, use_container_width=True)
+                
+                        # 6. Tabla de Detalle
+                        st.markdown("### Listado de Pedidos Fuera de Tiempo")
+                        cols_finales = ['NÚMERO DE PEDIDO', 'NOMBRE DEL CLIENTE', 'FLETERA', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL', 'DIAS_DIFERENCIA']
+                        # Mostramos solo las columnas que existan para evitar errores
+                        cols_a_mostrar = [c for c in cols_finales if c in df_solo_retrasos.columns]
+                        
+                        st.dataframe(
+                            df_solo_retrasos[cols_a_mostrar].sort_values('DIAS_DIFERENCIA', ascending=False), 
+                            use_container_width=True
+                        )
                     else:
-                        st.success("¡Felicidades! No se detectaron entregas con retraso en este periodo.")
+                        st.success(f"✅ ¡Excelente servicio! No hay retrasos registrados para {mes_sel}.")
                 
                 # NUEVA PESTAÑA SOLO PARA TI
                 if es_admin:
