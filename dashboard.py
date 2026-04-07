@@ -7322,9 +7322,10 @@ else:
                                
                 #HERRAMIENTA PARA TRASLADOS ------------------------------------------------------
                 
-                st.title("Procesador de Traspasos - Nexion")
+                # Puedes ajustar el valor de 40px a lo que mejor se vea en tu app
+                st.markdown(f'<h1 style="font-size: 16px;">Procesador de Traspasos - Nexion</h1>', unsafe_allow_html=True)
                 
-                uploaded_file = st.file_uploader("Sube el Excel de la matriz, amor", type=["xlsx"])
+                uploaded_file = st.file_uploader("Sube el Excel de la matriz de consignas", type=["xlsx"])
                 
                 if uploaded_file is not None:
                     try:
