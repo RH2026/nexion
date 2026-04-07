@@ -7321,16 +7321,46 @@ else:
                                 st.info("El archivo se guardará en tu carpeta de descargas.")# Previsualización incrustada
                                
                 #HERRAMIENTA PARA TRASLADOS ------------------------------------------------------
-                
                 # Puedes ajustar el valor de 40px a lo que mejor se vea en tu app
-                st.markdown(f'<h1 style="font-size: 22px; font-weight: 300;">Procesador de Traspasos - Nexion</h1>', unsafe_allow_html=True)
+                # 1. Definimos el estilo y la tarjeta (Título y Subtítulo juntos)
+                st.markdown("""
+                    <style>
+                    .nexion-container {
+                        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
+                        padding: 15px 25px;
+                        border-radius: 8px;
+                        border-left: 6px solid #4a90e2;
+                        margin-bottom: 20px;
+                    }
+                    .nexion-title {
+                        color: #ffffff;
+                        font-size: 20px; /* El tamaño que elegiste */
+                        font-weight: 300; /* El grosor que querías */
+                        margin-bottom: 2px;
+                    }
+                    .nexion-subtitle {
+                        color: #808495;
+                        font-size: 14px;
+                        font-weight: 400;
+                    }
+                    </style>
+                    
+                    <div class="nexion-container">
+                        <div class="nexion-title">Procesador de Traspasos - Nexion</div>
+                        <div class="nexion-subtitle">Sube el Excel de la matriz de consignas</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                uploaded_file = st.file_uploader("Sube el Excel de la matriz de consignas", type=["xlsx"])
+                # 2. El cargador de archivos (le quitamos el texto para que no se duplique)
+                uploaded_file = st.file_uploader("", type=["xlsx"], label_visibility="collapsed")
                 
+                # 3. Tu lógica de procesamiento
                 if uploaded_file is not None:
                     try:
                         data = pd.read_excel(uploaded_file, header=None)
-                        
+                        st.success("¡Archivo cargado con éxito, amor!")
+                        # Aquí sigue tu magia con los datos...
+                                           
                         row_index = 0
                         for i, row in data.iterrows():
                             if "DESCRIPCION" in row.astype(str).values:
