@@ -7382,7 +7382,7 @@ else:
                 if uploaded_file is not None:
                     try:
                         data = pd.read_excel(uploaded_file, header=None)
-                        st.success("¡Archivo cargado con éxito, amor!")
+                        st.success("¡Archivo cargado con éxito!")
                         # Aquí sigue tu magia con los datos...
                                            
                         row_index = 0
@@ -7416,19 +7416,20 @@ else:
                         df_final = df_final[['nombre del envio', col_cod, col_desc, 'cantidad']]
                         df_final.columns = ['nombre del envio', 'codigo', 'descripcion producto', 'cantidad']
                 
-                        st.success(f"¡Ahora sí está completo! Procesé {len(df_final)} líneas.")
+                        st.success(f"¡Completado! Se procesarón {len(df_final)} líneas.")
                         st.dataframe(df_final, use_container_width=True)
                 
                         csv = df_final.to_csv(index=False).encode('utf-8-sig')
                         st.download_button(
-                            label="Descargar CSV con Códigos",
+                            label="Descargar CSV",
                             data=csv,
-                            file_name='traspasos_con_codigo.csv',
+                            file_name='consignas.csv',
                             mime='text/csv',
+                            use_container_width=True,
                         )
                 
                     except Exception as e:
-                        st.error(f"Hubo un detalle, cielo: {e}")
+                        st.error(f"Hubo un detalle: {e}")
                 else:
                     st.info("Sube la matriz para generar la lista con códigos.")
     
