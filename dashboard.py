@@ -1215,7 +1215,7 @@ else:
                 # --- HUB LOG: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
                     with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "LABEL CREATOR"]:
+                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "PROCESSOR SUITE"]:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
                                 st.session_state.menu_main = "HUB LOG"
@@ -7188,7 +7188,7 @@ else:
                             st.error(f"Error al conectar con los logs: {e}")
             
             
-            elif st.session_state.menu_sub == "LABEL CREATOR":                
+            elif st.session_state.menu_sub == "PROCESSOR SUITE":                
                 # --- 1. CONFIGURACIÓN DE PODER ---
                 # --- 1. FUNCIONES DE PROCESAMIENTO ---
                 def limpiar_parentesis(texto):
