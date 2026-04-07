@@ -7292,10 +7292,34 @@ else:
                     return output.getvalue()
             
                 # --- 2. INTERFAZ DE USUARIO ---
-                archivo = st.file_uploader("Cargar Excel de Pedidos", type=["xlsx"])
+                # Estilo y Tarjeta para Cargar Pedidos
+                st.markdown("""
+                    <div style="
+                        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
+                        padding: 15px 25px;
+                        border-radius: 8px;
+                        border-left: 6px solid #4a90e2;
+                        margin-top: 20px;
+                        margin-bottom: 10px;
+                    ">
+                        <div style="color: #ffffff; font-size: 20px; font-weight: 300; margin-bottom: 2px;">
+                            Gestión de Pedidos - Nexion
+                        </div>
+                        <div style="color: #808495; font-size: 14px; font-weight: 400;">
+                            Cargar Excel de Pedidos para procesamiento
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # Cargador de archivos sin el label externo (porque ya está en la tarjeta)
+                archivo = st.file_uploader("", type=["xlsx"], label_visibility="collapsed")
                 
                 if archivo:
-                    df = pd.read_excel(archivo, sheet_name=0)
+                    try:
+                        df = pd.read_excel(archivo, sheet_name=0)
+                        # Aquí continúa tu lógica de procesamiento, corazón
+                    except Exception as e:
+                        st.error(f"Error al leer los pedidos: {e}")
                     
                     # Mostrar tabla para que no se vea vacío
                     st.subheader("Vista previa de datos")
