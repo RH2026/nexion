@@ -7344,6 +7344,9 @@ else:
                                 # Un pequeño mensaje de ayuda extra
                                 st.info("El archivo se guardará en tu carpeta de descargas.")# Previsualización incrustada
                                
+                else:
+                    st.info("Sube la matriz: Analisis_Final.xlsx para generar la lista con códigos.")
+                
                 #HERRAMIENTA PARA TRASLADOS ------------------------------------------------------
                 # Puedes ajustar el valor de 40px a lo que mejor se vea en tu app
                 # 1. Definimos el estilo y la tarjeta (Título y Subtítulo juntos)
@@ -7431,7 +7434,7 @@ else:
                     except Exception as e:
                         st.error(f"Hubo un detalle: {e}")
                 else:
-                    st.info("Sube la matriz para generar la lista con códigos.")
+                    st.info("Sube la matriz: consignas.xlsx para generar la lista con códigos.")
     
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
