@@ -7345,7 +7345,7 @@ else:
                                 st.info("El archivo se guardará en tu carpeta de descargas.")# Previsualización incrustada
                                
                 else:
-                    st.info("Sube la matriz: Analisis_Final.xlsx para generar la lista con códigos.")
+                    st.info("Sube la matriz: Analisis_Final.xlsx para generar las etiquetas de embarque.")
                 
                 #HERRAMIENTA PARA TRASLADOS ------------------------------------------------------
                 # Puedes ajustar el valor de 40px a lo que mejor se vea en tu app
