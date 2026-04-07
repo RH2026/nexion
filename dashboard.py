@@ -7323,7 +7323,7 @@ else:
                 #HERRAMIENTA PARA TRASLADOS ------------------------------------------------------
                 
                 # Puedes ajustar el valor de 40px a lo que mejor se vea en tu app
-               st.markdown(f'<h1 style="font-size: 22px; font-weight: 300;">Procesador de Traspasos - Nexion</h1>', unsafe_allow_html=True)
+                st.markdown(f'<h1 style="font-size: 22px; font-weight: 300;">Procesador de Traspasos - Nexion</h1>', unsafe_allow_html=True)
                 
                 uploaded_file = st.file_uploader("Sube el Excel de la matriz de consignas", type=["xlsx"])
                 
