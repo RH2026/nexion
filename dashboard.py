@@ -7303,7 +7303,7 @@ else:
                         margin-bottom: 10px;
                     ">
                         <div style="color: #ffffff; font-size: 20px; font-weight: 300; margin-bottom: 2px;">
-                            Gestión de Pedidos - Nexion
+                            Creador de Etiquetas de Embarque
                         </div>
                         <div style="color: #808495; font-size: 14px; font-weight: 400;">
                             Cargar Excel de Pedidos para procesamiento
@@ -7370,7 +7370,7 @@ else:
                     </style>
                     
                     <div class="nexion-container">
-                        <div class="nexion-title">Procesador de Traspasos - Nexion</div>
+                        <div class="nexion-title">Procesador de Consignas</div>
                         <div class="nexion-subtitle">Sube el Excel de la matriz de consignas</div>
                     </div>
                     """, unsafe_allow_html=True)
