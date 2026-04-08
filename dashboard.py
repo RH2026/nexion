@@ -7434,7 +7434,7 @@ else:
                 
                 
                 #PROCESADOR DE PACKING LIST TECNICO---------------------------
-                # --- FUNCIÓN GENERADORA DEL HTML (TU DISEÑO TÉCNICO - CORREGIDO) ---
+                # --- FUNCIÓN GENERADORA DEL HTML (TÉCNICO + CONTROL DE SALTOS) ---
                 def generar_packing_list_html(df):
                     # AJUSTE MANUAL A ZONA GDL (UTC-6)
                     ahora_gdl = datetime.utcnow() - timedelta(hours=6)
@@ -7452,7 +7452,16 @@ else:
                     
                     # --- INICIO DEL HTML ---
                     html_content = f"""
-                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; max-width: 900px; margin: auto; background-color: #fff;">
+                    <style>
+                        @media print {{
+                            .no-break {{ page-break-inside: avoid !important; break-inside: avoid !important; }}
+                            .page-break {{ page-break-before: always; }}
+                            table {{ width: 100%; border-collapse: collapse; table-layout: fixed; }}
+                            td {{ word-wrap: break-word; overflow-wrap: break-word; }}
+                        }}
+                    </style>
+                    
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; width: 95%; max-width: 900px; margin: auto; background-color: #fff;">
                         
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2276AA; padding-bottom: 10px; margin-bottom: 20px;">
                             <div style="text-align: left;">
@@ -7490,12 +7499,12 @@ else:
                         </div>
                     """
                 
-                    # --- LÓGICA POR PALLET (OPTIMIZADA) ---
+                    # --- LÓGICA POR PALLET ---
                     df_sorted = df.sort_values(by='Palet')
                     
                     for pallet_id, group in df_sorted.groupby('Palet'):
                         html_content += f"""
-                        <div style="margin-top: 20px; border: 2px solid #000; page-break-inside: avoid;">
+                        <div class="no-break" style="margin-top: 20px; border: 2px solid #000; margin-bottom: 10px;">
                             <div style="background: #eee; color: #000; padding: 8px 10px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; border-bottom: 2px solid #000;">
                                 <span>DETALLE TÉCNICO: PALLET {pallet_id}</span>
                                 <span style="font-family: 'Courier New';">CONTENIDO: {len(group)} SKUs</span>
@@ -7503,18 +7512,17 @@ else:
                             <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
                                 <thead>
                                     <tr style="background: #fff; border-bottom: 1px solid #000;">
-                                        <th style="padding: 8px; text-align: left; width: 25%; border-right: 1px solid #eee;">SKU / ARTÍCULO</th>
-                                        <th style="padding: 8px; text-align: left; width: 60%; border-right: 1px solid #eee;">DESCRIPCIÓN TÉCNICA</th>
+                                        <th style="padding: 8px; text-align: left; width: 20%; border-right: 1px solid #eee;">SKU / ARTÍCULO</th>
+                                        <th style="padding: 8px; text-align: left; width: 65%; border-right: 1px solid #eee;">DESCRIPCIÓN TÉCNICA</th>
                                         <th style="padding: 8px; text-align: center; width: 15%;">CANTIDAD</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                         """
                         
-                        # AQUÍ ESTABA EL ERROR: Solo necesitamos un ciclo 'for' para las filas
                         for _, row in group.iterrows():
                             html_content += f"""
-                                    <tr style="border-bottom: 1px solid #eee;">
+                                    <tr style="border-bottom: 1px solid #eee; page-break-inside: avoid;">
                                         <td style="padding: 8px; font-family: 'Courier New'; font-size: 11px;"><b>{row['Número de artículo']}</b></td>
                                         <td style="padding: 8px; text-transform: uppercase; font-size: 9px; line-height: 1.2;">{row['Descripción del artículo']}</td>
                                         <td style="padding: 8px; text-align: center; font-size: 12px; font-weight: bold; border-left: 1px solid #eee;">{row['Cantidad']:,.0f}</td>
@@ -7527,10 +7535,9 @@ else:
                         </div>
                         """
                 
-                    # --- CIERRE Y FIRMA ---
                     # --- CIERRE (NOTA TÉCNICA EXTENDIDA) ---
                     html_content += f"""
-                        <div style="margin-top: 40px; border-top: 2px solid #2276AA; padding-top: 15px;">
+                        <div class="no-break" style="margin-top: 30px; border-top: 2px solid #2276AA; padding-top: 15px;">
                             <div style="background-color: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 4px;">
                                 <p style="margin: 0; font-size: 10px; color: #444; line-height: 1.6; text-align: justify;">
                                     <b style="color: #d32f2f; font-size: 11px;">NOTAS TÉCNICAS DE RECEPCIÓN Y CONTROL:</b><br>
