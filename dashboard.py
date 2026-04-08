@@ -7491,24 +7491,40 @@ else:
                     """
                 
                     # --- LÓGICA DINÁMICA POR PALLET ---
+                    # --- LÓGICA DINÁMICA POR PALLET (OPTIMIZADA PARA B/N) ---
                     df_sorted = df.sort_values(by='Palet')
                     
                     for pallet_id, group in df_sorted.groupby('Palet'):
                         html_content += f"""
-                        <div style="margin-top: 15px; border: 1px solid #eee; page-break-inside: avoid;">
-                            <div style="background: #2276AA; color: white; padding: 5px 10px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between;">
+                        <div style="margin-top: 20px; border: 2px solid #000; page-break-inside: avoid;">
+                            <div style="background: #eee; color: #000; padding: 8px 10px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; border-bottom: 2px solid #000;">
                                 <span>DETALLE TÉCNICO: PALLET {pallet_id}</span>
-                                <span>{len(group)} LÍNEAS DE ARTÍCULO</span>
+                                <span style="font-family: 'Courier New';">CONTENIDO: {len(group)} SKUs</span>
                             </div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
                                 <thead>
-                                    <tr style="background: #f4f4f4; border-bottom: 1px solid #ccc;">
-                                        <th style="padding: 8px; text-align: left; width: 25%;">SKU / ARTÍCULO</th>
-                                        <th style="padding: 8px; text-align: left; width: 60%;">DESCRIPCIÓN TÉCNICA</th>
+                                    <tr style="background: #fff; border-bottom: 1px solid #000;">
+                                        <th style="padding: 8px; text-align: left; width: 25%; border-right: 1px solid #eee;">SKU / ARTÍCULO</th>
+                                        <th style="padding: 8px; text-align: left; width: 60%; border-right: 1px solid #eee;">DESCRIPCIÓN TÉCNICA</th>
                                         <th style="padding: 8px; text-align: center; width: 15%;">CANTIDAD</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                        """
+                        
+                        for _, row in group.iterrows():
+                            html_content += f"""
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 8px; font-family: 'Courier New'; font-size: 11px;"><b>{row['Número de artículo']}</b></td>
+                                        <td style="padding: 8px; text-transform: uppercase; font-size: 9px;">{row['Descripción del artículo']}</td>
+                                        <td style="padding: 8px; text-align: center; font-size: 12px; font-weight: bold; border-left: 1px solid #eee;">{row['Cantidad']:,.0f}</td>
+                                    </tr>
+                            """
+                            
+                        html_content += """
+                                </tbody>
+                            </table>
+                        </div>
                         """
                         
                         for _, row in group.iterrows():
