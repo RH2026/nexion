@@ -7532,7 +7532,7 @@ else:
                             <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                                 <div style="font-size: 9px; color: #888; width: 60%;">
                                     <b>NOTAS TÉCNICAS:</b><br>
-                                    Este packing list fue generado por el sistema <b>NEXION</b>. La integridad de la carga debe ser verificada contra sellos de seguridad al momento de la recepción física en almacén.
+                                    Este packing list fue generado por el sistema <b>NEXION</b>. La integridad de la carga debe ser verificada contra sellos de seguridad al momento de la recepción física.
                                 </div>
                                 <div style="text-align: center; font-size: 10px; width: 250px;">
                                     <div style="border-top: 1px solid #000; padding-top: 5px;">
