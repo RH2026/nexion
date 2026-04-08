@@ -7379,7 +7379,7 @@ else:
                     """, unsafe_allow_html=True)
                 
                 # 2. El cargador de archivos (le quitamos el texto para que no se duplique)
-                uploaded_file = st.file_uploader("", type=["xlsx"], label_visibility="collapsed", key="cargador_consignas")
+                uploaded_file = type=["xlsx"], label_visibility="collapsed", key="cargador_consignas")
                 
                 # 3. Tu lógica de procesamiento
                 if uploaded_file is not None:
