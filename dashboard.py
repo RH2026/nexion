@@ -7528,20 +7528,18 @@ else:
                         """
                 
                     # --- CIERRE Y FIRMA ---
+                    # --- CIERRE (NOTA TÉCNICA EXTENDIDA) ---
                     html_content += f"""
-                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                                <div style="font-size: 9px; color: #888; width: 60%;">
-                                    <b>NOTAS TÉCNICAS:</b><br>
-                                    Verificación visual obligatoria: En caso de detectar daños o anomalías en el embalaje, es indispensable realizar la anotación técnica en la Carta Porte. No se aceptarán reclamos posteriores si el documento de transporte se firma de conformidad.
-                                </div>
-                                <div style="text-align: center; font-size: 10px; width: 250px;">
-                                    <div style="border-top: 1px solid #000; padding-top: 5px;">
-                                        <b>Rigoberto Hernández</b><br>
-                                        Coordinación de Logística JYPESA
-                                    </div>
-                                </div>
+                        <div style="margin-top: 40px; border-top: 2px solid #2276AA; padding-top: 15px;">
+                            <div style="background-color: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 4px;">
+                                <p style="margin: 0; font-size: 10px; color: #444; line-height: 1.6; text-align: justify;">
+                                    <b style="color: #d32f2f; font-size: 11px;">NOTAS TÉCNICAS DE RECEPCIÓN Y CONTROL:</b><br>
+                                    <b>Verificación visual obligatoria:</b> La integridad física de la carga, sellos y embalajes debe ser validada minuciosamente al momento de la descarga. En caso de detectar daños, faltantes, discrepancias o cualquier anomalía, es <b>estrictamente indispensable</b> realizar la anotación técnica detallada en la <b>Carta Porte (POD)</b> antes de firmar. No se aceptarán reclamos, devoluciones ni garantías posteriores si el documento de transporte es firmado de conformidad sin observaciones. Este documento es generado por el sistema <b>NEXION</b> para control logístico interno y del cliente.
+                                </p>
                             </div>
+                            <p style="text-align: center; font-size: 8px; color: #aaa; margin-top: 10px; text-transform: uppercase;">
+                                Documento Digital de Control Logístico Jypesa.
+                            </p>
                         </div>
                     </div>
                     """
