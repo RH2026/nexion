@@ -7534,8 +7534,36 @@ else:
                     return html_content
                 
                 # --- INTERFAZ DE CARGA EN NEXION ---
-                st.title("📦 Nexion - Packing List Generator")
-                st.markdown("Sube tu factura en Excel para generar el desglose por pallet.")
+                st.markdown("""
+                    <style>
+                    .nexion-container {
+                        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
+                        padding: 15px 25px;
+                        border-radius: 8px;
+                        border-left: 6px solid #4a90e2;
+                        margin-bottom: 20px;
+                    }
+                    .nexion-title {
+                        color: #ffffff;
+                        font-size: 20px; /* El tamaño que elegiste */
+                        font-weight: 300; /* El grosor que querías */
+                        margin-bottom: 2px;
+                    }
+                    .nexion-subtitle {
+                        color: #808495;
+                        font-size: 14px;
+                        font-weight: 400;
+                    }
+                    </style>
+                    
+                    <div class="nexion-container">
+                        <div class="nexion-title">Generador de Packing List</div>
+                        <div class="nexion-subtitle">Sube el Excel del Packing List para generar el desglose por pallet</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                
+                
                 
                 uploaded_file = st.file_uploader("Cargar archivo Excel", type=["xlsx", "xls"])
                 
