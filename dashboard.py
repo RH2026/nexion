@@ -7433,8 +7433,7 @@ else:
                 
                     except Exception as e:
                         st.error(f"Hubo un detalle: {e}")
-                else:
-                    st.info("Sube la matriz: consignas.xlsx para generar la lista con códigos.")
+                
                 
                 #PROCESADOR DE PACKING LIST TECNICO---------------------------
                 # --- FUNCIÓN GENERADORA DEL HTML (TU DISEÑO TÉCNICO) ---
@@ -7565,7 +7564,7 @@ else:
                 
                 
                 
-                uploaded_file = st.file_uploader("Cargar archivo Excel", type=["xlsx", "xls"])
+                uploaded_file = st.file_uploader("", type=["xlsx", "xls"])
                 
                 if uploaded_file is not None:
                     try:
