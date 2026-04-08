@@ -7441,6 +7441,11 @@ else:
                     fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
                     hora_hoy = ahora_gdl.strftime('%H:%M')
                     
+                    # Extraemos info de encabezado (asumimos que es la misma en todo el archivo)
+                    cliente = df['CLIENTE'].iloc[0] if 'CLIENTE' in df.columns else "N/A"
+                    direccion = df['DIRECCION'].iloc[0] if 'DIRECCION' in df.columns else "N/A"
+                    remitente = df['REMITENTE'].iloc[0] if 'REMITENTE' in df.columns else "JABONES Y PRODUCTOS ESPECIALIZADOS"
+                    
                     # Cálculos rápidos para el encabezado
                     total_piezas = df['Cantidad'].sum()
                     total_pallets = df['Palet'].nunique()
@@ -7461,6 +7466,18 @@ else:
                             </div>
                         </div>
                 
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11px; gap: 20px;">
+                            <div style="flex: 1; border: 1px solid #eee; padding: 10px; background: #fafafa;">
+                                <b style="color: #2276AA; text-transform: uppercase; font-size: 9px;">Remitente:</b><br>
+                                <span style="font-weight: bold;">{remitente}</span>
+                            </div>
+                            <div style="flex: 1; border: 2px solid #2276AA; padding: 10px; background: #fff;">
+                                <b style="color: #2276AA; text-transform: uppercase; font-size: 9px;">Consignado a (Cliente):</b><br>
+                                <span style="font-size: 16px; font-weight: bold; color: #000; display: block; margin: 2px 0;">{cliente}</span>
+                                <span style="color: #555; font-size: 10px;">{direccion}</span>
+                            </div>
+                        </div>
+                
                         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                             <div style="flex: 1; background: #f0f7ff; padding: 10px; border: 1px solid #2276AA; text-align: center;">
                                 <span style="display: block; font-size: 9px; color: #2276AA; font-weight: bold;">TOTAL PALLETS</span>
@@ -7474,7 +7491,6 @@ else:
                     """
                 
                     # --- LÓGICA DINÁMICA POR PALLET ---
-                    # Ordenamos por Palet para que el PDF salga en secuencia
                     df_sorted = df.sort_values(by='Palet')
                     
                     for pallet_id, group in df_sorted.groupby('Palet'):
@@ -7542,8 +7558,8 @@ else:
                     }
                     .nexion-title {
                         color: #ffffff;
-                        font-size: 20px; /* El tamaño que elegiste */
-                        font-weight: 300; /* El grosor que querías */
+                        font-size: 20px;
+                        font-weight: 300;
                         margin-bottom: 2px;
                     }
                     .nexion-subtitle {
@@ -7559,29 +7575,22 @@ else:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                
-                
-                
                 uploaded_file = st.file_uploader("", type=["xlsx", "xls"], label_visibility="collapsed", key="packing")
                 
                 if uploaded_file is not None:
                     try:
-                        # Leemos el excel
                         df_input = pd.read_excel(uploaded_file)
                         
-                        # Mostramos una vista previa de lo que subiste
                         st.subheader("Vista Previa de Datos")
                         st.dataframe(df_input.head(), use_container_width=True)
                         
-                        # Verificamos que las columnas necesarias existan
-                        required_cols = ['Palet', 'Número de artículo', 'Descripción del artículo', 'Cantidad']
+                        # ACTUALIZACIÓN DE COLUMNAS REQUERIDAS
+                        required_cols = ['Palet', 'Número de artículo', 'Descripción del artículo', 'Cantidad', 'CLIENTE', 'DIRECCION', 'REMITENTE']
+                        
                         if all(col in df_input.columns for col in required_cols):
-                            
-                            # --- BOTÓN DE GENERACIÓN ---
                             if st.button("GENERAR PACKING LIST TÉCNICO", type="primary", use_container_width=True):
                                 html_final = generar_packing_list_html(df_input)
                                 
-                                # Inyectamos el JavaScript para abrir la ventana de impresión
                                 components.html(f"""
                                     <script>
                                         var win = window.open('', '', 'height=1100,width=950');
@@ -7603,7 +7612,7 @@ else:
                                 """, height=0)
                                 st.success("¡Documento enviado a impresión!")
                         else:
-                            st.error(f"El Excel debe contener exactamente estas columnas: {required_cols}")
+                            st.error(f"Faltan columnas. Asegúrate de incluir: {required_cols}")
                             
                     except Exception as e:
                         st.error(f"Error al procesar el archivo: {e}")
