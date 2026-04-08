@@ -7564,7 +7564,7 @@ else:
                 
                 
                 
-                uploaded_file = st.file_uploader("", type=["xlsx", "xls"]), label_visibility="collapsed", key="packing")
+                uploaded_file = st.file_uploader("", type=["xlsx", "xls"], label_visibility="collapsed", key="packing")
                 
                 if uploaded_file is not None:
                     try:
