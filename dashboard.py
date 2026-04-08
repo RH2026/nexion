@@ -7435,6 +7435,153 @@ else:
                         st.error(f"Hubo un detalle: {e}")
                 else:
                     st.info("Sube la matriz: consignas.xlsx para generar la lista con códigos.")
+                
+                #PROCESADOR DE PACKING LIST TECNICO---------------------------
+                # --- FUNCIÓN GENERADORA DEL HTML (TU DISEÑO TÉCNICO) ---
+                def generar_packing_list_html(df):
+                    # AJUSTE MANUAL A ZONA GDL (UTC-6)
+                    ahora_gdl = datetime.utcnow() - timedelta(hours=6)
+                    fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
+                    hora_hoy = ahora_gdl.strftime('%H:%M')
+                    
+                    # Cálculos rápidos para el encabezado
+                    total_piezas = df['Cantidad'].sum()
+                    total_pallets = df['Palet'].nunique()
+                    
+                    # --- INICIO DEL HTML ---
+                    html_content = f"""
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; max-width: 900px; margin: auto; background-color: #fff;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2276AA; padding-bottom: 10px; margin-bottom: 20px;">
+                            <div style="text-align: left;">
+                                <h1 style="margin: 0; font-size: 20px; color: #2276AA; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                <p style="margin: 2px 0; font-size: 12px; color: #666; font-weight: bold;">NEXION LOGISTICS | PACKING LIST OPERATIVO</p>
+                            </div>
+                            <div style="text-align: right; font-size: 10px; color: #444; line-height: 1.6;">
+                                <b>ID EMBARQUE:</b> PKL-{ahora_gdl.strftime('%m%d')}-2026<br>
+                                <b>FECHA EMISIÓN:</b> {fecha_hoy} | {hora_hoy} (ZMG)<br>
+                                <b>ESTADO:</b> CARGA CONSOLIDADA
+                            </div>
+                        </div>
+                
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <div style="flex: 1; background: #f0f7ff; padding: 10px; border: 1px solid #2276AA; text-align: center;">
+                                <span style="display: block; font-size: 9px; color: #2276AA; font-weight: bold;">TOTAL PALLETS</span>
+                                <span style="font-size: 18px; font-weight: bold;">{total_pallets} UNIT</span>
+                            </div>
+                            <div style="flex: 1; background: #f0f7ff; padding: 10px; border: 1px solid #2276AA; text-align: center;">
+                                <span style="display: block; font-size: 9px; color: #2276AA; font-weight: bold;">TOTAL UNIDADES</span>
+                                <span style="font-size: 18px; font-weight: bold;">{total_piezas:,.0f} PCS</span>
+                            </div>
+                        </div>
+                    """
+                
+                    # --- LÓGICA DINÁMICA POR PALLET ---
+                    # Ordenamos por Palet para que el PDF salga en secuencia
+                    df_sorted = df.sort_values(by='Palet')
+                    
+                    for pallet_id, group in df_sorted.groupby('Palet'):
+                        html_content += f"""
+                        <div style="margin-top: 15px; border: 1px solid #eee; page-break-inside: avoid;">
+                            <div style="background: #2276AA; color: white; padding: 5px 10px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between;">
+                                <span>DETALLE TÉCNICO: PALLET {pallet_id}</span>
+                                <span>{len(group)} LÍNEAS DE ARTÍCULO</span>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                                <thead>
+                                    <tr style="background: #f4f4f4; border-bottom: 1px solid #ccc;">
+                                        <th style="padding: 8px; text-align: left; width: 25%;">SKU / ARTÍCULO</th>
+                                        <th style="padding: 8px; text-align: left; width: 60%;">DESCRIPCIÓN TÉCNICA</th>
+                                        <th style="padding: 8px; text-align: center; width: 15%;">CANTIDAD</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        """
+                        
+                        for _, row in group.iterrows():
+                            html_content += f"""
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 8px; font-family: 'Courier New';"><b>{row['Número de artículo']}</b></td>
+                                        <td style="padding: 8px;">{row['Descripción del artículo']}</td>
+                                        <td style="padding: 8px; text-align: center; font-weight: bold;">{row['Cantidad']:,.0f}</td>
+                                    </tr>
+                            """
+                            
+                        html_content += """
+                                </tbody>
+                            </table>
+                        </div>
+                        """
+                
+                    # --- CIERRE Y FIRMA ---
+                    html_content += f"""
+                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                <div style="font-size: 9px; color: #888; width: 60%;">
+                                    <b>NOTAS TÉCNICAS:</b><br>
+                                    Este packing list fue generado por el sistema <b>NEXION</b>. La integridad de la carga debe ser verificada contra sellos de seguridad al momento de la recepción física en almacén.
+                                </div>
+                                <div style="text-align: center; font-size: 10px; width: 250px;">
+                                    <div style="border-top: 1px solid #000; padding-top: 5px;">
+                                        <b>Rigoberto Hernández</b><br>
+                                        Coordinación de Logística JYPESA
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    """
+                    return html_content
+                
+                # --- INTERFAZ DE CARGA EN NEXION ---
+                st.title("📦 Nexion - Packing List Generator")
+                st.markdown("Sube tu factura en Excel para generar el desglose por pallet.")
+                
+                uploaded_file = st.file_uploader("Cargar archivo Excel", type=["xlsx", "xls"])
+                
+                if uploaded_file is not None:
+                    try:
+                        # Leemos el excel
+                        df_input = pd.read_excel(uploaded_file)
+                        
+                        # Mostramos una vista previa de lo que subiste
+                        st.subheader("Vista Previa de Datos")
+                        st.dataframe(df_input.head(), use_container_width=True)
+                        
+                        # Verificamos que las columnas necesarias existan
+                        required_cols = ['Palet', 'Número de artículo', 'Descripción del artículo', 'Cantidad']
+                        if all(col in df_input.columns for col in required_cols):
+                            
+                            # --- BOTÓN DE GENERACIÓN ---
+                            if st.button("🚀 GENERAR PACKING LIST TÉCNICO", type="primary", use_container_width=True):
+                                html_final = generar_packing_list_html(df_input)
+                                
+                                # Inyectamos el JavaScript para abrir la ventana de impresión
+                                components.html(f"""
+                                    <script>
+                                        var win = window.open('', '', 'height=1100,width=950');
+                                        win.document.write(`<html>
+                                            <head>
+                                                <title>Nexion - Packing List</title>
+                                                <style>
+                                                    @media print {{ body {{ margin: 0; }} }}
+                                                </style>
+                                            </head>
+                                            <body>
+                                                {html_final}
+                                            </body></html>`);
+                                        win.document.close();
+                                        win.onload = function() {{ 
+                                            win.print(); 
+                                        }};
+                                    </script>
+                                """, height=0)
+                                st.success("¡Documento enviado a impresión!")
+                        else:
+                            st.error(f"El Excel debe contener exactamente estas columnas: {required_cols}")
+                            
+                    except Exception as e:
+                        st.error(f"Error al procesar el archivo: {e}")
     
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
