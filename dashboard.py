@@ -7434,19 +7434,19 @@ else:
                 
                 
                 #PROCESADOR DE PACKING LIST TECNICO---------------------------
-                # --- FUNCIÓN GENERADORA DEL HTML (TU DISEÑO TÉCNICO) ---
+                # --- FUNCIÓN GENERADORA DEL HTML (TU DISEÑO TÉCNICO - CORREGIDO) ---
                 def generar_packing_list_html(df):
                     # AJUSTE MANUAL A ZONA GDL (UTC-6)
                     ahora_gdl = datetime.utcnow() - timedelta(hours=6)
                     fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
                     hora_hoy = ahora_gdl.strftime('%H:%M')
                     
-                    # Extraemos info de encabezado (asumimos que es la misma en todo el archivo)
+                    # Extraemos info de encabezado
                     cliente = df['CLIENTE'].iloc[0] if 'CLIENTE' in df.columns else "N/A"
                     direccion = df['DIRECCION'].iloc[0] if 'DIRECCION' in df.columns else "N/A"
                     remitente = df['REMITENTE'].iloc[0] if 'REMITENTE' in df.columns else "JABONES Y PRODUCTOS ESPECIALIZADOS"
                     
-                    # Cálculos rápidos para el encabezado
+                    # Cálculos rápidos
                     total_piezas = df['Cantidad'].sum()
                     total_pallets = df['Palet'].nunique()
                     
@@ -7490,8 +7490,7 @@ else:
                         </div>
                     """
                 
-                    # --- LÓGICA DINÁMICA POR PALLET ---
-                    # --- LÓGICA DINÁMICA POR PALLET (OPTIMIZADA PARA B/N) ---
+                    # --- LÓGICA POR PALLET (OPTIMIZADA) ---
                     df_sorted = df.sort_values(by='Palet')
                     
                     for pallet_id, group in df_sorted.groupby('Palet'):
@@ -7512,27 +7511,13 @@ else:
                                 <tbody>
                         """
                         
+                        # AQUÍ ESTABA EL ERROR: Solo necesitamos un ciclo 'for' para las filas
                         for _, row in group.iterrows():
                             html_content += f"""
                                     <tr style="border-bottom: 1px solid #eee;">
                                         <td style="padding: 8px; font-family: 'Courier New'; font-size: 11px;"><b>{row['Número de artículo']}</b></td>
-                                        <td style="padding: 8px; text-transform: uppercase; font-size: 9px;">{row['Descripción del artículo']}</td>
+                                        <td style="padding: 8px; text-transform: uppercase; font-size: 9px; line-height: 1.2;">{row['Descripción del artículo']}</td>
                                         <td style="padding: 8px; text-align: center; font-size: 12px; font-weight: bold; border-left: 1px solid #eee;">{row['Cantidad']:,.0f}</td>
-                                    </tr>
-                            """
-                            
-                        html_content += """
-                                </tbody>
-                            </table>
-                        </div>
-                        """
-                        
-                        for _, row in group.iterrows():
-                            html_content += f"""
-                                    <tr style="border-bottom: 1px solid #eee;">
-                                        <td style="padding: 8px; font-family: 'Courier New';"><b>{row['Número de artículo']}</b></td>
-                                        <td style="padding: 8px;">{row['Descripción del artículo']}</td>
-                                        <td style="padding: 8px; text-align: center; font-weight: bold;">{row['Cantidad']:,.0f}</td>
                                     </tr>
                             """
                             
