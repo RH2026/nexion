@@ -7344,9 +7344,7 @@ else:
                                 # Un pequeño mensaje de ayuda extra
                                 st.info("El archivo se guardará en tu carpeta de descargas.")# Previsualización incrustada
                                
-                else:
-                    st.info("Sube la matriz: Analisis_Final.xlsx para generar las etiquetas de embarque.")
-                
+                                
                 #HERRAMIENTA PARA TRASLADOS ------------------------------------------------------
                 # Puedes ajustar el valor de 40px a lo que mejor se vea en tu app
                 # 1. Definimos el estilo y la tarjeta (Título y Subtítulo juntos)
@@ -7580,7 +7578,7 @@ else:
                         if all(col in df_input.columns for col in required_cols):
                             
                             # --- BOTÓN DE GENERACIÓN ---
-                            if st.button("🚀 GENERAR PACKING LIST TÉCNICO", type="primary", use_container_width=True):
+                            if st.button("GENERAR PACKING LIST TÉCNICO", type="primary", use_container_width=True):
                                 html_final = generar_packing_list_html(df_input)
                                 
                                 # Inyectamos el JavaScript para abrir la ventana de impresión
