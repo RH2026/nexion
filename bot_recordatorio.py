@@ -48,7 +48,7 @@ def procesar():
             fecha_valor = row.get('FECHA')
             if pd.notnull(fecha_valor):
                 diff = hoy - fecha_valor
-                dias_transcurridos = f"{diff.days} días"
+                dias_transcurridos = f"{diff.days} dias"
             else:
                 dias_transcurridos = "Sin fecha"
 
@@ -56,7 +56,7 @@ def procesar():
             accion = str(row.get('ULTIMO ACCION', 'SIN DATO')).strip()
             avance = int(row['PROGRESO'])
 
-            # Construcción del mensaje
+            # Construcción del mensaje (Líneas limpias sin caracteres raros)
             msj += f"📌 TAREA: {tarea}\n"
             msj += f"   ⏳ ANTIGÜEDAD: {dias_transcurridos}\n"
             msj += f"   📊 AVANCE: {avance}%\n"
@@ -66,7 +66,9 @@ def procesar():
         enviar_telegram(msj)
         
     except Exception as e:
-        enviar_telegram(f"Error en script: {str(e)}")
+        error_msj = f"Error en script: {str(e)}"
+        print(error_msj)
+        enviar_telegram(error_msj)
 
 if __name__ == "__main__":
     procesar()
