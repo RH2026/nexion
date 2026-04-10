@@ -10,7 +10,6 @@ CSV_URL = "https://raw.githubusercontent.com/RH2026/nexion/main/tareas.csv"
 
 def enviar_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    # Enviamos sin parse_mode para evitar problemas con caracteres especiales
     payload = {"chat_id": CHAT_ID, "text": mensaje} 
     try:
         requests.post(url, data=payload, timeout=10)
@@ -26,7 +25,7 @@ def procesar():
         # Limpiamos nombres de columnas
         df.columns = [c.strip().upper() for c in df.columns]
         
-        # 1. Convertimos la columna FECHA (usamos el nombre que sale en tu imagen)
+        # Convertimos la columna FECHA
         if 'FECHA' in df.columns:
             df['FECHA'] = pd.to_datetime(df['FECHA'], errors='coerce')
 
@@ -42,9 +41,10 @@ def procesar():
 
         for _, row in pendientes.iterrows():
             tarea = str(row.get('TAREA', 'Sin nombre')).strip()
-            if not tarea or tarea == "nan": continue
+            if not tarea or tarea == "nan": 
+                continue
             
-            # 2. Calculamos los días
+            # Cálculo de días
             fecha_valor = row.get('FECHA')
             if pd.notnull(fecha_valor):
                 diff = hoy - fecha_valor
@@ -52,12 +52,13 @@ def procesar():
             else:
                 dias_transcurridos = "Sin fecha"
 
+            # Sacamos la columna ULTIMO ACCION
             accion = str(row.get('ULTIMO ACCION', 'SIN DATO')).strip()
             avance = int(row['PROGRESO'])
 
-            # 3. Armamos el mensaje
+            # Construcción del mensaje
             msj += f"📌 TAREA: {tarea}\n"
-            msj += f"   ⏳ DIAS SIN RESOLVER: {dias_transcurridos}\n"
+            msj += f"   ⏳ ANTIGÜEDAD: {dias_transcurridos}\n"
             msj += f"   📊 AVANCE: {avance}%\n"
             msj += f"   📝 ULTIMA ACCION: {accion}\n"
             msj += "----------------------------\n"
