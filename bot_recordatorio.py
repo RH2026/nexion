@@ -40,7 +40,7 @@ def procesar():
             if not tarea or tarea == "nan": continue
             
             # Buscamos la columna (con o sin tilde)
-            ultima = row.get('ULTIMO ACCION') or row.get('ULTIMA ACCION') or row.get('ÚLTIMA ACCIÓN') or "Sin dato"
+            ultima = row.get('ULTIMO ACCION') or row.get('ULTIMO ACCION') or row.get('ULTIMA ACCION') or "Sin dato"
             
             prio = str(row.get('IMPORTANCIA', 'MEDIA')).upper()
             emoji = "📌" if "URGENTE" in prio else "📌"
