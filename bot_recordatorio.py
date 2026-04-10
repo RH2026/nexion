@@ -20,7 +20,7 @@ def procesar():
         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
         df = pd.read_csv(io.StringIO(r.text))
         
-        # Limpiamos nombres de columnas
+        # Estandarizamos columnas a mayúsculas
         df.columns = [c.strip().upper() for c in df.columns]
         
         if 'PROGRESO' not in df.columns:
@@ -31,29 +31,25 @@ def procesar():
         pendientes = df[df["PROGRESO"] < 100].copy()
 
         if pendientes.empty:
-            enviar_telegram("✅ *Nexion:* Sin pendientes hoy.")
+            enviar_telegram("✅ Nexion: Sin pendientes hoy.")
             return
 
-        msj = "*RESUMEN PENDIENTES NEXION*\n" + "_"*20 + "\n\n"
+        msj = "RESUMEN PENDIENTES NEXION\n" + "-"*20 + "\n\n"
         
         for _, row in pendientes.iterrows():
-            # Extraemos TAREA
             tarea = str(row.get('TAREA', 'Sin nombre')).strip()
             if not tarea or tarea == "nan": continue
             
-            # Extraemos ULTIMO ACCION (Exactamente como sale en tu imagen)
-            # Usamos .get() con el nombre exacto que detectamos
-            ultimo_movimiento = str(row.get('ULTIMO ACCION', 'Sin datos')).strip()
-            
-            # Limpieza rápida para que Telegram no se trabe con símbolos
-            ultimo_movimiento = ultimo_movimiento.replace("_", "-").replace("*", "")
+            # Sacamos la columna tal cual está en tu imagen
+            accion = str(row.get('ULTIMO ACCION', 'Sin dato')).strip()
+            avance = int(row['PROGRESO'])
 
-            msj += f"📌 *{tarea}*\n"
-            msj += f"┗ Avance: {int(row['PROGRESO'])}%\n"
-            msj += f"┗ Acción: _{ultimo_movimiento}_\n\n"
+            # Construimos el texto plano para evitar que Telegram lo rechace
+            msj += f"📌 {tarea}\n"
+            msj += f"   Avance: {avance}%\n"
+            msj += f"   Última Acción: {accion}\n\n"
         
-        # Enviamos el mensaje
         enviar_telegram(msj)
         
     except Exception as e:
-        enviar_telegram(f"❌ Error en script: {str(e)}")
+        enviar_telegram(f"❌ Error: {str(e)}")
