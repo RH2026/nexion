@@ -18,14 +18,10 @@ def enviar_telegram(mensaje):
 
 def procesar():
     try:
-        # Descarga del CSV
         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
         df = pd.read_csv(io.StringIO(r.text))
-        
-        # Limpiamos nombres de columnas
         df.columns = [c.strip().upper() for c in df.columns]
         
-        # Convertimos la columna FECHA
         if 'FECHA' in df.columns:
             df['FECHA'] = pd.to_datetime(df['FECHA'], errors='coerce')
 
@@ -44,21 +40,18 @@ def procesar():
             if not tarea or tarea == "nan":
                 continue
             
-            # Cálculo de días
             fecha_valor = row.get('FECHA')
             if pd.notnull(fecha_valor):
                 diff = hoy - fecha_valor
-                dias_transcurridos = f"{diff.days} dias"
+                dias = f"{diff.days} dias"
             else:
-                dias_transcurridos = "Sin fecha"
+                dias = "Sin fecha"
 
-            # Sacamos la columna ULTIMO ACCION
             accion = str(row.get('ULTIMO ACCION', 'SIN DATO')).strip()
             avance = int(row['PROGRESO'])
 
-            # Construcción del mensaje
             msj += f"📌 TAREA: {tarea}\n"
-            msj += f"   ⏳ ANTIGÜEDAD: {dias_transcurridos}\n"
+            msj += f"   ⏳ ANTIGÜEDAD: {dias}\n"
             msj += f"   📊 AVANCE: {avance}%\n"
             msj += f"   📝 ULTIMA ACCION: {accion}\n"
             msj += "----------------------------\n"
@@ -66,9 +59,8 @@ def procesar():
         enviar_telegram(msj)
 
     except Exception as e:
-        error_msj = f"Error en script: {str(e)}"
-        print(error_msj)
-        enviar_telegram(error_msj)
+        print(f"Error: {e}")
+        enviar_telegram(f"Error en script: {str(e)}")
 
 if __name__ == "__main__":
     procesar()
