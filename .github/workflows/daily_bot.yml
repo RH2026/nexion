@@ -1,0 +1,25 @@
+name: Recordatorio Diario Nexion
+
+on:
+  schedule:
+    # Esto corre a las 8:00 AM hora CDMX / GDL (14:00 UTC)
+    - cron: '0 14 * * *'
+  workflow_dispatch: # Esto es para que puedas probarlo picando un botón
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v2
+
+      - name: Configurar Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Instalar librerías
+        run: pip install pandas requests
+
+      - name: Ejecutar script
+        run: python bot_recordatorio.py
