@@ -14,15 +14,15 @@ def enviar_telegram(mensaje):
 
 def procesar_y_enviar():
     try:
-        # Leemos el CSV directamente de tu repo
         df = pd.read_csv(CSV_URL)
         df.columns = [c.strip().upper() for c in df.columns]
         
-        # Filtramos pendientes (Progreso < 100) y que no estén vacíos
+        # Filtramos
         pendientes = df[(df["PROGRESO"] < 100) & (df["TAREA"].str.strip() != "")]
         
         if pendientes.empty:
-            enviar_telegram("✅ *Nexion:* ¡Día limpio! No hay pendientes registrados.")
+            # CAMBIAMOS ESTO PARA PROBAR:
+            enviar_telegram("⚠️ *Prueba de conexión:* El bot funciona, pero no encontré tareas pendientes en tu archivo CSV.")
             return
 
         reporte = "📋 *RESUMEN DIARIO DE PENDIENTES*\n"
