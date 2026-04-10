@@ -46,7 +46,7 @@ def procesar():
 
             msj += f"📌 TAREA: {tarea}\n"
             msj += f"   AVANCE: {avance}%\n"
-            msj += f"   ULTIMA ACCION: {accion}\n\n"
+            msj += f"   ULTIMA INFORMACION: {accion}\n\n"
             msj += "----------------------------\n"
         
         enviar_telegram(msj)
