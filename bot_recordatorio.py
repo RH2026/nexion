@@ -32,12 +32,12 @@ def procesar():
             enviar_telegram("✅ *Nexion:* Sin pendientes hoy.")
             return
 
-        msj = "📋 *RESUMEN NEXION*\n" + "_"*20 + "\n\n"
+        msj = "*RESUMEN PENDIENTES NEXION*\n" + "_"*20 + "\n\n"
         for _, row in pendientes.iterrows():
             tarea = str(row.get('TAREA', 'Sin nombre')).strip()
             if not tarea or tarea == "nan": continue
             prio = str(row.get('IMPORTANCIA', 'MEDIA')).upper()
-            emoji = "🚨" if "URGENTE" in prio else "📌"
+            emoji = "📌" if "URGENTE" in prio else "📌"
             msj += f"{emoji} *{tarea}*\n   ┗ Avance: {int(row['PROGRESO'])}%\n\n"
         
         enviar_telegram(msj)
