@@ -10,7 +10,7 @@ CSV_URL = "https://raw.githubusercontent.com/RH2026/nexion/main/tareas.csv"
 
 def enviar_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": mensaje} 
+    payload = {"chat_id": CHAT_ID, "text": mensaje}
     try:
         requests.post(url, data=payload, timeout=10)
     except:
@@ -41,7 +41,7 @@ def procesar():
 
         for _, row in pendientes.iterrows():
             tarea = str(row.get('TAREA', 'Sin nombre')).strip()
-            if not tarea or tarea == "nan": 
+            if not tarea or tarea == "nan":
                 continue
             
             # Cálculo de días
@@ -56,15 +56,15 @@ def procesar():
             accion = str(row.get('ULTIMO ACCION', 'SIN DATO')).strip()
             avance = int(row['PROGRESO'])
 
-            # Construcción del mensaje (Líneas limpias sin caracteres raros)
+            # Construcción del mensaje
             msj += f"📌 TAREA: {tarea}\n"
             msj += f"   ⏳ ANTIGÜEDAD: {dias_transcurridos}\n"
             msj += f"   📊 AVANCE: {avance}%\n"
             msj += f"   📝 ULTIMA ACCION: {accion}\n"
             msj += "----------------------------\n"
-        
+
         enviar_telegram(msj)
-        
+
     except Exception as e:
         error_msj = f"Error en script: {str(e)}"
         print(error_msj)
