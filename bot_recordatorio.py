@@ -32,7 +32,7 @@ def procesar():
             enviar_telegram("Nexion: Sin pendientes hoy.")
             return
 
-        msj = "--- REPORTE DE PENDIENTES NEXION ---\n\n"
+        msj = "--- REPORTE NEXION ---\n\n"
         hoy = datetime.now()
 
         for _, row in pendientes.iterrows():
@@ -40,33 +40,23 @@ def procesar():
             if not tarea or tarea == "nan":
                 continue
             
-            fecha_valor = row.get('FECHA')
-            if pd.notnull(fecha_valor):
-                diff = hoy - fecha_valor
-                dias = f"{diff.days} dias"
-            else:
-                dias = "Sin fecha"
-
-            accion = str(row.get('ULTIMO ACCION', 'SIN DATO')).strip()
+            # Calculo de dias
+            fecha_val = row.get('FECHA')
+            dias = f"{(hoy - fecha_val).days} dias" if pd.notnull(fecha_val) else "S/F"
+            
+            # Datos adicionales
+            accion = str(row.get('ULTIMO ACCION', 'S/D')).strip()
             avance = int(row['PROGRESO'])
 
-            msj += f"📌 TAREA: {tarea}\n"
-            msj += f"   ⏳ ANTIGÜEDAD: {dias}\n"
-            msj += f"   📊 AVANCE: {avance}%\n"
-            msj += f"   📝 ULTIMA ACCION: {accion}\n"
-            msj += "----------------------------\n"
+            msj += f"📌 {tarea}\n"
+            msj += f"   ⏳ {dias} | 📊 {avance}%\n"
+            msj += f"   📝 {accion}\n"
+            msj += "------------------\n"
 
         enviar_telegram(msj)
 
     except Exception as e:
-        print(f"Error: {e}")
-        enviar_telegram(f"Error en script: {str(e)}")
-
-if __name__ == "__main__":
-    procesar()
-        
-    except Exception as e:
-        enviar_telegram(f"Error en el script: {str(e)}")
+        enviar_telegram(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     procesar()
