@@ -44,7 +44,7 @@ def procesar():
             accion = str(row.get('ULTIMO ACCION', 'SIN DATO')).strip()
             avance = int(row['PROGRESO'])
 
-            msj += f"📌 TAREA: {tarea}\n"
+            msj += f"📌 PENDIENE: {tarea}\n"
             msj += f"   AVANCE: {avance}%\n"
             msj += f"   ULTIMA INFORMACION: {accion}\n\n"
             msj += "----------------------------\n"
