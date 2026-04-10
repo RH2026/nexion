@@ -19,38 +19,41 @@ def procesar():
     try:
         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
         df = pd.read_csv(io.StringIO(r.text))
+        
+        # Limpiamos nombres de columnas
         df.columns = [c.strip().upper() for c in df.columns]
-
-        # --- LÍNEA DE PRUEBA: Borra esto después ---
-        print("Columnas detectadas:", df.columns.tolist())
-        # -------------------------------------------
+        
+        if 'PROGRESO' not in df.columns:
+            enviar_telegram("❌ No encontré la columna PROGRESO")
+            return
 
         df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors='coerce').fillna(0)
         pendientes = df[df["PROGRESO"] < 100].copy()
 
         if pendientes.empty:
-            print("No hay pendientes en el DataFrame")
             enviar_telegram("✅ *Nexion:* Sin pendientes hoy.")
             return
 
         msj = "*RESUMEN PENDIENTES NEXION*\n" + "_"*20 + "\n\n"
         
         for _, row in pendientes.iterrows():
+            # Extraemos TAREA
             tarea = str(row.get('TAREA', 'Sin nombre')).strip()
             if not tarea or tarea == "nan": continue
             
-            # Buscamos la columna (con o sin tilde)
-            ultima = row.get('ULTIMO ACCION') or row.get('ULTIMO ACCION') or row.get('ULTIMA ACCION') or "Sin dato"
+            # Extraemos ULTIMO ACCION (Exactamente como sale en tu imagen)
+            # Usamos .get() con el nombre exacto que detectamos
+            ultimo_movimiento = str(row.get('ULTIMO ACCION', 'Sin datos')).strip()
             
-            prio = str(row.get('IMPORTANCIA', 'MEDIA')).upper()
-            emoji = "📌" if "URGENTE" in prio else "📌"
-            
-            msj += f"{emoji} *{tarea}*\n    ┗ Avance: {int(row['PROGRESO'])}%\n"
-            msj += f"    ┗ Última acción: {ultima}\n\n"
-        
-        print("Enviando mensaje a Telegram...")
-        enviar_telegram(msj)
+            # Limpieza rápida para que Telegram no se trabe con símbolos
+            ultimo_movimiento = ultimo_movimiento.replace("_", "-").replace("*", "")
 
+            msj += f"📌 *{tarea}*\n"
+            msj += f"┗ Avance: {int(row['PROGRESO'])}%\n"
+            msj += f"┗ Acción: _{ultimo_movimiento}_\n\n"
+        
+        # Enviamos el mensaje
+        enviar_telegram(msj)
+        
     except Exception as e:
-        print(f"Error detectado: {e}")
-        enviar_telegram(f"❌ Error: {str(e)}")
+        enviar_telegram(f"❌ Error en script: {str(e)}")
