@@ -19,18 +19,17 @@ def procesar():
     try:
         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
         df = pd.read_csv(io.StringIO(r.text))
-        
-        # Esto limpia espacios y pone todo en MAYÚSCULAS para evitar errores de tipeo
         df.columns = [c.strip().upper() for c in df.columns]
-        
-        if 'PROGRESO' not in df.columns:
-            enviar_telegram("❌ No encontré la columna PROGRESO")
-            return
+
+        # --- LÍNEA DE PRUEBA: Borra esto después ---
+        print("Columnas detectadas:", df.columns.tolist())
+        # -------------------------------------------
 
         df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors='coerce').fillna(0)
         pendientes = df[df["PROGRESO"] < 100].copy()
 
         if pendientes.empty:
+            print("No hay pendientes en el DataFrame")
             enviar_telegram("✅ *Nexion:* Sin pendientes hoy.")
             return
 
@@ -40,16 +39,18 @@ def procesar():
             tarea = str(row.get('TAREA', 'Sin nombre')).strip()
             if not tarea or tarea == "nan": continue
             
-            # 1. Extraemos el dato de la columna (usamos .upper() porque arriba limpiamos las columnas)
-            ultima_accion = str(row.get('ULTIMA ACCION', 'Sin registro')).strip()
+            # Buscamos la columna (con o sin tilde)
+            ultima = row.get('ULTIMO ACCION') or row.get('ULTIMA ACCION') or row.get('ÚLTIMA ACCIÓN') or "Sin dato"
             
             prio = str(row.get('IMPORTANCIA', 'MEDIA')).upper()
             emoji = "📌" if "URGENTE" in prio else "📌"
             
-            # 2. Lo agregamos al cuerpo del mensaje
             msj += f"{emoji} *{tarea}*\n    ┗ Avance: {int(row['PROGRESO'])}%\n"
-            msj += f"    ┗ Última acción: _{ultima_accion}_\n\n"
+            msj += f"    ┗ Última acción: {ultima}\n\n"
         
+        print("Enviando mensaje a Telegram...")
         enviar_telegram(msj)
+
     except Exception as e:
+        print(f"Error detectado: {e}")
         enviar_telegram(f"❌ Error: {str(e)}")
