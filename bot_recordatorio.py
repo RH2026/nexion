@@ -34,14 +34,14 @@ def procesar():
         pendientes = df[df["PROGRESO"] < 100].copy()
 
         if pendientes.empty:
-            enviar_telegram("<b>Nexion:</b> Sin pendientes hoy.")
+            enviar_telegram("<b>Nexion Smart Logistics:</b> Sin pendientes hoy.")
             return
 
-        msj = "<b>--- REPORTE NEXION ---</b>\n\n"
+        msj = "<b>--- PENDIENTES NEXION SMART LOGISTICS ---</b>\n\n"
         hoy = datetime.now()
 
         for _, row in pendientes.iterrows():
-            tarea = str(row.get('TAREA', 'Sin nombre')).strip()
+            tarea = str(row.get('PENDIENTE', 'Sin nombre')).strip()
             if not tarea or tarea == "nan":
                 continue
             
@@ -55,8 +55,8 @@ def procesar():
 
             # FORMATO LIMPIO: Solo el pin al inicio
             msj += f"📌 <b>{tarea}</b>\n"
-            msj += f"   <b>Antigüedad:</b> {dias} | <b>Avance:</b> {avance}%\n"
-            msj += f"   <i>Acción: {accion}</i>\n"
+            msj += f"   <b>Dias sin resolver:</b> {dias} | <b>Avance:</b> {avance}%\n"
+            msj += f"   <i>Comentarios: {accion}</i>\n"
             msj += "----------------------------\n"
 
         enviar_telegram(msj)
