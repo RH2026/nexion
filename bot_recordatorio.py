@@ -10,7 +10,12 @@ CSV_URL = "https://raw.githubusercontent.com/RH2026/nexion/main/tareas.csv"
 
 def enviar_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": mensaje}
+    # CAMBIAMOS A HTML PARA QUE NO MARQUE ERROR CON SÍMBOLOS RÁROS
+    payload = {
+        "chat_id": CHAT_ID, 
+        "text": mensaje, 
+        "parse_mode": "HTML"
+    }
     try:
         requests.post(url, data=payload, timeout=10)
     except:
@@ -29,10 +34,10 @@ def procesar():
         pendientes = df[df["PROGRESO"] < 100].copy()
 
         if pendientes.empty:
-            enviar_telegram("Nexion: Sin pendientes hoy.")
+            enviar_telegram("<b>Nexion:</b> Sin pendientes hoy.")
             return
 
-        msj = "--- REPORTE NEXION ---\n\n"
+        msj = "<b>--- REPORTE NEXION ---</b>\n\n"
         hoy = datetime.now()
 
         for _, row in pendientes.iterrows():
@@ -42,7 +47,7 @@ def procesar():
             
             # Calculo de dias
             fecha_val = row.get('FECHA')
-            dias = f"{(hoy - fecha_val).days} dias" if pd.notnull(fecha_val) else "S/F"
+            dias = f"{(hoy - fecha_val).days} días" if pd.notnull(fecha_val) else "S/F"
             
             # Datos adicionales
             accion = str(row.get('ULTIMO ACCION', 'S/D')).strip()
@@ -50,10 +55,10 @@ def procesar():
 
             # USAMOS ETIQUETAS <b> PARA NEGRITAS Y <i> PARA CURSIVAS
             msj += f"📌 <b>{tarea}</b>\n"
-            msj += f"   <b>Antigüedad:</b> {dias} | 📊 <b>Avance:</b> {avance}%\n"
-            msj += f"   <i>Acción: {accion}</i>\n"
+            msj += f"   ⏳ <b>Antigüedad:</b> {dias} | 📊 <b>Avance:</b> {avance}%\n"
+            msj += f"   📝 <i>Acción: {accion}</i>\n"
             msj += "----------------------------\n"
-            
+
         enviar_telegram(msj)
 
     except Exception as e:
