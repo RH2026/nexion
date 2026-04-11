@@ -41,7 +41,7 @@ def procesar():
         hoy = datetime.now()
 
         for _, row in pendientes.iterrows():
-            tarea = str(row.get('PENDIENTE', 'Sin nombre')).strip()
+            tarea = str(row.get('TAREA', 'Sin nombre')).strip()
             if not tarea or tarea == "nan":
                 continue
             
