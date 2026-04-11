@@ -45,19 +45,16 @@ def procesar():
             if not tarea or tarea == "nan":
                 continue
             
-            # Calculo de dias
             fecha_val = row.get('FECHA')
             dias = f"{(hoy - fecha_val).days} días" if pd.notnull(fecha_val) else "S/F"
-            
-            # Datos adicionales
             accion = str(row.get('ULTIMO ACCION', 'S/D')).strip()
             avance = int(row['PROGRESO'])
 
-            # FORMATO LIMPIO: Solo el pin al inicio
-            msj += f"📌 <b>{tarea}</b>\n"
-            msj += f"   <b>Dias sin resolver:</b> {dias} | <b>Avance:</b> {avance}%\n"
-            msj += f"   <i>Comentarios: {accion}</i>\n"
-            msj += "----------------------------\n"
+            # FORMATO CON SALTOS DE LÍNEA ESTRATÉGICOS
+            msj += f"📌 <b>{tarea}</b>\n\n"  # Doble salto para separar del comentario
+            msj += f"   <i>Comentarios: {accion}</i>\n\n" # Doble salto para separar de los datos
+            msj += f"   <b>Días sin resolver:</b> {dias} | <b>Avance:</b> {avance}%\n"
+            msj += "----------------------------\n\n" # Salto final para separar de la siguiente tarea
 
         enviar_telegram(msj)
 
