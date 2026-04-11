@@ -53,10 +53,10 @@ def procesar():
             accion = str(row.get('ULTIMO ACCION', 'S/D')).strip()
             avance = int(row['PROGRESO'])
 
-            # USAMOS ETIQUETAS <b> PARA NEGRITAS Y <i> PARA CURSIVAS
+            # FORMATO LIMPIO: Solo el pin al inicio
             msj += f"📌 <b>{tarea}</b>\n"
-            msj += f"   ⏳ <b>Antigüedad:</b> {dias} | 📊 <b>Avance:</b> {avance}%\n"
-            msj += f"   📝 <i>Acción: {accion}</i>\n"
+            msj += f"   <b>Antigüedad:</b> {dias} | <b>Avance:</b> {avance}%\n"
+            msj += f"   <i>Acción: {accion}</i>\n"
             msj += "----------------------------\n"
 
         enviar_telegram(msj)
