@@ -1057,15 +1057,39 @@ else:
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "locales.csv"
     
-    st.set_page_config(page_title="Nexion Logistics", page_icon="🛡️", layout="wide")
+    st.set_page_config(page_title="NEXION SMART LOGISTICS", layout="wide")
     
-    # Estilo Nexion Silicon Valley
+    # --- ESTILO JYPESA PREMIUM (SIN EMOJIS) ---
     st.markdown("""
         <style>
-        .main { background-color: #0B1114; color: #FFFFFF; }
-        .stButton>button { background-color: #00FFAA; color: #0B1114; font-weight: bold; border-radius: 10px; height: 3.5em; width: 100%; }
-        .stSelectbox label, .stMultiSelect label { color: #00FFAA !important; font-weight: bold; }
-        hr { border: 1px solid #00FFAA; }
+        /* Fondo principal */
+        .main { background-color: #0B1114; color: #FFFFFF; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Títulos y Subtítulos */
+        h1, h2, h3 { color: #00FFAA; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
+        
+        /* Botones estilo Dashboard */
+        .stButton>button { 
+            background-color: #00FFAA; 
+            color: #0B1114; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            border: none;
+            height: 3em;
+            width: 100%;
+            text-transform: uppercase;
+        }
+        .stButton>button:hover { background-color: #00D18B; color: #FFFFFF; }
+        
+        /* Inputs y Selectores */
+        .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #00FFAA !important; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; }
+        div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
+        
+        /* Mensajes de información */
+        .stAlert { background-color: #1A2226; color: #00FFAA; border: 1px solid #00FFAA; border-radius: 4px; }
+        
+        /* Líneas divisorias */
+        hr { border: 0.5px solid #1A2226; }
         </style>
         """, unsafe_allow_html=True)
     
@@ -1096,66 +1120,71 @@ else:
         response = requests.put(url, headers=headers, json=payload)
         return response.status_code == 200
     
-    # --- INICIO DE LA APP ---
-    st.title("🛡️ NEXION SMART LOGISTICS")
+    # --- CUERPO DE LA APP ---
+    st.title("NEXION SMART LOGISTICS")
     
-    if st.button("🔄 RECARGAR MATRIZ (FORCE UPDATE)"):
+    if st.button("REFRESCAR MATRIZ"):
         st.rerun()
     
     df, sha = descargar_matriz()
     
     if df is not None:
-        # --- 1. SECCIÓN DE CARGA ---
-        st.header("🚀 1. Salida de Almacén (Carga)")
+        # --- SECCIÓN 1: CARGA ---
+        st.header("1. SALIDA DE ALMACEN")
         disponibles = df[~df['TRIGGER'].isin(['EN RUTA', 'ENTREGADO'])]
         
         if not disponibles.empty:
-            pedidos_sel = st.multiselect("Pedidos pendientes:", options=disponibles['NÚMERO DE PEDIDO'].unique())
+            pedidos_sel = st.multiselect("SELECCIONAR FOLIOS PARA CARGA:", options=disponibles['NÚMERO DE PEDIDO'].unique())
             
             if pedidos_sel:
-                # Aquí usamos el primer pedido seleccionado para refrescar la cámara si cambian de selección
                 ref_key = str(pedidos_sel[0])
-                f1 = st.camera_input("Foto 1: Producto", key=f"c1_{ref_key}")
+                f1 = st.camera_input("EVIDENCIA 1: PRODUCTO", key=f"c1_{ref_key}")
                 if f1:
-                    f2 = st.camera_input("Foto 2: Unidad", key=f"c2_{ref_key}")
+                    f2 = st.camera_input("EVIDENCIA 2: UNIDAD", key=f"c2_{ref_key}")
                     if f2:
-                        f3 = st.camera_input("Foto 3: Estiba", key=f"c3_{ref_key}")
+                        f3 = st.camera_input("EVIDENCIA 3: ESTIBA", key=f"c3_{ref_key}")
                         if f3:
-                            if st.button("CONFIRMAR SALIDA"):
-                                with st.spinner("Actualizando..."):
+                            if st.button("CONFIRMAR SALIDA DE UNIDAD"):
+                                with st.spinner("ACTUALIZANDO REGISTROS..."):
                                     for p in pedidos_sel:
                                         idx = df[df['NÚMERO DE PEDIDO'] == str(p)].index
                                         df.loc[idx, 'TRIGGER'] = 'EN RUTA'
                                         df.loc[idx, 'FECHA DE ENVÍO'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
                                     if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
-                                        st.success("✅ Ruta iniciada.")
                                         st.rerun()
         else:
-            st.write("✅ Todo el material ha sido cargado.")
+            st.info("NO HAY PENDIENTES EN ALMACEN")
     
-        st.markdown("---")
+        st.markdown("<br><hr><br>", unsafe_allow_html=True)
     
-        # --- 2. SECCIÓN DE ENTREGA ---
-        st.header("📍 2. Entrega en Destino")
+        # --- SECCIÓN 2: ENTREGA ---
+        st.header("2. ENTREGA EN DESTINO")
         en_ruta = df[df['TRIGGER'] == 'EN RUTA']
         
         if not en_ruta.empty:
             opciones = en_ruta.apply(lambda x: f"{x['NÚMERO DE PEDIDO']} | {x['NOMBRE DEL CLIENTE']}", axis=1)
-            seleccion = st.selectbox("Pedido a entregar:", opciones)
+            seleccion = st.selectbox("SELECCIONAR PEDIDO PARA ENTREGA:", opciones)
             id_p = seleccion.split(" | ")[0].strip()
             
             datos_p = en_ruta[en_ruta['NÚMERO DE PEDIDO'] == id_p].iloc[0]
-            st.warning(f"🏨 **{datos_p['DESTINO']}**\n\n🏠 {datos_p['DOMICILIO']}")
             
-            # --- EL TRUCO ESTÁ AQUÍ ---
-            # Al poner {id_p} en la key, la cámara se RESETEA cada que cambias de pedido en el selectbox
-            f_ent = st.camera_input("Evidencia Final", key=f"ce_{id_p}")
+            # Panel de detalles estilo dashboard
+            st.markdown(f"""
+                <div style="background-color: #1A2226; padding: 20px; border-radius: 4px; border-left: 5px solid #00FFAA; margin-bottom: 20px;">
+                    <p style="margin:0; font-size: 0.8rem; color: #00FFAA;">DESTINO:</p>
+                    <p style="margin:0; font-size: 1.1rem; font-weight: bold;">{datos_p['DESTINO']}</p>
+                    <br>
+                    <p style="margin:0; font-size: 0.8rem; color: #00FFAA;">DOMICILIO:</p>
+                    <p style="margin:0; font-size: 1rem;">{datos_p['DOMICILIO']}</p>
+                </div>
+            """, unsafe_allow_html=True)
             
-            obs = st.text_input("Notas:", key=f"obs_{id_p}")
+            f_ent = st.camera_input("EVIDENCIA FINAL: RECEPCION", key=f"ce_{id_p}")
+            obs = st.text_input("OBSERVACIONES / INCIDENCIAS:", key=f"obs_{id_p}")
     
-            if st.button("FINALIZAR ENTREGA"):
+            if st.button("FINALIZAR REGISTRO DE ENTREGA"):
                 if f_ent:
-                    with st.spinner("Guardando..."):
+                    with st.spinner("GUARDANDO DATOS..."):
                         ahora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         idx_f = df[(df['NÚMERO DE PEDIDO'] == id_p) & (df['TRIGGER'] == 'EN RUTA')].index
                         if not idx_f.empty:
@@ -1163,12 +1192,10 @@ else:
                             df.loc[idx_f[0], 'TRIGGER'] = 'ENTREGADO'
                             df.loc[idx_f[0], 'INCIDENCIAS'] = obs
                             if actualizar_github(df, sha, f"Entrega: {id_p}"):
-                                st.success("✅ Entregado.")
-                                st.balloons()
                                 st.rerun()
                 else:
-                    st.error("⚠️ La foto es obligatoria.")
+                    st.error("LA EVIDENCIA FOTOGRAFICA ES OBLIGATORIA")
         else:
-            st.write("💤 No hay pedidos viajando.")
+            st.info("NO HAY PEDIDOS EN RUTA ACTUALMENTE")
     else:
-        st.error("Error: No se encontró locales.csv")
+        st.error("ERROR DE CONEXION CON SERVIDOR DE DATOS")
