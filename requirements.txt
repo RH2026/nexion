@@ -17,6 +17,7 @@ pyzbar
 numpy
 pytesseract
 matplotlib
+streamlit-camera-input-live
 
 
 
