@@ -73,15 +73,12 @@ if df is not None:
                 st.warning("📸 EVIDENCIA DE CARGA (Cámara Trasera Forzada)")
                 col1, col2, col3 = st.columns(3)
                 
-                with col1:
-                    st.write("1. Producto")
-                    f1 = camera_input_live(facing_mode="environment", key="c1")
+               with col1:
+                    f1 = st.camera_input("Foto 1: Producto", key="c1")
                 with col2:
-                    st.write("2. Unidad")
-                    f2 = camera_input_live(facing_mode="environment", key="c2")
+                    f2 = st.camera_input("Foto 2: Unidad", key="c2")
                 with col3:
-                    st.write("3. Estiba")
-                    f3 = camera_input_live(facing_mode="environment", key="c3")
+                    f3 = st.camera_input("Foto 3: Estiba", key="c3")
 
                 if st.button("CONFIRMAR SALIDA DE JYPESA"):
                     if f1 and f2 and f3:
