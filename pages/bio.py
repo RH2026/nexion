@@ -24,26 +24,22 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def descargar_matriz():
-    # FUERZA BRUTA DE CARGA: Rompemos el caché de GitHub
+    # FUERZA BRUTA: Rompemos el caché para ver datos nuevos
     timestamp = int(time.time())
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}?t={timestamp}"
-    
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json",
         "Cache-Control": "no-cache"
     }
-    
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         datos = response.json()
         content = base64.b64decode(datos['content']).decode('utf-8')
         df = pd.read_csv(StringIO(content))
-        
-        # LIMPIEZA QUIRÚRGICA: Quitamos espacios locos que mete Excel o GitHub
+        # Limpieza de espacios y nulos
         for col in df.columns:
             df[col] = df[col].astype(str).str.strip().replace(['nan', 'None', 'NaN', 'null'], '')
-        
         return df, datos['sha']
     return None, None
 
@@ -59,25 +55,21 @@ def actualizar_github(df, sha, mensaje):
 # --- INICIO DE LA APP ---
 st.title("🛡️ NEXION SMART LOGISTICS")
 
-# Botón de refresco manual
 if st.button("🔄 RECARGAR MATRIZ (FORCE UPDATE)"):
     st.rerun()
 
 df, sha = descargar_matriz()
 
 if df is not None:
-    # ---------------------------------------------------------
-    # SECCIÓN 1: CARGA DE UNIDAD
-    # ---------------------------------------------------------
+    # --- 1. SECCIÓN DE CARGA ---
     st.header("🚀 1. Salida de Almacén (Carga)")
-    # Filtro relajado: si no dice EN RUTA ni ENTREGADO, está disponible
+    # Filtro: Mostrar todo lo que NO está en ruta ni entregado
     disponibles = df[~df['TRIGGER'].isin(['EN RUTA', 'ENTREGADO'])]
     
     if not disponibles.empty:
         pedidos_sel = st.multiselect("Pedidos pendientes:", options=disponibles['NÚMERO DE PEDIDO'].unique())
         
         if pedidos_sel:
-            # Fotos en cascada para que no truene la cámara
             f1 = st.camera_input("Foto 1: Producto", key="c1")
             if f1:
                 f2 = st.camera_input("Foto 2: Unidad", key="c2")
@@ -85,50 +77,43 @@ if df is not None:
                     f3 = st.camera_input("Foto 3: Estiba", key="c3")
                     if f3:
                         if st.button("CONFIRMAR SALIDA"):
-                            with st.spinner("Actualizando Nexion..."):
+                            with st.spinner("Actualizando..."):
                                 for p in pedidos_sel:
                                     idx = df[df['NÚMERO DE PEDIDO'] == str(p)].index
                                     df.loc[idx, 'TRIGGER'] = 'EN RUTA'
                                     df.loc[idx, 'FECHA DE ENVÍO'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-                                
                                 if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
                                     st.success("✅ Ruta iniciada.")
                                     st.rerun()
     else:
-        st.write("✅ No hay material pendiente en almacén.")
+        st.write("✅ Todo el material ha sido cargado.")
 
     st.markdown("---")
 
-    # ---------------------------------------------------------
-    # SECCIÓN 2: ENTREGA EN DESTINO
-    # ---------------------------------------------------------
+    # --- 2. SECCIÓN DE ENTREGA ---
     st.header("📍 2. Entrega en Destino")
     en_ruta = df[df['TRIGGER'] == 'EN RUTA']
     
     if not en_ruta.empty:
-        opciones_entrega = en_ruta.apply(lambda x: f"{x['NÚMERO DE PEDIDO']} | {x['NOMBRE DEL CLIENTE']}", axis=1)
-        seleccion = st.selectbox("Pedido a entregar ahora:", opciones_entrega)
-        
+        opciones = en_ruta.apply(lambda x: f"{x['NÚMERO DE PEDIDO']} | {x['NOMBRE DEL CLIENTE']}", axis=1)
+        seleccion = st.selectbox("Pedido a entregar:", opciones)
         id_p = seleccion.split(" | ")[0].strip()
-        datos_p = en_ruta[en_ruta['NÚMERO DE PEDIDO'] == id_p].iloc[0]
         
+        datos_p = en_ruta[en_ruta['NÚMERO DE PEDIDO'] == id_p].iloc[0]
         st.warning(f"🏨 **{datos_p['DESTINO']}**\n\n🏠 {datos_p['DOMICILIO']}")
         
-        f_ent = st.camera_input("Evidencia Final (Recepción)", key="ce")
-        obs = st.text_input("Observaciones:")
+        f_ent = st.camera_input("Evidencia Final", key="ce")
+        obs = st.text_input("Notas:")
 
         if st.button("FINALIZAR ENTREGA"):
             if f_ent:
-                with st.spinner("Guardando en locales.csv..."):
+                with st.spinner("Guardando..."):
                     ahora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    # Busqueda exacta para no entregar todo por error
                     idx_f = df[(df['NÚMERO DE PEDIDO'] == id_p) & (df['TRIGGER'] == 'EN RUTA')].index
-                    
                     if not idx_f.empty:
                         df.loc[idx_f[0], 'FECHA DE ENTREGA REAL'] = ahora
                         df.loc[idx_f[0], 'TRIGGER'] = 'ENTREGADO'
                         df.loc[idx_f[0], 'INCIDENCIAS'] = obs
-                        
                         if actualizar_github(df, sha, f"Entrega: {id_p}"):
                             st.success("✅ Entregado.")
                             st.balloons()
@@ -136,12 +121,6 @@ if df is not None:
             else:
                 st.error("⚠️ La foto es obligatoria.")
     else:
-        st.write("💤 No tienes pedidos 'En Ruta'.")
-
+        st.write("💤 No hay pedidos viajando.")
 else:
-    st.error("Error crítico: No se encontró locales.csv")
-    else:
-        st.write("💤 No hay pedidos viajando en este momento.")
-
-else:
-    st.error("Error crítico: No se puede leer el archivo locales.csv")
+    st.error("Error: No se encontró locales.csv")
