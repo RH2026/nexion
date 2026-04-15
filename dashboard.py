@@ -5619,6 +5619,7 @@ else:
                 f_coment = st.text_area("💬 COMENTARIOS ADICIONALES", height=100).upper()
                 
                 st.write("")
+                st.write("")
                 
                 # --- BOTONES PRINCIPALES ---
                 col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
@@ -5713,6 +5714,7 @@ else:
                     st.rerun()
                 # --- BÚSQUEDA RÁPIDA ---                
                 # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
+                st.write("")
                 st.write("")
                 st.write("")
                 with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS)", expanded=False):
