@@ -1,36 +1,10 @@
-import os
-import io
-import re
-import json
-import time
-import zipfile
-import unicodedata
-import requests
-from io import StringIO, BytesIO
-from datetime import datetime, date, timedelta
-import base64
-import altair as alt
-
-import pandas as pd
-import numpy as np  # Opcional, pero suele ir de la mano con pandas
 import streamlit as st
-import streamlit.components.v1 as components
-import altair as alt
-import plotly.graph_objects as go
-import plotly.express as px
-import math
-
-import pytz
-from github import Github
-from pypdf import PdfReader, PdfWriter
-from fpdf import FPDF
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.units import cm
-from reportlab.lib.utils import simpleSplit
-
-import google.generativeai as genai
-
+import pandas as pd
+import requests
+import base64
+import time
+from io import StringIO
+from datetime import datetime  # Importación directa corregida
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
