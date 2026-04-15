@@ -24,7 +24,6 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def descargar_matriz():
-    # FUERZA BRUTA: Rompemos el caché para ver datos nuevos
     timestamp = int(time.time())
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}?t={timestamp}"
     headers = {
@@ -37,7 +36,6 @@ def descargar_matriz():
         datos = response.json()
         content = base64.b64decode(datos['content']).decode('utf-8')
         df = pd.read_csv(StringIO(content))
-        # Limpieza de espacios y nulos
         for col in df.columns:
             df[col] = df[col].astype(str).str.strip().replace(['nan', 'None', 'NaN', 'null'], '')
         return df, datos['sha']
@@ -63,18 +61,19 @@ df, sha = descargar_matriz()
 if df is not None:
     # --- 1. SECCIÓN DE CARGA ---
     st.header("🚀 1. Salida de Almacén (Carga)")
-    # Filtro: Mostrar todo lo que NO está en ruta ni entregado
     disponibles = df[~df['TRIGGER'].isin(['EN RUTA', 'ENTREGADO'])]
     
     if not disponibles.empty:
         pedidos_sel = st.multiselect("Pedidos pendientes:", options=disponibles['NÚMERO DE PEDIDO'].unique())
         
         if pedidos_sel:
-            f1 = st.camera_input("Foto 1: Producto", key="c1")
+            # Aquí usamos el primer pedido seleccionado para refrescar la cámara si cambian de selección
+            ref_key = str(pedidos_sel[0])
+            f1 = st.camera_input("Foto 1: Producto", key=f"c1_{ref_key}")
             if f1:
-                f2 = st.camera_input("Foto 2: Unidad", key="c2")
+                f2 = st.camera_input("Foto 2: Unidad", key=f"c2_{ref_key}")
                 if f2:
-                    f3 = st.camera_input("Foto 3: Estiba", key="c3")
+                    f3 = st.camera_input("Foto 3: Estiba", key=f"c3_{ref_key}")
                     if f3:
                         if st.button("CONFIRMAR SALIDA"):
                             with st.spinner("Actualizando..."):
@@ -102,8 +101,11 @@ if df is not None:
         datos_p = en_ruta[en_ruta['NÚMERO DE PEDIDO'] == id_p].iloc[0]
         st.warning(f"🏨 **{datos_p['DESTINO']}**\n\n🏠 {datos_p['DOMICILIO']}")
         
-        f_ent = st.camera_input("Evidencia Final", key="ce")
-        obs = st.text_input("Notas:")
+        # --- EL TRUCO ESTÁ AQUÍ ---
+        # Al poner {id_p} en la key, la cámara se RESETEA cada que cambias de pedido en el selectbox
+        f_ent = st.camera_input("Evidencia Final", key=f"ce_{id_p}")
+        
+        obs = st.text_input("Notas:", key=f"obs_{id_p}")
 
         if st.button("FINALIZAR ENTREGA"):
             if f_ent:
