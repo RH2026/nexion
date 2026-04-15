@@ -5566,7 +5566,7 @@ else:
                     list(precios.keys()),
                     key=f"prod_select_{st.session_state.reset_key}", # <--- Esto es lo que hace la magia
                     default=st.session_state.get('seleccionados_muestras', []),
-                    placeholder="Selecciona los productos a enviar..."
+                    placeholder=""
                 )
                 
                 st.session_state.seleccionados_muestras = seleccionados
@@ -5617,6 +5617,8 @@ else:
                 
                 st.markdown("---")
                 f_coment = st.text_area("💬 COMENTARIOS ADICIONALES", height=100).upper()
+                
+                st.write("")
                 
                 # --- BOTONES PRINCIPALES ---
                 col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
@@ -5712,6 +5714,7 @@ else:
                 # --- BÚSQUEDA RÁPIDA ---                
                 # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
                 st.write("")
+                st.write("")
                 with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS)", expanded=False):
                     if not df_actual.empty:
                         busqueda = st.text_input("Escribe el nombre del Hotel o Folio para filtrar:").upper()
@@ -5796,6 +5799,7 @@ else:
                 # --- PANEL DE ADMIN ---
                 # --- PANEL DE ADMINISTRACIÓN (CORRECCIÓN DE NAMEERROR) ---
                 st.divider()
+                st.write("")
                 
                 # 1. Definimos la lista de quiénes mandan aquí
                 lista_admins = ["Rigoberto", "JMoreno"]
