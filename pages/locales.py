@@ -1124,7 +1124,7 @@ else:
     # --- HEADER ---
     logo_b64 = get_base64_logo('n2.png')
     if logo_b64:
-        st.markdown(f'<div class="header-container"><img src="data:image/png;base64,{logo_b64}" class="header-logo"><h1>NEXION SMART LOGISTICS</h1></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="header-container"><img src="data:image/png;base64,{logo_b64}" class="header-logo"><h1></h1></div>', unsafe_allow_html=True)
     else:
         st.title("NEXION SMART LOGISTICS")
     
