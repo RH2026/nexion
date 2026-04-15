@@ -5461,7 +5461,9 @@ else:
                 
                 # --- INTERFAZ ---
                 
+                
                 # --- CAPTURA NUEVA ---
+                st.write("")
                 with st.container():
                     # Definimos valores por defecto (ya no se muestran a Ventas)
                     f_paq_nombre = ""
