@@ -1144,7 +1144,7 @@ else:
         # Si no encuentra el logo, mostramos solo el texto
         logo_html = ''
     
-    st.markdown(f'<div class="header-container">{logo_html}<h1>NEXION SMART LOGISTICS</h1></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="header-container">{logo_html}<h1></h1></div>', unsafe_allow_html=True)
     
     if st.button("REFRESCAR INFORMACIÓN"):
         st.rerun()
@@ -1227,3 +1227,13 @@ else:
             st.info("NO HAY PEDIDOS EN RUTA ACTUALMENTE")
     else:
         st.error("Error: No se encontró locales.csv")
+
+
+    # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+        st.markdown(f"""
+            <div class="footer">
+                NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
+                <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
+                <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
+            </div>
+        """, unsafe_allow_html=True)
