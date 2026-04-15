@@ -59,39 +59,50 @@ df, sha = descargar_matriz()
 if df is not None:
     menu = st.sidebar.radio("FLUJO DE TRABAJO", ["🚀 CARGA DE UNIDAD", "📍 ENTREGA EN DESTINO"])
 
-    # --- MÓDULO 1: CARGA ---
+    # --- SUSTITUYE EL BLOQUE DE CARGA DE UNIDAD POR ESTE ---
+
     if menu == "🚀 CARGA DE UNIDAD":
         st.header("Registro de Carga - JYPESA")
         
-        # Filtramos pedidos pendientes (donde TRIGGER esté vacío)
         disponibles = df[df['TRIGGER'].isna() | (df['TRIGGER'] == '')]
         
         if not disponibles.empty:
             pedidos_sel = st.multiselect("Selecciona los pedidos a cargar:", options=disponibles['NÚMERO DE PEDIDO'].unique())
             
             if pedidos_sel:
-                st.subheader("📸 Evidencia de Carga")
-                col1, col2, col3 = st.columns(3)
+                st.divider()
+                # Creamos contenedores para que no se amontonen
                 
-                with col1:
-                    f1 = st.camera_input("Foto 1: Producto", key="c1")
-                with col2:
-                    f2 = st.camera_input("Foto 2: Unidad", key="c2")
-                with col3:
-                    f3 = st.camera_input("Foto 3: Estiba", key="c3")
-
-                if st.button("CONFIRMAR CARGA Y SALIDA"):
-                    if f1 and f2 and f3:
-                        with st.spinner("Sincronizando..."):
-                            idx = df[df['NÚMERO DE PEDIDO'].isin(pedidos_sel)].index
-                            df.loc[idx, 'TRIGGER'] = 'EN RUTA'
-                            df.loc[idx, 'FECHA DE ENVÍO'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-                            
-                            if actualizar_github(df, sha, f"Carga Pedidos: {pedidos_sel}"):
-                                st.success("¡Ruta Iniciada con éxito!")
-                                st.rerun()
-                    else:
-                        st.error("Amor, faltan fotos para validar la carga.")
+                # FOTO 1
+                st.subheader("1. Evidencia de Producto")
+                f1 = st.camera_input("Capturar Producto", key="c1")
+                
+                # Solo si ya tomó la foto 1, mostramos la 2
+                if f1:
+                    st.success("✅ Foto de Producto capturada")
+                    st.subheader("2. Evidencia de Unidad")
+                    f2 = st.camera_input("Capturar Unidad/Caja", key="c2")
+                    
+                    # Solo si ya tomó la foto 2, mostramos la 3
+                    if f2:
+                        st.success("✅ Foto de Unidad capturada")
+                        st.subheader("3. Evidencia de Estiba")
+                        f3 = st.camera_input("Capturar Estiba Final", key="c3")
+                        
+                        if f3:
+                            st.success("✅ Foto de Estiba capturada")
+                            if st.button("CONFIRMAR CARGA Y SALIDA"):
+                                with st.spinner("Sincronizando con Nexion..."):
+                                    idx = df[df['NÚMERO DE PEDIDO'].isin(pedidos_sel)].index
+                                    df.loc[idx, 'TRIGGER'] = 'EN RUTA'
+                                    df.loc[idx, 'FECHA DE ENVÍO'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+                                    
+                                    if actualizar_github(df, sha, f"Carga Pedidos: {pedidos_sel}"):
+                                        st.success("¡Ruta Iniciada con éxito!")
+                                        st.balloons()
+                                        st.rerun()
+                else:
+                    st.info("📸 Por favor, toma la primera foto para continuar.")
         else:
             st.info("No hay pedidos nuevos pendientes de carga.")
 
