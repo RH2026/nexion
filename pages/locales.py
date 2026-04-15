@@ -1063,8 +1063,26 @@ else:
         .header-logo { width: 180px; margin-right: 20px; }
         h1 { color: #FFFFFF; font-size: 1.4rem; letter-spacing: 1px; margin: 0; }
         h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid #1A2226; }
-        .stButton>button { background-color: #00FFAA; color: #0B1114; font-weight: bold; border-radius: 4px; border: none; height: 3em; width: 100%; text-transform: uppercase; }
+        
+        /* BOTÓN TOTALMENTE CENTRADO Y ANCHO */
+        .stButton>button { 
+            background-color: #00FFAA; 
+            color: #0B1114; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            border: none; 
+            height: 4em; 
+            width: 100%; 
+            text-transform: uppercase;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1rem;
+            letter-spacing: 2px;
+        }
         .stButton>button:hover { background-color: #00D18B; color: #FFFFFF; }
+        
         .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
         .stAlert { background-color: #1A2226; color: #00FFAA; border: 1px solid #00FFAA; border-radius: 4px; }
@@ -1097,19 +1115,20 @@ else:
         return response.status_code == 200
     
     def get_base64_logo(file):
-        with open(file, 'rb') as f:
-            return base64.b64encode(f.read()).decode()
+        try:
+            with open(file, 'rb') as f:
+                return base64.b64encode(f.read()).decode()
+        except:
+            return None
     
     # --- HEADER ---
-    try:
-        logo_b64 = get_base64_logo('n2.png')
+    logo_b64 = get_base64_logo('n2.png')
+    if logo_b64:
         st.markdown(f'<div class="header-container"><img src="data:image/png;base64,{logo_b64}" class="header-logo"><h1>NEXION SMART LOGISTICS</h1></div>', unsafe_allow_html=True)
-    except:
+    else:
         st.title("NEXION SMART LOGISTICS")
     
-    if st.button("REFRESCAR INFORMACIÓN"):
-        st.rerun()
-    
+    # --- LÓGICA DE DATOS ---
     df, sha = descargar_matriz()
     
     if df is not None:
@@ -1127,7 +1146,7 @@ else:
                     if f2:
                         f3 = st.camera_input("FOTO 3: ESTIBA", key=f"c3_{ref_k}")
                         if f3:
-                            if st.button("CONFIRMAR SALIDA"):
+                            if st.button("CONFIRMAR SALIDA DE UNIDAD"):
                                 with st.spinner("PROCESANDO..."):
                                     ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
                                     for p in pedidos_sel:
@@ -1163,6 +1182,7 @@ else:
             f_ent = st.camera_input("EVIDENCIA FINAL", key=f"ce_{id_p}")
             obs = st.text_input("OBSERVACIONES:", key=f"obs_{id_p}")
     
+            # BOTÓN DE PANTALLA COMPLETA
             if st.button("FINALIZAR ENTREGA"):
                 if f_ent:
                     with st.spinner("GUARDANDO..."):
