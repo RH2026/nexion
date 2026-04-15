@@ -1096,7 +1096,7 @@ else:
         
         /* Estilo del Header con Logo */
         .header-container { display: flex; align-items: center; margin-bottom: 30px; }
-        .header-logo { width: 120px; height: 160px; margin-right: 15px; }
+        .header-logo { width: 220px; height: 160px; margin-right: 15px; }
         </style>
         """, unsafe_allow_html=True)
     
