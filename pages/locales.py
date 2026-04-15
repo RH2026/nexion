@@ -1,10 +1,31 @@
-import streamlit as st
-import pandas as pd
+import os
+import io
+import re
+import json
+import time
+import zipfile
+import unicodedata
 import requests
 import base64
-import time
-from io import StringIO
-from datetime import datetime  # Importación directa corregida
+import math
+import pandas as pd
+import numpy as np
+import streamlit as st
+import streamlit.components.v1 as components
+import altair as alt
+import plotly.graph_objects as go
+import plotly.express as px
+import pytz
+import google.generativeai as genai
+from io import StringIO, BytesIO
+from datetime import datetime, date, timedelta
+from github import Github
+from pypdf import PdfReader, PdfWriter
+from fpdf import FPDF
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import cm
+from reportlab.lib.utils import simpleSplit
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
@@ -1031,63 +1052,36 @@ else:
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "locales.csv"
     
-    # --- CONFIGURACIÓN DE INTERFAZ NEXION PREMIUM ---
+    # --- CONFIGURACIÓN DE PÁGINA ---
     st.set_page_config(page_title="NEXION SMART LOGISTICS", layout="wide")
     
-    # --- ESTILO JYPESA CORPORATIVO (SIN EMOJIS, CON LOGO) ---
+    # --- ESTILO CORPORATIVO JYPESA ---
     st.markdown("""
         <style>
-        /* Fondo principal onyx profundo */
-        .main { background-color: #0B1114; color: #FFFFFF; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        /* Títulos y Subtítulos corporativos */
-        h1 { color: #FFFFFF; font-size: 1.5rem; letter-spacing: 1px; margin-bottom: 30px; }
-        h2, h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 1.1rem; padding-bottom: 5px; margin-top: 25px;}
-        
-        /* Botones estilo Dashboard JYPESA */
-        .stButton>button { 
-            background-color: #00FFAA; 
-            color: #0B1114; 
-            font-weight: bold; 
-            border-radius: 4px; 
-            border: none;
-            height: 3em;
-            width: 100%;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .main { background-color: #0B1114; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; }
+        .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
+        .header-logo { width: 180px; margin-right: 20px; }
+        h1 { color: #FFFFFF; font-size: 1.4rem; letter-spacing: 1px; margin: 0; }
+        h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid #1A2226; }
+        .stButton>button { background-color: #00FFAA; color: #0B1114; font-weight: bold; border-radius: 4px; border: none; height: 3em; width: 100%; text-transform: uppercase; }
         .stButton>button:hover { background-color: #00D18B; color: #FFFFFF; }
-        
-        /* Inputs y Selectores oscuros */
-        .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+        .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
-        
-        /* Mensajes de información con acento neón */
         .stAlert { background-color: #1A2226; color: #00FFAA; border: 1px solid #00FFAA; border-radius: 4px; }
-        
-        /* Líneas divisorias oscuras */
         hr { border: 0.5px solid #1A2226; }
-        
-        /* Estilo del Header con Logo */
-        .header-container { display: flex; align-items: center; margin-bottom: 30px; }
-        .header-logo { width: 220px; height: 160px; margin-right: 15px; }
         </style>
         """, unsafe_allow_html=True)
     
+    # --- FUNCIONES ---
     def descargar_matriz():
         timestamp = int(time.time())
         url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}?t={timestamp}"
-        headers = {
-            "Authorization": f"token {GITHUB_TOKEN}",
-            "Accept": "application/vnd.github.v3+json",
-            "Cache-Control": "no-cache"
-        }
+        headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json", "Cache-Control": "no-cache"}
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             datos = response.json()
             content = base64.b64decode(datos['content']).decode('utf-8')
             df = pd.read_csv(StringIO(content))
-            # Limpieza de nulos
             for col in df.columns:
                 df[col] = df[col].astype(str).str.strip().replace(['nan', 'None', 'NaN', 'null'], '')
             return df, datos['sha']
@@ -1102,23 +1096,16 @@ else:
         response = requests.put(url, headers=headers, json=payload)
         return response.status_code == 200
     
-    # --- CUERPO DE LA APP ---
-    # Header con Logo y Título
-    # Convertimos el logo a base64 para embeberlo en el HTML
-    def get_base64_of_bin_file(bin_file):
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
+    def get_base64_logo(file):
+        with open(file, 'rb') as f:
+            return base64.b64encode(f.read()).decode()
     
-    # Reemplaza 'n2.png' con la ruta real de tu imagen
+    # --- HEADER ---
     try:
-        logo_base64 = get_base64_of_bin_file('n2.png')
-        logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="header-logo">'
-    except FileNotFoundError:
-        # Si no encuentra el logo, mostramos solo el texto
-        logo_html = ''
-    
-    st.markdown(f'<div class="header-container">{logo_html}<h1></h1></div>', unsafe_allow_html=True)
+        logo_b64 = get_base64_logo('n2.png')
+        st.markdown(f'<div class="header-container"><img src="data:image/png;base64,{logo_b64}" class="header-logo"><h1>NEXION SMART LOGISTICS</h1></div>', unsafe_allow_html=True)
+    except:
+        st.title("NEXION SMART LOGISTICS")
     
     if st.button("REFRESCAR INFORMACIÓN"):
         st.rerun()
@@ -1126,81 +1113,73 @@ else:
     df, sha = descargar_matriz()
     
     if df is not None:
-        # --- SECCIÓN 1: CARGA DE UNIDAD ---
-        # Tamaño de texto reducido para los encabezados principales
+        # --- SECCIÓN 1: CARGA ---
         st.markdown("<h3>1. SALIDA DE ALMACEN (CARGA)</h3>", unsafe_allow_html=True)
         disponibles = df[~df['TRIGGER'].isin(['EN RUTA', 'ENTREGADO'])]
         
         if not disponibles.empty:
-            pedidos_sel = st.multiselect("SELECCIONAR FOLIOS PARA CARGA:", options=disponibles['NÚMERO DE PEDIDO'].unique(), key="ms_carga")
-            
+            pedidos_sel = st.multiselect("SELECCIONAR FOLIOS:", options=disponibles['NÚMERO DE PEDIDO'].unique(), key="ms_carga")
             if pedidos_sel:
-                ref_key = str(pedidos_sel[0])
-                st.write("📸 Registro de evidencias paso a paso:")
-                f1 = st.camera_input("Foto 1: Producto", key=f"c1_{ref_key}")
+                ref_k = str(pedidos_sel[0])
+                f1 = st.camera_input("FOTO 1: PRODUCTO", key=f"c1_{ref_k}")
                 if f1:
-                    f2 = st.camera_input("Foto 2: Unidad", key=f"c2_{ref_key}")
+                    f2 = st.camera_input("FOTO 2: UNIDAD", key=f"c2_{ref_k}")
                     if f2:
-                        f3 = st.camera_input("Foto 3: Estiba", key=f"c3_{ref_key}")
+                        f3 = st.camera_input("FOTO 3: ESTIBA", key=f"c3_{ref_k}")
                         if f3:
-                            if st.button("CONFIRMAR SALIDA DE UNIDAD"):
-                                with st.spinner("GUARDANDO DATOS..."):
+                            if st.button("CONFIRMAR SALIDA"):
+                                with st.spinner("PROCESANDO..."):
+                                    ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
                                     for p in pedidos_sel:
                                         idx = df[df['NÚMERO DE PEDIDO'] == str(p)].index
                                         df.loc[idx, 'TRIGGER'] = 'EN RUTA'
-                                        df.loc[idx, 'FECHA DE ENVÍO'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+                                        df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
                                     if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
-                                        st.success("✅ Ruta iniciada.")
                                         st.rerun()
         else:
             st.info("NO HAY PENDIENTES EN ALMACEN")
     
-        st.markdown("<br><hr><br>", unsafe_allow_html=True)
+        st.markdown("<br><hr>", unsafe_allow_html=True)
     
-        # --- SECCIÓN 2: ENTREGA EN DESTINO ---
+        # --- SECCIÓN 2: ENTREGA ---
         st.markdown("<h3>2. ENTREGA EN DESTINO</h3>", unsafe_allow_html=True)
         en_ruta = df[df['TRIGGER'] == 'EN RUTA']
         
         if not en_ruta.empty:
             opciones = en_ruta.apply(lambda x: f"{x['NÚMERO DE PEDIDO']} | {x['NOMBRE DEL CLIENTE']}", axis=1)
-            seleccion = st.selectbox("PEDIDO A ENTREGAR:", opciones)
-            id_p = seleccion.split(" | ")[0].strip()
+            sel = st.selectbox("PEDIDO A ENTREGAR:", opciones)
+            id_p = sel.split(" | ")[0].strip()
+            dat = en_ruta[en_ruta['NÚMERO DE PEDIDO'] == id_p].iloc[0]
             
-            datos_p = en_ruta[en_ruta['NÚMERO DE PEDIDO'] == id_p].iloc[0]
-            
-            # Panel de detalles estilo dashboard
             st.markdown(f"""
-                <div style="background-color: #1A2226; padding: 20px; border-radius: 4px; border-left: 5px solid #00FFAA; margin-bottom: 20px;">
-                    <p style="margin:0; font-size: 0.8rem; color: #00FFAA;">DESTINO:</p>
-                    <p style="margin:0; font-size: 1.1rem; font-weight: bold;">{datos_p['DESTINO']}</p>
-                    <br>
-                    <p style="margin:0; font-size: 0.8rem; color: #00FFAA;">DOMICILIO:</p>
-                    <p style="margin:0; font-size: 1rem;">{datos_p['DOMICILIO']}</p>
+                <div style="background-color: #1A2226; padding: 15px; border-radius: 4px; border-left: 4px solid #00FFAA; margin-bottom: 20px;">
+                    <p style="margin:0; font-size: 0.7rem; color: #00FFAA; font-weight: bold;">DESTINO:</p>
+                    <p style="margin:0; font-size: 1rem; font-weight: bold;">{dat['DESTINO']}</p>
+                    <p style="margin:10px 0 0 0; font-size: 0.7rem; color: #00FFAA; font-weight: bold;">DOMICILIO:</p>
+                    <p style="margin:0; font-size: 0.85rem;">{dat['DOMICILIO']}</p>
                 </div>
             """, unsafe_allow_html=True)
             
-            # Key dinámica: resetea la cámara para cada pedido
-            f_ent = st.camera_input("Evidencia Final", key=f"ce_{id_p}")
-            obs = st.text_input("Comentarios / Incidencias:", key=f"obs_{id_p}")
+            f_ent = st.camera_input("EVIDENCIA FINAL", key=f"ce_{id_p}")
+            obs = st.text_input("OBSERVACIONES:", key=f"obs_{id_p}")
     
             if st.button("FINALIZAR ENTREGA"):
                 if f_ent:
-                    with st.spinner("GUARDANDO EN MATRIZ..."):
-                        ahora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    with st.spinner("GUARDANDO..."):
+                        ahora_e = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         idx_f = df[(df['NÚMERO DE PEDIDO'] == id_p) & (df['TRIGGER'] == 'EN RUTA')].index
                         if not idx_f.empty:
-                            df.loc[idx_f[0], 'FECHA DE ENTREGA REAL'] = ahora
+                            df.loc[idx_f[0], 'FECHA DE ENTREGA REAL'] = ahora_e
                             df.loc[idx_f[0], 'TRIGGER'] = 'ENTREGADO'
                             df.loc[idx_f[0], 'INCIDENCIAS'] = obs
                             if actualizar_github(df, sha, f"Entrega: {id_p}"):
-                                st.success("✅ Entregado.")
                                 st.rerun()
                 else:
-                    st.error("LA FOTO ES OBLIGATORIA PARA VALIDAR EL KPI")
+                    st.error("EVIDENCIA FOTOGRAFICA REQUERIDA")
         else:
-            st.info("NO HAY PEDIDOS EN RUTA ACTUALMENTE")
+            st.info("NO HAY PEDIDOS EN RUTA")
     else:
-        st.error("Error: No se encontró locales.csv")
+        st.error("ERROR DE CONEXIÓN CON LOCALES.CSV")
 
 
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
