@@ -387,16 +387,6 @@ div[data-baseweb="select"] div {{
 
 /* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
 
-/* 1. Altura y alineación de la caja principal */
-div[data-baseweb="select"] > div:first-child {{
-    height: 35px !important; 
-    min-height: 35px !important;
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    display: flex !important;
-    align-items: center !important;
-}}
 
 /* 2. Ajuste del texto interno y el cursor */
 div[data-baseweb="select"] div {{
