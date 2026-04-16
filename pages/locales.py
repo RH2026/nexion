@@ -172,27 +172,30 @@ h3, .op-query-text {{
     text-transform: uppercase;
 }}
 
-/* 4. BOTONES SLIM */
-div.stButton > button {{ 
-    background-color: {vars_css['card']} !important; 
-    color: {vars_css['text']} !important; 
-    border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
-    font-weight: 700 !important; 
-    text-transform: uppercase; 
-    font-size: 10px !important; 
-    height: 28px !important; 
-    min-height: 28px !important; 
-    line-height: 28px !important; 
-    transition: all 0.2s ease !important; 
-    width: 100% !important; 
+/* 4. BOTONES ESTILO NEXION (FULL WIDTH) - CON DOBLE LLAVE */
+[data-testid="stElementContainer"], 
+[data-testid="stVerticalBlock"] > div {{
+    width: 100% !important;
 }}
 
-div.stButton > button:hover {{ 
-    background-color: #00A3A3 !important; 
-    color: #ffffff !important; 
-    border-color: #00A3A3 !important; 
-    box-shadow: 0 0 10px rgba(0, 163, 163, 0.3);
+div.stButton {{
+    width: 100% !important;
+}}
+
+div.stButton > button {{ 
+    background-color: #00FFAA !important; 
+    color: #0B1114 !important; 
+    border: none !important;
+    border-radius: 4px !important; 
+    font-weight: 800 !important; 
+    text-transform: uppercase; 
+    font-size: 14px !important; 
+    height: 50px !important; 
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 10px 0px !important;
 }}
 
 /* 5. INPUTS Y SELECTORES (Look minimalista) */
