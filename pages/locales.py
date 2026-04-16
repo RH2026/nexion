@@ -172,30 +172,25 @@ h3, .op-query-text {{
     text-transform: uppercase;
 }}
 
-/* 4. BOTONES ESTILO NEXION (FULL WIDTH) - CON DOBLE LLAVE */
-[data-testid="stElementContainer"], 
+/* 4. FUERZA BRUTA NEXION: BOTONES AL 100% */
 [data-testid="stVerticalBlock"] > div {{
     width: 100% !important;
 }}
 
-div.stButton {{
+.stButton {{
     width: 100% !important;
 }}
 
-div.stButton > button {{ 
-    background-color: #00FFAA !important; 
-    color: #0B1114 !important; 
-    border: none !important;
-    border-radius: 4px !important; 
-    font-weight: 800 !important; 
-    text-transform: uppercase; 
-    font-size: 14px !important; 
-    height: 50px !important; 
+.stButton > button {{
     width: 100% !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    margin: 10px 0px !important;
+    background-color: #00FFAA !important;
+    color: #0B1114 !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    height: 50px !important;
+    border: none !important;
+    display: block !important;
+    margin: 10px 0 !important;
 }}
 
 /* 5. INPUTS Y SELECTORES (Look minimalista) */
