@@ -375,16 +375,22 @@ else:
         }
 
         /* 3. Header y Títulos */
-        .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
-        .header-logo { width: 180px; margin-right: 20px; }
+        .header-container { ... }
+        .header-logo { ... }
         h1, h3 { 
             font-family: 'Courier New', monospace !important; 
             color: #FFFFFF; 
             letter-spacing: 2px; 
             text-transform: uppercase;
         }
-        h1 { font-size: 1.4rem; }
-        h3 { font-size: 0.95rem; margin-top: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 5px; }
+        h1 { font-size: 1.4rem; } /* Tamaño del título principal */
+        
+        h3 { 
+            font-size: 1.2rem; /* <--- CAMBIA ESTE VALOR (estaba en 0.95rem) */
+            margin-top: 30px; 
+            border-bottom: 1px solid #1A2226; 
+            padding-bottom: 5px; 
+        }
 
         /* 4. Botones Estilo Nexion (Sin bordes, alto impacto) */
         div.stButton > button {
