@@ -495,20 +495,29 @@ else:
                         if f3:
                             if st.button("CONFIRMAR SALIDA DE UNIDAD", use_container_width=True):
                                 with st.spinner("SUBIENDO EVIDENCIAS Y ACTUALIZANDO..."):
-                                    # 1. Subir Fotos
-                                    subir_foto_github(f1, f"CARGA_{ref_k}_PROD.png")
-                                    subir_foto_github(f2, f"CARGA_{ref_k}_LIMPIA.png")
-                                    subir_foto_github(f3, f"CARGA_{ref_k}_CARGADA.png")
+                                    # Nombres y Links
+                                    n1, n2, n3 = f"CARGA_{ref_k}_PROD.png", f"CARGA_{ref_k}_LIMPIA.png", f"CARGA_{ref_k}_CARGADA.png"
+                                    base_url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/evidencias/"
                                     
-                                    # 2. Actualizar DataFrame
+                                    subir_foto_github(f1, n1)
+                                    subir_foto_github(f2, n2)
+                                    subir_foto_github(f3, n3)
+                                    
                                     ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
                                     for p in pedidos_sel:
                                         idx = df[df[col_pedido] == str(p)].index
                                         df.loc[idx, col_trigger] = 'EN RUTA'
                                         df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
                                     
-                                    # 3. Guardar en GitHub
                                     if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
+                                        st.success("✅ EVIDENCIAS GUARDADAS")
+                                        st.markdown(f"""
+                                        **ACCESO DIRECTO A FOTOS:**
+                                        * [Foto Producto]({base_url}{n1})
+                                        * [Foto Unidad Limpia]({base_url}{n2})
+                                        * [Foto Unidad Cargada]({base_url}{n3})
+                                        """, unsafe_allow_html=True)
+                                        time.sleep(6)
                                         st.rerun()
         else:
             st.info("NO HAY PENDIENTES EN ALMACEN PARA SALIR A RUTA")
@@ -540,10 +549,10 @@ else:
             if st.button("FINALIZAR ENTREGA", use_container_width=True):
                 if f_ent:
                     with st.spinner("GUARDANDO EVIDENCIA FINAL..."):
-                        # 1. Subir Foto de Entrega
-                        subir_foto_github(f_ent, f"ENTREGA_{id_p}_FINAL.png")
+                        n_f = f"ENTREGA_{id_p}_FINAL.png"
+                        base_url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/evidencias/"
+                        subir_foto_github(f_ent, n_f)
                         
-                        # 2. Actualizar Datos
                         ahora_e = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         idx_f = df[(df[col_pedido] == id_p) & (df[col_trigger] == 'EN RUTA')].index
                         if not idx_f.empty:
@@ -551,6 +560,9 @@ else:
                             df.loc[idx_f[0], col_trigger] = 'ENTREGADO'
                             df.loc[idx_f[0], 'INCIDENCIAS'] = obs
                             if actualizar_github(df, sha, f"Entrega: {id_p}"):
+                                st.success("✅ ENTREGA REGISTRADA")
+                                st.markdown(f"**LINK DE EVIDENCIA:** [Ver Foto Final]({base_url}{n_f})")
+                                time.sleep(6)
                                 st.rerun()
                 else:
                     st.error("EVIDENCIA FOTOGRAFICA REQUERIDA")
