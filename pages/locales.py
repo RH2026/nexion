@@ -362,21 +362,17 @@ else:
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "locales.csv"
     
-    # --- CONFIGURACIÓN DE PÁGINA ---
     st.set_page_config(page_title="NEXION SMART LOGISTICS", layout="wide")
     
     # --- ESTILO CORPORATIVO JYPESA ---
     st.markdown("""
         <style>
         .main { background-color: #0B1114; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; }
-        .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+        .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
         .header-logo { width: 180px; margin-right: 20px; }
         h1 { color: #FFFFFF; font-size: 1.4rem; letter-spacing: 1px; margin: 0; }
+        h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid #1A2226; }
         
-        /* H3 con línea más sutil */
-        h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        
-        /* BOTÓN TOTALMENTE CENTRADO Y ANCHO */
         .stButton>button { 
             background-color: #00FFAA; 
             color: #0B1114; 
@@ -397,21 +393,11 @@ else:
         
         .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
-        
-        /* ALERTAS (Corrección de color y borde) */
-        .stAlert { 
-            background-color: #1A2226 !important; 
-            color: #00FFAA !important; 
-            border: 1px solid rgba(0, 255, 170, 0.2) !important; 
-            border-radius: 4px; 
-        }
-        .stAlert svg { display: none; } /* Quita el icono de advertencia para más limpieza */
-    
-        /* HR mucho más suave (acorde al fondo) */
-        hr { border: 0; border-top: 0.5px solid rgba(255,255,255,0.05) !important; }
+        .stAlert { background-color: #1A2226; color: #00FFAA; border: 1px solid #00FFAA; border-radius: 4px; }
+        hr { border: 0.5px solid #1A2226; }
         </style>
         """, unsafe_allow_html=True)
-        
+    
     # --- FUNCIONES ---
     def descargar_matriz():
         timestamp = int(time.time())
@@ -422,6 +408,8 @@ else:
             datos = response.json()
             content = base64.b64decode(datos['content']).decode('utf-8')
             df = pd.read_csv(StringIO(content))
+            # Limpieza inicial de columnas
+            df.columns = df.columns.str.upper().str.strip()
             for col in df.columns:
                 df[col] = df[col].astype(str).str.strip().replace(['nan', 'None', 'NaN', 'null'], '')
             return df, datos['sha']
@@ -446,7 +434,7 @@ else:
     # --- HEADER ---
     logo_b64 = get_base64_logo('n2.png')
     if logo_b64:
-        st.markdown(f'<div class="header-container"><img src="data:image/png;base64,{logo_b64}" class="header-logo"><h1></h1></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="header-container"><img src="data:image/png;base64,{logo_b64}" class="header-logo"><h1>NEXION SMART LOGISTICS</h1></div>', unsafe_allow_html=True)
     else:
         st.title("NEXION SMART LOGISTICS")
     
@@ -454,72 +442,89 @@ else:
     df, sha = descargar_matriz()
     
     if df is not None:
+        # --- MAPEADOR DE COLUMNAS PARA EVITAR KEYERROR ---
+        def obtener_valor(fila, posibles_nombres):
+            for nombre in posibles_nombres:
+                if nombre in fila.index:
+                    return fila[nombre]
+            return "N/D"
+    
         # --- SECCIÓN 1: CARGA ---
         st.markdown("<h3>1. SALIDA DE ALMACEN (CARGA)</h3>", unsafe_allow_html=True)
-        disponibles = df[~df['TRIGGER'].isin(['EN RUTA', 'ENTREGADO'])]
         
-        if not disponibles.empty:
-            pedidos_sel = st.multiselect("SELECCIONAR FOLIOS:", options=disponibles['NÚMERO DE PEDIDO'].unique(), key="ms_carga")
-            if pedidos_sel:
-                ref_k = str(pedidos_sel[0])
-                f1 = st.camera_input("FOTO 1: PRODUCTO", key=f"c1_{ref_k}")
-                if f1:
-                    f2 = st.camera_input("FOTO 2: UNIDAD", key=f"c2_{ref_k}")
-                    if f2:
-                        f3 = st.camera_input("FOTO 3: ESTIBA", key=f"c3_{ref_k}")
-                        if f3:
-                            if st.button("CONFIRMAR SALIDA DE UNIDAD"):
-                                with st.spinner("PROCESANDO..."):
-                                    ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
-                                    for p in pedidos_sel:
-                                        idx = df[df['NÚMERO DE PEDIDO'] == str(p)].index
-                                        df.loc[idx, 'TRIGGER'] = 'EN RUTA'
-                                        df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
-                                    if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
-                                        st.rerun()
-        else:
-            st.info("NO HAY PENDIENTES EN ALMACEN")
+        col_trigger = next((c for c in ['TRIGGER', 'ESTADO', 'STATUS'] if c in df.columns), 'TRIGGER')
+        col_pedido = next((c for c in ['NÚMERO DE PEDIDO', 'FOLIO', 'PEDIDO', 'NÚMERO_PEDIDO'] if c in df.columns), 'NÚMERO DE PEDIDO')
+        
+        if col_trigger in df.columns:
+            disponibles = df[~df[col_trigger].isin(['EN RUTA', 'ENTREGADO'])]
+            if not disponibles.empty:
+                pedidos_sel = st.multiselect("SELECCIONAR FOLIOS:", options=disponibles[col_pedido].unique(), key="ms_carga")
+                if pedidos_sel:
+                    ref_k = str(pedidos_sel[0])
+                    f1 = st.camera_input("FOTO 1: PRODUCTO", key=f"c1_{ref_k}")
+                    if f1:
+                        f2 = st.camera_input("FOTO 2: UNIDAD", key=f"c2_{ref_k}")
+                        if f2:
+                            f3 = st.camera_input("FOTO 3: ESTIBA", key=f"c3_{ref_k}")
+                            if f3:
+                                if st.button("CONFIRMAR SALIDA DE UNIDAD"):
+                                    with st.spinner("PROCESANDO..."):
+                                        ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
+                                        for p in pedidos_sel:
+                                            idx = df[df[col_pedido] == str(p)].index
+                                            df.loc[idx, col_trigger] = 'EN RUTA'
+                                            df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
+                                        if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
+                                            st.rerun()
+            else:
+                st.info("NO HAY PENDIENTES EN ALMACEN")
     
         st.markdown("<br><hr>", unsafe_allow_html=True)
     
         # --- SECCIÓN 2: ENTREGA ---
         st.markdown("<h3>2. ENTREGA EN DESTINO</h3>", unsafe_allow_html=True)
-        en_ruta = df[df['TRIGGER'] == 'EN RUTA']
+        en_ruta = df[df[col_trigger] == 'EN RUTA']
         
         if not en_ruta.empty:
-            opciones = en_ruta.apply(lambda x: f"{x['NÚMERO DE PEDIDO']} | {x['NOMBRE DEL CLIENTE']}", axis=1)
+            # Nombres posibles para cliente
+            col_cliente = ['NOMBRE DEL CLIENTE', 'CLIENTE', 'NOMBRE_CLIENTE']
+            opciones = en_ruta.apply(lambda x: f"{x[col_pedido]} | {obtener_valor(x, col_cliente)}", axis=1)
+            
             sel = st.selectbox("PEDIDO A ENTREGAR:", opciones)
             id_p = sel.split(" | ")[0].strip()
-            dat = en_ruta[en_ruta['NÚMERO DE PEDIDO'] == id_p].iloc[0]
+            dat = en_ruta[en_ruta[col_pedido] == id_p].iloc[0]
+            
+            # BUSQUEDA SEGURA DE DESTINO Y DOMICILIO
+            val_destino = obtener_valor(dat, ['DESTINO', 'HOTEL', 'LUGAR'])
+            val_domicilio = obtener_valor(dat, ['DOMICILIO', 'DIRECCION', 'DIRECCIÓN', 'UBICACIÓN'])
             
             st.markdown(f"""
                 <div style="background-color: #1A2226; padding: 15px; border-radius: 4px; border-left: 4px solid #00FFAA; margin-bottom: 20px;">
                     <p style="margin:0; font-size: 0.7rem; color: #00FFAA; font-weight: bold;">DESTINO:</p>
-                    <p style="margin:0; font-size: 1rem; font-weight: bold;">{dat['DESTINO']}</p>
+                    <p style="margin:0; font-size: 1rem; font-weight: bold;">{val_destino}</p>
                     <p style="margin:10px 0 0 0; font-size: 0.7rem; color: #00FFAA; font-weight: bold;">DOMICILIO:</p>
-                    <p style="margin:0; font-size: 0.85rem;">{dat['DOMICILIO']}</p>
+                    <p style="margin:0; font-size: 0.85rem;">{val_domicilio}</p>
                 </div>
             """, unsafe_allow_html=True)
             
             f_ent = st.camera_input("EVIDENCIA FINAL", key=f"ce_{id_p}")
             obs = st.text_input("OBSERVACIONES:", key=f"obs_{id_p}")
     
-            # BOTÓN DE PANTALLA COMPLETA
             if st.button("FINALIZAR ENTREGA"):
                 if f_ent:
                     with st.spinner("GUARDANDO..."):
                         ahora_e = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        idx_f = df[(df['NÚMERO DE PEDIDO'] == id_p) & (df['TRIGGER'] == 'EN RUTA')].index
+                        idx_f = df[(df[col_pedido] == id_p) & (df[col_trigger] == 'EN RUTA')].index
                         if not idx_f.empty:
                             df.loc[idx_f[0], 'FECHA DE ENTREGA REAL'] = ahora_e
-                            df.loc[idx_f[0], 'TRIGGER'] = 'ENTREGADO'
+                            df.loc[idx_f[0], col_trigger] = 'ENTREGADO'
                             df.loc[idx_f[0], 'INCIDENCIAS'] = obs
                             if actualizar_github(df, sha, f"Entrega: {id_p}"):
                                 st.rerun()
                 else:
                     st.error("EVIDENCIA FOTOGRAFICA REQUERIDA")
         else:
-            st.info("NO HAY PEDIDOS EN RUTA")
+            st.info("NO HAY PEDIDOS EN RUTA ACTUALMENTE")
     else:
         st.error("ERROR DE CONEXIÓN CON LOCALES.CSV")
 
