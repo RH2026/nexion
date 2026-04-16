@@ -487,7 +487,7 @@ else:
             pedidos_sel = st.multiselect("SELECCIONAR FOLIOS:", options=disponibles[col_pedido].unique(), key="ms_carga")
             if pedidos_sel:
                 ref_k = str(pedidos_sel[0])
-                f1 = st.camera_input("FOTO 1: PRODUCTO", key=f"c1_{ref_k}")
+                f1 = st.camera_input("FOTO 1: PRODUCTO EN BUEN ESTADO", key=f"c1_{ref_k}")
                 if f1:
                     f2 = st.camera_input("FOTO 2: UNIDAD LIMPIA", key=f"c2_{ref_k}")
                     if f2:
@@ -496,7 +496,7 @@ else:
                             if st.button("CONFIRMAR SALIDA DE UNIDAD", use_container_width=True):
                                 with st.spinner("SUBIENDO EVIDENCIAS Y ACTUALIZANDO..."):
                                     # Nombres y Links
-                                    n1, n2, n3 = f"CARGA_{ref_k}_PROD.png", f"CARGA_{ref_k}_LIMPIA.png", f"CARGA_{ref_k}_CARGADA.png"
+                                    n1, n2, n3 = f"CARGA_{ref_k}_PROD.OK.png", f"CARGA_{ref_k}_UNIDAD.LIMPIA.png", f"CARGA_{ref_k}_UNIDAD.CARGADA.png"
                                     base_url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/evidencias/"
                                     
                                     subir_foto_github(f1, n1)
@@ -517,7 +517,7 @@ else:
                                         * [Foto Unidad Limpia]({base_url}{n2})
                                         * [Foto Unidad Cargada]({base_url}{n3})
                                         """, unsafe_allow_html=True)
-                                        time.sleep(6)
+                                        time.sleep(12)
                                         st.rerun()
         else:
             st.info("NO HAY PENDIENTES EN ALMACEN PARA SALIR A RUTA")
@@ -549,7 +549,7 @@ else:
             if st.button("FINALIZAR ENTREGA", use_container_width=True):
                 if f_ent:
                     with st.spinner("GUARDANDO EVIDENCIA FINAL..."):
-                        n_f = f"ENTREGA_{id_p}_FINAL.png"
+                        n_f = f"EVIDENCIA_DE_ENTREGA_{id_p}_{datetime.now().strftime('%d%m%y')}.png"
                         base_url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/evidencias/"
                         subir_foto_github(f_ent, n_f)
                         
