@@ -386,7 +386,7 @@ else:
         h1 { font-size: 1.4rem; } /* Tamaño del título principal */
         
         h3 { 
-            font-size: 1.2rem; /* <--- CAMBIA ESTE VALOR (estaba en 0.95rem) */
+            font-size: 0.60rem; /* <--- CAMBIA ESTE VALOR (estaba en 0.95rem) */
             margin-top: 30px; 
             border-bottom: 1px solid #1A2226; 
             padding-bottom: 5px; 
