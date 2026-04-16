@@ -362,54 +362,64 @@ else:
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "locales.csv"
     
-    # --- CONFIGURACIÓN DE PÁGINA ---
     st.set_page_config(page_title="NEXION SMART LOGISTICS", layout="wide")
     
-    # --- ESTILO CORPORATIVO JYPESA (ESTILO NEXION TOTAL) ---
+    # --- ESTILO NEXION (FUERZA BRUTA TOTAL) ---
     st.markdown("""
         <style>
-        /* Fondo principal onyx profundo */
+        /* 1. Fondo y Base */
         .main { background-color: #0B1114; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; }
         
-        /* Header con Logo y Título */
+        /* 2. Header */
         .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
         .header-logo { width: 180px; margin-right: 20px; }
         h1 { color: #FFFFFF; font-size: 1.4rem; letter-spacing: 1px; margin: 0; }
-        
-        /* Encabezados de sección discretos */
         h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid #1A2226; }
         
-        /* FUERZA BRUTA: BOTONES A TODO LO ANCHO, CENTRADOS Y SIN MARGENES LATERALES */
-        div.stButton > button:first-child {
+        /* 3. EL HACK DEFINITIVO PARA BOTONES ANCHOS */
+        /* Forzamos al contenedor del botón a ocupar todo el espacio */
+        div.stButton {
+            width: 100%;
+            display: block;
+        }
+        
+        /* Forzamos al botón mismo */
+        div.stButton > button {
+            width: 100% !important;
             background-color: #00FFAA !important;
             color: #0B1114 !important;
             font-weight: bold !important;
             border-radius: 4px !important;
             border: none !important;
-            height: 4em !important;
-            width: 100% !important;
+            height: 4.5em !important;
             text-transform: uppercase !important;
-            font-size: 1rem !important;
+            font-size: 1.1rem !important;
             letter-spacing: 2px !important;
-            display: block !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-        }
-        
-        .stButton > button:hover {
-            background-color: #00D18B !important;
-            color: #FFFFFF !important;
+            margin-top: 15px !important;
+            margin-bottom: 15px !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
         }
     
-        /* Estilos de Inputs y Selectores */
+        div.stButton > button:hover {
+            background-color: #00D18B !important;
+            color: #FFFFFF !important;
+            box-shadow: 0px 0px 15px rgba(0, 255, 170, 0.4);
+        }
+    
+        /* 4. Estilos de Inputs y Selectores */
         .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
         .stAlert { background-color: #1A2226; color: #00FFAA; border: 1px solid #00FFAA; border-radius: 4px; }
         hr { border: 0.5px solid #1A2226; }
+        
+        /* Quitar padding extra de Streamlit */
+        .block-container { padding-top: 2rem; padding-bottom: 2rem; }
         </style>
         """, unsafe_allow_html=True)
     
-    # --- FUNCIONES CORE ---
+    # --- FUNCIONES ---
     def descargar_matriz():
         timestamp = int(time.time())
         url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}?t={timestamp}"
@@ -448,7 +458,7 @@ else:
     else:
         st.title("NEXION SMART LOGISTICS")
     
-    # --- LÓGICA DE DATOS ---
+    # --- DATA ---
     df, sha = descargar_matriz()
     
     if df is not None:
@@ -458,67 +468,61 @@ else:
                     return fila[nombre]
             return "N/D"
     
-        # --- SECCIÓN 1: CARGA ---
+        # --- CARGA ---
         st.markdown("<h3>1. SALIDA DE ALMACEN (CARGA)</h3>", unsafe_allow_html=True)
+        col_trigger = next((c for c in ['TRIGGER', 'ESTADO'] if c in df.columns), 'TRIGGER')
+        col_pedido = next((c for c in ['NÚMERO DE PEDIDO', 'FOLIO', 'PEDIDO'] if c in df.columns), 'NÚMERO DE PEDIDO')
         
-        col_trigger = next((c for c in ['TRIGGER', 'ESTADO', 'STATUS'] if c in df.columns), 'TRIGGER')
-        col_pedido = next((c for c in ['NÚMERO DE PEDIDO', 'FOLIO', 'PEDIDO', 'NÚMERO_PEDIDO'] if c in df.columns), 'NÚMERO DE PEDIDO')
-        
-        if col_trigger in df.columns:
-            disponibles = df[~df[col_trigger].isin(['EN RUTA', 'ENTREGADO'])]
-            if not disponibles.empty:
-                pedidos_sel = st.multiselect("SELECCIONAR FOLIOS:", options=disponibles[col_pedido].unique(), key="ms_carga")
-                if pedidos_sel:
-                    ref_k = str(pedidos_sel[0])
-                    f1 = st.camera_input("FOTO 1: PRODUCTO", key=f"c1_{ref_k}")
-                    if f1:
-                        f2 = st.camera_input("FOTO 2: UNIDAD", key=f"c2_{ref_k}")
-                        if f2:
-                            f3 = st.camera_input("FOTO 3: ESTIBA", key=f"c3_{ref_k}")
-                            if f3:
-                                if st.button("CONFIRMAR SALIDA DE UNIDAD"):
-                                    with st.spinner("PROCESANDO..."):
-                                        ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
-                                        for p in pedidos_sel:
-                                            idx = df[df[col_pedido] == str(p)].index
-                                            df.loc[idx, col_trigger] = 'EN RUTA'
-                                            df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
-                                        if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
-                                            st.rerun()
-            else:
-                st.info("NO HAY PENDIENTES EN ALMACEN")
+        disponibles = df[~df[col_trigger].isin(['EN RUTA', 'ENTREGADO'])]
+        if not disponibles.empty:
+            pedidos_sel = st.multiselect("SELECCIONAR FOLIOS:", options=disponibles[col_pedido].unique(), key="ms_carga")
+            if pedidos_sel:
+                ref_k = str(pedidos_sel[0])
+                f1 = st.camera_input("FOTO 1: PRODUCTO", key=f"c1_{ref_k}")
+                if f1:
+                    f2 = st.camera_input("FOTO 2: UNIDAD", key=f"c2_{ref_k}")
+                    if f2:
+                        f3 = st.camera_input("FOTO 3: ESTIBA", key=f"c3_{ref_k}")
+                        if f3:
+                            # BOTÓN ANCHO
+                            if st.button("CONFIRMAR SALIDA DE UNIDAD", key="btn_confirmar_carga"):
+                                with st.spinner("PROCESANDO..."):
+                                    ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
+                                    for p in pedidos_sel:
+                                        idx = df[df[col_pedido] == str(p)].index
+                                        df.loc[idx, col_trigger] = 'EN RUTA'
+                                        df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
+                                    if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
+                                        st.rerun()
+        else:
+            st.info("NO HAY PENDIENTES EN ALMACEN")
     
         st.markdown("<br><hr>", unsafe_allow_html=True)
     
-        # --- SECCIÓN 2: ENTREGA ---
+        # --- ENTREGA ---
         st.markdown("<h3>2. ENTREGA EN DESTINO</h3>", unsafe_allow_html=True)
         en_ruta = df[df[col_trigger] == 'EN RUTA']
         
         if not en_ruta.empty:
-            col_cliente = ['NOMBRE DEL CLIENTE', 'CLIENTE', 'NOMBRE_CLIENTE']
-            opciones = en_ruta.apply(lambda x: f"{x[col_pedido]} | {obtener_valor(x, col_cliente)}", axis=1)
-            
+            opciones = en_ruta.apply(lambda x: f"{x[col_pedido]} | {obtener_valor(x, ['NOMBRE DEL CLIENTE', 'CLIENTE'])}", axis=1)
             sel = st.selectbox("PEDIDO A ENTREGAR:", opciones)
             id_p = sel.split(" | ")[0].strip()
             dat = en_ruta[en_ruta[col_pedido] == id_p].iloc[0]
             
-            val_destino = obtener_valor(dat, ['DESTINO', 'HOTEL', 'LUGAR'])
-            val_domicilio = obtener_valor(dat, ['DOMICILIO', 'DIRECCION', 'DIRECCIÓN', 'UBICACIÓN'])
-            
             st.markdown(f"""
                 <div style="background-color: #1A2226; padding: 15px; border-radius: 4px; border-left: 4px solid #00FFAA; margin-bottom: 20px;">
                     <p style="margin:0; font-size: 0.7rem; color: #00FFAA; font-weight: bold;">DESTINO:</p>
-                    <p style="margin:0; font-size: 1rem; font-weight: bold;">{val_destino}</p>
+                    <p style="margin:0; font-size: 1rem; font-weight: bold;">{obtener_valor(dat, ['DESTINO', 'HOTEL'])}</p>
                     <p style="margin:10px 0 0 0; font-size: 0.7rem; color: #00FFAA; font-weight: bold;">DOMICILIO:</p>
-                    <p style="margin:0; font-size: 0.85rem;">{val_domicilio}</p>
+                    <p style="margin:0; font-size: 0.85rem;">{obtener_valor(dat, ['DOMICILIO', 'DIRECCION'])}</p>
                 </div>
             """, unsafe_allow_html=True)
             
             f_ent = st.camera_input("EVIDENCIA FINAL", key=f"ce_{id_p}")
             obs = st.text_input("OBSERVACIONES:", key=f"obs_{id_p}")
     
-            # BOTÓN DE PANTALLA COMPLETA CORREGIDO
-            if st.button("FINALIZAR ENTREGA"):
+            # BOTÓN ANCHO
+            if st.button("FINALIZAR ENTREGA", key="btn_finalizar_entrega"):
                 if f_ent:
                     with st.spinner("GUARDANDO..."):
                         ahora_e = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
