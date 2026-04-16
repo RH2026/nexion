@@ -347,29 +347,25 @@ else:
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "locales.csv"
     
-    # --- ESTILO NEXION CORREGIDO (LÍNEAS SUTILES Y LOGO 180PX) ---
+    # --- ESTILO NEXION FINAL (LÍNEAS ACERO NÍTIDAS) ---
     st.markdown("""
         <style>
-        /* 1. Fondo Onix y Fuente Global Monospace */
         .main { 
             background-color: #0B1114; 
             color: #FFFFFF; 
             font-family: 'Courier New', monospace !important; 
         }
 
-        /* 2. LOGO Y HEADER (Logo a 180px y línea sutil) */
+        /* 1. Línea del Header */
         .header-container { 
             display: flex; 
             align-items: center; 
             margin-bottom: 15px; 
-            border-bottom: 1px solid #2A353B; /* Línea más clara y elegante */
+            border-bottom: 1px solid #3A444B !important; /* Color acero más visible */
             padding-bottom: 10px; 
         }
         
-        .header-logo { 
-            width: 180px; 
-            margin-right: 15px; 
-        }
+        .header-logo { width: 180px; margin-right: 15px; }
 
         h1 { 
             font-family: 'Courier New', monospace !important; 
@@ -379,7 +375,7 @@ else:
             color: #FFFFFF;
         }
 
-        /* 3. TÍTULOS DE SECCIÓN (Puntos 1 y 2 con línea sutil) */
+        /* 2. Líneas de los Títulos de Sección (Puntos 1 y 2) */
         h3 { 
             font-family: 'Courier New', monospace !important; 
             font-size: 0.85rem !important; 
@@ -387,24 +383,25 @@ else:
             letter-spacing: 1.5px; 
             text-transform: uppercase;
             margin-top: 25px; 
-            border-bottom: 1px solid #2A353B; /* Línea más clara */
+            border-bottom: 1px solid #3A444B !important; /* Línea acero nítida */
             padding-bottom: 8px; 
         }
 
-        /* 4. NOTIFICACIONES */
+        /* 3. Líneas Divisorias Generales (HR) */
+        hr { 
+            border: none;
+            border-top: 1px solid #3A444B !important; /* Fuera esa línea negra fea */
+            margin: 25px 0;
+            opacity: 1; /* Asegura que no se desvanezca */
+        }
+
+        /* 4. Notificaciones, Botones e Inputs (Se mantienen limpios) */
         div[data-testid="stNotification"] {
             background-color: #161C20 !important;
             border: none !important;
             border-radius: 4px;
         }
         
-        div[data-testid="stNotification"] div {
-            font-family: 'Courier New', monospace !important;
-            color: #00FFAA !important;
-            font-size: 0.75rem !important;
-        }
-
-        /* 5. BOTONES */
         div.stButton > button {
             width: 100% !important;
             background-color: #00FFAA !important;
@@ -412,23 +409,8 @@ else:
             font-family: 'Courier New', monospace !important;
             font-weight: bold !important;
             height: 2.8em !important; 
-            font-size: 0.9rem !important;
-            letter-spacing: 2px !important;
             border: none !important;
-        }
-
-        /* 6. LÍNEAS DIVISORIAS (HR) */
-        hr { 
-            border: none;
-            border-top: 1px solid #2A353B !important; /* Ajuste de color aquí */
-            margin: 20px 0;
-        }
-
-        /* 7. INPUTS Y MARGENES */
-        .stSelectbox label, .stMultiSelect label, .stTextInput label { 
-            font-size: 0.7rem !important; 
-            letter-spacing: 1px;
-            font-family: 'Courier New', monospace !important;
+            letter-spacing: 2px;
         }
 
         .block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; }
