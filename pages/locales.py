@@ -159,38 +159,33 @@ header[data-testid="stHeader"] {{
     font-family: 'Inter', sans-serif; 
 }}
 
-/* 3. TÍTULOS Y OPERATIONAL QUERY */
-h3, .op-query-text {{ 
-    font-size: 11px !important; 
-    letter-spacing: 8px !important; 
-    text-align: center !important; 
-    margin-top: 8px !important; 
-    margin-bottom: 18px !important; 
-    color: {vars_css['sub']} !important; 
-    display: block !important; 
-    width: 100% !important; 
-    text-transform: uppercase;
-}}
-
-/* 4. FUERZA BRUTA NEXION: BOTONES AL 100% */
-[data-testid="stVerticalBlock"] > div {{
+/* 3. EL HACK DEFINITIVO PARA BOTONES ANCHOS (DOBLE LLAVE) */
+/* Rompemos el contenedor que encierra al botón */
+[data-testid="stVerticalBlockBorderWrapper"] > div > div {{
     width: 100% !important;
 }}
 
-.stButton {{
-    width: 100% !important;
-}}
-
+/* Forzamos al botón mismo */
 .stButton > button {{
     width: 100% !important;
     background-color: #00FFAA !important;
     color: #0B1114 !important;
     font-weight: 800 !important;
-    text-transform: uppercase !important;
-    height: 50px !important;
+    border-radius: 4px !important;
     border: none !important;
-    display: block !important;
+    height: 3.5em !important;
+    text-transform: uppercase !important;
+    font-size: 1rem !important;
+    letter-spacing: 2px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
     margin: 10px 0 !important;
+}}
+
+.stButton > button:hover {{
+    background-color: #00D18B !important;
+    color: #FFFFFF !important;
 }}
 
 /* 5. INPUTS Y SELECTORES (Look minimalista) */
