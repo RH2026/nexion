@@ -793,30 +793,33 @@ button[data-testid="stBaseButton-secondary"] p {{
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
 def login_screen():
-    # Ajustamos las proporciones para la columna central
+    # --- HACK PARA CENTRADO ABSOLUTO ---
+    # Leemos la imagen y la convertimos a base64 para poder usarla en HTML
+    with open("n2.png", "rb") as f:
+        data = f.read()
+        encoded = base64.b64encode(data).decode()
+
     _, col, _ = st.columns([2, 2, 2]) 
     
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         
-        # --- SUSTITUCIÓN DEL TEXTO POR EL LOGO ---
-        # Usamos un contenedor para asegurar que el logo esté centrado dentro de la columna
-        col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 2, 1])
-        with col_logo_2:
-            st.image("n2.png", width=160)
+        # Este es el contenedor mágico: usamos Flexbox para centrar
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                <img src="data:image/png;base64,{encoded}" width="160">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         
-        # Espacio inferior para que el logo no pegue con el formulario
-        st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
-        # -----------------------------------------
-        
-        # Creamos el formulario. El 'clear_on_submit' puede ser False.
         with st.form("login_form", clear_on_submit=False):
             user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
             pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
             
             st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
             
-            # Cambiamos st.button por st.form_submit_button
             submit_button = st.form_submit_button("VERIFY IDENTITY", use_container_width=True)
             
             if submit_button:
