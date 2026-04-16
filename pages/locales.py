@@ -354,33 +354,6 @@ div.stButton > button:hover {{
 }}
 
 
-/* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
-
-* El contenedor de la burbuja */
-div[data-baseweb="tag"] {{
-    background-color: #718096 !important;
-    border-radius: 4px !important;
-    height: 22px !important;
-    margin: 2px !important;
-}}
-
-/* El texto dentro de la burbuja (AQUÍ CAMBIA EL TAMAÑO) */
-div[data-baseweb="tag"] span {{
-    color: #ffffff !important;
-    font-size: 14px !important; /* <--- Ajusta este número a tu gusto */
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-}}
-
-/* El icono de cerrar (X) */
-div[data-baseweb="tag"] svg {{
-    fill: #ffffff !important;
-    height: 12px !important;
-    width: 12px !important;
-}}
-
-
-
 /* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
 
 div[data-baseweb="layer"] div[data-baseweb="popover"] > div {{
