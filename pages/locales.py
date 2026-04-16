@@ -362,17 +362,24 @@ else:
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "locales.csv"
     
+    # --- CONFIGURACIÓN DE PÁGINA ---
     st.set_page_config(page_title="NEXION SMART LOGISTICS", layout="wide")
     
-    # --- ESTILO CORPORATIVO JYPESA ---
+    # --- ESTILO CORPORATIVO JYPESA (ESTILO NEXION) ---
     st.markdown("""
         <style>
+        /* Fondo principal onyx profundo */
         .main { background-color: #0B1114; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Header con Logo y Título */
         .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
         .header-logo { width: 180px; margin-right: 20px; }
         h1 { color: #FFFFFF; font-size: 1.4rem; letter-spacing: 1px; margin: 0; }
+        
+        /* Encabezados de sección discretos */
         h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid #1A2226; }
         
+        /* FUERZA BRUTA: BOTONES A TODO LO ANCHO Y CENTRADOS */
         .stButton>button { 
             background-color: #00FFAA; 
             color: #0B1114; 
@@ -380,7 +387,7 @@ else:
             border-radius: 4px; 
             border: none; 
             height: 4em; 
-            width: 100%; 
+            width: 100% !important; 
             text-transform: uppercase;
             display: flex;
             justify-content: center;
@@ -388,9 +395,11 @@ else:
             text-align: center;
             font-size: 1rem;
             letter-spacing: 2px;
+            margin: 10px 0px;
         }
         .stButton>button:hover { background-color: #00D18B; color: #FFFFFF; }
         
+        /* Estilos de Inputs y Selectores */
         .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
         .stAlert { background-color: #1A2226; color: #00FFAA; border: 1px solid #00FFAA; border-radius: 4px; }
@@ -398,7 +407,7 @@ else:
         </style>
         """, unsafe_allow_html=True)
     
-    # --- FUNCIONES ---
+    # --- FUNCIONES CORE ---
     def descargar_matriz():
         timestamp = int(time.time())
         url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}?t={timestamp}"
@@ -408,7 +417,6 @@ else:
             datos = response.json()
             content = base64.b64decode(datos['content']).decode('utf-8')
             df = pd.read_csv(StringIO(content))
-            # Limpieza inicial de columnas
             df.columns = df.columns.str.upper().str.strip()
             for col in df.columns:
                 df[col] = df[col].astype(str).str.strip().replace(['nan', 'None', 'NaN', 'null'], '')
@@ -442,7 +450,6 @@ else:
     df, sha = descargar_matriz()
     
     if df is not None:
-        # --- MAPEADOR DE COLUMNAS PARA EVITAR KEYERROR ---
         def obtener_valor(fila, posibles_nombres):
             for nombre in posibles_nombres:
                 if nombre in fila.index:
@@ -475,6 +482,7 @@ else:
                                             df.loc[idx, col_trigger] = 'EN RUTA'
                                             df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
                                         if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
+                                            st.success("✅ RUTA INICIADA")
                                             st.rerun()
             else:
                 st.info("NO HAY PENDIENTES EN ALMACEN")
@@ -486,7 +494,6 @@ else:
         en_ruta = df[df[col_trigger] == 'EN RUTA']
         
         if not en_ruta.empty:
-            # Nombres posibles para cliente
             col_cliente = ['NOMBRE DEL CLIENTE', 'CLIENTE', 'NOMBRE_CLIENTE']
             opciones = en_ruta.apply(lambda x: f"{x[col_pedido]} | {obtener_valor(x, col_cliente)}", axis=1)
             
@@ -494,7 +501,6 @@ else:
             id_p = sel.split(" | ")[0].strip()
             dat = en_ruta[en_ruta[col_pedido] == id_p].iloc[0]
             
-            # BUSQUEDA SEGURA DE DESTINO Y DOMICILIO
             val_destino = obtener_valor(dat, ['DESTINO', 'HOTEL', 'LUGAR'])
             val_domicilio = obtener_valor(dat, ['DOMICILIO', 'DIRECCION', 'DIRECCIÓN', 'UBICACIÓN'])
             
