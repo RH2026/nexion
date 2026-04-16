@@ -159,33 +159,25 @@ header[data-testid="stHeader"] {{
     font-family: 'Inter', sans-serif; 
 }}
 
-/* 3. EL HACK DEFINITIVO PARA BOTONES ANCHOS (DOBLE LLAVE) */
-/* Rompemos el contenedor que encierra al botón */
-[data-testid="stVerticalBlockBorderWrapper"] > div > div {{
+/* 4. FUERZA BRUTA: BOTONES AL 100% ESTILO NEXION */
+[data-testid="stVerticalBlock"] > div {{
     width: 100% !important;
 }}
 
-/* Forzamos al botón mismo */
+.stButton {{
+    width: 100% !important;
+}}
+
 .stButton > button {{
     width: 100% !important;
     background-color: #00FFAA !important;
     color: #0B1114 !important;
     font-weight: 800 !important;
-    border-radius: 4px !important;
-    border: none !important;
-    height: 3.5em !important;
     text-transform: uppercase !important;
-    font-size: 1rem !important;
-    letter-spacing: 2px !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
+    height: 50px !important;
+    border: none !important;
+    display: block !important;
     margin: 10px 0 !important;
-}}
-
-.stButton > button:hover {{
-    background-color: #00D18B !important;
-    color: #FFFFFF !important;
 }}
 
 /* 5. INPUTS Y SELECTORES (Look minimalista) */
