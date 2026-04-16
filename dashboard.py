@@ -808,15 +808,15 @@ def login_screen():
         st.markdown(
             f"""
             <div style="display: flex; justify-content: center; margin-bottom: 30px;">
-                <img src="data:image/png;base64,{encoded}" width="160">
+                <img src="data:image/png;base64,{encoded}" width="180">
             </div>
             """,
             unsafe_allow_html=True
         )
         
         with st.form("login_form", clear_on_submit=False):
-            user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
-            pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
+            user_input = st.text_input("USUARIO", placeholder="Introduce tu usuario")
+            pass_input = st.text_input("CONRASEÑA", type="password", placeholder="••••••••")
             
             st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
             
