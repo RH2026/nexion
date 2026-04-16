@@ -349,58 +349,92 @@ else:
     
     st.set_page_config(page_title="NEXION SMART LOGISTICS", layout="wide")
     
-    # --- ESTILO NEXION (FUERZA BRUTA TOTAL) ---
+    # --- ESTILO NEXION ACTUALIZADO (MODO TÉCNICO) ---
     st.markdown("""
         <style>
-        /* 1. Fondo y Base */
-        .main { background-color: #0B1114; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; }
-        
-        /* 2. Header */
-        .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
-        .header-logo { width: 180px; margin-right: 20px; }
-        h1 { color: #FFFFFF; font-size: 1.4rem; letter-spacing: 1px; margin: 0; }
-        h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid #1A2226; }
-        
-        /* 3. EL HACK DEFINITIVO PARA BOTONES ANCHOS */
-        /* Forzamos al contenedor del botón a ocupar todo el espacio */
-        div.stButton {
-            width: 100%;
-            display: block;
+        /* 1. Fondo Onix y Fuente Global Monospace */
+        .main { 
+            background-color: #0B1114; 
+            color: #FFFFFF; 
+            font-family: 'Courier New', monospace !important; 
+        }
+
+        /* 2. Quitar bordes y cambiar fondo de st.info / st.error (Alertas) */
+        div[data-testid="stNotification"] {
+            background-color: #161C20 !important;
+            border: none !important;
+            color: #00FFAA !important;
+            border-radius: 4px;
         }
         
-        /* Forzamos al botón mismo */
+        /* Forzar fuente en las alertas */
+        div[data-testid="stNotification"] div {
+            font-family: 'Courier New', monospace !important;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        /* 3. Header y Títulos */
+        .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
+        .header-logo { width: 180px; margin-right: 20px; }
+        h1, h3 { 
+            font-family: 'Courier New', monospace !important; 
+            color: #FFFFFF; 
+            letter-spacing: 2px; 
+            text-transform: uppercase;
+        }
+        h1 { font-size: 1.4rem; }
+        h3 { font-size: 0.95rem; margin-top: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 5px; }
+
+        /* 4. Botones Estilo Nexion (Sin bordes, alto impacto) */
         div.stButton > button {
             width: 100% !important;
             background-color: #00FFAA !important;
             color: #0B1114 !important;
+            font-family: 'Courier New', monospace !important;
             font-weight: bold !important;
             border-radius: 4px !important;
             border: none !important;
-            height: 1.5em !important;
+            height: 3.5em !important;
             text-transform: uppercase !important;
-            font-size: 1.1rem !important;
-            letter-spacing: 2px !important;
+            font-size: 1rem !important;
+            letter-spacing: 3px !important;
             margin-top: 15px !important;
-            margin-bottom: 15px !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
         }
-    
+
         div.stButton > button:hover {
             background-color: #00D18B !important;
             color: #FFFFFF !important;
-            box-shadow: 0px 0px 15px rgba(0, 255, 170, 0.4);
+            box-shadow: 0px 0px 20px rgba(0, 255, 170, 0.2);
         }
-    
-        /* 4. Estilos de Inputs y Selectores */
-        .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
-        .stAlert { background-color: #1A2226; color: #00FFAA; border: 1px solid #00FFAA; border-radius: 4px; }
-        hr { border: 0.5px solid #1A2226; }
+
+        /* 5. Inputs y Selectores */
+        .stSelectbox label, .stMultiSelect label, .stTextInput label { 
+            color: #FFFFFF !important; 
+            font-family: 'Courier New', monospace !important;
+            font-size: 0.75rem; 
+            letter-spacing: 1px;
+        }
         
-        /* Quitar padding extra de Streamlit */
-        .block-container { padding-top: 2rem; padding-bottom: 2rem; }
+        div[data-baseweb="select"], .stTextInput>div>div>input { 
+            background-color: #161C20 !important; 
+            border: 1px solid #1A2226 !important; 
+            color: white !important;
+            font-family: 'Courier New', monospace !important;
+        }
+
+        /* 6. Cuadro de Detalle de Destino (Entrega) */
+        .destino-card {
+            background-color: #161C20 !important;
+            padding: 20px;
+            border-radius: 4px;
+            border: none !important;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace !important;
+        }
+
+        hr { border: 0.5px solid #1A2226; }
+        .block-container { padding-top: 2rem; padding-bottom: 5rem; }
         </style>
         """, unsafe_allow_html=True)
     
@@ -440,7 +474,7 @@ else:
     # --- HEADER ---
     logo_b64 = get_base64_logo('n2.png')
     if logo_b64:
-        st.markdown(f'<div class="header-container"><img src="data:image/png;base64,{logo_b64}" class="header-logo"><h1>NEXION SMART LOGISTICS</h1></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="header-container"><img src="data:image/png;base64,{logo_b64}" class="header-logo"><h1></h1></div>', unsafe_allow_html=True)
     else:
         st.title("NEXION SMART LOGISTICS")
     
@@ -466,9 +500,9 @@ else:
                 ref_k = str(pedidos_sel[0])
                 f1 = st.camera_input("FOTO 1: PRODUCTO", key=f"c1_{ref_k}")
                 if f1:
-                    f2 = st.camera_input("FOTO 2: UNIDAD", key=f"c2_{ref_k}")
+                    f2 = st.camera_input("FOTO 2: UNIDAD LIMPIA", key=f"c2_{ref_k}")
                     if f2:
-                        f3 = st.camera_input("FOTO 3: ESTIBA", key=f"c3_{ref_k}")
+                        f3 = st.camera_input("FOTO 3: UNIDAD CARGADA", key=f"c3_{ref_k}")
                         if f3:
                             # BOTÓN ANCHO
                             if st.button("CONFIRMAR SALIDA DE UNIDAD", use_container_width=True):
@@ -481,7 +515,7 @@ else:
                                     if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
                                         st.rerun()
         else:
-            st.info("NO HAY PENDIENTES EN ALMACEN")
+            st.info("NO HAY PENDIENTES EN ALMACEN PARA SALIR A RUTA")
     
         st.markdown("<br><hr>", unsafe_allow_html=True)
     
