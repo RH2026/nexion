@@ -141,6 +141,23 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+/* 1. ELIMINAR BARRA SUPERIOR (GITHUB, FORK, MENU) Y AJUSTAR ESPACIO */
+header[data-testid="stHeader"] {{
+    visibility: hidden;
+    height: 0% !important;
+}}
+
+.block-container {{
+    padding-top: 1rem !important;
+    padding-bottom: 5rem !important;
+}}
+
+/* 2. CONFIGURACIÓN DE FONDO Y TEXTO */
+.main {{ 
+    background-color: {vars_css['bg']}; 
+    color: {vars_css['text']}; 
+    font-family: 'Inter', sans-serif; 
+}}
 
 /* 3. TÍTULOS Y OPERATIONAL QUERY */
 h3, .op-query-text {{ 
@@ -152,6 +169,7 @@ h3, .op-query-text {{
     color: {vars_css['sub']} !important; 
     display: block !important; 
     width: 100% !important; 
+    text-transform: uppercase;
 }}
 
 /* 4. BOTONES SLIM */
@@ -174,6 +192,15 @@ div.stButton > button:hover {{
     background-color: #00A3A3 !important; 
     color: #ffffff !important; 
     border-color: #00A3A3 !important; 
+    box-shadow: 0 0 10px rgba(0, 163, 163, 0.3);
+}}
+
+/* 5. INPUTS Y SELECTORES (Look minimalista) */
+.stTextInput>div>div>input, div[data-baseweb="select"] {{
+    background-color: {vars_css['card']} !important;
+    color: white !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 2px !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -190,8 +217,6 @@ div.stButton > button:hover {{
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
-    animation: none !important; 
-    transform: none !important; 
 }}
 
 </style>
