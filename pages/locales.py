@@ -367,7 +367,7 @@ else:
         }
         
         .header-logo { 
-            width: 120px; /* Reducido de 180px a 120px para que no domine la pantalla */
+            width: 160px; /* Reducido de 180px a 120px para que no domine la pantalla */
             margin-right: 15px; 
         }
 
