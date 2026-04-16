@@ -404,57 +404,7 @@ else:
         </style>
         """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <style>
-    
-    /* CONTENEDOR GLOBAL */
-    .block-container {
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-    }
-    
-    /* BOTÓN BASE */
-    div.stButton {
-        width: 100% !important;
-    }
-    
-    /* BOTÓN REAL */
-    div.stButton > button {
-        width: 100% !important;
-        display: block !important;
-        height: 60px !important;
-        font-size: 1.1rem !important;
-        font-weight: 800 !important;
-        border-radius: 6px !important;
-        background-color: #00FFAA !important;
-        color: #0B1114 !important;
-        border: none !important;
-    }
-    
-    /* HOVER */
-    div.stButton > button:hover {
-        background-color: #00D18B !important;
-        color: white !important;
-    }
-    
-    /* FORM BUTTON (clave para login) */
-    div[data-testid="stForm"] div.stButton > button {
-        width: 100% !important;
-    }
-    
-    /* MULTISELECT Y COLUMNAS NO ROMPAN EL ANCHO */
-    div[data-testid="column"] {
-        width: 100% !important;
-    }
-    
-    /* FORZAR A QUE TODO BLOQUE USE ANCHO COMPLETO */
-    [data-testid="stVerticalBlock"] {
-        width: 100% !important;
-    }
-    
-    </style>
-    """, unsafe_allow_html=True)
-    
+       
     # --- FUNCIONES ---
     def descargar_matriz():
         timestamp = int(time.time())
