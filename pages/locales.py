@@ -442,6 +442,16 @@ else:
         payload = {"message": mensaje, "content": encoded, "sha": sha}
         response = requests.put(url, headers=headers, json=payload)
         return response.status_code == 200
+
+    def subir_foto_github(archivo_foto, nombre_archivo, carpeta="evidencias"):
+        """Sube la imagen capturada a GitHub en Base64."""
+        url = f"https://api.github.com/repos/{REPO_NAME}/contents/{carpeta}/{nombre_archivo}"
+        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+        contenido_binario = archivo_foto.getvalue()
+        encoded = base64.b64encode(contenido_binario).decode('utf-8')
+        payload = {"message": f"Evidencia: {nombre_archivo}", "content": encoded}
+        response = requests.put(url, headers=headers, json=payload)
+        return response.status_code in [200, 201]
     
     def get_base64_logo(file):
         try:
@@ -483,14 +493,21 @@ else:
                     if f2:
                         f3 = st.camera_input("FOTO 3: UNIDAD CARGADA", key=f"c3_{ref_k}")
                         if f3:
-                            # BOTÓN ANCHO
                             if st.button("CONFIRMAR SALIDA DE UNIDAD", use_container_width=True):
-                                with st.spinner("PROCESANDO..."):
+                                with st.spinner("SUBIENDO EVIDENCIAS Y ACTUALIZANDO..."):
+                                    # 1. Subir Fotos
+                                    subir_foto_github(f1, f"CARGA_{ref_k}_PROD.png")
+                                    subir_foto_github(f2, f"CARGA_{ref_k}_LIMPIA.png")
+                                    subir_foto_github(f3, f"CARGA_{ref_k}_CARGADA.png")
+                                    
+                                    # 2. Actualizar DataFrame
                                     ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
                                     for p in pedidos_sel:
                                         idx = df[df[col_pedido] == str(p)].index
                                         df.loc[idx, col_trigger] = 'EN RUTA'
                                         df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
+                                    
+                                    # 3. Guardar en GitHub
                                     if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
                                         st.rerun()
         else:
@@ -520,10 +537,13 @@ else:
             f_ent = st.camera_input("EVIDENCIA FINAL", key=f"ce_{id_p}")
             obs = st.text_input("OBSERVACIONES:", key=f"obs_{id_p}")
     
-            # BOTÓN ANCHO
             if st.button("FINALIZAR ENTREGA", use_container_width=True):
                 if f_ent:
-                    with st.spinner("GUARDANDO..."):
+                    with st.spinner("GUARDANDO EVIDENCIA FINAL..."):
+                        # 1. Subir Foto de Entrega
+                        subir_foto_github(f_ent, f"ENTREGA_{id_p}_FINAL.png")
+                        
+                        # 2. Actualizar Datos
                         ahora_e = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         idx_f = df[(df[col_pedido] == id_p) & (df[col_trigger] == 'EN RUTA')].index
                         if not idx_f.empty:
@@ -538,13 +558,3 @@ else:
             st.info("NO HAY PEDIDOS EN RUTA ACTUALMENTE")
     else:
         st.error("ERROR DE CONEXIÓN CON LOCALES.CSV")
-
-
-    # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
-    st.markdown(f"""
-        <div class="footer">
-            NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
-            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
-            <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
-        </div>
-    """, unsafe_allow_html=True)
