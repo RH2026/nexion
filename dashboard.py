@@ -791,13 +791,23 @@ button[data-testid="stBaseButton-secondary"] p {{
 
 
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
+# ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
 def login_screen():
     # Ajustamos las proporciones para la columna central
     _, col, _ = st.columns([2, 2, 2]) 
     
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; margin-bottom: 30px; color: #60A5FA !important; letter-spacing: 5px; font-weight: 500;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
+        
+        # --- SUSTITUCIÓN DEL TEXTO POR EL LOGO ---
+        # Usamos un contenedor para asegurar que el logo esté centrado dentro de la columna
+        col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 2, 1])
+        with col_logo_2:
+            st.image("n2.png", width=160)
+        
+        # Espacio inferior para que el logo no pegue con el formulario
+        st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+        # -----------------------------------------
         
         # Creamos el formulario. El 'clear_on_submit' puede ser False.
         with st.form("login_form", clear_on_submit=False):
