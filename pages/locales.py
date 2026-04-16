@@ -347,51 +347,51 @@ else:
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "locales.csv"
     
-    # --- ESTILO NEXION CORREGIDO (LOGO Y TEXTOS EQUILIBRADOS) ---
+    # --- ESTILO NEXION CORREGIDO (LÍNEAS SUTILES Y LOGO 180PX) ---
     st.markdown("""
         <style>
-        /* 1. Fondo Onix y Fuente Global */
+        /* 1. Fondo Onix y Fuente Global Monospace */
         .main { 
             background-color: #0B1114; 
             color: #FFFFFF; 
             font-family: 'Courier New', monospace !important; 
         }
 
-        /* 2. LOGO Y HEADER (Aquí corregimos el tamaño gigante) */
+        /* 2. LOGO Y HEADER (Logo a 180px y línea sutil) */
         .header-container { 
             display: flex; 
             align-items: center; 
             margin-bottom: 15px; 
-            border-bottom: 1px solid #1A2226; 
+            border-bottom: 1px solid #2A353B; /* Línea más clara y elegante */
             padding-bottom: 10px; 
         }
         
         .header-logo { 
-            width: 160px; /* Reducido de 180px a 120px para que no domine la pantalla */
+            width: 180px; 
             margin-right: 15px; 
         }
 
         h1 { 
             font-family: 'Courier New', monospace !important; 
-            font-size: 1.1rem !important; /* Tamaño equilibrado para el título principal */
+            font-size: 1.1rem !important; 
             letter-spacing: 2px; 
             margin: 0;
             color: #FFFFFF;
         }
 
-        /* 3. TÍTULOS DE SECCIÓN (Los puntos 1 y 2) */
+        /* 3. TÍTULOS DE SECCIÓN (Puntos 1 y 2 con línea sutil) */
         h3 { 
             font-family: 'Courier New', monospace !important; 
-            font-size: 0.85rem !important; /* Tamaño técnico, no estorba a la vista */
+            font-size: 0.85rem !important; 
             color: #FFFFFF; 
             letter-spacing: 1.5px; 
             text-transform: uppercase;
             margin-top: 25px; 
-            border-bottom: 1px solid #1A2226; 
+            border-bottom: 1px solid #2A353B; /* Línea más clara */
             padding-bottom: 8px; 
         }
 
-        /* 4. NOTIFICACIONES (Alertas sin bordes) */
+        /* 4. NOTIFICACIONES */
         div[data-testid="stNotification"] {
             background-color: #161C20 !important;
             border: none !important;
@@ -401,30 +401,37 @@ else:
         div[data-testid="stNotification"] div {
             font-family: 'Courier New', monospace !important;
             color: #00FFAA !important;
-            font-size: 0.75rem !important; /* Texto de alerta más sutil */
+            font-size: 0.75rem !important;
         }
 
-        /* 5. BOTONES (Ajuste de altura para no ser tan toscos) */
+        /* 5. BOTONES */
         div.stButton > button {
             width: 100% !important;
             background-color: #00FFAA !important;
             color: #0B1114 !important;
             font-family: 'Courier New', monospace !important;
             font-weight: bold !important;
-            height: 2.8em !important; /* Más estilizado */
+            height: 2.8em !important; 
             font-size: 0.9rem !important;
             letter-spacing: 2px !important;
             border: none !important;
         }
 
-        /* 6. INPUTS Y MARGENES */
+        /* 6. LÍNEAS DIVISORIAS (HR) */
+        hr { 
+            border: none;
+            border-top: 1px solid #2A353B !important; /* Ajuste de color aquí */
+            margin: 20px 0;
+        }
+
+        /* 7. INPUTS Y MARGENES */
         .stSelectbox label, .stMultiSelect label, .stTextInput label { 
             font-size: 0.7rem !important; 
             letter-spacing: 1px;
+            font-family: 'Courier New', monospace !important;
         }
 
         .block-container { padding-top: 1.5rem !important; padding-bottom: 4rem !important; }
-        hr { border: 0.5px solid #1A2226; }
         </style>
         """, unsafe_allow_html=True)
     
