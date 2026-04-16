@@ -484,40 +484,47 @@ else:
         
         disponibles = df[~df[col_trigger].isin(['EN RUTA', 'ENTREGADO'])]
         if not disponibles.empty:
-            pedidos_sel = st.multiselect("SELECCIONAR FOLIOS:", options=disponibles[col_pedido].unique(), key="ms_carga")
+            pedidos_sel = st.multiselect("SELECCIONAR FOLIOS PARA RUTA:", options=disponibles[col_pedido].unique(), key="ms_carga")
             if pedidos_sel:
-                ref_k = str(pedidos_sel[0])
-                f1 = st.camera_input("FOTO 1: PRODUCTO EN BUEN ESTADO", key=f"c1_{ref_k}")
+                # Generamos un ID de ruta único basado en la fecha y hora
+                ahora_foto = datetime.now()
+                id_ruta = ahora_foto.strftime('RUTA_%d%m%y_%H%M') 
+                
+                # Usamos una clave genérica para la cámara basada en el ID de ruta
+                f1 = st.camera_input("FOTO 1: PRODUCTO EN BUEN ESTADO", key=f"c1_{id_ruta}")
                 if f1:
-                    f2 = st.camera_input("FOTO 2: UNIDAD LIMPIA", key=f"c2_{ref_k}")
+                    f2 = st.camera_input("FOTO 2: UNIDAD LIMPIA", key=f"c2_{id_ruta}")
                     if f2:
-                        f3 = st.camera_input("FOTO 3: UNIDAD CARGADA", key=f"c3_{ref_k}")
+                        f3 = st.camera_input("FOTO 3: UNIDAD CARGADA", key=f"c3_{id_ruta}")
                         if f3:
                             if st.button("CONFIRMAR SALIDA DE UNIDAD", use_container_width=True):
-                                with st.spinner("SUBIENDO EVIDENCIAS Y ACTUALIZANDO..."):
-                                    # Nombres y Links
-                                    n1, n2, n3 = f"CARGA_{ref_k}_PROD.OK.png", f"CARGA_{ref_k}_UNIDAD.LIMPIA.png", f"CARGA_{ref_k}_UNIDAD.CARGADA.png"
+                                with st.spinner("SUBIENDO EVIDENCIAS DE RUTA..."):
+                                    # Nombres basados en la RUTA y FECHA
+                                    n1 = f"{id_ruta}_PROD_OK.png"
+                                    n2 = f"{id_ruta}_UNIDAD_LIMPIA.png"
+                                    n3 = f"{id_ruta}_UNIDAD_CARGADA.png"
+                                    
                                     base_url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/evidencias/"
                                     
                                     subir_foto_github(f1, n1)
                                     subir_foto_github(f2, n2)
                                     subir_foto_github(f3, n3)
                                     
-                                    ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
+                                    ahora_c = ahora_foto.strftime('%Y-%m-%d %H:%M')
                                     for p in pedidos_sel:
                                         idx = df[df[col_pedido] == str(p)].index
                                         df.loc[idx, col_trigger] = 'EN RUTA'
                                         df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
                                     
-                                    if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
-                                        st.success("✅ EVIDENCIAS GUARDADAS")
+                                    if actualizar_github(df, sha, f"Carga de Ruta: {id_ruta}"):
+                                        st.success(f"✅ RUTA REGISTRADA: {id_ruta}")
                                         st.markdown(f"""
-                                        **ACCESO DIRECTO A FOTOS:**
+                                        **ACCESO DIRECTO A EVIDENCIAS DE RUTA:**
                                         * [Foto Producto]({base_url}{n1})
                                         * [Foto Unidad Limpia]({base_url}{n2})
                                         * [Foto Unidad Cargada]({base_url}{n3})
                                         """, unsafe_allow_html=True)
-                                        time.sleep(12)
+                                        time.sleep(10) # Bajé un poco el tiempo, pero suficiente para ver los links
                                         st.rerun()
         else:
             st.info("NO HAY PENDIENTES EN ALMACEN PARA SALIR A RUTA")
