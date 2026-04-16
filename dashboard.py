@@ -816,7 +816,7 @@ def login_screen():
         
         with st.form("login_form", clear_on_submit=False):
             user_input = st.text_input("USUARIO", placeholder="Introduce tu usuario")
-            pass_input = st.text_input("CONRASEÑA", type="password", placeholder="••••••••")
+            pass_input = st.text_input("CONTRASEÑA", type="password", placeholder="••••••••")
             
             st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
             
