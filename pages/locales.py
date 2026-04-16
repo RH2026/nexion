@@ -365,7 +365,7 @@ else:
     # --- CONFIGURACIÓN DE PÁGINA ---
     st.set_page_config(page_title="NEXION SMART LOGISTICS", layout="wide")
     
-    # --- ESTILO CORPORATIVO JYPESA (ESTILO NEXION) ---
+    # --- ESTILO CORPORATIVO JYPESA (ESTILO NEXION TOTAL) ---
     st.markdown("""
         <style>
         /* Fondo principal onyx profundo */
@@ -379,26 +379,28 @@ else:
         /* Encabezados de sección discretos */
         h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid #1A2226; }
         
-        /* FUERZA BRUTA: BOTONES A TODO LO ANCHO Y CENTRADOS */
-        .stButton>button { 
-            background-color: #00FFAA; 
-            color: #0B1114; 
-            font-weight: bold; 
-            border-radius: 4px; 
-            border: none; 
-            height: 4em; 
-            width: 100% !important; 
-            text-transform: uppercase;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-size: 1rem;
-            letter-spacing: 2px;
-            margin: 10px 0px;
+        /* FUERZA BRUTA: BOTONES A TODO LO ANCHO, CENTRADOS Y SIN MARGENES LATERALES */
+        div.stButton > button:first-child {
+            background-color: #00FFAA !important;
+            color: #0B1114 !important;
+            font-weight: bold !important;
+            border-radius: 4px !important;
+            border: none !important;
+            height: 4em !important;
+            width: 100% !important;
+            text-transform: uppercase !important;
+            font-size: 1rem !important;
+            letter-spacing: 2px !important;
+            display: block !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
         }
-        .stButton>button:hover { background-color: #00D18B; color: #FFFFFF; }
         
+        .stButton > button:hover {
+            background-color: #00D18B !important;
+            color: #FFFFFF !important;
+        }
+    
         /* Estilos de Inputs y Selectores */
         .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
@@ -482,7 +484,6 @@ else:
                                             df.loc[idx, col_trigger] = 'EN RUTA'
                                             df.loc[idx, 'FECHA DE ENVÍO'] = ahora_c
                                         if actualizar_github(df, sha, f"Carga: {pedidos_sel}"):
-                                            st.success("✅ RUTA INICIADA")
                                             st.rerun()
             else:
                 st.info("NO HAY PENDIENTES EN ALMACEN")
@@ -516,6 +517,7 @@ else:
             f_ent = st.camera_input("EVIDENCIA FINAL", key=f"ce_{id_p}")
             obs = st.text_input("OBSERVACIONES:", key=f"obs_{id_p}")
     
+            # BOTÓN DE PANTALLA COMPLETA CORREGIDO
             if st.button("FINALIZAR ENTREGA"):
                 if f_ent:
                     with st.spinner("GUARDANDO..."):
