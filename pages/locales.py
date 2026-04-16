@@ -376,7 +376,7 @@ else:
             font-weight: bold !important;
             border-radius: 4px !important;
             border: none !important;
-            height: 2.5em !important;
+            height: 1.5em !important;
             text-transform: uppercase !important;
             font-size: 1.1rem !important;
             letter-spacing: 2px !important;
