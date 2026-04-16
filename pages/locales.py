@@ -521,7 +521,7 @@ else:
                         f3 = st.camera_input("FOTO 3: ESTIBA", key=f"c3_{ref_k}")
                         if f3:
                             # BOTÓN ANCHO
-                            if st.button("CONFIRMAR SALIDA DE UNIDAD", use_container_width=True)
+                            if st.button("CONFIRMAR SALIDA DE UNIDAD", use_container_width=True):
                                 with st.spinner("PROCESANDO..."):
                                     ahora_c = datetime.now().strftime('%Y-%m-%d %H:%M')
                                     for p in pedidos_sel:
@@ -558,7 +558,7 @@ else:
             obs = st.text_input("OBSERVACIONES:", key=f"obs_{id_p}")
     
             # BOTÓN ANCHO
-            if st.button("FINALIZAR ENTREGA", use_container_width=True)
+            if st.button("FINALIZAR ENTREGA", use_container_width=True):
                 if f_ent:
                     with st.spinner("GUARDANDO..."):
                         ahora_e = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
