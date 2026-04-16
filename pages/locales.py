@@ -383,7 +383,7 @@ else:
             letter-spacing: 2px; 
             text-transform: uppercase;
         }
-        h1 { font-size: 1.4rem; } /* Tamaño del título principal */
+        h1 { font-size: 0.60rem; } /* Tamaño del título principal */
         
         h3 { 
             font-size: 0.60rem; /* <--- CAMBIA ESTE VALOR (estaba en 0.95rem) */
