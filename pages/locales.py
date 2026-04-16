@@ -365,40 +365,114 @@ else:
     # --- CONFIGURACIÓN DE PÁGINA ---
     st.set_page_config(page_title="NEXION SMART LOGISTICS", layout="wide")
     
-    # --- ESTILO CORPORATIVO JYPESA ---
-    st.markdown("""
-        <style>
-        .main { background-color: #0B1114; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; }
-        .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1A2226; padding-bottom: 10px; }
-        .header-logo { width: 180px; margin-right: 20px; }
-        h1 { color: #FFFFFF; font-size: 1.4rem; letter-spacing: 1px; margin: 0; }
-        h3 { color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; font-size: 0.95rem; padding-bottom: 5px; margin-top: 20px; border-bottom: 1px solid #1A2226; }
-        
-        /* BOTÓN TOTALMENTE CENTRADO Y ANCHO */
-        .stButton>button { 
-            background-color: #00FFAA; 
-            color: #0B1114; 
-            font-weight: bold; 
-            border-radius: 4px; 
-            border: none; 
-            height: 4em; 
-            width: 100%; 
-            text-transform: uppercase;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-size: 1rem;
-            letter-spacing: 2px;
-        }
-        .stButton>button:hover { background-color: #00D18B; color: #FFFFFF; }
-        
-        .stSelectbox label, .stMultiSelect label, .stTextInput label { color: #FFFFFF !important; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        div[data-baseweb="select"] { background-color: #1A2226; border: 1px solid #333; border-radius: 4px; }
-        .stAlert { background-color: #1A2226; color: #00FFAA; border: 1px solid #00FFAA; border-radius: 4px; }
-        hr { border: 0.5px solid #1A2226; }
-        </style>
-        """, unsafe_allow_html=True)
+    # --- ESTILO CORPORATIVO JYPESA CONSOLIDADO ---
+    st.markdown(f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    
+    /* 1. OCULTAR HEADER Y AJUSTAR ESPACIOS */
+    header[data-testid="stHeader"] {{
+        visibility: hidden;
+        height: 0% !important;
+    }}
+    
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 5rem !important;
+    }}
+    
+    /* 2. FONDO Y TEXTO GENERAL */
+    .main {{ 
+        background-color: #0B1114; 
+        color: #FFFFFF; 
+        font-family: 'Inter', sans-serif; 
+    }}
+    
+    /* 3. TÍTULOS Y SEPARADORES (HR) */
+    h3 {{ 
+        color: #FFFFFF !important; 
+        text-transform: uppercase; 
+        letter-spacing: 5px !important; 
+        font-size: 0.85rem !important; 
+        padding-bottom: 12px; 
+        margin-top: 30px !important; 
+        border-bottom: 1px solid rgba(255,255,255,0.05) !important; /* Línea muy tenue */
+        text-align: center;
+    }}
+    
+    /* Líneas divisorias horizontales suaves */
+    hr {{ 
+        border: 0;
+        border-top: 1px solid rgba(255,255,255,0.05) !important;
+        margin: 25px 0 !important;
+    }}
+    
+    /* 4. BOTÓN ACCIÓN NEXION */
+    .stButton>button {{ 
+        background-color: #00FFAA; 
+        color: #0B1114; 
+        font-weight: 800; 
+        border-radius: 4px; 
+        border: none; 
+        height: 3.5em; 
+        width: 100%; 
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+        transition: all 0.3s ease;
+    }}
+    .stButton>button:hover {{ 
+        background-color: #00D18B; 
+        color: #FFFFFF; 
+        box-shadow: 0 0 15px rgba(0, 255, 170, 0.3);
+    }}
+    
+    /* 5. SELECTORES Y CAJAS DE TEXTO */
+    .stSelectbox label, .stMultiSelect label, .stTextInput label {{ 
+        color: rgba(255,255,255,0.6) !important; 
+        font-size: 0.7rem; 
+        font-weight: bold; 
+        text-transform: uppercase; 
+        letter-spacing: 1px;
+    }}
+    
+    div[data-baseweb="select"], .stTextInput>div>div>input {{ 
+        background-color: #1A2226 !important; 
+        border: 1px solid rgba(255,255,255,0.1) !important; 
+        border-radius: 4px !important; 
+    }}
+    
+    /* 6. REDISEÑO DE ALERTAS (CAJA AZUL/VERDE QUE NO TE GUSTABA) */
+    div[data-testid="stAlert"] {{
+        background-color: #1A2226 !important; /* Color de tus tarjetas */
+        color: #00FFAA !important;           /* Texto en neón */
+        border: 1px solid rgba(0, 255, 170, 0.2) !important; /* Borde neón muy suave */
+        border-radius: 8px !important;
+        padding: 10px !important;
+    }}
+    
+    /* Quitar el icono por defecto de la alerta para que sea más limpio */
+    div[data-testid="stAlert"] svg {{
+        display: none;
+    }}
+    
+    /* 7. FOOTER FIJO */
+    .footer {{ 
+        position: fixed; 
+        bottom: 0 !important; 
+        left: 0 !important; 
+        width: 100% !important; 
+        background-color: #0B1114 !important; 
+        color: #8fa3b0 !important; 
+        text-align: center; 
+        padding: 15px 0px !important; 
+        font-size: 8px; 
+        letter-spacing: 3px; 
+        border-top: 1px solid rgba(255,255,255,0.05) !important; 
+        z-index: 999999;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
     
     # --- FUNCIONES ---
     def descargar_matriz():
