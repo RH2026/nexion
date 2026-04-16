@@ -215,12 +215,12 @@ def login_screen():
     
     with col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; margin-bottom: 30px; color: #60A5FA !important; letter-spacing: 5px; font-weight: 500;'>SYSTEM ACCESS REQUIRED</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; margin-bottom: 30px; color: #60A5FA !important; letter-spacing: 5px; font-weight: 500;'></h3>", unsafe_allow_html=True)
         
         # Creamos el formulario. El 'clear_on_submit' puede ser False.
         with st.form("login_form", clear_on_submit=False):
-            user_input = st.text_input("OPERATOR ID", placeholder="Introduce tu usuario")
-            pass_input = st.text_input("ACCESS KEY", type="password", placeholder="••••••••")
+            user_input = st.text_input("USUARIO", placeholder="Introduce tu usuario")
+            pass_input = st.text_input("PASSWORD", type="password", placeholder="••••••••")
             
             st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
             
