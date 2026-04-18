@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
+import streamlit.components.v1 as components
 
 # Configuración de la página
 st.set_page_config(page_title="Nexion Renderer v3", layout="wide")
 
-# Estilos CSS (Estos sí pueden ir en bloque dentro del tag <style>)
+# Estilos CSS
 st.markdown("""
     <style>
     .stApp { background-color: #121417; }
@@ -22,9 +23,20 @@ st.markdown("""
     .card-value { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; }
     .grid-container { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: 20px; }
     .obs-section { background-color: #262c33; padding: 10px; border-radius: 8px; border: 1px dashed #444; font-size: 0.9rem; }
+    
+    /* Configuración para que la impresión salga impecable */
     @media print {
-        .no-print, .stFileUploader, button { display: none !important; }
-        .render-card { border: 1px solid #000; page-break-inside: avoid; color: black !important; background-color: white !important; }
+        header, footer, .stFileUploader, button, [data-testid="stSidebar"] { display: none !important; }
+        .stApp { background-color: white !important; }
+        .render-card { 
+            border: 1px solid #333 !important; 
+            page-break-inside: avoid; 
+            color: black !important; 
+            background-color: white !important;
+            box-shadow: none !important;
+        }
+        .card-header, .card-value { color: black !important; }
+        .obs-section { background-color: #f9f9f9 !important; border: 1px solid #ccc !important; color: black !important; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -36,23 +48,39 @@ uploaded_file = st.file_uploader("Sube tu archivo de Excel", type=["xlsx"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
     
-    # Columnas de observaciones por si no vienen en el Excel
+    # Columnas de observaciones
     if 'OBSERVACIONES DE ALMACEN' not in df.columns: df['OBSERVACIONES DE ALMACEN'] = ""
     if 'OBSERVACIONES DE EMBARQUES' not in df.columns: df['OBSERVACIONES DE EMBARQUES'] = ""
 
-    # Botón de impresión
-    if st.button("🖨️ Imprimir Reporte"):
-        st.markdown('<script>window.print();</script>', unsafe_allow_html=True)
+    # --- BOTÓN DE IMPRESIÓN CORREGIDO ---
+    # Creamos un pequeño componente que al hacer clic activa el diálogo de impresión del sistema
+    st.write("### Acciones")
+    components.html(
+        """
+        <button onclick="window.parent.print()" style="
+            background-color: #00f2ff; 
+            color: #000; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            font-weight: bold; 
+            cursor: pointer;
+            width: 100%;">
+            🖨️ ABRIR CONFIGURACIÓN DE IMPRESIÓN
+        </button>
+        """,
+        height=60,
+    )
 
-    st.write(f"Mostrando {len(df)} registros")
+    st.write(f"**Registros encontrados:** {len(df)}")
 
     for index, row in df.iterrows():
-        # HTML en una sola línea para evitar errores de renderizado
+        # HTML en una sola línea para evitar errores
         card_html = f'<div class="render-card"><div class="grid-container"><div><div class="card-header">PEDIDO / FACTURA</div><div class="card-value" style="color: #00f2ff;">{row.get("Factura", "N/A")}</div><div style="font-size: 0.8rem; opacity: 0.7;">RECOMENDACIÓN: {row.get("RECOMENDACION", "")}</div></div><div><div class="card-header">CLIENTE / DESTINO</div><div class="card-value" style="font-size: 1.1rem;">{row.get("Nombre_Extran", "N/A")}</div><div style="font-style: italic; font-size: 0.85rem; opacity: 0.8;">{row.get("DESTINO", "N/A")}</div></div><div class="obs-section"><div class="card-header" style="color: #a2ff00;">OBS. ALMACÉN</div><div>{row["OBSERVACIONES DE ALMACEN"]}</div></div><div class="obs-section"><div class="card-header" style="color: #ffaa00;">OBS. EMBARQUES</div><div>{row["OBSERVACIONES DE EMBARQUES"]}</div></div></div></div>'
         
         st.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.info("Sube el archivo para transformar los datos al estilo Nexion.")
+    st.info("Sube el archivo Excel para renderizar.")
 
 
 
