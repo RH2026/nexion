@@ -4,71 +4,17 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Nexion Logistics OS", layout="wide")
 
-# CSS Ajustado: Líneas finas y diseño compacto para impresión
+# CSS para la PANTALLA (Modo Dark Neon)
 st.markdown("""
     <style>
-    /* --- VISTA PANTALLA (TU LOOK DARK NEON) --- */
     .stApp { background-color: #121417; }
     .render-card {
-        background-color: #1e2227;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-left: 4px solid #00f2ff;
-        color: #e0e0e0;
-        font-family: 'Segoe UI', sans-serif;
+        background-color: #1e2227; border-radius: 8px; padding: 15px;
+        margin-bottom: 10px; border-left: 4px solid #00f2ff; color: #e0e0e0;
     }
     .grid-container { display: grid; grid-template-columns: 1fr 2fr 1.5fr 1.5fr; gap: 15px; }
     .card-header { color: #00f2ff; font-size: 0.75rem; font-weight: bold; }
     .card-value { font-size: 1.1rem; font-weight: bold; }
-
-    /* --- VISTA IMPRESIÓN (LISTADO TÉCNICO COMPACTO) --- */
-    @media print {
-        header, footer, .stFileUploader, button, [data-testid="stSidebar"] { display: none !important; }
-        .stApp { background-color: white !important; padding: 0 !important; }
-        
-        /* Convertimos la tarjeta en una fila de tabla fina */
-        .render-card {
-            display: block !important;
-            border: 0.5px solid #333 !important; /* Línea muy fina */
-            border-radius: 0 !important;
-            margin: -0.5px 0 0 0 !important; /* Colapsar bordes para que no se vean dobles */
-            padding: 5px 10px !important;
-            background-color: white !important;
-            color: black !important;
-        }
-
-        .grid-container {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 0 !important;
-        }
-
-        /* Ajuste de anchos para que todo quepa en una línea */
-        .grid-container > div:nth-child(1) { width: 15%; }
-        .grid-container > div:nth-child(2) { width: 35%; border-left: 0.5px solid #ccc; padding-left: 10px; }
-        .grid-container > div:nth-child(3) { width: 25%; border-left: 0.5px solid #ccc; padding-left: 10px; }
-        .grid-container > div:nth-child(4) { width: 25%; border-left: 0.5px solid #ccc; padding-left: 10px; }
-
-        .card-header { color: #555 !important; font-size: 7pt !important; text-transform: uppercase; }
-        .card-value { color: black !important; font-size: 9pt !important; }
-        
-        /* El cuadro de Checkbox más pequeño */
-        .render-card::before {
-            content: "[ ]";
-            font-family: monospace;
-            font-size: 12pt;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        .obs-section {
-            height: 35px !important; /* Altura controlada para que no ocupe toda la hoja */
-            background-color: transparent !important;
-            border: none !important;
-        }
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -77,18 +23,61 @@ st.title("🚀 Nexion Logistics OS")
 uploaded_file = st.file_uploader("Sube tu Excel", type=["xlsx"])
 
 if uploaded_file:
-    df = pd.read_excel(uploaded_file)
-    if 'OBSERVACIONES DE ALMACEN' not in df.columns: df['OBSERVACIONES DE ALMACEN'] = ""
-    if 'OBSERVACIONES DE EMBARQUES' not in df.columns: df['OBSERVACIONES DE EMBARQUES'] = ""
+    df = pd.read_excel(uploaded_file).fillna("")
+    
+    # --- CONSTRUCCIÓN DEL DOCUMENTO DE IMPRESIÓN (OCULTO) ---
+    # Creamos una tabla HTML pura, sin estilos de Streamlit
+    tabla_html = """
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #333; padding: 8px; text-align: left; font-size: 10pt; }
+            th { background-color: #eee; }
+            .ch { width: 30px; text-align: center; font-weight: bold; }
+            .header-info { font-size: 8pt; color: #666; display: block; }
+        </style>
+    </head>
+    <body>
+        <h2 style='text-align:center;'>Nexion Logistics - Listado Técnico de Embarques</h2>
+        <table>
+            <tr>
+                <th class='ch'>[ ]</th>
+                <th>FACTURA / REF</th>
+                <th>CLIENTE Y DESTINO</th>
+                <th>ALMACÉN (MATCH)</th>
+                <th>EMBARQUES (CHECK)</th>
+            </tr>
+    """
+    
+    for _, row in df.iterrows():
+        tabla_html += f"""
+            <tr>
+                <td class='ch'>[ ]</td>
+                <td><b>{row.get('Factura', '')}</b><br><span class='header-info'>{row.get('RECOMENDACION', '')}</span></td>
+                <td><b>{row.get('Nombre_Extran', '')}</b><br><span class='header-info'>{row.get('DESTINO', '')}</span></td>
+                <td>{row.get('OBSERVACIONES DE ALMACEN', '')}</td>
+                <td>{row.get('OBSERVACIONES DE EMBARQUES', '')}</td>
+            </tr>
+        """
+    
+    tabla_html += "</table><script>window.onload = function() { window.print(); window.close(); }</script></body></html>"
 
-    components.html(
-        """<button onclick="window.parent.print()" style="background-color: #00f2ff; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-family: sans-serif;">🖨️ IMPRIMIR LISTADO TÉCNICO</button>""", 
-        height=60
-    )
+    # --- BOTÓN DE IMPRESIÓN "PERRÓN" ---
+    # Este botón abre una ventana nueva con el HTML técnico puro
+    if st.button("🖨️ GENERAR REPORTE TÉCNICO LIMPIO"):
+        components.html(f"""
+            <script>
+                var printWindow = window.open('', '_blank');
+                printWindow.document.write(`{tabla_html}`);
+                printWindow.document.close();
+            </script>
+        """, height=0)
 
+    # --- RENDERIZADO EN PANTALLA (LO QUE TÚ VES) ---
     for index, row in df.iterrows():
-        # HTML en una sola línea
-        card_html = f'<div class="render-card"><div class="grid-container"><div><div class="card-header">FACTURA</div><div class="card-value">{row.get("Factura", "N/A")}</div><div style="font-size: 0.6rem;">{row.get("RECOMENDACION", "")}</div></div><div><div class="card-header">CLIENTE Y DESTINO</div><div class="card-value" style="font-size: 0.9rem;">{row.get("Nombre_Extran", "N/A")}</div><div style="font-size: 0.7rem;">{row.get("DESTINO", "N/A")}</div></div><div class="obs-section"><div class="card-header">ALMACÉN (MATCH)</div><div style="font-size: 0.7rem;">{row["OBSERVACIONES DE ALMACEN"]}</div></div><div class="obs-section"><div class="card-header">EMBARQUES (CHECK)</div><div style="font-size: 0.7rem;">{row["OBSERVACIONES DE EMBARQUES"]}</div></div></div></div>'
+        card_html = f'<div class="render-card"><div class="grid-container"><div><div class="card-header">FACTURA</div><div class="card-value">{row.get("Factura", "N/A")}</div></div><div><div class="card-header">CLIENTE</div><div class="card-value">{row.get("Nombre_Extran", "N/A")}</div></div><div><div class="card-header">ALMACÉN</div><div>{row.get("OBSERVACIONES DE ALMACEN", "")}</div></div><div><div class="card-header">EMBARQUES</div><div>{row.get("OBSERVACIONES DE EMBARQUES", "")}</div></div></div></div>'
         st.markdown(card_html, unsafe_allow_html=True)
 
 
