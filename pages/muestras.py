@@ -2,74 +2,71 @@ import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
 
-# Configuración de la página
 st.set_page_config(page_title="Nexion Logistics OS", layout="wide")
 
-# CSS Avanzado: Separamos el diseño de Pantalla del diseño de Impresión
+# CSS Ajustado: Líneas finas y diseño compacto para impresión
 st.markdown("""
     <style>
-    /* --- DISEÑO PARA PANTALLA (MODO DARK/NEON) --- */
+    /* --- VISTA PANTALLA (TU LOOK DARK NEON) --- */
     .stApp { background-color: #121417; }
     .render-card {
         background-color: #1e2227;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        border-left: 5px solid #00f2ff;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #00f2ff;
         color: #e0e0e0;
         font-family: 'Segoe UI', sans-serif;
     }
-    .card-header { color: #00f2ff; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-    .card-value { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; }
-    .grid-container { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: 20px; }
-    .obs-section { background-color: #262c33; padding: 10px; border-radius: 8px; border: 1px dashed #444; font-size: 0.9rem; }
+    .grid-container { display: grid; grid-template-columns: 1fr 2fr 1.5fr 1.5fr; gap: 15px; }
+    .card-header { color: #00f2ff; font-size: 0.75rem; font-weight: bold; }
+    .card-value { font-size: 1.1rem; font-weight: bold; }
 
-    /* --- DISEÑO PARA IMPRESIÓN (CHECKLIST TÉCNICO) --- */
+    /* --- VISTA IMPRESIÓN (LISTADO TÉCNICO COMPACTO) --- */
     @media print {
-        /* Ocultar todo lo innecesario de la web */
-        header, footer, .stFileUploader, button, [data-testid="stSidebar"], .stMarkdown div:empty { 
-            display: none !important; 
-        }
+        header, footer, .stFileUploader, button, [data-testid="stSidebar"] { display: none !important; }
+        .stApp { background-color: white !important; padding: 0 !important; }
         
-        /* Forzar fondo blanco y texto negro para el papel */
-        body, .stApp { background-color: white !important; color: black !important; }
-        
-        /* Transformar las tarjetas en filas de una tabla técnica */
+        /* Convertimos la tarjeta en una fila de tabla fina */
         .render-card {
             display: block !important;
-            border: 1px solid #000 !important;
-            border-left: 10px solid #000 !important;
-            margin: 0 !important;
-            padding: 10px !important;
+            border: 0.5px solid #333 !important; /* Línea muy fina */
             border-radius: 0 !important;
-            page-break-inside: avoid;
+            margin: -0.5px 0 0 0 !important; /* Colapsar bordes para que no se vean dobles */
+            padding: 5px 10px !important;
             background-color: white !important;
-            box-shadow: none !important;
+            color: black !important;
         }
 
         .grid-container {
             display: flex !important;
-            justify-content: space-between;
-            gap: 10px;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 0 !important;
         }
 
-        .card-header { color: #333 !important; font-size: 7pt !important; border-bottom: 0.5px solid #ccc; }
-        .card-value { color: black !important; font-size: 11pt !important; margin-bottom: 2px; }
-        .obs-section { 
-            border: 1px solid #000 !important; 
-            min-width: 150px; 
-            height: 50px; /* Espacio para que firmen o anoten */
-            background-color: transparent !important;
-        }
+        /* Ajuste de anchos para que todo quepa en una línea */
+        .grid-container > div:nth-child(1) { width: 15%; }
+        .grid-container > div:nth-child(2) { width: 35%; border-left: 0.5px solid #ccc; padding-left: 10px; }
+        .grid-container > div:nth-child(3) { width: 25%; border-left: 0.5px solid #ccc; padding-left: 10px; }
+        .grid-container > div:nth-child(4) { width: 25%; border-left: 0.5px solid #ccc; padding-left: 10px; }
+
+        .card-header { color: #555 !important; font-size: 7pt !important; text-transform: uppercase; }
+        .card-value { color: black !important; font-size: 9pt !important; }
         
-        /* Agregar un cuadrito de Checkbox solo para la impresión */
+        /* El cuadro de Checkbox más pequeño */
         .render-card::before {
-            content: " [  ] ";
-            float: left;
-            font-size: 20pt;
-            margin-right: 10px;
-            font-weight: normal;
+            content: "[ ]";
+            font-family: monospace;
+            font-size: 12pt;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .obs-section {
+            height: 35px !important; /* Altura controlada para que no ocupe toda la hoja */
+            background-color: transparent !important;
+            border: none !important;
         }
     }
     </style>
@@ -77,38 +74,22 @@ st.markdown("""
 
 st.title("🚀 Nexion Logistics OS")
 
-uploaded_file = st.file_uploader("Sube tu Excel de Operaciones", type=["xlsx"])
+uploaded_file = st.file_uploader("Sube tu Excel", type=["xlsx"])
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    
-    # Aseguramos columnas de observaciones
     if 'OBSERVACIONES DE ALMACEN' not in df.columns: df['OBSERVACIONES DE ALMACEN'] = ""
     if 'OBSERVACIONES DE EMBARQUES' not in df.columns: df['OBSERVACIONES DE EMBARQUES'] = ""
 
-    # Botón de impresión profesional
     components.html(
-        """
-        <div style="display: flex; gap: 10px;">
-            <button onclick="window.parent.print()" style="
-                background-color: #00f2ff; color: #000; border: none; 
-                padding: 12px; border-radius: 8px; font-weight: bold; 
-                cursor: pointer; width: 100%; font-family: sans-serif;">
-                🖨️ GENERAR LISTADO TÉCNICO (CHECKLIST)
-            </button>
-        </div>
-        """, height=70
+        """<button onclick="window.parent.print()" style="background-color: #00f2ff; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-family: sans-serif;">🖨️ IMPRIMIR LISTADO TÉCNICO</button>""", 
+        height=60
     )
 
-    st.write(f"Mostrando **{len(df)}** registros en Nexion")
-
     for index, row in df.iterrows():
-        # HTML compacto en una sola línea para evitar errores de renderizado
-        card_html = f'<div class="render-card"><div class="grid-container"><div><div class="card-header">FACTURA / PEDIDO</div><div class="card-value">{row.get("Factura", "N/A")}</div><div style="font-size: 0.7rem;">REF: {row.get("RECOMENDACION", "")}</div></div><div><div class="card-header">CLIENTE Y DESTINO</div><div class="card-value" style="font-size: 1rem;">{row.get("Nombre_Extran", "N/A")}</div><div style="font-size: 0.8rem;">{row.get("DESTINO", "N/A")}</div></div><div class="obs-section"><div class="card-header">ALMACÉN (MATCH)</div><div style="font-size: 0.8rem;">{row["OBSERVACIONES DE ALMACEN"]}</div></div><div class="obs-section"><div class="card-header">EMBARQUES (CHECK)</div><div style="font-size: 0.8rem;">{row["OBSERVACIONES DE EMBARQUES"]}</div></div></div></div>'
-        
+        # HTML en una sola línea
+        card_html = f'<div class="render-card"><div class="grid-container"><div><div class="card-header">FACTURA</div><div class="card-value">{row.get("Factura", "N/A")}</div><div style="font-size: 0.6rem;">{row.get("RECOMENDACION", "")}</div></div><div><div class="card-header">CLIENTE Y DESTINO</div><div class="card-value" style="font-size: 0.9rem;">{row.get("Nombre_Extran", "N/A")}</div><div style="font-size: 0.7rem;">{row.get("DESTINO", "N/A")}</div></div><div class="obs-section"><div class="card-header">ALMACÉN (MATCH)</div><div style="font-size: 0.7rem;">{row["OBSERVACIONES DE ALMACEN"]}</div></div><div class="obs-section"><div class="card-header">EMBARQUES (CHECK)</div><div style="font-size: 0.7rem;">{row["OBSERVACIONES DE EMBARQUES"]}</div></div></div></div>'
         st.markdown(card_html, unsafe_allow_html=True)
-else:
-    st.info("Esperando archivo Excel...")
 
 
 
