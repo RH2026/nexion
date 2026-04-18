@@ -1,60 +1,125 @@
 import streamlit as st
 import pandas as pd
 
-st.title("Procesador de Traspasos - Nexion")
+# Configuración de la página
+st.set_page_config(page_title="Nexion Render", layout="wide")
 
-uploaded_file = st.file_uploader("Sube el Excel de la matriz, amor", type=["xlsx"])
+# Estilos CSS personalizados para el look Dark Mode / Neon
+st.markdown("""
+    <style>
+    /* Fondo general */
+    .stApp {
+        background-color: #121417;
+    }
+    
+    /* Estilo de la Tarjeta (Card) */
+    .render-card {
+        background-color: #1e2227;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-left: 5px solid #00f2ff; /* Acento Neón */
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        color: #e0e0e0;
+        font-family: 'Segoe UI', sans-serif;
+    }
+    
+    .card-header {
+        color: #00f2ff;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+    
+    .card-value {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .obs-section {
+        background-color: #262c33;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px dashed #444;
+        font-size: 0.9rem;
+    }
 
-if uploaded_file is not None:
-    try:
-        data = pd.read_excel(uploaded_file, header=None)
-        
-        row_index = 0
-        for i, row in data.iterrows():
-            if "DESCRIPCION" in row.astype(str).values:
-                row_index = i
-                break
-        
-        df = pd.read_excel(uploaded_file, header=row_index)
-        df.columns = df.columns.astype(str).str.strip().str.replace('\n', ' ')
+    /* Ocultar elementos en la impresión */
+    @media print {
+        .no-print, .stFileUploader, .stButton {
+            display: none !important;
+        }
+        .render-card {
+            border: 1px solid #000;
+            page-break-inside: avoid;
+            color: black !important;
+            background-color: white !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-        # Identificamos las columnas clave
-        col_desc = [c for c in df.columns if 'DESCRIP' in c.upper()][0]
-        col_cod = [c for c in df.columns if 'COD' in c.upper()][0]
+st.title("🚀 Nexion Logistics Renderer")
 
-        # Identificamos las columnas de ciudades
-        ciudades = [c for c in df.columns if c not in [col_desc, col_cod] and "Unnamed" not in c]
-        
-        # Transformamos la tabla incluyendo el código en id_vars
-        df_unpivoted = df.melt(
-            id_vars=[col_cod, col_desc], # <--- Aquí incluimos el código para que no se pierda
-            value_vars=ciudades,
-            var_name='nombre del envio',
-            value_name='cantidad'
-        )
+# Subir archivo
+uploaded_file = st.file_uploader("Sube tu archivo de Excel", type=["xlsx"])
 
-        df_unpivoted['cantidad'] = pd.to_numeric(df_unpivoted['cantidad'], errors='coerce')
-        df_final = df_unpivoted[df_unpivoted['cantidad'] > 0].dropna(subset=['cantidad']).copy()
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
+    
+    # Aseguramos que existan las columnas extras si no vienen en el Excel
+    if 'OBSERVACIONES DE ALMACEN' not in df.columns:
+        df['OBSERVACIONES DE ALMACEN'] = ""
+    if 'OBSERVACIONES DE EMBARQUES' not in df.columns:
+        df['OBSERVACIONES DE EMBARQUES'] = ""
 
-        # Reordenamos las columnas para que el código aparezca
-        df_final = df_final[['nombre del envio', col_cod, col_desc, 'cantidad']]
-        df_final.columns = ['nombre del envio', 'codigo', 'descripcion producto', 'cantidad']
+    # Botón de impresión (usa comando JS de navegador)
+    st.button("🖨️ Imprimir Reporte", on_click=lambda: st.write('<script>window.print();</script>', unsafe_allow_html=True))
 
-        st.success(f"¡Ahora sí está completo! Procesé {len(df_final)} líneas.")
-        st.dataframe(df_final, use_container_width=True)
+    st.write(f"Mostrando {len(df)} registros")
 
-        csv = df_final.to_csv(index=False).encode('utf-8-sig')
-        st.download_button(
-            label="Descargar CSV con Códigos",
-            data=csv,
-            file_name='traspasos_con_codigo.csv',
-            mime='text/csv',
-        )
+    # Renderizado de Tarjetas
+    for index, row in df.iterrows():
+        # Construcción del HTML para cada registro
+        card_html = f"""
+        <div class="render-card">
+            <div class="grid-container">
+                <div>
+                    <div class="card-header">PEDIDO / FACTURA</div>
+                    <div class="card-value" style="color: #00f2ff;">{row.get('Factura', 'N/A')}</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">RECOMENDACIÓN: {row.get('RECOMENDACION', '')}</div>
+                </div>
+                
+                <div>
+                    <div class="card-header">CLIENTE / DESTINO</div>
+                    <div class="card-value" style="font-size: 1.1rem;">{row.get('Nombre_Extran', 'N/A')}</div>
+                    <div style="font-style: italic; font-size: 0.85rem; opacity: 0.8;">{row.get('DESTINO', 'N/A')}</div>
+                </div>
 
-    except Exception as e:
-        st.error(f"Hubo un detalle, cielo: {e}")
+                <div class="obs-section">
+                    <div class="card-header" style="color: #a2ff00;">OBS. ALMACÉN</div>
+                    <div>{row['OBSERVACIONES DE ALMACEN']}</div>
+                </div>
+
+                <div class="obs-section">
+                    <div class="card-header" style="color: #ffaa00;">OBS. EMBARQUES</div>
+                    <div>{row['OBSERVACIONES DE EMBARQUES']}</div>
+                </div>
+            </div>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
+
 else:
-    st.info("Sube la matriz para generar la lista con códigos.")
+    st.info("Por favor, sube un archivo Excel para procesar los datos.")
 
 
 
