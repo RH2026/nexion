@@ -848,7 +848,8 @@ def login_screen():
                     "Brenda": "F",
                     "Fialko": "M",
                     "Yaneli": "F",
-                    "Claudia": "F"
+                    "Claudia": "F",
+                    "Arturo": "M"
                 }
                 
                 # --- VALIDACIÓN EXITOSA ---
