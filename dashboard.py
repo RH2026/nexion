@@ -2636,20 +2636,20 @@ else:
                         # Si el estado es TORTON, el botón es 'primary', si no, es 'secondary'
                         btn_type_1 = "primary" if st.session_state.tipo_entrega == 'TORTON' else "secondary"
                         if st.button("ENTREGAS AGC TORTON", use_container_width=True, type=btn_type_1):
-                            st.session_state.tipo_entrega = 'TORTON'
+                            st.session_state.tipo_entrega = 'T O R T O N'
                             st.rerun() # Forzamos el refresco para que el color cambie al instante
                             
                     with col_btn2:
                         # Si el estado es TRAILER, el botón es 'primary', si no, es 'secondary'
                         btn_type_2 = "primary" if st.session_state.tipo_entrega == 'TRAILER' else "secondary"
                         if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
-                            st.session_state.tipo_entrega = 'TRAILER'
+                            st.session_state.tipo_entrega = 'T R A I L E R'
                             st.rerun()
                 
                     # --- Título dinámico con tilde --- - - - - 
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:20px; margin-bottom:10px;'>
-                            <span style='color:#00FFCC; font-weight:800; font-size:12px; letter-spacing:2px;'>
+                            <span style='color:#FFFFFF; font-weight:600; font-size:12px; letter-spacing:2px;'>
                                 ENVÍO {st.session_state.tipo_entrega}
                             </span>
                         </div>
