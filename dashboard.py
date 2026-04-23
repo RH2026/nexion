@@ -2625,9 +2625,23 @@ else:
                 
                 # PESTAÑA 5: AGC
                 with tab_entregas_agc:
-                    st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>PROGRAMA DE ENTREGAS AGC</h3>", unsafe_allow_html=True)
+                    # --- Lógica de Navegación ---
+                    if 'tipo_entrega' not in st.session_state:
+                        st.session_state.tipo_entrega = 'TORTON'
+                
+                    # Creamos dos columnas para los botones largos
+                    col_btn1, col_btn2 = st.columns(2)
+                
+                    with col_btn1:
+                        if st.button("ENTREGAS AGC TORTON", use_container_width=True):
+                            st.session_state.tipo_entrega = 'TORTON'
+                            
+                    with col_btn2:
+                        if st.button("ENTREGAS AGC TRAILER", use_container_width=True):
+                            st.session_state.tipo_entrega = 'TRAILER'
+                
+                    # --- Función de Renderizado (Tu HTML original) ---
                     def render_logistica_flow_responsive(data):
-                        # Ajustamos el contenedor para que sea full width
                         html_content = f"""
                         <!DOCTYPE html>
                         <html lang="es">
@@ -2641,16 +2655,13 @@ else:
                                     background-color: #384A52; 
                                     color: #e2e8f0; 
                                     margin: 0;
-                                    padding: 5px; /* Reducimos padding para ganar espacio */
+                                    padding: 5px;
                                     width: 100%;
                                 }}
-                                
-                                /* SCROLLBAR AGC STYLE */
                                 ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
                                 ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
                                 ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
                                 ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
-                    
                                 .list-row {{
                                     background-color: #263238;
                                     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -2658,14 +2669,12 @@ else:
                                     margin-bottom: 8px;
                                     border-radius: 10px;
                                     overflow: hidden;
-                                    width: 100%; /* Asegura que la fila ocupe el 100% */
+                                    width: 100%;
                                 }}
-                                
                                 .list-row:hover {{
                                     background-color: #2c3b42;
                                     border-color: rgba(56, 189, 248, 0.3);
                                 }}
-                    
                                 .label-mini {{
                                     font-size: 9px;
                                     text-transform: uppercase;
@@ -2680,23 +2689,19 @@ else:
                                 {"".join([f'''
                                 <div class="list-row flex items-stretch">
                                     <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
-                                    
                                     <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
-                                        
                                         <div class="w-full md:w-44 shrink-0">
                                             <div class="label-mini">{item['semana']}</div>
                                             <div class="text-lg font-black text-white italic tracking-tighter leading-none">
                                                 {item['oc']}
                                             </div>
                                         </div>
-                    
                                         <div class="w-full md:flex-1 md:min-w-[300px]">
                                             <div class="label-mini">Referencia / Destino</div>
                                             <div class="text-xs text-slate-300 italic truncate">
                                                 {item['entrega_texto']}
                                             </div>
                                         </div>
-                    
                                         <div class="grid grid-cols-2 gap-8 w-full md:w-auto md:flex md:gap-12 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-10">
                                             <div class="shrink-0">
                                                 <div class="label-mini">Volumen</div>
@@ -2709,7 +2714,6 @@ else:
                                                 </div>
                                             </div>
                                         </div>
-                    
                                         <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
                                             <div class="label-mini md:mb-1">Estatus de Logística</div>
                                             <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter">
@@ -2723,26 +2727,29 @@ else:
                         </body>
                         </html>
                         """
-                        # Importante: Streamlit a veces limita el ancho del componente, con esto cubrimos el máximo
                         return components.html(html_content, height=800, scrolling=True)
                 
-                    # Dataset corregido
-                    data_corregida = [
+                    # --- Data Duplicada (TORTON) ---
+                    data_torton = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "09 de marzo", "cita": "10/03/2026 - 11:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "06 de abril", "cita": "07/04/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "20 de abril", "cita": "21/04/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "27 de abril", "cita": "28/04/2026 - 10:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "30 de abril", "cita": "30/04/2026 - 10:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "04 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 24", "entrega_texto": "08 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 24", "entrega_texto": "08 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                     ]
                 
-                    render_logistica_flow_responsive(data_corregida)
+                    # --- Data Duplicada (TRAILER) ---
+                    data_trailer = [
+                        {"oc": "TRAILER-001", "cantidad": "2,500", "semana": "SEM 19", "entrega_texto": "04 de mayo", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-002", "cantidad": "2,500", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-003", "cantidad": "2,500", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "PENDIENTE", "estatus": "PENDIENTE"},
+                    ]
+                
+                    # --- Lógica de Renderizado Condicional ---
+                    if st.session_state.tipo_entrega == 'TORTON':
+                        render_logistica_flow_responsive(data_torton)
+                    else:
+                        render_logistica_flow_responsive(data_trailer)
                 
                 # PESTAÑA 6: CONSIGNAS
                 with tab_consignas:
