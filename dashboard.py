@@ -2650,7 +2650,7 @@ else:
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:20px; margin-bottom:10px;'>
                             <span style='color:#FFFFFF; font-weight:600; font-size:12px; letter-spacing:2px;'>
-                                ENVÍO {st.session_state.tipo_entrega}
+                                E N V Í O {st.session_state.tipo_entrega}
                             </span>
                         </div>
                     """, unsafe_allow_html=True)
