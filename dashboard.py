@@ -2627,21 +2627,21 @@ else:
                 with tab_entregas_agc:
                     # --- Lógica de Navegación ---
                     if 'tipo_entrega' not in st.session_state:
-                        st.session_state.tipo_entrega = 'TORTON'
+                        st.session_state.tipo_entrega = 'T O R T O N'
                 
                     # Creamos dos columnas para los botones largos
                     col_btn1, col_btn2 = st.columns(2)
                 
                     with col_btn1:
                         # Si el estado es TORTON, el botón es 'primary', si no, es 'secondary'
-                        btn_type_1 = "primary" if st.session_state.tipo_entrega == 'TORTON' else "secondary"
+                        btn_type_1 = "primary" if st.session_state.tipo_entrega == 'T O R T O N' else "secondary"
                         if st.button("ENTREGAS AGC TORTON", use_container_width=True, type=btn_type_1):
                             st.session_state.tipo_entrega = 'T O R T O N'
                             st.rerun() # Forzamos el refresco para que el color cambie al instante
                             
                     with col_btn2:
                         # Si el estado es TRAILER, el botón es 'primary', si no, es 'secondary'
-                        btn_type_2 = "primary" if st.session_state.tipo_entrega == 'TRAILER' else "secondary"
+                        btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
                         if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
                             st.session_state.tipo_entrega = 'T R A I L E R'
                             st.rerun()
