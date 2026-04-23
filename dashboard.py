@@ -2195,8 +2195,8 @@ else:
                     df_vol = df_mes.copy()
                     
                     # Forzamos la lectura de fechas ignorando errores de formato
-                    df_vol['EMISION'] = pd.to_datetime(df_vol['EMISION'], errors='coerce')
-                    df_vol['FECHA DE ENVÍO'] = pd.to_datetime(df_vol['FECHA DE ENVÍO'], errors='coerce')
+                    df_vol['EMISION'] = pd.to_datetime(df_vol['EMISION'], dayfirst=True, errors='coerce')
+                    df_vol['FECHA DE ENVÍO'] = pd.to_datetime(df_vol['FECHA DE ENVÍO'], dayfirst=True, errors='coerce')
                 
                     # 2. Configuración de Feriados
                     lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
