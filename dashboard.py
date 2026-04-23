@@ -2774,7 +2774,7 @@ else:
                     
                 
                     # --- Lógica de Renderizado Condicional ---
-                    if st.session_state.tipo_entrega == 'TORTON':
+                    if st.session_state.tipo_entrega == 'T O R T O N':
                         render_logistica_flow_responsive(data_torton)
                     else:
                         render_logistica_flow_responsive(data_trailer)
