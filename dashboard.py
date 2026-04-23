@@ -2633,13 +2633,31 @@ else:
                     col_btn1, col_btn2 = st.columns(2)
                 
                     with col_btn1:
-                        if st.button("ENTREGAS AGC TORTON", use_container_width=True):
+                        # Si el estado es TORTON, el botón es 'primary', si no, es 'secondary'
+                        btn_type_1 = "primary" if st.session_state.tipo_entrega == 'TORTON' else "secondary"
+                        if st.button("ENTREGAS AGC TORTON", use_container_width=True, type=btn_type_1):
                             st.session_state.tipo_entrega = 'TORTON'
+                            st.rerun() # Forzamos el refresco para que el color cambie al instante
                             
                     with col_btn2:
-                        if st.button("ENTREGAS AGC TRAILER", use_container_width=True):
+                        # Si el estado es TRAILER, el botón es 'primary', si no, es 'secondary'
+                        btn_type_2 = "primary" if st.session_state.tipo_entrega == 'TRAILER' else "secondary"
+                        if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
                             st.session_state.tipo_entrega = 'TRAILER'
+                            st.rerun()
                 
+                    # --- Título dinámico con tilde ---
+                    # Usamos la fecha actual o la que gustes
+                    fecha_hoy = "23 de abril" 
+                    st.markdown(f"""
+                        <div style='text-align:center; margin-top:20px; margin-bottom:10px;'>
+                            <span style='color:#3498db; font-weight:800; font-size:20px; letter-spacing:2px;'>
+                                ENVÍO {st.session_state.tipo_entrega}
+                            </span>
+                            <br>
+                            <span style='color:white; font-size:14px; opacity:0.8;'>{fecha_hoy}</span>
+                        </div>
+                    """, unsafe_allow_html=True)
                     # --- Función de Renderizado (Tu HTML original) ---
                     def render_logistica_flow_responsive(data):
                         html_content = f"""
