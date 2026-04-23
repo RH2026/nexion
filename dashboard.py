@@ -2646,15 +2646,12 @@ else:
                             st.session_state.tipo_entrega = 'TRAILER'
                             st.rerun()
                 
-                    # --- Título dinámico con tilde ---
-                    # Usamos la fecha actual o la que gustes
+                    # --- Título dinámico con tilde --- - - - - 
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:20px; margin-bottom:10px;'>
                             <span style='color:#CCFF00; font-weight:800; font-size:12px; letter-spacing:2px;'>
                                 ENVÍO {st.session_state.tipo_entrega}
                             </span>
-                            <br>
-                            <span style='color:white; font-size:14px; opacity:0.8;'>{fecha_hoy}</span>
                         </div>
                     """, unsafe_allow_html=True)
                     # --- Función de Renderizado (Tu HTML original) ---
