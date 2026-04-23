@@ -2649,7 +2649,7 @@ else:
                     # --- Título dinámico con tilde --- - - - - 
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:20px; margin-bottom:10px;'>
-                            <span style='color:#CCFF00; font-weight:800; font-size:12px; letter-spacing:2px;'>
+                            <span style='color:#00FFCC; font-weight:800; font-size:12px; letter-spacing:2px;'>
                                 ENVÍO {st.session_state.tipo_entrega}
                             </span>
                         </div>
