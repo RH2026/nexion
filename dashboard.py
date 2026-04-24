@@ -1518,7 +1518,15 @@ else:
             # --- EJECUCIÓN DEL MÓDULO ---
             # --- EJECUCIÓN DEL MÓDULO ---
             df_raw = cargar_datos()
-                
+
+            if df_raw is not None:
+                # 1. Convertimos la columna a formato fecha (ajusta el nombre si es necesario)
+                # Usamos errors='coerce' por si hay celdas vacías o con texto extraño
+                df_raw["FECHA DE ENVÍO"] = pd.to_datetime(df_raw["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
+            
+                # 2. Ordenamos: el más reciente (fecha más grande) arriba
+                df_raw = df_raw.sort_values(by="FECHA DE ENVÍO", ascending=False)
+                    
             
             if df_raw is not None:               
                 with st.expander("Ver / Ocultar, Listado de pedidos completo", expanded=False):
