@@ -5397,6 +5397,18 @@ else:
                     "JHJY-0037 Llave para rack de acero Jypesa": 25.50,
                     "JHJY-0026 Rack JH Individual color Negro": 40.28,
                     "JHJY-0027 Rack JH Doble color Negro": 40.28,
+                    "JHJY-0065 KIT Bracket+Key+3M Super Glue/Screw black ANTI-THEFT Emperor Semi circular 12 Piezas/Caja": 418.2,
+                    "JHJY-0064 KIT Bracket+Key+3M Super Glue/Screw black ANTI-THEFT Easy snap 12 Piezas/Caja": 418.2,
+                    "4029-A90 NOCEAN Cepillo Dental eco amigable nOcean caja con 144 piezas": 4.1,
+                    "4029-A91 NOCEAN Peine de bambu eco amigable nOcean caja con 200 piezas": 8.74,
+                    "4029-A92 NOCEAN Kit de afeitar eco amigable nOcean caja con 200 piezas": 16.60,
+                    "4029-A93 NOCEAN Kit de vanidad eco amigable nOcean caja con 500 piezas": 3.8,
+                    "4029-A95 NOCEAN Kit de costura eco amigable nOcean caja con 500 piezas": 2.4,
+                    "4029-A96 NOCEAN Limpia calzado eco amigable nOcean caja con 500 piezas": 4.4,
+                    "4029-A97 NOCEAN Toallita desmaquillante comprimida eco amigable nOcean caja con 300 piezas": 5.2,
+                    "4029-A98 NOCEAN Esponja de celulosa comprimida eco amigable nOcean caja con 500 piezas": 3.95
+
+                    
         
                 }
                 
