@@ -5371,8 +5371,8 @@ else:
                 # Diccionario de precios SINCRONIZADO
                 precios = {
                     "Envio Muestras Especiales": 0.0,
-                    "Accesorios Ecologicos": 47.85,
-                    "Accesorios Lavarino": 47.85,
+                    "Kit Accesorios Ecologicos": 47.85,
+                    "kit Accesorios Lavarino": 47.85,
                     "Dispensador Almond": 218.33,
                     "Dispensador Biogena": 216.00,
                     "Dispensador Cava": 230.58,
@@ -5406,7 +5406,18 @@ else:
                     "4029-A95 NOCEAN Kit de costura eco amigable nOcean caja con 500 piezas": 2.4,
                     "4029-A96 NOCEAN Limpia calzado eco amigable nOcean caja con 500 piezas": 4.4,
                     "4029-A97 NOCEAN Toallita desmaquillante comprimida eco amigable nOcean caja con 300 piezas": 5.2,
-                    "4029-A98 NOCEAN Esponja de celulosa comprimida eco amigable nOcean caja con 500 piezas": 3.95
+                    "4029-A98 NOCEAN Esponja de celulosa comprimida eco amigable nOcean caja con 500 piezas": 3.95,
+                    "4052-L17 CAVA Shampoo Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                    "4052-L18 CAVA Acondicionador Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                    "4052-L19 CAVA Gel de baño Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                    "4052-L20 CAVA Crema Humectante Cava Nocean 40 ml. Caja con 150 piezas": 6.44,
+                    "4018-A23 Limpia calzado Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 3.23,
+                    "4018-A24 Gorra de baño Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 2.26,
+                    "4018-A25 KIT dental Lavarino Cosso. Cajilla Nva. Imagen Caja con 144 piezas": 11.60,
+                    "4018-A26 KIT de vanidad Lavarino Cosso. Cajilla Nva. Imagen Caja con 150 piezas": 2.95,
+                    "4018-A27 KIT de afeitar Lavarino Cosso. Cajilla Nva. Imagen Caja con 116 piezas": 7.230,
+                    "4018-A28 KIT de costura Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 1.90,
+                    "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas 2.4416
 
                     
         
