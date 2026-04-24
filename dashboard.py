@@ -1555,15 +1555,22 @@ else:
                         
                         if not df_final.empty:
                             # --- PREPARACIÓN DE DATOS ---
-                            # Formateamos las fechas para que no salga la hora en el Timeline
-                            f_envio = pd.to_datetime(envio.get("FECHA DE ENVÍO"), errors='coerce').strftime('%d-%m-%Y') if pd.notna(envio.get("FECHA DE ENVÍO")) else "N/A"
-                            f_promesa = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), errors='coerce').strftime('%d-%m-%Y') if pd.notna(envio.get("PROMESA DE ENTREGA")) else "N/A"
+                            envio = df_final.iloc[0]
+                            
+                            # Función auxiliar interna para no repetir código y evitar errores
+                            def formatear_fecha_safe(valor):
+                                if pd.isna(valor) or valor == "":
+                                    return "N/A"
+                                try:
+                                    return pd.to_datetime(valor, errors='coerce').strftime('%d-%m-%Y')
+                                except:
+                                    return str(valor)
+                        
+                            f_envio = formatear_fecha_safe(envio.get("FECHA DE ENVÍO"))
+                            f_promesa = formatear_fecha_safe(envio.get("PROMESA DE ENTREGA"))
                             
                             entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
-                            if entregado_real:
-                                f_entrega_val = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], errors='coerce').strftime('%d-%m-%Y')
-                            else:
-                                f_entrega_val = "PENDIENTE"
+                            f_entrega_val = formatear_fecha_safe(envio.get("FECHA DE ENTREGA REAL")) if entregado_real else "PENDIENTE"
                             
                             trigger_val = str(envio.get("TRIGGER", "")).strip()
                             tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
