@@ -5417,7 +5417,7 @@ else:
                     "4018-A26 KIT de vanidad Lavarino Cosso. Cajilla Nva. Imagen Caja con 150 piezas": 2.95,
                     "4018-A27 KIT de afeitar Lavarino Cosso. Cajilla Nva. Imagen Caja con 116 piezas": 7.230,
                     "4018-A28 KIT de costura Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 1.90,
-                    "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas 2.4416
+                    "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas": 2.44
 
                     
         
