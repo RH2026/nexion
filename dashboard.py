@@ -1434,8 +1434,15 @@ else:
                     return None
             
             def render_listado_operativo_premium(df):
+                # --- FORMATEO DE FECHAS ANTES DE CONVERTIR ---
+                df_display = df.copy()
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                    if col in df_display.columns:
+                        # Convertimos a fecha y luego a texto con formato día-mes-año
+                        df_display[col] = pd.to_datetime(df_display[col], errors='coerce').dt.strftime('%d-%m-%Y').fillna('')
+            
                 # Llenamos vacíos y convertimos a diccionario
-                data = df.fillna('').to_dict('records')
+                data = df_display.fillna('').to_dict('records')
                 
                 html_content = f"""
                 <!DOCTYPE html>
@@ -1548,11 +1555,15 @@ else:
                         
                         if not df_final.empty:
                             # --- PREPARACIÓN DE DATOS ---
-                            envio = df_final.iloc[0]
-                            f_envio = envio.get("FECHA DE ENVÍO", "N/A")
-                            f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
+                            # Formateamos las fechas para que no salga la hora en el Timeline
+                            f_envio = pd.to_datetime(envio.get("FECHA DE ENVÍO"), errors='coerce').strftime('%d-%m-%Y') if pd.notna(envio.get("FECHA DE ENVÍO")) else "N/A"
+                            f_promesa = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), errors='coerce').strftime('%d-%m-%Y') if pd.notna(envio.get("PROMESA DE ENTREGA")) else "N/A"
+                            
                             entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
-                            f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
+                            if entregado_real:
+                                f_entrega_val = pd.to_datetime(envio["FECHA DE ENTREGA REAL"], errors='coerce').strftime('%d-%m-%Y')
+                            else:
+                                f_entrega_val = "PENDIENTE"
                             
                             trigger_val = str(envio.get("TRIGGER", "")).strip()
                             tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
