@@ -7181,8 +7181,11 @@ else:
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
                 DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
+                CONSIGNAS_FILE = "consignas.csv"  # <--- Agregamos esta variable
                 MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
-                TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME] + MATRICES_EXCEL
+                
+                # Actualizamos la lista completa para incluirlo
+                TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME, CONSIGNAS_FILE] + MATRICES_EXCEL
         
                 # ── HEADER VISUAL ──
                 st.markdown(f'<div class="main-header-pro"><h2 style="margin:0; color:#F8FAFC;">Central Data Hub</h2><p style="margin:0; color:#94A3B8; font-size:14px;">Nexion Logistic Node // Multiple Uplink</p></div>', unsafe_allow_html=True)
@@ -7209,9 +7212,11 @@ else:
                 st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
                 
                 # ── ÁREA DE CARGA MULTIPLE ──
+                # ── ÁREA DE CARGA MULTIPLE ──
                 with st.container(border=True):
                     st.markdown("### :material/security: SECURE MULTI-UPLINK")
-                    st.caption(f"Accepted Assets: `{DASHBOARD_NAME}` and `T1, T2, T3` (XLSX)")
+                    # Actualiza esta línea para que se vea el nombre del nuevo archivo
+                    st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}` and `T1, T2, T3` (XLSX)")
                     
                     uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
                 
