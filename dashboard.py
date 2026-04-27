@@ -1151,7 +1151,7 @@ else:
         
         with c4:
             # --- BOTÓN POPOVER (NAVEGACIÓN + PERFIL) ---
-            with st.popover("☰ Navegación", use_container_width=True):
+            with st.popover("☰ Menú", use_container_width=True):
             
                 # 1. IDENTIFICACIÓN DE USUARIO
                 usuario = st.session_state.get("usuario_activo", "GUEST")
