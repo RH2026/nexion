@@ -2775,7 +2775,7 @@ else:
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "06 de abril", "cita": "07/04/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "20 de abril", "cita": "21/04/2026 - 08:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "27 de abril", "cita": "28/04/2026 - 10:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "27 de abril", "cita": "28/04/2026 - 10:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "30 de abril", "cita": "30/04/2026 - 10:00 AM", "estatus": "PENDIENTE"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "04 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
