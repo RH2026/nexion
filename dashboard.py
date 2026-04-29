@@ -835,7 +835,8 @@ def login_screen():
                     "Brenda": "Brenda",
                     "Fialko": "Fialko",
                     "Atencion3G": "Sandra Yaneli",
-                    "Claudia": "Claudia"
+                    "Claudia": "Claudia",
+                    "Ruth": "Ruth Buen Rostro"
                 }
                 
                 # 2. Diccionario de géneros (F = Femenino, M = Masculino)
@@ -849,7 +850,8 @@ def login_screen():
                     "Fialko": "M",
                     "Yaneli": "F",
                     "Claudia": "F",
-                    "Arturo": "M"
+                    "Arturo": "M",
+                    "Ruth" : "F"
                 }
                 
                 # --- VALIDACIÓN EXITOSA ---
