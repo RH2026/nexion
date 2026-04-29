@@ -836,7 +836,7 @@ def login_screen():
                     "Fialko": "Fialko",
                     "Atencion3G": "Sandra Yaneli",
                     "Claudia": "Claudia",
-                    "Ruth": "Ruth Buen Rostro"
+                    "Ruth": "Ruth Buenrostro"
                 }
                 
                 # 2. Diccionario de géneros (F = Femenino, M = Masculino)
