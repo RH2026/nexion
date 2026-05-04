@@ -2790,8 +2790,8 @@ else:
                 
                     # --- Data Duplicada (TRAILER) ---
                     data_trailer = [
-                        {"oc": "TRAILER-001", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "05 de mayo", "cita": "04/04/2026 - 12:00 PM", "estatus": "PENDIENTE"},
-                        {"oc": "TRAILER-002", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "08 de mayo", "cita": "05/04/2026 - 12:00 PM", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-001", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "05 de mayo", "cita": "05/05/2026 - 12:00 PM", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-002", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "08 de mayo", "cita": "08/05/2026 - 12:00 PM", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-003", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "12 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-004", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "15 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-005", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "19 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
