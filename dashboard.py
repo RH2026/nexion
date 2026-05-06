@@ -2778,9 +2778,9 @@ else:
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "06 de abril", "cita": "07/04/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "20 de abril", "cita": "21/04/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "27 de abril", "cita": "28/04/2026 - 10:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "30 de abril", "cita": "04/05/2026 - 12:00 PM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "30 de abril", "cita": "04/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "04 de mayo", "cita": "07/05/2026 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "14/05/2026 - 08:00 AM", "estatus": "PENDIENTE"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 24", "entrega_texto": "08 de junio", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
@@ -2790,10 +2790,10 @@ else:
                 
                     # --- Data Duplicada (TRAILER) ---
                     data_trailer = [
-                        {"oc": "TRAILER-001", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "05 de mayo", "cita": "05/05/2026 - 12:00 PM", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-001", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "05 de mayo", "cita": "05/05/2026 - 12:00 PM", "estatus": "ENTREGADO"},
                         {"oc": "TRAILER-002", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "08 de mayo", "cita": "08/05/2026 - 12:00 PM", "estatus": "PENDIENTE"},
-                        {"oc": "TRAILER-003", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "12 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
-                        {"oc": "TRAILER-004", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "15 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-003", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "12 de mayo", "cita": "12/05/2026 - 12:00 PM", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-004", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "15 de mayo", "cita": "15/05/2026 - 12:00 PM", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-005", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "19 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-006", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "22 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-006", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "26 de mayo", "cita": "PENDIENTE - 00:00 --", "estatus": "PENDIENTE"},
