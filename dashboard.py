@@ -3216,7 +3216,7 @@ else:
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
                     
                     st.set_page_config(page_title="Nexion Core - Matrix", layout="wide")
-                    st.markdown("ESTATUS DE PEDIDOS DIARIO")
+                    st.markdown("### PANEL DE ENVIOS DIARIO")
                     
                     # ── 3. LÓGICA DE CARGA ULTRA LIMPIA ──
                     def get_data_nexion():
