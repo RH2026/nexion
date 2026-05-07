@@ -3210,9 +3210,8 @@ else:
                     CSV_URL = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/pedidos.csv"
                     tz_gdl = pytz.timezone('America/Mexico_City')
                     
-                    # ── 2. OPCIONES DE LOS SELECTORES (AGREGAMOS OPCIÓN VACÍA AL INICIO) ──
+                    # ── 2. OPCIONES DE LOS SELECTORES ──
                     OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🚚 EN RUTA", "✅ ENTREGADO", "❌ CANCELADO"]
-                    # Agregamos "" al inicio para que el "None" desaparezca y quede en blanco
                     OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
                     
@@ -3223,27 +3222,21 @@ else:
                     def get_data_nexion():
                         if 'df_pedidos' not in st.session_state:
                             try:
-                                # Forzamos a pandas a ignorar los NA y tratarlos como strings vacíos
                                 df = pd.read_csv(CSV_URL, keep_default_na=False).fillna("")
                                 
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "FECHA DE ENVÍO"]
                                 columnas_nuevas = ["ESTATUS", "SURTIDOR", "PAQUETERIA", "INCIDENCIA"]
                                 
-                                # Asegurar que todas las columnas existan y estén limpias
                                 all_cols = columnas_lectura + columnas_nuevas
                                 for col in all_cols:
                                     if col not in df.columns:
                                         df[col] = ""
                                     else:
-                                        # Reemplazo total de cualquier rastro de "None" o "nan" por vacío real
                                         df[col] = df[col].astype(str).replace(['None', 'nan', 'NaN', 'None ', 'nan ', 'N/A'], '')
                                         df[col] = df[col].str.strip()
                     
-                                # Validación final para que el Editor no se pierda
                                 if not df.empty:
-                                    # Si el estatus no es válido, poner el primero por defecto
                                     df.loc[~df['ESTATUS'].isin(OPCIONES_ESTATUS), 'ESTATUS'] = OPCIONES_ESTATUS[0]
-                                    # Para los demás, si no están en la lista, asegurar que sean un string vacío ""
                                     df.loc[~df['SURTIDOR'].isin(OPCIONES_SURTIDOR), 'SURTIDOR'] = ""
                                     df.loc[~df['PAQUETERIA'].isin(OPCIONES_PAQUETERIA), 'PAQUETERIA'] = ""
                                 
@@ -3253,14 +3246,18 @@ else:
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
                     
-                    # ── 4. BOTÓN RECARGAR ──
-                    if st.button("🔄 RECARGAR MATRIZ"):
-                        if 'df_pedidos' in st.session_state:
-                            del st.session_state.df_pedidos
-                        st.cache_data.clear()
-                        st.rerun()
+                    # ── 4. BOTÓN RECARGAR (PRIMERO / ARRIBA) ──
+                    col_refresh, _ = st.columns([1, 3])
+                    with col_refresh:
+                        if st.button("RECARGAR MATRIZ", use_container_width=True):
+                            if 'df_pedidos' in st.session_state:
+                                del st.session_state.df_pedidos
+                            st.cache_data.clear()
+                            st.rerun()
                     
-                    # ── 5. EDITOR DE DATOS (CONFIGURADO PARA BLANCOS) ──
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # ── 5. EDITOR DE DATOS ──
                     df_actual = get_data_nexion()
                     
                     if not df_actual.empty:
@@ -3268,7 +3265,7 @@ else:
                             df_actual,
                             use_container_width=True,
                             hide_index=True,
-                            key="editor_nexion_final_v6",
+                            key="editor_nexion_v7",
                             column_config={
                                 "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium"),
                                 "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small"),
@@ -3284,33 +3281,42 @@ else:
                     
                         st.markdown("<br>", unsafe_allow_html=True)
                     
-                        # ── 6. GUARDADO Y DESCARGA ──
-                        col_save, col_download = st.columns([2, 1])
+                        # ── 6. BOTONES DE GUARDADO Y DESCARGA (ABAJO / SEPARADOS) ──
+                        
+                        # Botón de Guardar en GitHub (Destacado)
+                        if st.button("ACTUALIZAR", type="primary", use_container_width=True):
+                            if TOKEN:
+                                with st.status("Sincronizando...", expanded=True) as status:
+                                    try:
+                                        g = Github(TOKEN)
+                                        repo = g.get_repo(REPO_NAME)
+                                        csv_string = edited_df.to_csv(index=False)
+                                        contents = repo.get_contents(FILE_PATH)
+                                        
+                                        hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
+                                        repo.update_file(path=FILE_PATH, message=f"PRO_SYNC // {hora_local}", content=csv_string, sha=contents.sha)
+                                        
+                                        st.session_state.df_pedidos = edited_df
+                                        status.update(label="Sincronización Exitosa", state="complete", expanded=False)
+                                        st.toast("GitHub Actualizado correctamente", icon="✅")
+                                        time.sleep(1)
+                                        st.rerun()
+                                    except Exception as e:
+                                        status.update(label=f"Error: {e}", state="error")
+                        
+                        # Espacio pequeño
+                        st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
                     
-                        with col_save:
-                            if st.button("🚀 EJECUTAR UPLINK A GITHUB", type="primary", use_container_width=True):
-                                if TOKEN:
-                                    with st.status("Sincronizando...", expanded=True) as status:
-                                        try:
-                                            g = Github(TOKEN)
-                                            repo = g.get_repo(REPO_NAME)
-                                            csv_string = edited_df.to_csv(index=False)
-                                            contents = repo.get_contents(FILE_PATH)
-                                            
-                                            hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
-                                            repo.update_file(path=FILE_PATH, message=f"PRO_SYNC // {hora_local}", content=csv_string, sha=contents.sha)
-                                            
-                                            st.session_state.df_pedidos = edited_df
-                                            status.update(label="Sincronización Exitosa", state="complete", expanded=False)
-                                            st.toast("GitHub Actualizado correctamente", icon="✅")
-                                            time.sleep(1)
-                                            st.rerun()
-                                        except Exception as e:
-                                            status.update(label=f"Error: {e}", state="error")
+                        # Botón de Descarga Local
+                        csv_data = edited_df.to_csv(index=False).encode('utf-8-sig')
+                        st.download_button(
+                            label="DESCARGAR", 
+                            data=csv_data, 
+                            file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
+                            mime="text/csv", 
+                            use_container_width=True
+                        )
                     
-                        with col_download:
-                            csv_data = edited_df.to_csv(index=False).encode('utf-8-sig')
-                            st.download_button(label="📥 DESCARGAR LOCAL", data=csv_data, file_name="pedidos_nexion.csv", mime="text/csv", use_container_width=True)
                     else:
                         st.info("Sin datos para mostrar.")
                 
