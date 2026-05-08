@@ -3229,8 +3229,8 @@ else:
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False).fillna("")
                                 
-                                columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION"]
-                                columnas_nuevas = ["FECHA DE ENVIO", "ESTATUS", "SURTIDOR", "PAQUETERIA"]
+                                columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION", "ESTATUS"]
+                                columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "PAQUETERIA"]
                                 all_cols = columnas_lectura + columnas_nuevas
                                 
                                 for col in all_cols:
