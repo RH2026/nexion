@@ -3204,7 +3204,7 @@ else:
                         st.error(f"Error crítico: {e}")
                 
                 with tab_pedidos:
-                    # ── 1. CONFIGURACIÓN Y PERMISOS ──
+
                     # ── 1. CONFIGURACIÓN Y PERMISOS ──
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
@@ -3215,14 +3215,14 @@ else:
                     AUTHORIZED_EDITORS = ["JMoreno", "Rigoberto"]
                     puede_editar = current_user in AUTHORIZED_EDITORS
                     
-                    # LISTAS LIMPIAS SIN ICONOS
-                    OPCIONES_ESTATUS = ["PENDIENTE", "DETENIDO", "ENVIADO", "CANCELADO"]
+                    # LISTA CON ICONOS PARA LA VISTA DE LA APP
+                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
                     OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
                     
                     st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar else '(MODO LECTURA)'}")
                     
-                    # ── 2. LÓGICA DE CARGA (BRUTE FORCE) ──
+                    # ── 2. LÓGICA DE CARGA (TRADUCTOR TEXTO -> ICONO) ──
                     def get_data_nexion_brute():
                         if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
                             try:
@@ -3239,21 +3239,16 @@ else:
                                     if col not in df.columns:
                                         df[col] = ""
                                     else:
-                                        # Limpiamos y forzamos mayúsculas para comparar sin fallos
                                         df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip().str.upper()
                     
-                                # Validación de ESTATUS para que encaje con el Selectbox
                                 if "ESTATUS" in df.columns:
-                                    def limpiar_estatus(val):
-                                        # Si el valor ya es uno válido, lo deja.
-                                        if val in OPCIONES_ESTATUS: return val
-                                        # Si tiene el icono viejo o basura, busca la palabra clave
-                                        for opc in OPCIONES_ESTATUS:
-                                            if opc in val: return opc
-                                        # Si está vacío, por defecto PENDIENTE
-                                        return "PENDIENTE"
-                                    
-                                    df['ESTATUS'] = df['ESTATUS'].apply(limpiar_estatus)
+                                    def poner_iconos(val):
+                                        if "PENDIENTE" in val: return "🆕 PENDIENTE"
+                                        if "DETENIDO" in val: return "🛑 DETENIDO"
+                                        if "ENVIADO" in val: return "✅ ENVIADO"
+                                        if "CANCELADO" in val: return "❌ CANCELADO"
+                                        return "🆕 PENDIENTE"
+                                    df['ESTATUS'] = df['ESTATUS'].apply(poner_iconos)
                     
                                 st.session_state.df_pedidos = df[all_cols]
                                 st.session_state.force_reload = False 
@@ -3262,7 +3257,7 @@ else:
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
                     
-                    # ── 3. BOTÓN RECARGAR (SOLO ADMINS) ──
+                    # ── 3. BOTÓN RECARGAR ──
                     if puede_editar:
                         if st.button("RECARGAR DATOS", use_container_width=True):
                             if 'df_pedidos' in st.session_state: del st.session_state.df_pedidos
@@ -3272,7 +3267,7 @@ else:
                     
                     st.markdown("---")
                     
-                    # ── 4. FORMULARIO PROTEGIDO ──
+                    # ── 4. FORMULARIO Y TABLA ──
                     df_actual = get_data_nexion_brute()
                     
                     if not df_actual.empty:                       
@@ -3288,9 +3283,9 @@ else:
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar),
                                     "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="medium", disabled=not puede_editar),
                                     "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar),
+                                    "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
                                     "FACTURA": st.column_config.TextColumn(disabled=True),
-                                    "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
                                     "DESTINO": st.column_config.TextColumn(disabled=True),
                                     "PROGRAMACION": st.column_config.TextColumn(disabled=True),
                                 }
@@ -3299,16 +3294,23 @@ else:
                             btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar else "🔒 Modo Lectura"
                             submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar)
                     
-                    # ── 5. LÓGICA DE ACTUALIZACIÓN ──
+                    # ── 5. LÓGICA DE ACTUALIZACIÓN (LIMPIEZA DE ICONOS ANTES DE GUARDAR) ──
                     if puede_editar and submit_button:
-                        with st.status("Sincronizando...", expanded=True) as status:
+                        with st.status("Limpiando iconos y sincronizando...", expanded=True) as status:
                             try:
+                                df_limpio = edited_df.copy()
+                                def quitar_iconos(val):
+                                    return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
+                                
+                                df_limpio['ESTATUS'] = df_limpio['ESTATUS'].apply(quitar_iconos)
+                    
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
-                                csv_string = edited_df.to_csv(index=False)
+                                csv_string = df_limpio.to_csv(index=False)
                                 contents = repo.get_contents(FILE_PATH)
                                 hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
                                 repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
+                                
                                 st.session_state.df_pedidos = edited_df
                                 status.update(label="¡Guardado!", state="complete", expanded=False)
                                 st.toast("GitHub Actualizado", icon="✅")
@@ -3317,17 +3319,17 @@ else:
                             except Exception as e:
                                 st.error(f"Error: {e}")
                     
-                    # ── 6. DESCARGA (SOLO ADMINS) ──
+                    # ── 6. DESCARGA (DIRECTA) ──
                     if puede_editar:
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        if st.button("DESCARGAR LISTADO ACTUALIZADO", use_container_width=True):
-                            try:
-                                csv_download = edited_df.to_csv(index=False).encode('utf-8')
-                                st.download_button(label="CONFIRMAR DESCARGA", data=csv_download, 
-                                                   file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
-                                                   mime="text/csv", use_container_width=True)
-                            except:
-                                st.error("Error en descarga.")
+                        st.write("")
+                        csv_download = edited_df.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            label="📥 DESCARGAR LISTADO ACTUALIZADO", 
+                            data=csv_download, 
+                            file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
+                            mime="text/csv", 
+                            use_container_width=True
+                        )
                                     
                 
                 
