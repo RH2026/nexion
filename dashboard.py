@@ -3210,7 +3210,7 @@ else:
                     FILE_PATH = "pedidos.csv"
                     tz_gdl = pytz.timezone('America/Mexico_City')
                     
-                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENTREGADO", "❌ CANCELADO"]
+                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
                     OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
                     
@@ -3253,15 +3253,10 @@ else:
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
                     
-                    # ── 3. BOTÓN RECARGAR (CAMBIA LA KEY SOLO AQUÍ) ──
-                    if 'version_editor' not in st.session_state:
-                        st.session_state.version_editor = 1
-                    
+                    # ── 3. BOTÓN RECARGAR (FUERA DEL FORMULARIO) ──
                     col_refresh, _ = st.columns([1, 3])
                     with col_refresh:
-                        if st.button("RECARGAR DATOS", use_container_width=True):
-                            # Al cambiar este número, el editor se refresca, pero solo una vez
-                            st.session_state.version_editor += 1
+                        if st.button("🚨 FORZAR RECARGA DESDE GITHUB", use_container_width=True):
                             if 'df_pedidos' in st.session_state:
                                 del st.session_state.df_pedidos
                             st.session_state.force_reload = True
@@ -3271,36 +3266,38 @@ else:
                     
                     st.markdown("---")
                     
-                    # ── 4. EDITOR DE DATOS (KEY ESTABLE) ──
+                    # ── 4. ÁREA DE EDICIÓN (CON FORMULARIO PARA EVITAR PARPADEO) ──
                     df_actual = get_data_nexion_brute()
                     
                     if not df_actual.empty:
-                        # Usamos una key que solo cambia cuando tú pides la recarga forzada
-                        # Así te deja escribir sin resetearse a cada segundo
-                        editor_key = f"editor_nexion_v{st.session_state.version_editor}"
-                        
-                        edited_df = st.data_editor(
-                            df_actual,
-                            use_container_width=True,
-                            hide_index=True,
-                            key=editor_key,
-                            column_config={
-                                "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium"),
-                                "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small"),
-                                "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium"),
-                                "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large"),
-                                "NO CLIENTE": st.column_config.TextColumn(disabled=True),
-                                "FACTURA": st.column_config.TextColumn(disabled=True),
-                                "NOMBRE DEL CLIENTE": st.column_config.TextColumn(disabled=True),
-                                "DESTINO": st.column_config.TextColumn(disabled=True),
-                                "FECHA DE ENVÍO": st.column_config.TextColumn(disabled=True),
-                            }
-                        )
+                        # Creamos un formulario. Todo lo que pase aquí adentro es "invisible" para el servidor
+                        # hasta que se envíe (submit).
+                        with st.form("nexion_editor_form", clear_on_submit=False):
+                            
+                            edited_df = st.data_editor(
+                                df_actual,
+                                use_container_width=True,
+                                hide_index=True,
+                                column_config={
+                                    "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium"),
+                                    "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small"),
+                                    "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium"),
+                                    "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large"),
+                                    "NO CLIENTE": st.column_config.TextColumn(disabled=True),
+                                    "FACTURA": st.column_config.TextColumn(disabled=True),
+                                    "NOMBRE DEL CLIENTE": st.column_config.TextColumn(disabled=True),
+                                    "DESTINO": st.column_config.TextColumn(disabled=True),
+                                    "FECHA DE ENVÍO": st.column_config.TextColumn(disabled=True),
+                                }
+                            )
+                            
+                            st.write("⚠️ *Los cambios se guardarán localmente hasta que presiones el botón de abajo.*")
+                            
+                            # El botón de Submit del formulario actúa como el disparador de la actualización
+                            submit_button = st.form_submit_button("🚀 ACTUALIZAR EN NUBE", type="primary", use_container_width=True)
                     
-                        st.markdown("<br>", unsafe_allow_html=True)
-                    
-                        # ── 5. ACTUALIZAR (UPLINK) ──
-                        if st.button("ACTUALIZAR EN NUBE", type="primary", use_container_width=True):
+                        # ── 5. LÓGICA DE ACTUALIZACIÓN (UPLINK) ──
+                        if submit_button:
                             if TOKEN:
                                 with st.status("Subiendo cambios...", expanded=True) as status:
                                     try:
@@ -3312,7 +3309,7 @@ else:
                                         hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
                                         repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
                                         
-                                        # Guardamos el cambio en la sesión actual también para no perderlo
+                                        # Actualizamos sesión
                                         st.session_state.df_pedidos = edited_df
                                         
                                         status.update(label="¡Guardado exitoso!", state="complete", expanded=False)
@@ -3322,8 +3319,10 @@ else:
                                     except Exception as e:
                                         status.update(label=f"Error: {e}", state="error")
                     
+                        st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
+                    
                         # ── 6. DESCARGA (OFICIAL) ──
-                        if st.button("DESCARGAR", use_container_width=True):
+                        if st.button("📥 DESCARGAR OFICIAL DE GITHUB", use_container_width=True):
                             try:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
@@ -3340,7 +3339,7 @@ else:
                                 st.error("Error al obtener la versión oficial.")
                     else:
                         st.info("Buscando datos frescos en el servidor...")
-                
+                                    
                 
                 
                 
