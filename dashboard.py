@@ -30,6 +30,7 @@ from reportlab.lib.units import cm
 from reportlab.lib.utils import simpleSplit
 
 import google.generativeai as genai
+import random
 
 
 # 1. CONFIGURACIÓN DE PÁGINA
