@@ -3215,7 +3215,8 @@ else:
                     AUTHORIZED_EDITORS = ["JMoreno", "Rigoberto"]
                     puede_editar = current_user in AUTHORIZED_EDITORS
                     
-                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
+                    # LISTAS LIMPIAS SIN ICONOS
+                    OPCIONES_ESTATUS = ["PENDIENTE", "DETENIDO", "ENVIADO", "CANCELADO"]
                     OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
                     
@@ -3230,33 +3231,30 @@ else:
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
                                 
-                                # 1. Definimos el orden que TÚ quieres ver en la app
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION", "ESTATUS"]
                                 columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "PAQUETERIA", "INCIDENCIA"]
                                 all_cols = columnas_lectura + columnas_nuevas
                                 
-                                # 2. Si la columna no existe, la crea. Si existe, NO LA TOCA.
                                 for col in all_cols:
                                     if col not in df.columns:
                                         df[col] = ""
                                     else:
-                                        # Solo quitamos los 'nan' de texto, pero dejamos el contenido real
-                                        df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip()
+                                        # Limpiamos y forzamos mayúsculas para comparar sin fallos
+                                        df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip().str.upper()
                     
-                                # 3. EL TRUCO FINAL: Solo aplica el emoji si el texto está limpio (ej. "ENVIADO" -> "✅ ENVIADO")
-                                # Pero si ya tiene el emoji, lo deja igual.
-                                def arreglar_emoji(valor):
-                                    valor = valor.upper()
-                                    if "PENDIENTE" in valor and "🆕" not in valor: return "🆕 PENDIENTE"
-                                    if "DETENIDO" in valor and "🛑" not in valor: return "🛑 DETENIDO"
-                                    if "ENVIADO" in valor and "✅" not in valor: return "✅ ENVIADO"
-                                    if "CANCELADO" in valor and "❌" not in valor: return "❌ CANCELADO"
-                                    return valor
-                    
+                                # Validación de ESTATUS para que encaje con el Selectbox
                                 if "ESTATUS" in df.columns:
-                                    df['ESTATUS'] = df['ESTATUS'].apply(arreglar_emoji)
+                                    def limpiar_estatus(val):
+                                        # Si el valor ya es uno válido, lo deja.
+                                        if val in OPCIONES_ESTATUS: return val
+                                        # Si tiene el icono viejo o basura, busca la palabra clave
+                                        for opc in OPCIONES_ESTATUS:
+                                            if opc in val: return opc
+                                        # Si está vacío, por defecto PENDIENTE
+                                        return "PENDIENTE"
+                                    
+                                    df['ESTATUS'] = df['ESTATUS'].apply(limpiar_estatus)
                     
-                                # 4. Aseguramos que solo mostramos las columnas que pediste
                                 st.session_state.df_pedidos = df[all_cols]
                                 st.session_state.force_reload = False 
                             except Exception as e:
@@ -3298,48 +3296,38 @@ else:
                                 }
                             )
                             
-                            if puede_editar:
-                                btn_label = "ACTUALIZAR EN LA NUBE"
-                                is_disabled = False
-                            else:
-                                btn_label = "🔒 Modo Lectura"
-                                is_disabled = True 
-                                
-                            submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=is_disabled)
+                            btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar else "🔒 Modo Lectura"
+                            submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar)
                     
-                        # ── 5. LÓGICA DE ACTUALIZACIÓN ──
-                        if puede_editar and submit_button:
-                            with st.status("Sincronizando...", expanded=True) as status:
-                                try:
-                                    g = Github(TOKEN)
-                                    repo = g.get_repo(REPO_NAME)
-                                    csv_string = edited_df.to_csv(index=False)
-                                    contents = repo.get_contents(FILE_PATH)
-                                    hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
-                                    repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
-                                    st.session_state.df_pedidos = edited_df
-                                    status.update(label="¡Guardado!", state="complete", expanded=False)
-                                    st.toast("GitHub Actualizado", icon="✅")
-                                    time.sleep(1)
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Error: {e}")
+                    # ── 5. LÓGICA DE ACTUALIZACIÓN ──
+                    if puede_editar and submit_button:
+                        with st.status("Sincronizando...", expanded=True) as status:
+                            try:
+                                g = Github(TOKEN)
+                                repo = g.get_repo(REPO_NAME)
+                                csv_string = edited_df.to_csv(index=False)
+                                contents = repo.get_contents(FILE_PATH)
+                                hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
+                                repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
+                                st.session_state.df_pedidos = edited_df
+                                status.update(label="¡Guardado!", state="complete", expanded=False)
+                                st.toast("GitHub Actualizado", icon="✅")
+                                time.sleep(1)
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
                     
-                        # ── 6. DESCARGA (SOLO ADMINS) ──
-                        if puede_editar:
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            if st.button("DESCARGAR LISTADO ACTUALIZADO", use_container_width=True):
-                                try:
-                                    g = Github(TOKEN)
-                                    repo = g.get_repo(REPO_NAME)
-                                    contents = repo.get_contents(FILE_PATH, ref="main")
-                                    st.download_button(label="CONFIRMAR DESCARGA", data=contents.decoded_content, 
-                                                     file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
-                                                     mime="text/csv", use_container_width=True)
-                                except:
-                                    st.error("Error en descarga.")
-                    else:
-                        st.info("Buscando datos...")
+                    # ── 6. DESCARGA (SOLO ADMINS) ──
+                    if puede_editar:
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        if st.button("DESCARGAR LISTADO ACTUALIZADO", use_container_width=True):
+                            try:
+                                csv_download = edited_df.to_csv(index=False).encode('utf-8')
+                                st.download_button(label="CONFIRMAR DESCARGA", data=csv_download, 
+                                                   file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
+                                                   mime="text/csv", use_container_width=True)
+                            except:
+                                st.error("Error en descarga.")
                                     
                 
                 
