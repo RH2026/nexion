@@ -3205,6 +3205,7 @@ else:
                 
                 with tab_pedidos:
                     # ── 1. CONFIGURACIÓN Y PERMISOS ──
+                    # ── 1. CONFIGURACIÓN Y PERMISOS ──
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "pedidos.csv"
@@ -3213,13 +3214,13 @@ else:
                     current_user = st.session_state.get("usuario_activo", "UNKNOWN")
                     AUTHORIZED_EDITORS = ["JMoreno", "Rigoberto"]
                     puede_editar = current_user in AUTHORIZED_EDITORS
-                
+                    
                     OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
                     OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
-                
+                    
                     st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar else '(MODO LECTURA)'}")
-                
+                    
                     # ── 2. LÓGICA DE CARGA (BRUTE FORCE) ──
                     def get_data_nexion_brute():
                         if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
@@ -3229,17 +3230,24 @@ else:
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False).fillna("")
                                 
+                                # MOVIMOS "ESTATUS" AQUÍ PARA QUE LEA TUS DATOS REALES
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION", "ESTATUS"]
-                                columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "PAQUETERIA"]
+                                # Dejamos como nuevas solo las que el sistema debe asegurar que existan si no están
+                                columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "PAQUETERIA", "INCIDENCIA"]
+                                
                                 all_cols = columnas_lectura + columnas_nuevas
                                 
                                 for col in all_cols:
-                                    if col not in df.columns: df[col] = ""
+                                    if col not in df.columns: 
+                                        df[col] = ""
                                     else:
                                         df[col] = df[col].astype(str).replace(['None', 'nan', 'NaN', 'None ', 'nan ', 'N/A'], '')
                                         df[col] = df[col].str.strip()
                                 
+                                # Mantenemos la validación para que los selectores no truenen, 
+                                # pero ahora ya tiene los datos cargados del CSV
                                 if not df.empty:
+                                    # Solo asigna PENDIENTE si la celda está vacía o tiene algo que no está en la lista oficial
                                     df.loc[~df['ESTATUS'].isin(OPCIONES_ESTATUS), 'ESTATUS'] = OPCIONES_ESTATUS[0]
                                     df.loc[~df['SURTIDOR'].isin(OPCIONES_SURTIDOR), 'SURTIDOR'] = ""
                                     df.loc[~df['PAQUETERIA'].isin(OPCIONES_PAQUETERIA), 'PAQUETERIA'] = ""
@@ -3250,7 +3258,7 @@ else:
                                 st.error(f"Error de conexión: {e}")
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
-                
+                    
                     # ── 3. BOTÓN RECARGAR (SOLO ADMINS) ──
                     if puede_editar:
                         if st.button("RECARGAR DATOS", use_container_width=True):
@@ -3258,15 +3266,13 @@ else:
                             st.session_state.force_reload = True
                             st.cache_data.clear()
                             st.rerun()
-                
+                    
                     st.markdown("---")
-                
+                    
                     # ── 4. FORMULARIO PROTEGIDO ──
                     df_actual = get_data_nexion_brute()
-                
+                    
                     if not df_actual.empty:                       
-                        
-                        # Iniciamos el formulario
                         with st.form("nexion_editor_form_safe"):
                             edited_df = st.data_editor(
                                 df_actual,
@@ -3277,14 +3283,8 @@ else:
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar),
                                     "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar),
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar),
-                                    
-                                    # Reducimos FECHA DE ENVIO a 'small' para que no parpadee ni se estire de más
                                     "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="medium", disabled=not puede_editar),
-                                    
-                                    # Agregamos INCIDENCIA con 'large' para que ocupe el resto del espacio sobrante
                                     "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar),
-                                    
-                                    # Columnas de solo lectura bloqueadas
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
                                     "FACTURA": st.column_config.TextColumn(disabled=True),
                                     "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
@@ -3293,16 +3293,15 @@ else:
                                 }
                             )
                             
-                            # EL BOTÓN DE SUBMIT SIEMPRE DEBE EXISTIR DENTRO DEL FORM
                             if puede_editar:
                                 btn_label = "ACTUALIZAR EN LA NUBE"
                                 is_disabled = False
                             else:
                                 btn_label = "🔒 Modo Lectura"
-                                is_disabled = True # Aquí se bloquea para el usuario normal
+                                is_disabled = True 
                                 
                             submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=is_disabled)
-                
+                    
                         # ── 5. LÓGICA DE ACTUALIZACIÓN ──
                         if puede_editar and submit_button:
                             with st.status("Sincronizando...", expanded=True) as status:
@@ -3320,7 +3319,7 @@ else:
                                     st.rerun()
                                 except Exception as e:
                                     st.error(f"Error: {e}")
-                
+                    
                         # ── 6. DESCARGA (SOLO ADMINS) ──
                         if puede_editar:
                             st.markdown("<br>", unsafe_allow_html=True)
