@@ -3210,7 +3210,7 @@ else:
                     FILE_PATH = "pedidos.csv"
                     tz_gdl = pytz.timezone('America/Mexico_City')
                     
-                    # Verificación de usuario para permisos de edición
+                    # Verificación estricta de usuario
                     current_user = st.session_state.get("usuario_activo", "UNKNOWN")
                     AUTHORIZED_EDITORS = ["JMoreno", "Rigoberto"]
                     puede_editar = current_user in AUTHORIZED_EDITORS
@@ -3227,7 +3227,6 @@ else:
                             try:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
-                                # Forzamos la rama main para asegurar datos frescos
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 
                                 df = pd.read_csv(
@@ -3258,31 +3257,29 @@ else:
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
                 
-                    # ── 3. BOTÓN RECARGAR (VISIBLE PARA TODOS) ──
-                    col_refresh, _ = st.columns([1, 3])
-                    with col_refresh:
-                        if st.button("RECARGAR DATOS", use_container_width=True):
-                            if 'df_pedidos' in st.session_state:
-                                del st.session_state.df_pedidos
-                            st.session_state.force_reload = True
-                            st.cache_data.clear()
-                            st.cache_resource.clear()
-                            st.rerun()
+                    # ── 3. BOTÓN RECARGAR (SOLO PARA ADMINS) ──
+                    if puede_editar:
+                        col_refresh, _ = st.columns([1, 3])
+                        with col_refresh:
+                            if st.button("RECARGAR DATOS", use_container_width=True):
+                                if 'df_pedidos' in st.session_state:
+                                    del st.session_state.df_pedidos
+                                st.session_state.force_reload = True
+                                st.cache_data.clear()
+                                st.cache_resource.clear()
+                                st.rerun()
                 
                     st.markdown("---")
                 
-                    # ── 4. ÁREA DE EDICIÓN / LECTURA (FORMULARIO ANTI-PARPADEO) ──
+                    # ── 4. ÁREA DE MATRIZ (CON SEGURIDAD ACTIVA) ──
                     df_actual = get_data_nexion_brute()
                 
                     if not df_actual.empty:
-                        # Formulario para que la edición sea fluida
                         with st.form("nexion_editor_form", clear_on_submit=False):
-                            
                             edited_df = st.data_editor(
                                 df_actual,
                                 use_container_width=True,
                                 hide_index=True,
-                                # El 'disabled' depende de si el usuario está autorizado
                                 column_config={
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar),
                                     "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small", disabled=not puede_editar),
@@ -3296,14 +3293,15 @@ else:
                                 }
                             )
                             
+                            # Solo mostramos el botón de actualizar a los VIP
                             if puede_editar:
-                                st.write("⚠️ *Modo Administrador activo. Los cambios se sincronizarán con Nexion Cloud.*")
+                                st.write("⚠️ *Modo Administrador activo.*")
                                 submit_button = st.form_submit_button("ACTUALIZAR EN LA NUBE", type="primary", use_container_width=True)
                             else:
-                                st.info("ℹ️ *Modo Lectura: No tienes permisos para modificar esta matriz.*")
-                                submit_button = st.form_submit_button("REVISAR CAMBIOS LOCALES", use_container_width=True, disabled=True)
+                                st.info("ℹ️ *Modo Lectura: La descarga y edición están restringidas.*")
+                                submit_button = False  # Desactivamos lógica de submit
                 
-                        # ── 5. LÓGICA DE ACTUALIZACIÓN (SOLO AUTORIZADOS) ──
+                        # ── 5. LÓGICA DE ACTUALIZACIÓN ──
                         if puede_editar and submit_button:
                             if TOKEN:
                                 with st.status("Subiendo cambios...", expanded=True) as status:
@@ -3316,9 +3314,7 @@ else:
                                         hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
                                         repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
                                         
-                                        # Actualizamos sesión local
                                         st.session_state.df_pedidos = edited_df
-                                        
                                         status.update(label="¡Guardado exitoso!", state="complete", expanded=False)
                                         st.toast("GitHub Actualizado", icon="✅")
                                         time.sleep(1)
@@ -3326,25 +3322,23 @@ else:
                                     except Exception as e:
                                         st.error(f"Error al subir: {e}")
                 
-                        st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
-                
-                        # ── 6. DESCARGA (DISPONIBLE PARA TODOS) ──
-                        if st.button("DESCARGAR LISTADO ACTUALIZADO", use_container_width=True):
-                            try:
-                                g = Github(TOKEN)
-                                repo = g.get_repo(REPO_NAME)
-                                # Descarga directa de la nube para asegurar sincronía
-                                contents = repo.get_contents(FILE_PATH, ref="main")
-                                
-                                st.download_button(
-                                    label="CONFIRMAR DESCARGA",
-                                    data=contents.decoded_content,
-                                    file_name=f"nexion_oficial_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv",
-                                    mime="text/csv",
-                                    use_container_width=True
-                                )
-                            except Exception as e:
-                                st.error("Error al obtener la versión oficial para descarga.")
+                        # ── 6. DESCARGA (SOLO PARA ADMINS) ──
+                        if puede_editar:
+                            st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
+                            if st.button("DESCARGAR LISTADO ACTUALIZADO", use_container_width=True):
+                                try:
+                                    g = Github(TOKEN)
+                                    repo = g.get_repo(REPO_NAME)
+                                    contents = repo.get_contents(FILE_PATH, ref="main")
+                                    st.download_button(
+                                        label="CONFIRMAR DESCARGA",
+                                        data=contents.decoded_content,
+                                        file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv",
+                                        mime="text/csv",
+                                        use_container_width=True
+                                    )
+                                except Exception as e:
+                                    st.error("Error en descarga.")
                     else:
                         st.info("Buscando datos frescos en el servidor...")
                                     
