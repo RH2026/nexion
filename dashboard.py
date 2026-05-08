@@ -3286,10 +3286,10 @@ else:
                             
                             # EL BOTÓN DE SUBMIT SIEMPRE DEBE EXISTIR DENTRO DEL FORM
                             if puede_editar:
-                                btn_label = "🚀 ACTUALIZAR EN LA NUBE"
+                                btn_label = "ACTUALIZAR EN LA NUBE"
                                 is_disabled = False
                             else:
-                                btn_label = "🔒 MODO LECTURA"
+                                btn_label = "🔒 Modo Lectura"
                                 is_disabled = True # Aquí se bloquea para el usuario normal
                                 
                             submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=is_disabled)
