@@ -3266,38 +3266,36 @@ else:
                 
                     if not df_actual.empty:
                         # 1. Al principio de tu script, inicializa el estado del modo pantalla completa
+                        # 1. Lógica del Botón Fullscreen (Sin funciones externas para evitar fallos)
                         if 'modo_full' not in st.session_state:
                             st.session_state.modo_full = False
-                        
-                        # Función para cambiar el estado
-                        def toggle_fullscreen():
-                            st.session_state.modo_full = not st.session_state.modo_full
-                        
-                        # 2. Botón de Control
-                        col_f1, col_f2 = st.columns([1, 4])
+                    
+                        col_f1, _ = st.columns([1, 3])
                         with col_f1:
-                            label_btn = "🔲 SALIR DE FULLSCREEN" if st.session_state.modo_full else "🔳 MODO FULLSCREEN"
-                            st.button(label_btn, on_click=toggle_fullscreen, use_container_width=True)
-                        
-                        # 3. CSS MÁGICO (Solo se activa si modo_full es True)
+                            # El botón cambia el estado directamente aquí
+                            if st.button("🔳 MODO PANTALLA COMPLETA" if not st.session_state.modo_full else "🔲 SALIR DE FULLSCREEN", use_container_width=True):
+                                st.session_state.modo_full = not st.session_state.modo_full
+                                st.rerun()
+                    
+                        # 2. Inyección de CSS (Ahora con una key única para asegurar que se aplique)
                         if st.session_state.modo_full:
-                            st.markdown("""
+                            st.markdown(f"""
                                 <style>
-                                    /* Oculta la barra lateral, el header y el footer de Streamlit */
-                                    [data-testid="stSidebar"], 
-                                    [data-testid="stHeader"], 
-                                    footer {
+                                    /* Oculta elementos molestos */
+                                    [data-testid="stSidebar"], [data-testid="stHeader"], footer {{
                                         display: none !important;
-                                    }
-                                    /* Quita márgenes para aprovechar cada pixel */
-                                    .main .block-container {
+                                    }}
+                                    /* Expande el contenedor al máximo */
+                                    .main .block-container {{
                                         padding-top: 1rem !important;
-                                        max-width: 98% !important;
-                                    }
-                                    /* Estira el editor de datos */
-                                    .stDataEditor {
+                                        padding-left: 1rem !important;
+                                        padding-right: 1rem !important;
+                                        max-width: 99% !important;
+                                    }}
+                                    /* Ajusta el editor para que no tenga márgenes */
+                                    .stDataEditor {{
                                         width: 100% !important;
-                                    }
+                                    }}
                                 </style>
                             """, unsafe_allow_html=True)
                         
@@ -3312,7 +3310,7 @@ else:
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar),
                                     "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small", disabled=not puede_editar),
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar),
-                                    "FECHA DE ENVIO": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar),
+                                    "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="large", disabled=not puede_editar),
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
                                     "FACTURA": st.column_config.TextColumn(disabled=True),
                                     "NOMBRE DEL CLIENTE": st.column_config.TextColumn(disabled=True),
