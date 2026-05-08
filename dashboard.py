@@ -3207,22 +3207,26 @@ else:
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "pedidos.csv"
-                    CSV_URL = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/pedidos.csv"
                     tz_gdl = pytz.timezone('America/Mexico_City')
                     
                     # ── 2. OPCIONES DE LOS SELECTORES ──
-                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🚚 EN RUTA", "✅ ENTREGADO", "❌ CANCELADO"]
+                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "✅ ENVIADO","🛑 DETENIDA", "❌ CANCELADA"]
                     OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
                     
                     st.set_page_config(page_title="Nexion Core - Matrix", layout="wide")
                     st.markdown("### PANEL DE ENVIOS DIARIO")
                     
-                    # ── 3. LÓGICA DE CARGA ULTRA LIMPIA ──
+                    # ── 3. LÓGICA DE CARGA ULTRA RÁPIDA (API DIRECTA) ──
                     def get_data_nexion():
                         if 'df_pedidos' not in st.session_state:
                             try:
-                                df = pd.read_csv(CSV_URL, keep_default_na=False).fillna("")
+                                # Usamos la API de Github para traer el dato real e instantáneo
+                                g = Github(TOKEN)
+                                repo = g.get_repo(REPO_NAME)
+                                contents = repo.get_contents(FILE_PATH)
+                                # Decodificamos el contenido del archivo directamente
+                                df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False).fillna("")
                                 
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "FECHA DE ENVÍO"]
                                 columnas_nuevas = ["ESTATUS", "SURTIDOR", "PAQUETERIA", "INCIDENCIA"]
@@ -3242,17 +3246,20 @@ else:
                                 
                                 st.session_state.df_pedidos = df[all_cols]
                             except Exception as e:
-                                st.error(f"Error de conexión: {e}")
+                                st.error(f"Error de conexión inmediata: {e}")
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
                     
-                    # ── 4. BOTÓN RECARGAR (PRIMERO / ARRIBA) ──
+                    # ── 4. BOTÓN RECARGAR (FUERZA BORRADO DE CACHÉ) ──
                     col_refresh, _ = st.columns([1, 3])
                     with col_refresh:
                         if st.button("RECARGAR MATRIZ", use_container_width=True):
+                            # Borramos el estado de la sesión
                             if 'df_pedidos' in st.session_state:
                                 del st.session_state.df_pedidos
+                            # Limpiamos cachés internos de Streamlit
                             st.cache_data.clear()
+                            st.cache_resource.clear()
                             st.rerun()
                     
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -3265,7 +3272,7 @@ else:
                             df_actual,
                             use_container_width=True,
                             hide_index=True,
-                            key="editor_nexion_v7",
+                            key="editor_nexion_v8",
                             column_config={
                                 "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium"),
                                 "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small"),
@@ -3281,12 +3288,12 @@ else:
                     
                         st.markdown("<br>", unsafe_allow_html=True)
                     
-                        # ── 6. BOTONES DE GUARDADO Y DESCARGA (ABAJO / SEPARADOS) ──
+                        # ── 6. BOTONES DE ACTUALIZAR Y DESCARGA (POR SEPARADO) ──
                         
-                        # Botón de Guardar en GitHub (Destacado)
+                        # BOTÓN ACTUALIZAR (Uplink a GitHub)
                         if st.button("ACTUALIZAR", type="primary", use_container_width=True):
                             if TOKEN:
-                                with st.status("Sincronizando...", expanded=True) as status:
+                                with st.status("Subiendo cambios a Nexion Core...", expanded=True) as status:
                                     try:
                                         g = Github(TOKEN)
                                         repo = g.get_repo(REPO_NAME)
@@ -3294,31 +3301,40 @@ else:
                                         contents = repo.get_contents(FILE_PATH)
                                         
                                         hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
-                                        repo.update_file(path=FILE_PATH, message=f"PRO_SYNC // {hora_local}", content=csv_string, sha=contents.sha)
+                                        repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
                                         
+                                        # Actualizamos sesión y forzamos recarga limpia
                                         st.session_state.df_pedidos = edited_df
-                                        status.update(label="Sincronización Exitosa", state="complete", expanded=False)
-                                        st.toast("GitHub Actualizado correctamente", icon="✅")
-                                        time.sleep(1)
+                                        status.update(label="Cambios guardados en la nube", state="complete", expanded=False)
+                                        st.toast("GitHub Actualizado", icon="✅")
+                                        time.sleep(0.5)
                                         st.rerun()
                                     except Exception as e:
-                                        status.update(label=f"Error: {e}", state="error")
-                        
-                        # Espacio pequeño
-                        st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
+                                        status.update(label=f"Error al subir: {e}", state="error")
                     
-                        # Botón de Descarga Local
-                        csv_data = edited_df.to_csv(index=False).encode('utf-8-sig')
-                        st.download_button(
-                            label="DESCARGAR", 
-                            data=csv_data, 
-                            file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
-                            mime="text/csv", 
-                            use_container_width=True
-                        )
+                        st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
+                    
+                        # BOTÓN DESCARGAR (Baja el archivo REAL de GitHub, no solo la pantalla)
+                        if st.button("DESCARGAR ARCHIVO DE GITHUB", use_container_width=True):
+                            try:
+                                g = Github(TOKEN)
+                                repo = g.get_repo(REPO_NAME)
+                                contents = repo.get_contents(FILE_PATH)
+                                # Descargamos la versión que YA está en la nube para asegurar sincronía
+                                final_csv = contents.decoded_content
+                                
+                                st.download_button(
+                                    label="CONFIRMAR DESCARGA (.CSV)",
+                                    data=final_csv,
+                                    file_name=f"nexion_oficial_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv",
+                                    mime="text/csv",
+                                    use_container_width=True
+                                )
+                            except Exception as e:
+                                st.error("No se pudo obtener el archivo para descarga.")
                     
                     else:
-                        st.info("Sin datos para mostrar.")
+                        st.info("Conectando con el servidor de archivos...")
                 
                 
                 
