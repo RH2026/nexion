@@ -3204,7 +3204,7 @@ else:
                         st.error(f"Error crítico: {e}")
                 
                 with tab_pedidos:
-
+                    
                     # ── 1. CONFIGURACIÓN Y PERMISOS ──
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
@@ -3222,7 +3222,7 @@ else:
                     
                     st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar else '(MODO LECTURA)'}")
                     
-                    # ── 2. LÓGICA DE CARGA (TRADUCTOR TEXTO -> ICONO) ──
+                    # ── 2. LÓGICA DE CARGA ──
                     def get_data_nexion_brute():
                         if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
                             try:
@@ -3294,19 +3294,20 @@ else:
                             btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar else "🔒 Modo Lectura"
                             submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar)
                     
-                    # ── 5. LÓGICA DE ACTUALIZACIÓN (LIMPIEZA DE ICONOS ANTES DE GUARDAR) ──
+                    # ── 5. LÓGICA DE ACTUALIZACIÓN ──
                     if puede_editar and submit_button:
-                        with st.status("Limpiando iconos y sincronizando...", expanded=True) as status:
+                        with st.status("Sincronizando...", expanded=True) as status:
                             try:
-                                df_limpio = edited_df.copy()
+                                # LIMPIEZA PARA GITHUB
+                                df_limpio_git = edited_df.copy()
                                 def quitar_iconos(val):
                                     return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
                                 
-                                df_limpio['ESTATUS'] = df_limpio['ESTATUS'].apply(quitar_iconos)
+                                df_limpio_git['ESTATUS'] = df_limpio_git['ESTATUS'].apply(quitar_iconos)
                     
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
-                                csv_string = df_limpio.to_csv(index=False)
+                                csv_string = df_limpio_git.to_csv(index=False)
                                 contents = repo.get_contents(FILE_PATH)
                                 hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
                                 repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
@@ -3319,12 +3320,22 @@ else:
                             except Exception as e:
                                 st.error(f"Error: {e}")
                     
-                    # ── 6. DESCARGA (DIRECTA) ──
+                    # ── 6. DESCARGA (LIMPIEZA DE EMOJIS PARA EXCEL) ──
                     if puede_editar:
                         st.write("")
-                        csv_download = edited_df.to_csv(index=False).encode('utf-8')
+                        
+                        # Creamos una versión limpia SOLO para la descarga
+                        df_descarga = edited_df.copy()
+                        def limpiar_para_excel(val):
+                            # Quitamos los emojis específicos y cualquier símbolo raro
+                            return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
+                        
+                        df_descarga['ESTATUS'] = df_descarga['ESTATUS'].apply(limpiar_para_excel)
+                        
+                        csv_download = df_descarga.to_csv(index=False).encode('utf-8')
+                        
                         st.download_button(
-                            label="📥 DESCARGAR LISTADO ACTUALIZADO", 
+                            label="📥 DESCARGAR LISTADO LIMPIO (SIN EMOJIS)", 
                             data=csv_download, 
                             file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
                             mime="text/csv", 
