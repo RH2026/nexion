@@ -3272,7 +3272,7 @@ else:
                                 df_actual,
                                 use_container_width=True,
                                 hide_index=True,
-                                height=700,
+                                height=900,
                                 column_config={
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar),
                                     "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar),
@@ -3287,7 +3287,7 @@ else:
                                     # Columnas de solo lectura bloqueadas
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
                                     "FACTURA": st.column_config.TextColumn(disabled=True),
-                                    "NOMBRE DEL CLIENTE": st.column_config.TextColumn(disabled=True),
+                                    "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
                                     "DESTINO": st.column_config.TextColumn(disabled=True),
                                     "PROGRAMACION": st.column_config.TextColumn(disabled=True),
                                 }
