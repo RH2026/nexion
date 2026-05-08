@@ -3230,7 +3230,7 @@ else:
                                 df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False).fillna("")
                                 
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION"]
-                                columnas_nuevas = ["ESTATUS", "SURTIDOR", "PAQUETERIA", "FECHA DE ENVIO"]
+                                columnas_nuevas = ["FECHA DE ENVIO", "ESTATUS", "SURTIDOR", "PAQUETERIA"]
                                 all_cols = columnas_lectura + columnas_nuevas
                                 
                                 for col in all_cols:
@@ -3264,41 +3264,7 @@ else:
                     # ── 4. FORMULARIO PROTEGIDO ──
                     df_actual = get_data_nexion_brute()
                 
-                    if not df_actual.empty:
-                        # 1. Al principio de tu script, inicializa el estado del modo pantalla completa
-                        # 1. Lógica del Botón Fullscreen (Sin funciones externas para evitar fallos)
-                        if 'modo_full' not in st.session_state:
-                            st.session_state.modo_full = False
-                    
-                        col_f1, _ = st.columns([1, 3])
-                        with col_f1:
-                            # El botón cambia el estado directamente aquí
-                            if st.button("🔳 MODO PANTALLA COMPLETA" if not st.session_state.modo_full else "🔲 SALIR DE FULLSCREEN", use_container_width=True):
-                                st.session_state.modo_full = not st.session_state.modo_full
-                                st.rerun()
-                    
-                        # 2. Inyección de CSS (Ahora con una key única para asegurar que se aplique)
-                        if st.session_state.modo_full:
-                            st.markdown(f"""
-                                <style>
-                                    /* Oculta elementos molestos */
-                                    [data-testid="stSidebar"], [data-testid="stHeader"], footer {{
-                                        display: none !important;
-                                    }}
-                                    /* Expande el contenedor al máximo */
-                                    .main .block-container {{
-                                        padding-top: 1rem !important;
-                                        padding-left: 1rem !important;
-                                        padding-right: 1rem !important;
-                                        max-width: 99% !important;
-                                    }}
-                                    /* Ajusta el editor para que no tenga márgenes */
-                                    .stDataEditor {{
-                                        width: 100% !important;
-                                    }}
-                                </style>
-                            """, unsafe_allow_html=True)
-                        
+                    if not df_actual.empty:                       
                         
                         # Iniciamos el formulario
                         with st.form("nexion_editor_form_safe"):
