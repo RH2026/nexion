@@ -3272,6 +3272,7 @@ else:
                                 df_actual,
                                 use_container_width=True,
                                 hide_index=True,
+                                height=700,
                                 column_config={
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar),
                                     "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar),
