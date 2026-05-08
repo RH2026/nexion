@@ -3247,8 +3247,22 @@ else:
                                 # Mantenemos la validación para que los selectores no truenen, 
                                 # pero ahora ya tiene los datos cargados del CSV
                                 if not df.empty:
-                                    # Solo asigna PENDIENTE si la celda está vacía o tiene algo que no está en la lista oficial
+                                    # 1. Primero, aseguramos que el ESTATUS del archivo tenga el emoji si le falta
+                                    # Creamos un diccionario para mapear texto simple a texto con emoji
+                                    mapeo_estatus = {
+                                        "PENDIENTE": "🆕 PENDIENTE",
+                                        "DETENIDO": "🛑 DETENIDO",
+                                        "ENVIADO": "✅ ENVIADO",
+                                        "CANCELADO": "❌ CANCELADO"
+                                    }
+                                    
+                                    # Si el dato en el CSV viene sin emoji (como en tu imagen), se lo ponemos
+                                    df['ESTATUS'] = df['ESTATUS'].apply(lambda x: mapeo_estatus.get(x.strip(), x))
+                
+                                    # 2. Ahora sí, validamos contra la lista oficial OPCIONES_ESTATUS
                                     df.loc[~df['ESTATUS'].isin(OPCIONES_ESTATUS), 'ESTATUS'] = OPCIONES_ESTATUS[0]
+                                    
+                                    # Limpieza normal para lo demás
                                     df.loc[~df['SURTIDOR'].isin(OPCIONES_SURTIDOR), 'SURTIDOR'] = ""
                                     df.loc[~df['PAQUETERIA'].isin(OPCIONES_PAQUETERIA), 'PAQUETERIA'] = ""
                                 
