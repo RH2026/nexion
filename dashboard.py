@@ -3228,44 +3228,35 @@ else:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
                                 contents = repo.get_contents(FILE_PATH, ref="main")
-                                df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False).fillna("")
+                                df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
                                 
-                                # MOVIMOS "ESTATUS" AQUÍ PARA QUE LEA TUS DATOS REALES
+                                # 1. Definimos el orden que TÚ quieres ver en la app
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION", "ESTATUS"]
-                                # Dejamos como nuevas solo las que el sistema debe asegurar que existan si no están
                                 columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "PAQUETERIA", "INCIDENCIA"]
-                                
                                 all_cols = columnas_lectura + columnas_nuevas
                                 
+                                # 2. Si la columna no existe, la crea. Si existe, NO LA TOCA.
                                 for col in all_cols:
-                                    if col not in df.columns: 
+                                    if col not in df.columns:
                                         df[col] = ""
                                     else:
-                                        df[col] = df[col].astype(str).replace(['None', 'nan', 'NaN', 'None ', 'nan ', 'N/A'], '')
-                                        df[col] = df[col].str.strip()
-                                
-                                # Mantenemos la validación para que los selectores no truenen, 
-                                # pero ahora ya tiene los datos cargados del CSV
-                                if not df.empty:
-                                    # 1. Primero, aseguramos que el ESTATUS del archivo tenga el emoji si le falta
-                                    # Creamos un diccionario para mapear texto simple a texto con emoji
-                                    mapeo_estatus = {
-                                        "PENDIENTE": "🆕 PENDIENTE",
-                                        "DETENIDO": "🛑 DETENIDO",
-                                        "ENVIADO": "✅ ENVIADO",
-                                        "CANCELADO": "❌ CANCELADO"
-                                    }
-                                    
-                                    # Si el dato en el CSV viene sin emoji (como en tu imagen), se lo ponemos
-                                    df['ESTATUS'] = df['ESTATUS'].apply(lambda x: mapeo_estatus.get(x.strip(), x))
-                
-                                    # 2. Ahora sí, validamos contra la lista oficial OPCIONES_ESTATUS
-                                    df.loc[~df['ESTATUS'].isin(OPCIONES_ESTATUS), 'ESTATUS'] = OPCIONES_ESTATUS[0]
-                                    
-                                    # Limpieza normal para lo demás
-                                    df.loc[~df['SURTIDOR'].isin(OPCIONES_SURTIDOR), 'SURTIDOR'] = ""
-                                    df.loc[~df['PAQUETERIA'].isin(OPCIONES_PAQUETERIA), 'PAQUETERIA'] = ""
-                                
+                                        # Solo quitamos los 'nan' de texto, pero dejamos el contenido real
+                                        df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip()
+                    
+                                # 3. EL TRUCO FINAL: Solo aplica el emoji si el texto está limpio (ej. "ENVIADO" -> "✅ ENVIADO")
+                                # Pero si ya tiene el emoji, lo deja igual.
+                                def arreglar_emoji(valor):
+                                    valor = valor.upper()
+                                    if "PENDIENTE" in valor and "🆕" not in valor: return "🆕 PENDIENTE"
+                                    if "DETENIDO" in valor and "🛑" not in valor: return "🛑 DETENIDO"
+                                    if "ENVIADO" in valor and "✅" not in valor: return "✅ ENVIADO"
+                                    if "CANCELADO" in valor and "❌" not in valor: return "❌ CANCELADO"
+                                    return valor
+                    
+                                if "ESTATUS" in df.columns:
+                                    df['ESTATUS'] = df['ESTATUS'].apply(arreglar_emoji)
+                    
+                                # 4. Aseguramos que solo mostramos las columnas que pediste
                                 st.session_state.df_pedidos = df[all_cols]
                                 st.session_state.force_reload = False 
                             except Exception as e:
