@@ -3265,6 +3265,43 @@ else:
                     df_actual = get_data_nexion_brute()
                 
                     if not df_actual.empty:
+                        # 1. Al principio de tu script, inicializa el estado del modo pantalla completa
+                        if 'modo_full' not in st.session_state:
+                            st.session_state.modo_full = False
+                        
+                        # Función para cambiar el estado
+                        def toggle_fullscreen():
+                            st.session_state.modo_full = not st.session_state.modo_full
+                        
+                        # 2. Botón de Control
+                        col_f1, col_f2 = st.columns([1, 4])
+                        with col_f1:
+                            label_btn = "🔲 SALIR DE FULLSCREEN" if st.session_state.modo_full else "🔳 MODO FULLSCREEN"
+                            st.button(label_btn, on_click=toggle_fullscreen, use_container_width=True)
+                        
+                        # 3. CSS MÁGICO (Solo se activa si modo_full es True)
+                        if st.session_state.modo_full:
+                            st.markdown("""
+                                <style>
+                                    /* Oculta la barra lateral, el header y el footer de Streamlit */
+                                    [data-testid="stSidebar"], 
+                                    [data-testid="stHeader"], 
+                                    footer {
+                                        display: none !important;
+                                    }
+                                    /* Quita márgenes para aprovechar cada pixel */
+                                    .main .block-container {
+                                        padding-top: 1rem !important;
+                                        max-width: 98% !important;
+                                    }
+                                    /* Estira el editor de datos */
+                                    .stDataEditor {
+                                        width: 100% !important;
+                                    }
+                                </style>
+                            """, unsafe_allow_html=True)
+                        
+                        
                         # Iniciamos el formulario
                         with st.form("nexion_editor_form_safe"):
                             edited_df = st.data_editor(
