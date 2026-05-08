@@ -3204,25 +3204,30 @@ else:
                         st.error(f"Error crítico: {e}")
                 
                 with tab_pedidos:
-                    # ── 1. CONFIGURACIÓN ──
+                    # ── 1. CONFIGURACIÓN Y PERMISOS ──
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "pedidos.csv"
                     tz_gdl = pytz.timezone('America/Mexico_City')
                     
+                    # Verificación de usuario para permisos de edición
+                    current_user = st.session_state.get("usuario_activo", "UNKNOWN")
+                    AUTHORIZED_EDITORS = ["JMoreno", "Rigoberto"]
+                    puede_editar = current_user in AUTHORIZED_EDITORS
+                
                     OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
                     OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
-                    
-                    st.set_page_config(page_title="Nexion Core - Matrix", layout="wide")
-                    st.markdown("### PANEL DE ENVIOS DIARIO")
-                    
-                    # ── 2. LÓGICA DE CARGA ──
+                
+                    st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar else '(MODO LECTURA)'}")
+                
+                    # ── 2. LÓGICA DE CARGA (BRUTE FORCE) ──
                     def get_data_nexion_brute():
                         if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
                             try:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
+                                # Forzamos la rama main para asegurar datos frescos
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 
                                 df = pd.read_csv(
@@ -3240,7 +3245,7 @@ else:
                                     else:
                                         df[col] = df[col].astype(str).replace(['None', 'nan', 'NaN', 'None ', 'nan ', 'N/A'], '')
                                         df[col] = df[col].str.strip()
-                    
+                                
                                 if not df.empty:
                                     df.loc[~df['ESTATUS'].isin(OPCIONES_ESTATUS), 'ESTATUS'] = OPCIONES_ESTATUS[0]
                                     df.loc[~df['SURTIDOR'].isin(OPCIONES_SURTIDOR), 'SURTIDOR'] = ""
@@ -3252,8 +3257,8 @@ else:
                                 st.error(f"Error de conexión inmediata: {e}")
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
-                    
-                    # ── 3. BOTÓN RECARGAR (FUERA DEL FORMULARIO) ──
+                
+                    # ── 3. BOTÓN RECARGAR (VISIBLE PARA TODOS) ──
                     col_refresh, _ = st.columns([1, 3])
                     with col_refresh:
                         if st.button("RECARGAR DATOS", use_container_width=True):
@@ -3263,26 +3268,26 @@ else:
                             st.cache_data.clear()
                             st.cache_resource.clear()
                             st.rerun()
-                    
+                
                     st.markdown("---")
-                    
-                    # ── 4. ÁREA DE EDICIÓN (CON FORMULARIO PARA EVITAR PARPADEO) ──
+                
+                    # ── 4. ÁREA DE EDICIÓN / LECTURA (FORMULARIO ANTI-PARPADEO) ──
                     df_actual = get_data_nexion_brute()
-                    
+                
                     if not df_actual.empty:
-                        # Creamos un formulario. Todo lo que pase aquí adentro es "invisible" para el servidor
-                        # hasta que se envíe (submit).
+                        # Formulario para que la edición sea fluida
                         with st.form("nexion_editor_form", clear_on_submit=False):
                             
                             edited_df = st.data_editor(
                                 df_actual,
                                 use_container_width=True,
                                 hide_index=True,
+                                # El 'disabled' depende de si el usuario está autorizado
                                 column_config={
-                                    "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium"),
-                                    "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small"),
-                                    "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium"),
-                                    "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large"),
+                                    "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar),
+                                    "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small", disabled=not puede_editar),
+                                    "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar),
+                                    "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar),
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
                                     "FACTURA": st.column_config.TextColumn(disabled=True),
                                     "NOMBRE DEL CLIENTE": st.column_config.TextColumn(disabled=True),
@@ -3291,13 +3296,15 @@ else:
                                 }
                             )
                             
-                            st.write("⚠️ *Los cambios se guardarán localmente hasta que presiones el botón de abajo.*")
-                            
-                            # El botón de Submit del formulario actúa como el disparador de la actualización
-                            submit_button = st.form_submit_button("ACTUALIZAR EN LA NUBE", type="primary", use_container_width=True)
-                    
-                        # ── 5. LÓGICA DE ACTUALIZACIÓN (UPLINK) ──
-                        if submit_button:
+                            if puede_editar:
+                                st.write("⚠️ *Modo Administrador activo. Los cambios se sincronizarán con Nexion Cloud.*")
+                                submit_button = st.form_submit_button("ACTUALIZAR EN LA NUBE", type="primary", use_container_width=True)
+                            else:
+                                st.info("ℹ️ *Modo Lectura: No tienes permisos para modificar esta matriz.*")
+                                submit_button = st.form_submit_button("REVISAR CAMBIOS LOCALES", use_container_width=True, disabled=True)
+                
+                        # ── 5. LÓGICA DE ACTUALIZACIÓN (SOLO AUTORIZADOS) ──
+                        if puede_editar and submit_button:
                             if TOKEN:
                                 with st.status("Subiendo cambios...", expanded=True) as status:
                                     try:
@@ -3309,7 +3316,7 @@ else:
                                         hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
                                         repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
                                         
-                                        # Actualizamos sesión
+                                        # Actualizamos sesión local
                                         st.session_state.df_pedidos = edited_df
                                         
                                         status.update(label="¡Guardado exitoso!", state="complete", expanded=False)
@@ -3317,15 +3324,16 @@ else:
                                         time.sleep(1)
                                         st.rerun()
                                     except Exception as e:
-                                        status.update(label=f"Error: {e}", state="error")
-                    
+                                        st.error(f"Error al subir: {e}")
+                
                         st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
-                    
-                        # ── 6. DESCARGA (OFICIAL) ──
+                
+                        # ── 6. DESCARGA (DISPONIBLE PARA TODOS) ──
                         if st.button("DESCARGAR LISTADO ACTUALIZADO", use_container_width=True):
                             try:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
+                                # Descarga directa de la nube para asegurar sincronía
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 
                                 st.download_button(
@@ -3336,7 +3344,7 @@ else:
                                     use_container_width=True
                                 )
                             except Exception as e:
-                                st.error("Error al obtener la versión oficial.")
+                                st.error("Error al obtener la versión oficial para descarga.")
                     else:
                         st.info("Buscando datos frescos en el servidor...")
                                     
