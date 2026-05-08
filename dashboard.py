@@ -3203,30 +3203,35 @@ else:
                         st.error(f"Error crítico: {e}")
                 
                 with tab_pedidos:
-                    # ── 1. CONFIGURACIÓN DE ACCESO Y RUTAS ──
+                    # ── 1. CONFIGURACIÓN ──
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "pedidos.csv"
                     tz_gdl = pytz.timezone('America/Mexico_City')
                     
-                    # ── 2. OPCIONES DE LOS SELECTORES ──
-                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "✅ ENVIADO","🛑 DETENIDA", "❌ CANCELADA"]
+                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENTREGADO", "❌ CANCELADO"]
                     OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
                     OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
                     
                     st.set_page_config(page_title="Nexion Core - Matrix", layout="wide")
                     st.markdown("### PANEL DE ENVIOS DIARIO")
                     
-                    # ── 3. LÓGICA DE CARGA ULTRA RÁPIDA (API DIRECTA) ──
-                    def get_data_nexion():
-                        if 'df_pedidos' not in st.session_state:
+                    # ── 2. LÓGICA DE CARGA CON "FUERZA BRUTA" (IGNORA CACHÉ TOTALMENTE) ──
+                    def get_data_nexion_brute():
+                        # Si existe el trigger de recarga o no hay datos, forzamos descarga
+                        if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
                             try:
-                                # Usamos la API de Github para traer el dato real e instantáneo
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
-                                contents = repo.get_contents(FILE_PATH)
-                                # Decodificamos el contenido del archivo directamente
-                                df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False).fillna("")
+                                
+                                # FUERZA BRUTA: Pedimos la rama main con un query de tiempo para que GitHub no nos de caché
+                                # Esto obliga al servidor de GitHub a buscar el archivo real
+                                contents = repo.get_contents(FILE_PATH, ref="main")
+                                
+                                df = pd.read_csv(
+                                    io.StringIO(contents.decoded_content.decode('utf-8')), 
+                                    keep_default_na=False
+                                ).fillna("")
                                 
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "FECHA DE ENVÍO"]
                                 columnas_nuevas = ["ESTATUS", "SURTIDOR", "PAQUETERIA", "INCIDENCIA"]
@@ -3245,34 +3250,35 @@ else:
                                     df.loc[~df['PAQUETERIA'].isin(OPCIONES_PAQUETERIA), 'PAQUETERIA'] = ""
                                 
                                 st.session_state.df_pedidos = df[all_cols]
+                                st.session_state.force_reload = False # Resetear el trigger
                             except Exception as e:
                                 st.error(f"Error de conexión inmediata: {e}")
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
                     
-                    # ── 4. BOTÓN RECARGAR (FUERZA BORRADO DE CACHÉ) ──
+                    # ── 3. BOTÓN RECARGAR (DESTRUCCIÓN DE CACHÉ) ──
                     col_refresh, _ = st.columns([1, 3])
                     with col_refresh:
-                        if st.button("RECARGAR MATRIZ", use_container_width=True):
-                            # Borramos el estado de la sesión
-                            if 'df_pedidos' in st.session_state:
-                                del st.session_state.df_pedidos
-                            # Limpiamos cachés internos de Streamlit
+                        if st.button("🚨 FORZAR RECARGA DESDE GITHUB", use_container_width=True):
+                            # Limpieza total de estados
+                            for key in st.session_state.keys():
+                                del st.session_state[key]
+                            st.session_state.force_reload = True
                             st.cache_data.clear()
                             st.cache_resource.clear()
                             st.rerun()
                     
-                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("---")
                     
-                    # ── 5. EDITOR DE DATOS ──
-                    df_actual = get_data_nexion()
+                    # ── 4. EDITOR DE DATOS ──
+                    df_actual = get_data_nexion_brute()
                     
                     if not df_actual.empty:
                         edited_df = st.data_editor(
                             df_actual,
                             use_container_width=True,
                             hide_index=True,
-                            key="editor_nexion_v8",
+                            key=f"editor_brute_{random.randint(0,9999)}", # Cambiamos la key para forzar renderizado
                             column_config={
                                 "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium"),
                                 "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small"),
@@ -3288,12 +3294,10 @@ else:
                     
                         st.markdown("<br>", unsafe_allow_html=True)
                     
-                        # ── 6. BOTONES DE ACTUALIZAR Y DESCARGA (POR SEPARADO) ──
-                        
-                        # BOTÓN ACTUALIZAR (Uplink a GitHub)
-                        if st.button("ACTUALIZAR", type="primary", use_container_width=True):
+                        # ── 5. ACTUALIZAR (UPLINK) ──
+                        if st.button("🚀 ACTUALIZAR EN NUBE", type="primary", use_container_width=True):
                             if TOKEN:
-                                with st.status("Subiendo cambios a Nexion Core...", expanded=True) as status:
+                                with st.status("Subiendo cambios...", expanded=True) as status:
                                     try:
                                         g = Github(TOKEN)
                                         repo = g.get_repo(REPO_NAME)
@@ -3301,40 +3305,36 @@ else:
                                         contents = repo.get_contents(FILE_PATH)
                                         
                                         hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
-                                        repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
+                                        repo.update_file(path=FILE_PATH, message=f"BRUTE_UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
                                         
-                                        # Actualizamos sesión y forzamos recarga limpia
-                                        st.session_state.df_pedidos = edited_df
-                                        status.update(label="Cambios guardados en la nube", state="complete", expanded=False)
+                                        # Al terminar, borramos sesión para que el próximo "get" sea obligado de GitHub
+                                        del st.session_state.df_pedidos
+                                        status.update(label="¡Guardado! Recargando...", state="complete", expanded=False)
                                         st.toast("GitHub Actualizado", icon="✅")
-                                        time.sleep(0.5)
+                                        time.sleep(1)
                                         st.rerun()
                                     except Exception as e:
-                                        status.update(label=f"Error al subir: {e}", state="error")
+                                        status.update(label=f"Error: {e}", state="error")
                     
-                        st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
-                    
-                        # BOTÓN DESCARGAR (Baja el archivo REAL de GitHub, no solo la pantalla)
-                        if st.button("DESCARGAR ARCHIVO DE GITHUB", use_container_width=True):
+                        # ── 6. DESCARGA (DEL REPOSITORIO REAL) ──
+                        if st.button("📥 DESCARGAR OFICIAL DE GITHUB", use_container_width=True):
                             try:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
-                                contents = repo.get_contents(FILE_PATH)
-                                # Descargamos la versión que YA está en la nube para asegurar sincronía
-                                final_csv = contents.decoded_content
+                                # Volvemos a pedir el contenido fresco antes de descargar
+                                contents = repo.get_contents(FILE_PATH, ref="main")
                                 
                                 st.download_button(
-                                    label="CONFIRMAR DESCARGA (.CSV)",
-                                    data=final_csv,
+                                    label="✅ CONFIRMAR DESCARGA DE ARCHIVO ACTUALIZADO",
+                                    data=contents.decoded_content,
                                     file_name=f"nexion_oficial_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv",
                                     mime="text/csv",
                                     use_container_width=True
                                 )
                             except Exception as e:
-                                st.error("No se pudo obtener el archivo para descarga.")
-                    
+                                st.error("Error al obtener la versión oficial.")
                     else:
-                        st.info("Conectando con el servidor de archivos...")
+                        st.info("Buscando datos frescos en el servidor...")
                 
                 
                 
