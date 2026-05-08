@@ -3256,7 +3256,7 @@ else:
                     # ── 3. BOTÓN RECARGAR (FUERA DEL FORMULARIO) ──
                     col_refresh, _ = st.columns([1, 3])
                     with col_refresh:
-                        if st.button("🚨 FORZAR RECARGA DESDE GITHUB", use_container_width=True):
+                        if st.button("RECARGAR DATOS", use_container_width=True):
                             if 'df_pedidos' in st.session_state:
                                 del st.session_state.df_pedidos
                             st.session_state.force_reload = True
@@ -3294,7 +3294,7 @@ else:
                             st.write("⚠️ *Los cambios se guardarán localmente hasta que presiones el botón de abajo.*")
                             
                             # El botón de Submit del formulario actúa como el disparador de la actualización
-                            submit_button = st.form_submit_button("🚀 ACTUALIZAR EN NUBE", type="primary", use_container_width=True)
+                            submit_button = st.form_submit_button("ACTUALIZAR EN LA NUBE", type="primary", use_container_width=True)
                     
                         # ── 5. LÓGICA DE ACTUALIZACIÓN (UPLINK) ──
                         if submit_button:
@@ -3322,14 +3322,14 @@ else:
                         st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
                     
                         # ── 6. DESCARGA (OFICIAL) ──
-                        if st.button("📥 DESCARGAR OFICIAL DE GITHUB", use_container_width=True):
+                        if st.button("DESCARGAR LISTADO ACTUALIZADO", use_container_width=True):
                             try:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 
                                 st.download_button(
-                                    label="✅ CONFIRMAR DESCARGA",
+                                    label="CONFIRMAR DESCARGA",
                                     data=contents.decoded_content,
                                     file_name=f"nexion_oficial_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv",
                                     mime="text/csv",
