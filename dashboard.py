@@ -3217,16 +3217,12 @@ else:
                     st.set_page_config(page_title="Nexion Core - Matrix", layout="wide")
                     st.markdown("### PANEL DE ENVIOS DIARIO")
                     
-                    # ── 2. LÓGICA DE CARGA CON "FUERZA BRUTA" (IGNORA CACHÉ TOTALMENTE) ──
+                    # ── 2. LÓGICA DE CARGA ──
                     def get_data_nexion_brute():
-                        # Si existe el trigger de recarga o no hay datos, forzamos descarga
                         if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
                             try:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
-                                
-                                # FUERZA BRUTA: Pedimos la rama main con un query de tiempo para que GitHub no nos de caché
-                                # Esto obliga al servidor de GitHub a buscar el archivo real
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 
                                 df = pd.read_csv(
@@ -3251,19 +3247,23 @@ else:
                                     df.loc[~df['PAQUETERIA'].isin(OPCIONES_PAQUETERIA), 'PAQUETERIA'] = ""
                                 
                                 st.session_state.df_pedidos = df[all_cols]
-                                st.session_state.force_reload = False # Resetear el trigger
+                                st.session_state.force_reload = False 
                             except Exception as e:
                                 st.error(f"Error de conexión inmediata: {e}")
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
                     
-                    # ── 3. BOTÓN RECARGAR (DESTRUCCIÓN DE CACHÉ) ──
+                    # ── 3. BOTÓN RECARGAR (CAMBIA LA KEY SOLO AQUÍ) ──
+                    if 'version_editor' not in st.session_state:
+                        st.session_state.version_editor = 1
+                    
                     col_refresh, _ = st.columns([1, 3])
                     with col_refresh:
-                        if st.button("🚨 FORZAR RECARGA DESDE GITHUB", use_container_width=True):
-                            # Limpieza total de estados
-                            for key in st.session_state.keys():
-                                del st.session_state[key]
+                        if st.button("RECARGAR DATOS", use_container_width=True):
+                            # Al cambiar este número, el editor se refresca, pero solo una vez
+                            st.session_state.version_editor += 1
+                            if 'df_pedidos' in st.session_state:
+                                del st.session_state.df_pedidos
                             st.session_state.force_reload = True
                             st.cache_data.clear()
                             st.cache_resource.clear()
@@ -3271,15 +3271,19 @@ else:
                     
                     st.markdown("---")
                     
-                    # ── 4. EDITOR DE DATOS ──
+                    # ── 4. EDITOR DE DATOS (KEY ESTABLE) ──
                     df_actual = get_data_nexion_brute()
                     
                     if not df_actual.empty:
+                        # Usamos una key que solo cambia cuando tú pides la recarga forzada
+                        # Así te deja escribir sin resetearse a cada segundo
+                        editor_key = f"editor_nexion_v{st.session_state.version_editor}"
+                        
                         edited_df = st.data_editor(
                             df_actual,
                             use_container_width=True,
                             hide_index=True,
-                            key=f"editor_brute_{random.randint(0,9999)}", # Cambiamos la key para forzar renderizado
+                            key=editor_key,
                             column_config={
                                 "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium"),
                                 "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small"),
@@ -3296,7 +3300,7 @@ else:
                         st.markdown("<br>", unsafe_allow_html=True)
                     
                         # ── 5. ACTUALIZAR (UPLINK) ──
-                        if st.button("🚀 ACTUALIZAR EN NUBE", type="primary", use_container_width=True):
+                        if st.button("ACTUALIZAR EN NUBE", type="primary", use_container_width=True):
                             if TOKEN:
                                 with st.status("Subiendo cambios...", expanded=True) as status:
                                     try:
@@ -3306,27 +3310,27 @@ else:
                                         contents = repo.get_contents(FILE_PATH)
                                         
                                         hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
-                                        repo.update_file(path=FILE_PATH, message=f"BRUTE_UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
+                                        repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
                                         
-                                        # Al terminar, borramos sesión para que el próximo "get" sea obligado de GitHub
-                                        del st.session_state.df_pedidos
-                                        status.update(label="¡Guardado! Recargando...", state="complete", expanded=False)
+                                        # Guardamos el cambio en la sesión actual también para no perderlo
+                                        st.session_state.df_pedidos = edited_df
+                                        
+                                        status.update(label="¡Guardado exitoso!", state="complete", expanded=False)
                                         st.toast("GitHub Actualizado", icon="✅")
                                         time.sleep(1)
                                         st.rerun()
                                     except Exception as e:
                                         status.update(label=f"Error: {e}", state="error")
                     
-                        # ── 6. DESCARGA (DEL REPOSITORIO REAL) ──
-                        if st.button("📥 DESCARGAR OFICIAL DE GITHUB", use_container_width=True):
+                        # ── 6. DESCARGA (OFICIAL) ──
+                        if st.button("DESCARGAR", use_container_width=True):
                             try:
                                 g = Github(TOKEN)
                                 repo = g.get_repo(REPO_NAME)
-                                # Volvemos a pedir el contenido fresco antes de descargar
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 
                                 st.download_button(
-                                    label="✅ CONFIRMAR DESCARGA DE ARCHIVO ACTUALIZADO",
+                                    label="✅ CONFIRMAR DESCARGA",
                                     data=contents.decoded_content,
                                     file_name=f"nexion_oficial_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv",
                                     mime="text/csv",
