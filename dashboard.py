@@ -3275,12 +3275,12 @@ else:
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar),
                                     "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small", disabled=not puede_editar),
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar),
-                                    "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar),
+                                    "FECHA DE ENVIO": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar),
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
                                     "FACTURA": st.column_config.TextColumn(disabled=True),
                                     "NOMBRE DEL CLIENTE": st.column_config.TextColumn(disabled=True),
                                     "DESTINO": st.column_config.TextColumn(disabled=True),
-                                    "FECHA DE ENVÍO": st.column_config.TextColumn(disabled=True),
+                                    "PROGRAMACION": st.column_config.TextColumn(disabled=True),
                                 }
                             )
                             
