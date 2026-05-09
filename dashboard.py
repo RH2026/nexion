@@ -3335,7 +3335,7 @@ else:
                         csv_download = df_descarga.to_csv(index=False).encode('utf-8')
                         
                         st.download_button(
-                            label="DESCARGAR LISTADO)", 
+                            label="DESCARGAR LISTADO", 
                             data=csv_download, 
                             file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
                             mime="text/csv", 
