@@ -2801,7 +2801,7 @@ else:
                         {"oc": "TRAILER-005M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "19 de mayo", "cita": "19/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "22 de mayo", "cita": "22/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "26 de mayo", "cita": "26/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
-                        {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "29 de mayo", "cita": "26/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "29 de mayo", "cita": "29/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
                     ]
                     
                 
