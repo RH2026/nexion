@@ -3218,7 +3218,7 @@ else:
                     # LISTA CON ICONOS PARA LA VISTA DE LA APP
                     OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
                     OPCIONES_PAQUETERIA = ["", "TRES GUERRAS", "CLIENTE PASA", "LOCAL", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS", "FEDEX", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
-                    OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
+                    OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX", "MARISOL"]
                     
                     st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar else '(MODO LECTURA)'}")
                     
@@ -3259,7 +3259,7 @@ else:
                     
                     # ── 3. BOTÓN RECARGAR ──
                     if puede_editar:
-                        if st.button("RECARGAR DATOS", use_container_width=True):
+                        if st.button("CLICK PARA OBTENER DATOS ACTUALIZADOS", use_container_width=True):
                             if 'df_pedidos' in st.session_state: del st.session_state.df_pedidos
                             st.session_state.force_reload = True
                             st.cache_data.clear()
