@@ -7328,7 +7328,7 @@ else:
                 REPO_NAME = "RH2026/nexion"
                 DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
                 CONSIGNAS_FILE = "consignas.csv"  # <--- Agregamos esta variable
-                CONSIGNAS_FILE = "pedidos.csv"  # <--- Agregamos esta variable
+                PEDIDOS_FILE = "pedidos.csv"  # <--- Agregamos esta variable
                 MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
                 
                 # Actualizamos la lista completa para incluirlo
