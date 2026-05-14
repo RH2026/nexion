@@ -3256,13 +3256,12 @@ else:
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
                     
-                    # ── 3. BOTÓN RECARGAR ──
-                    if puede_editar:
-                        if st.button("CLICK PARA OBTENER DATOS ACTUALIZADOS", use_container_width=True):
-                            if 'df_pedidos' in st.session_state: del st.session_state.df_pedidos
-                            st.session_state.force_reload = True
-                            st.cache_data.clear()
-                            st.rerun()
+                    # ── 3. BOTÓN RECARGAR (VISIBLE PARA TODOS) ──
+                    if st.button("CLICK PARA OBTENER DATOS ACTUALIZADOS", use_container_width=True):
+                        if 'df_pedidos' in st.session_state: del st.session_state.df_pedidos
+                        st.session_state.force_reload = True
+                        st.cache_data.clear()
+                        st.rerun()
                     
                     st.markdown("---")
                     
