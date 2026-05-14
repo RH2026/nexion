@@ -11,14 +11,14 @@ def procesar_nexion_v2():
     GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
     REPO_NAME = "RH2026/nexion"
     FILE_PATH_T1 = "T1.xlsx"
-    URL_TI = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_TI}"
+    URL_T1 = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_T1}"
 
     # 1. Cargar TI.xlsx (El origen de los datos)
     try:
         headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-        response = requests.get(URL_TI, headers=headers)
+        response = requests.get(URL_T1, headers=headers)
         if response.status_code == 200:
-            df_ti = pd.read_excel(BytesIO(response.content))
+            df_t1 = pd.read_excel(BytesIO(response.content))
         else:
             st.error(f"Error al conectar con GitHub (Status: {response.status_code})")
             return
@@ -40,9 +40,9 @@ def procesar_nexion_v2():
             return re.findall(r'\d+', str(texto))
 
         # Expandimos OBSERVACION 1 por si vienen varias facturas juntas
-        df_ti['factura_busqueda'] = df_ti['OBSERVACION 1'].apply(extraer_folios)
-        df_ti_exp = df_ti.explode('factura_busqueda')
-        df_ti_exp['factura_busqueda'] = df_ti_exp['factura_busqueda'].astype(str).str.strip()
+        df_t1['factura_busqueda'] = df_t1['OBSERVACION 1'].apply(extraer_folios)
+        df_t1_exp = df_t1.explode('factura_busqueda')
+        df_t1_exp['factura_busqueda'] = df_t1_exp['factura_busqueda'].astype(str).str.strip()
 
         # B. Aseguramos que la columna 'factura' del usuario sea texto
         if 'factura' in df_user.columns:
@@ -52,7 +52,7 @@ def procesar_nexion_v2():
             # Mapeamos: TALON -> guia, SUBTOTAL -> costo, F.DOC -> fecha_envio, BULTOS -> bultos
             resultado = pd.merge(
                 df_user[['factura']], # Solo nos quedamos con la columna base para rellenar
-                df_ti_exp[['factura_busqueda', 'TALON', 'SUBTOTAL', 'F.DOC', 'BULTOS']],
+                df_t1_exp[['factura_busqueda', 'TALON', 'SUBTOTAL', 'F.DOC', 'BULTOS']],
                 left_on='factura',
                 right_on='factura_busqueda',
                 how='left'
