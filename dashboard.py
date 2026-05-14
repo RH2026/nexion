@@ -3204,7 +3204,6 @@ else:
                         st.error(f"Error crítico: {e}")
                 
                 with tab_pedidos:
-                    
                     # ── 1. CONFIGURACIÓN Y PERMISOS ──
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
@@ -3240,7 +3239,7 @@ else:
                                         df[col] = ""
                                     else:
                                         df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip().str.upper()
-                    
+                                
                                 if "ESTATUS" in df.columns:
                                     def poner_iconos(val):
                                         if "PENDIENTE" in val: return "🆕 PENDIENTE"
@@ -3249,7 +3248,7 @@ else:
                                         if "CANCELADO" in val: return "❌ CANCELADO"
                                         return "🆕 PENDIENTE"
                                     df['ESTATUS'] = df['ESTATUS'].apply(poner_iconos)
-                    
+                                
                                 st.session_state.df_pedidos = df[all_cols]
                                 st.session_state.force_reload = False 
                             except Exception as e:
@@ -3267,13 +3266,37 @@ else:
                     
                     st.markdown("---")
                     
-                    # ── 4. FORMULARIO Y TABLA ──
+                    # ── 4. FILTROS Y TABLA ──
                     df_actual = get_data_nexion_brute()
                     
-                    if not df_actual.empty:                       
+                    if not df_actual.empty:
+                        # SECCIÓN DE FILTROS EN UNA SOLA LÍNEA
+                        col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+                        
+                        with col_f1:
+                            f_cliente = st.text_input("Filtrar No Cliente", value="", placeholder="Ej: 1234").upper()
+                        with col_f2:
+                            f_factura = st.text_input("Filtrar Factura", value="", placeholder="Ej: F-99").upper()
+                        with col_f3:
+                            f_prog = st.text_input("Filtrar Programación", value="", placeholder="Ej: 2024-05-15").upper()
+                        with col_f4:
+                            f_estatus = st.selectbox("Filtrar Estatus", ["TODOS"] + OPCIONES_ESTATUS)
+                
+                        # Aplicar filtrado al DataFrame en memoria
+                        df_filtrado = df_actual.copy()
+                        if f_cliente:
+                            df_filtrado = df_filtrado[df_filtrado["NO CLIENTE"].str.contains(f_cliente, na=False)]
+                        if f_factura:
+                            df_filtrado = df_filtrado[df_filtrado["FACTURA"].str.contains(f_factura, na=False)]
+                        if f_prog:
+                            df_filtrado = df_filtrado[df_filtrado["PROGRAMACION"].str.contains(f_prog, na=False)]
+                        if f_estatus != "TODOS":
+                            df_filtrado = df_filtrado[df_filtrado["ESTATUS"] == f_estatus]
+                
                         with st.form("nexion_editor_form_safe"):
                             edited_df = st.data_editor(
-                                df_actual,
+                                df_filtrado,
+                                # Usamos df_filtrado para mostrar, pero al guardar sincronizaremos los cambios
                                 use_container_width=True,
                                 hide_index=True,
                                 height=900,
@@ -3294,54 +3317,53 @@ else:
                             btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar else "🔒 Modo Lectura"
                             submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar)
                     
-                    # ── 5. LÓGICA DE ACTUALIZACIÓN ──
-                    if puede_editar and submit_button:
-                        with st.status("Sincronizando...", expanded=True) as status:
-                            try:
-                                # LIMPIEZA PARA GITHUB
-                                df_limpio_git = edited_df.copy()
-                                def quitar_iconos(val):
-                                    return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
-                                
-                                df_limpio_git['ESTATUS'] = df_limpio_git['ESTATUS'].apply(quitar_iconos)
-                    
-                                g = Github(TOKEN)
-                                repo = g.get_repo(REPO_NAME)
-                                csv_string = df_limpio_git.to_csv(index=False)
-                                contents = repo.get_contents(FILE_PATH)
-                                hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
-                                repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
-                                
-                                st.session_state.df_pedidos = edited_df
-                                status.update(label="¡Guardado!", state="complete", expanded=False)
-                                st.toast("GitHub Actualizado", icon="✅")
-                                time.sleep(1)
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error: {e}")
-                    
-                    # ── 6. DESCARGA (LIMPIEZA DE EMOJIS PARA EXCEL) ──
-                    if puede_editar:
-                        st.write("")
-                        
-                        # Creamos una versión limpia SOLO para la descarga
-                        df_descarga = edited_df.copy()
-                        def limpiar_para_excel(val):
-                            # Quitamos los emojis específicos y cualquier símbolo raro
-                            return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
-                        
-                        df_descarga['ESTATUS'] = df_descarga['ESTATUS'].apply(limpiar_para_excel)
-                        
-                        csv_download = df_descarga.to_csv(index=False).encode('utf-8')
-                        
-                        st.download_button(
-                            label="DESCARGAR LISTADO", 
-                            data=csv_download, 
-                            file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
-                            mime="text/csv", 
-                            use_container_width=True
-                        )
+                        # ── 5. LÓGICA DE ACTUALIZACIÓN ──
+                        if puede_editar and submit_button:
+                            with st.status("Sincronizando...", expanded=True) as status:
+                                try:
+                                    # Mezclamos los cambios del filtrado de vuelta al DataFrame original para no perder datos no filtrados
+                                    df_final_a_subir = st.session_state.df_pedidos.copy()
+                                    df_final_a_subir.update(edited_df)
                                     
+                                    # LIMPIEZA PARA GITHUB
+                                    df_limpio_git = df_final_a_subir.copy()
+                                    def quitar_iconos(val):
+                                        return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
+                                    
+                                    df_limpio_git['ESTATUS'] = df_limpio_git['ESTATUS'].apply(quitar_iconos)
+                    
+                                    g = Github(TOKEN)
+                                    repo = g.get_repo(REPO_NAME)
+                                    csv_string = df_limpio_git.to_csv(index=False)
+                                    contents = repo.get_contents(FILE_PATH)
+                                    hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
+                                    repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
+                                    
+                                    st.session_state.df_pedidos = df_final_a_subir
+                                    status.update(label="¡Guardado!", state="complete", expanded=False)
+                                    st.toast("GitHub Actualizado", icon="✅")
+                                    time.sleep(1)
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error: {e}")
+                    
+                        # ── 6. DESCARGA (LIMPIEZA DE EMOJIS PARA EXCEL) ──
+                        if puede_editar:
+                            st.write("")
+                            df_descarga = edited_df.copy() # Descarga lo que el usuario está viendo actualmente
+                            def limpiar_para_excel(val):
+                                return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
+                            
+                            df_descarga['ESTATUS'] = df_descarga['ESTATUS'].apply(limpiar_para_excel)
+                            csv_download = df_descarga.to_csv(index=False).encode('utf-8')
+                            
+                            st.download_button(
+                                label="DESCARGAR LISTADO FILTRADO", 
+                                data=csv_download, 
+                                file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
+                                mime="text/csv", 
+                                use_container_width=True
+                            )          
                 
                 
                 
