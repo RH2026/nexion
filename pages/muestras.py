@@ -10,7 +10,7 @@ def procesar_nexion_v2():
     # --- CONFIGURACIÓN GITHUB ---
     GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
     REPO_NAME = "RH2026/nexion"
-    FILE_PATH_TI = "TI.xlsx"
+    FILE_PATH_T1 = "T1.xlsx"
     URL_TI = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_TI}"
 
     # 1. Cargar TI.xlsx (El origen de los datos)
