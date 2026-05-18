@@ -3220,65 +3220,76 @@ else:
                     OPCIONES_PAQUETERIA = ["", "CANCELADO", "TRES GUERRAS", "CLIENTE PASA", "LOCAL", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS", "FEDEX", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
                     OPCIONES_SURTIDOR = ["", "CANCELADO", "SANDRA", "YAZMIN", "KEVIN", "FELIX", "MARISOL"]
                     
-                    # LÓGICA DE CONTROL DE BLOQUEO EN GITHUB
-                    lock_info = None
-                    bloqueado_por_otro = False
-                    
-                    if puede_editar:
-                        try:
-                            g = Github(TOKEN)
-                            repo = g.get_repo(REPO_NAME)
+                    # ── NUEVA FUNCIÓN AUTOMÁTICA DE CONTROL DE CANDADO (RECARGA EN TIEMPO REAL COLOIDAL) ──
+                    @st.fragment(run_every=10)  # Se ejecuta sola cada 10 segundos en segundo plano sin recargar toda la página
+                    def verificar_y_renderizar_bloqueo():
+                        lock_info = None
+                        bloqueado_por_otro = False
+                        
+                        if puede_editar:
                             try:
-                                lock_contents = repo.get_contents(LOCK_FILE_PATH, ref="main")
-                                lock_info = json.loads(lock_contents.decoded_content.decode('utf-8'))
-                                
-                                # Validar si el bloqueo sigue vigente (Expiración de 10 minutos)
-                                lock_time = datetime.strptime(lock_info["timestamp"], "%Y-%m-%d %H:%M:%S")
-                                lock_time = tz_gdl.localize(lock_time)
-                                ahora = datetime.now(tz_gdl)
-                                
-                                if (ahora - lock_time).total_seconds() < 600:  # Menos de 10 minutos
-                                    if lock_info["usuario"] != current_user:
-                                        bloqueado_por_otro = True
-                                else:
-                                    # El bloqueo expiró, no le hacemos caso
-                                    lock_info = None
-                            except Exception:
-                                # Si el archivo no existe, no está bloqueado
-                                pass
-                        except Exception as e:
-                            st.error(f"Error al verificar estado de bloqueo: {e}")
+                                g = Github(TOKEN)
+                                repo = g.get_repo(REPO_NAME)
+                                try:
+                                    lock_contents = repo.get_contents(LOCK_FILE_PATH, ref="main")
+                                    lock_info = json.loads(lock_contents.decoded_content.decode('utf-8'))
+                                    
+                                    # Validar si el bloqueo sigue vigente (Expiración de 10 minutos)
+                                    lock_time = datetime.strptime(lock_info["timestamp"], "%Y-%m-%d %H:%M:%S")
+                                    lock_time = tz_gdl.localize(lock_time)
+                                    ahora = datetime.now(tz_gdl)
+                                    
+                                    if (ahora - lock_time).total_seconds() < 600:  # Menos de 10 minutos
+                                        if lock_info["usuario"] != current_user:
+                                            bloqueado_por_otro = True
+                                    else:
+                                        # El bloqueo expiró, no le hacemos caso
+                                        lock_info = None
+                                except Exception:
+                                    # Si el archivo no existe, no está bloqueado
+                                    pass
+                            except Exception as e:
+                                st.error(f"Error al verificar estado de bloqueo: {e}")
                 
-                    # Determinar título y permisos reales de edición en esta corrida
-                    if bloqueado_por_otro:
-                        st.error(f"⚠️ MÓDULO BLOQUEADO: El usuario **{lock_info['usuario']}** está editando desde las {lock_info['hora']}. Espera a que termine.")
-                        puede_editar_efectivo = False
-                    else:
-                        puede_editar_efectivo = puede_editar
+                        # Guardamos el estado actual en las variables de sesión globales de Streamlit
+                        st.session_state["bloqueado_por_otro_efectivo"] = bloqueado_por_otro
+                
+                        if bloqueado_por_otro:
+                            st.error(f"⚠️ MÓDULO BLOQUEADO EN TIEMPO REAL: El usuario **{lock_info['usuario']}** está editando desde las {lock_info['hora']}. Tu acceso de escritura se ha pausado.")
+                            st.session_state["puede_editar_efectivo"] = False
+                        else:
+                            st.session_state["puede_editar_efectivo"] = puede_editar
+                            
+                            # Si el módulo está libre y nosotros somos editores autorizados pero aún no tenemos el candado, lo creamos
+                            if puede_editar and lock_info is None:
+                                try:
+                                    g = Github(TOKEN)
+                                    repo = g.get_repo(REPO_NAME)
+                                    ahora_gdl = datetime.now(tz_gdl)
+                                    nuevo_lock = {
+                                        "usuario": current_user,
+                                        "timestamp": ahora_gdl.strftime("%Y-%m-%d %H:%M:%S"),
+                                        "hora": ahora_gdl.strftime("%H:%M:%S")
+                                    }
+                                    lock_string = json.dumps(nuevo_lock, indent=4)
+                                    try:
+                                        contents_exist = repo.get_contents(LOCK_FILE_PATH)
+                                        repo.update_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, sha=contents_exist.sha)
+                                    except Exception:
+                                        repo.create_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, branch="main")
+                                    st.toast(f"Has tomado el control del módulo de envíos", icon="🔒")
+                                except Exception:
+                                    pass
+                
+                    # Invocamos la verificación en tiempo real
+                    verificar_y_renderizar_bloqueo()
+                    
+                    # Recuperamos los valores calculados dinámicamente por nuestro fragmento
+                    puede_editar_efectivo = st.session_state.get("puede_editar_efectivo", False)
+                    bloqueado_por_otro = st.session_state.get("bloqueado_por_otro_efectivo", False)
                 
                     st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar_efectivo else '(MODO LECTURA)'}")
                     
-                    # ── CREACIÓN DE BLOQUEO PASIVO (Si entra a editar y está libre) ──
-                    if puede_editar_efectivo and lock_info is None:
-                        try:
-                            g = Github(TOKEN)
-                            repo = g.get_repo(REPO_NAME)
-                            ahora_gdl = datetime.now(tz_gdl)
-                            nuevo_lock = {
-                                "usuario": current_user,
-                                "timestamp": ahora_gdl.strftime("%Y-%m-%d %H:%M:%S"),
-                                "hora": ahora_gdl.strftime("%H:%M:%S")
-                            }
-                            lock_string = json.dumps(nuevo_lock, indent=4)
-                            try:
-                                contents_exist = repo.get_contents(LOCK_FILE_PATH)
-                                repo.update_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, sha=contents_exist.sha)
-                            except Exception:
-                                repo.create_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, branch="main")
-                            st.toast(f"Has tomado el control del módulo de envíos", icon="🔒")
-                        except Exception as e:
-                            st.warning(f"No se pudo establecer el bloqueo de seguridad: {e}")
-                
                     # ── 2. LÓGICA DE CARGA ──
                     def get_data_nexion_brute():
                         if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
@@ -3421,7 +3432,7 @@ else:
                                 file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
                                 mime="text/csv", 
                                 use_container_width=True
-                            )    
+                            ) 
                 
                 
                 
