@@ -2784,11 +2784,11 @@ else:
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "27 de abril", "cita": "28/04/2026 - 10:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "30 de abril", "cita": "04/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "04 de mayo", "cita": "07/05/2026 - 08:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "14/05/2026 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "14/05/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "02/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "03/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 24", "entrega_texto": "08 de junio", "cita": "09/06/2038 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 24", "entrega_texto": "08 de junio", "cita": "10/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 13268", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "03 de junio", "cita": "03/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "09/06/2038 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 13268", "cantidad": "560", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "10/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
                     ]
 
                 
