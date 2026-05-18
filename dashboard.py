@@ -2658,39 +2658,56 @@ else:
                 
                 # PESTAÑA 5: AGC---
                 with tab_entregas_agc:
+    
+                    # --- TRUCO CSS PARA VOLVER ESTA PESTAÑA COMPLETAMENTE ULTRA-ANCHA (FULL SCREEN) ---
+                    st.markdown("""
+                        <style>
+                            /* Rompemos los márgenes predeterminados de Streamlit para que use el 100% real de la pantalla */
+                            div[data-testid="stBlock"] {
+                                max-width: 100% !important;
+                                padding-left: 0px !important;
+                                padding-right: 0px !important;
+                            }
+                            div[data-testid="stAppViewBlockContainer"] {
+                                max-width: 100% !important;
+                                padding-left: 1rem !important;
+                                padding-right: 1rem !important;
+                            }
+                            iframe {
+                                width: 100% !important;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+                
                     # --- Lógica de Navegación ---
-                    # Ahora 'tipo_entrega' puede ser: 'T O R T O N', 'T R A I L E R' o 'C A L E N D A R I O'
                     if 'tipo_entrega' not in st.session_state:
                         st.session_state.tipo_entrega = 'T O R T O N'
                     
                     if 'mes_calendario' not in st.session_state:
-                        st.session_state.mes_calendario = 5  # Por defecto inicia en Mayo (2026)
+                        st.session_state.mes_calendario = 5  # Por defecto inicia en Mayo
                 
                     # Creamos TRES columnas para los botones de navegación superiores
                     col_btn1, col_btn2, col_btn3 = st.columns(3)
                     
                     with col_btn1:
-                        # Si el estado es TORTON, el botón es 'primary', si no, es 'secondary'
                         btn_type_1 = "primary" if st.session_state.tipo_entrega == 'T O R T O N' else "secondary"
                         if st.button("ENTREGAS AGC TORTON", use_container_width=True, type=btn_type_1):
                             st.session_state.tipo_entrega = 'T O R T O N'
-                            st.rerun() # Forzamos el refresco para que el color cambie al instante
+                            st.rerun()
                             
                     with col_btn2:
-                        # Si el estado es TRAILER, el botón es 'primary', si no, es 'secondary'
                         btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
                         if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
                             st.session_state.tipo_entrega = 'T R A I L E R'
                             st.rerun()
                 
                     with col_btn3:
-                        # Si el estado es CALENDARIO, el botón es 'primary', si no, es 'secondary'
                         btn_type_3 = "primary" if st.session_state.tipo_entrega == 'C A L E N D A R I O' else "secondary"
                         if st.button("VISTA CALENDARIO GLOBAL", use_container_width=True, type=btn_type_3):
                             st.session_state.tipo_entrega = 'C A L E N D A R I O'
                             st.rerun()
                 
-                    # --- Título dinámico con tilde --- - - - - 
+                    # --- Título dinámico ---
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:20px; margin-bottom:10px;'>
                             <span style='color:#FFFFFF; font-weight:600; font-size:12px; letter-spacing:2px;'>
@@ -2699,7 +2716,7 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
                 
-                    # --- Función de Renderizado (Tu HTML original de tarjetas) ---
+                    # --- Función de Renderizado (Tarjetas de Entregas) ---
                     def render_logistica_flow_responsive(data):
                         html_content = f"""
                         <!DOCTYPE html>
@@ -2788,17 +2805,14 @@ else:
                         """
                         return components.html(html_content, height=800, scrolling=True)
                 
-                    # --- Nueva Función: Renderizado de Calendario Visual Moderno ---
+                    # --- Nueva Función: Renderizado de Calendario (CORREGIDO ANCHO Y DIAS VACIOS) ---
                     def render_calendario_visual(data_torton, data_trailer, mes_num, anio=2026):
-                        # Mapeo de meses en español para la cabecera
                         meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
                         nombre_mes = meses_nombres.get(mes_num, "MES")
                         
-                        # Procesar entregas de Torton e indexarlas por el día del mes
                         eventos_dias = {}
                         for item in data_torton:
                             try:
-                                # Extraemos solo la fecha de la cita, ej: "10/03/2026 - 11:00 AM" -> "10/03/2026"
                                 fecha_str = item['cita'].split(" - ")[0].strip()
                                 dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
                                 if dt.month == mes_num and dt.year == anio:
@@ -2808,7 +2822,6 @@ else:
                             except:
                                 pass 
                 
-                        # Procesar entregas de Trailer e indexarlas por el día del mes
                         for item in data_trailer:
                             try:
                                 fecha_str = item['cita'].split(" - ")[0].strip()
@@ -2820,25 +2833,21 @@ else:
                             except:
                                 pass
                 
-                        # Estructura de semanas del mes usando la librería nativa calendar (0 significa día fuera de mes)
-                        cal = calendar.Calendar(firstweekday=6) # 6 significa que la semana empieza en Domingo
+                        cal = calendar.Calendar(firstweekday=6) # Domingo es el día 0 en la cuadrícula
                         semanas_mes = cal.monthdayscalendar(anio, mes_num)
                 
-                        # Construcción dinámica de celdas HTML/Tailwind para el calendario
                         grid_html = ""
                         for semana in semanas_mes:
                             for dia in semana:
                                 if dia == 0:
-                                    # Celda vacía/opaca para días que pertenecen al mes anterior o siguiente
-                                    grid_html += '<div class="bg-[#2a373d]/40 min-h-[110px] p-1 border border-white/5"></div>'
+                                    # Celda opaca para los días fuera del mes actual
+                                    grid_html += '<div class="bg-[#2a373d]/40 min-h-[115px] p-1 border border-white/5"></div>'
                                 else:
                                     eventos_del_dia_html = ""
                                     if dia in eventos_dias:
                                         for ev in eventos_dias[dia]:
-                                            # Estilos y colores según el tipo de unidad
                                             bg_badge = "bg-sky-600/90 border-sky-400" if ev['tipo'] == "TORTON" else "bg-emerald-700/90 border-emerald-500"
                                             texto_badge = f"{ev['tipo']} - {ev['oc']}"
-                                            # Si ya se entregó se vuelve opaco, si está pendiente parpadea discretamente
                                             opacity = "opacity-60" if ev['estatus'] == "ENTREGADA" else "opacity-100 animate-pulse"
                                             
                                             eventos_del_dia_html += f'''
@@ -2848,9 +2857,9 @@ else:
                                             '''
                                     
                                     grid_html += f'''
-                                    <div class="bg-[#263238] min-h-[110px] p-2 border border-white/5 flex flex-col justify-between hover:bg-[#2c3b42] transition-colors">
+                                    <div class="bg-[#263238] min-h-[115px] p-2 border border-white/5 flex flex-col justify-between hover:bg-[#2c3b42] transition-colors">
                                         <span class="text-xs font-black text-slate-400 text-left">{dia}</span>
-                                        <div class="overflow-y-auto max-h-[80px] space-y-1 mt-1 pr-0.5">
+                                        <div class="overflow-y-auto max-h-[85px] space-y-1 mt-1 pr-0.5">
                                             {eventos_del_dia_html}
                                         </div>
                                     </div>
@@ -2864,13 +2873,13 @@ else:
                             <script src="https://cdn.tailwindcss.com"></script>
                             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
                             <style>
-                                body {{ font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin:0; padding:0; }}
+                                body {{ font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin:0; padding:0; width: 100%; }}
                                 ::-webkit-scrollbar {{ width: 4px; }}
                                 ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
                             </style>
                         </head>
-                        <body class="p-2">
-                            <div class="max-w-6xl mx-auto bg-[#1e272c] rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+                        <body class="p-0">
+                            <div class="w-full bg-[#1e272c] rounded-xl border border-white/10 shadow-2xl overflow-hidden">
                                 <div class="bg-[#263238] px-6 py-4 border-b border-white/10 flex justify-between items-center">
                                     <h2 class="text-xl font-black text-white tracking-widest italic">{nombre_mes} <span class="text-sky-400 font-light">{anio}</span></h2>
                                     <div class="flex items-center gap-4 text-xs font-semibold">
@@ -2890,7 +2899,7 @@ else:
                         </body>
                         </html>
                         """
-                        return components.html(html_calendario, height=720, scrolling=True)
+                        return components.html(html_calendario, height=750, scrolling=True)
                 
                     # --- Data Duplicada (TORTON) ---
                     data_torton = [
@@ -2920,13 +2929,12 @@ else:
                         {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "29 de mayo", "cita": "29/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
                     ]
                         
-                    # --- Lógica de Renderizado Condicional de las vistas ---
+                    # --- Lógica de Renderizado Condicional ---
                     if st.session_state.tipo_entrega == 'T O R T O N':
                         render_logistica_flow_responsive(data_torton)
                     elif st.session_state.tipo_entrega == 'T R A I L E R':
                         render_logistica_flow_responsive(data_trailer)
                     elif st.session_state.tipo_entrega == 'C A L E N D A R I O':
-                        # Selectbox elegante para controlar las vistas de los meses solicitados
                         col_mes_sel, _ = st.columns([2, 4])
                         with col_mes_sel:
                             opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
@@ -2937,7 +2945,6 @@ else:
                             )
                             st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
                             
-                        # Renderiza el calendario inyectando de forma cruzada ambas fuentes de datos
                         render_calendario_visual(data_torton, data_trailer, st.session_state.mes_calendario)
                 
                 # PESTAÑA 6: CONSIGNAS
