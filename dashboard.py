@@ -3208,6 +3208,7 @@ else:
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "pedidos.csv"
+                    LOCK_FILE_PATH = "lock_pedidos.json"  # Archivo testigo para control de concurrencia
                     tz_gdl = pytz.timezone('America/Mexico_City')
                     
                     current_user = st.session_state.get("usuario_activo", "UNKNOWN")
@@ -3219,8 +3220,65 @@ else:
                     OPCIONES_PAQUETERIA = ["", "CANCELADO", "TRES GUERRAS", "CLIENTE PASA", "LOCAL", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS", "FEDEX", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
                     OPCIONES_SURTIDOR = ["", "CANCELADO", "SANDRA", "YAZMIN", "KEVIN", "FELIX", "MARISOL"]
                     
-                    st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar else '(MODO LECTURA)'}")
+                    # LÓGICA DE CONTROL DE BLOQUEO EN GITHUB
+                    lock_info = None
+                    bloqueado_por_otro = False
                     
+                    if puede_editar:
+                        try:
+                            g = Github(TOKEN)
+                            repo = g.get_repo(REPO_NAME)
+                            try:
+                                lock_contents = repo.get_contents(LOCK_FILE_PATH, ref="main")
+                                lock_info = json.loads(lock_contents.decoded_content.decode('utf-8'))
+                                
+                                # Validar si el bloqueo sigue vigente (Expiración de 10 minutos)
+                                lock_time = datetime.strptime(lock_info["timestamp"], "%Y-%m-%d %H:%M:%S")
+                                lock_time = tz_gdl.localize(lock_time)
+                                ahora = datetime.now(tz_gdl)
+                                
+                                if (ahora - lock_time).total_seconds() < 600:  # Menos de 10 minutos
+                                    if lock_info["usuario"] != current_user:
+                                        bloqueado_por_otro = True
+                                else:
+                                    # El bloqueo expiró, no le hacemos caso
+                                    lock_info = None
+                            except Exception:
+                                # Si el archivo no existe, no está bloqueado
+                                pass
+                        except Exception as e:
+                            st.error(f"Error al verificar estado de bloqueo: {e}")
+                
+                    # Determinar título y permisos reales de edición en esta corrida
+                    if bloqueado_por_otro:
+                        st.error(f"⚠️ MÓDULO BLOQUEADO: El usuario **{lock_info['usuario']}** está editando desde las {lock_info['hora']}. Espera a que termine.")
+                        puede_editar_efectivo = False
+                    else:
+                        puede_editar_efectivo = puede_editar
+                
+                    st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar_efectivo else '(MODO LECTURA)'}")
+                    
+                    # ── CREACIÓN DE BLOQUEO PASIVO (Si entra a editar y está libre) ──
+                    if puede_editar_efectivo and lock_info is None:
+                        try:
+                            g = Github(TOKEN)
+                            repo = g.get_repo(REPO_NAME)
+                            ahora_gdl = datetime.now(tz_gdl)
+                            nuevo_lock = {
+                                "usuario": current_user,
+                                "timestamp": ahora_gdl.strftime("%Y-%m-%d %H:%M:%S"),
+                                "hora": ahora_gdl.strftime("%H:%M:%S")
+                            }
+                            lock_string = json.dumps(nuevo_lock, indent=4)
+                            try:
+                                contents_exist = repo.get_contents(LOCK_FILE_PATH)
+                                repo.update_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, sha=contents_exist.sha)
+                            except Exception:
+                                repo.create_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, branch="main")
+                            st.toast(f"Has tomado el control del módulo de envíos", icon="🔒")
+                        except Exception as e:
+                            st.warning(f"No se pudo establecer el bloqueo de seguridad: {e}")
+                
                     # ── 2. LÓGICA DE CARGA ──
                     def get_data_nexion_brute():
                         if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
@@ -3255,21 +3313,20 @@ else:
                                 st.error(f"Error de conexión: {e}")
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
-                    
-                    # ── 3. BOTÓN RECARGAR (VISIBLE PARA TODOS) ──
+                        
+                    # ── 3. BOTÓN RECARGAR ──
                     if st.button("CLICK PARA OBTENER DATOS ACTUALIZADOS", use_container_width=True):
                         if 'df_pedidos' in st.session_state: del st.session_state.df_pedidos
                         st.session_state.force_reload = True
                         st.cache_data.clear()
                         st.rerun()
-                    
+                        
                     st.markdown("---")
                     
                     # ── 4. FILTROS Y TABLA ──
                     df_actual = get_data_nexion_brute()
                     
                     if not df_actual.empty:
-                        # SECCIÓN DE FILTROS EN UNA SOLA LÍNEA
                         col_f1, col_f2, col_f3, col_f4 = st.columns(4)
                         
                         with col_f1:
@@ -3280,8 +3337,7 @@ else:
                             f_prog = st.text_input("Filtrar Programación", value="", placeholder="Ej: 2024-05-15").upper()
                         with col_f4:
                             f_estatus = st.selectbox("Filtrar Estatus", ["TODOS"] + OPCIONES_ESTATUS)
-                
-                        # Aplicar filtrado al DataFrame en memoria
+                        
                         df_filtrado = df_actual.copy()
                         if f_cliente:
                             df_filtrado = df_filtrado[df_filtrado["NO CLIENTE"].str.contains(f_cliente, na=False)]
@@ -3291,20 +3347,19 @@ else:
                             df_filtrado = df_filtrado[df_filtrado["PROGRAMACION"].str.contains(f_prog, na=False)]
                         if f_estatus != "TODOS":
                             df_filtrado = df_filtrado[df_filtrado["ESTATUS"] == f_estatus]
-                
+                        
                         with st.form("nexion_editor_form_safe"):
                             edited_df = st.data_editor(
                                 df_filtrado,
-                                # Usamos df_filtrado para mostrar, pero al guardar sincronizaremos los cambios
                                 use_container_width=True,
                                 hide_index=True,
                                 height=900,
                                 column_config={
-                                    "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar),
-                                    "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar),
-                                    "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar),
-                                    "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="medium", disabled=not puede_editar),
-                                    "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar),
+                                    "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar_efectivo),
+                                    "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar_efectivo),
+                                    "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar_efectivo),
+                                    "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="medium", disabled=not puede_editar_efectivo),
+                                    "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar_efectivo),
                                     "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
                                     "FACTURA": st.column_config.TextColumn(disabled=True),
@@ -3313,47 +3368,51 @@ else:
                                 }
                             )
                             
-                            btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar else "🔒 Modo Lectura"
-                            submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar)
-                    
-                        # ── 5. LÓGICA DE ACTUALIZACIÓN ──
-                        if puede_editar and submit_button:
+                            btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar_efectivo else ("🔒 Bloqueado por otro usuario" if bloqueado_por_otro else "🔒 Modo Lectura")
+                            submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar_efectivo)
+                        
+                        # ── 5. LÓGICA DE ACTUALIZACIÓN Y LIBERACIÓN ──
+                        if puede_editar_efectivo and submit_button:
                             with st.status("Sincronizando...", expanded=True) as status:
                                 try:
-                                    # Mezclamos los cambios del filtrado de vuelta al DataFrame original para no perder datos no filtrados
                                     df_final_a_subir = st.session_state.df_pedidos.copy()
                                     df_final_a_subir.update(edited_df)
                                     
-                                    # LIMPIEZA PARA GITHUB
                                     df_limpio_git = df_final_a_subir.copy()
                                     def quitar_iconos(val):
                                         return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
                                     
                                     df_limpio_git['ESTATUS'] = df_limpio_git['ESTATUS'].apply(quitar_iconos)
-                    
+                                    
                                     g = Github(TOKEN)
                                     repo = g.get_repo(REPO_NAME)
                                     csv_string = df_limpio_git.to_csv(index=False)
                                     contents = repo.get_contents(FILE_PATH)
                                     hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
+                                    
+                                    # 1. Guardar base de datos actualizada
                                     repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
                                     
+                                    # 2. ELIMINAR EL ARCHIVO LOCK PARA LIBERAR EL MÓDULO
+                                    try:
+                                        lock_file_now = repo.get_contents(LOCK_FILE_PATH)
+                                        repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=lock_file_now.sha)
+                                    except Exception:
+                                        pass # Si ya no existía, avanzamos
+                                    
                                     st.session_state.df_pedidos = df_final_a_subir
-                                    status.update(label="¡Guardado!", state="complete", expanded=False)
-                                    st.toast("GitHub Actualizado", icon="✅")
+                                    status.update(label="¡Guardado y Módulo Liberado!", state="complete", expanded=False)
+                                    st.toast("GitHub Actualizado Exitosamente", icon="✅")
                                     time.sleep(1)
                                     st.rerun()
                                 except Exception as e:
-                                    st.error(f"Error: {e}")
-                    
-                        # ── 6. DESCARGA (LIMPIEZA DE EMOJIS PARA EXCEL) ──
-                        if puede_editar:
+                                    st.error(f"Error al actualizar e intentar liberar: {e}")
+                                    
+                        # ── 6. DESCARGA ──
+                        if puede_editar_efectivo:
                             st.write("")
-                            df_descarga = edited_df.copy() # Descarga lo que el usuario está viendo actualmente
-                            def limpiar_para_excel(val):
-                                return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
-                            
-                            df_descarga['ESTATUS'] = df_descarga['ESTATUS'].apply(limpiar_para_excel)
+                            df_descarga = edited_df.copy()
+                            df_descarga['ESTATUS'] = df_descarga['ESTATUS'].apply(lambda val: val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip())
                             csv_download = df_descarga.to_csv(index=False).encode('utf-8')
                             
                             st.download_button(
@@ -3362,7 +3421,7 @@ else:
                                 file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
                                 mime="text/csv", 
                                 use_container_width=True
-                            )          
+                            )    
                 
                 
                 
