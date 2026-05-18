@@ -2881,7 +2881,7 @@ else:
                         <body class="p-0">
                             <div class="w-full bg-[#1e272c] rounded-xl border border-white/10 shadow-2xl overflow-hidden">
                                 <div class="bg-[#263238] px-6 py-4 border-b border-white/10 flex justify-between items-center">
-                                    <h2 class="text-xl font-black text-white tracking-widest italic">{nombre_mes} <span class="text-sky-400 font-light">{anio}</span></h2>
+                                    <h2 class="text-xl font-black text-white tracking-widest italic">{nombre_mes} <span style="color: #34D399;" class="font-light">{anio}</span></h2>
                                     <div class="flex items-center gap-4 text-xs font-semibold">
                                         <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-sky-600 rounded"></div>TORTON</div>
                                         <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-emerald-700 rounded"></div>TRAILER</div>
