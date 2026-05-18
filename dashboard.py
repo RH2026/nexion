@@ -3300,7 +3300,8 @@ else:
                                 df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
                                 
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION", "ESTATUS"]
-                                columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "PAQUETERIA", "INCIDENCIA"]
+                                # Modificado el orden aquí: CAJAS se inserta justo después de SURTIDOR
+                                columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "CAJAS", "PAQUETERIA", "INCIDENCIA"]
                                 all_cols = columnas_lectura + columnas_nuevas
                                 
                                 for col in all_cols:
@@ -3368,6 +3369,7 @@ else:
                                 column_config={
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar_efectivo),
                                     "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar_efectivo),
+                                    "CAJAS": st.column_config.TextColumn("CAJAS", width="small", disabled=not puede_editar_efectivo),  # Nueva columna agregada y editable
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar_efectivo),
                                     "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="medium", disabled=not puede_editar_efectivo),
                                     "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar_efectivo),
@@ -3432,7 +3434,7 @@ else:
                                 file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
                                 mime="text/csv", 
                                 use_container_width=True
-                            ) 
+                            )
                 
                 
                 
