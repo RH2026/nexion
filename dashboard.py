@@ -2805,7 +2805,7 @@ else:
                         """
                         return components.html(html_content, height=800, scrolling=True)
                 
-                    # --- Nueva Función: Renderizado de Calendario (CORREGIDO ANCHO Y DIAS VACIOS) ---
+                    # --- Función: Renderizado de Calendario ---
                     def render_calendario_visual(data_torton, data_trailer, mes_num, anio=2026):
                         meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
                         nombre_mes = meses_nombres.get(mes_num, "MES")
@@ -2833,14 +2833,13 @@ else:
                             except:
                                 pass
                 
-                        cal = calendar.Calendar(firstweekday=6) # Domingo es el día 0 en la cuadrícula
+                        cal = calendar.Calendar(firstweekday=6) 
                         semanas_mes = cal.monthdayscalendar(anio, mes_num)
                 
                         grid_html = ""
                         for semana in semanas_mes:
                             for dia in semana:
                                 if dia == 0:
-                                    # Celda opaca para los días fuera del mes actual
                                     grid_html += '<div class="bg-[#2a373d]/40 min-h-[115px] p-1 border border-white/5"></div>'
                                 else:
                                     eventos_del_dia_html = ""
@@ -2901,7 +2900,7 @@ else:
                         """
                         return components.html(html_calendario, height=750, scrolling=True)
                 
-                    # --- Data Duplicada (TORTON) ---
+                    # --- Data (TORTON) ---
                     data_torton = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "09 de marzo", "cita": "10/03/2026 - 11:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 08:00 AM", "estatus": "ENTREGADA"},
@@ -2917,7 +2916,7 @@ else:
                         {"oc": "OC 13268", "cantidad": "560", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "10/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
                     ]
                 
-                    # --- Data Duplicada (TRAILER) ---
+                    # --- Data (TRAILER) ---
                     data_trailer = [
                         {"oc": "TRAILER-001M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "05 de mayo", "cita": "05/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
                         {"oc": "TRAILER-002M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "08 de mayo", "cita": "08/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
@@ -2938,12 +2937,20 @@ else:
                         col_mes_sel, _ = st.columns([2, 4])
                         with col_mes_sel:
                             opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
+                            
+                            # Buscamos qué mes texto equivale al número guardado
+                            nombre_mes_actual = [k for k, v in opciones_meses.items() if v == st.session_state.mes_calendario][0]
+                            
                             mes_seleccionado = st.selectbox(
                                 "SELECCIONAR MES A VISUALIZAR", 
                                 list(opciones_meses.keys()),
-                                index=list(opciones_meses.values()).index(st.session_state.mes_calendario)
+                                index=list(opciones_meses.keys()).index(nombre_mes_actual)
                             )
-                            st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
+                            
+                            # CORRECCIÓN CLAVE: Si el mes seleccionado cambia, actualizamos y disparamos rerun de inmediato
+                            if opciones_meses[mes_seleccionado] != st.session_state.mes_calendario:
+                                st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
+                                st.rerun()
                             
                         render_calendario_visual(data_torton, data_trailer, st.session_state.mes_calendario)
                 
