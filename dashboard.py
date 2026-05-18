@@ -2656,8 +2656,7 @@ else:
                             else:
                                 st.warning(f"No se encontraron registros para '{tipo_mov}' en el mes seleccionado.")
                 
-                # PESTAÑA 5: AGC
-                # # PESTAÑA 5: AGC
+                # PESTAÑA 5: AGC---
                 with tab_entregas_agc:
                     # --- Lógica de Navegación ---
                     # Ahora 'tipo_entrega' puede ser: 'T O R T O N', 'T R A I L E R' o 'C A L E N D A R I O'
@@ -2665,30 +2664,33 @@ else:
                         st.session_state.tipo_entrega = 'T O R T O N'
                     
                     if 'mes_calendario' not in st.session_state:
-                        st.session_state.mes_calendario = 5  # Por defecto Mayo (2026)
+                        st.session_state.mes_calendario = 5  # Por defecto inicia en Mayo (2026)
                 
-                    # Creamos TRES columnas para los botones de navegación
+                    # Creamos TRES columnas para los botones de navegación superiores
                     col_btn1, col_btn2, col_btn3 = st.columns(3)
                     
                     with col_btn1:
+                        # Si el estado es TORTON, el botón es 'primary', si no, es 'secondary'
                         btn_type_1 = "primary" if st.session_state.tipo_entrega == 'T O R T O N' else "secondary"
                         if st.button("ENTREGAS AGC TORTON", use_container_width=True, type=btn_type_1):
                             st.session_state.tipo_entrega = 'T O R T O N'
-                            st.rerun()
+                            st.rerun() # Forzamos el refresco para que el color cambie al instante
                             
                     with col_btn2:
+                        # Si el estado es TRAILER, el botón es 'primary', si no, es 'secondary'
                         btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
                         if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
                             st.session_state.tipo_entrega = 'T R A I L E R'
                             st.rerun()
                 
                     with col_btn3:
+                        # Si el estado es CALENDARIO, el botón es 'primary', si no, es 'secondary'
                         btn_type_3 = "primary" if st.session_state.tipo_entrega == 'C A L E N D A R I O' else "secondary"
                         if st.button("VISTA CALENDARIO GLOBAL", use_container_width=True, type=btn_type_3):
                             st.session_state.tipo_entrega = 'C A L E N D A R I O'
                             st.rerun()
                 
-                    # --- Título dinámico con tilde ---
+                    # --- Título dinámico con tilde --- - - - - 
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:20px; margin-bottom:10px;'>
                             <span style='color:#FFFFFF; font-weight:600; font-size:12px; letter-spacing:2px;'>
@@ -2788,52 +2790,55 @@ else:
                 
                     # --- Nueva Función: Renderizado de Calendario Visual Moderno ---
                     def render_calendario_visual(data_torton, data_trailer, mes_num, anio=2026):
-                        # Mapeo de meses en español
+                        # Mapeo de meses en español para la cabecera
                         meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
                         nombre_mes = meses_nombres.get(mes_num, "MES")
                         
-                        # Procesar entregas de Torton
+                        # Procesar entregas de Torton e indexarlas por el día del mes
                         eventos_dias = {}
                         for item in data_torton:
                             try:
-                                # Extraemos la fecha de la cita ej: "10/03/2026 - 11:00 AM" -> "10/03/2026"
+                                # Extraemos solo la fecha de la cita, ej: "10/03/2026 - 11:00 AM" -> "10/03/2026"
                                 fecha_str = item['cita'].split(" - ")[0].strip()
                                 dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
                                 if dt.month == mes_num and dt.year == anio:
-                                    if dt.day not in eventos_dias: eventos_dias[dt.day] = []
+                                    if dt.day not in eventos_dias: 
+                                        eventos_dias[dt.day] = []
                                     eventos_dias[dt.day].append({"tipo": "TORTON", "oc": item['oc'], "estatus": item['estatus']})
                             except:
-                                pass # Evita que un formato de fecha roto tire la app (ej: el año 2038 que tienes ahí)
+                                pass 
                 
-                        # Procesar entregas de Trailer
+                        # Procesar entregas de Trailer e indexarlas por el día del mes
                         for item in data_trailer:
                             try:
                                 fecha_str = item['cita'].split(" - ")[0].strip()
                                 dt = datetime.strptime(fecha_str, "%d/%m/%Y")
                                 if dt.month == mes_num and dt.year == anio:
-                                    if dt.day not in eventos_dias: eventos_dias[dt.day] = []
+                                    if dt.day not in eventos_dias: 
+                                        eventos_dias[dt.day] = []
                                     eventos_dias[dt.day].append({"tipo": "TRAILER", "oc": item['oc'], "estatus": item['estatus']})
                             except:
                                 pass
                 
-                        # Estructura del calendario usando la librería nativa de Python
-                        cal = calendar.Calendar(firstweekday=6) # 6 = Domingo
+                        # Estructura de semanas del mes usando la librería nativa calendar (0 significa día fuera de mes)
+                        cal = calendar.Calendar(firstweekday=6) # 6 significa que la semana empieza en Domingo
                         semanas_mes = cal.monthdayscalendar(anio, mes_num)
                 
-                        # Construcción de celdas HTML
+                        # Construcción dinámica de celdas HTML/Tailwind para el calendario
                         grid_html = ""
                         for semana in semanas_mes:
-                            for dia in _semana_compuesta := semana:
+                            for dia in semana:
                                 if dia == 0:
-                                    # Celda vacía para días fuera del mes
+                                    # Celda vacía/opaca para días que pertenecen al mes anterior o siguiente
                                     grid_html += '<div class="bg-[#2a373d]/40 min-h-[110px] p-1 border border-white/5"></div>'
                                 else:
                                     eventos_del_dia_html = ""
                                     if dia in eventos_dias:
                                         for ev in eventos_dias[dia]:
-                                            # Color según el tipo de unidad
+                                            # Estilos y colores según el tipo de unidad
                                             bg_badge = "bg-sky-600/90 border-sky-400" if ev['tipo'] == "TORTON" else "bg-emerald-700/90 border-emerald-500"
                                             texto_badge = f"{ev['tipo']} - {ev['oc']}"
+                                            # Si ya se entregó se vuelve opaco, si está pendiente parpadea discretamente
                                             opacity = "opacity-60" if ev['estatus'] == "ENTREGADA" else "opacity-100 animate-pulse"
                                             
                                             eventos_del_dia_html += f'''
@@ -2887,7 +2892,6 @@ else:
                         """
                         return components.html(html_calendario, height=720, scrolling=True)
                 
-                
                     # --- Data Duplicada (TORTON) ---
                     data_torton = [
                         {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "09 de marzo", "cita": "10/03/2026 - 11:00 AM", "estatus": "ENTREGADA"},
@@ -2916,13 +2920,13 @@ else:
                         {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "29 de mayo", "cita": "29/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
                     ]
                         
-                    # --- Lógica de Renderizado Condicional ---
+                    # --- Lógica de Renderizado Condicional de las vistas ---
                     if st.session_state.tipo_entrega == 'T O R T O N':
                         render_logistica_flow_responsive(data_torton)
                     elif st.session_state.tipo_entrega == 'T R A I L E R':
                         render_logistica_flow_responsive(data_trailer)
-                    else:
-                        # Controles interactivos elegantes para cambiar de mes arriba del calendario
+                    elif st.session_state.tipo_entrega == 'C A L E N D A R I O':
+                        # Selectbox elegante para controlar las vistas de los meses solicitados
                         col_mes_sel, _ = st.columns([2, 4])
                         with col_mes_sel:
                             opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
@@ -2933,7 +2937,7 @@ else:
                             )
                             st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
                             
-                        # Llamamos al render del calendario pasándole ambas listas juntas
+                        # Renderiza el calendario inyectando de forma cruzada ambas fuentes de datos
                         render_calendario_visual(data_torton, data_trailer, st.session_state.mes_calendario)
                 
                 # PESTAÑA 6: CONSIGNAS
