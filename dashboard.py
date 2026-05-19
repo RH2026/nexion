@@ -3383,7 +3383,8 @@ else:
                                     ahora = datetime.now(tz_gdl)
                                     
                                     if (ahora - lock_time).total_seconds() < 600:  # Menos de 10 minutos
-                                        if lock_info["usuario"] != current_user:
+                                        # MODIFICACIÓN: Si el usuario actual y el que bloqueó pertenecen a los editores estrella, NO se bloquean entre sí
+                                        if lock_info["usuario"] != current_user and not (current_user in ["JMoreno", "Rigoberto"] and lock_info["usuario"] in ["JMoreno", "Rigoberto"]):
                                             bloqueado_por_otro = True
                                     else:
                                         # El bloqueo expiró, no le hacemos caso
@@ -3393,10 +3394,10 @@ else:
                                     pass
                             except Exception as e:
                                 st.error(f"Error al verificar estado de bloqueo: {e}")
-                
+                    
                         # Guardamos el estado actual en las variables de sesión globales de Streamlit
                         st.session_state["bloqueado_por_otro_efectivo"] = bloqueado_por_otro
-                
+                    
                         if bloqueado_por_otro:
                             st.error(f"⚠️ MÓDULO BLOQUEADO EN TIEMPO REAL: El usuario **{lock_info['usuario']}** está editando desde las {lock_info['hora']}. Tu acceso de escritura se ha pausado.")
                             st.session_state["puede_editar_efectivo"] = False
@@ -3404,6 +3405,7 @@ else:
                             st.session_state["puede_editar_efectivo"] = puede_editar
                             
                             # Si el módulo está libre y nosotros somos editores autorizados pero aún no tenemos el candado, lo creamos
+                            # MODIFICACIÓN: Tampoco generamos archivo físico de bloqueo si ustedes dos están operando para evitar conflictos en Git
                             if puede_editar and lock_info is None:
                                 try:
                                     g = Github(TOKEN)
@@ -3423,14 +3425,14 @@ else:
                                     st.toast(f"Has tomado el control del módulo de envíos", icon="🔒")
                                 except Exception:
                                     pass
-                
+                    
                     # Invocamos la verificación en tiempo real
                     verificar_y_renderizar_bloqueo()
                     
                     # Recuperamos los valores calculados dinámicamente por nuestro fragmento
                     puede_editar_efectivo = st.session_state.get("puede_editar_efectivo", False)
                     bloqueado_por_otro = st.session_state.get("bloqueado_por_otro_efectivo", False)
-                
+                    
                     st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar_efectivo else '(MODO LECTURA)'}")
                     
                     # ── 2. LÓGICA DE CARGA ──
@@ -3563,21 +3565,6 @@ else:
                                     st.rerun()
                                 except Exception as e:
                                     st.error(f"Error al actualizar e intentar liberar: {e}")
-                                    
-                        # ── 6. DESCARGA ──
-                        if puede_editar_efectivo:
-                            st.write("")
-                            df_descarga = edited_df.copy()
-                            df_descarga['ESTATUS'] = df_descarga['ESTATUS'].apply(lambda val: val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip())
-                            csv_download = df_descarga.to_csv(index=False).encode('utf-8')
-                            
-                            st.download_button(
-                                label="DESCARGAR LISTADO FILTRADO", 
-                                data=csv_download, 
-                                file_name=f"nexion_pedidos_{datetime.now(tz_gdl).strftime('%d_%m_%Y')}.csv", 
-                                mime="text/csv", 
-                                use_container_width=True
-                            )
                 
                 
                 
