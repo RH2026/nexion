@@ -3363,6 +3363,10 @@ else:
                     OPCIONES_PAQUETERIA = ["", "CANCELADO", "TRES GUERRAS", "CLIENTE PASA", "LOCAL", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS", "FEDEX", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
                     OPCIONES_SURTIDOR = ["", "CANCELADO", "SANDRA", "YAZMIN", "KEVIN", "FELIX", "MARISOL"]
                     
+                    # Función auxiliar global para limpiar textos antes de exportar o guardar
+                    def quitar_iconos(val):
+                        return str(val).replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
+                    
                     # ── NUEVA FUNCIÓN AUTOMÁTICA DE CONTROL DE CANDADO (RECARGA EN TIEMPO REAL COLOIDAL) ──
                     @st.fragment(run_every=10)  # Se ejecuta sola cada 10 segundos en segundo plano sin recargar toda la página
                     def verificar_y_renderizar_bloqueo():
@@ -3468,7 +3472,7 @@ else:
                                 st.error(f"Error de conexión: {e}")
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
-                        
+                    
                     # ── 3. BOTÓN RECARGAR ──
                     if st.button("CLICK PARA OBTENER DATOS ACTUALIZADOS", use_container_width=True):
                         if 'df_pedidos' in st.session_state: del st.session_state.df_pedidos
@@ -3527,11 +3531,15 @@ else:
                             btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar_efectivo else ("🔒 Bloqueado por otro usuario" if bloqueado_por_otro else "🔒 Modo Lectura")
                             submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar_efectivo)
                         
-                        # ── BOTÓN DE DESCARGA (AL FINAL DE TODO HASTA ABAJO) ──
-                        st.markdown("<br>", unsafe_allow_html=True)  # Un pequeño espacio estético
-                        csv_descarga = df_filtrado.to_csv(index=False).encode('utf-8')
+                        # ── BOTÓN DE DESCARGA (AL FINAL DE TODO HASTA ABAJO Y SIN EMOJIS) ──
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        df_descarga_limpio = df_filtrado.copy()
+                        if 'ESTATUS' in df_descarga_limpio.columns:
+                            df_descarga_limpio['ESTATUS'] = df_descarga_limpio['ESTATUS'].apply(quitar_iconos)
+                            
+                        csv_descarga = df_descarga_limpio.to_csv(index=False).encode('utf-8')
                         st.download_button(
-                            label="DESCARGAR TABLA ACTUAL EN CSV",
+                            label="📥 DESCARGAR TABLA ACTUAL EN CSV",
                             data=csv_descarga,
                             file_name=f"pedidos_nexion_{datetime.now(tz_gdl).strftime('%Y%m%d_%H%M%S')}.csv",
                             mime="text/csv",
@@ -3546,9 +3554,6 @@ else:
                                     df_final_a_subir.update(edited_df)
                                     
                                     df_limpio_git = df_final_a_subir.copy()
-                                    def quitar_iconos(val):
-                                        return val.replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
-                                    
                                     df_limpio_git['ESTATUS'] = df_limpio_git['ESTATUS'].apply(quitar_iconos)
                                     
                                     g = Github(TOKEN)
