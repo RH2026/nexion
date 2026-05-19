@@ -3405,7 +3405,6 @@ else:
                             st.session_state["puede_editar_efectivo"] = puede_editar
                             
                             # Si el módulo está libre y nosotros somos editores autorizados pero aún no tenemos el candado, lo creamos
-                            # MODIFICACIÓN: Tampoco generamos archivo físico de bloqueo si ustedes dos están operando para evitar conflictos en Git
                             if puede_editar and lock_info is None:
                                 try:
                                     g = Github(TOKEN)
@@ -3445,7 +3444,6 @@ else:
                                 df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
                                 
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION", "ESTATUS"]
-                                # Modificado el orden aquí: CAJAS se inserta justo después de SURTIDOR
                                 columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "CAJAS", "PAQUETERIA", "INCIDENCIA"]
                                 all_cols = columnas_lectura + columnas_nuevas
                                 
@@ -3514,7 +3512,7 @@ else:
                                 column_config={
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar_efectivo),
                                     "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar_efectivo),
-                                    "CAJAS": st.column_config.TextColumn("CAJAS", width="small", disabled=not puede_editar_efectivo),  # Nueva columna agregada y editable
+                                    "CAJAS": st.column_config.TextColumn("CAJAS", width="small", disabled=not puede_editar_efectivo),
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar_efectivo),
                                     "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="small", disabled=not puede_editar_efectivo),
                                     "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar_efectivo),
@@ -3528,6 +3526,17 @@ else:
                             
                             btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar_efectivo else ("🔒 Bloqueado por otro usuario" if bloqueado_por_otro else "🔒 Modo Lectura")
                             submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar_efectivo)
+                        
+                        # ── BOTÓN DE DESCARGA (AL FINAL DE TODO HASTA ABAJO) ──
+                        st.markdown("<br>", unsafe_allow_html=True)  # Un pequeño espacio estético
+                        csv_descarga = df_filtrado.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            label="DESCARGAR TABLA ACTUAL EN CSV",
+                            data=csv_descarga,
+                            file_name=f"pedidos_nexion_{datetime.now(tz_gdl).strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv",
+                            use_container_width=True
+                        )
                         
                         # ── 5. LÓGICA DE ACTUALIZACIÓN Y LIBERACIÓN ──
                         if puede_editar_efectivo and submit_button:
@@ -3556,7 +3565,7 @@ else:
                                         lock_file_now = repo.get_contents(LOCK_FILE_PATH)
                                         repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=lock_file_now.sha)
                                     except Exception:
-                                        pass # Si ya no existía, avanzamos
+                                        pass
                                     
                                     st.session_state.df_pedidos = df_final_a_subir
                                     status.update(label="¡Guardado y Módulo Liberado!", state="complete", expanded=False)
