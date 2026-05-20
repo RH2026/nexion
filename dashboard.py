@@ -839,7 +839,8 @@ def login_screen():
                     "Atencion3G": "Sandra Yaneli",
                     "Claudia": "Claudia",
                     "Ruth": "Ruth Buenrostro",
-                    "Carlos": "Carlos Vazquez"
+                    "Carlos": "Carlos Vazquez",
+                    "Sandra": "Sandraalm@"
                 }
                 
                 # 2. Diccionario de géneros (F = Femenino, M = Masculino)
@@ -855,7 +856,8 @@ def login_screen():
                     "Claudia": "F",
                     "Arturo": "M",
                     "Ruth" : "F",
-                    "Carlos" : "M"
+                    "Carlos": "M",
+                    "Sandra": "F"
                 }
                 
                 # --- VALIDACIÓN EXITOSA ---
