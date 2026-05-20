@@ -7,14 +7,34 @@ import base64
 # Configuración de página (optimizada para móvil)
 st.set_page_config(page_title="Nexion Wallet", page_icon="💳", layout="centered")
 
-# --- ESTILOS CSS (Silicon Valley Dark Mode) ---
+# --- ESTILOS CSS PERSONALIZADOS ---
 st.markdown("""
     <style>
+    /* 1. Fondo menos negro fúnebre (Gris Pizarra Oscuro) */
     .stApp {
-        background-color: #0E1117;
+        background-color: #1E2329;
     }
+    
+    /* 2. Ocultar íconos de GitHub, menú de Streamlit y footer */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* 3. Campos de entrada y selectores mucho más oscuros */
+    div[data-baseweb="input"] > div {
+        background-color: #0D1117 !important;
+        border: 1px solid #2D333B !important;
+        color: white !important;
+    }
+    div[data-baseweb="select"] > div {
+        background-color: #0D1117 !important;
+        border: 1px solid #2D333B !important;
+        color: white !important;
+    }
+    
+    /* 4. Tarjetas de saldo adaptadas al nuevo fondo */
     .saldo-card {
-        background-color: #1E2127;
+        background-color: #2D333B;
         border-left: 4px solid #00FFAA;
         padding: 15px;
         border-radius: 8px;
@@ -30,7 +50,8 @@ st.markdown("""
         font-size: 24px;
         font-weight: bold;
     }
-    /* Estilo para mensaje de acceso denegado */
+    
+    /* 5. Estilo para mensaje de acceso denegado */
     .access-denied {
         text-align: center;
         color: #FF4B4B;
@@ -38,6 +59,7 @@ st.markdown("""
         padding: 20px;
         border: 1px solid #FF4B4B;
         border-radius: 8px;
+        background-color: #0D1117;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -85,7 +107,6 @@ if not st.session_state.splash_completado:
 
 # 2. PANTALLA DE LOGIN DE NEXION
 elif not st.session_state.autenticado:
-    # Intenta cargar el logo, si no existe, muestra el texto de Xenocode
     try:
         with open("n2.png", "rb") as f:
             encoded = base64.b64encode(f.read()).decode()
@@ -112,7 +133,6 @@ elif not st.session_state.autenticado:
         submit_button = st.form_submit_button("VERIFY IDENTITY", use_container_width=True)
         
         if submit_button:
-            # ¡AQUÍ USAMOS TUS SECRETS!
             lista_usuarios = st.secrets.get("usuarios", {})
             
             nombres_reales = {
@@ -163,7 +183,6 @@ else:
              st.rerun()
              
     else:
-        # --- EL CÓDIGO DE LA WALLET SÓLO SE EJECUTA SI ERES TÚ ---
         col1, col2 = st.columns([3, 1])
         with col1:
             st.markdown("<h3 style='color: #00FFAA;'>Mi Cartera (Xenocode)</h3>", unsafe_allow_html=True)
@@ -173,7 +192,6 @@ else:
                 st.session_state.splash_completado = False
                 st.rerun()
 
-        # VISOR DE SALDOS
         st.write("### Cuentas Activas")
         for cuenta, monto in st.session_state.saldos.items():
             st.markdown(f"""
@@ -185,30 +203,31 @@ else:
 
         st.write("---")
 
-        # CAPTURA RÁPIDA
         st.write("### Registrar Movimiento")
-        with st.form("registro_rapido", clear_on_submit=True):
-            monto = st.number_input("Cantidad ($)", min_value=0.01, format="%.2f", step=100.0)
-            concepto = st.text_input("¿En qué fue? (Ej. Gasolina, Comida)")
-            cuenta_sel = st.selectbox("¿De qué cuenta?", ["Bolsillo", "Banco", "Caja de Ahorro"])
-            
-            col_gasto, col_ingreso = st.columns(2)
-            with col_gasto:
-                btn_gasto = st.form_submit_button("📉 Gasto (-)", use_container_width=True)
-            with col_ingreso:
-                btn_ingreso = st.form_submit_button("📈 Ingreso (+)", use_container_width=True)
+        
+        # El contenedor para el formulario
+        with st.container():
+            with st.form("registro_rapido", clear_on_submit=True):
+                monto = st.number_input("Cantidad ($)", min_value=0.01, format="%.2f", step=100.0)
+                concepto = st.text_input("¿En qué fue? (Ej. Gasolina, Comida)")
+                cuenta_sel = st.selectbox("¿De qué cuenta?", ["Bolsillo", "Banco", "Caja de Ahorro"])
                 
-            if btn_gasto and monto and concepto:
-                st.session_state.saldos[cuenta_sel] -= monto
-                st.session_state.movimientos.append({"Fecha": datetime.now().strftime("%d/%m %H:%M"), "Tipo": "Gasto", "Concepto": concepto, "Monto": f"-${monto:,.2f}", "Cuenta": cuenta_sel})
-                st.rerun()
-                
-            if btn_ingreso and monto and concepto:
-                st.session_state.saldos[cuenta_sel] += monto
-                st.session_state.movimientos.append({"Fecha": datetime.now().strftime("%d/%m %H:%M"), "Tipo": "Ingreso", "Concepto": concepto, "Monto": f"+${monto:,.2f}", "Cuenta": cuenta_sel})
-                st.rerun()
+                col_gasto, col_ingreso = st.columns(2)
+                with col_gasto:
+                    btn_gasto = st.form_submit_button("📉 Gasto (-)", use_container_width=True)
+                with col_ingreso:
+                    btn_ingreso = st.form_submit_button("📈 Ingreso (+)", use_container_width=True)
+                    
+                if btn_gasto and monto and concepto:
+                    st.session_state.saldos[cuenta_sel] -= monto
+                    st.session_state.movimientos.append({"Fecha": datetime.now().strftime("%d/%m %H:%M"), "Tipo": "Gasto", "Concepto": concepto, "Monto": f"-${monto:,.2f}", "Cuenta": cuenta_sel})
+                    st.rerun()
+                    
+                if btn_ingreso and monto and concepto:
+                    st.session_state.saldos[cuenta_sel] += monto
+                    st.session_state.movimientos.append({"Fecha": datetime.now().strftime("%d/%m %H:%M"), "Tipo": "Ingreso", "Concepto": concepto, "Monto": f"+${monto:,.2f}", "Cuenta": cuenta_sel})
+                    st.rerun()
 
-        # HISTORIAL RECIENTE
         if st.session_state.movimientos:
             st.write("### Últimos Movimientos")
             df = pd.DataFrame(st.session_state.movimientos[::-1])
