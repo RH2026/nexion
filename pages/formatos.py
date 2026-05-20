@@ -281,12 +281,11 @@ with op_col2:
         fig_cat = px.bar(df_gastos_cat, x='Monto', y='Categoria', orientation='h', text_auto=',.0f')
         fig_cat.update_traces(marker_color='#30363D', hovertemplate="%{y}: $%{x:,.2f}", textposition='outside', textfont=dict(family="monospace", color="#C9D1D9"))
         # Resaltar la categoría más alta con color Neon
+       # Resaltar la categoría más alta con color Neon
         if not df_gastos_cat.empty:
-            max_cat = df_gastos_cat.iloc[-1]['Categoria']
-            fig_cat.update_traces(marker_color=px.colors.repeating.colorlover.gray, selector={'type':'bar'}) # Default
-            # Esto es un truco para colorear una sola barra en Plotly Express, a veces es más fácil con Graph Objects pero esto funciona:
+            # Creamos la lista de colores: gris oscuro para todas, neón para la más alta
             colors = ['#30363D'] * len(df_gastos_cat)
-            colors[-1] = '#00FFAA' # La última barra (la más alta por el sort) es Neon
+            colors[-1] = '#00FFAA' 
             fig_cat.update_traces(marker_color=colors)
 
         fig_cat.update_layout(
