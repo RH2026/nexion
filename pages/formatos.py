@@ -230,8 +230,8 @@ with gr_col2:
         
         fig_flow.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(showgrid=False, color="#8B949E", font=dict(family="monospace"), tickformat="%d %b"),
-            yaxis=dict(showgrid=True, gridcolor="#30363D", color="#8B949E", font=dict(family="monospace"), zeroline=False),
+            xaxis=dict(showgrid=False, color="#8B949E", tickfont=dict(family="monospace"), tickformat="%d %b"),
+            yaxis=dict(showgrid=True, gridcolor="#30363D", color="#8B949E", tickfont=dict(family="monospace"), zeroline=False),
             legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center", font=dict(family="monospace", color="#C9D1D9")),
             margin=dict(t=10, b=10, l=10, r=10), height=380, hovermode="x unified"
         )
