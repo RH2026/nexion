@@ -290,8 +290,8 @@ with op_col2:
 
         fig_cat.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(title=None, showgrid=True, gridcolor="#30363D", color="#8B949E", font=dict(family="monospace"), tickformat="$,.0f"),
-            yaxis=dict(title=None, color="#C9D1D9", font=dict(family="monospace")),
+            xaxis=dict(title=None, showgrid=True, gridcolor="#30363D", color="#8B949E", tickfont=dict(family="monospace"), tickformat="$,.0f"),
+            yaxis=dict(title=None, color="#C9D1D9", tickfont=dict(family="monospace")),
             margin=dict(t=10, b=10, l=10, r=10), height=410
         )
         st.plotly_chart(fig_cat, use_container_width=True, config={'displayModeBar': False})
