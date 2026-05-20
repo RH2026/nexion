@@ -2914,6 +2914,8 @@ else:
                         {"oc": "OC 13268", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "03 de junio", "cita": "03/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "09/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
                         {"oc": "OC 13268", "cantidad": "560", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "10/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1120", "semana": "SEM 24", "entrega_texto": "10 de junio", "cita": "11/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 24", "entrega_texto": "10 de junio", "cita": "12/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
                     ]
                 
                     # --- Data (TRAILER) ---
@@ -2922,7 +2924,7 @@ else:
                         {"oc": "TRAILER-002M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "08 de mayo", "cita": "08/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
                         {"oc": "TRAILER-003M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "12 de mayo", "cita": "12/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
                         {"oc": "TRAILER-004M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "15 de mayo", "cita": "15/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
-                        {"oc": "TRAILER-005M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "19 de mayo", "cita": "19/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
+                        {"oc": "TRAILER-005M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "19 de mayo", "cita": "19/05/2026 - 13:00 PM", "estatus": "ENTREGADA"},
                         {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "22 de mayo", "cita": "22/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "26 de mayo", "cita": "26/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
                         {"oc": "TRAILER-006M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "29 de mayo", "cita": "29/05/2026 - 13:00 PM", "estatus": "PENDIENTE"},
