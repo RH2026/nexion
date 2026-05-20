@@ -1,121 +1,218 @@
 import streamlit as st
 import pandas as pd
-from github import Github
-import io
-import pytz
-import time
 from datetime import datetime
+import time
+import base64
 
-# ── 1. CONFIGURACIÓN DE ACCESO Y RUTAS ──
-TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-REPO_NAME = "RH2026/nexion"
-FILE_PATH = "pedidos.csv"
-CSV_URL = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/pedidos.csv"
-tz_gdl = pytz.timezone('America/Mexico_City')
+# Configuración de página (optimizada para móvil)
+st.set_page_config(page_title="Nexion Wallet", page_icon="💳", layout="centered")
 
-# ── 2. OPCIONES DE LOS SELECTORES (AGREGAMOS OPCIÓN VACÍA AL INICIO) ──
-OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🚚 EN RUTA", "✅ ENTREGADO", "❌ CANCELADO"]
-# Agregamos "" al inicio para que el "None" desaparezca y quede en blanco
-OPCIONES_PAQUETERIA = ["", "FEDEX", "TRES GUERRAS", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS"]
-OPCIONES_SURTIDOR = ["", "SANDRA", "YAZMIN", "KEVIN", "FELIX"]
+# --- ESTILOS CSS (Silicon Valley Dark Mode) ---
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0E1117;
+    }
+    .saldo-card {
+        background-color: #1E2127;
+        border-left: 4px solid #00FFAA;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+    .saldo-titulo {
+        color: #8892B0;
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+    .saldo-monto {
+        color: #E6F1FF;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    /* Estilo para mensaje de acceso denegado */
+    .access-denied {
+        text-align: center;
+        color: #FF4B4B;
+        margin-top: 50px;
+        padding: 20px;
+        border: 1px solid #FF4B4B;
+        border-radius: 8px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-st.set_page_config(page_title="Nexion Core - Matrix", layout="wide")
-st.markdown("### ⚡ Panel de Control: Matriz de Pedidos")
+# --- INICIALIZACIÓN DE VARIABLES EN MEMORIA ---
+if 'saldos' not in st.session_state:
+    st.session_state.saldos = {"Bolsillo": 1500.00, "Banco": 12400.00, "Caja de Ahorro": 5000.00}
+if 'movimientos' not in st.session_state:
+    st.session_state.movimientos = []
+if 'splash_completado' not in st.session_state:
+    st.session_state.splash_completado = False
+if 'autenticado' not in st.session_state:
+    st.session_state.autenticado = False
 
-# ── 3. LÓGICA DE CARGA ULTRA LIMPIA ──
-def get_data_nexion():
-    if 'df_pedidos' not in st.session_state:
-        try:
-            # Forzamos a pandas a ignorar los NA y tratarlos como strings vacíos
-            df = pd.read_csv(CSV_URL, keep_default_na=False).fillna("")
+# ==============================================================================
+# ── FLUJO DE CONTROL MAESTRO ──
+# ==============================================================================
+
+# 1. SPLASH SCREEN (Animación de carga)
+if not st.session_state.splash_completado:
+    p = st.empty()
+    mensajes = [
+        "ESTABLISHING SECURE ACCESS...",
+        "LOADING FINANCIAL DATA...",
+        "SYNCHRONIZING NEXION WALLET...",
+        "SYSTEM READY..."
+    ]
+    
+    for m in mensajes:
+        with p.container():
+            st.markdown(f"""
+            <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                <div style="width:80px;height:80px;border:2px solid rgba(255,255,255,0.05); border-top:2px solid #00FFAA; border-radius:50%;animation:spin 1s linear infinite; box-shadow: 0 0 15px rgba(0,255,170,0.3);"></div>
+                <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:white;text-transform:uppercase;">{m}</p>
+            </div>
+            <style>
+                @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+            </style>
+            """, unsafe_allow_html=True)
+            time.sleep(0.7)
             
-            columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "FECHA DE ENVÍO"]
-            columnas_nuevas = ["ESTATUS", "SURTIDOR", "PAQUETERIA", "INCIDENCIA"]
-            
-            # Asegurar que todas las columnas existan y estén limpias
-            all_cols = columnas_lectura + columnas_nuevas
-            for col in all_cols:
-                if col not in df.columns:
-                    df[col] = ""
-                else:
-                    # Reemplazo total de cualquier rastro de "None" o "nan" por vacío real
-                    df[col] = df[col].astype(str).replace(['None', 'nan', 'NaN', 'None ', 'nan ', 'N/A'], '')
-                    df[col] = df[col].str.strip()
-
-            # Validación final para que el Editor no se pierda
-            if not df.empty:
-                # Si el estatus no es válido, poner el primero por defecto
-                df.loc[~df['ESTATUS'].isin(OPCIONES_ESTATUS), 'ESTATUS'] = OPCIONES_ESTATUS[0]
-                # Para los demás, si no están en la lista, asegurar que sean un string vacío ""
-                df.loc[~df['SURTIDOR'].isin(OPCIONES_SURTIDOR), 'SURTIDOR'] = ""
-                df.loc[~df['PAQUETERIA'].isin(OPCIONES_PAQUETERIA), 'PAQUETERIA'] = ""
-            
-            st.session_state.df_pedidos = df[all_cols]
-        except Exception as e:
-            st.error(f"Error de conexión: {e}")
-            return pd.DataFrame()
-    return st.session_state.df_pedidos
-
-# ── 4. BOTÓN RECARGAR ──
-if st.button("🔄 RECARGAR MATRIZ"):
-    if 'df_pedidos' in st.session_state:
-        del st.session_state.df_pedidos
-    st.cache_data.clear()
+    p.empty()
+    st.session_state.splash_completado = True
     st.rerun()
 
-# ── 5. EDITOR DE DATOS (CONFIGURADO PARA BLANCOS) ──
-df_actual = get_data_nexion()
+# 2. PANTALLA DE LOGIN DE NEXION
+elif not st.session_state.autenticado:
+    # Intenta cargar el logo, si no existe, muestra el texto de Xenocode
+    try:
+        with open("n2.png", "rb") as f:
+            encoded = base64.b64encode(f.read()).decode()
+            logo_html = f'<img src="data:image/png;base64,{encoded}" width="180">'
+    except FileNotFoundError:
+        logo_html = '<h1 style="color: #00FFAA; font-family: monospace; margin: 0;">NEXION</h1>'
 
-if not df_actual.empty:
-    edited_df = st.data_editor(
-        df_actual,
-        use_container_width=True,
-        hide_index=True,
-        key="editor_nexion_final_v6",
-        column_config={
-            "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium"),
-            "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small"),
-            "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium"),
-            "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large"),
-            "NO CLIENTE": st.column_config.TextColumn(disabled=True),
-            "FACTURA": st.column_config.TextColumn(disabled=True),
-            "NOMBRE DEL CLIENTE": st.column_config.TextColumn(disabled=True),
-            "DESTINO": st.column_config.TextColumn(disabled=True),
-            "FECHA DE ENVÍO": st.column_config.TextColumn(disabled=True),
-        }
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+            {logo_html}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
+    
+    with st.form("login_form", clear_on_submit=False):
+        user_input = st.text_input("USUARIO", placeholder="Introduce tu usuario")
+        pass_input = st.text_input("CONTRASEÑA", type="password", placeholder="••••••••")
+        
+        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+        submit_button = st.form_submit_button("VERIFY IDENTITY", use_container_width=True)
+        
+        if submit_button:
+            # ¡AQUÍ USAMOS TUS SECRETS!
+            lista_usuarios = st.secrets.get("usuarios", {})
+            
+            nombres_reales = {
+                "Rigoberto": "Rigoberto Hernández",
+                "AGomez": "Ale Gomez",
+                "JMoreno": "Jesus Moreno",
+                "Cynthia": "Cynthia",
+                "Brenda": "Brenda",
+                "Fialko": "Fialko",
+                "Atencion3G": "Sandra Yaneli",
+                "Claudia": "Claudia",
+                "Ruth": "Ruth Buenrostro",
+                "Carlos": "Carlos Vazquez"
+            }
+            generos = {
+                "Rigoberto": "M", "AGomez": "F", "JMoreno": "M", "Cynthia": "F", 
+                "Brenda": "F", "Fialko": "M", "Yaneli": "F", "Claudia": "F", 
+                "Arturo": "M", "Ruth": "F", "Carlos": "M"
+            }
+            
+            if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
+                st.session_state.autenticado = True
+                st.session_state.usuario_activo = user_input
+                
+                nombre_completo = nombres_reales.get(user_input, user_input)
+                gen = generos.get(user_input, "M")
+                saludo = "BIENVENIDA" if gen == "F" else "BIENVENIDO"
+                
+                st.success(f"¡{saludo}!, {nombre_completo.upper()}") 
+                time.sleep(1) 
+                st.rerun()
+            else:
+                st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ── 6. GUARDADO Y DESCARGA ──
-    col_save, col_download = st.columns([2, 1])
-
-    with col_save:
-        if st.button("🚀 EJECUTAR UPLINK A GITHUB", type="primary", use_container_width=True):
-            if TOKEN:
-                with st.status("Sincronizando...", expanded=True) as status:
-                    try:
-                        g = Github(TOKEN)
-                        repo = g.get_repo(REPO_NAME)
-                        csv_string = edited_df.to_csv(index=False)
-                        contents = repo.get_contents(FILE_PATH)
-                        
-                        hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
-                        repo.update_file(path=FILE_PATH, message=f"PRO_SYNC // {hora_local}", content=csv_string, sha=contents.sha)
-                        
-                        st.session_state.df_pedidos = edited_df
-                        status.update(label="Sincronización Exitosa", state="complete", expanded=False)
-                        st.toast("GitHub Actualizado correctamente", icon="✅")
-                        time.sleep(1)
-                        st.rerun()
-                    except Exception as e:
-                        status.update(label=f"Error: {e}", state="error")
-
-    with col_download:
-        csv_data = edited_df.to_csv(index=False).encode('utf-8-sig')
-        st.download_button(label="📥 DESCARGAR LOCAL", data=csv_data, file_name="pedidos_nexion.csv", mime="text/csv", use_container_width=True)
+# 3. INTERFAZ DE WALLET (EXCLUSIVO PARA RIGOBERTO)
 else:
-    st.info("Sin datos para mostrar.")
+    # ── VALIDACIÓN DE USUARIO ÉLITE ──
+    if st.session_state.usuario_activo.upper() != "RIGOBERTO":
+        st.markdown("""
+            <div class="access-denied">
+                <h2>⚠️ ACCESO DENEGADO</h2>
+                <p>Este módulo es exclusivo de la dirección general.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("⬅️ Volver", use_container_width=True):
+             st.session_state.autenticado = False
+             st.rerun()
+             
+    else:
+        # --- EL CÓDIGO DE LA WALLET SÓLO SE EJECUTA SI ERES TÚ ---
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown("<h3 style='color: #00FFAA;'>Mi Cartera (Xenocode)</h3>", unsafe_allow_html=True)
+        with col2:
+            if st.button("🔒 Salir"):
+                st.session_state.autenticado = False
+                st.session_state.splash_completado = False
+                st.rerun()
+
+        # VISOR DE SALDOS
+        st.write("### Cuentas Activas")
+        for cuenta, monto in st.session_state.saldos.items():
+            st.markdown(f"""
+                <div class="saldo-card">
+                    <div class="saldo-titulo">{cuenta}</div>
+                    <div class="saldo-monto">${monto:,.2f} MXN</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        st.write("---")
+
+        # CAPTURA RÁPIDA
+        st.write("### Registrar Movimiento")
+        with st.form("registro_rapido", clear_on_submit=True):
+            monto = st.number_input("Cantidad ($)", min_value=0.01, format="%.2f", step=100.0)
+            concepto = st.text_input("¿En qué fue? (Ej. Gasolina, Comida)")
+            cuenta_sel = st.selectbox("¿De qué cuenta?", ["Bolsillo", "Banco", "Caja de Ahorro"])
+            
+            col_gasto, col_ingreso = st.columns(2)
+            with col_gasto:
+                btn_gasto = st.form_submit_button("📉 Gasto (-)", use_container_width=True)
+            with col_ingreso:
+                btn_ingreso = st.form_submit_button("📈 Ingreso (+)", use_container_width=True)
+                
+            if btn_gasto and monto and concepto:
+                st.session_state.saldos[cuenta_sel] -= monto
+                st.session_state.movimientos.append({"Fecha": datetime.now().strftime("%d/%m %H:%M"), "Tipo": "Gasto", "Concepto": concepto, "Monto": f"-${monto:,.2f}", "Cuenta": cuenta_sel})
+                st.rerun()
+                
+            if btn_ingreso and monto and concepto:
+                st.session_state.saldos[cuenta_sel] += monto
+                st.session_state.movimientos.append({"Fecha": datetime.now().strftime("%d/%m %H:%M"), "Tipo": "Ingreso", "Concepto": concepto, "Monto": f"+${monto:,.2f}", "Cuenta": cuenta_sel})
+                st.rerun()
+
+        # HISTORIAL RECIENTE
+        if st.session_state.movimientos:
+            st.write("### Últimos Movimientos")
+            df = pd.DataFrame(st.session_state.movimientos[::-1])
+            st.dataframe(df, use_container_width=True, hide_index=True)
 
 
 
