@@ -840,7 +840,7 @@ def login_screen():
                     "Claudia": "Claudia",
                     "Ruth": "Ruth Buenrostro",
                     "Carlos": "Carlos Vazquez",
-                    "Sandra": "Sandraalm@"
+                    "Sandra": "Sandra, Analista"
                 }
                 
                 # 2. Diccionario de géneros (F = Femenino, M = Masculino)
