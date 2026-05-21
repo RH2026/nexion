@@ -341,11 +341,14 @@ else:
                 ),
                 yaxis=dict(
                     color="#E0E6ED", 
-                    font=dict(size=13),
+                    tickfont=dict(size=13), # Corregido: tickfont en lugar de font
                     title=None,
                     autorange="reversed" # La cuenta principal arriba
                 ),
-                hoverlabel=dict(bgcolor="#253441", font_size=13, font_family="monospace")
+                hoverlabel=dict(
+                    bgcolor="#253441", 
+                    font=dict(size=13, family="monospace") # Corregido: La fuente debe ir dentro de su propio dict
+                )
             )
             
             st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
