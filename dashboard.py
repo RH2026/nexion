@@ -8161,7 +8161,7 @@ else:
                     "Cartera": {"color": "#8B9BB4", "fondo_base": 0.00}
                 }
                 CATEGORIAS = [
-                    "Nómina", "Freelance / Proyectos", "Rendimientos", "Reembolsos", "Ventas",
+                    "Nómina", "Ahorros", "Ventas", "Freelance / Proyectos", "Rendimientos", "Reembolsos", "Ventas",
                     "Renta", "Servicios Fijos", "Conectividad", "Mantenimiento",
                     "Supermercado", "Restaurantes", "Cafeterías y Snacks",
                     "Gasolina", "Mantenimiento Automotriz", "Trámites y Seguros", "Transporte Alternativo",
