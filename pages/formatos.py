@@ -18,6 +18,7 @@ st.set_page_config(page_title="Nexion Terminal | Wallet Élite", page_icon="🧮
 # ==============================================================================
 # 2. CONFIGURACIÓN DE GITHUB Y PERMISOS
 # ==============================================================================
+# Intentar obtener el token de secrets, si no, usar None para evitar crash en local
 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 REPO_NAME = "RH2026/nexion"
 FILE_PATH = "cartera.csv"
@@ -113,7 +114,7 @@ if 'autenticado' not in st.session_state: st.session_state.autenticado = False
 @st.fragment(run_every=10)
 def verificar_y_renderizar_bloqueo():
     lock_info, bloqueado_por_otro = None, False
-    if puede_editar:
+    if puede_editar and TOKEN:
         try:
             repo = Github(TOKEN).get_repo(REPO_NAME)
             try:
@@ -130,7 +131,7 @@ def verificar_y_renderizar_bloqueo():
         st.session_state["puede_editar_efectivo"] = False
     else:
         st.session_state["puede_editar_efectivo"] = puede_editar
-        if puede_editar and lock_info is None:
+        if puede_editar and lock_info is None and TOKEN:
             try:
                 repo = Github(TOKEN).get_repo(REPO_NAME)
                 ahora_gdl = datetime.now(tz_gdl)
@@ -140,30 +141,35 @@ def verificar_y_renderizar_bloqueo():
             except: pass
 
 # ==============================================================================
-# 5. MOTOR DE DATOS (GITHUB)
+# 5. MOTOR DE DATOS (GITHUB O LOCAL FALLBACK)
 # ==============================================================================
 def get_wallet_data_from_git():
     if 'df_wallet' not in st.session_state or st.session_state.get('force_reload', False):
-        try:
-            repo = Github(TOKEN).get_repo(REPO_NAME)
+        # Fallback de datos si no hay token (para desarrollo local sin secrets)
+        start_date = datetime.now(tz_gdl)
+        ejemplos = [
+            {"Fecha": (start_date - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Nomina", "Concepto": "Pago Quincena 1 JYPESA", "Monto": 35000.0, "Cuenta": "Banco MX (Core)"},
+            {"Fecha": (start_date - timedelta(days=8)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Renta", "Concepto": "Renta Oficinas", "Monto": -18000.0, "Cuenta": "Banco MX (Core)"},
+            {"Fecha": (start_date - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Freelance", "Concepto": "Proyecto Xenocode UI", "Monto": 15000.0, "Cuenta": "USD Wallet (Hedge)"},
+            {"Fecha": (start_date - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Supermercado", "Concepto": "Compras Semanales", "Monto": -3500.0, "Cuenta": "Banco MX (Core)"},
+        ]
+        df_load = pd.DataFrame(ejemplos)
+
+        if TOKEN:
             try:
-                df_load = pd.read_csv(io.StringIO(repo.get_contents(FILE_PATH, ref="main").decoded_content.decode('utf-8')), keep_default_na=False)
-            except:
-                start_date = datetime.now(tz_gdl)
-                ejemplos = [
-                    {"Fecha": (start_date - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Nomina", "Concepto": "Pago Quincena 1 JYPESA", "Monto": 35000.0, "Cuenta": "Banco MX (Core)"},
-                    {"Fecha": (start_date - timedelta(days=8)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Renta", "Concepto": "Renta Oficinas", "Monto": -18000.0, "Cuenta": "Banco MX (Core)"},
-                    {"Fecha": (start_date - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Freelance", "Concepto": "Proyecto Xenocode UI", "Monto": 15000.0, "Cuenta": "USD Wallet (Hedge)"},
-                ]
-                df_load = pd.DataFrame(ejemplos)
-                repo.create_file(path=FILE_PATH, message="INITIALIZE WALLET MATRIX", content=df_load.to_csv(index=False), branch="main")
-            
-            df_load['Fecha'] = pd.to_datetime(df_load['Fecha'])
-            st.session_state.df_wallet = df_load
-            st.session_state.force_reload = False
-        except Exception as e:
-            st.error(f"Error crítico en Matrix-GitHub: {e}")
-            return pd.DataFrame()
+                repo = Github(TOKEN).get_repo(REPO_NAME)
+                try:
+                    df_load = pd.read_csv(io.StringIO(repo.get_contents(FILE_PATH, ref="main").decoded_content.decode('utf-8')), keep_default_na=False)
+                except:
+                    # Si no existe el archivo en Git, crearlo con los ejemplos
+                    repo.create_file(path=FILE_PATH, message="INITIALIZE WALLET MATRIX", content=df_load.to_csv(index=False), branch="main")
+            except Exception as e:
+                st.error(f"Error conexión GitHub: {e}. Usando datos locales.")
+        
+        df_load['Fecha'] = pd.to_datetime(df_load['Fecha'])
+        st.session_state.df_wallet = df_load
+        st.session_state.force_reload = False
+        
     return st.session_state.df_wallet
 
 # ==============================================================================
@@ -181,7 +187,7 @@ if not st.session_state.splash_completado:
             </div>
             <style> @keyframes spin {{ to {{ transform: rotate(360deg); }} }} </style>
             """, unsafe_allow_html=True)
-            time.sleep(0.5)
+            time.sleep(0.4) # Un poco más rápido amor
     p.empty()
     st.session_state.splash_completado = True
     st.rerun()
@@ -190,16 +196,20 @@ elif not st.session_state.autenticado:
     _, col_login, _ = st.columns([1, 1, 1])
     with col_login:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
+        # Intento de logo, si no texto neón
         try:
             encoded = base64.b64encode(open("n2.png", "rb").read()).decode()
             st.markdown(f'<div style="text-align:center"><img src="data:image/png;base64,{encoded}" width="180"></div>', unsafe_allow_html=True)
-        except: st.markdown("<h1 style='text-align:center; color:#00E5FF;'>NEXION</h1>", unsafe_allow_html=True)
+        except: st.markdown("<h1 style='text-align:center; color:#00E5FF; font-family:monospace; letter-spacing:10px;'>NEXION</h1>", unsafe_allow_html=True)
 
+        st.markdown("<br>", unsafe_allow_html=True)
         with st.form("login_form"):
+            st.markdown("<p class='kpi-label' style='text-align:center;'>SECURITY CHECKPOINT</p>", unsafe_allow_html=True)
             user_input = st.text_input("USUARIO", placeholder="Rigoberto")
             pass_input = st.text_input("CONTRASEÑA", type="password", placeholder="••••••••")
             if st.form_submit_button("VERIFY IDENTITY", use_container_width=True):
-                lista_usuarios = st.secrets.get("usuarios", {})
+                # Fallback credenciales si no hay secrets
+                lista_usuarios = st.secrets.get("usuarios", {"Rigoberto": "demo123"})
                 if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
                     st.session_state.autenticado = True
                     st.session_state.usuario_activo = user_input
@@ -207,8 +217,9 @@ elif not st.session_state.autenticado:
                 else: st.error("ERROR: ACCESS DENIED.")
 
 else:
+    # Restricción de usuario Hardcoded solicitada
     if st.session_state.usuario_activo.upper() != "RIGOBERTO":
-        st.markdown("<div style='text-align:center; padding:50px;'><h2 style='color:#FF4B4B;'>⚠️ ACCESO RESTRINGIDO</h2></div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; padding:50px;'><h2 style='color:#FF4B4B;'>⚠️ ACCESO RESTRINGIDO</h2><p>Solo personal autorizado.</p></div>", unsafe_allow_html=True)
         st.stop()
 
     verificar_y_renderizar_bloqueo()
@@ -236,10 +247,11 @@ else:
     # --- HEADER ESTILO JYPESA ---
     head_l, head_r = st.columns([6, 1])
     with head_l:
-        st.markdown(f"<h3 style='color:#FFFFFF; margin: 0; font-weight: 300; letter-spacing: 2px;'>D A S H B O A R D <span style='color:#00E5FF'>|</span> WALLET</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color:#FFFFFF; margin: 0; font-weight: 300; letter-spacing: 2px;'>D A S H B O A R D <span style='color:#00E5FF'>|</span> WALLET <span style='color:#8B9BB4; font-size:14px;'>v2.0</span></h3>", unsafe_allow_html=True)
     with head_r:
         if st.button("🔒 DISCONNECT", use_container_width=True):
             st.session_state.autenticado = False
+            st.session_state.usuario_activo = "UNKNOWN"
             st.rerun()
 
     # ==========================================================================
@@ -286,18 +298,57 @@ else:
         
         st.markdown("<br><hr style='border-color: #34495E;'>", unsafe_allow_html=True)
         
-        col_dona, _ = st.columns([1, 1]) # Para que no se vea gigante la dona
-        with col_dona:
-            st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🔍</span> DISTRIBUCIÓN DE CAPITAL</p>", unsafe_allow_html=True)
-            fig_donut = go.Figure(data=[go.Pie(
-                labels=list(saldos_actuales.keys()), values=list(saldos_actuales.values()), hole=.75,
-                marker=dict(colors=[CUENTAS_MATRIX[c]['color'] for c in saldos_actuales.keys()], line=dict(color='#1D2A35', width=4)),
-                textinfo='none', hoverinfo='label+percent+value'
-            )])
-            fig_donut.add_annotation(text="FONDOS", x=0.5, y=0.5, font_size=16, font_color="#8B9BB4", showarrow=False)
-            fig_donut.update_layout(showlegend=True, legend=dict(orientation="h", y=-0.1, x=0.5, xanchor="center", font=dict(color="#8B9BB4")),
-                                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), height=350)
-            st.plotly_chart(fig_donut, use_container_width=True, config={'displayModeBar': False})
+        # ======================================================================
+        # 🔥 EL NUEVO GRÁFICO: BARRAS HORIZONTALES ÉLITE (Adiós Donita) 🔥
+        # ======================================================================
+        col_chart, _ = st.columns([2, 1]) # Le damos más espacio a lo ancho
+        with col_chart:
+            st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🔍</span> DISTRIBUCIÓN DE CAPITAL POR CUENTA</p>", unsafe_allow_html=True)
+            
+            # Preparar datos para el gráfico de barras
+            nombres_cuentas = list(saldos_actuales.keys())
+            valores_saldos = list(saldos_actuales.values())
+            colores_barras = [CUENTAS_MATRIX[c]['color'] for c in nombres_cuentas]
+
+            # Crear Gráfico de Barras Horizontales con go.Figure para control total
+            fig_bars = go.Figure(go.Bar(
+                x=valores_saldos,
+                y=nombres_cuentas,
+                orientation='h',
+                marker=dict(
+                    color=colores_barras, # Colores neón asignados
+                    line=dict(color='#1D2A35', width=2) # Borde oscuro para resaltar
+                ),
+                text=valores_saldos,
+                texttemplate='%{text:$,.2f}', # Formato moneda en la barra
+                textposition='auto',
+                textfont=dict(color='#FFFFFF', size=12, family="monospace"),
+                hovertemplate="<b>%{y}</b><br>Saldo: %{x:$,.2f}<extra></extra>"
+            ))
+
+            fig_bars.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)', # Fondo transparente
+                plot_bgcolor='rgba(0,0,0,0)',
+                showlegend=False,
+                margin=dict(t=10, b=10, l=10, r=10),
+                height=350,
+                xaxis=dict(
+                    showgrid=True, 
+                    gridcolor="#34495E", # Rejilla sutil
+                    color="#8B9BB4", 
+                    tickformat="$,.0f",
+                    title=None
+                ),
+                yaxis=dict(
+                    color="#E0E6ED", 
+                    font=dict(size=13),
+                    title=None,
+                    autorange="reversed" # La cuenta principal arriba
+                ),
+                hoverlabel=dict(bgcolor="#253441", font_size=13, font_family="monospace")
+            )
+            
+            st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
 
     # --------------------------------------------------------------------------
     # PESTAÑA 2: FLUJOS DE EFECTIVO (Gráficos)
@@ -338,7 +389,7 @@ else:
                     fig_cat = px.bar(df_gastos_cat, x='Monto', y='Categoria', orientation='h', text_auto=',.0f')
                     
                     colors = ['#34495E'] * len(df_gastos_cat)
-                    colors[-1] = '#00FFAA' # La barra más grande en verde neón Jypesa
+                    if len(colors) > 0: colors[-1] = '#00FFAA' # La barra más grande en verde neón Jypesa
                     
                     fig_cat.update_traces(marker_color=colors, hovertemplate="%{y}: $%{x:,.2f}", textposition='outside', textfont=dict(color="#E0E6ED"))
                     fig_cat.update_layout(
@@ -356,6 +407,10 @@ else:
     # --------------------------------------------------------------------------
     with tab_registro:
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        if not TOKEN:
+            st.warning("⚠️ Modo de solo lectura local. Configure GITHUB_TOKEN para registrar operaciones.")
+        
         op_col1, op_col2 = st.columns([1, 2])
 
         with op_col1:
@@ -364,14 +419,17 @@ else:
                 f_monto = st.number_input("Cantidad MXN", min_value=0.0, step=100.0)
                 f_cat = st.selectbox("Categoría", CATEGORIAS)
                 f_desc = st.text_input("Concepto / Referencia", placeholder="Ej. Gastos de Operación")
-                f_cuenta = st.selectbox("Cuenta Destino", list(CUENTAS_MATRIX.keys()))
+                f_cuenta = st.selectbox("Cuenta Destino/Origen", list(CUENTAS_MATRIX.keys()))
                 
                 btn_l, btn_r = st.columns(2)
-                gasto_sub = btn_l.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=not puede_editar_efectivo)
-                ingreso_sub = btn_r.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=not puede_editar_efectivo)
+                # Deshabilitar si no tiene permisos O si está bloqueado por otro O si no hay token
+                block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
                 
-                if puede_editar_efectivo and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
-                    with st.status("Sincronizando con Nube...", expanded=True):
+                gasto_sub = btn_l.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit)
+                ingreso_sub = btn_r.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit)
+                
+                if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
+                    with st.status("Sincronizando con Nube Nexion...", expanded=True):
                         try:
                             repo = Github(TOKEN).get_repo(REPO_NAME)
                             contents = repo.get_contents(FILE_PATH)
@@ -387,13 +445,17 @@ else:
                             }
                             
                             df_latest = pd.concat([df_latest, pd.DataFrame([nueva_fila])], ignore_index=True)
-                            repo.update_file(path=FILE_PATH, message=f"UPDATE // {datetime.now(tz_gdl).strftime('%H:%M:%S')}", content=df_latest.to_csv(index=False), sha=contents.sha)
-                            try: repo.delete_file(path=LOCK_FILE_PATH, message="UNLOCK", sha=repo.get_contents(LOCK_FILE_PATH).sha)
+                            repo.update_file(path=FILE_PATH, message=f"UPDATE // {current_user} // {datetime.now(tz_gdl).strftime('%H:%M:%S')}", content=df_latest.to_csv(index=False), sha=contents.sha)
+                            
+                            # Liberar candado inmediatamente después de escribir
+                            try: repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=repo.get_contents(LOCK_FILE_PATH).sha)
                             except: pass
                             
                             st.session_state.force_reload = True
+                            st.success("OPERACIÓN CLASIFICADA EXITOSAMENTE.")
+                            time.sleep(1)
                             st.rerun()
-                        except Exception as e: st.error(f"Error: {e}")
+                        except Exception as e: st.error(f"Error crítico de sincronización: {e}")
 
         with op_col2:
             st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIÓN EN TIEMPO REAL</p>", unsafe_allow_html=True)
@@ -401,10 +463,12 @@ else:
                 df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
                 df_ledger['Fecha'] = df_ledger['Fecha'].dt.strftime('%d/%m/%Y %H:%M')
                 
+                # Estilo de tabla avanzada
                 st.dataframe(
                     df_ledger[['Fecha', 'Tipo', 'Categoria', 'Concepto', 'Monto', 'Cuenta']].style
                     .format({'Monto': '${:,.2f}'})
-                    .map(lambda val: 'color: #00FFAA; font-weight: bold;' if val > 0 else 'color: #FF4B4B; font-weight: bold;', subset=['Monto']),
+                    .map(lambda val: 'color: #00FFAA; font-weight: bold;' if val > 0 else 'color: #FF4B4B; font-weight: bold;', subset=['Monto'])
+                    .map(lambda val: 'background-color: rgba(0, 229, 255, 0.05);' if val == "Ingreso" else '', subset=['Tipo']),
                     use_container_width=True, hide_index=True, height=400
                 )
 
