@@ -1244,6 +1244,18 @@ else:
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
+
+                # --- FINANZAS: Estrictamente confidencial ---
+                if st.session_state.get("usuario_activo") == "Rigoberto": 
+                    with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
+                        opciones_fin = ["WALLET", "PRESUPUESTOS", "GASTOS"] 
+                        for s in opciones_fin:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
+                                st.session_state.menu_main = "FINANZAS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
             
                 # 3. SECCIÓN DE CIERRE DE SESIÓN
                 st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
@@ -8121,6 +8133,20 @@ else:
                             
                     except Exception as e:
                         st.error(f"Error al procesar el archivo: {e}")
+            
+            elif st.session_state.menu_main == "FINANZAS":
+                if st.session_state.menu_sub == "WALLET":
+                    st.title("💰 Mi Wallet")
+                    st.info("AQUÍ VA TODO EL CÓDIGO Y CONTENIDO DE TU WALLET")
+                    
+                elif st.session_state.menu_sub == "PRESUPUESTOS":
+                    st.title("📝 Presupuestos")
+                    st.info("AQUÍ VA EL CONTENIDO PARA TUS PRESUPUESTOS")
+                    
+                elif st.session_state.menu_sub == "GASTOS":
+                    st.title("💸 Control de Gastos")
+                    st.info("AQUÍ VA EL CONTENIDO DE TUS GASTOS")
+
     
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
