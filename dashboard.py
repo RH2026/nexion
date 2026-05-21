@@ -8134,18 +8134,18 @@ else:
                     except Exception as e:
                         st.error(f"Error al procesar el archivo: {e}")
             
-            elif st.session_state.menu_main == "FINANZAS":
-                if st.session_state.menu_sub == "WALLET":
-                    st.title("💰 Mi Wallet")
-                    st.info("AQUÍ VA TODO EL CÓDIGO Y CONTENIDO DE TU WALLET")
-                    
-                elif st.session_state.menu_sub == "PRESUPUESTOS":
-                    st.title("📝 Presupuestos")
-                    st.info("AQUÍ VA EL CONTENIDO PARA TUS PRESUPUESTOS")
-                    
-                elif st.session_state.menu_sub == "GASTOS":
-                    st.title("💸 Control de Gastos")
-                    st.info("AQUÍ VA EL CONTENIDO DE TUS GASTOS")
+        elif st.session_state.menu_main == "FINANZAS":
+            if st.session_state.menu_sub == "WALLET":
+                st.title("💰 Mi Wallet")
+                st.info("AQUÍ VA TODO EL CÓDIGO Y CONTENIDO DE TU WALLET")
+                
+            elif st.session_state.menu_sub == "PRESUPUESTOS":
+                st.title("📝 Presupuestos")
+                st.info("AQUÍ VA EL CONTENIDO PARA TUS PRESUPUESTOS")
+                
+            elif st.session_state.menu_sub == "GASTOS":
+                st.title("💸 Control de Gastos")
+                st.info("AQUÍ VA EL CONTENIDO DE TUS GASTOS")
 
     
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
