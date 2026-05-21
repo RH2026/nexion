@@ -8291,9 +8291,7 @@ else:
                 exp_month = abs(df_month[df_month['Tipo'] == "Gasto"]['Monto'].sum()) if not df_month.empty else 0
                 net_month = inc_month - exp_month
         
-                # HEADER ESTILO JYPESA
-                st.markdown(f"<h3 style='color:#FFFFFF; margin: 0; font-weight: 300; letter-spacing: 2px;'>D A S H B O A R D <span style='color:#00E5FF'>|</span> WALLET <span style='color:#8B9BB4; font-size:14px;'>v2.0</span></h3>", unsafe_allow_html=True)
-        
+                        
                 # SISTEMA DE PESTAÑAS
                 tab_kpi, tab_flujos, tab_registro = st.tabs(["KPI'S WALLET", "FLUJOS DE EFECTIVO", "REGISTRO NUBE"])
         
