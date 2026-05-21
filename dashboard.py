@@ -8155,10 +8155,10 @@ else:
                     
                 # Cuentas y Categorías (Colores Neon de Jypesa)
                 CUENTAS_MATRIX = {
-                    "Caja de Ahorros": {"color": "#00E5FF", "fondo_base": 60000.00},
-                    "Scottiabank": {"color": "#00FFAA", "fondo_base": 2000.00},
-                    "Santander": {"color": "#FF4B4B", "fondo_base": 200.00},
-                    "Cartera": {"color": "#8B9BB4", "fondo_base": 500.00}
+                    "Caja de Ahorros": {"color": "#00E5FF", "fondo_base": 0.00},
+                    "Scottiabank": {"color": "#00FFAA", "fondo_base": 0.00},
+                    "Santander": {"color": "#FF4B4B", "fondo_base": 0.00},
+                    "Cartera": {"color": "#8B9BB4", "fondo_base": 0.00}
                 }
                 CATEGORIAS = [
                     "Nómina", "Freelance / Proyectos", "Rendimientos", "Reembolsos", "Ventas",
