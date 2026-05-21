@@ -8155,12 +8155,22 @@ else:
                     
                 # Cuentas y Categorías (Colores Neon de Jypesa)
                 CUENTAS_MATRIX = {
-                    "Banco MX (Core)": {"color": "#00E5FF", "fondo_base": 450000.00},
-                    "USD Wallet (Hedge)": {"color": "#00FFAA", "fondo_base": 12500.00},
-                    "Crypto Fund (Risk)": {"color": "#FF4B4B", "fondo_base": 3200.00},
-                    "Caja Fuerte (Physical)": {"color": "#8B9BB4", "fondo_base": 50000.00}
+                    "Caja de Ahorros": {"color": "#00E5FF", "fondo_base": 60000.00},
+                    "Scottiabank": {"color": "#00FFAA", "fondo_base": 2000.00},
+                    "Santander": {"color": "#FF4B4B", "fondo_base": 200.00},
+                    "Cartera": {"color": "#8B9BB4", "fondo_base": 500.00}
                 }
-                CATEGORIAS = ["Nomina", "Freelance", "Renta", "Servicios", "Supermercado", "Restaurantes", "Transporte", "Inversiones", "Varios"]
+                CATEGORIAS = [
+                    "Nómina", "Freelance / Proyectos", "Rendimientos", "Reembolsos", "Ventas",
+                    "Renta", "Servicios Fijos", "Conectividad", "Mantenimiento",
+                    "Supermercado", "Restaurantes", "Cafeterías y Snacks",
+                    "Gasolina", "Mantenimiento Automotriz", "Trámites y Seguros", "Transporte Alternativo",
+                    "Mascotas", "Gastos Familiares", "Educación",
+                    "Deportes y Entrenamiento", "Cuidado Personal", "Gastos Médicos",
+                    "Suscripciones y Software", "Equipo y Gadgets",
+                    "Entretenimiento", "Ropa y Calzado", "Regalos",
+                    "Pago de Tarjetas", "Inversiones", "Ahorro", "Comisiones", "Varios"
+                ]
         
                 # ==============================================================================
                 # 2. ESTILOS CSS "JYPESA NEXION CORE" (Específicos para el módulo)
