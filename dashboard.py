@@ -1210,7 +1210,7 @@ else:
                 if not es_atencion3g:
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                         if es_admin:
-                            opciones_rep = ["APQ", "% LOGISTICO", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                            opciones_rep = ["CORPORATIVOS", "NALISIS MENSUAL", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         else:
                             opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
                             
@@ -4913,13 +4913,13 @@ else:
         elif st.session_state.menu_main == "REPORTES":
             
             # Aquí creamos el "espacio" para cada uno
-            if st.session_state.menu_sub == "APQ":
+            if st.session_state.menu_sub == "CORPORATIVOS":
                 st.subheader("Análisis de Producto y Quejas (APQ)")
                 # [Aquí va tu código o función para el reporte APQ]
                 st.info("Cargando datos de calidad...")
                 # Ejemplo: st.dataframe(df_apq)
     
-            elif st.session_state.menu_sub == "% LOGISTICO":
+            elif st.session_state.menu_sub == "ANALISIS MENSUAL":
                 # --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
                 # --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
                 st.markdown("""
