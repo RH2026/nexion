@@ -1062,12 +1062,12 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
     with m_col3:
         st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520Z'/></svg></div><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
         if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "REPORTES"; st.session_state.menu_sub = "% LOGISTICO"; st.rerun()
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "REPORTES"; st.session_state.menu_sub = "ANALISIS MENSUAL"; st.rerun()
     
     with m_col4:
         st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z'/></svg></div><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
         if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
-            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "HUB LOG"; st.session_state.menu_sub = "SMART ROUTING"; st.rerun()
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "CENTRO DE DATOS"; st.session_state.menu_sub = "ASIGNAR FLETERA"; st.rerun()
 
 
    
@@ -1236,11 +1236,11 @@ else:
             
                 # --- HUB LOG: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
-                    with st.expander("HUB LOG", expanded=(st.session_state.menu_main == "HUB LOG")):
-                        for s in ["SMART ROUTING", "DATA MANAGEMENT", "PROCESSOR SUITE"]:
+                    with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
+                        for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "HERRAMIENTAS"]:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
-                                st.session_state.menu_main = "HUB LOG"
+                                st.session_state.menu_main = "CENTRO DE DATOS"
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
@@ -7275,8 +7275,8 @@ else:
                     components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)
                 
         # 5. HUB LOG
-        elif st.session_state.menu_main == "HUB LOG":
-            if st.session_state.menu_sub == "SMART ROUTING":               
+        elif st.session_state.menu_main == "CENTRO DE DATOS":
+            if st.session_state.menu_sub == "ASIGNAR FLETERA":               
                 # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
                 # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
                 @st.cache_data(ttl=60) # Actualiza la caché cada minuto
@@ -7503,7 +7503,7 @@ else:
                                 st.download_button(":material/folder_zip: DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
 
     
-            elif st.session_state.menu_sub == "DATA MANAGEMENT":
+            elif st.session_state.menu_sub == "CARGAR DATOS":
                 # ── VALIDACIÓN DE ACCESO EXCLUSIVO (CONECTADO A TU LOGIN) ──
                 # Usamos 'usuario_activo' porque es la que definiste en tu login_screen()
                 current_user = st.session_state.get("usuario_activo", "UNKNOWN")
@@ -7699,7 +7699,7 @@ else:
                             st.error(f"Error al conectar con los logs: {e}")
             
             
-            elif st.session_state.menu_sub == "PROCESSOR SUITE":                
+            elif st.session_state.menu_sub == "HERRAMIENTAS":                
                 # --- 1. CONFIGURACIÓN DE PODER ---
                 # --- 1. FUNCIONES DE PROCESAMIENTO ---
                 def limpiar_parentesis(texto):
