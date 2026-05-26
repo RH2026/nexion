@@ -8133,7 +8133,96 @@ else:
                             
                     except Exception as e:
                         st.error(f"Error al procesar el archivo: {e}")
-            
+
+                
+                # 4. HERRAMIENTA: ACTUALIZADOR DE FACTURAS (Módulo Independiente)-----
+                                
+                # 1. Dibujamos la tarjeta visual exactamente igual a las anteriores
+                st.markdown("""
+                    <div class="nexion-container">
+                        <div class="nexion-title">Actualizador de Facturas</div>
+                        <div class="nexion-subtitle">Sube tu archivo de facturas para cruzar la información en tiempo real con T1</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # 2. El cargador de archivos independiente
+                archivo_usuario = st.file_uploader("", type=["xlsx"], label_visibility="collapsed", key="cargador_actualizador")
+                
+                # 3. Lógica de procesamiento que solo se ejecuta si se sube el archivo en esta sección
+                if archivo_usuario is not None:
+                    try:
+                        # Conexión a GitHub para descargar T1.xlsx en tiempo real
+                        GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+                        REPO_NAME = "RH2026/nexion"
+                        FILE_PATH_T1 = "T1.xlsx"
+                        URL_T1 = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_T1}"
+                        
+                        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                        response = requests.get(URL_T1, headers=headers)
+                        
+                        if response.status_code == 200:
+                            df_t1 = pd.read_excel(BytesIO(response.content))
+                            df_user = pd.read_excel(archivo_usuario)
+                            
+                            # Función anidada para extraer folios sin afectar otras herramientas
+                            def extraer_folios(texto):
+                                if pd.isna(texto): return []
+                                import re
+                                return re.findall(r'\d+', str(texto))
+                
+                            # Expandimos OBSERVACION 1 por si vienen varias facturas juntas
+                            df_t1['factura_busqueda'] = df_t1['OBSERVACION 1'].apply(extraer_folios)
+                            df_t1_exp = df_t1.explode('factura_busqueda')
+                            df_t1_exp['factura_busqueda'] = df_t1_exp['factura_busqueda'].astype(str).str.strip()
+                
+                            # Aseguramos que la columna 'factura' del usuario sea texto para el cruce
+                            if 'factura' in df_user.columns:
+                                df_user['factura'] = df_user['factura'].astype(str).str.strip()
+                
+                                # Realizamos el Cruce (Match)
+                                resultado = pd.merge(
+                                    df_user[['factura']], 
+                                    df_t1_exp[['factura_busqueda', 'TALON', 'SUBTOTAL', 'F.DOC', 'BULTOS']],
+                                    left_on='factura',
+                                    right_on='factura_busqueda',
+                                    how='left'
+                                )
+                
+                                # Renombramos las columnas
+                                resultado = resultado.rename(columns={
+                                    'TALON': 'guia',
+                                    'SUBTOTAL': 'costo',
+                                    'F.DOC': 'fecha_envio',
+                                    'BULTOS': 'bultos'
+                                })
+                
+                                # Limpieza de columnas temporales
+                                resultado = resultado.drop(columns=['factura_busqueda'])
+                
+                                st.success("¡Datos cruzados con éxito!")
+                                st.dataframe(resultado.head(10), use_container_width=True)
+                
+                                # Generamos el Excel en memoria para la descarga
+                                output = BytesIO()
+                                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                                    resultado.to_excel(writer, index=False)
+                                
+                                # Botón de descarga estilizado y responsivo
+                                st.download_button(
+                                    label="Descargar Reporte para Nexion",
+                                    data=output.getvalue(),
+                                    file_name="nexion_actualizado.xlsx",
+                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    use_container_width=True
+                                )
+                            else:
+                                st.error("El archivo subido no tiene una columna llamada 'factura'. Revisa tu plantilla.")
+                        else:
+                            st.error(f"Error al conectar con GitHub (Status: {response.status_code}). Verifica tu Token.")
+                            
+                    except Exception as e:
+                        st.error(f"Hubo un detalle en el procesamiento: {e}")
+        
         elif st.session_state.menu_main == "FINANZAS":
             if st.session_state.menu_sub == "WALLET":
                 # ==============================================================================
