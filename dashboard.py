@@ -7416,7 +7416,7 @@ else:
                                 with sc1:
                                     towrite = io.BytesIO()
                                     df_st.to_excel(towrite, index=False, engine='openpyxl')
-                                    st.download_button(label=":material/download: DESCARGAR S&T", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
+                                    st.download_button(label=":material/download: DESCARGAR S&T", type="primary", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
                                 
                                 with sc2:
                                     if st.button(":material/join_inner: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
@@ -7508,7 +7508,8 @@ else:
                                 label=":material/swap_vert: GENERAR SELLOS MODO INVERSO", 
                                 data=generar_sellos_fisicos(sellos_invertidos, ax, ay), 
                                 file_name="Sellos_Inversos.pdf", 
-                                use_container_width=True
+                                use_container_width=True,
+                                type="primary"
                             )
                                 
                         st.markdown("---")
