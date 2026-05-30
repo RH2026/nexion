@@ -7484,24 +7484,37 @@ else:
                 
                     with st.expander("SISTEMA DE SELLADO", expanded=False):
                         cx, cy = st.columns(2)
-                        ax = cx.slider("X", 0, 612, 480)
+                        ax = cx.slider("X", 0, 612, 399)
                         ay = cy.slider("Y", 0, 792, 760)
-                                            
+                        
+                        st.markdown("###### :material/print: Opciones de Impresión Física")
                         s1, s2 = st.columns(2)
+                        
                         with s1:
-                            if st.button(":material/print: GENERAR SELLOS PAPEL", use_container_width=True):
-                                # Aquí está la magia amor: agregamos [::-1] para invertir el orden de la lista
-                                sellos_invertidos = p_editado['RECOMENDACION'].tolist()[::-1]
+                            # Generación Normal
+                            sellos_normal = p_editado['RECOMENDACION'].tolist()
+                            st.download_button(
+                                label=":material/print: GENERAR SELLOS NORMAL", 
+                                data=generar_sellos_fisicos(sellos_normal, ax, ay), 
+                                file_name="Sellos_Normales.pdf", 
+                                use_container_width=True,
+                                type="primary" # Destacamos este botón visualmente
+                            )
+                            
+                        with s2:
+                            # Generación Inversa
+                            sellos_invertidos = p_editado['RECOMENDACION'].tolist()[::-1]
+                            st.download_button(
+                                label=":material/swap_vert: GENERAR SELLOS MODO INVERSO", 
+                                data=generar_sellos_fisicos(sellos_invertidos, ax, ay), 
+                                file_name="Sellos_Inversos.pdf", 
+                                use_container_width=True
+                            )
                                 
-                                st.download_button(
-                                    ":material/picture_as_pdf: DESCARGAR PDF", 
-                                    generar_sellos_fisicos(sellos_invertidos, ax, ay), 
-                                    "Sellos.pdf", 
-                                    use_container_width=True
-                                )
-                                    
                         st.markdown("---")
+                        st.markdown("###### :material/devices: Opciones de Sellado Digital")
                         pdfs = st.file_uploader(":material/picture_as_pdf: Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+                        
                         if pdfs:
                             if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
                                 mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
@@ -7513,10 +7526,11 @@ else:
                                             zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
                                 
                                 st.download_button(
-                                    ":material/folder_zip: DESCARGAR ZIP", 
-                                    z_io.getvalue(), 
-                                    "Sellado.zip", 
-                                    use_container_width=True
+                                    label=":material/folder_zip: DESCARGAR ZIP", 
+                                    data=z_io.getvalue(), 
+                                    file_name="Sellado.zip", 
+                                    use_container_width=True,
+                                    type="primary"
                                 )
 
     
