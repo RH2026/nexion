@@ -7427,13 +7427,15 @@ else:
                                                                 
                                 # Botón 2: Smart Routing (Abajo)
                                 if st.button(":material/join_inner: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
-                                    df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
-                                    matriz_db = obtener_matriz_github()
+                                    try:
+                                        df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
+                                        matriz_db = obtener_matriz_github()
+                                        
                                         col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
                                         col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
                                         col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
                                         col_tarifa_matriz = 'PRECIO POR CAJA' if 'PRECIO POR CAJA' in matriz_db.columns else 'COSTO'
-                
+                                
                                         def motor_v4(row):
                                             if not col_dir_erp: return "ERROR: COL DIRECCION", 0.0
                                             dir_limpia = limpiar_texto(row[col_dir_erp])
@@ -7446,7 +7448,7 @@ else:
                                                     costo_val = pd.to_numeric(fila.get(col_tarifa_matriz, 0.0), errors='coerce')
                                                     return flet, costo_val
                                             return "REVISIÓN MANUAL", 0.0
-                
+                                
                                         res = df_log.apply(motor_v4, axis=1)
                                         df_log['RECOMENDACION'] = [r[0] for r in res]
                                         df_log['COSTO'] = [r[1] for r in res]
@@ -7458,8 +7460,9 @@ else:
                                         st.session_state.df_analisis = df_log[cols_finales]
                                         st.success("¡Motor sincronizado con datos recientes!")
                                         st.rerun()
-                
-                    except Exception as e: st.error(f"Error: {e}")
+                                
+                                    except Exception as e: 
+                                        st.error(f"Error en el motor de asignación: {e}")
                 
                 # --- BLOQUE 2: SMART ROUTING & ANALISIS ---
                 if "df_analisis" in st.session_state:
