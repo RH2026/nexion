@@ -7483,13 +7483,23 @@ else:
                         st.download_button(label=":material/download: DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
                 
                     with st.expander("SISTEMA DE SELLADO", expanded=False):
-                        cx, cy = st.columns(2); ax = cx.slider("X", 0, 612, 510); ay = cy.slider("Y", 0, 792, 760)
-                        
+                        cx, cy = st.columns(2)
+                        ax = cx.slider("X", 0, 612, 480)
+                        ay = cy.slider("Y", 0, 792, 760)
+                                            
                         s1, s2 = st.columns(2)
                         with s1:
                             if st.button(":material/print: GENERAR SELLOS PAPEL", use_container_width=True):
-                                st.download_button(":material/picture_as_pdf: DESCARGAR PDF", generar_sellos_fisicos(p_editado['RECOMENDACION'].tolist(), ax, ay), "Sellos.pdf", use_container_width=True)
-                
+                                # Aquí está la magia amor: agregamos [::-1] para invertir el orden de la lista
+                                sellos_invertidos = p_editado['RECOMENDACION'].tolist()[::-1]
+                                
+                                st.download_button(
+                                    ":material/picture_as_pdf: DESCARGAR PDF", 
+                                    generar_sellos_fisicos(sellos_invertidos, ax, ay), 
+                                    "Sellos.pdf", 
+                                    use_container_width=True
+                                )
+                                    
                         st.markdown("---")
                         pdfs = st.file_uploader(":material/picture_as_pdf: Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
                         if pdfs:
@@ -7499,8 +7509,15 @@ else:
                                 with zipfile.ZipFile(z_io, "a") as zf:
                                     for pdf in pdfs:
                                         f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
-                                        if f_id: zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
-                                st.download_button(":material/folder_zip: DESCARGAR ZIP", z_io.getvalue(), "Sellado.zip", use_container_width=True)
+                                        if f_id: 
+                                            zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
+                                
+                                st.download_button(
+                                    ":material/folder_zip: DESCARGAR ZIP", 
+                                    z_io.getvalue(), 
+                                    "Sellado.zip", 
+                                    use_container_width=True
+                                )
 
     
             elif st.session_state.menu_sub == "CARGAR DATOS":
