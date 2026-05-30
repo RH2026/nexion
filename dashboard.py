@@ -7411,18 +7411,24 @@ else:
                             if "df_final_st" in st.session_state:
                                 df_st = st.session_state.df_final_st
                                 st.dataframe(df_st, use_container_width=True)
+                                                                
+                                st.write("") # Le pongo este pequeño espacio en blanco para que el diseño respire un poco
                                 
-                                sc1, sc2 = st.columns(2)
-                                with sc1:
-                                    towrite = io.BytesIO()
-                                    df_st.to_excel(towrite, index=False, engine='openpyxl')
-                                    st.download_button(label=":material/download: DESCARGAR S&T", type="primary", data=towrite.getvalue(), file_name="ST_DATA.xlsx", use_container_width=True)
-                                
-                                with sc2:
-                                    if st.button(":material/join_inner: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
-                                        df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
-                                        matriz_db = obtener_matriz_github()
-                                        
+                                # Botón 1: Descargar (Arriba)
+                                towrite = io.BytesIO()
+                                df_st.to_excel(towrite, index=False, engine='openpyxl')
+                                st.download_button(
+                                    label=":material/download: DESCARGAR S&T", 
+                                    type="primary", 
+                                    data=towrite.getvalue(), 
+                                    file_name="ST_DATA.xlsx", 
+                                    use_container_width=True
+                                )
+                                                                
+                                # Botón 2: Smart Routing (Abajo)
+                                if st.button(":material/join_inner: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
+                                    df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
+                                    matriz_db = obtener_matriz_github()
                                         col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
                                         col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
                                         col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
@@ -7472,15 +7478,22 @@ else:
                         key="editor_final_github"
                     )
                 
-                    ba1, ba2 = st.columns(2)
-                    with ba1:
-                        if st.button(":material/save_as: FIJAR CAMBIOS", use_container_width=True):
-                            st.session_state.df_analisis = p_editado
-                            st.toast("Cambios guardados", icon="✅")
-                    with ba2:
-                        output_xlsx = io.BytesIO()
-                        p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
-                        st.download_button(label=":material/download: DESCARGAR ANÁLISIS", data=output_xlsx.getvalue(), file_name="Analisis_Final.xlsx", use_container_width=True)
+                    # Botón 1: Fijar Cambios (Arriba)
+                    if st.button(":material/save_as: FIJAR CAMBIOS", use_container_width=True, type="primary"):
+                        st.session_state.df_analisis = p_editado
+                        st.toast("Cambios guardados", icon="✅")
+                    
+                    st.write("") # Un pequeño respiro visual entre los botones
+                    
+                    # Botón 2: Descargar Análisis (Abajo)
+                    output_xlsx = io.BytesIO()
+                    p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
+                    st.download_button(
+                        label=":material/download: DESCARGAR ANÁLISIS", 
+                        data=output_xlsx.getvalue(), 
+                        file_name="Analisis_Final.xlsx", 
+                        use_container_width=True
+                    )
                 
                     with st.expander("SISTEMA DE SELLADO", expanded=False):
                         cx, cy = st.columns(2)
