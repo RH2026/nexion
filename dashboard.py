@@ -7371,16 +7371,14 @@ else:
                         df = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                         
                         # --- LÓGICA DE GUARDADO AUTOMÁTICO ---
-                        # Se ejecuta inmediatamente al cargar, solo una vez por archivo
                         if f"uploaded_{uploaded_file.name}" not in st.session_state:
                             if guardar_facturacion_moreno(df):
                                 st.toast("Archivo 'facturacion_moreno' guardado en GitHub", icon="🚀")
                                 st.session_state[f"uploaded_{uploaded_file.name}"] = True
                             else:
                                 st.error("Error al guardar en GitHub. Revisa el Token en Secrets.")
-                
+                                
                         df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
-                        
                         col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower() or 'folio' in c.lower()), df.columns[0])
                         
                         col_left, col_right = st.columns([1, 2], gap="large")
@@ -7391,15 +7389,16 @@ else:
                             final = st.number_input("Hasta:", value=int(serie.max()) if not serie.empty else 0)
                             df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
                             df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
-                
+                            
                         with col_right:
                             st.markdown(f"<p class='op-query-text'>SELECCIÓN</p>", unsafe_allow_html=True)
                             if not df_rango.empty:
                                 info = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
                                 info.insert(0, "Incluir", True)
                                 edited_df = st.data_editor(info, hide_index=True, use_container_width=True, key="ed_v4")
-                            else: st.warning("Rango vacío")
-                
+                            else: 
+                                st.warning("Rango vacío")
+                                
                         if not df_rango.empty and not edited_df.empty:
                             folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
                             
@@ -7407,12 +7406,12 @@ else:
                             st.markdown("---")
                             if st.button(":material/play_circle: RENDERIZAR TABLA", use_container_width=True):
                                 st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
-                            
+                                
                             if "df_final_st" in st.session_state:
                                 df_st = st.session_state.df_final_st
                                 st.dataframe(df_st, use_container_width=True)
-                                                                
-                                st.write("") # Le pongo este pequeño espacio en blanco para que el diseño respire un poco
+                                
+                                st.write("") # Respiro visual
                                 
                                 # Botón 1: Descargar (Arriba)
                                 towrite = io.BytesIO()
@@ -7424,7 +7423,7 @@ else:
                                     file_name="ST_DATA.xlsx", 
                                     use_container_width=True
                                 )
-                                                                
+                                
                                 # Botón 2: Smart Routing (Abajo)
                                 if st.button(":material/join_inner: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
                                     try:
@@ -7435,7 +7434,7 @@ else:
                                         col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
                                         col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
                                         col_tarifa_matriz = 'PRECIO POR CAJA' if 'PRECIO POR CAJA' in matriz_db.columns else 'COSTO'
-                                
+                                        
                                         def motor_v4(row):
                                             if not col_dir_erp: return "ERROR: COL DIRECCION", 0.0
                                             dir_limpia = limpiar_texto(row[col_dir_erp])
@@ -7448,7 +7447,7 @@ else:
                                                     costo_val = pd.to_numeric(fila.get(col_tarifa_matriz, 0.0), errors='coerce')
                                                     return flet, costo_val
                                             return "REVISIÓN MANUAL", 0.0
-                                
+                                            
                                         res = df_log.apply(motor_v4, axis=1)
                                         df_log['RECOMENDACION'] = [r[0] for r in res]
                                         df_log['COSTO'] = [r[1] for r in res]
@@ -7460,11 +7459,18 @@ else:
                                         st.session_state.df_analisis = df_log[cols_finales]
                                         st.success("¡Motor sincronizado con datos recientes!")
                                         st.rerun()
-                                
+                                        
                                     except Exception as e: 
                                         st.error(f"Error en el motor de asignación: {e}")
                 
+                    # AQUÍ ESTÁ LA MAGIA: Faltaba cerrar el try principal de la carga de archivos
+                    except Exception as e:
+                        st.error(f"Error procesando el archivo ERP: {e}")
+                
+                # ==================================================================================
                 # --- BLOQUE 2: SMART ROUTING & ANALISIS ---
+                # Totalmente independiente y alineado a la raíz de la app
+                # ==================================================================================
                 if "df_analisis" in st.session_state:
                     st.markdown("---")
                     st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
@@ -7480,13 +7486,13 @@ else:
                         },
                         key="editor_final_github"
                     )
-                
+                    
                     # Botón 1: Fijar Cambios (Arriba)
                     if st.button(":material/save_as: FIJAR CAMBIOS", use_container_width=True, type="primary"):
                         st.session_state.df_analisis = p_editado
                         st.toast("Cambios guardados", icon="✅")
-                    
-                    st.write("") # Un pequeño respiro visual entre los botones
+                        
+                    st.write("") # Respiro visual
                     
                     # Botón 2: Descargar Análisis (Abajo)
                     output_xlsx = io.BytesIO()
@@ -7497,7 +7503,7 @@ else:
                         file_name="Analisis_Final.xlsx", 
                         use_container_width=True
                     )
-                
+                    
                     with st.expander("SISTEMA DE SELLADO", expanded=False):
                         cx, cy = st.columns(2)
                         ax = cx.slider("X", 0, 612, 399)
@@ -7507,18 +7513,16 @@ else:
                         s1, s2 = st.columns(2)
                         
                         with s1:
-                            # Generación Normal
                             sellos_normal = p_editado['RECOMENDACION'].tolist()
                             st.download_button(
                                 label=":material/print: GENERAR SELLOS NORMAL", 
                                 data=generar_sellos_fisicos(sellos_normal, ax, ay), 
                                 file_name="Sellos_Normales.pdf", 
                                 use_container_width=True,
-                                type="primary" # Destacamos este botón visualmente
+                                type="primary" 
                             )
                             
                         with s2:
-                            # Generación Inversa
                             sellos_invertidos = p_editado['RECOMENDACION'].tolist()[::-1]
                             st.download_button(
                                 label=":material/swap_vert: GENERAR SELLOS MODO INVERSO", 
