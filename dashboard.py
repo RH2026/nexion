@@ -7501,7 +7501,8 @@ else:
                         label=":material/download: DESCARGAR ANÁLISIS", 
                         data=output_xlsx.getvalue(), 
                         file_name="Analisis_Final.xlsx", 
-                        use_container_width=True
+                        use_container_width=True,
+                        type="primary" 
                     )
                     
                     with st.expander("SISTEMA DE SELLADO", expanded=False):
