@@ -2925,11 +2925,11 @@ else:
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "04 de mayo", "cita": "07/05/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "14/05/2026 - 08:00 AM", "estatus": "ENTREGADA"},
                         {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "02/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 13268", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "03 de junio", "cita": "03/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "09/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 13268", "cantidad": "560", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "10/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "1120", "semana": "SEM 24", "entrega_texto": "10 de junio", "cita": "11/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
-                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 24", "entrega_texto": "10 de junio", "cita": "12/06/2026 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 13268", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "12 de junio", "cita": "PENDIENTE - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "PENDIENTE- 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 13268", "cantidad": "560", "semana": "SEM 24", "entrega_texto": "05 de junio", "cita": "PENDIENTE6 - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "1120", "semana": "SEM 24", "entrega_texto": "10 de junio", "cita": "PENDIENTE - 08:00 AM", "estatus": "PENDIENTE"},
+                        {"oc": "OC 10663", "cantidad": "160", "semana": "SEM 24", "entrega_texto": "10 de junio", "cita": "PENDIENTE - 08:00 AM", "estatus": "PENDIENTE"},
                     ]
                 
                     # --- Data (TRAILER) ---
