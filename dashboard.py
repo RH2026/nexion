@@ -2698,7 +2698,7 @@ else:
                         st.session_state.tipo_entrega = 'T O R T O N'
                     
                     if 'mes_calendario' not in st.session_state:
-                        st.session_state.mes_calendario = 5  # Por defecto inicia en Mayo
+                        st.session_state.mes_calendario = 6  # Por defecto inicia en Mayo
                 
                     # Creamos TRES columnas para los botones de navegación superiores
                     col_btn1, col_btn2, col_btn3 = st.columns(3)
