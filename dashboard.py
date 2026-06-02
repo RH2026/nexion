@@ -840,7 +840,8 @@ def login_screen():
                     "Claudia": "Claudia",
                     "Ruth": "Ruth Buenrostro",
                     "Carlos": "Carlos Vazquez",
-                    "Sandra": "Sandra, Analista"
+                    "Sandra": "Sandra, Analista",
+                    "ASanchez": "Alejandra"
                 }
                 
                 # 2. Diccionario de géneros (F = Femenino, M = Masculino)
@@ -857,7 +858,8 @@ def login_screen():
                     "Arturo": "M",
                     "Ruth" : "F",
                     "Carlos": "M",
-                    "Sandra": "F"
+                    "Sandra": "F",
+                    "ASanchez":"F"
                 }
                 
                 # --- VALIDACIÓN EXITOSA ---
