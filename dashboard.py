@@ -5618,7 +5618,7 @@ else:
                     st.write("") 
                     c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
                     f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=str(nuevo_folio), disabled=True)
-                    f_paq_sel = c2.selectbox(":material/local_shipping: FORMA DE ENVÍO", ["Envio Pagado", "Envio por cobrar", "Entrega Personal"])
+                    f_paq_sel = c2.selectbox(":material/local_shipping: FORMA DE ENVÍO", ["Credito", "Envio por cobrar", "Entrega Personal"])
                     f_ent_sel = c3.selectbox(":material/home_pin: TIPO DE ENTREGA", ["Domicilio", "Ocurre Oficina"])
                     f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
                 
@@ -5871,7 +5871,7 @@ else:
                                 <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #444;">Distribución y Logística | 2026</p>
                             </div>
                             <div style="text-align: right;">
-                                <h2 style="margin: 0; font-size: 16px; text-decoration: underline; font-weight: 900;">ORDEN DE ENVÍO MUESTRAS</h2>
+                                <h2 style="margin: 0; font-size: 16px; text-decoration: underline; font-weight: 900;">ORDEN DE EMBARQUE</h2>
                                 <p style="margin: 5px 0 0 0; font-size: 13px;"><b>{paq_nombre} - {tipo_pago}</b></p>
                             </div>
                         </div>
