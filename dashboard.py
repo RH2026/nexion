@@ -2789,6 +2789,7 @@ else:
                                 <div class="list-row flex items-stretch">
                                     <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                                     <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
+                                        
                                         <div class="w-full md:w-44 shrink-0">
                                             <div class="label-mini">{item['semana']}</div>
                                             <div class="text-lg font-black text-white italic tracking-tighter leading-none min-h-[20px]">
@@ -2811,24 +2812,26 @@ else:
                                             </div>
                                         </div>
                 
-                                        <div class="grid grid-cols-2 gap-8 w-full md:w-auto md:flex md:gap-12 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-10">
-                                            <div class="shrink-0">
+                                        <div class="w-full md:w-[420px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
+                                            <div class="w-2/5 shrink-0">
                                                 <div class="label-mini">Volumen</div>
-                                                <div class="text-sm font-bold text-white min-h-[20px]">{item['cantidad']}</div>
+                                                <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['cantidad']}</div>
                                             </div>
-                                            <div class="shrink-0">
+                                            <div class="w-3/5 shrink-0">
                                                 <div class="label-mini">Cita</div>
-                                                <div class="text-sm font-mono font-bold min-h-[20px] {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-sky-400"}">
+                                                <div class="text-sm font-mono font-bold min-h-[20px] truncate {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-sky-400"}">
                                                     {item['cita']}
                                                 </div>
                                             </div>
                                         </div>
+                
                                         <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
                                             <div class="label-mini md:mb-1">Estatus de Logística</div>
                                             <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter min-h-[16px]">
                                                 {item['estatus']}
                                             </div>
                                         </div>
+                
                                     </div>
                                 </div>
                                 ''' for item in data])}
