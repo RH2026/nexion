@@ -2698,19 +2698,19 @@ else:
                     # --- Lógica de Navegación ---
                     if 'tipo_entrega' not in st.session_state:
                         st.session_state.tipo_entrega = 'T O R T O N'
-                    
+                
                     if 'mes_calendario' not in st.session_state:
-                        st.session_state.mes_calendario = 6  # Por defecto inicia en Mayo
+                        st.session_state.mes_calendario = 6  # Por defecto inicia en Junio
                 
                     # Creamos TRES columnas para los botones de navegación superiores
                     col_btn1, col_btn2, col_btn3 = st.columns(3)
-                    
+                
                     with col_btn1:
                         btn_type_1 = "primary" if st.session_state.tipo_entrega == 'T O R T O N' else "secondary"
                         if st.button("ENTREGAS AGC TORTON", use_container_width=True, type=btn_type_1):
                             st.session_state.tipo_entrega = 'T O R T O N'
                             st.rerun()
-                            
+                
                     with col_btn2:
                         btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
                         if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
@@ -2723,14 +2723,15 @@ else:
                             st.session_state.tipo_entrega = 'C A L E N D A R I O'
                             st.rerun()
                 
-                    # --- Título dinámico ---
-                    st.markdown(f"""
-                        <div style='text-align:center; margin-top:20px; margin-bottom:10px;'>
-                            <span style='color:#FFFFFF; font-weight:600; font-size:12px; letter-spacing:2px;'>
-                                E N V Í O - {st.session_state.tipo_entrega}
-                            </span>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    # --- Encabezado Dinámico con Logo ---
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    col_logo1, col_logo2, col_logo3 = st.columns([3, 2, 3])
+                    with col_logo2:
+                        try:
+                            st.image("n2.png", use_container_width=True)
+                        except:
+                            st.warning("No se encontró la imagen n2.png")
+                    st.markdown("<br>", unsafe_allow_html=True)
                 
                     # --- Función de Renderizado (Tarjetas de Entregas) ---
                     def render_logistica_flow_responsive(data):
@@ -2801,7 +2802,7 @@ else:
                                             </div>
                                             <div class="shrink-0">
                                                 <div class="label-mini">Cita</div>
-                                                <div class="text-sm font-mono font-bold {"text-slate-500" if "PENDIENTE" in item['cita'].upper() else "text-sky-400"}">
+                                                <div class="text-sm font-mono font-bold {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-sky-400"}">
                                                     {item['cita']}
                                                 </div>
                                             </div>
@@ -2829,7 +2830,7 @@ else:
                         eventos_dias = {}
                         for item in data_torton:
                             try:
-                                fecha_str = item['cita'].split(" - ")[0].strip()
+                                fecha_str = str(item['cita']).split(" - ")[0].strip()
                                 dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
                                 if dt.month == mes_num and dt.year == anio:
                                     if dt.day not in eventos_dias: 
@@ -2840,7 +2841,7 @@ else:
                 
                         for item in data_trailer:
                             try:
-                                fecha_str = item['cita'].split(" - ")[0].strip()
+                                fecha_str = str(item['cita']).split(" - ")[0].strip()
                                 dt = datetime.strptime(fecha_str, "%d/%m/%Y")
                                 if dt.month == mes_num and dt.year == anio:
                                     if dt.day not in eventos_dias: 
@@ -2916,33 +2917,70 @@ else:
                         """
                         return components.html(html_calendario, height=750, scrolling=True)
                 
-                    # --- Data (TORTON) ---
-                    data_torton = [
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 8", "entrega_texto": "09 de marzo", "cita": "10/03/2026 - 11:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 13", "entrega_texto": "23 de marzo", "cita": "24/03/2026 - 08:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 9197", "cantidad": "1,120", "semana": "SEM 15", "entrega_texto": "06 de abril", "cita": "07/04/2026 - 08:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 9197", "cantidad": "520", "semana": "SEM 17", "entrega_texto": "20 de abril", "cita": "21/04/2026 - 08:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "27 de abril", "cita": "28/04/2026 - 10:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 18", "entrega_texto": "30 de abril", "cita": "04/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 19", "entrega_texto": "04 de mayo", "cita": "07/05/2026 - 08:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 20", "entrega_texto": "14 de mayo", "cita": "14/05/2026 - 08:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "01 de junio", "cita": "02/06/2026 - 08:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "OC 10663", "cantidad": "1,120", "semana": "SEM 23", "entrega_texto": "04 de junio", "cita": "04/06/2026 - 11:00 AM", "estatus": "ENTREGADA"},
+                    # =====================================================================
+                    # --- EXTRACCIÓN AUTOMÁTICA Y ADAPTACIÓN DE TUS ENCABEZADOS REALES ---
+                    # =====================================================================
+                    
+                    @st.cache_data(ttl=60)
+                    def get_github_data():
+                        TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                        REPO_NAME = "RH2026/nexion"
+                        FILE_PATH = "agc.csv"
+                        CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
                         
-                    ]
+                        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+                        response = requests.get(CSV_URL, headers=headers)
+                        
+                        if response.status_code == 200:
+                            return pd.read_csv(io.StringIO(response.text))
+                        else:
+                            st.error(f"Amor, hubo un error al cargar los datos: {response.status_code}")
+                            return pd.DataFrame()
                 
-                    # --- Data (TRAILER) ---
-                    data_trailer = [
-                        {"oc": "TRAILER-001M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "05 de mayo", "cita": "05/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
-                        {"oc": "TRAILER-002M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "08 de mayo", "cita": "08/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
-                        {"oc": "TRAILER-003M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "12 de mayo", "cita": "12/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
-                        {"oc": "TRAILER-004M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "15 de mayo", "cita": "15/05/2026 - 12:00 PM", "estatus": "ENTREGADA"},
-                        {"oc": "TRAILER-005M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "19 de mayo", "cita": "19/05/2026 - 13:00 PM", "estatus": "ENTREGADA"},            
-                        {"oc": "TRAILER-006M", "cantidad": "12 TARIMAS", "semana": "ENVÍO", "entrega_texto": "04 de junio", "cita": "04/06/2026 - 11:00 AM", "estatus": "ENTREGADA"},
-                        {"oc": "TRAILER-007M", "cantidad": "18 TARIMAS", "semana": "ENVÍO", "entrega_texto": "09 de junio", "cita": "09/06/2026 - 12:00 PM", "estatus": "PENDIENTE"},
-                        {"oc": "TRAILER-008M", "cantidad": "30 TARIMAS", "semana": "ENVÍO", "entrega_texto": "11 de junio", "cita": "11/06/2026 - 12:00 PM", "estatus": "PENDIENTE"},
-                    ]
+                    df_raw = get_github_data()
+                
+                    if not df_raw.empty:
+                        # Quitamos espacios en blanco accidentales de los nombres de tus columnas
+                        df_raw.columns = df_raw.columns.str.strip()
                         
+                        # Mapeamos tus columnas exactas a las variables que usa el HTML
+                        df_entregas = pd.DataFrame()
+                        
+                        # Asignamos la PO Customer para el título principal
+                        df_entregas['oc'] = df_raw.get('PO Customer', '').astype(str)
+                        
+                        # Combinamos Cajas y Tarimas para el Volumen
+                        cajas = df_raw.get('Cajas a Entregar', '').astype(str)
+                        tarimas = df_raw.get('Tarimas', '').astype(str)
+                        df_entregas['cantidad'] = cajas + " CXS / " + tarimas + " TAR"
+                        
+                        # Usamos la OV de Jypesa como identificador secundario (semana)
+                        df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', '').astype(str)
+                        
+                        # Pasamos la fecha literal para el texto gris
+                        df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', '').astype(str)
+                        
+                        # Combinamos CITA y HORA para el formato exacto del calendario (ej. "10/03/2026 - 11:00 AM")
+                        df_entregas['cita'] = df_raw.get('CITA', '').astype(str) + " - " + df_raw.get('HORA', '').astype(str)
+                        
+                        # Estatus
+                        df_entregas['estatus'] = df_raw.get('ESTATUS', '').astype(str).str.upper().str.strip()
+                        
+                        # Tipo de unidad para separar pestañas (TORTON o TRAILER)
+                        df_entregas['tipo'] = df_raw.get('Unidad', '').astype(str).str.upper().str.strip()
+                        
+                        # Limpieza de "nan" para evitar errores visuales
+                        df_entregas = df_entregas.replace('nan - nan', '').replace('nan CXS / nan TAR', '').fillna('')
+                        
+                        # Separación final de listas
+                        data_torton = df_entregas[df_entregas['tipo'] == 'TORTON'].to_dict('records')
+                        data_trailer = df_entregas[df_entregas['tipo'] == 'TRAILER'].to_dict('records')
+                    else:
+                        data_torton = []
+                        data_trailer = []
+                
+                    # =====================================================================
+                
                     # --- Lógica de Renderizado Condicional ---
                     if st.session_state.tipo_entrega == 'T O R T O N':
                         render_logistica_flow_responsive(data_torton)
@@ -2953,7 +2991,6 @@ else:
                         with col_mes_sel:
                             opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
                             
-                            # Buscamos qué mes texto equivale al número guardado
                             nombre_mes_actual = [k for k, v in opciones_meses.items() if v == st.session_state.mes_calendario][0]
                             
                             mes_seleccionado = st.selectbox(
@@ -2962,7 +2999,6 @@ else:
                                 index=list(opciones_meses.keys()).index(nombre_mes_actual)
                             )
                             
-                            # CORRECCIÓN CLAVE: Si el mes seleccionado cambia, actualizamos y disparamos rerun de inmediato
                             if opciones_meses[mes_seleccionado] != st.session_state.mes_calendario:
                                 st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
                                 st.rerun()
