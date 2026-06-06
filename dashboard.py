@@ -2674,7 +2674,7 @@ else:
                 
                 # PESTAÑA 5: AGC---
                 with tab_entregas_agc:
-    
+                    
                     # --- TRUCO CSS PARA VOLVER ESTA PESTAÑA COMPLETAMENTE ULTRA-ANCHA (FULL SCREEN) ---
                     st.markdown("""
                         <style>
@@ -2791,7 +2791,7 @@ else:
                                     <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
                                         <div class="w-full md:w-44 shrink-0">
                                             <div class="label-mini">{item['semana']}</div>
-                                            <div class="text-lg font-black text-white italic tracking-tighter leading-none">
+                                            <div class="text-lg font-black text-white italic tracking-tighter leading-none min-h-[20px]">
                                                 {item['oc']}
                                             </div>
                                         </div>
@@ -2799,13 +2799,13 @@ else:
                                         <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                             <div>
                                                 <div class="label-mini">Referencia / Destino</div>
-                                                <div class="text-xs text-slate-300 italic truncate">
+                                                <div class="text-xs text-slate-300 italic truncate min-h-[16px]">
                                                     {item['entrega_texto']}
                                                 </div>
                                             </div>
                                             <div>
                                                 <div class="label-mini">Producto</div>
-                                                <div class="text-xs font-semibold text-sky-200 truncate">
+                                                <div class="text-xs font-semibold text-sky-200 truncate min-h-[16px]">
                                                     {item['producto']}
                                                 </div>
                                             </div>
@@ -2814,18 +2814,18 @@ else:
                                         <div class="grid grid-cols-2 gap-8 w-full md:w-auto md:flex md:gap-12 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-10">
                                             <div class="shrink-0">
                                                 <div class="label-mini">Volumen</div>
-                                                <div class="text-sm font-bold text-white">{item['cantidad']}</div>
+                                                <div class="text-sm font-bold text-white min-h-[20px]">{item['cantidad']}</div>
                                             </div>
                                             <div class="shrink-0">
                                                 <div class="label-mini">Cita</div>
-                                                <div class="text-sm font-mono font-bold {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-sky-400"}">
+                                                <div class="text-sm font-mono font-bold min-h-[20px] {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-sky-400"}">
                                                     {item['cita']}
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
                                             <div class="label-mini md:mb-1">Estatus de Logística</div>
-                                            <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter">
+                                            <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter min-h-[16px]">
                                                 {item['estatus']}
                                             </div>
                                         </div>
@@ -2965,12 +2965,12 @@ else:
                         # Asignamos la PO Customer para el título principal
                         df_entregas['oc'] = df_raw.get('PO Customer', '').astype(str)
                         
-                        # Extraemos el PRODUCTO directamente de tu matriz
+                        # Extraemos el PRODUCTO
                         df_entregas['producto'] = df_raw.get('PRODUCTO', '').astype(str)
                         
-                        # Combinamos Cajas y Tarimas para el Volumen
-                        cajas = df_raw.get('Cajas a Entregar', '').astype(str)
-                        tarimas = df_raw.get('Tarimas', '').astype(str)
+                        # Combinamos Cajas y Tarimas para el Volumen (limpiando "nan")
+                        cajas = df_raw.get('Cajas a Entregar', '').astype(str).str.replace('nan', '0').str.strip()
+                        tarimas = df_raw.get('Tarimas', '').astype(str).str.replace('nan', '0').str.strip()
                         df_entregas['cantidad'] = cajas + " CXS / " + tarimas + " TAR"
                         
                         # Usamos la OV de Jypesa como identificador secundario (semana)
@@ -2979,8 +2979,22 @@ else:
                         # Pasamos la fecha literal para el texto gris
                         df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', '').astype(str)
                         
-                        # Combinamos CITA y HORA para el formato exacto del calendario (ej. "10/03/2026 - 11:00 AM")
-                        df_entregas['cita'] = df_raw.get('CITA', '').astype(str) + " - " + df_raw.get('HORA', '').astype(str)
+                        # Extraemos y combinamos CITA y HORA validando si están vacíos
+                        cita_series = df_raw.get('CITA', '').astype(str).str.replace('nan', '').str.strip()
+                        hora_series = df_raw.get('HORA', '').astype(str).str.replace('nan', '').str.strip()
+                        
+                        citas_combinadas = []
+                        for c, h in zip(cita_series, hora_series):
+                            if not c and not h:
+                                citas_combinadas.append("PENDIENTE DE CITA")
+                            elif c and not h:
+                                citas_combinadas.append(f"{c} - POR ASIGNAR")
+                            elif not c and h:
+                                citas_combinadas.append(f"PENDIENTE - {h}")
+                            else:
+                                citas_combinadas.append(f"{c} - {h}")
+                                
+                        df_entregas['cita'] = citas_combinadas
                         
                         # Estatus
                         df_entregas['estatus'] = df_raw.get('ESTATUS', '').astype(str).str.upper().str.strip()
@@ -2989,8 +3003,8 @@ else:
                         df_entregas['tipo'] = df_raw.get('Unidad', '').astype(str).str.upper().str.strip()
                         df_entregas['tipo'] = df_entregas['tipo'].str.replace('Ó', 'O') 
                         
-                        # Limpieza de "nan" para evitar errores visuales
-                        df_entregas = df_entregas.replace('nan - nan', '').replace('nan CXS / nan TAR', '').replace('nan', '').fillna('')
+                        # Limpieza final de cualquier "nan" esporádico que haya quedado
+                        df_entregas = df_entregas.replace('nan', '').fillna('')
                         
                         # Separación final de listas
                         data_camion = df_entregas[df_entregas['tipo'] == 'CAMION'].to_dict('records')
