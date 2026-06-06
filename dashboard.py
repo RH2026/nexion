@@ -2674,7 +2674,7 @@ else:
                 
                 # PESTAÑA 5: AGC---
                 with tab_entregas_agc:
-                    
+    
                     # --- TRUCO CSS PARA VOLVER ESTA PESTAÑA COMPLETAMENTE ULTRA-ANCHA (FULL SCREEN) ---
                     st.markdown("""
                         <style>
@@ -2963,33 +2963,44 @@ else:
                         df_entregas = pd.DataFrame()
                         
                         # Asignamos la PO Customer para el título principal
-                        df_entregas['oc'] = df_raw.get('PO Customer', '').astype(str)
+                        df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
                         
                         # Extraemos el PRODUCTO
-                        df_entregas['producto'] = df_raw.get('PRODUCTO', '').astype(str)
+                        df_entregas['producto'] = df_raw.get('PRODUCTO', pd.Series(dtype=str)).fillna('').astype(str)
                         
                         # Combinamos Cajas y Tarimas para el Volumen (limpiando "nan")
-                        cajas = df_raw.get('Cajas a Entregar', '').astype(str).str.replace('nan', '0').str.strip()
-                        tarimas = df_raw.get('Tarimas', '').astype(str).str.replace('nan', '0').str.strip()
+                        cajas = df_raw.get('Cajas a Entregar', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
+                        tarimas = df_raw.get('Tarimas', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
+                        
+                        # Reemplazamos los ceros puros para que no se vea el string vacío o "0.0" suelto
+                        cajas = cajas.replace({'': '0', '0.0': '0'})
+                        tarimas = tarimas.replace({'': '0', '0.0': '0'})
+                        
                         df_entregas['cantidad'] = cajas + " CXS / " + tarimas + " TAR"
                         
                         # Usamos la OV de Jypesa como identificador secundario (semana)
-                        df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', '').astype(str)
+                        df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', pd.Series(dtype=str)).fillna('').astype(str)
                         
                         # Pasamos la fecha literal para el texto gris
-                        df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', '').astype(str)
+                        df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', pd.Series(dtype=str)).fillna('').astype(str)
                         
-                        # Extraemos y combinamos CITA y HORA validando si están vacíos
-                        cita_series = df_raw.get('CITA', '').astype(str).str.replace('nan', '').str.strip()
-                        hora_series = df_raw.get('HORA', '').astype(str).str.replace('nan', '').str.strip()
+                        # Extraemos CITA y HORA validando los ceros indeseados
+                        cita_series = df_raw.get('CITA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+                        hora_series = df_raw.get('HORA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+                        
+                        # LISTA NEGRA: Todo esto será considerado como "espacio en blanco"
+                        valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat']
                         
                         citas_combinadas = []
                         for c, h in zip(cita_series, hora_series):
-                            if not c and not h:
+                            es_cita_vacia = str(c).lower() in valores_nulos
+                            es_hora_vacia = str(h).lower() in valores_nulos
+                            
+                            if es_cita_vacia and es_hora_vacia:
                                 citas_combinadas.append("PENDIENTE DE CITA")
-                            elif c and not h:
+                            elif not es_cita_vacia and es_hora_vacia:
                                 citas_combinadas.append(f"{c} - POR ASIGNAR")
-                            elif not c and h:
+                            elif es_cita_vacia and not es_hora_vacia:
                                 citas_combinadas.append(f"PENDIENTE - {h}")
                             else:
                                 citas_combinadas.append(f"{c} - {h}")
@@ -2997,14 +3008,15 @@ else:
                         df_entregas['cita'] = citas_combinadas
                         
                         # Estatus
-                        df_entregas['estatus'] = df_raw.get('ESTATUS', '').astype(str).str.upper().str.strip()
+                        df_entregas['estatus'] = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
+                        df_entregas['estatus'] = df_entregas['estatus'].replace('NAN', 'PENDIENTE') # Por si viene vacío
                         
                         # Tipo de unidad para separar pestañas (CAMION o TRAILER)
-                        df_entregas['tipo'] = df_raw.get('Unidad', '').astype(str).str.upper().str.strip()
+                        df_entregas['tipo'] = df_raw.get('Unidad', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
                         df_entregas['tipo'] = df_entregas['tipo'].str.replace('Ó', 'O') 
                         
-                        # Limpieza final de cualquier "nan" esporádico que haya quedado
-                        df_entregas = df_entregas.replace('nan', '').fillna('')
+                        # Limpieza final profunda de cualquier "nan" esporádico
+                        df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
                         
                         # Separación final de listas
                         data_camion = df_entregas[df_entregas['tipo'] == 'CAMION'].to_dict('records')
