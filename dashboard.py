@@ -2795,12 +2795,22 @@ else:
                                                 {item['oc']}
                                             </div>
                                         </div>
-                                        <div class="w-full md:flex-1 md:min-w-[300px]">
-                                            <div class="label-mini">Referencia / Destino</div>
-                                            <div class="text-xs text-slate-300 italic truncate">
-                                                {item['entrega_texto']}
+                                        
+                                        <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                            <div>
+                                                <div class="label-mini">Referencia / Destino</div>
+                                                <div class="text-xs text-slate-300 italic truncate">
+                                                    {item['entrega_texto']}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="label-mini">Producto</div>
+                                                <div class="text-xs font-semibold text-sky-200 truncate">
+                                                    {item['producto']}
+                                                </div>
                                             </div>
                                         </div>
+                
                                         <div class="grid grid-cols-2 gap-8 w-full md:w-auto md:flex md:gap-12 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-10">
                                             <div class="shrink-0">
                                                 <div class="label-mini">Volumen</div>
@@ -2955,6 +2965,9 @@ else:
                         # Asignamos la PO Customer para el título principal
                         df_entregas['oc'] = df_raw.get('PO Customer', '').astype(str)
                         
+                        # Extraemos el PRODUCTO directamente de tu matriz
+                        df_entregas['producto'] = df_raw.get('PRODUCTO', '').astype(str)
+                        
                         # Combinamos Cajas y Tarimas para el Volumen
                         cajas = df_raw.get('Cajas a Entregar', '').astype(str)
                         tarimas = df_raw.get('Tarimas', '').astype(str)
@@ -2973,12 +2986,11 @@ else:
                         df_entregas['estatus'] = df_raw.get('ESTATUS', '').astype(str).str.upper().str.strip()
                         
                         # Tipo de unidad para separar pestañas (CAMION o TRAILER)
-                        # Convertimos a mayúsculas, quitamos espacios y reemplazamos acentos por si lo escribes como "Camión" en tu matriz
                         df_entregas['tipo'] = df_raw.get('Unidad', '').astype(str).str.upper().str.strip()
                         df_entregas['tipo'] = df_entregas['tipo'].str.replace('Ó', 'O') 
                         
                         # Limpieza de "nan" para evitar errores visuales
-                        df_entregas = df_entregas.replace('nan - nan', '').replace('nan CXS / nan TAR', '').fillna('')
+                        df_entregas = df_entregas.replace('nan - nan', '').replace('nan CXS / nan TAR', '').replace('nan', '').fillna('')
                         
                         # Separación final de listas
                         data_camion = df_entregas[df_entregas['tipo'] == 'CAMION'].to_dict('records')
