@@ -1250,7 +1250,7 @@ else:
                 # --- FINANZAS: Estrictamente confidencial ---
                 if st.session_state.get("usuario_activo") == "Rigoberto": 
                     with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
-                        opciones_fin = ["WALLET", "PRESUPUESTOS", "GASTOS"] 
+                        opciones_fin = ["WALLET", "CAJA CHICA", "GASTOS"] 
                         for s in opciones_fin:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
