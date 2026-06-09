@@ -8712,7 +8712,7 @@ else:
                 
             
             #PRESUPUESTOS________________________________________________________     
-            elif st.session_state.menu_sub == "PRESUPUESTOS":
+            elif st.session_state.menu_sub == "CAJA CHICA":
                 # ==============================================================================
                 # 1. CONFIGURACIÓN DE DATOS PARA CAJA CHICA (ENVÍOS)
                 # ==============================================================================
@@ -8745,8 +8745,14 @@ else:
                     "Mermas / Devoluciones", "Varios / Imprevistos"
                 ]
         
-                # Tipos de Movimiento (Añadimos "Por Comprobar")
-                TIPOS_MOVIMIENTO = ["Ingreso (Fondo)", "Egreso Comprobado", "Por Comprobar"]
+                # Tipos de Movimiento (A prueba de descuadres)
+                TIPOS_MOVIMIENTO = [
+                    "1. Ingreso a Caja", 
+                    "2. Egreso Directo", 
+                    "3. Salida a Ruta (Por Comprobar)", 
+                    "4. Comprobante de Ruta", 
+                    "5. Devolución Efectivo (Chofer)"
+                ]
         
                 # ==============================================================================
                 # 2. ESTILOS CSS (Mantenemos tu estilo Neon pero adaptado)
@@ -8812,9 +8818,9 @@ else:
                     if 'df_caja' not in st.session_state or st.session_state.get('force_reload_caja', False):
                         start_date = datetime.now(tz_gdl)
                         ejemplos = [
-                            {"Fecha": (start_date - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso (Fondo)", "Categoria": "Reabastecimiento de Caja", "Concepto": "Fondo Inicial Quincena", "Monto": 10000.0, "Cuenta": "Caja Efectivo (Matriz)"},
-                            {"Fecha": (start_date - timedelta(days=3)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Egreso Comprobado", "Categoria": "Paquetería (FedEx/DHL/Estafeta)", "Concepto": "Guías Nacionales", "Monto": -2500.0, "Cuenta": "Caja Efectivo (Matriz)"},
-                            {"Fecha": (start_date - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Por Comprobar", "Categoria": "Gasolina y Diésel", "Concepto": "Efectivo entregado a chofer", "Monto": -1500.0, "Cuenta": "Fondo en Tránsito (Chofer)"},
+                            {"Fecha": (start_date - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"), "Tipo": "1. Ingreso a Caja", "Categoria": "Reabastecimiento de Caja", "Concepto": "Fondo Inicial Quincena", "Monto": 10000.0, "Cuenta": "Caja Efectivo (Matriz)"},
+                            {"Fecha": (start_date - timedelta(days=3)).strftime("%Y-%m-%d %H:%M"), "Tipo": "2. Egreso Directo", "Categoria": "Paquetería (FedEx/DHL/Estafeta)", "Concepto": "Guías Nacionales", "Monto": -2500.0, "Cuenta": "Caja Efectivo (Matriz)"},
+                            {"Fecha": (start_date - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"), "Tipo": "3. Salida a Ruta (Por Comprobar)", "Categoria": "Gasolina y Diésel", "Concepto": "Efectivo entregado a chofer", "Monto": -1500.0, "Cuenta": "Fondo en Tránsito (Chofer)"},
                         ]
                         df_load = pd.DataFrame(ejemplos)
         
@@ -8847,13 +8853,24 @@ else:
                 else:
                     df_month = pd.DataFrame()
         
-                # Cálculos estratégicos para la caja
-                fondo_ingresos = df_actual[df_actual['Tipo'] == "Ingreso (Fondo)"]['Monto'].sum() if not df_actual.empty else 0
-                egresos_comprobados = abs(df_actual[df_actual['Tipo'] == "Egreso Comprobado"]['Monto'].sum()) if not df_actual.empty else 0
-                por_comprobar = abs(df_actual[df_actual['Tipo'] == "Por Comprobar"]['Monto'].sum()) if not df_actual.empty else 0
+                # ==============================================================================
+                # CÁLCULOS ESTRATÉGICOS A PRUEBA DE DESCUADRES
+                # ==============================================================================
+                ingresos_caja = df_actual[df_actual['Tipo'] == "1. Ingreso a Caja"]['Monto'].sum() if not df_actual.empty else 0
+                devoluciones = df_actual[df_actual['Tipo'] == "5. Devolución Efectivo (Chofer)"]['Monto'].sum() if not df_actual.empty else 0
                 
-                # El disponible real es lo que queda físicamente (Ingresos - Gastados - Entregados sin comprobar)
-                efectivo_disponible = fondo_ingresos - egresos_comprobados - por_comprobar
+                egresos_directos = abs(df_actual[df_actual['Tipo'] == "2. Egreso Directo"]['Monto'].sum()) if not df_actual.empty else 0
+                salidas_ruta = abs(df_actual[df_actual['Tipo'] == "3. Salida a Ruta (Por Comprobar)"]['Monto'].sum()) if not df_actual.empty else 0
+                gastos_ruta = abs(df_actual[df_actual['Tipo'] == "4. Comprobante de Ruta"]['Monto'].sum()) if not df_actual.empty else 0
+        
+                # 1. Tu dinero físico real en el cajón
+                efectivo_disponible = (ingresos_caja + devoluciones) - (egresos_directos + salidas_ruta)
+                
+                # 2. Lo que realmente ha gastado la empresa
+                egresos_comprobados = egresos_directos + gastos_ruta
+                
+                # 3. El dinero que los choferes tienen en la calle
+                por_comprobar = salidas_ruta - gastos_ruta - devoluciones
         
                 # SISTEMA DE PESTAÑAS
                 tab_kpi, tab_flujos, tab_registro = st.tabs(["KPI'S CAJA CHICA", "ANÁLISIS DE ENVÍOS", "REGISTRO NUBE"])
@@ -8900,7 +8917,7 @@ else:
                     with col_chart:
                         st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#FF9900'>📦</span> DISTRIBUCIÓN DE GASTOS LOGÍSTICOS</p>", unsafe_allow_html=True)
                         if not df_month.empty:
-                            df_gastos = df_month[df_month['Tipo'].str.contains("Egreso|Por Comprobar")]
+                            df_gastos = df_month[df_month['Tipo'].str.contains("Egreso|Salida|Comprobante")]
                             if not df_gastos.empty:
                                 df_agrupado = df_gastos.groupby('Categoria')['Monto'].sum().abs().reset_index().sort_values('Monto', ascending=True)
                                 fig_bars = px.bar(df_agrupado, x='Monto', y='Categoria', orientation='h', text_auto='$,.2f')
@@ -8918,10 +8935,10 @@ else:
                 # --- PESTAÑA 2: ANÁLISIS DE ENVÍOS ---
                 with tab_flujos:
                     st.markdown("<br>", unsafe_allow_html=True)
-                    st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🚨</span> OPERACIONES PENDIENTES DE COMPROBACIÓN</p>", unsafe_allow_html=True)
+                    st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🚨</span> REGISTRO DE SALIDAS A RUTA</p>", unsafe_allow_html=True)
                     
                     if not df_actual.empty:
-                        df_pendientes = df_actual[df_actual['Tipo'] == "Por Comprobar"].copy()
+                        df_pendientes = df_actual[df_actual['Tipo'].str.contains("Por Comprobar")].copy()
                         if not df_pendientes.empty:
                             df_pendientes['Fecha'] = df_pendientes['Fecha'].dt.strftime('%d/%m/%Y %H:%M')
                             st.dataframe(
@@ -8931,7 +8948,7 @@ else:
                                 use_container_width=True, hide_index=True
                             )
                         else:
-                            st.success("¡Excelente amor! No tienes ningún saldo por comprobar, todo está en regla. ✨")
+                            st.success("¡Excelente amor! No tienes ningún saldo por comprobar en el historial. ✨")
                     
                 # --- PESTAÑA 3: REGISTRO NUBE ---
                 with tab_registro:
@@ -8961,8 +8978,11 @@ else:
                                         contents = repo.get_contents(FILE_PATH)
                                         df_latest = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
                                         
-                                        # Si es un egreso o por comprobar, el monto es negativo para descontarlo del balance
-                                        monto_final = -f_monto if "Ingreso" not in f_tipo else f_monto
+                                        # Lógica contable: Ingresos y Devoluciones son positivos para la caja, lo demás resta.
+                                        if "1. Ingreso" in f_tipo or "5. Devolución" in f_tipo:
+                                            monto_final = f_monto
+                                        else:
+                                            monto_final = -f_monto
         
                                         nueva_fila = {
                                             "Fecha": datetime.now(tz_gdl).strftime("%Y-%m-%d %H:%M"),
@@ -8991,11 +9011,14 @@ else:
                             df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
                             df_ledger['Fecha'] = df_ledger['Fecha'].dt.strftime('%d/%m/%Y %H:%M')
                             
-                            # Coloreamos dependiendo del tipo de operación
+                            # Coloreamos dependiendo del tipo de operación para que visualmente te alerte
                             def color_tipo(val):
-                                if "Ingreso" in val: return 'background-color: rgba(0, 255, 170, 0.1);'
-                                elif "Por Comprobar" in val: return 'background-color: rgba(255, 153, 0, 0.1);'
-                                else: return 'background-color: rgba(255, 75, 75, 0.05);'
+                                if "1. Ingreso" in val or "5. Devolución" in val: 
+                                    return 'background-color: rgba(0, 255, 170, 0.1);'
+                                elif "3. Salida a Ruta" in val: 
+                                    return 'background-color: rgba(255, 153, 0, 0.1);'
+                                else: 
+                                    return 'background-color: rgba(255, 75, 75, 0.05);'
         
                             st.dataframe(
                                 df_ledger[['Fecha', 'Tipo', 'Categoria', 'Concepto', 'Monto']].style
