@@ -4,3 +4,4 @@ Fecha,Tipo,Categoria,Concepto,Monto,Cuenta
 2026-06-08 16:47,Por Comprobar,Gasolina y Diésel,Efectivo entregado a chofer,-1500.0,Fondo en Tránsito (Chofer)
 2026-06-09 17:01,Ingreso (Fondo),Reabastecimiento de Caja,Envio de pedido F238583,2920.08,Caja Efectivo (Matriz)
 2026-06-09 17:03,Por Comprobar,Reabastecimiento de Caja,Envio de pedido F238583,-2920.08,Caja Efectivo (Matriz)
+2026-06-09 17:05,Egreso Comprobado,Reabastecimiento de Caja,Envio de pedido F238583,-2920.08,Caja Efectivo (Matriz)
