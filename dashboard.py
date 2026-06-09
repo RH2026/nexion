@@ -8713,9 +8713,297 @@ else:
             
             #PRESUPUESTOS________________________________________________________     
             elif st.session_state.menu_sub == "PRESUPUESTOS":
-                st.title("📝 Presupuestos")
-                st.info("AQUÍ VA EL CONTENIDO PARA TUS PRESUPUESTOS")
+                # ==============================================================================
+                # 1. CONFIGURACIÓN DE DATOS PARA CAJA CHICA (ENVÍOS)
+                # ==============================================================================
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                FILE_PATH = "caja_chica.csv"
+                LOCK_FILE_PATH = "lock_caja_chica.json"
                 
+                current_user = st.session_state.get("usuario_activo", "UNKNOWN")
+                puede_editar = current_user.upper() == "RIGOBERTO"
+                
+                try:
+                    tz_gdl = pytz.timezone('America/Mexico_City')
+                except:
+                    pass 
+                    
+                # Cuentas enfocadas en la operación de envíos
+                CUENTAS_MATRIX = {
+                    "Caja Efectivo (Matriz)": {"color": "#00E5FF", "fondo_base": 0.00},
+                    "Fondo en Tránsito (Chofer)": {"color": "#FF9900", "fondo_base": 0.00}, # Naranja alerta
+                    "Tarjeta Corporativa": {"color": "#8B9BB4", "fondo_base": 0.00}
+                }
+                
+                # Categorías específicas para tu logística
+                CATEGORIAS = [
+                    "Reabastecimiento de Caja", "Sobras / Reembolso", 
+                    "Paquetería (FedEx/DHL/Estafeta)", "Material de Empaque", 
+                    "Gasolina y Diésel", "Casetas y Peajes", "Viáticos (Comidas)",
+                    "Propinas / Maniobras", "Mantenimiento Vehicular", 
+                    "Mermas / Devoluciones", "Varios / Imprevistos"
+                ]
+        
+                # Tipos de Movimiento (Añadimos "Por Comprobar")
+                TIPOS_MOVIMIENTO = ["Ingreso (Fondo)", "Egreso Comprobado", "Por Comprobar"]
+        
+                # ==============================================================================
+                # 2. ESTILOS CSS (Mantenemos tu estilo Neon pero adaptado)
+                # ==============================================================================
+                st.markdown("""
+                    <style>
+                    .kpi-card {
+                        background-color: #253441; 
+                        padding: 20px; 
+                        border-radius: 8px;
+                        border: 1px solid #34495E; 
+                        text-align: center; 
+                        transition: transform 0.2s;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    }
+                    .kpi-card:hover { transform: translateY(-2px); border-color: #00E5FF; }
+                    .kpi-label { color: #8B9BB4; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px;}
+                    .kpi-value { color: #FFFFFF; font-size: 34px; font-weight: bold; margin: 10px 0;}
+                    .kpi-trend { font-size: 13px; font-weight: bold; }
+                    .neon-bar { height: 4px; border-radius: 2px; margin-top: 10px; width: 100%; }
+                    
+                    /* Tabs */
+                    div[data-baseweb="tab-list"] { gap: 20px; border-bottom: 2px solid #34495E; margin-bottom: 20px; }
+                    div[data-baseweb="tab"] { background-color: transparent !important; color: #8B9BB4 !important; font-weight: bold; font-size: 13px; border: none !important; padding-top: 0px; padding-bottom: 10px; }
+                    div[aria-selected="true"] { color: #00FFAA !important; border-bottom: 3px solid #00FFAA !important; }
+                    </style>
+                """, unsafe_allow_html=True)
+        
+                # ==============================================================================
+                # 3. CONTROL DE CANDADO DE ARCHIVO
+                # ==============================================================================
+                lock_info, bloqueado_por_otro = None, False
+                if puede_editar and TOKEN:
+                    try:
+                        repo = Github(TOKEN).get_repo(REPO_NAME)
+                        try:
+                            lock_info = json.loads(repo.get_contents(LOCK_FILE_PATH, ref="main").decoded_content.decode('utf-8'))
+                            if (datetime.now(tz_gdl) - tz_gdl.localize(datetime.strptime(lock_info["timestamp"], "%Y-%m-%d %H:%M:%S"))).total_seconds() < 600:
+                                if lock_info["usuario"] != current_user: bloqueado_por_otro = True
+                            else: lock_info = None
+                        except: pass
+                    except: pass
+                        
+                st.session_state["bloqueado_por_otro_caja"] = bloqueado_por_otro
+                if bloqueado_por_otro:
+                    st.warning(f"⚠️ CAJA BLOQUEADA: Sesión activa de **{lock_info['usuario']}**.")
+                    st.session_state["puede_editar_caja"] = False
+                else:
+                    st.session_state["puede_editar_caja"] = puede_editar
+                    if puede_editar and lock_info is None and TOKEN:
+                        try:
+                            repo = Github(TOKEN).get_repo(REPO_NAME)
+                            ahora_gdl = datetime.now(tz_gdl)
+                            lock_string = json.dumps({"usuario": current_user, "timestamp": ahora_gdl.strftime("%Y-%m-%d %H:%M:%S"), "hora": ahora_gdl.strftime("%H:%M:%S")}, indent=4)
+                            try: repo.update_file(path=LOCK_FILE_PATH, message=f"LOCK CAJA // {current_user}", content=lock_string, sha=repo.get_contents(LOCK_FILE_PATH).sha)
+                            except: repo.create_file(path=LOCK_FILE_PATH, message=f"LOCK CAJA // {current_user}", content=lock_string, branch="main")
+                        except: pass
+        
+                # ==============================================================================
+                # 4. MOTOR DE DATOS (CAJA CHICA)
+                # ==============================================================================
+                def get_caja_data_from_git():
+                    if 'df_caja' not in st.session_state or st.session_state.get('force_reload_caja', False):
+                        start_date = datetime.now(tz_gdl)
+                        ejemplos = [
+                            {"Fecha": (start_date - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso (Fondo)", "Categoria": "Reabastecimiento de Caja", "Concepto": "Fondo Inicial Quincena", "Monto": 10000.0, "Cuenta": "Caja Efectivo (Matriz)"},
+                            {"Fecha": (start_date - timedelta(days=3)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Egreso Comprobado", "Categoria": "Paquetería (FedEx/DHL/Estafeta)", "Concepto": "Guías Nacionales", "Monto": -2500.0, "Cuenta": "Caja Efectivo (Matriz)"},
+                            {"Fecha": (start_date - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Por Comprobar", "Categoria": "Gasolina y Diésel", "Concepto": "Efectivo entregado a chofer", "Monto": -1500.0, "Cuenta": "Fondo en Tránsito (Chofer)"},
+                        ]
+                        df_load = pd.DataFrame(ejemplos)
+        
+                        if TOKEN:
+                            try:
+                                repo = Github(TOKEN).get_repo(REPO_NAME)
+                                try:
+                                    df_load = pd.read_csv(io.StringIO(repo.get_contents(FILE_PATH, ref="main").decoded_content.decode('utf-8')), keep_default_na=False)
+                                except:
+                                    repo.create_file(path=FILE_PATH, message="INITIALIZE CAJA CHICA", content=df_load.to_csv(index=False), branch="main")
+                            except Exception as e:
+                                st.error(f"Error conexión GitHub: {e}. Usando datos locales.")
+                        
+                        df_load['Fecha'] = pd.to_datetime(df_load['Fecha'])
+                        st.session_state.df_caja = df_load
+                        st.session_state.force_reload_caja = False
+                        
+                    return st.session_state.df_caja
+        
+                # ==============================================================================
+                # 5. RENDERIZADO DE INTERFAZ CAJA CHICA
+                # ==============================================================================
+                puede_editar_caja = st.session_state.get("puede_editar_caja", False)
+                df_actual = get_caja_data_from_git()
+                
+                if not df_actual.empty:
+                    df_actual['Mes'] = df_actual['Fecha'].dt.strftime('%Y-%m')
+                    current_month = datetime.now(tz_gdl).strftime('%Y-%m')
+                    df_month = df_actual[df_actual['Mes'] == current_month]
+                else:
+                    df_month = pd.DataFrame()
+        
+                # Cálculos estratégicos para la caja
+                fondo_ingresos = df_actual[df_actual['Tipo'] == "Ingreso (Fondo)"]['Monto'].sum() if not df_actual.empty else 0
+                egresos_comprobados = abs(df_actual[df_actual['Tipo'] == "Egreso Comprobado"]['Monto'].sum()) if not df_actual.empty else 0
+                por_comprobar = abs(df_actual[df_actual['Tipo'] == "Por Comprobar"]['Monto'].sum()) if not df_actual.empty else 0
+                
+                # El disponible real es lo que queda físicamente (Ingresos - Gastados - Entregados sin comprobar)
+                efectivo_disponible = fondo_ingresos - egresos_comprobados - por_comprobar
+        
+                # SISTEMA DE PESTAÑAS
+                tab_kpi, tab_flujos, tab_registro = st.tabs(["KPI'S CAJA CHICA", "ANÁLISIS DE ENVÍOS", "REGISTRO NUBE"])
+        
+                # --- PESTAÑA 1: KPI'S ---
+                with tab_kpi:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    kpi1, kpi2, kpi3 = st.columns(3)
+                    
+                    with kpi1:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>EFECTIVO DISPONIBLE</div>
+                                <div class='kpi-value'>${efectivo_disponible:,.2f}</div>
+                                <div class='kpi-trend' style='color:#00E5FF'>LISTO PARA OPERAR</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #00E5FF, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with kpi2:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>SALDO POR COMPROBAR</div>
+                                <div class='kpi-value'>${por_comprobar:,.2f}</div>
+                                <div class='kpi-trend' style='color:#FF9900'>¡ATENCIÓN REQUERIDA!</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #FF9900, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with kpi3:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>GASTO COMPROBADO</div>
+                                <div class='kpi-value'>${egresos_comprobados:,.2f}</div>
+                                <div class='kpi-trend' style='color:#00FFAA'>FLOTA / ENVÍOS</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #00FFAA, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+        
+                    st.markdown("<br><hr style='border-color: #34495E;'>", unsafe_allow_html=True)
+                    
+                    # Gráfico de distribución de los Egresos
+                    col_chart, _ = st.columns([2, 1]) 
+                    with col_chart:
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#FF9900'>📦</span> DISTRIBUCIÓN DE GASTOS LOGÍSTICOS</p>", unsafe_allow_html=True)
+                        if not df_month.empty:
+                            df_gastos = df_month[df_month['Tipo'].str.contains("Egreso|Por Comprobar")]
+                            if not df_gastos.empty:
+                                df_agrupado = df_gastos.groupby('Categoria')['Monto'].sum().abs().reset_index().sort_values('Monto', ascending=True)
+                                fig_bars = px.bar(df_agrupado, x='Monto', y='Categoria', orientation='h', text_auto='$,.2f')
+                                fig_bars.update_traces(marker_color='#FF9900', textfont=dict(color="#FFFFFF", size=12))
+                                fig_bars.update_layout(
+                                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                    xaxis=dict(showgrid=True, gridcolor="#34495E", color="#8B9BB4", title=None),
+                                    yaxis=dict(color="#E0E6ED", title=None),
+                                    margin=dict(t=10, b=10, l=10, r=10), height=300
+                                )
+                                st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
+                            else:
+                                st.info("No hay gastos registrados aún este mes.")
+        
+                # --- PESTAÑA 2: ANÁLISIS DE ENVÍOS ---
+                with tab_flujos:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🚨</span> OPERACIONES PENDIENTES DE COMPROBACIÓN</p>", unsafe_allow_html=True)
+                    
+                    if not df_actual.empty:
+                        df_pendientes = df_actual[df_actual['Tipo'] == "Por Comprobar"].copy()
+                        if not df_pendientes.empty:
+                            df_pendientes['Fecha'] = df_pendientes['Fecha'].dt.strftime('%d/%m/%Y %H:%M')
+                            st.dataframe(
+                                df_pendientes[['Fecha', 'Categoria', 'Concepto', 'Cuenta', 'Monto']].style
+                                .format({'Monto': '${:,.2f}'})
+                                .map(lambda _: 'color: #FF9900; font-weight: bold;', subset=['Monto']),
+                                use_container_width=True, hide_index=True
+                            )
+                        else:
+                            st.success("¡Excelente amor! No tienes ningún saldo por comprobar, todo está en regla. ✨")
+                    
+                # --- PESTAÑA 3: REGISTRO NUBE ---
+                with tab_registro:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    if not TOKEN:
+                        st.warning("⚠️ Modo local. Configure GITHUB_TOKEN para registrar operaciones.")
+                    
+                    op_col1, op_col2 = st.columns([1, 2])
+        
+                    with op_col1:
+                        st.markdown("<p class='kpi-label'><span style='color:#00FFAA'>⚡</span> REGISTRAR MOVIMIENTO</p>", unsafe_allow_html=True)
+                        with st.form("caja_ops", clear_on_submit=True):
+                            f_tipo = st.selectbox("Tipo de Operación", TIPOS_MOVIMIENTO)
+                            f_monto = st.number_input("Cantidad MXN", min_value=0.0, step=100.0)
+                            f_cat = st.selectbox("Categoría", CATEGORIAS)
+                            f_cuenta = st.selectbox("Origen / Destino", list(CUENTAS_MATRIX.keys()))
+                            f_desc = st.text_input("Concepto / Referencia", placeholder="Ej. Guías DHL, Gasolina Ruta 1...")
+                            
+                            block_submit = (not puede_editar_caja) or st.session_state.get("bloqueado_por_otro_caja", False) or (not TOKEN)
+                            submit_btn = st.form_submit_button("🚀 EJECUTAR REGISTRO", use_container_width=True, disabled=block_submit)
+                            
+                            if not block_submit and submit_btn and f_monto > 0 and f_desc:
+                                with st.status("Sincronizando Caja Chica con Nexion...", expanded=True):
+                                    try:
+                                        repo = Github(TOKEN).get_repo(REPO_NAME)
+                                        contents = repo.get_contents(FILE_PATH)
+                                        df_latest = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
+                                        
+                                        # Si es un egreso o por comprobar, el monto es negativo para descontarlo del balance
+                                        monto_final = -f_monto if "Ingreso" not in f_tipo else f_monto
+        
+                                        nueva_fila = {
+                                            "Fecha": datetime.now(tz_gdl).strftime("%Y-%m-%d %H:%M"),
+                                            "Tipo": f_tipo,
+                                            "Categoria": f_cat,
+                                            "Concepto": f_desc,
+                                            "Monto": monto_final,
+                                            "Cuenta": f_cuenta
+                                        }
+                                        
+                                        df_latest = pd.concat([df_latest, pd.DataFrame([nueva_fila])], ignore_index=True)
+                                        repo.update_file(path=FILE_PATH, message=f"CAJA UPDATE // {current_user} // {datetime.now(tz_gdl).strftime('%H:%M:%S')}", content=df_latest.to_csv(index=False), sha=contents.sha)
+                                        
+                                        try: repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK CAJA // {current_user}", sha=repo.get_contents(LOCK_FILE_PATH).sha)
+                                        except: pass
+                                        
+                                        st.session_state.force_reload_caja = True
+                                        st.success("¡Registro de caja exitoso, mi amor!")
+                                        time.sleep(1)
+                                        st.rerun()
+                                    except Exception as e: st.error(f"Error crítico de sincronización: {e}")
+        
+                    with op_col2:
+                        st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE LOGÍSTICA EN TIEMPO REAL</p>", unsafe_allow_html=True)
+                        if not df_actual.empty:
+                            df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
+                            df_ledger['Fecha'] = df_ledger['Fecha'].dt.strftime('%d/%m/%Y %H:%M')
+                            
+                            # Coloreamos dependiendo del tipo de operación
+                            def color_tipo(val):
+                                if "Ingreso" in val: return 'background-color: rgba(0, 255, 170, 0.1);'
+                                elif "Por Comprobar" in val: return 'background-color: rgba(255, 153, 0, 0.1);'
+                                else: return 'background-color: rgba(255, 75, 75, 0.05);'
+        
+                            st.dataframe(
+                                df_ledger[['Fecha', 'Tipo', 'Categoria', 'Concepto', 'Monto']].style
+                                .format({'Monto': '${:,.2f}'})
+                                .map(lambda val: 'color: #00FFAA; font-weight: bold;' if val > 0 else 'color: #FF4B4B; font-weight: bold;', subset=['Monto'])
+                                .map(color_tipo, subset=['Tipo']),
+                                use_container_width=True, hide_index=True, height=400
+                            )
             elif st.session_state.menu_sub == "GASTOS":
                 st.title("💸 Control de Gastos")
                 st.info("AQUÍ VA EL CONTENIDO DE TUS GASTOS")
