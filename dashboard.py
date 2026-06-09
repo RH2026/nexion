@@ -8384,7 +8384,8 @@ else:
                     "Caja de Ahorros": {"color": "#00E5FF", "fondo_base": 0.00},
                     "Scottiabank": {"color": "#00FFAA", "fondo_base": 0.00},
                     "Santander": {"color": "#FF4B4B", "fondo_base": 0.00},
-                    "Cartera": {"color": "#8B9BB4", "fondo_base": 0.00}
+                    "Cartera": {"color": "#8B9BB4", "fondo_base": 0.00},
+                    "Caja Jypesa": {"color": "#8B9BB8", "fondo_base": 0.00}
                 }
                 CATEGORIAS = [
                     "Nómina", "Ahorros", "Ventas", "Freelance / Proyectos", "Rendimientos", "Reembolsos", "Ventas",
