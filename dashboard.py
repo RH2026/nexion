@@ -8739,7 +8739,7 @@ else:
                 # Categorías específicas para tu logística
                 CATEGORIAS = [
                     "Reabastecimiento de Caja", "Sobras / Reembolso", 
-                    "Paquetería (FedEx/DHL/Estafeta)", "Material de Empaque", 
+                    "Envio Castores", "Envio Aereo", "Material de Empaque", 
                     "Gasolina y Diésel", "Casetas y Peajes", "Viáticos (Comidas)",
                     "Propinas / Maniobras", "Mantenimiento Vehicular", 
                     "Mermas / Devoluciones", "Varios / Imprevistos"
