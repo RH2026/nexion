@@ -8935,7 +8935,7 @@ else:
                 # --- PESTAÑA 2: ANÁLISIS DE ENVÍOS ---
                 with tab_flujos:
                     st.markdown("<br>", unsafe_allow_html=True)
-                    st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🚨</span> REGISTRO DE SALIDAS A RUTA</p>", unsafe_allow_html=True)
+                    st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'></span> REGISTRO DE SALIDAS A RUTA</p>", unsafe_allow_html=True)
                     
                     if not df_actual.empty:
                         df_pendientes = df_actual[df_actual['Tipo'].str.contains("Por Comprobar")].copy()
@@ -8948,7 +8948,7 @@ else:
                                 use_container_width=True, hide_index=True
                             )
                         else:
-                            st.success("¡Excelente amor! No tienes ningún saldo por comprobar en el historial. ✨")
+                            st.success("¡Excelente! No tienes ningún saldo por comprobar en el historial")
                     
                 # --- PESTAÑA 3: REGISTRO NUBE ---
                 with tab_registro:
