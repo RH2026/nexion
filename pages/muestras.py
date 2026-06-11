@@ -1,21 +1,24 @@
 import streamlit as st
 import pandas as pd
 import re
-import io  # <-- ¡Importante! Nueva librería para crear archivos Excel
+import io
 
+# Configuración premium de la página de Nexion
 st.set_page_config(page_title="Nexion Conciliación", layout="wide")
 st.title("Sistema de Conciliación Inteligente")
 st.subheader("Paso 1: Carga y Limpieza de Datos")
 
-# --- FUNCIÓN HELPER DE LIMPIEZA PARA TRESGUERRAS ---
+# --- FUNCIÓN DE LIMPIEZA PARA TRESGUERRAS ---
 def limpiar_y_explotar_tresguerras(df):
+    """
+    Toma el reporte de Tresguerras, limpia costos y expande/prorratea facturas
+    basado en las columnas EXACTAS.
+    """
     col_guia = 'NÚMERO DE GUÍA'
     col_costo = 'COSTO DE LA GUÍA'
     col_factura = 'FACTURA'
 
     df_clean = df.copy()
-
-    st.write("🔍 Iniciando limpieza del reporte de Tresguerras...")
 
     # A. Limpiar formato de dinero
     if df_clean[col_costo].dtype == 'object':
@@ -59,12 +62,10 @@ def limpiar_y_explotar_tresguerras(df):
     df_final = df_final.drop(columns=['Factura_List', 'num_facturas'])
     df_final[col_costo] = df_final[col_costo].round(2)
     
-    st.success("¡Reporte de Tresguerras limpio y prorrateado con éxito!")
     return df_final
 
-
 # =========================================================
-# === FLUJO PRINCIPAL DE STREAMLIT ===
+# === FLUJO PRINCIPAL DE LA INTERFAZ ===
 # =========================================================
 
 st.write("---")
@@ -75,85 +76,92 @@ with col2:
     archivo_tg = st.file_uploader("📥 Sube el reporte de Tresguerras", type=["xlsx", "xls"])
 
 if archivo_matriz and archivo_tg:
-    try:
-        # Leemos los archivos
-        df_matriz = pd.read_excel(archivo_matriz)
-        df_tg_crudo = pd.read_excel(archivo_tg)
-        
-        # Limpiamos espacios invisibles en los encabezados
-        df_matriz.columns = df_matriz.columns.str.strip()
-        df_tg_crudo.columns = df_tg_crudo.columns.str.strip()
-
-        # LIMPIEZA APLICADA SOLO A TRESGUERRAS
-        df_tg_limpio = limpiar_y_explotar_tresguerras(df_tg_crudo)
-        
-        # Preparación de tu Matriz Operativa
-        c_guia = 'NÚMERO DE GUÍA'
-        c_fac = 'FACTURA'
-        c_costo = 'COSTO DE LA GUÍA'
-
-        # Asegurar que el costo de tu matriz sea numérico
-        if df_matriz[c_costo].dtype == 'object':
-            df_matriz[c_costo] = df_matriz[c_costo].astype(str).str.replace('$', '', regex=False).str.replace(',', '', regex=False)
-        df_matriz[c_costo] = pd.to_numeric(df_matriz[c_costo], errors='coerce').fillna(0.0).round(2)
-        
-        # Asegurar que la factura de tu matriz sea texto
-        df_matriz[c_fac] = df_matriz[c_fac].fillna('').astype(str).str.strip()
-
-
-        # MATCH FINAL
-        st.subheader("Paso 2: Ejecutando el Match y Análisis Contable")
-        
-        df_match = pd.merge(
-            df_matriz, 
-            df_tg_limpio, 
-            on=[c_fac, c_guia], 
-            how='outer', 
-            suffixes=('_Matriz', '_TG'),
-            indicator=True
-        )
-        
-        def revisar_estatus(fila):
-            if fila['_merge'] == 'left_only':
-                return '🔴 Falta en reporte Tresguerras (Operación sin cobro)'
-            elif fila['_merge'] == 'right_only':
-                return '🔴 Falta en tu Matriz (Cobro sin registro operativo)'
+    # AQUÍ INICIA LA ANIMACIÓN DE CARGA (SPINNER)
+    with st.spinner('⏳ Analizando y cruzando la contabilidad, mi amor. Dame un segundito...'):
+        try:
+            # 1. Leemos los archivos
+            df_matriz = pd.read_excel(archivo_matriz)
+            df_tg_crudo = pd.read_excel(archivo_tg)
             
-            costo_matriz = fila[f'{c_costo}_Matriz']
-            costo_tg = fila[f'{c_costo}_TG']
-            
-            if abs(costo_matriz - costo_tg) < 0.01: 
-                return '✅ ¡Cuadra perfecto!'
-            else:
-                return f"⚠️ Diferencia de costo: Matriz(${costo_matriz:.2f}) vs TG(${costo_tg:.2f})"
+            # Limpiamos espacios invisibles en los encabezados
+            df_matriz.columns = df_matriz.columns.str.strip()
+            df_tg_crudo.columns = df_tg_crudo.columns.str.strip()
 
-        df_match['Estatus_Match'] = df_match.apply(revisar_estatus, axis=1)
-        df_resultado = df_match.drop(columns=['_merge'])
-        
-        st.success("¡Conciliación completada con éxito, corazón!")
-        st.dataframe(df_resultado, use_container_width=True)
-        
-        # =========================================================
-        # LA MAGIA PREMIUM: Descargar como Excel Real (.xlsx)
-        # =========================================================
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            df_resultado.to_excel(writer, index=False, sheet_name='Diferencias')
-        
-        st.download_button(
-            label="📥 Descargar Reporte Completo en Excel (.xlsx)",
-            data=buffer.getvalue(),
-            file_name="Conciliacion_Nexion_Final.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-        # =========================================================
-        
-    except KeyError as e:
-        st.error(f"¡Ups! Asegúrate de que las columnas se llamen exactamente igual que en tu imagen. No encuentro: {e}")
-    except Exception as e:
-        st.error(f"Hubo un detalle inesperado: {e}")
+            # 2. LIMPIEZA APLICADA SOLO A TRESGUERRAS
+            df_tg_limpio = limpiar_y_explotar_tresguerras(df_tg_crudo)
+            
+            # 3. Preparación de tu Matriz Operativa
+            c_guia = 'NÚMERO DE GUÍA'
+            c_fac = 'FACTURA'
+            c_costo = 'COSTO DE LA GUÍA'
+
+            # Asegurar que el costo de tu matriz sea numérico
+            if df_matriz[c_costo].dtype == 'object':
+                df_matriz[c_costo] = df_matriz[c_costo].astype(str).str.replace('$', '', regex=False).str.replace(',', '', regex=False)
+            df_matriz[c_costo] = pd.to_numeric(df_matriz[c_costo], errors='coerce').fillna(0.0).round(2)
+            
+            # Asegurar que la factura de tu matriz sea texto para poder comparar bien
+            df_matriz[c_fac] = df_matriz[c_fac].fillna('').astype(str).str.strip()
+
+            # 4. MATCH FINAL
+            df_match = pd.merge(
+                df_matriz, 
+                df_tg_limpio, 
+                on=[c_fac, c_guia], 
+                how='outer', 
+                suffixes=('_Matriz', '_TG'),
+                indicator=True
+            )
+            
+            def revisar_estatus(fila):
+                if fila['_merge'] == 'left_only':
+                    return '🔴 Falta en reporte Tresguerras (Operación sin cobro)'
+                elif fila['_merge'] == 'right_only':
+                    return '🔴 Falta en tu Matriz (Cobro sin registro operativo)'
+                
+                costo_matriz = fila[f'{c_costo}_Matriz']
+                costo_tg = fila[f'{c_costo}_TG']
+                
+                if abs(costo_matriz - costo_tg) < 0.01: 
+                    return '✅ ¡Cuadra perfecto!'
+                else:
+                    return f"⚠️ Diferencia de costo: Matriz(${costo_matriz:.2f}) vs TG(${costo_tg:.2f})"
+
+            df_match['Estatus_Match'] = df_match.apply(revisar_estatus, axis=1)
+            df_resultado = df_match.drop(columns=['_merge'])
+            
+            # 5. PREPARAR DESCARGA EN EXCEL REAL (.xlsx)
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                df_resultado.to_excel(writer, index=False, sheet_name='Diferencias')
+            
+        except KeyError as e:
+            st.error(f"¡Ups! Asegúrate de que las columnas se llamen exactamente igual que en tu imagen. No encuentro: {e}")
+            st.stop() # Detiene la ejecución si hay error
+        except Exception as e:
+            st.error(f"Hubo un detalle inesperado: {e}")
+            st.stop() # Detiene la ejecución si hay error
+
+    # =========================================================
+    # ESTO SE MUESTRA FUERA DEL SPINNER CUANDO TERMINA CON ÉXITO
+    # =========================================================
+    st.subheader("Paso 2: Análisis Contable Terminado")
+    st.success("¡Conciliación completada con éxito, corazón!")
+    st.balloons() # Animación de celebración
+    
+    # Mostramos la tabla en pantalla
+    st.dataframe(df_resultado, use_container_width=True)
+    
+    # Botón de descarga elegante
+    st.download_button(
+        label="📥 Descargar Reporte Completo en Excel (.xlsx)",
+        data=buffer.getvalue(),
+        file_name="Conciliacion_Nexion_Final.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
 else:
-    st.info("Esperando tus archivos para hacer la magia.")
+    st.info("Esperando tus archivos para hacer la magia. Sube tu matriz y el reporte de Tresguerras arriba.")
 
 
 
