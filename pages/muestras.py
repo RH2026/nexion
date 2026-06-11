@@ -147,8 +147,7 @@ if archivo_matriz and archivo_tg:
     # =========================================================
     st.subheader("Paso 2: Análisis Contable Terminado")
     st.success("¡Conciliación completada con éxito, corazón!")
-    st.balloons() # Animación de celebración
-    
+        
     # Mostramos la tabla en pantalla
     st.dataframe(df_resultado, use_container_width=True)
     
