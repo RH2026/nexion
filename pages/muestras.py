@@ -77,7 +77,7 @@ with col2:
 
 if archivo_matriz and archivo_tg:
     # AQUÍ INICIA LA ANIMACIÓN DE CARGA (SPINNER)
-    with st.spinner('⏳ Analizando y cruzando información, espera un momento por favor...'):
+    with st.spinner('Analizando y cruzando información, espera un momento por favor...'):
         try:
             # 1. Leemos los archivos
             df_matriz = pd.read_excel(archivo_matriz)
