@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
+import io  # <-- ¡Importante! Nueva librería para crear archivos Excel
 
 st.set_page_config(page_title="Nexion Conciliación", layout="wide")
 st.title("Sistema de Conciliación Inteligente")
@@ -8,11 +9,6 @@ st.subheader("Paso 1: Carga y Limpieza de Datos")
 
 # --- FUNCIÓN HELPER DE LIMPIEZA PARA TRESGUERRAS ---
 def limpiar_y_explotar_tresguerras(df):
-    """
-    Toma el reporte de Tresguerras, limpia costos y expande/prorratea facturas
-    basado en las columnas EXACTAS de la imagen.
-    """
-    # Nombres de columnas exactos de tu imagen
     col_guia = 'NÚMERO DE GUÍA'
     col_costo = 'COSTO DE LA GUÍA'
     col_factura = 'FACTURA'
@@ -88,15 +84,10 @@ if archivo_matriz and archivo_tg:
         df_matriz.columns = df_matriz.columns.str.strip()
         df_tg_crudo.columns = df_tg_crudo.columns.str.strip()
 
-        # =========================================================
         # LIMPIEZA APLICADA SOLO A TRESGUERRAS
-        # =========================================================
         df_tg_limpio = limpiar_y_explotar_tresguerras(df_tg_crudo)
         
-        st.write("📈 Visualización de Tresguerras Limpio:")
-        st.dataframe(df_tg_limpio.head(5), use_container_width=True)
-
-        # Preparación de tu Matriz Operativa (asegurar tipos de datos)
+        # Preparación de tu Matriz Operativa
         c_guia = 'NÚMERO DE GUÍA'
         c_fac = 'FACTURA'
         c_costo = 'COSTO DE LA GUÍA'
@@ -110,9 +101,7 @@ if archivo_matriz and archivo_tg:
         df_matriz[c_fac] = df_matriz[c_fac].fillna('').astype(str).str.strip()
 
 
-        # =========================================================
         # MATCH FINAL
-        # =========================================================
         st.subheader("Paso 2: Ejecutando el Match y Análisis Contable")
         
         df_match = pd.merge(
@@ -144,13 +133,20 @@ if archivo_matriz and archivo_tg:
         st.success("¡Conciliación completada con éxito, corazón!")
         st.dataframe(df_resultado, use_container_width=True)
         
-        csv = df_resultado.to_csv(index=False, sep=';', decimal=',').encode('utf-8-sig')
+        # =========================================================
+        # LA MAGIA PREMIUM: Descargar como Excel Real (.xlsx)
+        # =========================================================
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+            df_resultado.to_excel(writer, index=False, sheet_name='Diferencias')
+        
         st.download_button(
-            label="📥 Descargar Reporte de Diferencias (CSV para Excel)",
-            data=csv,
-            file_name="Conciliacion_Premium_Nexion.csv",
-            mime="text/csv",
+            label="📥 Descargar Reporte Completo en Excel (.xlsx)",
+            data=buffer.getvalue(),
+            file_name="Conciliacion_Nexion_Final.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
+        # =========================================================
         
     except KeyError as e:
         st.error(f"¡Ups! Asegúrate de que las columnas se llamen exactamente igual que en tu imagen. No encuentro: {e}")
