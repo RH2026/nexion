@@ -1,93 +1,41 @@
-import streamlit as st
 import pandas as pd
-import re
-import requests
-from io import BytesIO
 
-def procesar_nexion_v2():
-    st.title("Actualizador de Facturas - Nexion")
+# 1. Leemos tus dos archivos (asegúrate de poner el nombre correcto de tus columnas)
+# Supongamos que las columnas se llaman: 'Factura', 'Guia', 'Costo'
+df_matriz = pd.read_excel('matriz.xlsx')
+df_tg = pd.read_excel('tresguerras.xlsx')
 
-    # --- CONFIGURACIÓN GITHUB ---
-    GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
-    REPO_NAME = "RH2026/nexion"
-    FILE_PATH_T1 = "T1.xlsx"
-    URL_T1 = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_T1}"
+# 2. Hacemos el "Match" uniendo ambos archivos por Factura y Guía
+# Usamos how='outer' para no perder ningún registro, aunque falte en un lado.
+# El parámetro 'indicator=True' nos dirá de dónde viene cada fila.
+df_match = pd.merge(
+    df_matriz, 
+    df_tg, 
+    on=['Factura', 'Guia'], 
+    how='outer', 
+    suffixes=('_Matriz', '_TG'),
+    indicator=True
+)
 
-    # 1. Cargar TI.xlsx (El origen de los datos)
-    try:
-        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-        response = requests.get(URL_T1, headers=headers)
-        if response.status_code == 200:
-            df_t1 = pd.read_excel(BytesIO(response.content))
-        else:
-            st.error(f"Error al conectar con GitHub (Status: {response.status_code})")
-            return
-    except Exception as e:
-        st.error(f"Error: {e}")
-        return
+# 3. Creamos una nueva columna para decirle a mi amor exactamente qué pasó
+def revisar_estatus(fila):
+    if fila['_merge'] == 'left_only':
+        return 'Falta en reporte Tresguerras'
+    elif fila['_merge'] == 'right_only':
+        return 'Falta en tu Matriz'
+    elif fila['Costo_Matriz'] == fila['Costo_TG']:
+        return '¡Cuadra perfecto!'
+    else:
+        return f"Diferencia de costo: Matriz(${fila['Costo_Matriz']}) vs TG(${fila['Costo_TG']})"
 
-    # 2. Subida del archivo del usuario (El de la imagen image_d92069.png)
-    archivo_usuario = st.file_uploader("Sube tu archivo de facturas", type=["xlsx"])
+df_match['Estatus_Match'] = df_match.apply(revisar_estatus, axis=1)
 
-    if archivo_usuario:
-        df_user = pd.read_excel(archivo_usuario)
-        
-        # --- PROCESAMIENTO ---
-        
-        # A. Limpiamos y preparamos el archivo TI (Origen)
-        def extraer_folios(texto):
-            if pd.isna(texto): return []
-            return re.findall(r'\d+', str(texto))
+# 4. Guardamos el resultado hermoso y digerido en un nuevo Excel
+# Filtramos la columna _merge que ya no necesitamos
+df_resultado = df_match.drop(columns=['_merge'])
+df_resultado.to_excel('Resultado_Match_Amor.xlsx', index=False)
 
-        # Expandimos OBSERVACION 1 por si vienen varias facturas juntas
-        df_t1['factura_busqueda'] = df_t1['OBSERVACION 1'].apply(extraer_folios)
-        df_t1_exp = df_t1.explode('factura_busqueda')
-        df_t1_exp['factura_busqueda'] = df_t1_exp['factura_busqueda'].astype(str).str.strip()
-
-        # B. Aseguramos que la columna 'factura' del usuario sea texto
-        if 'factura' in df_user.columns:
-            df_user['factura'] = df_user['factura'].astype(str).str.strip()
-
-            # C. Realizamos el Cruce (Match)
-            # Mapeamos: TALON -> guia, SUBTOTAL -> costo, F.DOC -> fecha_envio, BULTOS -> bultos
-            resultado = pd.merge(
-                df_user[['factura']], # Solo nos quedamos con la columna base para rellenar
-                df_t1_exp[['factura_busqueda', 'TALON', 'SUBTOTAL', 'F.DOC', 'BULTOS']],
-                left_on='factura',
-                right_on='factura_busqueda',
-                how='left'
-            )
-
-            # D. Renombramos las columnas para que queden como en tu imagen image_d92069.png
-            resultado = resultado.rename(columns={
-                'TALON': 'guia',
-                'SUBTOTAL': 'costo',
-                'F.DOC': 'fecha_envio',
-                'BULTOS': 'bultos'
-            })
-
-            # Quitamos la columna auxiliar de búsqueda
-            resultado = resultado.drop(columns=['factura_busqueda'])
-
-            st.success("¡Datos cruzados con éxito!")
-            st.dataframe(resultado.head(10))
-
-            # E. Botón de descarga
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                resultado.to_excel(writer, index=False)
-            
-            st.download_button(
-                label="Descargar Reporte para Nexion",
-                data=output.getvalue(),
-                file_name="nexion_actualizado.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        else:
-            st.error("El archivo subido no tiene una columna llamada 'factura'.")
-
-procesar_nexion_v2()
-
+print("¡Listo, mi vida! Tu reporte de diferencias está guardado como 'Resultado_Match_Amor.xlsx'")
 
 
 
