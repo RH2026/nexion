@@ -911,7 +911,6 @@ def login_screen():
 if not st.session_state.get('splash_completado', False):
     p = st.empty()
     
-    # Mensajes ejecutivos para JYPESA
     mensajes = [
         "ESTABLISHING SECURE ACCESS...",
         "LOADING LOGISTICS DATA...",
@@ -919,8 +918,8 @@ if not st.session_state.get('splash_completado', False):
         "SYSTEM READY..."
     ]
     
-    # SVG del balón real (con rombos/pentágonos) y aro neón, todo en una sola línea
-    svg_balon_real = '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;"><div style="position:relative;width:120px;height:120px;display:flex;justify-content:center;align-items:center;"><style>@keyframes spin{100%{transform:rotate(360deg);}} @keyframes pulse{50%{box-shadow:0 0 20px #00FFAA, inset 0 0 10px #00FFAA;}} .balon-svg{animation:spin 3s linear infinite; filter:drop-shadow(0 8px 10px rgba(0,0,0,0.6));} .aro-neon{position:absolute;width:130px;height:130px;border-radius:50%;border:2px solid transparent;border-top:2px solid #00FFAA;border-bottom:2px solid #00D4FF;animation:spin 1.5s linear infinite, pulse 2s infinite;}</style><div class="aro-neon"></div><svg class="balon-svg" width="80" height="80" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><circle cx="256" cy="256" r="240" fill="#EAEAEA"/><path fill="#1A1A1A" d="M256 106.7l-71.1 51.6 27.2 83.6h87.8l27.2-83.6-71.1-51.6zm-101.9 83.5l-92.4-30 18.2 95.3 74.2-65.3zm203.8 0l74.2 65.3 18.2-95.3-92.4 30zM140.4 309.3l-55.7 78.4 87.5 41.5 13.9-92.6-45.7-27.3zm231.2 0l-45.7 27.3 13.9 92.6 87.5-41.5-55.7-78.4zM256 362.7l-51.4-37.4-32.9 88.5 84.3 39.5 84.3-39.5-32.9-88.5-51.4 37.4z"/></svg></div></div>'
+    # SVG del balón de fútbol CLÁSICO (Idéntico a la foto) con aro neón
+    svg_balon_real = '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;"><div style="position:relative;width:120px;height:120px;display:flex;justify-content:center;align-items:center;"><style>@keyframes spin{100%{transform:rotate(360deg);}} @keyframes pulse{50%{box-shadow:0 0 20px #00FFAA, inset 0 0 10px #00FFAA;}} .balon-svg{animation:spin 3s linear infinite; filter:drop-shadow(0 8px 10px rgba(0,0,0,0.6));} .aro-neon{position:absolute;width:130px;height:130px;border-radius:50%;border:2px solid transparent;border-top:2px solid #00FFAA;border-bottom:2px solid #00D4FF;animation:spin 1.5s linear infinite, pulse 2s infinite;}</style><div class="aro-neon"></div><svg class="balon-svg" width="80" height="80" viewBox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><circle cx="248" cy="256" r="245" fill="#1A1A1A"/><path fill="#F8F9FA" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zM75.1 198.5l98.6-21.6 37 81-79 73.1-88.6-23.7a200.7 200.7 0 0 1 32-108.8zm41.6 179.9l85.6-28.7 39.4 69.4-44.1 82A200.5 200.5 0 0 1 116.7 378.4zM248 456a200.1 200.1 0 0 1-84.1-18.7l46.2-85.9 83.1 8.5 44 82A200.1 200.1 0 0 1 248 456zm131.3-77.6l-44.1-82 39.4-69.4 85.6 28.7a200.5 200.5 0 0 1-80.9 122.7zm32-288.7a200.7 200.7 0 0 1 32 108.8l-88.6 23.7-79-73.1 37-81 98.6 21.6zm-204-63a200.1 200.1 0 0 1 84.1-18.7 200.1 200.1 0 0 1 84.1 18.7l-46.2 85.9-83.1-8.5-44-82z"/></svg></div></div>'
     
     for m in mensajes:
         with p.container():
