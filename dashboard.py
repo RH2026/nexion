@@ -908,6 +908,7 @@ def login_screen():
 ###############################################################################
 ######################################¿FALTA MOSTRAR EL SPLASH?
 # 1. ¿FALTA MOSTRAR EL SPLASH?
+# 1. ¿FALTA MOSTRAR EL SPLASH?
 if not st.session_state.get('splash_completado', False):
     p = st.empty()
     
@@ -918,18 +919,13 @@ if not st.session_state.get('splash_completado', False):
         "SYSTEM READY..."
     ]
     
-    # SVG del balón de fútbol CLÁSICO (Idéntico a la foto) con aro neón
-    svg_balon_real = '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;"><div style="position:relative;width:120px;height:120px;display:flex;justify-content:center;align-items:center;"><style>@keyframes spin{100%{transform:rotate(360deg);}} @keyframes pulse{50%{box-shadow:0 0 20px #00FFAA, inset 0 0 10px #00FFAA;}} .balon-svg{animation:spin 3s linear infinite; filter:drop-shadow(0 8px 10px rgba(0,0,0,0.6));} .aro-neon{position:absolute;width:130px;height:130px;border-radius:50%;border:2px solid transparent;border-top:2px solid #00FFAA;border-bottom:2px solid #00D4FF;animation:spin 1.5s linear infinite, pulse 2s infinite;}</style><div class="aro-neon"></div><svg class="balon-svg" width="80" height="80" viewBox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><circle cx="248" cy="256" r="245" fill="#1A1A1A"/><path fill="#F8F9FA" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zM75.1 198.5l98.6-21.6 37 81-79 73.1-88.6-23.7a200.7 200.7 0 0 1 32-108.8zm41.6 179.9l85.6-28.7 39.4 69.4-44.1 82A200.5 200.5 0 0 1 116.7 378.4zM248 456a200.1 200.1 0 0 1-84.1-18.7l46.2-85.9 83.1 8.5 44 82A200.1 200.1 0 0 1 248 456zm131.3-77.6l-44.1-82 39.4-69.4 85.6 28.7a200.5 200.5 0 0 1-80.9 122.7zm32-288.7a200.7 200.7 0 0 1 32 108.8l-88.6 23.7-79-73.1 37-81 98.6 21.6zm-204-63a200.1 200.1 0 0 1 84.1-18.7 200.1 200.1 0 0 1 84.1 18.7l-46.2 85.9-83.1-8.5-44-82z"/></svg></div></div>'
+    # Todo el código gráfico estrictamente en UNA SOLA LÍNEA para evitar errores de renderizado
+    html_una_linea = '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;"><div style="position:relative;width:120px;height:120px;display:flex;justify-content:center;align-items:center;"><style>@keyframes spin{100%{transform:rotate(360deg);}} @keyframes pulse{50%{box-shadow:0 0 20px #00FFAA, inset 0 0 10px #00FFAA;}} .b-svg{width:80px;height:80px;animation:spin 3s linear infinite;filter:drop-shadow(0 8px 10px rgba(0,0,0,0.6));} .aro{position:absolute;width:130px;height:130px;border-radius:50%;border:2px solid transparent;border-top:2px solid #00FFAA;border-bottom:2px solid #00D4FF;animation:spin 1.5s linear infinite, pulse 2s infinite;}</style><div class="aro"></div><svg class="b-svg" viewBox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><circle cx="248" cy="256" r="240" fill="#F8F9FA"/><path fill="#1A1A1A" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zM75.1 198.5l98.6-21.6 37 81-79 73.1-88.6-23.7a200.7 200.7 0 0 1 32-108.8zm41.6 179.9l85.6-28.7 39.4 69.4-44.1 82A200.5 200.5 0 0 1 116.7 378.4zM248 456a200.1 200.1 0 0 1-84.1-18.7l46.2-85.9 83.1 8.5 44 82A200.1 200.1 0 0 1 248 456zm131.3-77.6l-44.1-82 39.4-69.4 85.6 28.7a200.5 200.5 0 0 1-80.9 122.7zm32-288.7a200.7 200.7 0 0 1 32 108.8l-88.6 23.7-79-73.1 37-81 98.6 21.6zm-204-63a200.1 200.1 0 0 1 84.1-18.7 200.1 200.1 0 0 1 84.1 18.7l-46.2 85.9-83.1-8.5-44-82z"/></svg></div></div>'
     
     for m in mensajes:
         with p.container():
-            st.markdown(f"""
-            <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                {svg_balon_real}
-                <p style="margin-top:20px;font-family:monospace;font-size:11px;letter-spacing:4px;color:#EAEAEA;text-transform:uppercase;">{m}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
+            # Inyección limpia usando concatenación en lugar de f-strings multilínea
+            st.markdown('<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">' + html_una_linea + '<p style="margin-top:20px;font-family:monospace;font-size:11px;letter-spacing:4px;color:#EAEAEA;text-transform:uppercase;">' + m + '</p></div>', unsafe_allow_html=True)
             time.sleep(0.7)
             
     p.empty()
