@@ -905,7 +905,15 @@ def login_screen():
 # ── FLUJO DE CONTROL MAESTRO (SPLASH -> LOGIN -> CEO GATE -> CORE) ──
 # ==============================================================================
 
-# 1. ¿FALTA MOSTRAR EL SPLASH?
+# 1. Función para leer la imagen y convertirla a texto base64
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Convertimos la imagen del mundial (asegúrate de que la ruta sea correcta)
+img_base64 = get_base64_image("watermarked_img_4545563354392696103.png")
+
+# 2. ¿FALTA MOSTRAR EL SPLASH?
 if not st.session_state.get('splash_completado', False):
     # Creamos el contenedor vacío una sola vez
     p = st.empty()
@@ -922,12 +930,16 @@ if not st.session_state.get('splash_completado', False):
         with p.container():
             st.markdown(f"""
             <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <div style="width:80px;height:80px;border:2px solid rgba(255,255,255,0.05); border-top:2px solid #00D4FF; border-radius:50%;animation:spin 1s linear infinite; box-shadow: 0 0 15px rgba(0,212,255,0.3);"></div>
+                <!-- Reemplazamos el div del spinner por una etiqueta img con nuestra imagen en base64 -->
+                <img src="data:image/png;base64,{img_base64}" style="width: 320px; animation: pulse 1.5s infinite; filter: drop-shadow(0px 0px 20px rgba(0, 255, 170, 0.4)); border-radius: 15px;">
                 <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:white;text-transform:uppercase;">{m}</p>
             </div>
             <style>
-                @keyframes spin {{
-                    to {{ transform: rotate(360deg); }}
+                /* Nueva animación de pulso para la imagen */
+                @keyframes pulse {{
+                    0% {{ transform: scale(0.98); opacity: 0.8; }}
+                    50% {{ transform: scale(1.02); opacity: 1; }}
+                    100% {{ transform: scale(0.98); opacity: 0.8; }}
                 }}
             </style>
             """, unsafe_allow_html=True)
