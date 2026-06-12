@@ -911,6 +911,7 @@ def login_screen():
 if not st.session_state.get('splash_completado', False):
     p = st.empty()
     
+    # Mensajes ejecutivos para JYPESA
     mensajes = [
         "ESTABLISHING SECURE ACCESS...",
         "LOADING LOGISTICS DATA...",
@@ -918,14 +919,14 @@ if not st.session_state.get('splash_completado', False):
         "SYSTEM READY..."
     ]
     
-    # Balón matemáticamente perfecto + Aro de carga neón (Todo en una sola línea a prueba de fallos)
-    svg_balon = '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;"><div style="position:relative;width:120px;height:120px;display:flex;justify-content:center;align-items:center;"><style>@keyframes spin3D{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}} @keyframes pulseNeon{0%,100%{box-shadow:0 0 15px rgba(0,212,255,0.4), inset 0 0 10px rgba(0,212,255,0.4);}50%{box-shadow:0 0 30px rgba(0,255,170,0.8), inset 0 0 20px rgba(0,255,170,0.5);}} .pro-ball{animation:spin3D 3.5s linear infinite; filter:drop-shadow(0 10px 10px rgba(0,0,0,0.5));} .neon-ring{position:absolute;width:140px;height:140px;border-radius:50%;border:2px solid transparent;border-top-color:#00FFAA;border-bottom-color:#00D4FF;animation:spin3D 1.5s linear infinite, pulseNeon 2s ease-in-out infinite;}</style><div class="neon-ring"></div><svg class="pro-ball" width="85" height="85" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><circle cx="256" cy="256" r="245" fill="#EAEAEA" stroke="#1A1A1A" stroke-width="15"/><path fill="#1A1A1A" d="M256 76.8L165.7 142.4l34.5 106.1h111.6l34.5-106.1L256 76.8zM125.1 172l-81.8 59.5c15.3 58.1 48.1 109 91.8 146.5l25.4-98.4-35.4-107.6zM386.9 172l-35.4 107.6 25.4 98.4c43.8-37.5 76.6-88.4 91.8-146.5l-81.8-59.5zM256 281l-83.3 60.5L204.5 439.6h102.9l31.9-98.1L256 281z"/></svg></div></div>'
+    # SVG del balón real (con rombos/pentágonos) y aro neón, todo en una sola línea
+    svg_balon_real = '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;"><div style="position:relative;width:120px;height:120px;display:flex;justify-content:center;align-items:center;"><style>@keyframes spin{100%{transform:rotate(360deg);}} @keyframes pulse{50%{box-shadow:0 0 20px #00FFAA, inset 0 0 10px #00FFAA;}} .balon-svg{animation:spin 3s linear infinite; filter:drop-shadow(0 8px 10px rgba(0,0,0,0.6));} .aro-neon{position:absolute;width:130px;height:130px;border-radius:50%;border:2px solid transparent;border-top:2px solid #00FFAA;border-bottom:2px solid #00D4FF;animation:spin 1.5s linear infinite, pulse 2s infinite;}</style><div class="aro-neon"></div><svg class="balon-svg" width="80" height="80" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><circle cx="256" cy="256" r="240" fill="#EAEAEA"/><path fill="#1A1A1A" d="M256 106.7l-71.1 51.6 27.2 83.6h87.8l27.2-83.6-71.1-51.6zm-101.9 83.5l-92.4-30 18.2 95.3 74.2-65.3zm203.8 0l74.2 65.3 18.2-95.3-92.4 30zM140.4 309.3l-55.7 78.4 87.5 41.5 13.9-92.6-45.7-27.3zm231.2 0l-45.7 27.3 13.9 92.6 87.5-41.5-55.7-78.4zM256 362.7l-51.4-37.4-32.9 88.5 84.3 39.5 84.3-39.5-32.9-88.5-51.4 37.4z"/></svg></div></div>'
     
     for m in mensajes:
         with p.container():
             st.markdown(f"""
             <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                {svg_balon}
+                {svg_balon_real}
                 <p style="margin-top:20px;font-family:monospace;font-size:11px;letter-spacing:4px;color:#EAEAEA;text-transform:uppercase;">{m}</p>
             </div>
             """, unsafe_allow_html=True)
