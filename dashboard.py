@@ -905,20 +905,13 @@ def login_screen():
 # ── FLUJO DE CONTROL MAESTRO (SPLASH -> LOGIN -> CEO GATE -> CORE) ──
 # ==============================================================================
 
-# 1. Función para leer la imagen y convertirla a texto base64
-def get_base64_image(image_path):
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
-
-# Convertimos la imagen del mundial (asegúrate de que la ruta sea correcta)
-img_base64 = get_base64_image("watermarked_img_4545563354392696103.png")
-
-# 2. ¿FALTA MOSTRAR EL SPLASH?
+# ##########################################################################
+# BLOQUE 1. ¿FALTA MOSTRAR EL SPLASH? (VERSIÓN SVG INLINE MUNDIAL)
+# ##########################################################################
 if not st.session_state.get('splash_completado', False):
-    # Creamos el contenedor vacío una sola vez
     p = st.empty()
     
-    # Mensajes ejecutivos y técnicos para JYPESA
+    # Mensajes ejecutivos para JYPESA
     mensajes = [
         "ESTABLISHING SECURE ACCESS...",
         "LOADING LOGISTICS DATA...",
@@ -926,27 +919,63 @@ if not st.session_state.get('splash_completado', False):
         "SYSTEM READY..."
     ]
     
+    # Este es un gráfico vectorial completo (SVG) escrito directamente en código
+    # Incluye sus propias animaciones de rebote y giro.
+    soccer_ball_svg = """
+    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
+        <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <style>
+                @keyframes bounce {
+                    0%, 100% { transform: translateY(0) rotate(0deg); }
+                    50% { transform: translateY(-30px) rotate(180deg); }
+                }
+                @keyframes shadowPulse {
+                    0%, 100% { transform: scale(1); opacity: 0.3; }
+                    50% { transform: scale(0.7); opacity: 0.1; }
+                }
+                .ball-group {
+                    transform-origin: 50px 50px;
+                    animation: bounce 1.2s infinite ease-in-out;
+                }
+                .ball-shadow {
+                    transform-origin: 50px 95px;
+                    animation: shadowPulse 1.2s infinite ease-in-out;
+                }
+                /* Toque Neón de Nexion al balón */
+                .st-neon-line {
+                    stroke: #00FFAA;
+                    stroke-width: 0.5;
+                    filter: drop-shadow(0 0 2px rgba(0,255,170,0.8));
+                }
+            </style>
+            
+            <ellipse class="ball-shadow" cx="50" cy="95" rx="20" ry="4" fill="rgba(255,255,255,0.2)" />
+            
+            <g class="ball-group">
+                <circle cx="50" cy="50" r="20" fill="#F8F9FA" stroke="#1A1A1A" stroke-width="1"/>
+                
+                <path d="M 50 40 L 58 46 L 55 55 L 45 55 L 42 46 Z" fill="#1A1A1A" />
+                
+                <line class="st-neon-line" x1="50" y1="40" x2="50" y2="30" />
+                <line class="st-neon-line" x1="58" y1="46" x2="68" y2="44" />
+                <line class="st-neon-line" x1="55" y1="55" x2="62" y2="65" />
+                <line class="st-neon-line" x1="45" y1="55" x2="38" y2="65" />
+                <line class="st-neon-line" x1="42" y1="46" x2="32" y2="44" />
+            </g>
+        </svg>
+    </div>
+    """
+    
     for m in mensajes:
         with p.container():
             st.markdown(f"""
             <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-                <!-- Reemplazamos el div del spinner por una etiqueta img con nuestra imagen en base64 -->
-                <img src="data:image/png;base64,{img_base64}" style="width: 320px; animation: pulse 1.5s infinite; filter: drop-shadow(0px 0px 20px rgba(0, 255, 170, 0.4)); border-radius: 15px;">
-                <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:white;text-transform:uppercase;">{m}</p>
+                {soccer_ball_svg}
+                <p style="margin-top:40px;font-family:monospace;font-size:10px;letter-spacing:5px;color:white;text-transform:uppercase;text-align:center;">{m}</p>
             </div>
-            <style>
-                /* Nueva animación de pulso para la imagen */
-                @keyframes pulse {{
-                    0% {{ transform: scale(0.98); opacity: 0.8; }}
-                    50% {{ transform: scale(1.02); opacity: 1; }}
-                    100% {{ transform: scale(0.98); opacity: 0.8; }}
-                }}
-            </style>
             """, unsafe_allow_html=True)
-            # Tiempo estético para lectura
             time.sleep(0.7)
             
-    # Limpiamos y marcamos como completado
     p.empty()
     st.session_state.splash_completado = True
     st.rerun()
