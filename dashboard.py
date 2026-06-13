@@ -899,18 +899,8 @@ def login_screen():
                 else:
                     st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
                     
-# ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP) ──────────
-
-# ==============================================================================
-# ── FLUJO DE CONTROL MAESTRO (SPLASH -> LOGIN -> CEO GATE -> CORE) ──
-# ==============================================================================
-##############################################################################
-###############################################################################
-######################################¿FALTA MOSTRAR EL SPLASH?
-# 1. ¿FALTA MOSTRAR EL SPLASH?
-# 1. ¿FALTA MOSTRAR EL SPLASH?
-# 1. ¿FALTA MOSTRAR EL SPLASH?
-# 1. ¿FALTA MOSTRAR EL SPLASH?
+# ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP)
+#1. ¿FALTA MOSTRAR EL SPLASH?
 if not st.session_state.get('splash_completado', False):
     p = st.empty()
     
@@ -921,12 +911,12 @@ if not st.session_state.get('splash_completado', False):
         "SYSTEM READY..."
     ]
     
-    # Anillo transparente con gradiente mundial + neón (UNA SOLA LÍNEA)
-    anillo_transparente = '<div style="display:flex;justify-content:center;align-items:center;margin-bottom:30px;"><div style="width:80px;height:80px;border-radius:50%;border:8px solid transparent;background-image:linear-gradient(white,white),conic-gradient(from 0deg, #FF0000, #FFFF00, #00FF00, #0000FF, #FF0000);background-origin:border-box;background-clip:padding-box,border-box;animation:spin 1s linear infinite;box-shadow:0 0 15px rgba(255,255,255,0.2);"><style>@keyframes spin{100%{transform:rotate(360deg);}}</style></div></div>'
+    # Círculo con degradado de colores Mundial + Neón en una sola línea
+    circulo_mundial = '<div style="display:flex;justify-content:center;align-items:center;margin-bottom:30px;"><div style="width:80px;height:80px;border:3px solid transparent;border-top:3px solid #FFD700;border-bottom:3px solid #00FFAA;border-radius:50%;animation:spin 1s linear infinite;box-shadow:0 0 15px rgba(255,215,0,0.3);"><style>@keyframes spin{100%{transform:rotate(360deg);}}</style></div></div>'
     
     for m in mensajes:
         with p.container():
-            st.markdown('<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">' + anillo_transparente + '<p style="margin-top:20px;font-family:monospace;font-size:11px;letter-spacing:4px;color:#EAEAEA;text-transform:uppercase;">' + m + '</p></div>', unsafe_allow_html=True)
+            st.markdown('<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">' + circulo_mundial + '<p style="margin-top:20px;font-family:monospace;font-size:11px;letter-spacing:4px;color:#EAEAEA;text-transform:uppercase;">' + m + '</p></div>', unsafe_allow_html=True)
             time.sleep(0.7)
             
     p.empty()
