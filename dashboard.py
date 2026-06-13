@@ -904,7 +904,8 @@ def login_screen():
 if not st.session_state.get('splash_completado', False):
     p = st.empty()
     mensajes = ["ESTABLISHING SECURE ACCESS...", "LOADING LOGISTICS DATA...", "SYNCHRONIZING WITH GITHUB REPO...", "SYSTEM READY..."]
-    circulo_mundial = '<div style="display:flex;justify-content:center;align-items:center;margin-bottom:30px;"><div style="width:80px;height:80px;border:3px solid transparent;border-top:3px solid #FFD700;border-bottom:3px solid #00FFAA;border-left:3px solid #FFFFFF;border-radius:50%;animation:spin 1s linear infinite;box-shadow:0 0 15px rgba(255,255,255,0.3);"><style>@keyframes spin{100%{transform:rotate(360deg);}}</style></div></div>'
+    # Colores: Verde (#006847), Blanco (#FFFFFF), Rojo (#CE1126) + borde dorado (#FFD700) como sombra o glow
+    circulo_mundial = '<div style="display:flex;justify-content:center;align-items:center;margin-bottom:30px;"><div style="width:80px;height:80px;border:4px solid transparent;border-top:4px solid #006847;border-right:4px solid #FFFFFF;border-bottom:4px solid #CE1126;border-left:4px solid #CE1126;border-radius:50%;animation:spin 1s linear infinite;box-shadow:0 0 15px #FFD700;"><style>@keyframes spin{100%{transform:rotate(360deg);}}</style></div></div>'
     for m in mensajes:
         with p.container():
             st.markdown('<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">' + circulo_mundial + '<p style="margin-top:20px;font-family:monospace;font-size:11px;letter-spacing:4px;color:#EAEAEA;text-transform:uppercase;">' + m + '</p></div>', unsafe_allow_html=True)
