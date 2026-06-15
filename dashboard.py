@@ -2709,7 +2709,7 @@ else:
                 
                     # --- Encabezado de Texto Dinámico ---
                     if st.session_state.tipo_entrega == 'C A M I O N':
-                        titulo_dinamico = "ENTREGAS DE CAMIONES"
+                        titulo_dinamico = "E N T R E G A S  D E  C A M I O N E S"
                     elif st.session_state.tipo_entrega == 'T R A I L E R':
                         titulo_dinamico = "ENTREGAS DE TRAILER"
                     else:
@@ -2717,7 +2717,7 @@ else:
                 
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
-                            <span style='color:#FFFFFF; font-weight:800; font-size:22px; letter-spacing:3px;'>
+                            <span style='color:#FFFFFF; font-weight:800; font-size:18px; letter-spacing:3px;'>
                                 {titulo_dinamico}
                             </span>
                         </div>
