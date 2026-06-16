@@ -4982,10 +4982,73 @@ else:
             
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
-                st.subheader("Análisis de Producto y Quejas (APQ)")
-                # [Aquí va tu código o función para el reporte APQ]
-                st.info("Cargando datos de calidad...")
-                # Ejemplo: st.dataframe(df_apq)
+                st.markdown("### :material/request_quote: GENERADOR DE COTIZACIONES")
+    
+                with st.container():
+                    st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        transporte = st.text_input("FLETERA / TRANSPORTE")
+                        unidad = st.selectbox("TIPO DE UNIDAD", ["CAMIONETA 3.5", "TORTON", "TRAILER 48'", "TRAILER 53'", "CONSOLIDADO"])
+                    with col2:
+                        costo = st.number_input("COSTO DE LA COTIZACIÓN ($)", min_value=0.0, format="%.2f")
+                        cant_pallets = st.number_input("CANTIDAD DE PALLETS", min_value=0, step=1)
+                        cant_cajas = st.number_input("CANTIDAD DE CAJAS", min_value=0, step=1)
+                        
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                st.write("") # Espacio
+                
+                # --- LÓGICA DE IMPRESIÓN TÉCNICA ---
+                def generar_cotizacion_html():
+                    ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
+                    return f"""
+                    <div style="font-family: 'Segoe UI', Arial; padding: 40px; border: 2px solid #000; max-width: 800px; margin: auto;">
+                        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 20px;">
+                            <h1 style="margin: 0; text-transform: uppercase;">Cotización de Logística</h1>
+                            <p style="font-size: 12px; color: #666;">JYPESA | {ahora}</p>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ccc;"><b>Transporte:</b></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ccc; text-align: right;">{transporte}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ccc;"><b>Unidad:</b></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ccc; text-align: right;">{unidad}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ccc;"><b>Pallets:</b></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ccc; text-align: right;">{cant_pallets}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ccc;"><b>Cajas:</b></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ccc; text-align: right;">{cant_cajas}</td>
+                            </tr>
+                            <tr style="background-color: #f0f0f0;">
+                                <td style="padding: 15px; font-weight: bold; font-size: 1.2em;">Total Cotizado:</td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 1.2em;">${costo:,.2f}</td>
+                            </tr>
+                        </table>
+                        <div style="text-align: center; margin-top: 50px;">
+                            <div style="width: 200px; border-top: 1px solid #000; margin: auto; padding-top: 5px; font-size: 10px;">
+                                <b>Rigoberto Hernández</b><br>Coordinación Logística
+                            </div>
+                        </div>
+                    </div>
+                    """
+            
+                if st.button(":material/print: IMPRIMIR COTIZACIÓN TÉCNICA", type="primary", use_container_width=True):
+                    cot_html = generar_cotizacion_html()
+                    components.html(f"""
+                        <script>
+                            var win = window.open('', '', 'height=800,width=900');
+                            win.document.write('<html><body>{cot_html}</body></html>');
+                            win.document.close();
+                            win.onload = function() {{ win.print(); win.close(); }};
+                        </script>
+                    """, height=0)
     
             elif st.session_state.menu_sub == "ANALISIS MENSUAL":
                 # --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
