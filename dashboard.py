@@ -5039,14 +5039,24 @@ else:
                     </div>
                     """
             
+                # --- BOTÓN DE IMPRESIÓN REFORZADO ---
                 if st.button(":material/print: IMPRIMIR COTIZACIÓN TÉCNICA", type="primary", use_container_width=True):
                     cot_html = generar_cotizacion_html()
+                    
+                    # Usamos un componente de Streamlit con un script más directo
                     components.html(f"""
                         <script>
-                            var win = window.open('', '', 'height=800,width=900');
-                            win.document.write('<html><body>{cot_html}</body></html>');
-                            win.document.close();
-                            win.onload = function() {{ win.print(); win.close(); }};
+                            var win = window.open('', '_blank', 'height=800,width=900');
+                            if (win) {{
+                                win.document.write('<html><body>{cot_html}</body></html>');
+                                win.document.close();
+                                win.focus();
+                                setTimeout(function() {{
+                                    win.print();
+                                }}, 500);
+                            }} else {{
+                                alert('Amor, por favor permite las ventanas emergentes para poder imprimir.');
+                            }}
                         </script>
                     """, height=0)
     
