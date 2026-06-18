@@ -7594,7 +7594,7 @@ else:
                                         df_log['COSTO'] = [r[1] for r in res]
                                         
                                         df_log = df_log.rename(columns={col_folio: "Factura"})
-                                        cols_deseadas = ["Factura", "RECOMENDACION", "Transporte", "DIRECCION", "COSTO", "Transporte", "Nombre_Cliente", "Nombre_Extran", "Quantity", "DESTINO"]
+                                        cols_deseadas = ["Factura", "RECOMENDACION", "Transporte", "DIRECCION", "COSTO", "Nombre_Cliente", "Nombre_Extran", "Quantity", "DESTINO"]
                                         cols_finales = [c for c in cols_deseadas if c in df_log.columns]
                                         
                                         st.session_state.df_analisis = df_log[cols_finales]
