@@ -3137,24 +3137,31 @@ else:
                         # --- FILTROS LINEALES ---
                         df_filtrado = df_consignas.copy()
                         
-                        # Conversión para el filtro de mes
+                        # Preparamos la columna de mes para el filtro
                         df_filtrado['MES_TEMP'] = pd.to_datetime(df_filtrado['F.DOC'], errors='coerce', dayfirst=True).dt.strftime('%B')
                         
                         col1, col2, col3, col4 = st.columns(4)
                         
+                        # Filtro Mes (Selectbox única)
                         with col1:
-                            meses = st.multiselect("Mes", options=sorted(df_filtrado['MES_TEMP'].dropna().unique()))
+                            meses_opciones = ["TODOS"] + sorted([m for m in df_filtrado['MES_TEMP'].dropna().unique()])
+                            mes_sel = st.selectbox("Mes", meses_opciones)
+                            
+                        # Filtros de búsqueda libre
                         with col2:
-                            clientes = st.multiselect("Cliente", options=sorted(df_filtrado['DESTINATARIO'].dropna().unique().astype(str)))
+                            cliente_busq = st.text_input("Buscar Cliente")
                         with col3:
-                            talones = st.multiselect("Talón", options=sorted(df_filtrado['TALON'].dropna().unique().astype(str)))
+                            talon_busq = st.text_input("Buscar Talón")
                         with col4:
                             ref_busqueda = st.text_input("Ref. (Observación 1)")
                     
                         # Aplicar filtros
-                        if meses: df_filtrado = df_filtrado[df_filtrado['MES_TEMP'].isin(meses)]
-                        if clientes: df_filtrado = df_filtrado[df_filtrado['DESTINATARIO'].isin(clientes)]
-                        if talones: df_filtrado = df_filtrado[df_filtrado['TALON'].astype(str).isin(talones)]
+                        if mes_sel != "TODOS":
+                            df_filtrado = df_filtrado[df_filtrado['MES_TEMP'] == mes_sel]
+                        if cliente_busq:
+                            df_filtrado = df_filtrado[df_filtrado['DESTINATARIO'].astype(str).str.contains(cliente_busq, case=False, na=False)]
+                        if talon_busq:
+                            df_filtrado = df_filtrado[df_filtrado['TALON'].astype(str).str.contains(talon_busq, case=False, na=False)]
                         if ref_busqueda:
                             df_filtrado = df_filtrado[df_filtrado['OBSERVACION 1'].astype(str).str.contains(ref_busqueda, case=False, na=False)]
                     
