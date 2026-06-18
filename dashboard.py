@@ -7612,13 +7612,33 @@ else:
                 # --- BLOQUE 2: SMART ROUTING & ANALISIS ---
                 # Totalmente independiente y alineado a la raíz de la app
                 # ==================================================================================
+                # --- BLOQUE 2: SMART ROUTING & ANALISIS ---
                 if "df_analisis" in st.session_state:
                     st.markdown("---")
                     st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
                     
-                    p = st.session_state.df_analisis
+                    p = st.session_state.df_analisis.copy()
+                
+                    # --- LIMPIEZA FORZADA PARA EL EDITOR ---
+                    # 1. Asegurar que los nombres de columnas sean strings y únicos
+                    p.columns = [str(c) for c in p.columns]
+                    
+                    # 2. Si hay columnas duplicadas, las renombramos para que no haya conflicto
+                    if p.columns.duplicated().any():
+                        cols = []
+                        for i, col in enumerate(p.columns):
+                            if col in cols:
+                                cols.append(f"{col}_{i}")
+                            else:
+                                cols.append(col)
+                        p.columns = cols
+                
+                    # 3. Eliminar columnas que no tengan nombre o sean nulas
+                    p = p.loc[:, ~p.columns.isna()]
+                    
                     modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
                     
+                    # Ahora el editor debería funcionar sin errores
                     p_editado = st.data_editor(
                         p, use_container_width=True, hide_index=True,
                         column_config={
