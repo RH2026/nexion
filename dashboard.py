@@ -9079,7 +9079,24 @@ else:
                 st.title("💸 Control de Gastos")
                 st.info("AQUÍ VA EL CONTENIDO DE TUS GASTOS")
 
-    
+        # --- LÓGICA DE VISUALIZACIÓN PARA EL MÓDULO ENFOQUE ---
+        elif st.session_state.menu_main == "ENFOQUE":
+            
+            if st.session_state.menu_sub == "MORENO":
+                st.subheader("ENFOQUE: MORENO")
+                # Aquí irán los campos, tablas o métricas para Moreno
+                st.info("Configuración de vista para Moreno...")
+                
+            elif st.session_state.menu_sub == "VAZQUEZ":
+                st.subheader("ENFOQUE: VAZQUEZ")
+                # Aquí irán los campos, tablas o métricas para Vazquez
+                st.info("Configuración de vista para Vazquez...")
+                
+            elif st.session_state.menu_sub == "MIGUEL":
+                st.subheader("ENFOQUE: MIGUEL")
+                # Aquí irán los campos, tablas o métricas para Miguel
+                st.info("Configuración de vista para Miguel...")
+                
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
         <div class="footer">
