@@ -9089,15 +9089,15 @@ else:
                     /* Estilos Generales y de Tarjetas */
                     .kpi-card { background: #242c33; padding: 15px; border-radius: 12px; border: 1px solid #343e47; text-align: center; margin-bottom: 20px; transition: 0.3s; }
                     .kpi-card:hover { border-color: #5DADE2; transform: translateY(-3px); }
-                    .kpi-label { color: #A4B9C8; font-size: 9px; font-weight: 700; letter-spacing: 2px; margin-bottom: 5px; }
-                    .kpi-value { color: white; font-size: 18px; font-weight: 700; }
-                    .kpi-pct { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
-                    .bar-bg { background-color: #0B1014; border-radius: 10px; height: 4px; width: 100%; }
-                    .bar-fill { height: 4px; border-radius: 10px; }
+                    .kpi-label { color: #A4B9C8; font-size: 10px; font-weight: 700; letter-spacing: 2px; margin-bottom: 5px; }
+                    .kpi-value { color: white; font-size: 20px; font-weight: 700; }
+                    .kpi-pct { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+                    .bar-bg { background-color: #0B1014; border-radius: 10px; height: 5px; width: 100%; }
+                    .bar-fill { height: 5px; border-radius: 10px; }
                     
                     /* Estilo de Pestañas (Tabs) Jypesa */
                     div[data-baseweb="tab-list"] { gap: 15px; border-bottom: 2px solid #34495E; margin-bottom: 20px; }
-                    div[data-baseweb="tab"] { background-color: transparent !important; color: #8B9BB4 !important; font-weight: 700; font-size: 12px; letter-spacing: 1px; border: none !important; padding-bottom: 10px; }
+                    div[data-baseweb="tab"] { background-color: transparent !important; color: #8B9BB4 !important; font-weight: 700; font-size: 13px; letter-spacing: 1px; border: none !important; padding-bottom: 10px; }
                     div[aria-selected="true"] { color: #00FFAA !important; border-bottom: 3px solid #00FFAA !important; }
                     </style>
                 """, unsafe_allow_html=True)
@@ -9116,19 +9116,23 @@ else:
                         df[col] = pd.to_datetime(df[col].str.replace(r'[^0-9/]', '', regex=True), dayfirst=True, errors='coerce', format='mixed')
                     return df
                 
-                                
                 # --- FILTRO GLOBAL ---
                 try:
                     df = cargar_datos()
                     df['MES_PROG'] = df['PROGRAMACION'].dt.to_period('M')
                     meses = sorted(df['MES_PROG'].dropna().unique(), reverse=True)
-                    mes_sel = st.selectbox("Seleccionar Mes de Programación", options=["TODAS"] + [m.strftime('%Y-%m') for m in meses])
+                    
+                    # Filtro por defecto: Mes actual
+                    mes_actual = pd.Period(datetime.datetime.now(), freq='M')
+                    opciones_mes = [m.strftime('%Y-%m') for m in meses]
+                    default_index = opciones_mes.index(mes_actual.strftime('%Y-%m')) if mes_actual.strftime('%Y-%m') in opciones_mes else 0
+                    
+                    mes_sel = st.selectbox("Seleccionar Mes de Programación", options=["TODAS"] + opciones_mes, index=default_index + 1 if default_index != -1 else 0)
                     
                     # --- SISTEMA DE TABS ---
                     tab1, tab2, tab3, tab4, tab5 = st.tabs(["KPI DESPACHOS", "KPI DESPACHO FLETERAS", "KPI MUESTRAS", "CONFIG", "BITÁCORA"])
                 
                     with tab1:
-                        # Lógica de datos aplicada al tab 1
                         if mes_sel == "TODAS":
                             df_vol = df[df['FECHA DE ENVIO'].notna()].copy()
                         else:
@@ -9146,26 +9150,26 @@ else:
                         with c2: render_card(ok, tot, "A Tiempo", "#39da8a")
                         with c3: render_card(no, tot, "Fuera de Meta", "#ff5b5c")
                 
-                        st.markdown("<p style='font-size:11px; font-weight:bold; color:#54AFE7; margin-top:15px; margin-bottom:10px;'>🔍 DETALLE DE OPERACIÓN</p>", unsafe_allow_html=True)
+                        st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; margin-top:15px; margin-bottom:10px;'>🔍 DETALLE DE OPERACIÓN</p>", unsafe_allow_html=True)
                         df_vol['EMIS_STR'] = df_vol['PROGRAMACION'].dt.strftime('%d/%m/%Y').fillna("S/D")
                         df_vol['ENVIO_STR'] = df_vol['FECHA DE ENVIO'].dt.strftime('%d/%m/%Y').fillna("S/D")
                         
-                        alto_detalle = min(len(df_vol) * 70 + 20, 500)
+                        alto_detalle = min(len(df_vol) * 85 + 20, 500)
                         html_detalle = f"""
                         <div style="font-family: sans-serif;">
                             <style>
                                 ::-webkit-scrollbar {{ width: 6px; }}
                                 ::-webkit-scrollbar-thumb {{ background: #2ecc71; border-radius: 10px; }}
-                                .row-detalle {{ background: #263238; border-left: 4px solid; border-radius: 8px; padding: 10px; margin-bottom: 6px; display: flex; align-items: center; transition: 0.3s; }}
+                                .row-detalle {{ background: #263238; border-left: 5px solid; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; transition: 0.3s; }}
                                 .row-detalle:hover {{ background: #2d3b42; transform: translateX(3px); }}
-                                .col-box {{ flex: 1; padding: 0 5px; }}
+                                .col-box {{ flex: 1; padding: 0 8px; }}
                             </style>
                             {"".join([f'''
                             <div class="row-detalle" style="border-left-color: {'#00FFAA' if row['Estado_KPI']=='A TIEMPO' else '#FF4B4B'};">
-                                <div class="col-box"><div style="font-size:7px; opacity:0.5; color:white;">PEDIDO</div><div style="color:#00FFAA; font-weight:700; font-size:12px;">{row['FACTURA']}</div></div>
-                                <div class="col-box"><div style="font-size:7px; opacity:0.5; color:white;">PROGRAMACIÓN</div><div style="color:white; font-size:10px;">{row['EMIS_STR']}</div></div>
-                                <div class="col-box"><div style="font-size:7px; opacity:0.5; color:white;">SALIDA ALMACÉN</div><div style="color:white; font-size:10px;">{row['ENVIO_STR']}</div></div>
-                                <div class="col-box" style="text-align:right;"><div style="color:{'#00FFAA' if row['Estado_KPI']=='A TIEMPO' else '#FF4B4B'}; font-weight:700; font-size:10px;">{row['Estado_KPI']}</div></div>
+                                <div class="col-box"><div style="font-size:8px; opacity:0.6; color:white;">PEDIDO</div><div style="color:#00FFAA; font-weight:700; font-size:14px;">{row['FACTURA']}</div></div>
+                                <div class="col-box"><div style="font-size:8px; opacity:0.6; color:white;">PROGRAMACIÓN</div><div style="color:white; font-size:12px;">{row['EMIS_STR']}</div></div>
+                                <div class="col-box"><div style="font-size:8px; opacity:0.6; color:white;">SALIDA ALMACÉN</div><div style="color:white; font-size:12px;">{row['ENVIO_STR']}</div></div>
+                                <div class="col-box" style="text-align:right;"><div style="color:{'#00FFAA' if row['Estado_KPI']=='A TIEMPO' else '#FF4B4B'}; font-weight:700; font-size:12px;">{row['Estado_KPI']}</div></div>
                             </div>''' for _, row in df_vol.iterrows()])}
                         </div>"""
                         components.html(html_detalle, height=alto_detalle, scrolling=True)
