@@ -8,11 +8,10 @@ import streamlit.components.v1 as components
 # Configuración de página
 st.set_page_config(page_title="Nexion: Dashboard KPIs", layout="wide")
 
-# --- CSS ELITE - ALINEACIÓN CORREGIDA ---
+# --- CSS ELITE ---
 st.markdown("""
     <style>
-    .kpi-card { background: #242c33; padding: 15px; border-radius: 12px; border: 1px solid #343e47; text-align: center; margin-bottom: 20px; transition: 0.3s; }
-    .kpi-card:hover { border-color: #5DADE2; transform: translateY(-3px); }
+    .kpi-card { background: #242c33; padding: 15px; border-radius: 12px; border: 1px solid #343e47; text-align: center; margin-bottom: 20px; }
     .kpi-label { color: #A4B9C8; font-size: 9px; font-weight: 700; letter-spacing: 2px; margin-bottom: 5px; }
     .kpi-value { color: white; font-size: 18px; font-weight: 700; }
     .kpi-pct { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
@@ -43,15 +42,18 @@ try:
     meses = sorted(df['MES_PROG'].dropna().unique(), reverse=True)
     mes_sel = st.selectbox("Seleccionar Mes de Programación", options=["TODAS"] + [m.strftime('%Y-%m') for m in meses])
     
+    # Filtro
     if mes_sel == "TODAS":
         df_vol = df[df['FECHA DE ENVIO'].notna()].copy()
     else:
         df_vol = df[(df['MES_PROG'] == pd.Period(mes_sel, freq='M')) & (df['FECHA DE ENVIO'].notna())].copy()
 
+    # Cálculo
     df_vol['Estado_KPI'] = df_vol.apply(lambda x: "A TIEMPO" if (x['FECHA DE ENVIO'] - x['PROGRAMACION']) <= timedelta(days=1) else "FUERA DE TIEMPO", axis=1)
 
     tot, ok, no = len(df_vol), len(df_vol[df_vol['Estado_KPI'] == "A TIEMPO"]), len(df_vol[df_vol['Estado_KPI'] != "A TIEMPO"])
 
+    # Tarjetas
     c1, c2, c3 = st.columns(3)
     def render_card(val, total, lab, col):
         porc = (val / total * 100) if total > 0 else 0
@@ -61,6 +63,7 @@ try:
     with c2: render_card(ok, tot, "A Tiempo", "#39da8a")
     with c3: render_card(no, tot, "Fuera de Meta", "#ff5b5c")
 
+    # Detalle con Scroll y alineación
     st.markdown("<p style='font-size:11px; font-weight:bold; color:#54AFE7; margin-top:15px; margin-bottom:10px;'>🔍 DETALLE DE OPERACIÓN</p>", unsafe_allow_html=True)
     
     df_vol['EMIS_STR'] = df_vol['PROGRAMACION'].dt.strftime('%d/%m/%Y').fillna("S/D")
@@ -73,12 +76,12 @@ try:
         <style>
             ::-webkit-scrollbar {{ width: 6px; }}
             ::-webkit-scrollbar-thumb {{ background: #2ecc71; border-radius: 10px; }}
-            .card-detalle {{ background: #263238; border-left: 4px solid; border-radius: 8px; padding: 10px 15px; margin-bottom: 6px; display: flex; align-items: center; transition: 0.3s; }}
-            .card-detalle:hover {{ border-color: #38bdf8 !important; background: #2d3b42; transform: translateX(3px); }}
-            .col-box { flex: 1; min-width: 100px; }
+            .row-detalle {{ background: #263238; border-left: 4px solid; border-radius: 8px; padding: 10px; margin-bottom: 6px; display: flex; align-items: center; transition: 0.3s; }}
+            .row-detalle:hover {{ background: #2d3b42; transform: translateX(3px); }}
+            .col-box {{ flex: 1; padding: 0 5px; }}
         </style>
         {"".join([f'''
-        <div class="card-detalle" style="border-left-color: {'#00FFAA' if row['Estado_KPI']=='A TIEMPO' else '#FF4B4B'};">
+        <div class="row-detalle" style="border-left-color: {'#00FFAA' if row['Estado_KPI']=='A TIEMPO' else '#FF4B4B'};">
             <div class="col-box"><div style="font-size:7px; opacity:0.5; color:white;">PEDIDO</div><div style="color:#00FFAA; font-weight:700; font-size:12px;">{row['FACTURA']}</div></div>
             <div class="col-box"><div style="font-size:7px; opacity:0.5; color:white;">PROGRAMACIÓN</div><div style="color:white; font-size:10px;">{row['EMIS_STR']}</div></div>
             <div class="col-box"><div style="font-size:7px; opacity:0.5; color:white;">SALIDA ALMACÉN</div><div style="color:white; font-size:10px;">{row['ENVIO_STR']}</div></div>
