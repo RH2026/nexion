@@ -9116,8 +9116,7 @@ else:
                         df[col] = pd.to_datetime(df[col].str.replace(r'[^0-9/]', '', regex=True), dayfirst=True, errors='coerce', format='mixed')
                     return df
                 
-                st.title("📊 Nexion: Análisis de Despacho 24h")
-                
+                                
                 # --- FILTRO GLOBAL ---
                 try:
                     df = cargar_datos()
@@ -9126,7 +9125,7 @@ else:
                     mes_sel = st.selectbox("Seleccionar Mes de Programación", options=["TODAS"] + [m.strftime('%Y-%m') for m in meses])
                     
                     # --- SISTEMA DE TABS ---
-                    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📂 DASHBOARD", "📊 ANÁLISIS", "📈 REPORTES", "⚙️ CONFIG", "📝 BITÁCORA"])
+                    tab1, tab2, tab3, tab4, tab5 = st.tabs(["KPI DESPACHOS", "KPI DESPACHO FLETERAS", "KPI MUESTRAS", "CONFIG", "BITÁCORA"])
                 
                     with tab1:
                         # Lógica de datos aplicada al tab 1
@@ -9178,7 +9177,6 @@ else:
                 
                 except Exception as e:
                     st.error(f"Error en Nexion: {e}")
-                st.info("Configuración de vista para Moreno...")
                 
             elif st.session_state.menu_sub == "VAZQUEZ":
                 # Aquí irán los campos, tablas o métricas para Vazquez
