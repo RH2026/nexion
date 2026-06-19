@@ -4,32 +4,30 @@ import io
 from github import Github
 from datetime import timedelta
 
-# Configuración de página
 st.set_page_config(page_title="Nexion: Dashboard KPIs", layout="wide")
 
-# --- CSS ELITE ACTUALIZADO ---
+# --- CSS ELITE CON SCROLL CONTROLADO ---
 st.markdown("""
     <style>
-    /* Estilo de Tarjetas KPI */
     .kpi-card { 
         background: #242c33; padding: 25px; border-radius: 15px; border: 1px solid #343e47; 
-        text-align: center; margin-bottom: 20px; transition: transform 0.3s ease, border-color 0.3s ease;
+        text-align: center; margin-bottom: 20px; transition: transform 0.3s ease;
     }
-    .kpi-card:hover { border-color: #5DADE2; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+    .kpi-card:hover { border-color: #5DADE2; transform: translateY(-5px); }
     .kpi-label { color: #A4B9C8; font-size: 10px; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; }
-    .kpi-value { color: white; font-size: 24px; font-weight: 700; margin-bottom: 2px; } /* Tamaño reducido */
+    .kpi-value { color: white; font-size: 24px; font-weight: 700; margin-bottom: 2px; }
     .kpi-pct { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
     .bar-bg { background-color: #0B1014; border-radius: 10px; height: 5px; width: 100%; }
     .bar-fill { height: 5px; border-radius: 10px; transition: 0.5s; }
     
-    /* Efecto Hover en filas de detalle */
+    /* Contenedor con Scroll para no hacer infinito */
+    .scroll-container { height: 550px; overflow-y: auto; padding-right: 10px; }
     .row-detalle {
         background: #263238; border: 1px solid rgba(255,255,255,0.05); border-left: 5px solid; 
         border-radius: 8px; padding: 15px 20px; margin-bottom: 8px; 
-        display: flex; justify-content: space-between; align-items: center;
-        transition: 0.3s ease;
+        display: flex; justify-content: space-between; align-items: center; transition: 0.3s ease;
     }
-    .row-detalle:hover { background: #2d3b42; transform: translateX(5px); border-color: #5DADE2 !important; cursor: pointer; }
+    .row-detalle:hover { background: #2d3b42; transform: translateX(5px); border-color: #5DADE2 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -52,27 +50,30 @@ try:
     df['MES_PROG'] = df['PROGRAMACION'].dt.to_period('M')
     meses = sorted(df['MES_PROG'].dropna().unique(), reverse=True)
     mes_sel = st.selectbox("Seleccionar Mes de Programación", options=[m.strftime('%Y-%m') for m in meses])
-    df_vol = df[df['MES_PROG'] == pd.Period(mes_sel, freq='M')].copy()
+    
+    # LÓGICA CLAVE: Solo tomamos programados en el mes Y con fecha de envío existente
+    df_vol = df[(df['MES_PROG'] == pd.Period(mes_sel, freq='M')) & (df['FECHA DE ENVIO'].notna())].copy()
 
-    df_vol = df_vol[df_vol['FECHA DE ENVIO'].notna()].copy()
+    # Cálculo KPI (24h de tolerancia)
     df_vol['Estado_KPI'] = df_vol.apply(lambda x: "A TIEMPO" if (x['FECHA DE ENVIO'] - x['PROGRAMACION']) <= timedelta(days=1) else "FUERA DE TIEMPO", axis=1)
 
-    # Métricas
     tot, ok, no = len(df_vol), len(df_vol[df_vol['Estado_KPI'] == "A TIEMPO"]), len(df_vol[df_vol['Estado_KPI'] != "A TIEMPO"])
 
     st.markdown(f"<h3 style='text-align:center; color:#5DADE2; margin-bottom:30px;'>DESEMPEÑO DESPACHOS 24H — {mes_sel}</h3>", unsafe_allow_html=True)
     
     c1, c2, c3 = st.columns(3)
-    def render_card(val, tot, lab, col):
-        porc = (val / tot * 100) if tot > 0 else 0
+    def render_card(val, total, lab, col):
+        porc = (val / total * 100) if total > 0 else 0
         st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{lab.upper()}</div><div class="kpi-value">{val}</div><div class="kpi-pct" style="color: {col};">{porc:.1f}%</div><div class="bar-bg"><div class="bar-fill" style="background-color: {col}; width: {porc}%;"></div></div></div>""", unsafe_allow_html=True)
 
     with c1: render_card(tot, tot, "Total Facturas", "#5a8dee")
     with c2: render_card(ok, tot, "A Tiempo", "#39da8a")
     with c3: render_card(no, tot, "Fuera de Meta", "#ff5b5c")
 
+    # --- DETALLE CON SCROLL CONTROLADO ---
     st.markdown("<p style='color:#54AFE7; font-weight:bold; margin-top:20px;'>🔍 DETALLE DE OPERACIÓN EN TIEMPO REAL</p>", unsafe_allow_html=True)
     
+    st.markdown('<div class="scroll-container">', unsafe_allow_html=True)
     for _, row in df_vol.iterrows():
         borde_color = '#00FFAA' if row['Estado_KPI'] == 'A TIEMPO' else '#FF4B4B'
         st.markdown(f"""
@@ -83,9 +84,10 @@ try:
                 <div style="text-align: right;"><div style="color: {borde_color}; font-weight: 800; font-size: 11px;">{row['Estado_KPI']}</div></div>
             </div>
         """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Error en Nexion: {e}")
+    st.error(f"Error en el motor Nexion: {e}")
 
 
 
