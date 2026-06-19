@@ -9102,8 +9102,9 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
+                # --- 1. BLOQUE DE FUNCIONES ---
                 @st.cache_data
-                def cargar_datos():
+                def cargar_datos_pedidos():
                     g = Github(st.secrets["GITHUB_TOKEN"])
                     repo = g.get_repo("RH2026/nexion")
                     contents = repo.get_contents("pedidos.csv", ref="main")
@@ -9115,10 +9116,53 @@ else:
                     for col in ['PROGRAMACION', 'FECHA DE ENVIO']:
                         df[col] = pd.to_datetime(df[col].str.replace(r'[^0-9/]', '', regex=True), dayfirst=True, errors='coerce', format='mixed')
                     return df
-                
-                # --- FILTRO GLOBAL ---
+
+                def render_card(val, total, lab, col):
+                    porc = (val / total * 100) if total > 0 else 0
+                    st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{lab.upper()}</div><div class="kpi-value">{val}</div><div class="kpi-pct" style="color: {col};">{porc:.1f}%</div><div class="bar-bg"><div class="bar-fill" style="background-color: {col}; width: {porc}%;"></div></div></div>""", unsafe_allow_html=True)
+
+                def modulo_kpi_subordinado():
+                    st.title("📊 Módulo de Control de KPIs")
+                    
+                    GITHUB_USER = "RH2026"
+                    GITHUB_REPO = "nexion"
+                    GITHUB_PATH = "kpi_muestras.csv" 
+                    GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+                    
+                    try:
+                        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                        r = requests.get(url, headers=headers)
+                        if r.status_code == 200:
+                            content = r.json()
+                            import base64
+                            from io import BytesIO
+                            df_kpi = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                            
+                            if not df_kpi.empty:
+                                df_kpi['FECHA'] = pd.to_datetime(df_kpi['FECHA'])
+                                resumen = df_kpi.groupby(['FECHA', 'DESTINO', 'NOMBRE DEL HOTEL']).agg(
+                                    Total_Envios=('FOLIO', 'count'),
+                                    Monto_Total=('COSTO_TOTAL', 'sum')
+                                ).reset_index()
+                        
+                                st.subheader("Resumen General de Operaciones")
+                                st.dataframe(resumen, use_container_width=True)
+                        
+                                col1, col2, col3 = st.columns(3)
+                                col1.metric("Total Envíos", len(df_kpi))
+                                col2.metric("Inversión Total", f"${df_kpi['COSTO_TOTAL'].sum():,.2f}")
+                                col3.metric("Destinos Únicos", df_kpi['DESTINO'].nunique())
+                            else:
+                                st.info("El archivo de muestras está vacío.")
+                        else:
+                            st.info("Esperando carga de información en el archivo kpi_muestras.csv...") 
+                    except Exception as e:
+                        st.error(f"Error al cargar KPIs de muestras: {e}")
+
+                # --- 2. LÓGICA PRINCIPAL Y RENDERIZADO ---
                 try:
-                    df = cargar_datos()
+                    df = cargar_datos_pedidos()
                     df['MES_PROG'] = df['PROGRAMACION'].dt.to_period('M')
                     meses = sorted(df['MES_PROG'].dropna().unique(), reverse=True)
                     
@@ -9142,10 +9186,6 @@ else:
                         tot, ok, no = len(df_vol), len(df_vol[df_vol['Estado_KPI'] == "A TIEMPO"]), len(df_vol[df_vol['Estado_KPI'] != "A TIEMPO"])
                 
                         c1, c2, c3 = st.columns(3)
-                        def render_card(val, total, lab, col):
-                            porc = (val / total * 100) if total > 0 else 0
-                            st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{lab.upper()}</div><div class="kpi-value">{val}</div><div class="kpi-pct" style="color: {col};">{porc:.1f}%</div><div class="bar-bg"><div class="bar-fill" style="background-color: {col}; width: {porc}%;"></div></div></div>""", unsafe_allow_html=True)
-                
                         with c1: render_card(tot, tot, "Total Facturas", "#5a8dee")
                         with c2: render_card(ok, tot, "A Tiempo", "#39da8a")
                         with c3: render_card(no, tot, "Fuera de Meta", "#ff5b5c")
@@ -9172,73 +9212,29 @@ else:
                                 <div class="col-box" style="text-align:right;"><div style="color:{'#00FFAA' if row['Estado_KPI']=='A TIEMPO' else '#FF4B4B'}; font-weight:700; font-size:12px;">{row['Estado_KPI']}</div></div>
                             </div>''' for _, row in df_vol.iterrows()])}
                         </div>"""
+                        import streamlit.components.v1 as components
                         components.html(html_detalle, height=alto_detalle, scrolling=True)
                 
                     with tab2: 
-                        # --- 1. CONFIGURACIÓN DEL MÓDULO ---
-                        def modulo_kpi_subordinado():
-                            st.title("📊 Módulo de Control de KPIs")
-                            
-                            # Variables de entorno para este archivo específico
-                            GITHUB_USER = "RH2026"
-                            GITHUB_REPO = "nexion"
-                            GITHUB_PATH = "kpi_muestras.csv" # Nombre de archivo único para este módulo
-                            GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-                        
-                            # --- 2. FUNCIONES DE DATOS ---
-                            def cargar_datos():
-                                try:
-                                    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
-                                    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-                                    r = requests.get(url, headers=headers)
-                                    if r.status_code == 200:
-                                        content = r.json()
-                                        df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
-                                        return df, content['sha']
-                                except:
-                                    pass
-                                return pd.DataFrame(), None
-                        
-                            # --- 3. LÓGICA DE PROCESAMIENTO ---
-                            df, sha = cargar_datos()
-                        
-                            if not df.empty:
-                                df['FECHA'] = pd.to_datetime(df['FECHA'])
-                                
-                                # Generación de KPIs
-                                resumen = df.groupby(['FECHA', 'DESTINO', 'NOMBRE DEL HOTEL']).agg(
-                                    Total_Envios=('FOLIO', 'count'),
-                                    Monto_Total=('COSTO_TOTAL', 'sum')
-                                ).reset_index()
-                        
-                                # Mostrar tabla principal
-                                st.subheader("Resumen General de Operaciones")
-                                st.dataframe(resumen, use_container_width=True)
-                        
-                                # KPIs Rápidos (Métricas clave)
-                                col1, col2, col3 = st.columns(3)
-                                col1.metric("Total Envíos", len(df))
-                                col2.metric("Inversión Total", f"${df['COSTO_TOTAL'].sum():,.2f}")
-                                col3.metric("Destinos Únicos", df['DESTINO'].nunique())
-                                
-                            else:
-                                st.info("Esperando carga de información en el archivo kpi_muestras.csv...")
-                        
-                        
+                        st.info("Reportes en desarrollo...")                      
                     
-                    with tab3: st.info("Reportes en desarrollo...")
-                    with tab4: st.info("Configuración en desarrollo...")
-                    with tab5: st.info("Bitácora en desarrollo...")
+                    with tab3: 
+                        # ¡Aquí está la magia, cariñito! Solo llamamos a la función
+                        modulo_kpi_subordinado()
+                    
+                    with tab4: 
+                        st.info("Configuración en desarrollo...")
+                    
+                    with tab5: 
+                        st.info("Bitácora en desarrollo...")
                 
                 except Exception as e:
                     st.error(f"Error en Nexion: {e}")
                 
             elif st.session_state.menu_sub == "VAZQUEZ":
-                # Aquí irán los campos, tablas o métricas para Vazquez
                 st.info("Configuración de vista para Vazquez...")
                 
             elif st.session_state.menu_sub == "MIGUEL":
-                # Aquí irán los campos, tablas o métricas para Miguel
                 st.info("Configuración de vista para Miguel...")
                 
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
