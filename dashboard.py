@@ -9124,6 +9124,7 @@ else:
                 def modulo_kpi_subordinado():
                     st.title("📊 Módulo de Control de KPIs")
                     
+                    # --- VARIABLES DE GITHUB CORREGIDAS ---
                     GITHUB_USER = "RH2026"
                     GITHUB_REPO = "nexion"
                     GITHUB_PATH = "muestras.csv" 
@@ -9140,7 +9141,10 @@ else:
                             df_kpi = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
                             
                             if not df_kpi.empty:
-                                df_kpi['FECHA'] = pd.to_datetime(df_kpi['FECHA'])
+                                # ¡Aquí está la corrección de las fechas, amor!
+                                df_kpi['FECHA'] = pd.to_datetime(df_kpi['FECHA'], format='mixed', errors='coerce')
+                                
+                                # Resumen para la tabla
                                 resumen = df_kpi.groupby(['FECHA', 'DESTINO', 'NOMBRE DEL HOTEL']).agg(
                                     Total_Envios=('FOLIO', 'count'),
                                     Monto_Total=('COSTO_TOTAL', 'sum')
@@ -9149,14 +9153,15 @@ else:
                                 st.subheader("Resumen General de Operaciones")
                                 st.dataframe(resumen, use_container_width=True)
                         
+                                # Métricas rápidas
                                 col1, col2, col3 = st.columns(3)
                                 col1.metric("Total Envíos", len(df_kpi))
                                 col2.metric("Inversión Total", f"${df_kpi['COSTO_TOTAL'].sum():,.2f}")
                                 col3.metric("Destinos Únicos", df_kpi['DESTINO'].nunique())
                             else:
-                                st.info("El archivo de muestras está vacío.")
+                                st.info("El archivo de muestras está vacío, amor.")
                         else:
-                            st.info("Esperando carga de información en el archivo muestras.csv...") 
+                            st.warning("No se pudo conectar con GitHub. Verifica el archivo.") 
                     except Exception as e:
                         st.error(f"Error al cargar KPIs de muestras: {e}")
 
