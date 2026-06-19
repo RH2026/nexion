@@ -1242,6 +1242,17 @@ else:
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
+
+                # --- NUEVO: SECCIÓN ENFOQUE (Solo visible para Rigoberto, Jmoreno y Carlos) ---
+                usuario_actual = st.session_state.get("usuario_activo", "").upper()
+                if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
+                    with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
+                        for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
+                            label = f"» {s}" if st.session_state.get("menu_sub") == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
+                                st.session_state.menu_main = "ENFOQUE"
+                                st.session_state.menu_sub = s
+                                st.rerun()
             
                 # 3. SECCIÓN DE CIERRE DE SESIÓN
                 st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
