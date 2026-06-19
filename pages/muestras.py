@@ -17,40 +17,45 @@ st.title("📊 Nexion: Dashboard de Control Logístico")
 # 1. Carga y Limpieza PROFUNDA de datos
 @st.cache_data
 def cargar_datos():
-    df = pd.read_csv('pedidos.csv')
+    # Usamos latin1 para evitar problemas con acentos en Excel
+    df = pd.read_csv('pedidos.csv', encoding='latin1')
     df.columns = df.columns.str.strip()
     
-    # Limpieza "a prueba de balas"
+    # Limpieza extrema de caracteres invisibles
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            df[col] = df[col].astype(str).str.strip()
+            
+    # Conversión "de fuerza bruta" para las fechas
     for col in ['PROGRAMACION', 'FECHA DE ENVIO']:
-        # Convertir a texto, limpiar espacios y forzar fecha
-        df[col] = df[col].astype(str).str.strip()
-        df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
-    
+        # Quitamos cualquier carácter basura que no sea número o /
+        df[col] = df[col].str.replace(r'[^0-9/]', '', regex=True)
+        # Convertimos usando formato mixto y día primero
+        df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce', format='mixed')
+        
     return df
 
 try:
     df = cargar_datos()
     
-    # --- AUDITORÍA DE DATOS (Detectar errores de captura) ---
+    # --- AUDITORÍA DE DATOS ---
     errores = df[df['PROGRAMACION'].isna() | df['FECHA DE ENVIO'].isna()]
     if not errores.empty:
-        st.error(f"⚠️ Atención: {len(errores)} registros tienen problemas de formato en fechas.")
-        with st.expander("Ver registros con errores para corregir en origen"):
-            st.dataframe(errores)
-
+        st.error(f"⚠️ Atención: {len(errores)} registros tienen fechas no reconocidas.")
+    
     # --- CÁLCULO DE KPIs ---
     total = len(df)
     validos = df.dropna(subset=['FECHA DE ENVIO', 'PROGRAMACION'])
     
-    # 1. Efectividad de Despacho
+    # Efectividad (>98%)
     pedidos_ok = validos[validos['FECHA DE ENVIO'] <= validos['PROGRAMACION']].shape[0]
     efectividad = (pedidos_ok / total * 100) if total > 0 else 0
     
-    # 2. Precisión Facturación
-    verificados = df[(df['FACTURA'].notnull()) & (df['ESTATUS'].astype(str).str.contains('ENTREGADO', case=False, na=False))].shape[0]
+    # Precisión Facturación (buscando 'ENTREGADO' en ESTATUS)
+    verificados = df[df['ESTATUS'].astype(str).str.contains('ENTREGADO', case=False, na=False)].shape[0]
     precision_fact = (verificados / total * 100) if total > 0 else 0
     
-    # 3. Muestras y Documentación
+    # Muestras y Documentos
     muestras = df[df['NOMBRE DEL CLIENTE'].astype(str).str.contains('MUESTRA', case=False, na=False)]
     docs_pendientes = df[df['INCIDENCIA'].astype(str).str.contains('DOC', case=False, na=False)]
 
@@ -72,6 +77,7 @@ try:
     
     with c2:
         st.subheader("Incidencias Recientes")
+        # Mostramos detalle de incidencias
         st.dataframe(df[df['INCIDENCIA'].notnull()][['FACTURA', 'NOMBRE DEL CLIENTE', 'INCIDENCIA']])
 
 except Exception as e:
