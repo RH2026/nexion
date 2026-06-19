@@ -6,7 +6,7 @@ from datetime import timedelta
 
 st.set_page_config(page_title="Nexion: Dashboard KPIs", layout="wide")
 
-# --- CSS ELITE CON SCROLL CONTROLADO ---
+# --- CSS ELITE CON SCROLL Y HOVER ---
 st.markdown("""
     <style>
     .kpi-card { 
@@ -20,14 +20,14 @@ st.markdown("""
     .bar-bg { background-color: #0B1014; border-radius: 10px; height: 5px; width: 100%; }
     .bar-fill { height: 5px; border-radius: 10px; transition: 0.5s; }
     
-    /* Contenedor con Scroll para no hacer infinito */
-    .scroll-container { height: 550px; overflow-y: auto; padding-right: 10px; }
+    /* Contenedor del Detalle con Scroll */
+    .scroll-container { height: 550px; overflow-y: auto; padding-right: 10px; border: 1px solid #343e47; border-radius: 10px; background: #1a2228; }
     .row-detalle {
         background: #263238; border: 1px solid rgba(255,255,255,0.05); border-left: 5px solid; 
         border-radius: 8px; padding: 15px 20px; margin-bottom: 8px; 
         display: flex; justify-content: space-between; align-items: center; transition: 0.3s ease;
     }
-    .row-detalle:hover { background: #2d3b42; transform: translateX(5px); border-color: #5DADE2 !important; }
+    .row-detalle:hover { background: #2d3b42; transform: translateX(5px); border-color: #5DADE2 !important; cursor: pointer; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -36,11 +36,14 @@ def cargar_datos():
     g = Github(st.secrets["GITHUB_TOKEN"])
     repo = g.get_repo("RH2026/nexion")
     contents = repo.get_contents("pedidos.csv", ref="main")
+    
     df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
     for col in df.columns:
         df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip().str.upper()
+    
     for col in ['PROGRAMACION', 'FECHA DE ENVIO']:
-        df[col] = pd.to_datetime(df[col].str.replace(r'[^0-9/]', '', regex=True), dayfirst=True, errors='coerce', format='mixed')
+        df[col] = pd.to_datetime(df[col].str.replace(r'[^0-9/]', '', regex=True), 
+                                 dayfirst=True, errors='coerce', format='mixed')
     return df
 
 st.title("📊 Nexion: Dashboard de Control Logístico")
@@ -51,10 +54,10 @@ try:
     meses = sorted(df['MES_PROG'].dropna().unique(), reverse=True)
     mes_sel = st.selectbox("Seleccionar Mes de Programación", options=[m.strftime('%Y-%m') for m in meses])
     
-    # LÓGICA CLAVE: Solo tomamos programados en el mes Y con fecha de envío existente
+    # Filtro: Mes seleccionado + Exclusión de los que no tienen FECHA DE ENVIO
     df_vol = df[(df['MES_PROG'] == pd.Period(mes_sel, freq='M')) & (df['FECHA DE ENVIO'].notna())].copy()
 
-    # Cálculo KPI (24h de tolerancia)
+    # Cálculo KPI (Tolerancia 24h)
     df_vol['Estado_KPI'] = df_vol.apply(lambda x: "A TIEMPO" if (x['FECHA DE ENVIO'] - x['PROGRAMACION']) <= timedelta(days=1) else "FUERA DE TIEMPO", axis=1)
 
     tot, ok, no = len(df_vol), len(df_vol[df_vol['Estado_KPI'] == "A TIEMPO"]), len(df_vol[df_vol['Estado_KPI'] != "A TIEMPO"])
@@ -70,9 +73,9 @@ try:
     with c2: render_card(ok, tot, "A Tiempo", "#39da8a")
     with c3: render_card(no, tot, "Fuera de Meta", "#ff5b5c")
 
-    # --- DETALLE CON SCROLL CONTROLADO ---
     st.markdown("<p style='color:#54AFE7; font-weight:bold; margin-top:20px;'>🔍 DETALLE DE OPERACIÓN EN TIEMPO REAL</p>", unsafe_allow_html=True)
     
+    # Aquí empieza el contenedor con scroll
     st.markdown('<div class="scroll-container">', unsafe_allow_html=True)
     for _, row in df_vol.iterrows():
         borde_color = '#00FFAA' if row['Estado_KPI'] == 'A TIEMPO' else '#FF4B4B'
@@ -87,8 +90,7 @@ try:
     st.markdown('</div>', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Error en el motor Nexion: {e}")
-
+    st.error(f"Error en Nexion: {e}")
 
 
 
