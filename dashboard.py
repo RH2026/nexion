@@ -9174,7 +9174,61 @@ else:
                         </div>"""
                         components.html(html_detalle, height=alto_detalle, scrolling=True)
                 
-                    with tab2: st.info("Análisis en desarrollo...")
+                    with tab2: 
+                        # --- 1. CONFIGURACIÓN DEL MÓDULO ---
+                        def modulo_kpi_subordinado():
+                            st.title("📊 Módulo de Control de KPIs")
+                            
+                            # Variables de entorno para este archivo específico
+                            GITHUB_USER = "RH2026"
+                            GITHUB_REPO = "nexion"
+                            GITHUB_PATH = "kpi_muestras.csv" # Nombre de archivo único para este módulo
+                            GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+                        
+                            # --- 2. FUNCIONES DE DATOS ---
+                            def cargar_datos():
+                                try:
+                                    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                                    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                                    r = requests.get(url, headers=headers)
+                                    if r.status_code == 200:
+                                        content = r.json()
+                                        df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                                        return df, content['sha']
+                                except:
+                                    pass
+                                return pd.DataFrame(), None
+                        
+                            # --- 3. LÓGICA DE PROCESAMIENTO ---
+                            df, sha = cargar_datos()
+                        
+                            if not df.empty:
+                                df['FECHA'] = pd.to_datetime(df['FECHA'])
+                                
+                                # Generación de KPIs
+                                resumen = df.groupby(['FECHA', 'DESTINO', 'NOMBRE DEL HOTEL']).agg(
+                                    Total_Envios=('FOLIO', 'count'),
+                                    Monto_Total=('COSTO_TOTAL', 'sum')
+                                ).reset_index()
+                        
+                                # Mostrar tabla principal
+                                st.subheader("Resumen General de Operaciones")
+                                st.dataframe(resumen, use_container_width=True)
+                        
+                                # KPIs Rápidos (Métricas clave)
+                                col1, col2, col3 = st.columns(3)
+                                col1.metric("Total Envíos", len(df))
+                                col2.metric("Inversión Total", f"${df['COSTO_TOTAL'].sum():,.2f}")
+                                col3.metric("Destinos Únicos", df['DESTINO'].nunique())
+                                
+                            else:
+                                st.info("Esperando carga de información en el archivo kpi_muestras.csv...")
+                        
+                        # --- 4. INTEGRACIÓN EN EL MENÚ ---
+                        # Esto es lo que pondrías en tu archivo principal de navegación
+                        if st.session_state.menu_sub == "KPI SUBORDINADO":
+                            modulo_kpi_subordinado()st.info("Análisis en desarrollo...")
+                    
                     with tab3: st.info("Reportes en desarrollo...")
                     with tab4: st.info("Configuración en desarrollo...")
                     with tab5: st.info("Bitácora en desarrollo...")
