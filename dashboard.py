@@ -9126,7 +9126,7 @@ else:
                     
                     GITHUB_USER = "RH2026"
                     GITHUB_REPO = "nexion"
-                    GITHUB_PATH = "kpi_muestras.csv" 
+                    GITHUB_PATH = "muestras.csv" 
                     GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
                     
                     try:
@@ -9156,7 +9156,7 @@ else:
                             else:
                                 st.info("El archivo de muestras está vacío.")
                         else:
-                            st.info("Esperando carga de información en el archivo kpi_muestras.csv...") 
+                            st.info("Esperando carga de información en el archivo muestras.csv...") 
                     except Exception as e:
                         st.error(f"Error al cargar KPIs de muestras: {e}")
 
