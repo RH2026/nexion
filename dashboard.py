@@ -9123,7 +9123,7 @@ else:
                     meses = sorted(df['MES_PROG'].dropna().unique(), reverse=True)
                     
                     # Filtro por defecto: Mes actual
-                    mes_actual = pd.Period(datetime.datetime.now(), freq='M')
+                    mes_actual = pd.Period(datetime.now(), freq='M')
                     opciones_mes = [m.strftime('%Y-%m') for m in meses]
                     default_index = opciones_mes.index(mes_actual.strftime('%Y-%m')) if mes_actual.strftime('%Y-%m') in opciones_mes else 0
                     
