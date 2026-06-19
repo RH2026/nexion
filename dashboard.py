@@ -9224,10 +9224,7 @@ else:
                             else:
                                 st.info("Esperando carga de información en el archivo kpi_muestras.csv...")
                         
-                        # --- 4. INTEGRACIÓN EN EL MENÚ ---
-                        # Esto es lo que pondrías en tu archivo principal de navegación
-                        if st.session_state.menu_sub == "KPI SUBORDINADO":
-                            modulo_kpi_subordinado()st.info("Análisis en desarrollo...")
+                        
                     
                     with tab3: st.info("Reportes en desarrollo...")
                     with tab4: st.info("Configuración en desarrollo...")
