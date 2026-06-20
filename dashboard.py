@@ -9122,7 +9122,6 @@ else:
                     st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{lab.upper()}</div><div class="kpi-value">{val}</div><div class="kpi-pct" style="color: {col};">{porc:.1f}%</div><div class="bar-bg"><div class="bar-fill" style="background-color: {col}; width: {porc}%;"></div></div></div>""", unsafe_allow_html=True)
 
                 def modulo_kpi_subordinado():
-                    st.markdown("<p style='font-size:18px; font-weight:bold; color:#00FFAA; margin-bottom:0px;'>📊 CONTROL DE KPIs MUESTRAS</p>", unsafe_allow_html=True)
                     
                     # --- VARIABLES DE GITHUB ---
                     GITHUB_USER = "RH2026"
