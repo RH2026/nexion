@@ -9281,7 +9281,7 @@ else:
                     
                     with tab3: 
                         # ¡Aquí está la magia, cariñito! Solo llamamos a la función
-                        modulo_kpi_subordinado()
+                        modulo_kpi_subordinado(mes_sel)
                     
                     with tab4: 
                         st.info("Configuración en desarrollo...")
