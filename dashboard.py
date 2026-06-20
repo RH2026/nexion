@@ -9121,10 +9121,10 @@ else:
                     porc = (val / total * 100) if total > 0 else 0
                     st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{lab.upper()}</div><div class="kpi-value">{val}</div><div class="kpi-pct" style="color: {col};">{porc:.1f}%</div><div class="bar-bg"><div class="bar-fill" style="background-color: {col}; width: {porc}%;"></div></div></div>""", unsafe_allow_html=True)
 
-                def modulo_kpi_subordinado():
-                    st.title("📊 Módulo de Control de KPIs")
+                def modulo_kpi_subordinado(mes_seleccionado):
+                    st.markdown("<p style='font-size:18px; font-weight:bold; color:#00FFAA; margin-bottom:0px;'>📊 CONTROL DE KPIs MUESTRAS</p>", unsafe_allow_html=True)
                     
-                    # --- VARIABLES DE GITHUB CORREGIDAS ---
+                    # --- VARIABLES DE GITHUB ---
                     GITHUB_USER = "RH2026"
                     GITHUB_REPO = "nexion"
                     GITHUB_PATH = "muestras.csv" 
@@ -9138,26 +9138,82 @@ else:
                             content = r.json()
                             import base64
                             from io import BytesIO
+                            import streamlit.components.v1 as components
+                            
                             df_kpi = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
                             
                             if not df_kpi.empty:
-                                # ¡Aquí está la corrección de las fechas, amor!
+                                # Limpieza y fechas
                                 df_kpi['FECHA'] = pd.to_datetime(df_kpi['FECHA'], format='mixed', errors='coerce')
+                                df_kpi['COSTO_TOTAL'] = pd.to_numeric(df_kpi['COSTO_TOTAL'].astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
                                 
-                                # Resumen para la tabla
-                                resumen = df_kpi.groupby(['FECHA', 'DESTINO', 'NOMBRE DEL HOTEL']).agg(
-                                    Total_Envios=('FOLIO', 'count'),
-                                    Monto_Total=('COSTO_TOTAL', 'sum')
-                                ).reset_index()
-                        
-                                st.subheader("Resumen General de Operaciones")
-                                st.dataframe(resumen, use_container_width=True)
-                        
-                                # Métricas rápidas
-                                col1, col2, col3 = st.columns(3)
-                                col1.metric("Total Envíos", len(df_kpi))
-                                col2.metric("Inversión Total", f"${df_kpi['COSTO_TOTAL'].sum():,.2f}")
-                                col3.metric("Destinos Únicos", df_kpi['DESTINO'].nunique())
+                                # --- 1. CONEXIÓN CON TU FILTRO PRINCIPAL ---
+                                df_kpi['MES_PROG'] = df_kpi['FECHA'].dt.to_period('M')
+                                if mes_seleccionado != "TODAS":
+                                    df_kpi = df_kpi[df_kpi['MES_PROG'] == pd.Period(mes_seleccionado, freq='M')].copy()
+                                
+                                if df_kpi.empty:
+                                    st.warning(f"No hay registros de muestras para el mes seleccionado.")
+                                    return
+                                
+                                # --- 2. TARJETAS ARRIBA (RENDER ÉLITE) ---
+                                total_envios = len(df_kpi)
+                                inversion_total = df_kpi['COSTO_TOTAL'].sum()
+                                destinos_unicos = df_kpi['DESTINO'].nunique()
+                                
+                                c1, c2, c3 = st.columns(3)
+                                
+                                # Tarjeta 1: Total Envíos
+                                with c1:
+                                    st.markdown(f"""
+                                    <div class="kpi-card" style="border-bottom: 3px solid #5a8dee;">
+                                        <div class="kpi-label">TOTAL ENVÍOS</div>
+                                        <div class="kpi-value">{total_envios}</div>
+                                    </div>""", unsafe_allow_html=True)
+                                
+                                # Tarjeta 2: Inversión
+                                with c2:
+                                    st.markdown(f"""
+                                    <div class="kpi-card" style="border-bottom: 3px solid #39da8a;">
+                                        <div class="kpi-label">INVERSIÓN TOTAL</div>
+                                        <div class="kpi-value" style="color:#39da8a;">${inversion_total:,.2f}</div>
+                                    </div>""", unsafe_allow_html=True)
+                                
+                                # Tarjeta 3: Destinos
+                                with c3:
+                                    st.markdown(f"""
+                                    <div class="kpi-card" style="border-bottom: 3px solid #f6c23e;">
+                                        <div class="kpi-label">DESTINOS ÚNICOS</div>
+                                        <div class="kpi-value" style="color:#f6c23e;">{destinos_unicos}</div>
+                                    </div>""", unsafe_allow_html=True)
+                                
+                                # --- 3. TABLA CHINGONA (DETALLE DE OPERACIÓN) ---
+                                st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; margin-top:5px; margin-bottom:10px;'>🔍 DETALLE DE ENVÍOS DE MUESTRAS</p>", unsafe_allow_html=True)
+                                
+                                df_kpi['FECHA_STR'] = df_kpi['FECHA'].dt.strftime('%d/%m/%Y').fillna("S/D")
+                                alto_detalle = min(len(df_kpi) * 85 + 20, 500)
+                                
+                                html_detalle = f"""
+                                <div style="font-family: sans-serif;">
+                                    <style>
+                                        ::-webkit-scrollbar {{ width: 6px; }}
+                                        ::-webkit-scrollbar-thumb {{ background: #2ecc71; border-radius: 10px; }}
+                                        .row-detalle {{ background: #263238; border-left: 5px solid #00FFAA; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; transition: 0.3s; }}
+                                        .row-detalle:hover {{ background: #2d3b42; transform: translateX(3px); }}
+                                        .col-box {{ flex: 1; padding: 0 8px; }}
+                                    </style>
+                                    {"".join([f'''
+                                    <div class="row-detalle">
+                                        <div class="col-box" style="flex: 0.7;"><div style="font-size:8px; opacity:0.6; color:white;">FOLIO</div><div style="color:#00FFAA; font-weight:700; font-size:14px;">{row.get('FOLIO', 'S/F')}</div></div>
+                                        <div class="col-box" style="flex: 0.8;"><div style="font-size:8px; opacity:0.6; color:white;">FECHA</div><div style="color:white; font-size:12px;">{row['FECHA_STR']}</div></div>
+                                        <div class="col-box" style="flex: 1.5;"><div style="font-size:8px; opacity:0.6; color:white;">HOTEL</div><div style="color:white; font-size:12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{row.get('NOMBRE DEL HOTEL', 'S/D')}</div></div>
+                                        <div class="col-box" style="flex: 1;"><div style="font-size:8px; opacity:0.6; color:white;">DESTINO</div><div style="color:white; font-size:12px;">{row.get('DESTINO', 'S/D')}</div></div>
+                                        <div class="col-box" style="text-align:right; flex: 0.8;"><div style="font-size:8px; opacity:0.6; color:white;">COSTO TOTAL</div><div style="color:#39da8a; font-weight:700; font-size:13px;">${float(row.get('COSTO_TOTAL', 0)):,.2f}</div></div>
+                                    </div>''' for _, row in df_kpi.iterrows()])}
+                                </div>"""
+                                
+                                components.html(html_detalle, height=alto_detalle, scrolling=True)
+                                
                             else:
                                 st.info("El archivo de muestras está vacío, amor.")
                         else:
