@@ -9121,7 +9121,7 @@ else:
                     porc = (val / total * 100) if total > 0 else 0
                     st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{lab.upper()}</div><div class="kpi-value">{val}</div><div class="kpi-pct" style="color: {col};">{porc:.1f}%</div><div class="bar-bg"><div class="bar-fill" style="background-color: {col}; width: {porc}%;"></div></div></div>""", unsafe_allow_html=True)
 
-                def modulo_kpi_subordinado(mes_seleccionado):
+                def modulo_kpi_subordinado():
                     st.markdown("<p style='font-size:18px; font-weight:bold; color:#00FFAA; margin-bottom:0px;'>📊 CONTROL DE KPIs MUESTRAS</p>", unsafe_allow_html=True)
                     
                     # --- VARIABLES DE GITHUB ---
@@ -9147,10 +9147,20 @@ else:
                                 df_kpi['FECHA'] = pd.to_datetime(df_kpi['FECHA'], format='mixed', errors='coerce')
                                 df_kpi['COSTO_TOTAL'] = pd.to_numeric(df_kpi['COSTO_TOTAL'].astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
                                 
-                                # --- 1. CONEXIÓN CON TU FILTRO PRINCIPAL ---
+                                # --- 1. FILTRO INDEPENDIENTE DE MUESTRAS ---
                                 df_kpi['MES_PROG'] = df_kpi['FECHA'].dt.to_period('M')
-                                if mes_seleccionado != "TODAS":
-                                    df_kpi = df_kpi[df_kpi['MES_PROG'] == pd.Period(mes_seleccionado, freq='M')].copy()
+                                meses_muestras = sorted(df_kpi['MES_PROG'].dropna().unique(), reverse=True)
+                                opciones_mes_muestras = [m.strftime('%Y-%m') for m in meses_muestras]
+                                
+                                mes_sel_muestras = st.selectbox(
+                                    "Seleccionar Mes (Muestras)", 
+                                    options=["TODAS"] + opciones_mes_muestras, 
+                                    index=0,
+                                    key="filtro_muestras"
+                                )
+
+                                if mes_sel_muestras != "TODAS":
+                                    df_kpi = df_kpi[df_kpi['MES_PROG'] == pd.Period(mes_sel_muestras, freq='M')].copy()
                                 
                                 if df_kpi.empty:
                                     st.warning(f"No hay registros de muestras para el mes seleccionado.")
@@ -9163,7 +9173,6 @@ else:
                                 
                                 c1, c2, c3 = st.columns(3)
                                 
-                                # Tarjeta 1: Total Envíos
                                 with c1:
                                     st.markdown(f"""
                                     <div class="kpi-card" style="border-bottom: 3px solid #5a8dee;">
@@ -9171,7 +9180,6 @@ else:
                                         <div class="kpi-value">{total_envios}</div>
                                     </div>""", unsafe_allow_html=True)
                                 
-                                # Tarjeta 2: Inversión
                                 with c2:
                                     st.markdown(f"""
                                     <div class="kpi-card" style="border-bottom: 3px solid #39da8a;">
@@ -9179,7 +9187,6 @@ else:
                                         <div class="kpi-value" style="color:#39da8a;">${inversion_total:,.2f}</div>
                                     </div>""", unsafe_allow_html=True)
                                 
-                                # Tarjeta 3: Destinos
                                 with c3:
                                     st.markdown(f"""
                                     <div class="kpi-card" style="border-bottom: 3px solid #f6c23e;">
@@ -9227,17 +9234,22 @@ else:
                     df['MES_PROG'] = df['PROGRAMACION'].dt.to_period('M')
                     meses = sorted(df['MES_PROG'].dropna().unique(), reverse=True)
                     
-                    # Filtro por defecto: Mes actual
-                    mes_actual = pd.Period(datetime.now(), freq='M')
-                    opciones_mes = [m.strftime('%Y-%m') for m in meses]
-                    default_index = opciones_mes.index(mes_actual.strftime('%Y-%m')) if mes_actual.strftime('%Y-%m') in opciones_mes else 0
-                    
-                    mes_sel = st.selectbox("Seleccionar Mes de Programación", options=["TODAS"] + opciones_mes, index=default_index + 1 if default_index != -1 else 0)
-                    
                     # --- SISTEMA DE TABS ---
                     tab1, tab2, tab3, tab4, tab5 = st.tabs(["KPI DESPACHOS", "KPI DESPACHO FLETERAS", "KPI MUESTRAS", "CONFIG", "BITÁCORA"])
                 
                     with tab1:
+                        # --- 1. FILTRO INDEPENDIENTE DE DESPACHOS ---
+                        mes_actual = pd.Period(datetime.now(), freq='M')
+                        opciones_mes = [m.strftime('%Y-%m') for m in meses]
+                        default_index = opciones_mes.index(mes_actual.strftime('%Y-%m')) if mes_actual.strftime('%Y-%m') in opciones_mes else 0
+                        
+                        mes_sel = st.selectbox(
+                            "Seleccionar Mes de Programación", 
+                            options=["TODAS"] + opciones_mes, 
+                            index=default_index + 1 if default_index != -1 else 0,
+                            key="filtro_despachos"
+                        )
+
                         if mes_sel == "TODAS":
                             df_vol = df[df['FECHA DE ENVIO'].notna()].copy()
                         else:
@@ -9246,11 +9258,13 @@ else:
                         df_vol['Estado_KPI'] = df_vol.apply(lambda x: "A TIEMPO" if (x['FECHA DE ENVIO'] - x['PROGRAMACION']) <= timedelta(days=1) else "FUERA DE TIEMPO", axis=1)
                         tot, ok, no = len(df_vol), len(df_vol[df_vol['Estado_KPI'] == "A TIEMPO"]), len(df_vol[df_vol['Estado_KPI'] != "A TIEMPO"])
                 
+                        # --- 2. TARJETAS ARRIBA ---
                         c1, c2, c3 = st.columns(3)
                         with c1: render_card(tot, tot, "Total Facturas", "#5a8dee")
                         with c2: render_card(ok, tot, "A Tiempo", "#39da8a")
                         with c3: render_card(no, tot, "Fuera de Meta", "#ff5b5c")
                 
+                        # --- 3. TABLA CHINGONA ---
                         st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; margin-top:15px; margin-bottom:10px;'>🔍 DETALLE DE OPERACIÓN</p>", unsafe_allow_html=True)
                         df_vol['EMIS_STR'] = df_vol['PROGRAMACION'].dt.strftime('%d/%m/%Y').fillna("S/D")
                         df_vol['ENVIO_STR'] = df_vol['FECHA DE ENVIO'].dt.strftime('%d/%m/%Y').fillna("S/D")
@@ -9280,8 +9294,8 @@ else:
                         st.info("Reportes en desarrollo...")                      
                     
                     with tab3: 
-                        # ¡Aquí está la magia, cariñito! Solo llamamos a la función
-                        modulo_kpi_subordinado(mes_sel)
+                        # Ahora llamamos a la función limpia, ¡ella misma hace todo en orden!
+                        modulo_kpi_subordinado()
                     
                     with tab4: 
                         st.info("Configuración en desarrollo...")
@@ -9292,11 +9306,11 @@ else:
                 except Exception as e:
                     st.error(f"Error en Nexion: {e}")
                 
-            elif st.session_state.menu_sub == "VAZQUEZ":
-                st.info("Configuración de vista para Vazquez...")
+        elif st.session_state.menu_sub == "VAZQUEZ":
+            st.info("Configuración de vista para Vazquez...")
                 
-            elif st.session_state.menu_sub == "MIGUEL":
-                st.info("Configuración de vista para Miguel...")
+        elif st.session_state.menu_sub == "MIGUEL":
+            st.info("Configuración de vista para Miguel...")
                 
     # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
     st.markdown(f"""
