@@ -9153,10 +9153,20 @@ else:
                                 meses_muestras = sorted(df_kpi['MES_PROG'].dropna().unique(), reverse=True)
                                 opciones_mes_muestras = [m.strftime('%Y-%m') for m in meses_muestras]
                                 
+                                # --- MAGIA PARA SELECCIONAR EL MES ACTUAL ---
+                                from datetime import datetime
+                                mes_actual_str = pd.Period(datetime.now(), freq='M').strftime('%Y-%m')
+                                
+                                # Verificamos si el mes actual existe en tu archivo de muestras
+                                if mes_actual_str in opciones_mes_muestras:
+                                    indice_defecto = opciones_mes_muestras.index(mes_actual_str) + 1 # +1 porque "TODAS" ocupa el lugar 0
+                                else:
+                                    indice_defecto = 0 # Si no hay datos de este mes, se queda en "TODAS"
+                                
                                 mes_sel_muestras = st.selectbox(
                                     "Seleccionar Mes (Muestras)", 
                                     options=["TODAS"] + opciones_mes_muestras, 
-                                    index=0,
+                                    index=indice_defecto,
                                     key="filtro_muestras"
                                 )
 
