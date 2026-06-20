@@ -9103,7 +9103,9 @@ else:
                 """, unsafe_allow_html=True)
                 
                 # --- 1. BLOQUE DE FUNCIONES ---
-                @st.cache_data
+                
+                # Le agregamos ttl=60 para que los datos estén frescos cada minuto
+                @st.cache_data(ttl=60)
                 def cargar_datos_pedidos():
                     g = Github(st.secrets["GITHUB_TOKEN"])
                     repo = g.get_repo("RH2026/nexion")
