@@ -3370,31 +3370,32 @@ else:
                 
                 with tab_pedidos:
                     # ── 1. CONFIGURACIÓN Y PERMISOS ──
+                    # ── 1. CONFIGURACIÓN Y PERMISOS ──
                     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                     REPO_NAME = "RH2026/nexion"
                     FILE_PATH = "pedidos.csv"
                     LOCK_FILE_PATH = "lock_pedidos.json"  # Archivo testigo para control de concurrencia
                     tz_gdl = pytz.timezone('America/Mexico_City')
-                    
+                                        
                     current_user = st.session_state.get("usuario_activo", "UNKNOWN")
                     AUTHORIZED_EDITORS = ["JMoreno", "Rigoberto"]
                     puede_editar = current_user in AUTHORIZED_EDITORS
-                    
+                                        
                     # LISTA CON ICONOS PARA LA VISTA DE LA APP
                     OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
                     OPCIONES_PAQUETERIA = ["", "MAS APRISA", "CANCELADO", "TRES GUERRAS", "CLIENTE PASA", "LOCAL", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS", "FEDEX", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
                     OPCIONES_SURTIDOR = ["", "MARCOS", "SANDRA", "YAZMIN", "KEVIN", "FELIX", "MARISOL", "CANCELADO"]
-                    
+                                        
                     # Función auxiliar global para limpiar textos antes de exportar o guardar
                     def quitar_iconos(val):
                         return str(val).replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
-                    
+                                        
                     # ── NUEVA FUNCIÓN AUTOMÁTICA DE CONTROL DE CANDADO (RECARGA EN TIEMPO REAL COLOIDAL) ──
                     @st.fragment(run_every=10)  # Se ejecuta sola cada 10 segundos en segundo plano sin recargar toda la página
                     def verificar_y_renderizar_bloqueo():
                         lock_info = None
                         bloqueado_por_otro = False
-                        
+                                            
                         if puede_editar:
                             try:
                                 g = Github(TOKEN)
@@ -3402,12 +3403,12 @@ else:
                                 try:
                                     lock_contents = repo.get_contents(LOCK_FILE_PATH, ref="main")
                                     lock_info = json.loads(lock_contents.decoded_content.decode('utf-8'))
-                                    
+                                                        
                                     # Validar si el bloqueo sigue vigente (Expiración de 10 minutos)
                                     lock_time = datetime.strptime(lock_info["timestamp"], "%Y-%m-%d %H:%M:%S")
                                     lock_time = tz_gdl.localize(lock_time)
                                     ahora = datetime.now(tz_gdl)
-                                    
+                                                        
                                     if (ahora - lock_time).total_seconds() < 600:  # Menos de 10 minutos
                                         # MODIFICACIÓN: Si el usuario actual y el que bloqueó pertenecen a los editores estrella, NO se bloquean entre sí
                                         if lock_info["usuario"] != current_user and not (current_user in ["JMoreno", "Rigoberto"] and lock_info["usuario"] in ["JMoreno", "Rigoberto"]):
@@ -3420,16 +3421,16 @@ else:
                                     pass
                             except Exception as e:
                                 st.error(f"Error al verificar estado de bloqueo: {e}")
-                    
+                                            
                         # Guardamos el estado actual en las variables de sesión globales de Streamlit
                         st.session_state["bloqueado_por_otro_efectivo"] = bloqueado_por_otro
-                    
+                                            
                         if bloqueado_por_otro:
                             st.error(f"⚠️ MÓDULO BLOQUEADO EN TIEMPO REAL: El usuario **{lock_info['usuario']}** está editando desde las {lock_info['hora']}. Tu acceso de escritura se ha pausado.")
                             st.session_state["puede_editar_efectivo"] = False
                         else:
                             st.session_state["puede_editar_efectivo"] = puede_editar
-                            
+                                                
                             # Si el módulo está libre y nosotros somos editores autorizados pero aún no tenemos el candado, lo creamos
                             if puede_editar and lock_info is None:
                                 try:
@@ -3450,16 +3451,16 @@ else:
                                     st.toast(f"Has tomado el control del módulo de envíos", icon="🔒")
                                 except Exception:
                                     pass
-                    
+                                        
                     # Invocamos la verificación en tiempo real
                     verificar_y_renderizar_bloqueo()
-                    
+                                        
                     # Recuperamos los valores calculados dinámicamente por nuestro fragmento
                     puede_editar_efectivo = st.session_state.get("puede_editar_efectivo", False)
                     bloqueado_por_otro = st.session_state.get("bloqueado_por_otro_efectivo", False)
-                    
+                                        
                     st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar_efectivo else '(MODO LECTURA)'}")
-                    
+                                        
                     # ── 2. LÓGICA DE CARGA ──
                     def get_data_nexion_brute():
                         if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
@@ -3468,17 +3469,18 @@ else:
                                 repo = g.get_repo(REPO_NAME)
                                 contents = repo.get_contents(FILE_PATH, ref="main")
                                 df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
-                                
+                                                    
                                 columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION", "ESTATUS"]
-                                columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "CAJAS", "PAQUETERIA", "INCIDENCIA"]
+                                # CAMBIO AQUÍ: Agregamos las dos columnas para el KPI
+                                columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "CAJAS", "PAQUETERIA", "HORA PROGRAMADA", "HORA REAL", "INCIDENCIA"]
                                 all_cols = columnas_lectura + columnas_nuevas
-                                
+                                                    
                                 for col in all_cols:
                                     if col not in df.columns:
                                         df[col] = ""
                                     else:
                                         df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip().str.upper()
-                                
+                                                    
                                 if "ESTATUS" in df.columns:
                                     def poner_iconos(val):
                                         if "PENDIENTE" in val: return "🆕 PENDIENTE"
@@ -3487,29 +3489,29 @@ else:
                                         if "CANCELADO" in val: return "❌ CANCELADO"
                                         return "🆕 PENDIENTE"
                                     df['ESTATUS'] = df['ESTATUS'].apply(poner_iconos)
-                                
+                                                    
                                 st.session_state.df_pedidos = df[all_cols]
                                 st.session_state.force_reload = False 
                             except Exception as e:
                                 st.error(f"Error de conexión: {e}")
                                 return pd.DataFrame()
                         return st.session_state.df_pedidos
-                    
+                                        
                     # ── 3. BOTÓN RECARGAR ──
                     if st.button("CLICK PARA OBTENER DATOS ACTUALIZADOS", use_container_width=True):
                         if 'df_pedidos' in st.session_state: del st.session_state.df_pedidos
                         st.session_state.force_reload = True
                         st.cache_data.clear()
                         st.rerun()
-                        
+                                            
                     st.markdown("---")
-                    
+                                        
                     # ── 4. FILTROS Y TABLA ──
                     df_actual = get_data_nexion_brute()
-                    
+                                        
                     if not df_actual.empty:
                         col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-                        
+                                            
                         with col_f1:
                             f_cliente = st.text_input("Filtrar No Cliente", value="", placeholder="Ej: 1234").upper()
                         with col_f2:
@@ -3518,7 +3520,7 @@ else:
                             f_prog = st.text_input("Filtrar Programación", value="", placeholder="Ej: 2024-05-15").upper()
                         with col_f4:
                             f_estatus = st.selectbox("Filtrar Estatus", ["TODOS"] + OPCIONES_ESTATUS)
-                        
+                                            
                         df_filtrado = df_actual.copy()
                         if f_cliente:
                             df_filtrado = df_filtrado[df_filtrado["NO CLIENTE"].str.contains(f_cliente, na=False)]
@@ -3528,7 +3530,7 @@ else:
                             df_filtrado = df_filtrado[df_filtrado["PROGRAMACION"].str.contains(f_prog, na=False)]
                         if f_estatus != "TODOS":
                             df_filtrado = df_filtrado[df_filtrado["ESTATUS"] == f_estatus]
-                        
+                                            
                         with st.form("nexion_editor_form_safe"):
                             edited_df = st.data_editor(
                                 df_filtrado,
@@ -3541,6 +3543,9 @@ else:
                                     "CAJAS": st.column_config.TextColumn("CAJAS", width="small", disabled=not puede_editar_efectivo),
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar_efectivo),
                                     "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="small", disabled=not puede_editar_efectivo),
+                                    # CAMBIO AQUÍ: Configuraciones visuales seguras para rellenar las horas
+                                    "HORA PROGRAMADA": st.column_config.TextColumn("HORA PROGRAMADA", placeholder="Ej: 11:00 AM", width="small", disabled=not puede_editar_efectivo),
+                                    "HORA REAL": st.column_config.TextColumn("HORA REAL", placeholder="Ej: 11:15 AM", width="small", disabled=not puede_editar_efectivo),
                                     "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar_efectivo),
                                     "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
@@ -3549,16 +3554,16 @@ else:
                                     "PROGRAMACION": st.column_config.TextColumn(disabled=True),
                                 }
                             )
-                            
+                                                
                             btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar_efectivo else ("🔒 Bloqueado por otro usuario" if bloqueado_por_otro else "🔒 Modo Lectura")
                             submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar_efectivo)
-                        
+                                            
                         # ── BOTÓN DE DESCARGA (AL FINAL DE TODO HASTA ABAJO Y SIN EMOJIS) ──
                         st.markdown("<br>", unsafe_allow_html=True)
                         df_descarga_limpio = df_filtrado.copy()
                         if 'ESTATUS' in df_descarga_limpio.columns:
                             df_descarga_limpio['ESTATUS'] = df_descarga_limpio['ESTATUS'].apply(quitar_iconos)
-                            
+                                                
                         csv_descarga = df_descarga_limpio.to_csv(index=False).encode('utf-8')
                         st.download_button(
                             label="📥 DESCARGAR TABLA ACTUAL EN CSV",
@@ -3567,33 +3572,33 @@ else:
                             mime="text/csv",
                             use_container_width=True
                         )
-                        
+                                            
                         # ── 5. LÓGICA DE ACTUALIZACIÓN Y LIBERACIÓN ──
                         if puede_editar_efectivo and submit_button:
                             with st.status("Sincronizando...", expanded=True) as status:
                                 try:
                                     df_final_a_subir = st.session_state.df_pedidos.copy()
                                     df_final_a_subir.update(edited_df)
-                                    
+                                                        
                                     df_limpio_git = df_final_a_subir.copy()
                                     df_limpio_git['ESTATUS'] = df_limpio_git['ESTATUS'].apply(quitar_iconos)
-                                    
+                                                        
                                     g = Github(TOKEN)
                                     repo = g.get_repo(REPO_NAME)
                                     csv_string = df_limpio_git.to_csv(index=False)
                                     contents = repo.get_contents(FILE_PATH)
                                     hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
-                                    
+                                                        
                                     # 1. Guardar base de datos actualizada
                                     repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
-                                    
+                                                        
                                     # 2. ELIMINAR EL ARCHIVO LOCK PARA LIBERAR EL MÓDULO
                                     try:
                                         lock_file_now = repo.get_contents(LOCK_FILE_PATH)
                                         repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=lock_file_now.sha)
                                     except Exception:
                                         pass
-                                    
+                                                        
                                     st.session_state.df_pedidos = df_final_a_subir
                                     status.update(label="¡Guardado y Módulo Liberado!", state="complete", expanded=False)
                                     st.toast("GitHub Actualizado Exitosamente", icon="✅")
