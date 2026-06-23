@@ -3539,13 +3539,13 @@ else:
                                 height=900,
                                 column_config={
                                     "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar_efectivo),
-                                    "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar_efectivo),
+                                    "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="small", disabled=not puede_editar_efectivo),
                                     "CAJAS": st.column_config.TextColumn("CAJAS", width="small", disabled=not puede_editar_efectivo),
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar_efectivo),
                                     "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="small", disabled=not puede_editar_efectivo),
                                     # CAMBIO AQUÍ: Configuraciones visuales seguras para rellenar las horas
-                                    "HORA PROGRAMADA": st.column_config.TextColumn("HORA PROGRAMADA", width="small", disabled=not puede_editar_efectivo),
-                                    "HORA REAL": st.column_config.TextColumn("HORA REAL", width="small", disabled=not puede_editar_efectivo),
+                                    "HORA PROGRAMADA": st.column_config.TextColumn("HORA PROGRAMADA", width="medium", disabled=not puede_editar_efectivo),
+                                    "HORA REAL": st.column_config.TextColumn("HORA REAL", width="medium", disabled=not puede_editar_efectivo),
                                     "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar_efectivo),
                                     "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
