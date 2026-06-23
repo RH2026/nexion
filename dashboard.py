@@ -3544,8 +3544,8 @@ else:
                                     "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar_efectivo),
                                     "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="small", disabled=not puede_editar_efectivo),
                                     # CAMBIO AQUÍ: Configuraciones visuales seguras para rellenar las horas
-                                    "HORA PROGRAMADA": st.column_config.TextColumn("HORA PROGRAMADA", placeholder="Ej: 11:00 AM", width="small", disabled=not puede_editar_efectivo),
-                                    "HORA REAL": st.column_config.TextColumn("HORA REAL", placeholder="Ej: 11:15 AM", width="small", disabled=not puede_editar_efectivo),
+                                    "HORA PROGRAMADA": st.column_config.TextColumn("HORA PROGRAMADA", width="small", disabled=not puede_editar_efectivo),
+                                    "HORA REAL": st.column_config.TextColumn("HORA REAL", width="small", disabled=not puede_editar_efectivo),
                                     "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar_efectivo),
                                     "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
                                     "NO CLIENTE": st.column_config.TextColumn(disabled=True),
