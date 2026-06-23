@@ -3190,7 +3190,7 @@ else:
                     FILE_PATH = "amazon.csv"
                     API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
                     headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
-                
+                    
                     try:
                         response = requests.get(API_URL, headers=headers)
                         if response.status_code == 200:
@@ -3204,7 +3204,7 @@ else:
                                 if col in df.columns:
                                     df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).replace(['nan', '', 'None'], '0').astype(float)
                             df = df.sort_values(by='FECHA', ascending=False)
-                
+                    
                             # --- 1. DASHBOARD PANTALLA ---
                             st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
                             
@@ -3215,14 +3215,14 @@ else:
                             m2.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Valor Carga</div><div style="color:white; font-size:22px; font-weight:800;">${df["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
                             m3.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Costo Flete</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
                             m4.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">% Logístico</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
-                
+                    
                             # --- 2. FILTRO ---
                             st.divider()
                             df['MES'] = df['FECHA'].dt.strftime('%B %Y')
                             opciones_mes = ["TODO EL HISTÓRICO"] + list(df['MES'].unique())
                             mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
                             df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
-                
+                    
                             # --- 3. CONTENIDO HTML ---
                             data_dict = df_mes.fillna('').to_dict('records')
                             costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
@@ -3236,58 +3236,19 @@ else:
                                 <style>
                                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
                                     body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
-                                    
                                     #screen-view {{ display: block; }}
                                     #print-view {{ display: none; }}
-                                    
                                     .scroller {{ height: 480px; overflow-y: auto; padding-right: 10px; margin-bottom: 10px; }}
                                     ::-webkit-scrollbar {{ width: 6px; }}
                                     ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
                                     .scroller:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
-                
-                                    .card-row {{
-                                        background: #243038; border-radius: 12px; margin-bottom: 10px; padding: 15px 25px;
-                                        display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr; gap: 15px; align-items: center;
-                                        border: 1px solid rgba(255,255,255,0.05);
-                                    }}
+                                    .card-row {{ background: #243038; border-radius: 12px; margin-bottom: 10px; padding: 15px 25px; display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr; gap: 15px; align-items: center; border: 1px solid rgba(255,255,255,0.05); }}
                                     .label {{ font-size: 8px; color: #90a4ae; font-weight: 800; text-transform: uppercase; }}
                                     .v-main {{ font-size: 14px; font-weight: 800; color: #2ecc71; }}
                                     .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; }}
-                
-                                    /* BOTÓN AJUSTADO: DELGADO, SIN BOLD Y HOVER #00A0A8 */
-                                    .btn-print-master {{
-                                        background-color: #243038;
-                                        color: #ffffff;
-                                        border: 1px solid rgba(255,255,255,0.1);
-                                        border-radius: 8px;
-                                        padding: 6px 20px;
-                                        font-size: 12px;
-                                        font-weight: 400; 
-                                        cursor: pointer;
-                                        width: 100%;
-                                        transition: all 0.3s ease;
-                                        display: flex;
-                                        justify-content: center;
-                                        align-items: center;
-                                        text-transform: uppercase;
-                                        letter-spacing: 1px;
-                                    }}
-                                    .btn-print-master:hover {{
-                                        background-color: #00A0A8;
-                                        color: #ffffff;
-                                        border-color: #00A0A8;
-                                    }}
-                
-                                    @media print {{
-                                        @page {{ size: A4; margin: 10mm; }}
-                                        #screen-view {{ display: none !important; }}
-                                        #print-view {{ display: block !important; color: black !important; background: white !important; }}
-                                        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
-                                        th {{ background: #f0f0f0 !important; border: 1px solid #000; padding: 6px; font-size: 8px; text-transform: uppercase; }}
-                                        td {{ border: 1px solid #ddd; padding: 6px; font-size: 8px; }}
-                                        .header-print {{ border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 15px; }}
-                                        .resumen-caja {{ border: 1.5px solid #000; padding: 10px; margin: 15px 0; font-size: 11px; }}
-                                    }}
+                                    .btn-print-master {{ background-color: #243038; color: #ffffff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 20px; font-size: 12px; font-weight: 400; cursor: pointer; width: 100%; transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; text-transform: uppercase; letter-spacing: 1px; }}
+                                    .btn-print-master:hover {{ background-color: #00A0A8; color: #ffffff; border-color: #00A0A8; }}
+                                    @media print {{ @page {{ size: A4; margin: 10mm; }} #screen-view {{ display: none !important; }} #print-view {{ display: block !important; color: black !important; background: white !important; }} table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }} th {{ background: #f0f0f0 !important; border: 1px solid #000; padding: 6px; font-size: 8px; text-transform: uppercase; }} td {{ border: 1px solid #ddd; padding: 6px; font-size: 8px; }} .header-print {{ border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 15px; }} .resumen-caja {{ border: 1.5px solid #000; padding: 10px; margin: 15px 0; font-size: 11px; }} }}
                                 </style>
                             </head>
                             <body>
@@ -3303,7 +3264,9 @@ else:
                                             <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
                                                 <div class="label">DESTINO / ESTATUS</div>
                                                 <div class="v-txt">{item.get('AMAZON', 'AMAZON')}</div>
-                                                <div style="font-size:10px; color:#3498db;">{item.get('ESTATUS', 'PROCESADO')}</div>
+                                                <div style="font-size:10px; color:{'#f39c12' if item.get('ESTATUS') == 'PENDIENTE' else '#2ecc71' if item.get('ESTATUS') == 'ENTREGADA' else '#3498db'};">
+                                                    {item.get('ESTATUS', 'PROCESADO')}
+                                                </div>
                                             </div>
                                             <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
                                                 <div class="label">BULTOS / COSTO CAJA</div>
@@ -3323,12 +3286,9 @@ else:
                                         ''' for item in data_dict])}
                                     </div>
                                     <div style="padding: 10px 0;">
-                                        <button class="btn-print-master" onclick="window.print()">
-                                            GENERAR REPORTE DE OPERACIÓN (PDF)
-                                        </button>
+                                        <button class="btn-print-master" onclick="window.print()">GENERAR REPORTE DE OPERACIÓN (PDF)</button>
                                     </div>
                                 </div>
-                
                                 <div id="print-view">
                                     <div class="header-print">
                                         <table style="border:none;">
@@ -3345,14 +3305,11 @@ else:
                                             </tr>
                                         </table>
                                     </div>
-                                    
                                     <h2 style="text-align:center; text-decoration:underline; font-size:16px; margin: 15px 0;">REPORTE OPERATIVO DE CONSIGNAS AMAZON</h2>
-                                    
                                     <div class="resumen-caja">
                                         <b>RESUMEN EJECUTIVO:</b> El KPI logístico promedio del periodo es de <b>{costo_log_real:.2f}%</b> contra un target objetivo del <b>7.50%</b>. 
                                         Se movilizaron un total de <b>{int(df_mes["CAJAS"].sum()):,}</b> cajas con un valor de mercancía de <b>${df_mes["VALOR MERCANCIA"].sum():,.2f}</b>.
                                     </div>
-                
                                     <table>
                                         <thead>
                                             <tr>
@@ -3373,15 +3330,14 @@ else:
                                                 <td>{item.get('FECHA').strftime('%d/%m/%Y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</td>
                                                 <td>{item.get('AMAZON')}</td>
                                                 <td>{item.get('ESTATUS')}</td>
-                                                <td style="text-align:center;">{int(item.get('CAJAS'))}</td>
+                                                <td style="text-align:center;">{int(item.get('CAJAS', 0))}</td>
                                                 <td style="text-align:right;">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f}</td>
-                                                <td style="text-align:right;">${float(item.get('TOTAL')):,.2f}</td>
-                                                <td style="text-align:center; font-weight:bold;">{float(item.get('PORCENTAJE LOGISTICO')):,.2f}%</td>
+                                                <td style="text-align:right;">${float(item.get('TOTAL', 0)):,.2f}</td>
+                                                <td style="text-align:center; font-weight:bold;">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}%</td>
                                             </tr>
                                             ''' for item in data_dict])}
                                         </tbody>
                                     </table>
-                
                                     <div style="margin-top: 60px; display: flex; justify-content: space-between;">
                                         <div style="width: 220px; border-top: 1.5px solid #000; text-align: center; font-size: 10px;">
                                             <br><b>Rigoberto Hernández</b><br>Coordinador Logística Nacional
@@ -3395,7 +3351,6 @@ else:
                             </html>
                             """
                             components.html(html_content, height=650, scrolling=False)
-                
                         else:
                             st.error("Error al conectar con GitHub.")
                     except Exception as e:
