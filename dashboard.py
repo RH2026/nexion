@@ -2787,10 +2787,10 @@ else:
                                         
                                         <div class="w-full md:w-44 shrink-0">
                                             <div class="label-mini">{item['semana']}</div>
-                                            <div class="text-lg font-black text-white italic tracking-tighter leading-none min-h-[20px]">
+                                            <div class="text-sm font-black text-white italic tracking-tighter leading-none min-h-[20px]">
                                                 {item['oc']}
                                             </div>
-                                            <div class="text-[10px] text-sky-400 font-bold mt-1">
+                                            <div class="text-[12px] text-sky-400 font-bold mt-1">
                                                 ITEM: {item['item_no']}
                                             </div>
                                             </div>
