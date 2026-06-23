@@ -2790,7 +2790,10 @@ else:
                                             <div class="text-lg font-black text-white italic tracking-tighter leading-none min-h-[20px]">
                                                 {item['oc']}
                                             </div>
-                                        </div>
+                                            <div class="text-[10px] text-sky-400 font-bold mt-1">
+                                                ITEM: {item['item_no']}
+                                            </div>
+                                            </div>
                                         
                                         <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                             <div>
@@ -2961,9 +2964,14 @@ else:
                         df_entregas = pd.DataFrame()
                         
                         # Asignamos la PO Customer para el título principal
+                        # Mapeamos tus columnas exactas
+                        df_entregas = pd.DataFrame()
                         df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
                         
-                        # Extraemos el PRODUCTO
+                        # --- AQUÍ AGREGAMOS LA LÍNEA PARA EL ITEM NO ---
+                        df_entregas['item_no'] = df_raw.get('Item No.', pd.Series(dtype=str)).fillna('').astype(str)
+                        # -----------------------------------------------
+                        
                         df_entregas['producto'] = df_raw.get('PRODUCTO', pd.Series(dtype=str)).fillna('').astype(str)
                         
                         # Combinamos Cajas y Tarimas para el Volumen (limpiando "nan")
