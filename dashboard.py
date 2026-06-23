@@ -33,6 +33,10 @@ import google.generativeai as genai
 import random
 import calendar
 
+# 1. Inicialización del estado para controlar qué se debe imprimir
+if "reporte_a_imprimir" not in st.session_state:
+    st.session_state.reporte_a_imprimir = None
+
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
@@ -5473,31 +5477,38 @@ else:
                             """
                         
                         # --- BOTONES DE IMPRESIÓN (RESULTADOS Y MEMORIA TÉCNICA) ---
+                        # --- ESTRUCTURA DE LA INTERFAZ ---
                         col_print1, col_print2 = st.columns(2)
                         
                         with col_print1:
                             if st.button(":material/print: GENERAR REPORTE GRÁFICO", type="primary", use_container_width=True):
-                                reporte_html = generar_reporte_grafico()
-                                components.html(f"""
-                                    <script>
-                                        var win = window.open('', '', 'height=1100,width=950');
-                                        win.document.write(`<html><body>{reporte_html}</body></html>`);
-                                        win.document.close();
-                                        win.onload = function() {{ win.print(); win.close(); }};
-                                    </script>
-                                """, height=0)
+                                # Guardamos el contenido en el estado
+                                st.session_state.reporte_a_imprimir = generar_reporte_grafico()
                         
                         with col_print2:
-                            if st.button(":material/calculate: IMPRIMIR CALCULO APLICADO", use_container_width=True):
-                                memoria_html = generar_memoria_tecnica()
-                                components.html(f"""
-                                    <script>
-                                        var win = window.open('', '', 'height=1100,width=950');
-                                        win.document.write(`<html><body>{memoria_html}</body></html>`);
-                                        win.document.close();
-                                        win.onload = function() {{ win.print(); win.close(); }};
-                                    </script>
-                                """, height=0)
+                            if st.button(":material/calculate: IMPRIMIR CÁLCULO APLICADO", use_container_width=True):
+                                # Guardamos el contenido en el estado
+                                st.session_state.reporte_a_imprimir = generar_memoria_tecnica()
+                        
+                        # --- DISPARADOR (TRIGGER) DE LA VENTANA DE IMPRESIÓN ---
+                        # Este bloque se ejecuta solo cuando el estado tiene contenido
+                        if st.session_state.reporte_a_imprimir is not None:
+                            html_template = f"""
+                                <script>
+                                    var win = window.open('', '_blank', 'height=800,width=800');
+                                    win.document.write('<html><body>' + `{st.session_state.reporte_a_imprimir}` + '</body></html>');
+                                    win.document.close();
+                                    win.onload = function() {{ 
+                                        win.print(); 
+                                        // Opcional: descomenta la siguiente línea si quieres cerrar la ventana al terminar
+                                        // win.close(); 
+                                    }};
+                                </script>
+                            """
+                            components.html(html_template, height=0)
+                            
+                            # IMPORTANTE: Limpiamos el estado para que no se re-ejecute al interactuar con otros elementos
+                            st.session_state.reporte_a_imprimir = None
                 
                     # --- 8. VISTA DE GRÁFICO (COMPARATIVO) ---
                     else:
