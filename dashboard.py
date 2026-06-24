@@ -9184,23 +9184,23 @@ else:
                     pct_perfecto = (dias_perfectos / dias_trabajados) * 100 if dias_trabajados > 0 else 0
                     pct_malo = (dias_malos / dias_trabajados) * 100 if dias_trabajados > 0 else 0
                 
-                    # 6. Dibujar Tarjetas Élite (Ajustadas en altura)
+                    # 6. Dibujar Tarjetas Élite (Ajustadas en altura y con porcentajes más grandes)
                     tarjetas_html = f"""
                     <div style="display: flex; gap: 15px; margin-bottom: 20px;">
                         <div style="flex: 1; background-color: #1E252B; padding: 8px 15px; border-radius: 6px; border-bottom: 3px solid #3B82F6; text-align: center;">
                             <p style="margin: 0; font-size: 10px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS TRABAJADOS</p>
                             <h2 style="margin: 2px 0; color: white; font-size: 24px;">{dias_trabajados} <span style="font-size:12px; color:#5DADE2;">días</span></h2>
-                            <p style="margin: 0; font-size: 11px; color: #3B82F6;">Total del mes</p>
+                            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #3B82F6;">Total del mes</p>
                         </div>
                         <div style="flex: 1; background-color: #1E252B; padding: 8px 15px; border-radius: 6px; border-bottom: 3px solid #10B981; text-align: center;">
                             <p style="margin: 0; font-size: 10px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS PERFECTOS</p>
                             <h2 style="margin: 2px 0; color: white; font-size: 24px;">{dias_perfectos} <span style="font-size:12px; color:#10B981;">días</span></h2>
-                            <p style="margin: 0; font-size: 11px; color: #10B981;">{pct_perfecto:.1f}% de efectividad</p>
+                            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #10B981;">{pct_perfecto:.1f}% de efectividad</p>
                         </div>
                         <div style="flex: 1; background-color: #1E252B; padding: 8px 15px; border-radius: 6px; border-bottom: 3px solid #EF4444; text-align: center;">
                             <p style="margin: 0; font-size: 10px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS CON RETRASOS</p>
                             <h2 style="margin: 2px 0; color: white; font-size: 24px;">{dias_malos} <span style="font-size:12px; color:#EF4444;">días</span></h2>
-                            <p style="margin: 0; font-size: 11px; color: #EF4444;">{pct_malo:.1f}% fuera de meta</p>
+                            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #EF4444;">{pct_malo:.1f}% fuera de meta</p>
                         </div>
                     </div>
                     """
@@ -9237,7 +9237,7 @@ else:
                                 <div style="color:#FF4B4B; font-size:14px; font-weight:bold;">{row['TOTAL_RETRASOS']}</div>
                             </div>
                             <div class="col-box" style="text-align:right; flex: 1.2;">
-                                <div style="color:{color_estatus}; font-weight:900; font-size:13px; letter-spacing: 0.5px;">{row['ESTATUS_DIA']}</div>
+                                <div style="color:{color_estatus}; font-weight:900; font-size:11px; letter-spacing: 0.5px;">{row['ESTATUS_DIA']}</div>
                             </div>
                         </div>
                         '''
