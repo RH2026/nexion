@@ -9361,7 +9361,7 @@ else:
                 
                     with tab2: 
                         # Llamar al nuevo módulo pasándole la información actualizada
-                        modulo_kpi_fleteras(df_actual)                    
+                        modulo_kpi_fleteras(df)                    
                     
                     with tab3: 
                         # Ahora llamamos a la función limpia, ¡ella misma hace todo en orden!
