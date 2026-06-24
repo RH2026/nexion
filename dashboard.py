@@ -3383,7 +3383,7 @@ else:
                                         
                     # LISTA CON ICONOS PARA LA VISTA DE LA APP
                     OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
-                    OPCIONES_PAQUETERIA = ["", "MAS APRISA", "CANCELADO", "TRES GUERRAS", "CLIENTE PASA", "LOCAL", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS", "FEDEX", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
+                    OPCIONES_PAQUETERIA = ["", "MAS APRISA", "CANCELADO", "TRES GUERRAS", "CLIENTE PASA", "LOCAL", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "FLETES REGRESO", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS", "FEDEX", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
                     OPCIONES_SURTIDOR = ["", "MARCOS", "SANDRA", "YAZMIN", "KEVIN", "FELIX", "MARISOL", "CANCELADO", "LOCAL", "SOLO FACTURA", "CEDIS", "EXPORTACION"]
                                         
                     # Función auxiliar global para limpiar textos antes de exportar o guardar
