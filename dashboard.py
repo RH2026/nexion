@@ -9106,113 +9106,138 @@ else:
                     # 1. Preparar los datos
                     df_kpi = df.copy()
                     
-                    # Asegurar que existan las columnas por si acaso
+                    # Asegurar que existan las columnas
                     if 'HORA PROGRAMADA' not in df_kpi.columns: df_kpi['HORA PROGRAMADA'] = ''
                     if 'HORA REAL' not in df_kpi.columns: df_kpi['HORA REAL'] = ''
                     if 'PAQUETERIA' not in df_kpi.columns: df_kpi['PAQUETERIA'] = ''
                     
-                    # --- FILTRO MAESTRO 1: EXCLUIR LO QUE NO ES FLETERA ---
-                    # Aquí metemos exactamente lo que NO queremos contar
+                    # --- FILTRO MAESTRO: EXCLUIR LO QUE NO ES FLETERA ---
                     no_fleteras = ["", "CANCELADO", "CLIENTE PASA", "LOCAL", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
                     df_kpi = df_kpi[~df_kpi['PAQUETERIA'].isin(no_fleteras)]
-                    
-                    # --- FILTRO MAESTRO 2: SOLO EL DÍA DE HOY ---
-                    tz_gdl = pytz.timezone('America/Mexico_City')
-                    fecha_hoy = datetime.now(tz_gdl).date()
-                    
-                    # Convertimos la columna FECHA DE ENVIO a formato de fecha para poder compararla
-                    df_kpi['fecha_envio_dt'] = pd.to_datetime(df_kpi['FECHA DE ENVIO'], format='mixed', dayfirst=True, errors='coerce')
-                    df_kpi = df_kpi[df_kpi['fecha_envio_dt'].dt.date == fecha_hoy]
                     
                     # Nos quedamos solo con los que ya llenaron sus horas
                     df_kpi = df_kpi[(df_kpi['HORA PROGRAMADA'] != '') & (df_kpi['HORA REAL'] != '')]
                     
                     if df_kpi.empty:
-                        st.info("Aún no hay despachos a fleteras registrados el día de hoy.")
+                        st.info("Aún no hay despachos a fleteras registrados con horarios.")
                         return
                 
-                    # 2. Calcular los tiempos
-                    df_kpi['prog_dt'] = pd.to_datetime(df_kpi['HORA PROGRAMADA'], format='%H:%M', errors='coerce')
-                    df_kpi['real_dt'] = pd.to_datetime(df_kpi['HORA REAL'], format='%H:%M', errors='coerce')
-                    
-                    df_kpi = df_kpi.dropna(subset=['prog_dt', 'real_dt'])
+                    # 2. Manejo de Fechas y Filtro de Mes
+                    df_kpi['fecha_envio_dt'] = pd.to_datetime(df_kpi['FECHA DE ENVIO'], format='mixed', dayfirst=True, errors='coerce')
+                    df_kpi = df_kpi.dropna(subset=['fecha_envio_dt'])
                     
                     if df_kpi.empty:
-                        st.warning("Revisa el formato de las horas. Recuerda usar formato 24 hrs (ej. 14:30)")
+                        st.warning("Faltan fechas de envío válidas para agrupar.")
                         return
                 
-                    # Calculamos la diferencia en minutos
-                    df_kpi['MINUTOS DESVIACION'] = (df_kpi['real_dt'] - df_kpi['prog_dt']).dt.total_seconds() / 60
+                    # Crear lista de meses disponibles
+                    df_kpi['MES_PROG'] = df_kpi['fecha_envio_dt'].dt.to_period('M')
+                    meses_disponibles = sorted(df_kpi['MES_PROG'].unique(), reverse=True)
+                    opciones_mes = [m.strftime('%Y-%m') for m in meses_disponibles]
                     
-                    # 3. Clasificar Estatus (Sin emojis para que el render se vea limpio)
-                    df_kpi['ESTATUS DESPACHO'] = df_kpi['MINUTOS DESVIACION'].apply(
-                        lambda x: 'A TIEMPO' if x <= 0 else 'FUERA DE META'
+                    # Seleccionar mes actual por defecto
+                    tz_gdl = pytz.timezone('America/Mexico_City')
+                    mes_actual_str = datetime.now(tz_gdl).strftime('%Y-%m')
+                    indice_defecto = opciones_mes.index(mes_actual_str) if mes_actual_str in opciones_mes else 0
+                    
+                    mes_sel = st.selectbox(
+                        "Seleccionar Mes a Evaluar",
+                        options=opciones_mes,
+                        index=indice_defecto,
+                        key="filtro_mes_fleteras"
                     )
                     
-                    # 4. Calcular métricas para las tarjetas
-                    total_despachos = len(df_kpi)
-                    a_tiempo = len(df_kpi[df_kpi['MINUTOS DESVIACION'] <= 0])
-                    fuera_meta = total_despachos - a_tiempo
+                    # Aplicar el filtro de mes seleccionado
+                    df_mes = df_kpi[df_kpi['MES_PROG'] == pd.Period(mes_sel, freq='M')].copy()
                     
-                    pct_tiempo = (a_tiempo / total_despachos) * 100 if total_despachos > 0 else 0
-                    pct_fuera = (fuera_meta / total_despachos) * 100 if total_despachos > 0 else 0
+                    if df_mes.empty:
+                        st.info(f"No hay operación de fleteras para el mes de {mes_sel}.")
+                        return
                 
-                    # 5. Dibujar Tarjetas Élite
+                    # 3. Calcular retrasos a nivel factura (para luego sumarlos por día)
+                    df_mes['prog_dt'] = pd.to_datetime(df_mes['HORA PROGRAMADA'], format='%H:%M', errors='coerce')
+                    df_mes['real_dt'] = pd.to_datetime(df_mes['HORA REAL'], format='%H:%M', errors='coerce')
+                    df_mes = df_mes.dropna(subset=['prog_dt', 'real_dt'])
+                    
+                    df_mes['MINUTOS DESVIACION'] = (df_mes['real_dt'] - df_mes['prog_dt']).dt.total_seconds() / 60
+                    df_mes['TUVO_RETRASO'] = df_mes['MINUTOS DESVIACION'] > 0
+                
+                    # --- 4. LA MAGIA: AGRUPACIÓN DIARIA ---
+                    df_diario = df_mes.groupby(df_mes['fecha_envio_dt'].dt.date).agg(
+                        TOTAL_DESPACHOS=('PAQUETERIA', 'count'),
+                        TOTAL_RETRASOS=('TUVO_RETRASO', 'sum')
+                    ).reset_index()
+                    
+                    df_diario.rename(columns={'fecha_envio_dt': 'FECHA'}, inplace=True)
+                    df_diario['A_TIEMPO'] = df_diario['TOTAL_DESPACHOS'] - df_diario['TOTAL_RETRASOS']
+                    
+                    # Clasificar el día: Si tuvo al menos 1 retraso, el día ya no fue perfecto
+                    df_diario['ESTATUS_DIA'] = df_diario['TOTAL_RETRASOS'].apply(
+                        lambda x: 'DÍA PERFECTO' if x == 0 else 'CON RETRASOS'
+                    )
+                    
+                    # 5. Calcular métricas para las tarjetas de arriba (días del mes)
+                    dias_trabajados = len(df_diario)
+                    dias_perfectos = len(df_diario[df_diario['ESTATUS_DIA'] == 'DÍA PERFECTO'])
+                    dias_malos = dias_trabajados - dias_perfectos
+                    
+                    pct_perfecto = (dias_perfectos / dias_trabajados) * 100 if dias_trabajados > 0 else 0
+                    pct_malo = (dias_malos / dias_trabajados) * 100 if dias_trabajados > 0 else 0
+                
+                    # 6. Dibujar Tarjetas Élite
                     tarjetas_html = f"""
                     <div style="display: flex; gap: 15px; margin-bottom: 20px;">
                         <div style="flex: 1; background-color: #1E252B; padding: 15px; border-radius: 6px; border-bottom: 3px solid #3B82F6; text-align: center;">
-                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">TOTAL DESPACHOS HOY</p>
-                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{total_despachos}</h2>
-                            <p style="margin: 0; font-size: 12px; color: #3B82F6;">100.0%</p>
+                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS TRABAJADOS</p>
+                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{dias_trabajados} <span style="font-size:14px; color:#5DADE2;">días</span></h2>
+                            <p style="margin: 0; font-size: 12px; color: #3B82F6;">Total del mes</p>
                         </div>
                         <div style="flex: 1; background-color: #1E252B; padding: 15px; border-radius: 6px; border-bottom: 3px solid #10B981; text-align: center;">
-                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">A TIEMPO</p>
-                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{a_tiempo}</h2>
-                            <p style="margin: 0; font-size: 12px; color: #10B981;">{pct_tiempo:.1f}%</p>
+                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS PERFECTOS</p>
+                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{dias_perfectos} <span style="font-size:14px; color:#10B981;">días</span></h2>
+                            <p style="margin: 0; font-size: 12px; color: #10B981;">{pct_perfecto:.1f}% de efectividad</p>
                         </div>
                         <div style="flex: 1; background-color: #1E252B; padding: 15px; border-radius: 6px; border-bottom: 3px solid #EF4444; text-align: center;">
-                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">FUERA DE META</p>
-                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{fuera_meta}</h2>
-                            <p style="margin: 0; font-size: 12px; color: #EF4444;">{pct_fuera:.1f}%</p>
+                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS CON RETRASOS</p>
+                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{dias_malos} <span style="font-size:14px; color:#EF4444;">días</span></h2>
+                            <p style="margin: 0; font-size: 12px; color: #EF4444;">{pct_malo:.1f}% fuera de meta</p>
                         </div>
                     </div>
                     """
                     st.markdown(tarjetas_html, unsafe_allow_html=True)
                 
-                    # 6. RENDER CHINGÓN PARA EL SUBORDINADO
-                    st.markdown("<p style='font-size: 13px; color: #3498db; font-weight: bold;'>🔵 DETALLE DIARIO DE OPERACIÓN EN MUELLE</p>", unsafe_allow_html=True)
+                    # 7. RENDER CHINGÓN AGRUPADO POR DÍA
+                    st.markdown("<p style='font-size: 13px; color: #3498db; font-weight: bold;'>🔵 RESUMEN DIARIO DE OPERACIÓN</p>", unsafe_allow_html=True)
                     
-                    # Ordenamos del más reciente al más antiguo para que lo último quede arriba
-                    df_kpi = df_kpi.sort_values(by='HORA PROGRAMADA', ascending=False)
+                    # Ordenamos del día más reciente al más antiguo
+                    df_diario = df_diario.sort_values(by='FECHA', ascending=False)
+                    alto_detalle = min(len(df_diario) * 85 + 20, 500)
                     
-                    alto_detalle = min(len(df_kpi) * 85 + 20, 500)
-                    
-                    # Construimos las filas con la misma magia CSS de tu sistema
                     filas_html = ""
-                    for _, row in df_kpi.iterrows():
-                        color_estatus = '#00FFAA' if row['ESTATUS DESPACHO'] == 'A TIEMPO' else '#FF4B4B'
+                    for _, row in df_diario.iterrows():
+                        color_estatus = '#00FFAA' if row['ESTATUS_DIA'] == 'DÍA PERFECTO' else '#FF4B4B'
+                        fecha_str = row['FECHA'].strftime('%d/%m/%Y')
                         
                         filas_html += f'''
                         <div class="row-detalle" style="border-left-color: {color_estatus};">
-                            <div class="col-box" style="flex: 1;">
-                                <div style="font-size:8px; opacity:0.6; color:white;">FACTURA</div>
-                                <div style="color:#00FFAA; font-weight:700; font-size:14px;">{row.get('FACTURA', 'S/D')}</div>
-                            </div>
-                            <div class="col-box" style="flex: 1.5;">
-                                <div style="font-size:8px; opacity:0.6; color:white;">FLETERA</div>
-                                <div style="color:white; font-size:12px; font-weight:bold;">{row.get('PAQUETERIA', 'S/D')}</div>
+                            <div class="col-box" style="flex: 1.2;">
+                                <div style="font-size:8px; opacity:0.6; color:white;">FECHA</div>
+                                <div style="color:white; font-weight:700; font-size:15px;">{fecha_str}</div>
                             </div>
                             <div class="col-box" style="flex: 1;">
-                                <div style="font-size:8px; opacity:0.6; color:white;">HORA PROGRAMADA</div>
-                                <div style="color:white; font-size:12px;">{row.get('HORA PROGRAMADA', '')}</div>
+                                <div style="font-size:8px; opacity:0.6; color:white;">TOTAL FLETERAS</div>
+                                <div style="color:white; font-size:14px; font-weight:bold;">{row['TOTAL_DESPACHOS']} envíos</div>
                             </div>
                             <div class="col-box" style="flex: 1;">
-                                <div style="font-size:8px; opacity:0.6; color:white;">SALIDA REAL</div>
-                                <div style="color:white; font-size:12px;">{row.get('HORA REAL', '')}</div>
+                                <div style="font-size:8px; opacity:0.6; color:white;">A TIEMPO</div>
+                                <div style="color:#00FFAA; font-size:14px; font-weight:bold;">{row['A_TIEMPO']}</div>
                             </div>
-                            <div class="col-box" style="text-align:right; flex: 1;">
-                                <div style="color:{color_estatus}; font-weight:700; font-size:12px;">{row['ESTATUS DESPACHO']}</div>
-                                <div style="font-size:9px; color:{color_estatus}; opacity:0.8;">{abs(int(row['MINUTOS DESVIACION']))} min {'tarde' if row['MINUTOS DESVIACION'] > 0 else 'antes'}</div>
+                            <div class="col-box" style="flex: 1;">
+                                <div style="font-size:8px; opacity:0.6; color:white;">CON RETRASO</div>
+                                <div style="color:#FF4B4B; font-size:14px; font-weight:bold;">{row['TOTAL_RETRASOS']}</div>
+                            </div>
+                            <div class="col-box" style="text-align:right; flex: 1.2;">
+                                <div style="color:{color_estatus}; font-weight:900; font-size:13px; letter-spacing: 0.5px;">{row['ESTATUS_DIA']}</div>
                             </div>
                         </div>
                         '''
@@ -9222,7 +9247,7 @@ else:
                         <style>
                             ::-webkit-scrollbar {{ width: 6px; }}
                             ::-webkit-scrollbar-thumb {{ background: #2ecc71; border-radius: 10px; }}
-                            .row-detalle {{ background: #263238; border-left: 5px solid; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; transition: 0.3s; }}
+                            .row-detalle {{ background: #263238; border-left: 5px solid; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
                             .row-detalle:hover {{ background: #2d3b42; transform: translateX(3px); }}
                             .col-box {{ padding: 0 8px; }}
                         </style>
