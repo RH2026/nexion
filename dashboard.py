@@ -6220,6 +6220,8 @@ else:
                         st.error("Falta el hotel")
                     elif not f_soli:
                         st.error("Falta el nombre de quien solicita (Solicitante / Agente)")
+                    elif not f_con: # <--- AQUÍ ESTÁ EL BLOQUEO NUEVO, AMOR
+                        st.error("Falta el nombre y teléfono de quien recibe")
                     elif not prods_actuales: 
                         st.error("Selecciona al menos un producto")
                     else:
