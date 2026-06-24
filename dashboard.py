@@ -9102,6 +9102,85 @@ else:
                     porc = (val / total * 100) if total > 0 else 0
                     st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{lab.upper()}</div><div class="kpi-value">{val}</div><div class="kpi-pct" style="color: {col};">{porc:.1f}%</div><div class="bar-bg"><div class="bar-fill" style="background-color: {col}; width: {porc}%;"></div></div></div>""", unsafe_allow_html=True)
 
+                def modulo_kpi_fleteras(df):
+                    st.markdown("<br>### ⏱️ INDICADORES DE DESPACHO EN MUELLE", unsafe_allow_html=True)
+                    
+                    # 1. Preparar los datos (filtrar solo los que tienen ambas horas registradas)
+                    df_kpi = df.copy()
+                    
+                    # Limpiamos los espacios y filtramos donde sí haya datos capturados
+                    df_kpi = df_kpi[(df_kpi['HORA PROGRAMADA'] != '') & (df_kpi['HORA REAL'] != '')]
+                    
+                    if df_kpi.empty:
+                        st.info("Aún no hay registros de horas despachadas para analizar.")
+                        return
+                
+                    # 2. Calcular los tiempos convirtiendo el texto a formato de fecha/hora
+                    # Usamos errors='coerce' para que si alguien teclea algo raro (como "hola"), no se rompa la app
+                    df_kpi['prog_dt'] = pd.to_datetime(df_kpi['HORA PROGRAMADA'], format='%H:%M', errors='coerce')
+                    df_kpi['real_dt'] = pd.to_datetime(df_kpi['HORA REAL'], format='%H:%M', errors='coerce')
+                    
+                    # Eliminamos las filas donde hubo error de dedo al escribir la hora
+                    df_kpi = df_kpi.dropna(subset=['prog_dt', 'real_dt'])
+                    
+                    if df_kpi.empty:
+                        st.warning("Revisa el formato de las horas. Recuerda usar formato 24 hrs (ej. 14:30)")
+                        return
+                
+                    # Calculamos la diferencia en minutos
+                    df_kpi['MINUTOS DESVIACION'] = (df_kpi['real_dt'] - df_kpi['prog_dt']).dt.total_seconds() / 60
+                    
+                    # 3. Clasificar si fue a tiempo o hubo retraso
+                    df_kpi['ESTATUS DESPACHO'] = df_kpi['MINUTOS DESVIACION'].apply(
+                        lambda x: '🟢 A TIEMPO' if x <= 0 else '🔴 FUERA DE META'
+                    )
+                    
+                    # 4. Calcular métricas para las tarjetas
+                    total_despachos = len(df_kpi)
+                    a_tiempo = len(df_kpi[df_kpi['MINUTOS DESVIACION'] <= 0])
+                    fuera_meta = total_despachos - a_tiempo
+                    
+                    pct_tiempo = (a_tiempo / total_despachos) * 100 if total_despachos > 0 else 0
+                    pct_fuera = (fuera_meta / total_despachos) * 100 if total_despachos > 0 else 0
+                
+                    # 5. Dibujar las tarjetas con HTML/CSS manteniendo tu diseño actual
+                    tarjetas_html = f"""
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <div style="flex: 1; background-color: #1E252B; padding: 15px; border-radius: 6px; border-bottom: 3px solid #3B82F6; text-align: center;">
+                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">TOTAL DESPACHOS</p>
+                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{total_despachos}</h2>
+                            <p style="margin: 0; font-size: 12px; color: #3B82F6;">100.0%</p>
+                        </div>
+                        <div style="flex: 1; background-color: #1E252B; padding: 15px; border-radius: 6px; border-bottom: 3px solid #10B981; text-align: center;">
+                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">A TIEMPO</p>
+                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{a_tiempo}</h2>
+                            <p style="margin: 0; font-size: 12px; color: #10B981;">{pct_tiempo:.1f}%</p>
+                        </div>
+                        <div style="flex: 1; background-color: #1E252B; padding: 15px; border-radius: 6px; border-bottom: 3px solid #EF4444; text-align: center;">
+                            <p style="margin: 0; font-size: 11px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">FUERA DE META</p>
+                            <h2 style="margin: 5px 0; color: white; font-size: 32px;">{fuera_meta}</h2>
+                            <p style="margin: 0; font-size: 12px; color: #EF4444;">{pct_fuera:.1f}%</p>
+                        </div>
+                    </div>
+                    """
+                    st.markdown(tarjetas_html, unsafe_allow_html=True)
+                
+                    # 6. Mostrar el desglose detallado para el subordinado
+                    st.markdown("<p style='font-size: 13px; color: #3498db; font-weight: bold;'>🔵 DETALLE DE OPERACIÓN EN MUELLE</p>", unsafe_allow_html=True)
+                    
+                    # Preparamos la tabla final solo con lo que importa para este análisis
+                    columnas_mostrar = ['FACTURA', 'PAQUETERIA', 'HORA PROGRAMADA', 'HORA REAL', 'MINUTOS DESVIACION', 'ESTATUS DESPACHO']
+                    df_mostrar = df_kpi[columnas_mostrar].sort_values(by='HORA PROGRAMADA', ascending=False)
+                    
+                    st.dataframe(
+                        df_mostrar,
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                
+                
+                
+                
                 def modulo_kpi_subordinado():
                     
                     # --- VARIABLES DE GITHUB ---
@@ -9281,7 +9360,8 @@ else:
                         components.html(html_detalle, height=alto_detalle, scrolling=True)
                 
                     with tab2: 
-                        st.info("Reportes en desarrollo...")                      
+                        # Llamar al nuevo módulo pasándole la información actualizada
+                        modulo_kpi_fleteras(df_actual)                    
                     
                     with tab3: 
                         # Ahora llamamos a la función limpia, ¡ella misma hace todo en orden!
