@@ -9237,7 +9237,7 @@ else:
                                 <div style="color:#FF4B4B; font-size:14px; font-weight:bold;">{row['TOTAL_RETRASOS']}</div>
                             </div>
                             <div class="col-box" style="text-align:right; flex: 1.2;">
-                                <div style="color:{color_estatus}; font-weight:900; font-size:11px; letter-spacing: 0.5px;">{row['ESTATUS_DIA']}</div>
+                                <div style="color:{color_estatus}; font-weight:500; font-size:11px; letter-spacing: 0.5px;">{row['ESTATUS_DIA']}</div>
                             </div>
                         </div>
                         '''
