@@ -5630,7 +5630,7 @@ else:
                                 <p style="margin: 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #444;">Distribución y Logística | 2026</p>
                             </div>
                             <div style="text-align: right;">
-                                <h2 style="margin: 0; font-size: 15px; text-decoration: underline; font-weight: 900;">ORDEN DE ENVÍO COSTOS ESPECIALES</h2>
+                                <h2 style="margin: 0; font-size: 15px; text-decoration: underline; font-weight: 900;">ORDEN DE EMBARQUE</h2>
                                 <p style="margin: 2px 0 0 0; font-size: 12px;"><b>{paq_nombre} - {tipo_pago}</b></p>
                             </div>
                         </div>
