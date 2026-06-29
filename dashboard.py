@@ -2777,7 +2777,7 @@ else:
                                     font-size: 9px;
                                     text-transform: uppercase;
                                     font-weight: 800;
-                                    color: rgba(255,255,255,0.3);
+                                    color: #FFFFFF;
                                     letter-spacing: 0.5px;
                                 }}
                             </style>
@@ -2801,7 +2801,7 @@ else:
                                         
                                         <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                             <div>
-                                                <div class="label-mini">Referencia / Destino</div>
+                                                <div class="label-mini">Fecha Compromiso</div>
                                                 <div class="text-xs text-slate-300 italic truncate min-h-[16px]">
                                                     {item['entrega_texto']}
                                                 </div>
