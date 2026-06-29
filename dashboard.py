@@ -2777,7 +2777,7 @@ else:
                                     font-size: 9px;
                                     text-transform: uppercase;
                                     font-weight: 800;
-                                    color: #F2F2F2;
+                                    color: #BFBFBF;
                                     letter-spacing: 0.5px;
                                 }}
                             </style>
