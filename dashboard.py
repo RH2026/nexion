@@ -6239,7 +6239,8 @@ else:
                             "NUMERO_GUIA": "", 
                             "COSTO_GUIA": 0.0,
                             "CANTIDAD_TOTAL": total_cantidad,
-                            "COSTO_TOTAL": round(total_costo_prods, 2)
+                            "COSTO_TOTAL": round(total_costo_prods, 2),
+                            "COMENTARIOS": f_coment # <--- LÍNEA NUEVA AGREGADA AQUÍ
                         }
                         
                         for p in precios.keys():
@@ -6505,7 +6506,7 @@ else:
                                         "", 
                                         datos_fol["CONTACTO"], 
                                         prods_re, 
-                                        "RE-IMPRESIÓN DE LOGÍSTICA", 
+                                        datos_fol.get("COMENTARIOS", "RE-IMPRESIÓN DE LOGÍSTICA"), # <--- LECTURA DINÁMICA
                                         paq_a_imprimir, 
                                         pago_a_imprimir 
                                     )
