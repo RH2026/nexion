@@ -5149,10 +5149,14 @@ else:
                     total_consignas = 0
                     total_fnacional = 0
                     
-                    if 'CONCEPTO' in df_filtered.columns:
-                        total_muestras = df_filtered[df_filtered['CONCEPTO'] == 'MUESTRAS/RECOLECCIONES']['COSTO DE FLETE'].sum()
-                        total_consignas = df_filtered[df_filtered['CONCEPTO'] == 'CONSIGNAS']['COSTO DE FLETE'].sum()
-                        total_fnacional = df_filtered[df_filtered['CONCEPTO'] == 'F NACIONAL']['COSTO DE FLETE'].sum()
+                    if 'CONCEPTO' in df_filtered.columns and 'COSTO DE LA GUIA' in df_filtered.columns:
+                        # Estandarizamos los textos por si el Excel trae espacios invisibles o minúsculas
+                        conceptos_limpios = df_filtered['CONCEPTO'].astype(str).str.strip().str.upper()
+                        
+                        # Sumamos específicamente la columna 'COSTO DE LA GUIA'
+                        total_muestras = df_filtered[conceptos_limpios == 'MUESTRAS/RECOLECCIONES']['COSTO DE LA GUIA'].sum()
+                        total_consignas = df_filtered[conceptos_limpios == 'CONSIGNAS']['COSTO DE LA GUIA'].sum()
+                        total_fnacional = df_filtered[conceptos_limpios == 'F NACIONAL']['COSTO DE LA GUIA'].sum()
         
                     # --- LÓGICA DE HIERRO INTELIGENTE: COMPARATIVA MES ANTERIOR ---
                     meses_map_inv = {k: v for v, k in meses_nombres.items()}
