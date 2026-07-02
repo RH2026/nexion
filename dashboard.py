@@ -5388,9 +5388,23 @@ else:
                             fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
                             hora_hoy = ahora_gdl.strftime('%H:%M')
 
-                            # --- LÓGICA DINÁMICA (Pon esto justo antes del bloque HTML) ---
-                            txt_volumen = "alza" if var_volumen >= 0 else "baja"
-                            txt_gasto = "alza" if var_flete_total >= 0 else "baja"
+                            # --- LÓGICA DINÁMICA DE INTERPRETACIÓN TÉCNICA ---
+                            txt_volumen = "el alza" if var_volumen >= 0 else "la reducción"
+                            txt_gasto = "el incremento" if var_flete_total >= 0 else "la disminución"
+                            
+                            # Inteligencia para el costo por caja (Detecta ahorro vs gasto extra)
+                            if var_costo_caja < 0:
+                                txt_tarifa = "una <span style='color: #2e7d32; font-weight: bold;'>reducción (optimización)</span> en la tarifa unitaria por caja"
+                            elif var_costo_caja > 0:
+                                txt_tarifa = "un <span style='color: #d32f2f; font-weight: bold;'>incremento</span> en la tarifa unitaria por caja"
+                            else:
+                                txt_tarifa = "una <b>estabilidad absoluta</b> en la tarifa unitaria por caja"
+        
+                            # Inteligencia para las incidencias
+                            if total_valuacion_2026 <= 0:
+                                txt_inc = f"Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo."
+                            else:
+                                txt_inc = f"Es importante notar que existen incidencias acumuladas por ${total_valuacion_2026:,.2f} que impactan el balance financiero del periodo."
                             
                             return f"""
                             <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px; color: #333; max-width: 800px; margin: auto; background-color: #fff;">
@@ -5472,7 +5486,7 @@ else:
                                 </div>
                         
                                 <div style="margin-top: 15px; padding: 10px; background: #fffde7; border-left: 5px solid #fbc02d; font-size: 9px; line-height: 1.3;">
-                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre la {txt_volumen} de volumen ({var_volumen:+.1f}%) y la {txt_gasto} del gasto ({var_flete_total:+.1f}%) confirma un incremento en la tarifa unitaria por caja. Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo.
+                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre {txt_volumen} de volumen ({var_volumen:+.1f}%) y {txt_gasto} del gasto ({var_flete_total:+.1f}%) confirma {txt_tarifa}. {txt_inc}
                                 </div>
                         
                                 <div style="margin-top: 30px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
