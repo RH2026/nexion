@@ -5149,14 +5149,23 @@ else:
                     total_consignas = 0
                     total_fnacional = 0
                     
-                    if 'CONCEPTO' in df_filtered.columns and 'COSTO DE LA GUIA' in df_filtered.columns:
-                        # Estandarizamos los textos por si el Excel trae espacios invisibles o minúsculas
-                        conceptos_limpios = df_filtered['CONCEPTO'].astype(str).str.strip().str.upper()
+                    # Limpiamos los nombres de las columnas por si traen espacios invisibles
+                    df_safe = df_filtered.copy()
+                    df_safe.columns = df_safe.columns.str.strip().str.upper()
+        
+                    if 'CONCEPTO' in df_safe.columns and 'COSTO DE LA GUIA' in df_safe.columns:
+                        # Estandarizamos los textos de la columna (mayúsculas y sin espacios al inicio/final)
+                        conceptos_limpios = df_safe['CONCEPTO'].astype(str).str.strip().str.upper()
                         
-                        # Sumamos específicamente la columna 'COSTO DE LA GUIA'
-                        total_muestras = df_filtered[conceptos_limpios == 'MUESTRAS/RECOLECCIONES']['COSTO DE LA GUIA'].sum()
-                        total_consignas = df_filtered[conceptos_limpios == 'CONSIGNAS']['COSTO DE LA GUIA'].sum()
-                        total_fnacional = df_filtered[conceptos_limpios == 'F NACIONAL']['COSTO DE LA GUIA'].sum()
+                        # Usamos .str.contains() que es un radar más potente y perdona símbolos extra
+                        mask_muestras = conceptos_limpios.str.contains('MUESTRA|RECOLECCI', na=False)
+                        mask_consignas = conceptos_limpios.str.contains('CONSIGNA', na=False)
+                        mask_fnacional = conceptos_limpios.str.contains('NACIONAL', na=False)
+                        
+                        # Sumamos exclusivamente la columna COSTO DE LA GUIA
+                        total_muestras = df_safe.loc[mask_muestras, 'COSTO DE LA GUIA'].sum()
+                        total_consignas = df_safe.loc[mask_consignas, 'COSTO DE LA GUIA'].sum()
+                        total_fnacional = df_safe.loc[mask_fnacional, 'COSTO DE LA GUIA'].sum()
         
                     # --- LÓGICA DE HIERRO INTELIGENTE: COMPARATIVA MES ANTERIOR ---
                     meses_map_inv = {k: v for v, k in meses_nombres.items()}
