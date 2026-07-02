@@ -5006,7 +5006,7 @@ else:
                     """, height=0)
     
             elif st.session_state.menu_sub == "ANALISIS MENSUAL":
-                # --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
+         
                 # --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
                 st.markdown("""
                 <style>
@@ -5040,7 +5040,7 @@ else:
                 
                 /* Esto cambia específicamente el tamaño del texto del Delta */
                 div[data-testid="stMetricDelta"] {
-                    font-size: 0.7rem !important; /* Aquí ajustas el tamaño (ejemplo: 0.9rem, 1.2rem, etc.) */
+                    font-size: 0.7rem !important; 
                     font-weight: bold;
                 }                
                 </style>
@@ -5057,13 +5057,13 @@ else:
                 def limpiar_dinero(col):
                     return pd.to_numeric(
                         col.astype(str)
-                           .str.replace('$', '', regex=False)
-                           .str.replace(',', '', regex=False)
-                           .str.strip(),
+                        .str.replace('$', '', regex=False)
+                        .str.replace(',', '', regex=False)
+                        .str.strip(),
                         errors='coerce'
                     ).fillna(0)
                 
-                # 2. CARGA Y PROCESAMIENTO
+                # 2. CARGA Y PROCESAMIENTO A PRUEBA DE ERRORES
                 try:
                     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
                     df_2025 = pd.read_csv('Historial2025.csv')
@@ -5071,11 +5071,11 @@ else:
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
                     df_2025.columns = [limpiar_columnas(c) for c in df_2025.columns]
                 
-                    columnas_dinero = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES', 'CAJAS'] # <--- AGREGAMOS 'CAJAS'
+                    columnas_dinero = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES', 'CAJAS']
                     for col in columnas_dinero:
                         if col in df_actual.columns: 
                             df_actual[col] = limpiar_dinero(df_actual[col])
-                    # Limpiamos las dos columnas clave del 2025
+                    
                     for col in ['COSTO DE LA GUIA', 'CAJAS']:
                         if col in df_2025.columns: 
                             df_2025[col] = limpiar_dinero(df_2025[col])
@@ -5084,44 +5084,46 @@ else:
                         if f_col in df_actual.columns:
                             df_actual[f_col] = pd.to_datetime(df_actual[f_col], errors='coerce')
                 
-                    # Con esto, si hay un hueco, le pone "SIN MES" en lugar de tronar
                     df_actual['MES'] = df_actual['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
                     df_2025['MES'] = df_2025['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
                 
-                    df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
+                    # Blindaje en caso de que la columna no exista
+                    if 'FORMA DE ENVIO' in df_actual.columns:
+                        df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
+                    else:
+                        df_gastos = df_actual.copy()
+                        
                     df_gastos['COSTOS ADICIONALES'] = limpiar_dinero(df_gastos.get('COSTOS ADICIONALES', 0))
                     df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
+                    
                     # 3. INTERFAZ
                     meses_nombres = {1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"}
-                    mes_actual_txt = meses_nombres[datetime.now().month]
+                    mes_actual_txt = meses_nombres.get(datetime.now().month, "ENERO")
                     opciones_mes = ["TODOS"] + sorted(df_gastos['MES'].unique().tolist())
                     indice_def = opciones_mes.index(mes_actual_txt) if mes_actual_txt in opciones_mes else 0
                 
                     c_f1, c_f2 = st.columns(2)
                     with c_f1: mes_sel = st.selectbox(":material/calendar_month: FILTRAR POR MES:", opciones_mes, index=indice_def)
-                    with c_f2: flet_sel = st.selectbox(":material/local_shipping: FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()))
+                    with c_f2: flet_sel = st.selectbox(":material/local_shipping: FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()) if 'FLETERA' in df_gastos.columns else ["TODAS"])
                 
                     df_filtered = df_gastos.copy()
                     if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
-                    if flet_sel != "TODAS": df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
-
-                    #-----# 👇 AQUÍ LO METES
-                    #st.write("DEBUG TIPOS:")
-                    #st.write(df_filtered[['COSTO DE FLETE','FACTURACION','CAJAS']].dtypes)
-                    # 4. CÁLCULOS
+                    if flet_sel != "TODAS" and 'FLETERA' in df_filtered.columns: df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
+        
+                    # 4. CÁLCULOS PRINCIPALES
                     mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
                     df_eval = df_filtered[mask_evaluable]
                     pct_eficiencia = ( (df_eval['FECHA DE ENTREGA REAL'] <= df_eval['PROMESA DE ENTREGA']).sum() / len(df_eval) * 100 ) if len(df_eval) > 0 else 0
                 
-                    total_flete_2026 = df_filtered['COSTO DE FLETE'].sum()
-                    total_fact_2026 = df_filtered['FACTURACION'].sum()
-                    total_cajas_2026 = df_filtered['CAJAS'].sum()
-                    total_valuacion_2026 = df_filtered['VALUACION'].sum()
+                    total_flete_2026 = df_filtered['COSTO DE FLETE'].sum() if 'COSTO DE FLETE' in df_filtered.columns else 0
+                    total_fact_2026 = df_filtered['FACTURACION'].sum() if 'FACTURACION' in df_filtered.columns else 0
+                    total_cajas_2026 = df_filtered['CAJAS'].sum() if 'CAJAS' in df_filtered.columns else 0
+                    total_valuacion_2026 = df_filtered['VALUACION'].sum() if 'VALUACION' in df_filtered.columns else 0
                 
                     meses_activos = df_filtered['MES'].unique()
                     df_2025_filtrado = df_2025[df_2025['MES'].isin(meses_activos)]
-                    total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum()
-                    total_cajas_2025 = df_2025_filtrado['CAJAS'].sum()
+                    total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum() if 'COSTO DE LA GUIA' in df_2025_filtrado.columns else 0
+                    total_cajas_2025 = df_2025_filtrado['CAJAS'].sum() if 'CAJAS' in df_2025_filtrado.columns else 0
                     
                     costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
                     costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
@@ -5130,88 +5132,73 @@ else:
                     var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
                     costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
                     diferencia_target = costo_log_real - 7.5
-                    num_inc = (df_filtered['VALUACION'] > 0).sum()
+                    num_inc = (df_filtered['VALUACION'] > 0).sum() if 'VALUACION' in df_filtered.columns else 0
                     pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
                     inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
-                    # --- Faltantes para los deltas de abajo ---
+                    
                     total_valuacion_2025 = df_2025_filtrado['VALUACION'].sum() if 'VALUACION' in df_2025_filtrado.columns else 0
                     num_inc_2025 = (df_2025_filtrado['VALUACION'] > 0).sum() if 'VALUACION' in df_2025_filtrado.columns else 0
                     pct_inc_2025 = (num_inc_2025 / len(df_2025_filtrado) * 100) if len(df_2025_filtrado) > 0 else 0
                     
-                    # La variación de la valuación (para el delta de k7)
                     var_val_monto = total_valuacion_2026 - total_valuacion_2025
-                    # La variación de puntos porcentuales (para el delta de k8)
                     var_pct_inc = pct_inc - pct_inc_2025
-
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
-
-                    # --- Lógica para Facturación Mes Anterior ------
-                                        
-                    # --- LÓGICA DE HIERRO: COMPARATIVA EXCLUSIVA POR 'FORMA DE ENVIO' ---
+        
+                    # --- CÁLCULO DE LOS 3 CONCEPTOS NUEVOS (SOLO COBRO REGRESO) ---
+                    total_muestras = 0
+                    total_consignas = 0
+                    total_fnacional = 0
                     
-                    # 1. TOTAL ACTUAL (8 Millones en Marzo filtrado)
-                    total_fact_actual = df_filtered['FACTURACION'].sum()
+                    if 'CONCEPTO' in df_filtered.columns:
+                        total_muestras = df_filtered[df_filtered['CONCEPTO'] == 'MUESTRAS/RECOLECCIONES']['COSTO DE FLETE'].sum()
+                        total_consignas = df_filtered[df_filtered['CONCEPTO'] == 'CONSIGNAS']['COSTO DE FLETE'].sum()
+                        total_fnacional = df_filtered[df_filtered['CONCEPTO'] == 'F NACIONAL']['COSTO DE FLETE'].sum()
+        
+                    # --- LÓGICA DE HIERRO INTELIGENTE: COMPARATIVA MES ANTERIOR ---
+                    meses_map_inv = {k: v for v, k in meses_nombres.items()}
                     
-                    # 2. DEFINIR MES ACTUAL Y TRADUCTOR
-                    meses_map = {"ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6, 
-                                 "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12}
-                    meses_inv = {v: k for k, v in meses_map.items()}
-                    
-                    if not df_filtered.empty:
-                        mes_actual_str = df_filtered['MES'].unique()[0]
-                    else:
-                        mes_actual_str = "MARZO"
-                    
-                    # 3. BUSCAR TOTAL DEL MES ANTERIOR (Filtrando por la misma Forma de Envío)
+                    total_fact_actual = total_fact_2026
                     total_fact_mes_anterior = 0
-                    mes_anterior_nombre = "ANTERIOR"
+                    var_fact_mensual = 0
+                    pct_eficiencia_ant = 0
+                    var_eficiencia_mensual = 0
+                    mes_anterior_nombre = None
                     
-                    if mes_actual_str in meses_map:
-                        num_ant = meses_map[mes_actual_str] - 1
-                        mes_anterior_nombre = meses_inv.get(num_ant, "ANTERIOR")
+                    # Solo hacemos cálculos de mes anterior si no seleccionaron "TODOS"
+                    if mes_sel != "TODOS":
+                        num_mes_actual = meses_map_inv.get(mes_sel, 3) 
                         
-                        if mes_anterior_nombre:
-                            # 🔥 FILTRO MAESTRO: Mismo Mes anterior Y misma forma de envío
-                            # Usamos df_actual porque es tu base completa de 2026
-                            df_busqueda_ant = df_actual[
-                                (df_actual['MES'] == mes_anterior_nombre) & 
-                                (df_actual['FORMA DE ENVIO'] == 'COBRO REGRESO')
-                            ]
-                            total_fact_mes_anterior = df_busqueda_ant['FACTURACION'].sum()
-                    
-                    # 4. VARIACIÓN MATEMÁTICA (8.0M - 7.0M = POSITIVO)
-                    if total_fact_mes_anterior > 0:
-                        var_fact_mensual = ((total_fact_actual - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
-                    else:
-                        var_fact_mensual = 0
-                    
-                    
-                    # --- LÓGICA DELTA EFICIENCIA ---                   
-                    # --- LÓGICA DELTA EFICIENCIA (CORREGIDA Y BLINDADA) ---
-                    if mes_actual_str in meses_map and mes_anterior_nombre:
-                        # 1. Filtramos el mes anterior Y aseguramos que sea la misma forma de envío (COBRO REGRESO)
-                        df_ant_raw = df_actual[
-                            (df_actual['MES'] == mes_anterior_nombre) & 
-                            (df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False))
-                        ]
-                        
-                        # 2. Creamos la máscara asegurando que AMBAS columnas tengan fechas válidas
-                        mask_ant = df_ant_raw['PROMESA DE ENTREGA'].notna() & df_ant_raw['FECHA DE ENTREGA REAL'].notna()
-                        df_eval_ant = df_ant_raw[mask_ant]
-                        
-                        # 3. Calculamos eficiencia solo si hay datos evaluables
-                        if not df_eval_ant.empty:
-                            # Usamos .values para evitar conflictos de índices de NumPy si fuera necesario
-                            cumplidos_ant = (df_eval_ant['FECHA DE ENTREGA REAL'] <= df_eval_ant['PROMESA DE ENTREGA']).sum()
-                            pct_eficiencia_ant = (cumplidos_ant / len(df_eval_ant)) * 100
-                            var_eficiencia_mensual = pct_eficiencia - pct_eficiencia_ant
+                        # Lógica de transición de año: Si es Enero, el anterior es Diciembre del 2025
+                        if num_mes_actual == 1:
+                            mes_anterior_nombre = "DICIEMBRE"
+                            if 'FORMA DE ENVIO' in df_2025.columns:
+                                df_ant_raw = df_2025[(df_2025['MES'] == mes_anterior_nombre) & (df_2025['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False))]
+                            else:
+                                df_ant_raw = df_2025[df_2025['MES'] == mes_anterior_nombre]
+                                
+                            total_fact_mes_anterior = df_ant_raw['FACTURACION'].sum() if 'FACTURACION' in df_ant_raw.columns else 0
                         else:
-                            # Si el mes anterior no tiene entregas registradas, la variación es 0 o basada solo en el actual
-                            pct_eficiencia_ant = 0
-                            var_eficiencia_mensual = 0
-                    else:
-                        var_eficiencia_mensual = 0
-                    
+                            mes_anterior_nombre = meses_nombres.get(num_mes_actual - 1)
+                            if 'FORMA DE ENVIO' in df_actual.columns:
+                                df_ant_raw = df_actual[(df_actual['MES'] == mes_anterior_nombre) & (df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False))]
+                            else:
+                                df_ant_raw = df_actual[df_actual['MES'] == mes_anterior_nombre]
+                                
+                            total_fact_mes_anterior = df_ant_raw['FACTURACION'].sum() if 'FACTURACION' in df_ant_raw.columns else 0
+                        
+                        # Variación Facturación Mensual
+                        if total_fact_mes_anterior > 0:
+                            var_fact_mensual = ((total_fact_actual - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
+                        
+                        # Variación Eficiencia Mensual
+                        if not df_ant_raw.empty:
+                            mask_ant = df_ant_raw['PROMESA DE ENTREGA'].notna() & df_ant_raw['FECHA DE ENTREGA REAL'].notna()
+                            df_eval_ant = df_ant_raw[mask_ant]
+                            if not df_eval_ant.empty:
+                                cumplidos_ant = (df_eval_ant['FECHA DE ENTREGA REAL'] <= df_eval_ant['PROMESA DE ENTREGA']).sum()
+                                pct_eficiencia_ant = (cumplidos_ant / len(df_eval_ant)) * 100
+                                var_eficiencia_mensual = pct_eficiencia - pct_eficiencia_ant
+        
                     # --- BOTONES DE VISTA ---
                     c_btn1, c_btn2 = st.columns(2)
                     with c_btn1:
@@ -5221,38 +5208,37 @@ else:
                         if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
                             st.session_state.ver_grafico = True
                     
-                    # --- 5. VISTA DE TARJETAS (AQUÍ ESTABA EL DESMADRE) ---
+                    # --- 5. VISTA DE TARJETAS ---
                     if not st.session_state.ver_grafico:
                         st.markdown("### RESUMEN DE RENDIMIENTO")
                         
-                        # --- FILA 1 ---
+                        txt_mes_ant = f"vs {mes_anterior_nombre}" if mes_anterior_nombre else "Promedio"
+                        
                         k1, k2, k3 = st.columns(3)
-                        with k1: 
-                            st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
+                        with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
+                        with k2: st.metric("FACTURACIÓN", f"${total_fact_actual:,.2f}", delta=f"{var_fact_mensual:+.1f}% {txt_mes_ant}", delta_color="normal")
+                        with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="normal")
                         
-                        with k2: 
-                            # CORRECCIÓN: Usamos 'total_fact_actual' y 'var_fact_mensual' que calculamos arriba
-                            st.metric("FACTURACIÓN", f"${total_fact_actual:,.2f}", delta=f"{var_fact_mensual:+.1f}% vs {mes_anterior_nombre if mes_anterior_nombre else 'ant.'}", delta_color="normal")
-                        
-                        with k3: 
-                            st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="normal")
-                        
-                        # --- FILA 2 ---
                         k4, k5, k6 = st.columns(3)
                         with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
                         with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
-                        with k6: st.metric("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%", delta=f"{var_eficiencia_mensual:+.1f}% vs mes ant.")
+                        with k6: st.metric("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%", delta=f"{var_eficiencia_mensual:+.1f}% {txt_mes_ant}")
                         
                         k7, k8, k9 = st.columns(3)
                         with k7: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", delta=f"${var_val_monto:,.2f}", delta_color="inverse")
                         with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%", delta=f"{var_pct_inc:.1f}%", delta_color="inverse")
                         with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}", delta=f"{var_inc_vi_pct:.1f}%", delta_color="normal")
+        
+                        # --- NUEVAS TARJETAS DE CONCEPTOS ---
+                        st.markdown("### DESGLOSE DE CONCEPTOS (INFORMATIVO)")
+                        k10, k11, k12 = st.columns(3)
+                        with k10: st.metric("MUESTRAS / REC.", f"${total_muestras:,.2f}")
+                        with k11: st.metric("CONSIGNAS", f"${total_consignas:,.2f}")
+                        with k12: st.metric("F NACIONAL", f"${total_fnacional:,.2f}")
                 
                         # --- 6. ANÁLISIS DINÁMICO PROFUNDO ---
                         st.markdown("### DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
                         
-                        # Lógica de interpretación
-                        # 1. Análisis de Costo
                         if costo_log_real <= 7.5:
                             status_target = "🟢 DENTRO DEL TARGET"
                             desc_costo = "La gestión financiera es <span class='highlight'>óptima</span>, manteniendo la rentabilidad bajo los parámetros establecidos."
@@ -5260,21 +5246,11 @@ else:
                             status_target = "🔴 FUERA DE TARGET"
                             desc_costo = f"Se detecta una desviación del <span class='highlight'>{diferencia_target:.2f}%</span>. Es prioritario revisar la negociación con fleteras o la consolidación de carga."
                 
-                        # 2. Análisis de Eficiencia (On-Time)
-                        if pct_eficiencia >= 95:
-                            status_entrega = "Excelencia Logística"
-                        elif pct_eficiencia >= 85:
-                            status_entrega = "Operación Estable"
-                        else:
-                            status_entrega = "Alerta de Servicio"
+                        if pct_eficiencia >= 95: status_entrega = "Excelencia Logística"
+                        elif pct_eficiencia >= 85: status_entrega = "Operación Estable"
+                        else: status_entrega = "Alerta de Servicio"
                 
-                        # 3. Análisis de Incidencias
-                        if pct_inc > 5:
-                            alerta_incidencias = f"<br>⚠️ <b style='color:#FF4B4B;'>ALERTA:</b> El nivel de incidencias ({pct_inc:.1f}%) está impactando la valuación en <span class='highlight'>${total_valuacion_2026:,.2f}</span>."
-                        else:
-                            alerta_incidencias = ""
-                
-                        # 4. Análisis de Eficiencia Unitaria
+                        alerta_incidencias = f"<br>⚠️ <b style='color:#FF4B4B;'>ALERTA:</b> El nivel de incidencias ({pct_inc:.1f}%) está impactando la valuación en <span class='highlight'>${total_valuacion_2026:,.2f}</span>." if pct_inc > 5 else ""
                         tendencia_caja = "una <span class='highlight'>mejora</span>" if var_costo_caja <= 0 else "un <span class='highlight'>incremento</span>"
                 
                         html_analisis = f'''
@@ -5293,14 +5269,13 @@ else:
                         
                         st.markdown(html_analisis, unsafe_allow_html=True)
                         st.write("")
-                        # --- REPORTE DE IMPRESIÓN REPOTENCIADO (RESULTADOS GRÁFICOS) ---
+                        
+                        # --- REPORTE DE IMPRESIÓN REPOTENCIADO ---
                         def generar_reporte_grafico():
                             estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
                             pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
                             c_flete_rep = "red" if var_flete_total > 0 else "green"
                             c_caja_rep = "red" if var_costo_caja > 0 else "green"
-                            
-                            # AJUSTE MANUAL A ZONA GDL (UTC-6)
                             ahora_gdl = datetime.utcnow() - timedelta(hours=6)
                             fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
                             hora_hoy = ahora_gdl.strftime('%H:%M')
@@ -5310,7 +5285,7 @@ else:
                                 <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
                                     <tr>
                                         <td style="width: 50%;">
-                                            <h1 style="margin: 0; font-size: 14px; font-weight: 900; color: #000; border-bottom: none; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                            <h1 style="margin: 0; font-size: 14px; font-weight: 900; color: #000; text-transform: uppercase;">Jabones y Productos Especializados</h1>
                                             <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #666;">Distribución y Logística | 2026</p>
                                         </td>
                                         <td style="width: 50%; text-align: right; font-size: 11px; line-height: 1.6;">
@@ -5353,7 +5328,7 @@ else:
                                     </div>
                                 </div>
                         
-                                <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 30px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
                                     <tr style="background: #000; color: #fff; border: 1px solid #000;">
                                         <th style="padding: 10px; text-align: left;">MÉTRICA DE OPERACIÓN DETALLADA</th>
                                         <th style="padding: 10px; text-align: center;">VALOR ACTUAL</th>
@@ -5367,8 +5342,20 @@ else:
                                     <tr><td style="border: 1px solid #000; padding: 8px;">Porcentaje de Incidencias sobre Pedidos</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{pct_inc:.1f}%</td></tr>
                                     <tr><td style="border: 1px solid #000; padding: 8px;">Impacto Económico Neto (Incremento + VI)</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">${inc_vi_monto:,.2f}</td></tr>
                                 </table>
+        
+                                <h3 style="font-size: 11px; font-weight: bold; margin-top: 10px; background: #000; color: #fff; padding: 5px; text-align: center;">DESGLOSE POR CONCEPTO INFORMATIVO</h3>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 30px;">
+                                    <tr>
+                                        <td style="border: 1px solid #000; padding: 6px; background: #f9f9f9;"><b>Muestras / Recolecciones</b></td>
+                                        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${total_muestras:,.2f}</td>
+                                        <td style="border: 1px solid #000; padding: 6px; background: #f9f9f9;"><b>Consignas</b></td>
+                                        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${total_consignas:,.2f}</td>
+                                        <td style="border: 1px solid #000; padding: 6px; background: #f9f9f9;"><b>F Nacional</b></td>
+                                        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${total_fnacional:,.2f}</td>
+                                    </tr>
+                                </table>
                         
-                                <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
+                                <div style="margin-top: 40px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
                                     <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
                                         <b>Rigoberto Hernández</b><br>Coordinador de Logística Nacional
                                     </div>
@@ -5379,20 +5366,16 @@ else:
                             </div>
                             """
                         
-                        # --- MEMORIA TÉCNICA DE CÁLCULO (LÓGICA Y DELTAS) ---
                         def generar_memoria_tecnica():
                             gasto_base_2025 = total_flete_2026 - inc_vi_monto
-                            
-                            # AJUSTE MANUAL A ZONA GDL (UTC-6)
                             ahora_gdl = datetime.utcnow() - timedelta(hours=6)
                             fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
                             hora_hoy = ahora_gdl.strftime('%H:%M')
-
+                            
                             # --- LÓGICA DINÁMICA DE INTERPRETACIÓN TÉCNICA ---
                             txt_volumen = "el alza" if var_volumen >= 0 else "la reducción"
                             txt_gasto = "el incremento" if var_flete_total >= 0 else "la disminución"
                             
-                            # Inteligencia para el costo por caja (Detecta ahorro vs gasto extra)
                             if var_costo_caja < 0:
                                 txt_tarifa = "una <span style='color: #2e7d32; font-weight: bold;'>reducción (optimización)</span> en la tarifa unitaria por caja"
                             elif var_costo_caja > 0:
@@ -5400,7 +5383,6 @@ else:
                             else:
                                 txt_tarifa = "una <b>estabilidad absoluta</b> en la tarifa unitaria por caja"
         
-                            # Inteligencia para las incidencias
                             if total_valuacion_2026 <= 0:
                                 txt_inc = f"Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo."
                             else:
@@ -5418,11 +5400,10 @@ else:
                                         <b>FECHA:</b> {fecha_hoy} | <b>HORA:</b> {hora_hoy} (ZMG)
                                     </div>
                                 </div>
-                        
                                 <p style="font-size: 11px; line-height: 1.4; color: #555; margin-bottom: 15px;">
-                                    Este documento detalla la trazabilidad algorítmica de los KPIs presentados en el periodo <b>{mes_sel} 2026</b>, incluyendo la procedencia de los indicadores comparativos (Deltas) contra el ejercicio 2025.
+                                    Este documento detalla la trazabilidad algorítmica de los KPIs presentados en el periodo <b>{mes_sel} 2026</b>.
                                 </p>
-                        
+                                
                                 <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
                                     <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">1. COSTO LOGÍSTICO (KPI DE RENTABILIDAD)</h3>
                                     <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
@@ -5430,7 +5411,7 @@ else:
                                     </div>
                                     <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> (${total_flete_2026:,.2f} / ${total_fact_2026:,.2f}) x 100 = <b>{costo_log_real:.2f}%</b></p>
                                 </div>
-                        
+                                
                                 <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
                                     <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">2. EFICIENCIA DE ENTREGA (OTD)</h3>
                                     <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
@@ -5438,7 +5419,7 @@ else:
                                     </div>
                                     <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> Cumplimiento del <b>{pct_eficiencia:.1f}%</b> basado en registros evaluables.</p>
                                 </div>
-                        
+                                
                                 <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
                                     <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">3. COSTO POR CAJA (EFICIENCIA UNITARIA)</h3>
                                     <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
@@ -5446,7 +5427,7 @@ else:
                                     </div>
                                     <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> ${total_flete_2026:,.2f} / {total_cajas_2026:,.0f} cajas = <b>${costo_caja_2026:,.2f} / caja</b></p>
                                 </div>
-                        
+                                
                                 <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
                                     <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">4. INCREMENTO LOGÍSTICO + VALUACIÓN INCIDENCIAS (VI)</h3>
                                     <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
@@ -5454,7 +5435,7 @@ else:
                                     </div>
                                     <p style="font-size: 10px; margin-top: 5px;"><b>Desglose:</b> (${total_flete_2026:,.2f} - ${gasto_base_2025:,.2f}) + ${total_valuacion_2026:,.2f} = <b>${inc_vi_monto:,.2f}</b></p>
                                 </div>
-                        
+                                
                                 <div style="margin-top: 10px; padding: 10px; border: 2px solid #2276AA; background: #f0f7ff;">
                                     <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">5. ANÁLISIS DE DELTAS (COMPARATIVA ANUAL)</h3>
                                     <table style="width: 100%; font-size: 9px; border-collapse: collapse; text-align: left; margin-top: 5px;">
@@ -5484,11 +5465,19 @@ else:
                                         </tr>
                                     </table>
                                 </div>
-                        
+        
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">6. DESGLOSE DE CONCEPTOS ESPECIALES</h3>
+                                    <p style="font-size: 10px; margin-top: 5px;">
+                                        Muestras/Recolecciones: <b>${total_muestras:,.2f}</b> | Consignas: <b>${total_consignas:,.2f}</b> | F Nacional: <b>${total_fnacional:,.2f}</b><br>
+                                        <i style="color: #777;">* Valores meramente informativos para la modalidad Cobro Regreso. No aplican en la comparativa anual (Deltas).</i>
+                                    </p>
+                                </div>
+                                
                                 <div style="margin-top: 15px; padding: 10px; background: #fffde7; border-left: 5px solid #fbc02d; font-size: 9px; line-height: 1.3;">
                                     <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre {txt_volumen} de volumen ({var_volumen:+.1f}%) y {txt_gasto} del gasto ({var_flete_total:+.1f}%) confirma {txt_tarifa}. {txt_inc}
                                 </div>
-                        
+                                
                                 <div style="margin-top: 30px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
                                     <div style="width: 200px; border-top: 1px solid #000; padding-top: 5px;">
                                         <b>Rigoberto Hernández</b><br>Coordinación de Logística
@@ -5497,23 +5486,15 @@ else:
                             </div>
                             """
                         
-                        # --- BOTONES DE IMPRESIÓN (RESULTADOS Y MEMORIA TÉCNICA) ---
-                        # --- ESTRUCTURA DE LA INTERFAZ ---
                         col_print1, col_print2 = st.columns(2)
-                        
                         with col_print1:
                             if st.button(":material/print: GENERAR REPORTE GRÁFICO", type="primary", use_container_width=True):
-                                # Guardamos el contenido en el estado
                                 st.session_state.reporte_a_imprimir = generar_reporte_grafico()
-                        
                         with col_print2:
                             if st.button(":material/calculate: IMPRIMIR CÁLCULO APLICADO", use_container_width=True):
-                                # Guardamos el contenido en el estado
                                 st.session_state.reporte_a_imprimir = generar_memoria_tecnica()
                         
-                        # --- DISPARADOR (TRIGGER) DE LA VENTANA DE IMPRESIÓN ---
-                        # Este bloque se ejecuta solo cuando el estado tiene contenido
-                        if st.session_state.reporte_a_imprimir is not None:
+                        if st.session_state.get('reporte_a_imprimir') is not None:
                             html_template = f"""
                                 <script>
                                     var win = window.open('', '_blank', 'height=800,width=800');
@@ -5521,56 +5502,46 @@ else:
                                     win.document.close();
                                     win.onload = function() {{ 
                                         win.print(); 
-                                        // Opcional: descomenta la siguiente línea si quieres cerrar la ventana al terminar
-                                        // win.close(); 
                                     }};
                                 </script>
                             """
                             components.html(html_template, height=0)
-                            
-                            # IMPORTANTE: Limpiamos el estado para que no se re-ejecute al interactuar con otros elementos
                             st.session_state.reporte_a_imprimir = None
                 
                     # --- 8. VISTA DE GRÁFICO (COMPARATIVO) ---
                     else:
                         st.markdown("###  COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
                         
-                        # 1. Preparación de datos
                         df_g_2026 = df_gastos.groupby('MES')['COSTO DE FLETE'].sum().reset_index()
                         df_g_2025 = df_2025.groupby('MES')['COSTO DE LA GUIA'].sum().reset_index()
                 
-                        # 2. Ordenar meses
                         meses_orden = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
                                        "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
                         df_g_2026['MES'] = pd.Categorical(df_g_2026['MES'], categories=meses_orden, ordered=True)
                         df_g_2025['MES'] = pd.Categorical(df_g_2025['MES'], categories=meses_orden, ordered=True)
                 
-                        # 3. Creación del Gráfico de Élite
                         fig = go.Figure()
                 
-                        # --- NUEVA BARRA 2025 (Azul Grisáceo Profundo) ---
                         fig.add_trace(go.Bar(
                             x=df_g_2025.sort_values('MES')['MES'], 
                             y=df_g_2025.sort_values('MES')['COSTO DE LA GUIA'], 
                             name='Gasto 2025', 
-                            marker_color='#36b9cc', # <--- AQUÍ ESTÁ EL CAMBIO DE COLOR
+                            marker_color='#36b9cc', 
                             text=[f'${x:,.0f}' for x in df_g_2025.sort_values('MES')['COSTO DE LA GUIA']],
                             textposition='outside',
-                            textfont=dict(color='#A4B9C8') # Mantenemos el texto en gris claro para legibilidad
+                            textfont=dict(color='#A4B9C8') 
                         ))
                 
-                        # Barra 2026 (Oro / Dorado)
                         fig.add_trace(go.Bar(
                             x=df_g_2026.sort_values('MES')['MES'], 
                             y=df_g_2026.sort_values('MES')['COSTO DE FLETE'], 
                             name='Gasto 2026 (Actual)', 
-                            marker_color='#D4AF37', # Oro
+                            marker_color='#D4AF37', 
                             text=[f'${x:,.0f}' for x in df_g_2026.sort_values('MES')['COSTO DE FLETE']],
                             textposition='outside',
                             textfont=dict(color='#FFFFFF')
                         ))
                 
-                        # 4. Diseño Onyx
                         fig.update_layout(
                             template='plotly_dark',
                             paper_bgcolor='rgba(0,0,0,0)',
@@ -5580,7 +5551,7 @@ else:
                             yaxis_title="MONTO TOTAL ($)",
                             font=dict(color="#A4B9C8"),
                             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                            margin=dict(t=80) # Espacio extra arriba para las etiquetas
+                            margin=dict(t=80) 
                         )
                 
                         st.plotly_chart(fig, use_container_width=True)
