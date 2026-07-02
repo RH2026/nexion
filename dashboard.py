@@ -5145,27 +5145,24 @@ else:
                     var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
         
                     # --- CÁLCULO DE LOS 3 CONCEPTOS NUEVOS (SOLO COBRO REGRESO) ---
-                    total_muestras = 0
-                    total_consignas = 0
-                    total_fnacional = 0
+                    total_muestras = 0.0
+                    total_consignas = 0.0
+                    total_fnacional = 0.0
                     
-                    # Limpiamos los nombres de las columnas por si traen espacios invisibles
-                    df_safe = df_filtered.copy()
-                    df_safe.columns = df_safe.columns.str.strip().str.upper()
-        
-                    if 'CONCEPTO' in df_safe.columns and 'COSTO DE LA GUIA' in df_safe.columns:
-                        # Estandarizamos los textos de la columna (mayúsculas y sin espacios al inicio/final)
-                        conceptos_limpios = df_safe['CONCEPTO'].astype(str).str.strip().str.upper()
+                    # 1. Buscamos el nombre de la columna dinámicamente por si el CSV le agregó espacios invisibles
+                    col_concepto = next((c for c in df_filtered.columns if 'CONCEPTO' in c), None)
+                    
+                    if col_concepto:
+                        # 2. Llenamos los espacios vacíos y limpiamos el texto para que no haya errores por 'NaN'
+                        conceptos_limpios = df_filtered[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
                         
-                        # Usamos .str.contains() que es un radar más potente y perdona símbolos extra
-                        mask_muestras = conceptos_limpios.str.contains('MUESTRA|RECOLECCI', na=False)
-                        mask_consignas = conceptos_limpios.str.contains('CONSIGNA', na=False)
-                        mask_fnacional = conceptos_limpios.str.contains('NACIONAL', na=False)
-                        
-                        # Sumamos exclusivamente la columna COSTO DE LA GUIA
-                        total_muestras = df_safe.loc[mask_muestras, 'COSTO DE LA GUIA'].sum()
-                        total_consignas = df_safe.loc[mask_consignas, 'COSTO DE LA GUIA'].sum()
-                        total_fnacional = df_safe.loc[mask_fnacional, 'COSTO DE LA GUIA'].sum()
+                        # 3. Sumamos usando regex para que pesque cualquier variante de la palabra (F NACIONAL, Consignas, etc.)
+                        total_muestras = df_filtered.loc[conceptos_limpios.str.contains('MUESTRA|RECOLECCI', regex=True), 'COSTO DE LA GUIA'].sum()
+                        total_consignas = df_filtered.loc[conceptos_limpios.str.contains('CONSIGNA', regex=True), 'COSTO DE LA GUIA'].sum()
+                        total_fnacional = df_filtered.loc[conceptos_limpios.str.contains('NACIONAL', regex=True), 'COSTO DE LA GUIA'].sum()
+                    else:
+                        # Si esto aparece en pantalla, significa que Pandas no está logrando importar la columna desde tu Excel
+                        st.warning("⚠️ Amor, Nexion no está detectando la columna CONCEPTO en el archivo CSV.")
         
                     # --- LÓGICA DE HIERRO INTELIGENTE: COMPARATIVA MES ANTERIOR ---
                     meses_map_inv = {k: v for v, k in meses_nombres.items()}
