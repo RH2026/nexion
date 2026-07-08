@@ -1,5 +1,7 @@
 import streamlit as st
 import qrcode
+import os
+import urllib.request
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from reportlab.pdfgen import canvas
@@ -9,6 +11,30 @@ from reportlab.lib.utils import ImageReader
 
 st.subheader("Generador de Etiquetas AGC")
 
+# --- NUEVO: Función para descargar la fuente automáticamente ---
+def cargar_fuente(nombre, url, size):
+    if not os.path.exists(nombre):
+        try:
+            urllib.request.urlretrieve(url, nombre)
+        except Exception as e:
+            st.error("Hubo un detalle descargando la fuente, pero seguimos trabajando.")
+            return ImageFont.load_default()
+    try:
+        return ImageFont.truetype(nombre, size)
+    except:
+        return ImageFont.load_default()
+
+# Enlaces directos a las fuentes de Google
+url_bold = "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Bold.ttf"
+url_regular = "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Regular.ttf"
+
+# Configuramos los tamaños exactos de las letras
+font_logo = cargar_fuente("Roboto-Bold.ttf", url_bold, 120)
+font_slogan = cargar_fuente("Roboto-Regular.ttf", url_regular, 35)
+font_datos = cargar_fuente("Roboto-Bold.ttf", url_bold, 75) 
+font_bottom = cargar_fuente("Roboto-Regular.ttf", url_regular, 75)
+# ---------------------------------------------------------------
+
 # 1. Controles de Entrada
 opciones_np = ["712117", "PT10065", "PT10219", "PT10264"]
 numero_parte = st.selectbox("Número de Parte", opciones_np)
@@ -16,61 +42,50 @@ lote = st.text_input("Lote (Ej. 6181)")
 valor_fijo = "140"
 
 if lote:
-    # 2. Preparamos el texto final (agregando la "C" al final como en tu foto)
+    # 2. Preparamos el texto final con la "C"
     texto_qr_inferior = f"{numero_parte} - {lote} - {valor_fijo}C"
     
-    # 3. Generamos el QR puro
+    # 3. Generamos el QR
     qr = qrcode.QRCode(version=1, box_size=15, border=1)
     qr.add_data(texto_qr_inferior)
     qr.make(fit=True)
-    img_qr = qr.make_image(fill_color="#374151", back_color="white").convert("RGB")
+    img_qr = qr.make_image(fill_color="#27272A", back_color="white").convert("RGB")
     
-    # 4. Creamos el lienzo de la etiqueta en alta resolución (12 cm alto x 8.5 cm ancho)
-    # A 300 DPI, esto equivale a unos 1004 x 1417 pixeles
+    # 4. Creamos el lienzo de la etiqueta (12 cm x 8.5 cm a 300 DPI)
     ancho_px, alto_px = 1004, 1417
     etiqueta = Image.new("RGB", (ancho_px, alto_px), "white")
     draw = ImageDraw.Draw(etiqueta)
-    
-    # Intentamos usar la fuente Arial si está en tu Windows, si no, usa la básica
-    try:
-        font_logo = ImageFont.truetype("arialbd.ttf", 110)
-        font_slogan = ImageFont.truetype("arial.ttf", 35)
-        font_datos = ImageFont.truetype("arialbd.ttf", 65)
-        font_bottom = ImageFont.truetype("arial.ttf", 75)
-    except IOError:
-        font_logo = font_slogan = font_datos = font_bottom = ImageFont.load_default()
 
-    # --- DIBUJAMOS LOS ELEMENTOS ---
+    # --- DIBUJAMOS LOS ELEMENTOS CON LA FUENTE NUEVA ---
     
-    # Textos Estáticos (Logo AGC)
-    draw.text((80, 100), "AGC", fill="#1E3A8A", font=font_logo) # Azul oscuro
-    draw.text((80, 220), "ARTÍCULOS DE GRAN CONSUMO", fill="#1E3A8A", font=font_slogan)
+    # Logo y Slogan
+    draw.text((80, 100), "AGC", fill="#1E3A8A", font=font_logo)
+    draw.text((80, 230), "ARTÍCULOS DE GRAN CONSUMO", fill="#1E3A8A", font=font_slogan)
     
-    # Variables a un costado
-    draw.text((80, 320), numero_parte, fill="#374151", font=font_datos)
-    draw.text((80, 400), lote, fill="#374151", font=font_datos)
-    draw.text((80, 480), valor_fijo, fill="#374151", font=font_datos)
+    # Variables de logística
+    draw.text((80, 350), numero_parte, fill="#27272A", font=font_datos)
+    draw.text((80, 440), lote, fill="#27272A", font=font_datos)
+    draw.text((80, 530), valor_fijo, fill="#27272A", font=font_datos)
     
-    # Pegamos el QR en el centro
-    img_qr = img_qr.resize((750, 750)) # Hacemos el QR más grande
+    # Pegamos el QR centrado
+    img_qr = img_qr.resize((700, 700)) 
     qr_w, qr_h = img_qr.size
     pos_x = (ancho_px - qr_w) // 2
-    pos_y = 550
+    pos_y = 600
     etiqueta.paste(img_qr, (pos_x, pos_y))
     
     # Texto inferior centrado
     bbox = draw.textbbox((0, 0), texto_qr_inferior, font=font_bottom)
     w_texto = bbox[2] - bbox[0]
-    draw.text(((ancho_px - w_texto) // 2, 1320), texto_qr_inferior, fill="#374151", font=font_bottom)
+    draw.text(((ancho_px - w_texto) // 2, 1320), texto_qr_inferior, fill="#27272A", font=font_bottom)
 
-    # 5. Renderizamos en pantalla para que la veas primero
+    # 5. Mostramos la vista previa en pantalla
     st.markdown("### Vista Previa:")
-    # Usamos BytesIO para pasar la imagen a Streamlit sin guardarla en disco
     buf_preview = BytesIO()
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=350)
     
-    # 6. Preparamos el PDF en Tamaño Carta con la etiqueta volteada
+    # 6. Preparamos el PDF final para la Zebra
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     ancho_carta, alto_carta = letter
@@ -78,18 +93,17 @@ if lote:
     ancho_etiq_pt = 8.5 * cm
     alto_etiq_pt = 12 * cm
     
-    # Preparamos la imagen para ReportLab
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
-    # Nos movemos al centro de la hoja carta, rotamos 90 grados y dibujamos
+    # Rotamos y acomodamos la etiqueta
     c.translate(ancho_carta / 2, alto_carta / 2)
     c.rotate(90)
     c.drawImage(img_reader, -ancho_etiq_pt / 2, -alto_etiq_pt / 2, width=ancho_etiq_pt, height=alto_etiq_pt)
     c.showPage()
     c.save()
 
-    # 7. Botón para imprimir (descargar el PDF)
+    # 7. Botón de descarga
     st.markdown("---")
     st.download_button(
         label="🖨️ Imprimir Etiqueta (PDF Tamaño Carta)",
