@@ -90,14 +90,18 @@ if lote:
     
     ancho_etiq_pt = 8.5 * cm
     alto_etiq_pt = 12 * cm
-    margin = 0.5 * cm 
+    
+    # --- CAMBIO: Margen a cero ---
+    margin = 0 * cm 
     
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
+    # Al rotar 90 grados, el origen se desplaza. 
+    # Para que quede en la esquina superior izquierda sin margen:
     c.rotate(90)
-    x_pos = alto_carta - margin - ancho_etiq_pt
-    y_pos = -(margin + alto_etiq_pt)
+    x_pos = 0  # Ajustado a 0
+    y_pos = -alto_etiq_pt  # Ajustado para que el borde superior toque el borde de la hoja
     
     c.drawImage(img_reader, x_pos, y_pos, width=ancho_etiq_pt, height=alto_etiq_pt)
     c.showPage()
