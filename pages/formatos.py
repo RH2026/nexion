@@ -1,17 +1,19 @@
-import streamlit as st
-import qrcode
+import os
 from io import BytesIO
+
+import qrcode
+import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 
 st.subheader("🏷️ Generador de Etiquetas Nexion")
 
-# =========================
-# DATOS DE ENTRADA
-# =========================
+# ==========================
+# DATOS
+# ==========================
 
 opciones_np = [
     "712117",
@@ -24,32 +26,57 @@ numero_parte = st.selectbox("Número de Parte", opciones_np)
 lote = st.text_input("Lote (Ej. 6181)")
 valor_fijo = "140"
 
+# ==========================
+# FUNCIÓN PARA CARGAR FUENTE
+# ==========================
+
+def cargar_fuente(size):
+
+    posibles = [
+        "DejaVuSans-Bold.ttf",
+        "arial.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+        "C:/Windows/Fonts/arialbd.ttf",
+        "C:/Windows/Fonts/Arial.ttf"
+    ]
+
+    for ruta in posibles:
+        try:
+            return ImageFont.truetype(ruta, size)
+        except:
+            pass
+
+    return ImageFont.load_default()
+
+
 if lote:
 
-    texto_qr_inferior = f"{numero_parte} - {lote} - {valor_fijo}C"
+    texto_qr = f"{numero_parte} - {lote} - {valor_fijo}C"
 
-    # =========================
-    # GENERAR QR
-    # =========================
+    # ==========================
+    # QR
+    # ==========================
 
     qr = qrcode.QRCode(
-        version=1,
+        version=2,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
         box_size=15,
         border=1
     )
 
-    qr.add_data(texto_qr_inferior)
+    qr.add_data(texto_qr)
     qr.make(fit=True)
 
-    img_qr = qr.make_image(
+    qr_img = qr.make_image(
         fill_color="#27272A",
         back_color="white"
     ).convert("RGB")
 
-    # =========================
-    # ETIQUETA 10.40 x 8.50 cm
-    # 300 DPI
-    # =========================
+    # ==========================
+    # TAMAÑO ETIQUETA
+    # 10.40 x 8.50 cm
+    # ==========================
 
     ancho_px = 1004
     alto_px = 1228
@@ -57,130 +84,117 @@ if lote:
     etiqueta = Image.new("RGB", (ancho_px, alto_px), "white")
     draw = ImageDraw.Draw(etiqueta)
 
-    # =========================
-    # FUENTES
-    # =========================
+    font_np = cargar_fuente(54)
+    font_info = cargar_fuente(46)
+    font_bottom = cargar_fuente(42)
 
-    try:
-        font_datos = ImageFont.truetype("arial.ttf", 58)
-        font_bottom = ImageFont.truetype("arial.ttf", 52)
-    except:
-        font_datos = ImageFont.load_default()
-        font_bottom = ImageFont.load_default()
-
-    # =========================
+    # ==========================
     # LOGO
-    # =========================
+    # ==========================
 
     try:
+
         logo = Image.open("agc.png").convert("RGBA")
 
         logo_w, logo_h = logo.size
 
-        target_w = 650
-        target_h = int((target_w / logo_w) * logo_h)
+        nuevo_ancho = 620
+        nuevo_alto = int(logo_h * nuevo_ancho / logo_w)
 
         logo = logo.resize(
-            (target_w, target_h),
+            (nuevo_ancho, nuevo_alto),
             Image.Resampling.LANCZOS
         )
 
-        logo_x = (ancho_px - target_w) // 2
-        logo_y = 35
-
         etiqueta.paste(
             logo,
-            (logo_x, logo_y),
+            ((ancho_px - nuevo_ancho)//2, 30),
             logo
         )
 
     except Exception as e:
-        st.warning(f"No se pudo cargar el logo AGC ({e})")
+        st.warning(f"No se encontró agc.png ({e})")
 
-    # =========================
-    # DATOS
-    # =========================
+    # ==========================
+    # TEXTO
+    # ==========================
+
+    x = 90
 
     draw.text(
-        (100, 235),
+        (x, 210),
         numero_parte,
-        fill="#27272A",
-        font=font_datos
+        fill="#222222",
+        font=font_np
     )
 
     draw.text(
-        (100, 305),
-        lote,
-        fill="#27272A",
-        font=font_datos
+        (x, 280),
+        f"Lote: {lote}",
+        fill="#222222",
+        font=font_info
     )
 
     draw.text(
-        (100, 375),
-        valor_fijo,
-        fill="#27272A",
-        font=font_datos
+        (x, 345),
+        f"Cantidad: {valor_fijo}",
+        fill="#222222",
+        font=font_info
     )
 
-    # =========================
+    # ==========================
     # QR
-    # =========================
+    # ==========================
 
-    img_qr = img_qr.resize((580, 580))
-
-    qr_w, qr_h = img_qr.size
-
-    pos_x = (ancho_px - qr_w) // 2
-    pos_y = 430
+    qr_img = qr_img.resize(
+        (560, 560),
+        Image.Resampling.NEAREST
+    )
 
     etiqueta.paste(
-        img_qr,
-        (pos_x, pos_y)
+        qr_img,
+        ((ancho_px-560)//2, 420)
     )
 
-    # =========================
+    # ==========================
     # TEXTO INFERIOR
-    # =========================
+    # ==========================
 
-    try:
-        bbox = draw.textbbox(
-            (0, 0),
-            texto_qr_inferior,
-            font=font_bottom
-        )
-
-        w_texto = bbox[2] - bbox[0]
-
-    except:
-        w_texto = len(texto_qr_inferior) * 28
-
-    draw.text(
-        (
-            (ancho_px - w_texto) // 2,
-            1120
-        ),
-        texto_qr_inferior,
-        fill="#27272A",
+    bbox = draw.textbbox(
+        (0, 0),
+        texto_qr,
         font=font_bottom
     )
 
-    # =========================
+    ancho_texto = bbox[2] - bbox[0]
+
+    draw.text(
+        (
+            (ancho_px-ancho_texto)//2,
+            1080
+        ),
+        texto_qr,
+        fill="#222222",
+        font=font_bottom
+    )
+
+    # ==========================
     # VISTA PREVIA
-    # =========================
+    # ==========================
 
     st.markdown("### Vista previa")
 
-    buf_preview = BytesIO()
-    etiqueta.save(buf_preview, format="PNG")
+    buffer_img = BytesIO()
+    etiqueta.save(buffer_img, format="PNG")
 
     st.image(
-        buf_preview.getvalue(),
-        width=320
+        buffer_img.getvalue(),
+        width=340
     )
 
-    # =========================
+    # ==========================
     # PDF
-    # =========================
+    # ==========================
 
     pdf_buffer = BytesIO()
 
@@ -191,40 +205,40 @@ if lote:
 
     ancho_carta, alto_carta = letter
 
-    ancho_etiq_pt = 8.5 * cm
-    alto_etiq_pt = 10.4 * cm
+    ancho_pdf = 8.5 * cm
+    alto_pdf = 10.4 * cm
 
     margen = 0.5 * cm
 
-    buf_preview.seek(0)
+    buffer_img.seek(0)
 
-    img_reader = ImageReader(buf_preview)
+    img_reader = ImageReader(buffer_img)
 
     c.rotate(90)
 
-    x_pos = alto_carta - margen - ancho_etiq_pt
-    y_pos = -(margen + alto_etiq_pt)
+    x = alto_carta - margen - ancho_pdf
+    y = -(margen + alto_pdf)
 
     c.drawImage(
         img_reader,
-        x_pos,
-        y_pos,
-        width=ancho_etiq_pt,
-        height=alto_etiq_pt
+        x,
+        y,
+        width=ancho_pdf,
+        height=alto_pdf
     )
 
     c.showPage()
     c.save()
 
-    # =========================
+    # ==========================
     # DESCARGA
-    # =========================
+    # ==========================
 
     st.markdown("---")
 
     st.download_button(
-        label="🖨️ Descargar Etiqueta PDF",
-        data=pdf_buffer.getvalue(),
+        "🖨️ Descargar Etiqueta PDF",
+        pdf_buffer.getvalue(),
         file_name=f"Etiqueta_{numero_parte}_{lote}.pdf",
         mime="application/pdf"
     )
