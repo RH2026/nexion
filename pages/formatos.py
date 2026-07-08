@@ -198,33 +198,35 @@ if lote:
 
     pdf_buffer = BytesIO()
 
-    ancho_pdf = 8.5 * cm
-    alto_pdf = 10.4 * cm
-    
     c = canvas.Canvas(
         pdf_buffer,
-        pagesize=(ancho_pdf, alto_pdf)
+        pagesize=letter
     )
-    
+
+    ancho_carta, alto_carta = letter
+
+    ancho_pdf = 8.5 * cm
+    alto_pdf = 10.4 * cm
+
+    margen = 0.5 * cm
+
     buffer_img.seek(0)
-    
-    img = Image.open(buffer_img)
-    img = img.rotate(90, expand=True)
-    
-    rotada = BytesIO()
-    img.save(rotada, format="PNG")
-    rotada.seek(0)
-    
-    img_reader = ImageReader(rotada)
-    
+
+    img_reader = ImageReader(buffer_img)
+
+    c.rotate(90)
+
+    x = alto_carta - margen - ancho_pdf
+    y = -(margen + alto_pdf)
+
     c.drawImage(
         img_reader,
-        0,
-        0,
+        x,
+        y,
         width=ancho_pdf,
         height=alto_pdf
     )
-    
+
     c.showPage()
     c.save()
 
