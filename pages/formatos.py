@@ -217,7 +217,7 @@ if lote:
     c.rotate(90)
 
     x = alto_carta - margen - ancho_pdf
-    y = -(margen + alto_pdf)
+    y = -alto_pdf + (0.5 * cm)
 
     c.drawImage(
         img_reader,
