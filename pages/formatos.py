@@ -36,7 +36,7 @@ if lote:
         font_datos = ImageFont.load_default()
         font_bottom = ImageFont.load_default()
 
-    # --- MÁRGENES INTERNOS MÍNIMOS ---
+    # --- MÁRGENES INTERNOS ---
     m_izq = 15
     m_top = 15
 
@@ -72,7 +72,7 @@ if lote:
     # 4. Vista Previa
     st.image(etiqueta, width=320)
     
-    # 5. PDF CON POSICIÓN ABSOLUTA (0,0)
+    # 5. PDF ROTADO Y PEGADO ARRIBA-IZQUIERDA
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     ancho_carta, alto_carta = letter
@@ -82,15 +82,21 @@ if lote:
     buf_img.seek(0)
     img_reader = ImageReader(buf_img)
     
-    # Dimensiones de la etiqueta en puntos
-    ancho_pt = 8.5 * cm
-    alto_pt = 10.4 * cm
+    # Dimensiones
+    ancho_etiq_pt = 8.5 * cm
+    alto_etiq_pt = 10.4 * cm
     
-    # Posición exacta: Pegado a la izquierda (0) y arriba (alto_carta - alto_etiqueta)
-    c.drawImage(img_reader, 0, alto_carta - alto_pt, width=ancho_pt, height=alto_pt)
+    # ROTACIÓN: Cambiamos el sistema de coordenadas
+    c.saveState()
+    c.translate(0, alto_carta) # Movemos el origen arriba
+    c.rotate(-90)              # Rotamos el lienzo
+    
+    # Ahora dibujamos en (0,0) que es la esquina superior izquierda
+    c.drawImage(img_reader, 0, 0, width=alto_etiq_pt, height=ancho_etiq_pt)
+    c.restoreState()
     c.save()
 
-    st.download_button("🖨️ Descargar Etiqueta", pdf_buffer.getvalue(), "Etiqueta_Final.pdf", "application/pdf")
+    st.download_button("🖨️ Descargar Etiqueta Acostada", pdf_buffer.getvalue(), "Etiqueta_Acostada.pdf", "application/pdf")
 
 
 
