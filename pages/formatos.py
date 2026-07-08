@@ -93,12 +93,9 @@ if lote:
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
-    # --- LA SOLUCIÓN CORRECTA ---
-    # Al rotar 90 grados, el origen (0,0) queda en la esquina superior izquierda original.
-    # No necesitamos mover X, solo Y. 
-    # Al rotar, el eje Y se vuelve negativo hacia la derecha.
-    c.rotate(90)
-    c.drawImage(img_reader, 0, -alto_etiq_pt, width=ancho_etiq_pt, height=alto_etiq_pt)
+    # DIBUJA DIRECTAMENTE EN (0,0) SIN ROTACIÓN
+    # Esto coloca la etiqueta en la esquina superior izquierda de la página
+    c.drawImage(img_reader, 0, alto_carta - alto_etiq_pt, width=ancho_etiq_pt, height=alto_etiq_pt)
     
     c.showPage()
     c.save()
