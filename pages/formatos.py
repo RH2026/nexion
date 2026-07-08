@@ -38,7 +38,7 @@ if lote:
         font_datos = ImageFont.load_default()
         font_bottom = ImageFont.load_default()
 
-    # --- LOGO (TAMAÑO GRANDE) ---
+    # --- LOGO AGC ---
     try:
         logo = Image.open("agc.png").convert("RGBA")
         logo_w, logo_h = logo.size
@@ -54,7 +54,7 @@ if lote:
     except Exception as e:
         st.warning(f"No se pudo cargar 'agc.png'. ({e})")
 
-    # --- TEXTOS Y QR (COORDENADAS FIJAS) ---
+    # --- TEXTOS Y QR ---
     draw.text((100, 300), numero_parte, fill="#27272A", font=font_datos)
     draw.text((100, 380), lote, fill="#27272A", font=font_datos)
     draw.text((100, 460), valor_fijo, fill="#27272A", font=font_datos)
@@ -73,13 +73,13 @@ if lote:
         
     draw.text(((ancho_px - w_texto) // 2, 1260), texto_qr_inferior, fill="#27272A", font=font_bottom)
 
-    # 5. Vista Previa
+    # 5. Vista Previa en Nexion
     st.markdown("### Vista Previa de la Etiqueta AGC:")
     buf_preview = BytesIO()
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=320)
     
-    # 6. Preparación del PDF (CERO MÁRGENES)
+    # 6. Preparación del PDF (Pegado al límite absoluto)
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     ancho_carta, alto_carta = letter
@@ -87,7 +87,7 @@ if lote:
     ancho_etiq_pt = 8.5 * cm
     alto_etiq_pt = 12 * cm
     
-    # Aquí están los márgenes ajustados a cero para pegarlo a la esquina superior izquierda
+    # Cero margen para dejarlo completamente al ras
     margen_superior = 0 * cm 
     margen_izquierdo = 0 * cm
     
