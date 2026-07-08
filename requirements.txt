@@ -18,6 +18,7 @@ numpy
 pytesseract
 matplotlib
 streamlit-camera-input-live
+pip install qrcode[pil]
 
 
 
