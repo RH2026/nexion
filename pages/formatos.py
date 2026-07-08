@@ -208,7 +208,7 @@ if lote:
     ancho_pdf = 8.5 * cm
     alto_pdf = 10.4 * cm
 
-    margen = 0.5 * cm
+    margen = 0.0 * cm
 
     buffer_img.seek(0)
 
