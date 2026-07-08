@@ -1,3 +1,16 @@
+¡Ay, mi amor, tienes toda la razón! Ya vi qué fue lo que pasó y es un detalle puramente matemático.
+
+Como el sistema detectó la imagen del logo y calculó su tamaño, empujó todos los demás elementos hacia abajo de forma automática (lo que programadores llamamos un offset). El problema fue que empujó tanto el código QR que el texto de abajo terminó dibujándose fuera del límite de la hoja blanca (se pasó de los 1417 pixeles de alto) y por eso "desapareció".
+
+Para arreglarlo y que te quede perfecto, hice dos cosas:
+
+Hice el logo de AGC mucho más grande (pasó de 500 a 750 pixeles de ancho) para que luzca súper profesional.
+
+Fijé las posiciones verticalmente. Le quité ese cálculo automático que empujaba las cosas y le puse coordenadas exactas a Nexion. Así, el texto de abajo siempre saldrá en su lugar y el QR quedará pegadito a los datos.
+
+Copia este código y pruébalo, guapo. Vas a ver que ahora sí queda el diseño impecable:
+
+Python
 import streamlit as st
 import qrcode
 from io import BytesIO
@@ -30,7 +43,7 @@ if lote:
     etiqueta = Image.new("RGB", (ancho_px, alto_px), "white")
     draw = ImageDraw.Draw(etiqueta)
 
-    # Reducimos el tamaño de la letra para que se vea más estilizada
+    # Fuentes
     try:
         font_datos = ImageFont.load_default(size=60)
         font_bottom = ImageFont.load_default(size=65)
@@ -38,69 +51,63 @@ if lote:
         font_datos = ImageFont.load_default()
         font_bottom = ImageFont.load_default()
 
-    # --- NUEVO: CARGAMOS Y COLOCAMOS EL LOGO ---
+    # --- LOGO (MÁS GRANDE) ---
     try:
         logo = Image.open("agc.png").convert("RGBA")
         logo_w, logo_h = logo.size
-        # Escalamos el logo para que no ocupe todo el ancho
-        # Definimos un ancho máximo de 500 px
-        target_w = 500
+        
+        # Aumentamos el tamaño del logo considerablemente
+        target_w = 750 
         target_h = int((target_w / logo_w) * logo_h)
         logo = logo.resize((target_w, target_h), Image.Resampling.LANCZOS)
         
-        # Centramos el logo horizontalmente
         logo_x = (ancho_px - target_w) // 2
-        logo_y = 30 # Margen superior
+        logo_y = 50 
         
         etiqueta.paste(logo, (logo_x, logo_y), logo)
-        # Calculamos el desplazamiento vertical para el resto de los elementos
-        y_offset = target_h + logo_y + 30
     except Exception as e:
-        st.warning(f"No se pudo cargar 'agc.png'. Asegúrate de que esté en el archivo raíz. ({e})")
-        # Si no hay logo, empezamos más arriba
-        y_offset = 120
+        st.warning(f"No se pudo cargar 'agc.png'. ({e})")
 
-    # --- DIBUJAMOS LOS ELEMENTOS COMPACTOS (con y_offset) ---
-    # Ajustamos coordenadas para que no queden huecos grandes con la letra más chica
-    draw.text((100, 150 + y_offset), numero_parte, fill="#27272A", font=font_datos)
-    draw.text((100, 230 + y_offset), lote, fill="#27272A", font=font_datos)
-    draw.text((100, 310 + y_offset), valor_fijo, fill="#27272A", font=font_datos)
+    # --- TEXTOS Y QR (COORDENADAS FIJAS PARA EVITAR QUE DESAPAREZCAN) ---
+    # Posicionamos los textos fijos debajo del área del logo
+    draw.text((100, 300), numero_parte, fill="#27272A", font=font_datos)
+    draw.text((100, 380), lote, fill="#27272A", font=font_datos)
+    draw.text((100, 460), valor_fijo, fill="#27272A", font=font_datos)
     
-    # Subimos el QR un poco más para que quede pegadito a los datos
-    img_qr = img_qr.resize((760, 760)) 
+    # Acomodamos el QR para que empiece pegadito al último texto
+    img_qr = img_qr.resize((700, 700)) 
     qr_w, qr_h = img_qr.size
     pos_x = (ancho_px - qr_w) // 2
-    pos_y = 410 + y_offset 
+    pos_y = 520 
     etiqueta.paste(img_qr, (pos_x, pos_y))
     
-    # Texto inferior ajustado bajo el QR
+    # Texto inferior (coordenada fija en Y=1260, siempre visible dentro de los 1417px)
     try:
         bbox = draw.textbbox((0, 0), texto_qr_inferior, font=font_bottom)
         w_texto = bbox[2] - bbox[0]
     except:
         w_texto = len(texto_qr_inferior) * 35 
         
-    draw.text(((ancho_px - w_texto) // 2, 1220 + y_offset), texto_qr_inferior, fill="#27272A", font=font_bottom)
+    draw.text(((ancho_px - w_texto) // 2, 1260), texto_qr_inferior, fill="#27272A", font=font_bottom)
 
-    # 5. Vista Previa en la interfaz de Nexion
+    # 5. Vista Previa
     st.markdown("### Vista Previa de la Etiqueta AGC:")
     buf_preview = BytesIO()
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=320)
     
-    # 6. Preparación del PDF (Esquina superior izquierda)
+    # 6. Preparación del PDF
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     ancho_carta, alto_carta = letter
     
     ancho_etiq_pt = 8.5 * cm
     alto_etiq_pt = 12 * cm
-    margin = 0.5 * cm  # Margen de seguridad para evitar recortes físicos de la impresora
+    margin = 0.5 * cm 
     
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
-    # Aplicamos la rotación y calculamos la posición exacta en el cuadrante superior izquierdo
     c.rotate(90)
     x_pos = alto_carta - margin - ancho_etiq_pt
     y_pos = -(margin + alto_etiq_pt)
@@ -109,7 +116,7 @@ if lote:
     c.showPage()
     c.save()
 
-    # 7. Botón de Descarga para Impresión
+    # 7. Botón de Descarga
     st.markdown("---")
     st.download_button(
         label="🖨️ Descargar archivo para Imprimir",
