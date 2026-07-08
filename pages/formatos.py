@@ -16,15 +16,16 @@ lote = st.text_input("Lote (Ej. 6181)")
 valor_fijo = "140"
 
 if lote:
+    # 2. Preparamos el texto final con la "C"
     texto_qr_inferior = f"{numero_parte} - {lote} - {valor_fijo}C"
     
-    # 2. Generamos el QR
+    # 3. Generamos el QR
     qr = qrcode.QRCode(version=1, box_size=15, border=1)
     qr.add_data(texto_qr_inferior)
     qr.make(fit=True)
     img_qr = qr.make_image(fill_color="#27272A", back_color="white").convert("RGB")
     
-    # 3. Lienzo de la etiqueta (10.40 cm x 8.5 cm)
+    # 4. Lienzo de la etiqueta (10.40 cm x 8.5 cm)
     ancho_px, alto_px = 1004, 1228
     etiqueta = Image.new("RGB", (ancho_px, alto_px), "white")
     draw = ImageDraw.Draw(etiqueta)
@@ -32,13 +33,13 @@ if lote:
     try:
         font_datos = ImageFont.load_default(size=60)
         font_bottom = ImageFont.load_default(size=65)
-    except:
+    except TypeError:
         font_datos = ImageFont.load_default()
         font_bottom = ImageFont.load_default()
 
     # --- MÁRGENES INTERNOS ---
-    m_izq = 15
-    m_top = 15
+    margen_izquierdo_interno = 15
+    margen_superior_interno = 15
 
     # --- LOGO AGC ---
     try:
@@ -47,14 +48,14 @@ if lote:
         target_w = 750
         target_h = int((target_w / logo_w) * logo_h)
         logo = logo.resize((target_w, target_h), Image.Resampling.LANCZOS)
-        etiqueta.paste(logo, (m_izq, m_top), logo)
-    except:
-        pass
+        etiqueta.paste(logo, (margen_izquierdo_interno, margen_superior_interno), logo)
+    except Exception as e:
+        st.warning(f"No se pudo cargar 'agc.png'. ({e})")
 
     # --- TEXTOS Y QR ---
-    draw.text((m_izq, 200), numero_parte, fill="#27272A", font=font_datos)
-    draw.text((m_izq, 270), lote, fill="#27272A", font=font_datos)
-    draw.text((m_izq, 340), valor_fijo, fill="#27272A", font=font_datos)
+    draw.text((margen_izquierdo_interno, 200), numero_parte, fill="#27272A", font=font_datos)
+    draw.text((margen_izquierdo_interno, 270), lote, fill="#27272A", font=font_datos)
+    draw.text((margen_izquierdo_interno, 340), valor_fijo, fill="#27272A", font=font_datos)
     
     img_qr = img_qr.resize((680, 680))
     pos_x = (ancho_px - 680) // 2
@@ -69,34 +70,38 @@ if lote:
         
     draw.text(((ancho_px - w_texto) // 2, 1130), texto_qr_inferior, fill="#27272A", font=font_bottom)
 
-    # 4. Vista Previa
-    st.image(etiqueta, width=320)
+    # 5. Vista Previa
+    st.markdown("### Vista Previa de la Etiqueta AGC:")
+    buf_preview = BytesIO()
+    etiqueta.save(buf_preview, format="PNG")
+    st.image(buf_preview.getvalue(), width=320)
     
-    # 5. PDF ROTADO Y PEGADO ARRIBA-IZQUIERDA
+    # 6. Preparación del PDF (ACROBÁTICA Y PEGADA AL LÍMITE)
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     ancho_carta, alto_carta = letter
     
-    buf_img = BytesIO()
-    etiqueta.save(buf_img, format="PNG")
-    buf_img.seek(0)
-    img_reader = ImageReader(buf_img)
-    
-    # Dimensiones
     ancho_etiq_pt = 8.5 * cm
     alto_etiq_pt = 10.4 * cm
     
-    # ROTACIÓN: Cambiamos el sistema de coordenadas
-    c.saveState()
-    c.translate(0, alto_carta) # Movemos el origen arriba
-    c.rotate(-90)              # Rotamos el lienzo
+    buf_preview.seek(0)
+    img_reader = ImageReader(buf_preview)
     
-    # Ahora dibujamos en (0,0) que es la esquina superior izquierda
-    c.drawImage(img_reader, 0, 0, width=alto_etiq_pt, height=ancho_etiq_pt)
-    c.restoreState()
+    # ROTACIÓN 90 GRADOS (ACOSTADA)
+    c.rotate(90)
+    # Posicionamiento: X=0 (pegado a la izquierda), Y=-(largo de la etiqueta) para que quede en el filo superior
+    c.drawImage(img_reader, 0, -alto_etiq_pt, width=ancho_etiq_pt, height=alto_etiq_pt)
+    c.showPage()
     c.save()
 
-    st.download_button("🖨️ Descargar Etiqueta Acostada", pdf_buffer.getvalue(), "Etiqueta_Acostada.pdf", "application/pdf")
+    # 7. Botón de Descarga
+    st.markdown("---")
+    st.download_button(
+        label="🖨️ Descargar Etiqueta Acostada",
+        data=pdf_buffer.getvalue(),
+        file_name=f"Etiqueta_Acostada_{numero_parte}.pdf",
+        mime="application/pdf"
+    )
 
 
 
