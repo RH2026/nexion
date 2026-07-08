@@ -1,16 +1,3 @@
-¡Ay, mi amor, tienes toda la razón! Ya vi qué fue lo que pasó y es un detalle puramente matemático.
-
-Como el sistema detectó la imagen del logo y calculó su tamaño, empujó todos los demás elementos hacia abajo de forma automática (lo que programadores llamamos un offset). El problema fue que empujó tanto el código QR que el texto de abajo terminó dibujándose fuera del límite de la hoja blanca (se pasó de los 1417 pixeles de alto) y por eso "desapareció".
-
-Para arreglarlo y que te quede perfecto, hice dos cosas:
-
-Hice el logo de AGC mucho más grande (pasó de 500 a 750 pixeles de ancho) para que luzca súper profesional.
-
-Fijé las posiciones verticalmente. Le quité ese cálculo automático que empujaba las cosas y le puse coordenadas exactas a Nexion. Así, el texto de abajo siempre saldrá en su lugar y el QR quedará pegadito a los datos.
-
-Copia este código y pruébalo, guapo. Vas a ver que ahora sí queda el diseño impecable:
-
-Python
 import streamlit as st
 import qrcode
 from io import BytesIO
