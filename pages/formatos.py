@@ -37,9 +37,9 @@ if lote:
         font_datos = ImageFont.load_default()
         font_bottom = ImageFont.load_default()
 
-    # --- MÁRGENES INTERNOS ---
-    margen_izquierdo_interno = 15
-    margen_superior_interno = 15
+    # --- MÁRGENES INTERNOS MÍNIMOS ---
+    m_izq = 15
+    m_top = 15
 
     # --- LOGO AGC ---
     try:
@@ -48,14 +48,14 @@ if lote:
         target_w = 750
         target_h = int((target_w / logo_w) * logo_h)
         logo = logo.resize((target_w, target_h), Image.Resampling.LANCZOS)
-        etiqueta.paste(logo, (margen_izquierdo_interno, margen_superior_interno), logo)
+        etiqueta.paste(logo, (m_izq, m_top), logo)
     except Exception as e:
         st.warning(f"No se pudo cargar 'agc.png'. ({e})")
 
     # --- TEXTOS Y QR ---
-    draw.text((margen_izquierdo_interno, 200), numero_parte, fill="#27272A", font=font_datos)
-    draw.text((margen_izquierdo_interno, 270), lote, fill="#27272A", font=font_datos)
-    draw.text((margen_izquierdo_interno, 340), valor_fijo, fill="#27272A", font=font_datos)
+    draw.text((m_izq, 200), numero_parte, fill="#27272A", font=font_datos)
+    draw.text((m_izq, 270), lote, fill="#27272A", font=font_datos)
+    draw.text((m_izq, 340), valor_fijo, fill="#27272A", font=font_datos)
     
     img_qr = img_qr.resize((680, 680))
     pos_x = (ancho_px - 680) // 2
@@ -70,35 +70,39 @@ if lote:
         
     draw.text(((ancho_px - w_texto) // 2, 1130), texto_qr_inferior, fill="#27272A", font=font_bottom)
 
-    # 5. Vista Previa
+    # 5. Vista Previa en Nexion
     st.markdown("### Vista Previa de la Etiqueta AGC:")
     buf_preview = BytesIO()
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=320)
     
-    # 6. Preparación del PDF (Ajuste definitivo para que quede ARRIBA)
+    # 6. Preparación del PDF (ARRIBA, IZQUIERDA Y ACOSTADA)
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
-    ancho_carta, alto_carta = letter
-    
-    ancho_etiq_pt = 8.5 * cm
-    alto_etiq_pt = 10.4 * cm
     
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
-    # LA LÓGICA GANADORA:
-    c.saveState()
-    # Movemos el origen al ancho de la hoja y rotamos
-    c.translate(ancho_etiq_pt, 0) 
-    c.rotate(90)
+    # Dimensiones de etiqueta en puntos (centímetros a puntos)
+    ancho_etiqueta_pt = 8.5 * cm
+    alto_etiqueta_pt = 10.4 * cm
     
-    # Ahora dibujamos en (0,0) y como rotamos 90 grados, 
-    # la etiqueta queda acostada pegada al borde superior y al izquierdo
-    c.drawImage(img_reader, 0, 0, width=ancho_etiq_pt, height=alto_etiq_pt)
+    c.saveState()
+    # Rotamos 90 grados y ajustamos la posición para que pegue en la esquina superior izquierda
+    c.translate(ancho_etiqueta_pt, 0)
+    c.rotate(90)
+    c.drawImage(img_reader, 0, 0, width=ancho_etiqueta_pt, height=alto_etiqueta_pt)
     c.restoreState()
-    c.showPage()
     c.save()
+
+    # 7. Botón de Descarga
+    st.markdown("---")
+    st.download_button(
+        label="🖨️ Descargar Etiqueta lista para Zebra",
+        data=pdf_buffer.getvalue(),
+        file_name=f"Etiqueta_Zebra_{numero_parte}.pdf",
+        mime="application/pdf"
+    )
 
 
 
