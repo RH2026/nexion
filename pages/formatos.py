@@ -18,13 +18,13 @@ valor_fijo = "140"
 if lote:
     texto_qr_inferior = f"{numero_parte} - {lote} - {valor_fijo}C"
     
-    # --- DISEÑO ORIGINAL (Versión anterior) ---
+    # 2. Generamos el QR
     qr = qrcode.QRCode(version=1, box_size=15, border=1)
     qr.add_data(texto_qr_inferior)
     qr.make(fit=True)
     img_qr = qr.make_image(fill_color="#27272A", back_color="white").convert("RGB")
     
-    # Lienzo de etiqueta base (10.4 cm x 8.5 cm)
+    # 3. Lienzo de la etiqueta (10.40 cm x 8.5 cm)
     ancho_px, alto_px = 1004, 1228
     etiqueta = Image.new("RGB", (ancho_px, alto_px), "white")
     draw = ImageDraw.Draw(etiqueta)
@@ -36,43 +36,61 @@ if lote:
         font_datos = ImageFont.load_default()
         font_bottom = ImageFont.load_default()
 
-    # --- ELEMENTOS DEL DISEÑO ---
+    # --- MÁRGENES INTERNOS MÍNIMOS ---
+    m_izq = 15
+    m_top = 15
+
+    # --- LOGO AGC ---
     try:
         logo = Image.open("agc.png").convert("RGBA")
         logo_w, logo_h = logo.size
         target_w = 750
         target_h = int((target_w / logo_w) * logo_h)
         logo = logo.resize((target_w, target_h), Image.Resampling.LANCZOS)
-        etiqueta.paste(logo, (50, 50), logo)
+        etiqueta.paste(logo, (m_izq, m_top), logo)
     except:
         pass
 
-    draw.text((50, 250), numero_parte, fill="#27272A", font=font_datos)
-    draw.text((50, 320), lote, fill="#27272A", font=font_datos)
-    draw.text((50, 390), valor_fijo, fill="#27272A", font=font_datos)
+    # --- TEXTOS Y QR ---
+    draw.text((m_izq, 200), numero_parte, fill="#27272A", font=font_datos)
+    draw.text((m_izq, 270), lote, fill="#27272A", font=font_datos)
+    draw.text((m_izq, 340), valor_fijo, fill="#27272A", font=font_datos)
     
-    img_qr = img_qr.resize((650, 650))
-    etiqueta.paste(img_qr, (170, 450))
+    img_qr = img_qr.resize((680, 680))
+    pos_x = (ancho_px - 680) // 2
+    pos_y = 410
+    etiqueta.paste(img_qr, (pos_x, pos_y))
     
-    draw.text((50, 1120), texto_qr_inferior, fill="#27272A", font=font_bottom)
+    try:
+        bbox = draw.textbbox((0, 0), texto_qr_inferior, font=font_bottom)
+        w_texto = bbox[2] - bbox[0]
+    except:
+        w_texto = len(texto_qr_inferior) * 35
+        
+    draw.text(((ancho_px - w_texto) // 2, 1130), texto_qr_inferior, fill="#27272A", font=font_bottom)
 
-    # 2. PDF TAMAÑO CARTA CON ETIQUETA EN ESQUINA SUPERIOR IZQUIERDA
+    # 4. Vista Previa
+    st.image(etiqueta, width=320)
+    
+    # 5. PDF CON POSICIÓN ABSOLUTA (0,0)
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
+    ancho_carta, alto_carta = letter
     
     buf_img = BytesIO()
     etiqueta.save(buf_img, format="PNG")
     buf_img.seek(0)
+    img_reader = ImageReader(buf_img)
     
-    # Coordenadas: x=0 (pegado a la izquierda), y=carta_alto - etiqueta_alto (pegado arriba)
-    # letter es (612, 792) puntos aprox.
-    ancho_etiq_pt = 8.5 * cm
-    alto_etiq_pt = 10.4 * cm
+    # Dimensiones de la etiqueta en puntos
+    ancho_pt = 8.5 * cm
+    alto_pt = 10.4 * cm
     
-    c.drawImage(ImageReader(buf_img), 0, 792 - alto_etiq_pt, width=ancho_etiq_pt, height=alto_etiq_pt)
+    # Posición exacta: Pegado a la izquierda (0) y arriba (alto_carta - alto_etiqueta)
+    c.drawImage(img_reader, 0, alto_carta - alto_pt, width=ancho_pt, height=alto_pt)
     c.save()
 
-    st.download_button("🖨️ Descargar PDF (Esquina Superior Izquierda)", pdf_buffer.getvalue(), "Etiqueta_Carta.pdf", "application/pdf")
+    st.download_button("🖨️ Descargar Etiqueta", pdf_buffer.getvalue(), "Etiqueta_Final.pdf", "application/pdf")
 
 
 
