@@ -76,29 +76,32 @@ if lote:
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=320)
     
-    # 6. Preparación del PDF (ARRIBA, IZQUIERDA Y ACOSTADA)
+    # 6. Preparación del PDF (CORREGIDO: ACOSTADA Y PEGA A LA ESQUINA SUPERIOR IZQUIERDA)
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
-    # Dimensiones de etiqueta en puntos (centímetros a puntos)
-    ancho_etiqueta_pt = 8.5 * cm
-    alto_etiqueta_pt = 10.4 * cm
+    # Dimensiones de etiqueta
+    ancho_etiq_pt = 8.5 * cm
+    alto_etiq_pt = 10.4 * cm
     
     c.saveState()
-    # Rotamos 90 grados y ajustamos la posición para que pegue en la esquina superior izquierda
-    c.translate(ancho_etiqueta_pt, 0)
+    # Rotamos 90 grados. Al rotar, el punto (0,0) es la esquina superior izquierda de la hoja.
     c.rotate(90)
-    c.drawImage(img_reader, 0, 0, width=ancho_etiqueta_pt, height=alto_etiqueta_pt)
+    
+    # Dibujamos en (0, -ancho_etiq_pt) para empujar el diseño hacia el borde superior
+    c.drawImage(img_reader, 0, -ancho_etiq_pt, width=ancho_etiq_pt, height=alto_etiq_pt)
+    
     c.restoreState()
+    c.showPage()
     c.save()
 
     # 7. Botón de Descarga
     st.markdown("---")
     st.download_button(
-        label="🖨️ Descargar Etiqueta lista para Zebra",
+        label="🖨️ Descargar Etiqueta Final (Zebra)",
         data=pdf_buffer.getvalue(),
         file_name=f"Etiqueta_Zebra_{numero_parte}.pdf",
         mime="application/pdf"
