@@ -76,7 +76,7 @@ if lote:
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=320)
     
-    # 6. Preparación del PDF (ACROBÁTICA Y PEGADA AL LÍMITE)
+    # 6. Preparación del PDF (Ajuste definitivo para que quede ARRIBA)
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     ancho_carta, alto_carta = letter
@@ -87,21 +87,18 @@ if lote:
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
-    # ROTACIÓN 90 GRADOS (ACOSTADA)
+    # LA LÓGICA GANADORA:
+    c.saveState()
+    # Movemos el origen al ancho de la hoja y rotamos
+    c.translate(ancho_etiq_pt, 0) 
     c.rotate(90)
-    # Posicionamiento: X=0 (pegado a la izquierda), Y=-(largo de la etiqueta) para que quede en el filo superior
-    c.drawImage(img_reader, 0, -alto_etiq_pt, width=ancho_etiq_pt, height=alto_etiq_pt)
+    
+    # Ahora dibujamos en (0,0) y como rotamos 90 grados, 
+    # la etiqueta queda acostada pegada al borde superior y al izquierdo
+    c.drawImage(img_reader, 0, 0, width=ancho_etiq_pt, height=alto_etiq_pt)
+    c.restoreState()
     c.showPage()
     c.save()
-
-    # 7. Botón de Descarga
-    st.markdown("---")
-    st.download_button(
-        label="🖨️ Descargar Etiqueta Acostada",
-        data=pdf_buffer.getvalue(),
-        file_name=f"Etiqueta_Acostada_{numero_parte}.pdf",
-        mime="application/pdf"
-    )
 
 
 
