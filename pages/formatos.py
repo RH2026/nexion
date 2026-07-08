@@ -38,40 +38,48 @@ if lote:
         font_datos = ImageFont.load_default()
         font_bottom = ImageFont.load_default()
 
-    # --- LOGO AGC ---
+    # --- DEFINIMOS LOS MÁRGENES INTERNOS AL LÍMITE ---
+    # 15 pixeles equivalen a casi 1 milímetro, para que no se corte pero quede al ras
+    margen_izquierdo_interno = 15
+    margen_superior_interno = 15
+
+    # --- LOGO AGC (Alineado a la izquierda y pegado arriba) ---
     try:
         logo = Image.open("agc.png").convert("RGBA")
         logo_w, logo_h = logo.size
         
-        target_w = 750 
+        target_w = 800 # Un poquito más grande para que luzca
         target_h = int((target_w / logo_w) * logo_h)
         logo = logo.resize((target_w, target_h), Image.Resampling.LANCZOS)
         
-        logo_x = (ancho_px - target_w) // 2
-        logo_y = 50 
+        logo_x = margen_izquierdo_interno 
+        logo_y = margen_superior_interno 
         
         etiqueta.paste(logo, (logo_x, logo_y), logo)
     except Exception as e:
         st.warning(f"No se pudo cargar 'agc.png'. ({e})")
 
-    # --- TEXTOS Y QR ---
-    draw.text((100, 300), numero_parte, fill="#27272A", font=font_datos)
-    draw.text((100, 380), lote, fill="#27272A", font=font_datos)
-    draw.text((100, 460), valor_fijo, fill="#27272A", font=font_datos)
+    # --- TEXTOS Y QR (Recorridos al límite) ---
+    # Alineamos los textos con el mismo margen izquierdo que el logo
+    draw.text((margen_izquierdo_interno, 240), numero_parte, fill="#27272A", font=font_datos)
+    draw.text((margen_izquierdo_interno, 320), lote, fill="#27272A", font=font_datos)
+    draw.text((margen_izquierdo_interno, 400), valor_fijo, fill="#27272A", font=font_datos)
     
-    img_qr = img_qr.resize((700, 700)) 
+    # Subimos el QR para que abrace los textos
+    img_qr = img_qr.resize((740, 740)) 
     qr_w, qr_h = img_qr.size
     pos_x = (ancho_px - qr_w) // 2
-    pos_y = 520 
+    pos_y = 440 
     etiqueta.paste(img_qr, (pos_x, pos_y))
     
+    # Texto inferior
     try:
         bbox = draw.textbbox((0, 0), texto_qr_inferior, font=font_bottom)
         w_texto = bbox[2] - bbox[0]
     except:
         w_texto = len(texto_qr_inferior) * 35 
         
-    draw.text(((ancho_px - w_texto) // 2, 1260), texto_qr_inferior, fill="#27272A", font=font_bottom)
+    draw.text(((ancho_px - w_texto) // 2, 1200), texto_qr_inferior, fill="#27272A", font=font_bottom)
 
     # 5. Vista Previa en Nexion
     st.markdown("### Vista Previa de la Etiqueta AGC:")
@@ -79,7 +87,7 @@ if lote:
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=320)
     
-    # 6. Preparación del PDF (Pegado al límite absoluto)
+    # 6. Preparación del PDF (Cero márgenes externos en la hoja carta)
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     ancho_carta, alto_carta = letter
@@ -87,16 +95,15 @@ if lote:
     ancho_etiq_pt = 8.5 * cm
     alto_etiq_pt = 12 * cm
     
-    # Cero margen para dejarlo completamente al ras
-    margen_superior = 0 * cm 
-    margen_izquierdo = 0 * cm
+    margen_superior_pdf = 0 * cm 
+    margen_izquierdo_pdf = 0 * cm
     
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
     c.rotate(90)
-    x_pos = alto_carta - margen_superior - ancho_etiq_pt
-    y_pos = -(margen_izquierdo + alto_etiq_pt)
+    x_pos = alto_carta - margen_superior_pdf - ancho_etiq_pt
+    y_pos = -(margen_izquierdo_pdf + alto_etiq_pt)
     
     c.drawImage(img_reader, x_pos, y_pos, width=ancho_etiq_pt, height=alto_etiq_pt)
     c.showPage()
