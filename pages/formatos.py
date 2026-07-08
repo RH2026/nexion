@@ -38,12 +38,11 @@ if lote:
         font_datos = ImageFont.load_default()
         font_bottom = ImageFont.load_default()
 
-    # --- LOGO (MÁS GRANDE) ---
+    # --- LOGO (TAMAÑO GRANDE) ---
     try:
         logo = Image.open("agc.png").convert("RGBA")
         logo_w, logo_h = logo.size
         
-        # Aumentamos el tamaño del logo considerablemente
         target_w = 750 
         target_h = int((target_w / logo_w) * logo_h)
         logo = logo.resize((target_w, target_h), Image.Resampling.LANCZOS)
@@ -55,20 +54,17 @@ if lote:
     except Exception as e:
         st.warning(f"No se pudo cargar 'agc.png'. ({e})")
 
-    # --- TEXTOS Y QR (COORDENADAS FIJAS PARA EVITAR QUE DESAPAREZCAN) ---
-    # Posicionamos los textos fijos debajo del área del logo
+    # --- TEXTOS Y QR (COORDENADAS FIJAS) ---
     draw.text((100, 300), numero_parte, fill="#27272A", font=font_datos)
     draw.text((100, 380), lote, fill="#27272A", font=font_datos)
     draw.text((100, 460), valor_fijo, fill="#27272A", font=font_datos)
     
-    # Acomodamos el QR para que empiece pegadito al último texto
     img_qr = img_qr.resize((700, 700)) 
     qr_w, qr_h = img_qr.size
     pos_x = (ancho_px - qr_w) // 2
     pos_y = 520 
     etiqueta.paste(img_qr, (pos_x, pos_y))
     
-    # Texto inferior (coordenada fija en Y=1260, siempre visible dentro de los 1417px)
     try:
         bbox = draw.textbbox((0, 0), texto_qr_inferior, font=font_bottom)
         w_texto = bbox[2] - bbox[0]
@@ -83,21 +79,24 @@ if lote:
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=320)
     
-    # 6. Preparación del PDF
+    # 6. Preparación del PDF (CERO MÁRGENES)
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     ancho_carta, alto_carta = letter
     
     ancho_etiq_pt = 8.5 * cm
     alto_etiq_pt = 12 * cm
-    margin = 0.5 * cm 
+    
+    # Aquí están los márgenes ajustados a cero para pegarlo a la esquina superior izquierda
+    margen_superior = 0 * cm 
+    margen_izquierdo = 0 * cm
     
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
     c.rotate(90)
-    x_pos = alto_carta - margin - ancho_etiq_pt
-    y_pos = -(margin + alto_etiq_pt)
+    x_pos = alto_carta - margen_superior - ancho_etiq_pt
+    y_pos = -(margen_izquierdo + alto_etiq_pt)
     
     c.drawImage(img_reader, x_pos, y_pos, width=ancho_etiq_pt, height=alto_etiq_pt)
     c.showPage()
