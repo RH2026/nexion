@@ -83,10 +83,9 @@ if lote:
     etiqueta.save(buf_preview, format="PNG")
     st.image(buf_preview.getvalue(), width=320)
     
-    # 6. Preparación del PDF (Versión ajustada para esquina superior izquierda)
+    # 6. Preparación del PDF
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
-    ancho_carta, alto_carta = letter
     
     ancho_etiq_pt = 8.5 * cm
     alto_etiq_pt = 12 * cm
@@ -94,14 +93,13 @@ if lote:
     buf_preview.seek(0)
     img_reader = ImageReader(buf_preview)
     
-    # --- AJUSTE CORRECTO ---
-    # Al rotar 90 grados, el origen (0,0) está en la esquina inferior izquierda.
-    # Para ponerlo en la esquina superior izquierda real de la hoja:
+    # --- LA SOLUCIÓN CORRECTA ---
+    # Al rotar 90 grados, el origen (0,0) queda en la esquina superior izquierda original.
+    # No necesitamos mover X, solo Y. 
+    # Al rotar, el eje Y se vuelve negativo hacia la derecha.
     c.rotate(90)
-    x_pos = 0 
-    y_pos = -ancho_etiq_pt # Ajustamos para que suba al borde superior
+    c.drawImage(img_reader, 0, -alto_etiq_pt, width=ancho_etiq_pt, height=alto_etiq_pt)
     
-    c.drawImage(img_reader, x_pos, y_pos, width=ancho_etiq_pt, height=alto_etiq_pt)
     c.showPage()
     c.save()
 
