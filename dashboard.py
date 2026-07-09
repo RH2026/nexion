@@ -434,17 +434,19 @@ div[data-baseweb="popover"] li:hover {{
     color: #ffffff !important;
 }}
 
-/* --- FORZAR NUMBER INPUT (CANTIDAD DE CAJAS) A 34PX --- */
-div[data-testid="stNumberInput"] > div > div {{
+/* --- FORZAR NUMBER INPUT (CANTIDAD DE CAJAS) A 34PX (NUCLEAR) --- */
+div[data-testid="stNumberInput"] > div > div,
+div[data-testid="stNumberInput"] div[data-baseweb="input"] {{
     min-height: 34px !important;
     height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
-    transition: all 0.3s ease-in-out !important;
 }}
 
-/* Focus del Number Input (Borde iluminado) */
+/* Focus del Number Input */
 div[data-testid="stNumberInput"] > div > div:focus-within {{
     border: 1px solid #00A0A8 !important;
     box-shadow: 0 0 0 1px #00A0A8 !important;
@@ -465,19 +467,30 @@ div[data-testid="stNumberInput"] input {{
     outline: none !important;
 }}
 
-/* Los botones de menos (-) y más (+) */
+/* Aplastar los contenedores de los botones + y - */
+div[data-testid="stNumberInputStepDown"],
+div[data-testid="stNumberInputStepUp"],
 div[data-testid="stNumberInput"] button {{
     min-height: 34px !important;
     height: 34px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-    color: {vars_css['sub']} !important;
+    padding: 0px !important;
+    margin: 0px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     background-color: transparent !important;
+    color: {vars_css['sub']} !important;
     border: none !important;
 }}
 
+/* El icono SVG dentro de los botones para que no estorbe */
+div[data-testid="stNumberInput"] button svg {{
+    height: 12px !important;
+    width: 12px !important;
+}}
+
 div[data-testid="stNumberInput"] button:hover {{
-    color: #00FFAA !important; /* Un toque de tu verde neón al pasar el mouse */
+    color: #00FFAA !important;
 }}
 
 /* --- FORZAR TABS (PESTAÑAS) A 30PX --- */
@@ -511,7 +524,7 @@ div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
 
 /* Bajar tamaño de los nombres de los filtros (Labels) */
 [data-testid="stWidgetLabel"] p {{
-    font-size: 12px !important;
+    font-size: 10px !important;
     text-transform: uppercase !important;
     letter-spacing: 2px !important;
     color: {vars_css['sub']} !important;
@@ -519,7 +532,7 @@ div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
 }}
 
 input[data-testid="stDateInputView"] {{
-    font-size: 12px !important;
+    font-size: 10px !important;
     color: {vars_css['text']} !important;
 }}
 
