@@ -349,8 +349,8 @@ div.stButton > button:hover {{
 
 /* --- FORZAR TEXT INPUT (BÚSQUEDA) A 30PX --- */
 div[data-testid="stTextInput"] > div > div {{
-    min-height: 35px !important;
-    height: 35px !important;
+    min-height: 34px !important;
+    height: 34px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
@@ -363,9 +363,9 @@ div[data-testid="stTextInput"] > div > div:focus-within {{
 }}
 
 div[data-testid="stTextInput"] input {{
-    min-height: 35px !important;
-    height: 35px !important;
-    line-height: 35px !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
     padding-top: 0px !important;
     padding-bottom: 0px !important;
     background-color: transparent !important; 
@@ -389,8 +389,8 @@ div[data-testid="stTextInput"] input::placeholder {{
 div[data-testid="stSelectbox"] div[role="combobox"],
 div[data-testid="stSelectbox"] div[role="button"],
 div[data-testid="stSelectbox"] > div > div {{
-    min-height: 35px !important;
-    height: 35px !important;
+    min-height: 34px !important;
+    height: 34px !important;
     padding-top: 0px !important;
     padding-bottom: 0px !important;
     background-color: {vars_css['card']} !important;
