@@ -321,8 +321,11 @@ h3, .op-query-text {{
     width: 100% !important; 
 }}
 
-/* 4. BOTONES SLIM */
-div.stButton > button {{ 
+/* 4. BOTONES SLIM (BLINDAJE TOTAL CON DOBLE LLAVE) */
+div.stButton > button, 
+button[kind="secondary"], 
+div[data-testid="stFormSubmitButton"] > button,
+div[data-testid="stVerticalBlock"] button {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
     border: 1px solid {vars_css['border']} !important; 
@@ -337,7 +340,11 @@ div.stButton > button {{
     width: 100% !important; 
 }}
 
-div.stButton > button:hover {{ 
+/* El estado Hover para todos ellos */
+div.stButton > button:hover, 
+button[kind="secondary"]:hover, 
+div[data-testid="stFormSubmitButton"] > button:hover,
+div[data-testid="stVerticalBlock"] button:hover {{ 
     background-color: #00A3A3 !important; 
     color: #ffffff !important; 
     border-color: #00A3A3 !important; 
