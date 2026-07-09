@@ -321,7 +321,12 @@ h3, .op-query-text {{
     width: 100% !important; 
 }}
 
-/* 4. BOTONES SLIM (BLINDAJE TOTAL CON DOBLE LLAVE) */
+/* ========================================================================= */
+/* 4 y 5. BLINDAJE TOTAL DE BOTONES, INPUTS, SELECTBOX Y TABS              */
+/* ========================================================================= */
+
+/* --- BOTONES (BLINDAJE TOTAL PARA QUE NINGUNO QUEDE TRANSPARENTE) --- */
+button, 
 div.stButton > button, 
 button[kind="secondary"], 
 div[data-testid="stFormSubmitButton"] > button,
@@ -340,7 +345,7 @@ div[data-testid="stVerticalBlock"] button {{
     width: 100% !important; 
 }}
 
-/* El estado Hover para todos ellos */
+button:hover,
 div.stButton > button:hover, 
 button[kind="secondary"]:hover, 
 div[data-testid="stFormSubmitButton"] > button:hover,
@@ -350,154 +355,48 @@ div[data-testid="stVerticalBlock"] button:hover {{
     border-color: #00A3A3 !important; 
 }}
 
-/* ========================================================================= */
-/* 5. SOLUCIÓN DEFINITIVA Y AGRESIVA (SELECTBOX, INPUTS Y TABS)              */
-/* ========================================================================= */
-
-/* --- FORZAR TEXT INPUT (BÚSQUEDA) A 30PX --- */
+/* --- FORZAR TEXT INPUT (BÚSQUEDA) A 34PX --- */
 div[data-testid="stTextInput"] > div > div {{
     min-height: 34px !important;
     height: 34px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
-    transition: all 0.3s ease-in-out !important;
-}}
-
-div[data-testid="stTextInput"] > div > div:focus-within {{
-    border: 1px solid #00A0A8 !important;
-    box-shadow: 0 0 0 1px #00A0A8 !important;
 }}
 
 div[data-testid="stTextInput"] input {{
     min-height: 34px !important;
     height: 34px !important;
     line-height: 34px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
     background-color: transparent !important; 
     color: {vars_css['text']} !important; 
     border: none !important; 
-    box-shadow: none !important; 
     text-align: center !important; 
-    letter-spacing: 2px; 
-    outline: none !important;
 }}
 
-div[data-testid="stTextInput"] input::placeholder {{
-    font-size: 12px !important; 
-    color: {vars_css['sub']} !important; 
-    opacity: 0.7 !important;
-    letter-spacing: 1px !important;
-    text-transform: uppercase !important;
+/* --- FORZAR SELECTBOX A 34PX --- */
+div[data-testid="stSelectbox"] > div[data-baseweb="select"] {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    border-radius: 4px !important;
 }}
 
-/* --- FORZAR SELECTBOX A 30PX --- */
-div[data-testid="stSelectbox"] div[role="combobox"],
-div[data-testid="stSelectbox"] div[role="button"],
-div[data-testid="stSelectbox"] > div > div {{
+/* --- FORZAR NUMBER INPUT (CANTIDAD DE CAJAS) A 34PX --- */
+div[data-testid="stNumberInput"] > div > div {{
     min-height: 34px !important;
     height: 34px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
 }}
 
-/* Focus del SelectBox */
-div[data-testid="stSelectbox"] > div > div:focus-within {{
-    border-color: #00A0A8 !important;
-    box-shadow: 0 0 0 1px #00A0A8 !important;
-    outline: none !important;
-}}
-
-/* Centra el texto dentro del Selectbox */
-div[data-testid="stSelectbox"] div[data-testid="stMarkdownContainer"] p {{
-    line-height: 1.5 !important; 
-    margin: 0 !important;
-    font-size: 11px !important;
-    color: {vars_css['text']} !important;
-    text-transform: uppercase !important;
-}}
-
-/* El menú desplegable del Selectbox y sus colores (Mantenido intacto) */
-div[data-baseweb="popover"] ul {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    padding: 0 !important;
-}}
-div[data-baseweb="popover"] li {{
-    background-color: transparent !important;
-    color: {vars_css['text']} !important;
-    font-size: 14px !important;
-    padding: 8px 12px !important;
-    text-transform: uppercase !important;
-    transition: background 0.2s ease !important;
-}}
-div[data-baseweb="popover"] li:hover {{
-    background-color: #00A3A3 !important;
-    color: #ffffff !important;
-}}
-
-/* --- FORZAR NUMBER INPUT (CANTIDAD DE CAJAS) A 34PX (NUCLEAR) --- */
-div[data-testid="stNumberInput"] > div > div,
-div[data-testid="stNumberInput"] div[data-baseweb="input"] {{
-    min-height: 34px !important;
-    height: 34px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-}}
-
-/* Focus del Number Input */
-div[data-testid="stNumberInput"] > div > div:focus-within {{
-    border: 1px solid #00A0A8 !important;
-    box-shadow: 0 0 0 1px #00A0A8 !important;
-}}
-
-/* El campo de texto de los números */
-div[data-testid="stNumberInput"] input {{
-    min-height: 34px !important;
-    height: 34px !important;
-    line-height: 34px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-    background-color: transparent !important; 
-    color: {vars_css['text']} !important; 
-    border: none !important; 
-    box-shadow: none !important; 
-    text-align: center !important; 
-    outline: none !important;
-}}
-
-/* Aplastar los contenedores de los botones + y - */
-div[data-testid="stNumberInputStepDown"],
-div[data-testid="stNumberInputStepUp"],
 div[data-testid="stNumberInput"] button {{
-    min-height: 34px !important;
-    height: 34px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
     background-color: transparent !important;
     color: {vars_css['sub']} !important;
     border: none !important;
-}}
-
-/* El icono SVG dentro de los botones para que no estorbe */
-div[data-testid="stNumberInput"] button svg {{
-    height: 12px !important;
-    width: 12px !important;
-}}
-
-div[data-testid="stNumberInput"] button:hover {{
-    color: #00FFAA !important;
+    height: 34px !important;
 }}
 
 /* --- FORZAR DATE INPUT (CALENDARIO) A 34PX --- */
@@ -507,36 +406,18 @@ div[data-testid="stDateInput"] > div > div {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
-    transition: all 0.3s ease-in-out !important;
-    display: flex !important;
-    align-items: center !important;
 }}
 
-/* Focus del Date Input (Borde iluminado) */
-div[data-testid="stDateInput"] > div > div:focus-within {{
-    border: 1px solid #00A0A8 !important;
-    box-shadow: 0 0 0 1px #00A0A8 !important;
+/* --- FORZAR TABS (PESTAÑAS) A 30PX --- */
+div[data-testid="stTabs"] button {{
+    min-height: 30px !important;
+    height: 30px !important;
+    background-color: transparent !important;
+    color: {vars_css['sub']} !important; 
 }}
-
-/* El campo de texto de las fechas */
-div[data-testid="stDateInput"] input {{
-    min-height: 34px !important;
-    height: 34px !important;
-    line-height: 34px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-    background-color: transparent !important; 
-    color: {vars_css['text']} !important; 
-    border: none !important; 
-    box-shadow: none !important; 
-    text-align: center !important; 
-    outline: none !important;
-}}
-
-/* Centrar el ícono del calendario si aparece */
-div[data-testid="stDateInput"] svg {{
-    margin-top: 0px !important;
-    margin-bottom: 0px !important;
+div[data-testid="stTabs"] button[aria-selected="true"] {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
 }}
 
 /* --- FORZAR TABS (PESTAÑAS) A 30PX --- */
