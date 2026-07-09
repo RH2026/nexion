@@ -2704,8 +2704,8 @@ else:
                             /* 1. Reset para que el contenedor use todo el ancho */
                             div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
                             
-                            /* 2. Estilo para los botones personalizados */
-                            div.stButton > button {
+                            /* 2. Estilo para los botones personalizados (aislados con la clase .btn-nav-agc) */
+                            .btn-nav-agc div.stButton > button {
                                 background-color: #000000 !important; /* Fondo negro */
                                 color: #FFFFFF !important;            /* Texto blanco o el color que prefieras */
                                 border: 1px solid #384A52 !important; /* Borde oscuro */
@@ -2714,49 +2714,55 @@ else:
                                 width: 100% !important;
                             }
                     
-                            /* 3. Efecto HOVER: El color de la segunda imagen (ejemplo: un tono azul-verde) */
-                            div.stButton > button:hover {
+                            /* 3. Efecto HOVER: El color de la segunda imagen */
+                            .btn-nav-agc div.stButton > button:hover {
                                 background-color: #00BFA5 !important; /* Reemplaza este hex con el de tu imagen */
                                 color: #000000 !important;            /* Texto negro al hacer hover */
                                 border-color: #00BFA5 !important;
                             }
                             
                             /* 4. Estado ACTIVO (el botón presionado) */
-                            div.stButton > button:active {
+                            .btn-nav-agc div.stButton > button:active {
                                 background-color: #008C7A !important;
                                 border-color: #008C7A !important;
                             }
                         </style>
                     """, unsafe_allow_html=True)
-                
+                    
                     # --- Lógica de Navegación ---
                     if 'tipo_entrega' not in st.session_state:
                         st.session_state.tipo_entrega = 'C A M I O N'
-                
+                    
                     if 'mes_calendario' not in st.session_state:
                         st.session_state.mes_calendario = 6  # Por defecto inicia en Junio
-                
+                    
                     # Creamos TRES columnas para los botones de navegación superiores
                     col_btn1, col_btn2, col_btn3 = st.columns(3)
-                
+                    
                     with col_btn1:
+                        st.markdown('<div class="btn-nav-agc">', unsafe_allow_html=True)
                         btn_type_1 = "primary" if st.session_state.tipo_entrega == 'C A M I O N' else "secondary"
                         if st.button("ENTREGAS AGC CAMIÓN", use_container_width=True, type=btn_type_1):
                             st.session_state.tipo_entrega = 'C A M I O N'
                             st.rerun()
-                
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    
                     with col_btn2:
+                        st.markdown('<div class="btn-nav-agc">', unsafe_allow_html=True)
                         btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
                         if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
                             st.session_state.tipo_entrega = 'T R A I L E R'
                             st.rerun()
-                
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    
                     with col_btn3:
+                        st.markdown('<div class="btn-nav-agc">', unsafe_allow_html=True)
                         btn_type_3 = "primary" if st.session_state.tipo_entrega == 'C A L E N D A R I O' else "secondary"
                         if st.button("VISTA CALENDARIO GLOBAL", use_container_width=True, type=btn_type_3):
                             st.session_state.tipo_entrega = 'C A L E N D A R I O'
                             st.rerun()
-                
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    
                     # --- Encabezado de Texto Dinámico ---
                     if st.session_state.tipo_entrega == 'C A M I O N':
                         titulo_dinamico = "ENTREGAS DE CAMIONES"
@@ -2764,7 +2770,7 @@ else:
                         titulo_dinamico = "ENTREGAS DE TRAILER"
                     else:
                         titulo_dinamico = "CALENDARIO DE ENTREGAS"
-                
+                    
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
                             <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
@@ -2772,7 +2778,7 @@ else:
                             </span>
                         </div>
                     """, unsafe_allow_html=True)
-                
+                    
                     # --- Función de Renderizado (Tarjetas de Entregas) ---
                     def render_logistica_flow_responsive(data):
                         html_content = f"""
@@ -2832,7 +2838,7 @@ else:
                                             <div class="text-[12px] text-sky-400 font-bold mt-1">
                                                 ITEM: {item['item_no']}
                                             </div>
-                                            </div>
+                                        </div>
                                         
                                         <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                             <div>
@@ -2848,7 +2854,7 @@ else:
                                                 </div>
                                             </div>
                                         </div>
-                
+                        
                                         <div class="w-full md:w-[420px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
                                             <div class="w-2/5 shrink-0">
                                                 <div class="label-mini">Volumen</div>
@@ -2861,14 +2867,14 @@ else:
                                                 </div>
                                             </div>
                                         </div>
-                
+                        
                                         <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
                                             <div class="label-mini md:mb-1">Estatus de Logística</div>
                                             <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter min-h-[16px]">
                                                 {item['estatus']}
                                             </div>
                                         </div>
-                
+                        
                                     </div>
                                 </div>
                                 ''' for item in data])}
@@ -2877,7 +2883,7 @@ else:
                         </html>
                         """
                         return components.html(html_content, height=800, scrolling=True)
-                
+                    
                     # --- Función: Renderizado de Calendario ---
                     def render_calendario_visual(data_camion, data_trailer, mes_num, anio=2026):
                         meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
@@ -2894,7 +2900,7 @@ else:
                                     eventos_dias[dt.day].append({"tipo": "CAMIÓN", "oc": item['oc'], "estatus": item['estatus']})
                             except:
                                 pass 
-                
+                        
                         for item in data_trailer:
                             try:
                                 fecha_str = str(item['cita']).split(" - ")[0].strip()
@@ -2905,10 +2911,10 @@ else:
                                     eventos_dias[dt.day].append({"tipo": "TRAILER", "oc": item['oc'], "estatus": item['estatus']})
                             except:
                                 pass
-                
+                        
                         cal = calendar.Calendar(firstweekday=6) 
                         semanas_mes = cal.monthdayscalendar(anio, mes_num)
-                
+                        
                         grid_html = ""
                         for semana in semanas_mes:
                             for dia in semana:
@@ -2936,7 +2942,7 @@ else:
                                         </div>
                                     </div>
                                     '''
-                
+                        
                         html_calendario = f"""
                         <!DOCTYPE html>
                         <html lang="es">
@@ -2972,7 +2978,7 @@ else:
                         </html>
                         """
                         return components.html(html_calendario, height=750, scrolling=True)
-                
+                    
                     # =====================================================================
                     # --- EXTRACCIÓN AUTOMÁTICA Y ADAPTACIÓN DE TUS ENCABEZADOS REALES ---
                     # =====================================================================
@@ -2992,9 +2998,9 @@ else:
                         else:
                             st.error(f"Amor, hubo un error al cargar los datos: {response.status_code}")
                             return pd.DataFrame()
-                
+                    
                     df_raw = get_github_data()
-                
+                    
                     if not df_raw.empty:
                         # Quitamos espacios en blanco accidentales de los nombres de tus columnas
                         df_raw.columns = df_raw.columns.str.strip()
@@ -3003,8 +3009,6 @@ else:
                         df_entregas = pd.DataFrame()
                         
                         # Asignamos la PO Customer para el título principal
-                        # Mapeamos tus columnas exactas
-                        df_entregas = pd.DataFrame()
                         df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
                         
                         # --- AQUÍ AGREGAMOS LA LÍNEA PARA EL ITEM NO ---
@@ -3069,9 +3073,9 @@ else:
                     else:
                         data_camion = []
                         data_trailer = []
-                
+                    
                     # =====================================================================
-                
+                    
                     # --- Lógica de Renderizado Condicional ---
                     if st.session_state.tipo_entrega == 'C A M I O N':
                         render_logistica_flow_responsive(data_camion)
@@ -3095,136 +3099,135 @@ else:
                                 st.rerun()
                             
                         render_calendario_visual(data_camion, data_trailer, st.session_state.mes_calendario)
-                
-                # PESTAÑA 6: CONSIGNAS
-                with tab_consignas:
-                    # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
-                    # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
-                    GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
-                    REPO_NAME = "RH2026/nexion"
-                    FILE_PATH_CON = "consignas.csv"
-                    URL_CONSIGNAS = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_CON}"
-                    
-                    @st.cache_data(ttl=600)
-                    def load_consignas():
-                        try:
-                            headers = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
-                            df = pd.read_csv(URL_CONSIGNAS, storage_options=headers, low_memory=False)
-                            df.columns = [c.strip() for c in df.columns]
-                            
-                            # Lógica de ordenamiento por fecha
-                            if 'F.DOC' in df.columns:
-                                df['F_TEMP'] = pd.to_datetime(df['F.DOC'], errors='coerce', dayfirst=True)
-                                df = df.sort_values(by='F_TEMP', ascending=False).drop(columns=['F_TEMP'])
-                            return df
-                        except Exception as e:
-                            st.error(f"Error cargando consignas: {e}")
-                            return None
-                    
-                    def render_expediente_chingon(df):
-                        df_clean = df.fillna('')
-                        data = df_clean.to_dict('records')
-                        
-                        html_content = f"""
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <script src="https://cdn.tailwindcss.com"></script>
-                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-                            <style>
-                                body {{ background-color: #384A52; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 10px 15px; }}
-                                ::-webkit-scrollbar {{ width: 8px; height: 10px; }}
-                                ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); border-radius: 10px; }}
-                                ::-webkit-scrollbar-thumb {{ background: rgba(56, 189, 248, 0.6); border-radius: 10px; border: 2px solid #384A52; }}
-                                ::-webkit-scrollbar-thumb:hover {{ background: rgba(0, 255, 170, 0.8); }}
-                                .row-expediente {{ background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin-bottom: 12px; padding: 18px 24px; transition: all 0.3s ease; width: 100%; box-sizing: border-box; }}
-                                .row-expediente:hover {{ border-color: #00FFAA; background-color: #2d3b42; transform: scale(1.001); }}
-                                .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 800; letter-spacing: 1.5px; }}
-                                .valor {{ font-size: 14px; font-weight: 700; color: #FFFFFF; }}
-                                .highlight {{ color: #00FFAA; font-family: monospace; }}
-                                .text-muted-claro {{ color: rgba(255,255,255,0.7); font-style: italic; }}
-                            </style>
-                        </head>
-                        <body>
-                            <div class="w-full">
-                                {"".join([f'''
-                                <div class="row-expediente">
-                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
-                                        <div>
-                                            <div class="label-mini">Talon / Folio</div>
-                                            <div class="valor highlight text-xl leading-none">{str(item.get('TALON', ''))}</div>
-                                            <div class="text-[10px] text-blue-300 mt-1 opacity-90 italic">F. Doc: {str(item.get('F.DOC', ''))}</div>
-                                        </div>
-                                        <div class="md:border-l md:border-white/10 md:pl-6">
-                                            <div class="label-mini">Destinatario</div>
-                                            <div class="valor truncate text-sm uppercase">{str(item.get('DESTINATARIO', ''))[:45]}</div>
-                                            <div class="text-[10px] text-muted-claro">{str(item.get('ORIGEN', ''))} → {str(item.get('DESTINO', ''))}</div>
-                                        </div>
-                                        <div class="md:border-l md:border-white/10 md:pl-6">
-                                            <div class="label-mini">Resumen Financiero</div>
-                                            <div class="flex justify-between items-center"><span class="label-mini">Bultos:</span> <span class="valor text-xs">{str(item.get('BULTOS', '0'))}</span></div>
-                                            <div class="flex justify-between items-center"><span class="label-mini">Total Cargo:</span> <span class="valor text-emerald-400 text-sm">${str(item.get('TOTAL', '0'))}</span></div>
-                                        </div>
-                                        <div class="text-right md:border-l md:border-white/10 md:pl-6">
-                                            <div class="label-mini">Estatus Entrega</div>
-                                            <div class="valor text-sm {'text-orange-400' if not item.get('F.ENTREGA') else 'text-white'}">{str(item.get('F.ENTREGA', 'PENDIENTE'))}</div>
-                                            <div class="text-[10px] text-blue-300 font-bold uppercase tracking-tighter">{str(item.get('QUIEN RECIBIO', ''))[:25]}</div>
-                                        </div>
-                                    </div>
-                                    <div class="mt-4 pt-3 border-t border-white/10 flex flex-col md:flex-row justify-between gap-4">
-                                        <div class="flex-1"><span class="label-mini text-blue-200">Domicilio:</span> <span class="text-[11px] text-white/80 ml-2">{str(item.get('DOMICILIO DEL DESTINATARIO', ''))}</span></div>
-                                        <div class="text-right flex gap-4">
-                                            <div><span class="label-mini text-orange-200">Ref:</span> <span class="text-[11px] text-white/80 italic ml-1">{str(item.get('REFERENCIA', '--'))}</span></div>
-                                            <div><span class="label-mini text-white/60">Notas:</span> <span class="text-[11px] text-white/70 italic ml-1">{str(item.get('OBSERVACION 1', '--'))}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                ''' for item in data])}
-                            </div>
-                        </body>
-                        </html>
-                        """
-                        return components.html(html_content, height=1200, scrolling=True)
-                    
-                    # --- EJECUCIÓN PRINCIPAL ---
-                    df_consignas = load_consignas()
-                    
-                    if df_consignas is not None:
-                        st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>CONSIGNAS BARCELO</h3>", unsafe_allow_html=True)
-                        
-                        # --- FILTROS LINEALES ---
-                        df_filtrado = df_consignas.copy()
-                        
-                        # Preparamos la columna de mes para el filtro
-                        df_filtrado['MES_TEMP'] = pd.to_datetime(df_filtrado['F.DOC'], errors='coerce', dayfirst=True).dt.strftime('%B')
-                        
-                        col1, col2, col3, col4 = st.columns(4)
-                        
-                        # Filtro Mes (Selectbox única)
-                        with col1:
-                            meses_opciones = ["TODOS"] + sorted([m for m in df_filtrado['MES_TEMP'].dropna().unique()])
-                            mes_sel = st.selectbox("Mes", meses_opciones)
-                            
-                        # Filtros de búsqueda libre
-                        with col2:
-                            cliente_busq = st.text_input("Buscar Cliente")
-                        with col3:
-                            talon_busq = st.text_input("Buscar Talón")
-                        with col4:
-                            ref_busqueda = st.text_input("Ref. (Observación 1)")
-                    
-                        # Aplicar filtros
-                        if mes_sel != "TODOS":
-                            df_filtrado = df_filtrado[df_filtrado['MES_TEMP'] == mes_sel]
-                        if cliente_busq:
-                            df_filtrado = df_filtrado[df_filtrado['DESTINATARIO'].astype(str).str.contains(cliente_busq, case=False, na=False)]
-                        if talon_busq:
-                            df_filtrado = df_filtrado[df_filtrado['TALON'].astype(str).str.contains(talon_busq, case=False, na=False)]
-                        if ref_busqueda:
-                            df_filtrado = df_filtrado[df_filtrado['OBSERVACION 1'].astype(str).str.contains(ref_busqueda, case=False, na=False)]
-                    
-                        # Renderizado final
-                        render_expediente_chingon(df_filtrado)
+
+# PESTAÑA 6: CONSIGNAS
+with tab_consignas:
+    # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
+    GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+    REPO_NAME = "RH2026/nexion"
+    FILE_PATH_CON = "consignas.csv"
+    URL_CONSIGNAS = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_CON}"
+    
+    @st.cache_data(ttl=600)
+    def load_consignas():
+        try:
+            headers = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
+            df = pd.read_csv(URL_CONSIGNAS, storage_options=headers, low_memory=False)
+            df.columns = [c.strip() for c in df.columns]
+            
+            # Lógica de ordenamiento por fecha
+            if 'F.DOC' in df.columns:
+                df['F_TEMP'] = pd.to_datetime(df['F.DOC'], errors='coerce', dayfirst=True)
+                df = df.sort_values(by='F_TEMP', ascending=False).drop(columns=['F_TEMP'])
+            return df
+        except Exception as e:
+            st.error(f"Error cargando consignas: {e}")
+            return None
+    
+    def render_expediente_chingon(df):
+        df_clean = df.fillna('')
+        data = df_clean.to_dict('records')
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+            <style>
+                body {{ background-color: #384A52; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 10px 15px; }}
+                ::-webkit-scrollbar {{ width: 8px; height: 10px; }}
+                ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); border-radius: 10px; }}
+                ::-webkit-scrollbar-thumb {{ background: rgba(56, 189, 248, 0.6); border-radius: 10px; border: 2px solid #384A52; }}
+                ::-webkit-scrollbar-thumb:hover {{ background: rgba(0, 255, 170, 0.8); }}
+                .row-expediente {{ background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin-bottom: 12px; padding: 18px 24px; transition: all 0.3s ease; width: 100%; box-sizing: border-box; }}
+                .row-expediente:hover {{ border-color: #00FFAA; background-color: #2d3b42; transform: scale(1.001); }}
+                .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 800; letter-spacing: 1.5px; }}
+                .valor {{ font-size: 14px; font-weight: 700; color: #FFFFFF; }}
+                .highlight {{ color: #00FFAA; font-family: monospace; }}
+                .text-muted-claro {{ color: rgba(255,255,255,0.7); font-style: italic; }}
+            </style>
+        </head>
+        <body>
+            <div class="w-full">
+                {"".join([f'''
+                <div class="row-expediente">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                        <div>
+                            <div class="label-mini">Talon / Folio</div>
+                            <div class="valor highlight text-xl leading-none">{str(item.get('TALON', ''))}</div>
+                            <div class="text-[10px] text-blue-300 mt-1 opacity-90 italic">F. Doc: {str(item.get('F.DOC', ''))}</div>
+                        </div>
+                        <div class="md:border-l md:border-white/10 md:pl-6">
+                            <div class="label-mini">Destinatario</div>
+                            <div class="valor truncate text-sm uppercase">{str(item.get('DESTINATARIO', ''))[:45]}</div>
+                            <div class="text-[10px] text-muted-claro">{str(item.get('ORIGEN', ''))} → {str(item.get('DESTINO', ''))}</div>
+                        </div>
+                        <div class="md:border-l md:border-white/10 md:pl-6">
+                            <div class="label-mini">Resumen Financiero</div>
+                            <div class="flex justify-between items-center"><span class="label-mini">Bultos:</span> <span class="valor text-xs">{str(item.get('BULTOS', '0'))}</span></div>
+                            <div class="flex justify-between items-center"><span class="label-mini">Total Cargo:</span> <span class="valor text-emerald-400 text-sm">${str(item.get('TOTAL', '0'))}</span></div>
+                        </div>
+                        <div class="text-right md:border-l md:border-white/10 md:pl-6">
+                            <div class="label-mini">Estatus Entrega</div>
+                            <div class="valor text-sm {'text-orange-400' if not item.get('F.ENTREGA') else 'text-white'}">{str(item.get('F.ENTREGA', 'PENDIENTE'))}</div>
+                            <div class="text-[10px] text-blue-300 font-bold uppercase tracking-tighter">{str(item.get('QUIEN RECIBIO', ''))[:25]}</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 flex flex-col md:flex-row justify-between gap-4">
+                        <div class="flex-1"><span class="label-mini text-blue-200">Domicilio:</span> <span class="text-[11px] text-white/80 ml-2">{str(item.get('DOMICILIO DEL DESTINATARIO', ''))}</span></div>
+                        <div class="text-right flex gap-4">
+                            <div><span class="label-mini text-orange-200">Ref:</span> <span class="text-[11px] text-white/80 italic ml-1">{str(item.get('REFERENCIA', '--'))}</span></div>
+                            <div><span class="label-mini text-white/60">Notas:</span> <span class="text-[11px] text-white/70 italic ml-1">{str(item.get('OBSERVACION 1', '--'))}</span></div>
+                        </div>
+                    </div>
+                </div>
+                ''' for item in data])}
+            </div>
+        </body>
+        </html>
+        """
+        return components.html(html_content, height=1200, scrolling=True)
+    
+    # --- EJECUCIÓN PRINCIPAL ---
+    df_consignas = load_consignas()
+    
+    if df_consignas is not None:
+        st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>CONSIGNAS BARCELO</h3>", unsafe_allow_html=True)
+        
+        # --- FILTROS LINEALES ---
+        df_filtrado = df_consignas.copy()
+        
+        # Preparamos la columna de mes para el filtro
+        df_filtrado['MES_TEMP'] = pd.to_datetime(df_filtrado['F.DOC'], errors='coerce', dayfirst=True).dt.strftime('%B')
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        # Filtro Mes (Selectbox única)
+        with col1:
+            meses_opciones = ["TODOS"] + sorted([m for m in df_filtrado['MES_TEMP'].dropna().unique()])
+            mes_sel = st.selectbox("Mes", meses_opciones)
+            
+        # Filtros de búsqueda libre
+        with col2:
+            cliente_busq = st.text_input("Buscar Cliente")
+        with col3:
+            talon_busq = st.text_input("Buscar Talón")
+        with col4:
+            ref_busqueda = st.text_input("Ref. (Observación 1)")
+    
+        # Aplicar filtros
+        if mes_sel != "TODOS":
+            df_filtrado = df_filtrado[df_filtrado['MES_TEMP'] == mes_sel]
+        if cliente_busq:
+            df_filtrado = df_filtrado[df_filtrado['DESTINATARIO'].astype(str).str.contains(cliente_busq, case=False, na=False)]
+        if talon_busq:
+            df_filtrado = df_filtrado[df_filtrado['TALON'].astype(str).str.contains(talon_busq, case=False, na=False)]
+        if ref_busqueda:
+            df_filtrado = df_filtrado[df_filtrado['OBSERVACION 1'].astype(str).str.contains(ref_busqueda, case=False, na=False)]
+    
+        # Renderizado final
+        render_expediente_chingon(df_filtrado)
                 
                 # PESTAÑA 7: AMAZON
                 with tab_amazon:
