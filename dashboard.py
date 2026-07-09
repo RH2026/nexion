@@ -444,33 +444,51 @@ div[data-baseweb="tag"] svg {{
     width: 12px !important;
 }}
 
-/* ───────── SELECTBOX / MULTISELECT BLINDADO ───────── */
-/* AQUÍ ESTÁ LA CORRECCIÓN PRINCIPAL PARA QUE NO TE CAMBIE LA ALTURA */
-div[data-baseweb="select"] > div {{
-    height: 30px !important; 
+/* ───────── SOLUCIÓN DE FUERZA BRUTA PARA ALTURAS (SELECTBOX, INPUTS Y TABS) ───────── */
+
+/* 1. Obligar al TextInput (Búsqueda) a ser pequeño */
+div[data-testid="stTextInput"] div[data-baseweb="input"] {{
     min-height: 30px !important;
+    height: 30px !important;
+    border-radius: 4px !important;
+}}
+
+div[data-testid="stTextInput"] input {{
+    height: 30px !important;
+    min-height: 30px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    line-height: 30px !important;
+}}
+
+/* 2. Obligar al SelectBox a ser pequeño */
+div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child {{
+    min-height: 30px !important;
+    height: 30px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
-    display: flex !important;
-    align-items: center !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
 }}
 
-/* Ajuste para centrar el texto dentro del select */
-div[data-baseweb="select"] > div > div {{
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-}}
-
-div[data-baseweb="select"] div {{
+/* Ajuste para el texto dentro del select */
+div[data-testid="stSelectbox"] div[data-baseweb="select"] div {{
     font-size: 11px !important;
     color: {vars_css['text']} !important;
     line-height: 1 !important;
     text-transform: uppercase !important;
 }}
 
+/* 3. Pestañas (Tabs) forzadas */
+div[data-testid="stTabs"] button[data-baseweb="tab"] {{
+    min-height: 30px !important;
+    height: 30px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}}
+
+/* Mantenemos tus colores del menú desplegable del SelectBox */
 div[data-baseweb="popover"] ul {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
