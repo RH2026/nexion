@@ -144,7 +144,7 @@ vars_css = {
     "sub": "#FFFFFF",          # Gris Azulado Claro (Subtítulos/Secundario)
     "border": "#4B5D67",       # Contorno sutil para elevación
     "table_header": "#ffffff",
-    "table_bg": "#2B343B",# Tono profundo para encabezados de tabla
+    "table_bg": "#2B343B",     # Tono profundo para encabezados de tabla
     "logo": "n1.png"           # Tu archivo de imagen
 }
 
@@ -221,7 +221,6 @@ st.markdown(f"""
     align-self: flex-start;
 }}
 
-
 #-----RENDER DE MODULO ALERTAS------
 .kpi-slim-card {{
     background: rgba(30, 39, 46, 0.7);
@@ -254,7 +253,6 @@ st.markdown(f"""
 }}
 
 /* --- ESTILOS MAESTROS DE NEXION (SECCIÓN SEMÁFORO ALERTAS) --- */   
-/* Estilo base oscuro para alertas (Negro profundo con glass effect) */
 .base-card-alerta {{
     background: rgba(30, 39, 46, 0.8); /* Negro Obsidiana ultra oscuro y glass */
     border: 1px solid rgba(255, 255, 255, 0.05); /* Borde de luz súper fino */
@@ -269,7 +267,6 @@ st.markdown(f"""
     cursor: pointer;
 }}
 
-/* El hover elegante (Solo flota y brilla un poco) */
 .base-card-alerta:hover {{
     transform: translateY(-5px);
     background: rgba(10, 15, 20, 0.9) !important;
@@ -346,39 +343,35 @@ div.stButton > button:hover {{
     border-color: #00A3A3 !important; 
 }}
 
-
-
-/* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS */
-
-/* Atacamos al contenedor que envuelve el input */
+/* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS Y ALTURA */
 div[data-baseweb="input"] {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
-    height: 35px !important; /* <--- AGREGA ESTO (Ajusta el número a tu gusto) */
+    height: 35px !important;
+    min-height: 35px !important;
     border-radius: 4px !important;
     transition: all 0.3s ease-in-out !important;
 }}
 
-/* Cuando el usuario hace clic (Focus) en el contenedor */
 div[data-baseweb="input"]:focus-within {{
     border: 1px solid #00A0A8 !important;
     box-shadow: 0 0 0 1px #00A0A8 !important;
 }}
 
-/* Estilo del campo de texto real */
 .stTextInput input {{ 
-    background-color: transparent !important; /* Para que se vea el fondo del contenedor */
+    background-color: transparent !important; 
     color: {vars_css['text']} !important; 
-    border: none !important; /* Quitamos el borde de aquí para que no choque */
+    border: none !important; 
     box-shadow: none !important; 
     height: 35px !important;
-    line-height: 35px !important; /* <--- PARA CENTRAR EL TEXTO VERTICALMENTE */
+    line-height: 35px !important;
+    padding-top: 0px !important; /* Resetea padding interno */
+    padding-bottom: 0px !important; /* Resetea padding interno */
     text-align: center !important; 
     letter-spacing: 2px; 
     outline: none !important;
 }}
 
-/* Eliminamos cualquier borde extra que Streamlit ponga por defecto */
 div[data-baseweb="base-input"] {{
     border: none !important;
     background-color: transparent !important;
@@ -393,20 +386,17 @@ div[data-baseweb="base-input"] {{
     font-weight: 600 !important;
 }}
 
-/* Cambiar el texto de ADENTRO de los selectores (lo seleccionado) */
 div[data-baseweb="select"] div {{
     font-size: 12px !important;
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
 }}
 
-/* Cambiar el texto de ADENTRO del input de fecha */
 input[data-testid="stDateInputView"] {{
     font-size: 12px !important;
     color: {vars_css['text']} !important;
 }}
 
-/* --- NUEVO: Control de Placeholder (Escapado para f-string) --- */
 .stTextInput input::placeholder {{
     font-size: 12px !important; 
     color: {vars_css['sub']} !important; 
@@ -414,7 +404,6 @@ input[data-testid="stDateInputView"] {{
     letter-spacing: 1px !important;
     text-transform: uppercase !important;
 }}
-
 
 /* 6. FOOTER FIJO */
 .footer {{ 
@@ -434,10 +423,7 @@ input[data-testid="stDateInputView"] {{
     transform: none !important; 
 }}
 
-
 /* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
-
-* El contenedor de la burbuja */
 div[data-baseweb="tag"] {{
     background-color: #718096 !important;
     border-radius: 4px !important;
@@ -445,33 +431,22 @@ div[data-baseweb="tag"] {{
     margin: 2px !important;
 }}
 
-/* El texto dentro de la burbuja (AQUÍ CAMBIA EL TAMAÑO) */
 div[data-baseweb="tag"] span {{
     color: #ffffff !important;
-    font-size: 14px !important; /* <--- Ajusta este número a tu gusto */
+    font-size: 14px !important; 
     font-weight: 600 !important;
     text-transform: uppercase !important;
 }}
 
-/* El icono de cerrar (X) */
 div[data-baseweb="tag"] svg {{
     fill: #ffffff !important;
     height: 12px !important;
     width: 12px !important;
 }}
 
-/* AJUSTE EXTRA: El texto antes de ser seleccionado */
-div[data-baseweb="select"] div {{
-    font-size: 12px !important; /* Para que todo el multiselect sea uniforme */
-    text-transform: uppercase !important;
-}}
-
-/* Valor seleccionado – Selectbox */
-
-/* ───────── SELECTBOX / MULTISELECT (ESTILO COMPLETO) ───────── */
-
-/* 1. Altura y alineación de la caja principal */
-div[data-baseweb="select"] > div:first-child {{
+/* ───────── SELECTBOX / MULTISELECT BLINDADO ───────── */
+/* AQUÍ ESTÁ LA CORRECCIÓN PRINCIPAL PARA QUE NO TE CAMBIE LA ALTURA */
+div[data-baseweb="select"] > div {{
     height: 35px !important; 
     min-height: 35px !important;
     background-color: {vars_css['card']} !important;
@@ -479,9 +454,16 @@ div[data-baseweb="select"] > div:first-child {{
     border-radius: 4px !important;
     display: flex !important;
     align-items: center !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
 }}
 
-/* 2. Ajuste del texto interno y el cursor */
+/* Ajuste para centrar el texto dentro del select */
+div[data-baseweb="select"] > div > div {{
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}}
+
 div[data-baseweb="select"] div {{
     font-size: 11px !important;
     color: {vars_css['text']} !important;
@@ -489,7 +471,6 @@ div[data-baseweb="select"] div {{
     text-transform: uppercase !important;
 }}
 
-/* 3. El Menú Desplegable (La lista de opciones de tu foto) */
 div[data-baseweb="popover"] ul {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -497,7 +478,6 @@ div[data-baseweb="popover"] ul {{
     padding: 0 !important;
 }}
 
-/* 4. Cada opción individual de la lista */
 div[data-baseweb="popover"] li {{
     background-color: transparent !important;
     color: {vars_css['text']} !important;
@@ -507,42 +487,29 @@ div[data-baseweb="popover"] li {{
     transition: background 0.2s ease !important;
 }}
 
-/* 5. Hover en las opciones (Color Aqua para resaltar) */
 div[data-baseweb="popover"] li:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
 }}
 
-
-
-/* 6. Quitar el resplandor azul de Streamlit al hacer click */
 div[data-baseweb="select"]:focus-within {{
     border-color: #00A0A8 !important;
     box-shadow: 0 0 0 1px #00A0A8 !important;
-}}
-
-div[data-baseweb="select"] > div {{
-    background-color: rgba(113, 128, 150, 0.15) !important;
-    border: 1px solid #718096 !important;
-}}
-
-/* Focus - Sin color azul, mantiene el estilo neutro */
-div[data-baseweb="select"]:focus-within {{
-    border-color: #718096 !important; /* Mantiene el gris slate */
-    box-shadow: none !important;      /* Elimina cualquier resplandor azul */
     outline: none !important;
 }}
 
-/* Eliminar el azul de fondo de la pestaña seleccionada */
+/* ───────── TABS (PESTAÑAS) BLINDADAS ───────── */
 button[data-baseweb="tab"] {{
     background-color: transparent !important;
     border: none !important;
-    color: {vars_css['sub']} !important; /* Texto grisáceo para los no seleccionados */
+    color: {vars_css['sub']} !important; 
     font-weight: 400 !important;
     transition: all 0.3s ease !important;
+    min-height: 35px !important; /* Altura forzada aquí también */
+    padding-top: 0px !important; /* Quita el espacio basura de la actualización */
+    padding-bottom: 0px !important;
 }}
 
-/* Estilo para la pestaña cuando está activa (seleccionada) */
 div[data-baseweb="tab-list"] button[aria-selected="true"] {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -554,18 +521,11 @@ div[data-baseweb="tab-list"] button:active {{
     box-shadow: none !important;
 }}
 
-div[data-baseweb="tab-list"] button {{
-    background-color: transparent !important;
-    color: {vars_css['sub']} !important;
-    border: none !important;
-}}
-
 div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
 
 /* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
-
 div[data-baseweb="layer"] div[data-baseweb="popover"] > div {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -581,27 +541,20 @@ button[kind="secondary"] {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
+    height: 35px !important;
+    min-height: 32px !important;
+    padding: 0 12px !important;
+    font-size: 8px !important;
+    line-height: 30px !important;
 }}
 
 button[kind="secondary"]:hover {{
-    background-color: #617F8D !important;   /* un poco más claro que tu card */
+    background-color: #617F8D !important;   
     color: {vars_css['text']} !important;
     border-color: #617F8D !important;
 }}
 
-button[kind="secondary"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-
-    height: 35px !important;
-    min-height: 32px !important;
-    padding: 0 12px !important;
-    font-size: 08px !important;
-    line-height: 30px !important;
-}}
-
-/* --- WIDGET DE RUTA PREMIUM (Optimizado para f-string) --- */
+/* --- WIDGET DE RUTA PREMIUM --- */
 .kpi-ruta-container {{
     display: flex;
     justify-content: center;
@@ -621,7 +574,6 @@ button[kind="secondary"] {{
     box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
 }}
 
-/* Línea de acento superior */
 .kpi-ruta-card::before {{
     content: "";
     position: absolute;
@@ -689,7 +641,6 @@ button[kind="secondary"] {{
     color: #00FFAA;
 }}
 
-/* CLASE PARA TÍTULOS DE SECCIÓN DE DATOS */
 .data-section-header {{
     font-size: 13px !important;
     letter-spacing: 3px !important;
@@ -698,51 +649,42 @@ button[kind="secondary"] {{
     color: {vars_css['sub']} !important;
     margin-bottom: 15px !important;
     margin-top: 25px !important;
-    border-left: 3px solid #00FFAA; /* Una pequeña línea de acento como tus cards */
+    border-left: 3px solid #00FFAA; 
     padding-left: 10px !important;
 }}
 
 /* ───────── REFINAMIENTO GENERAL DEL POPOVER ───────── */
-
-/* 1. Achicar el texto de los botones dentro del Popover */
 div[data-baseweb="popover"] button {{
     font-size: 12px !important;
     letter-spacing: 1px !important;
     text-transform: uppercase !important;
 }}
 
-/* 2. Achicar el texto de los Expanders dentro del Popover (Navegación) */
 div[data-baseweb="popover"] .st-expanderHeader p {{
     font-size: 12px !important;
     letter-spacing: 1.5px !important;
     font-weight: 600 !important;
 }}
 
-/* 3. Achicar cualquier texto simple (p, span) dentro del Popover */
 div[data-baseweb="popover"] p, 
 div[data-baseweb="popover"] span {{
     font-size: 12px !important;
     letter-spacing: 1px !important;
 }}
 
-/* 4. El botón de Logout con fondo rojo sólido y hover intenso */
 div[data-baseweb="popover"] button[kind="primary"] {{
     font-size: 12px !important;
     height: 26px !important;
     min-height: 26px !important;
     line-height: 26px !important;
-    
-    /* Rojo sólido original (el que tenías en el hover) */
     background-color: #ff4b4b !important; 
     border: 1px solid #ff4b4b !important;
     color: white !important;
-    
-    border-radius: 4px !important; /* Para mantenerlo limpio */
+    border-radius: 4px !important; 
     transition: background-color 0.3s ease !important;
 }}
 
 div[data-baseweb="popover"] button[kind="primary"]:hover {{
-    /* Rojo más intenso y oscuro para el hover */
     background-color: #FF7C80 !important; 
     border-color: #FF7C80 !important;
     color: white !important;
@@ -750,36 +692,29 @@ div[data-baseweb="popover"] button[kind="primary"]:hover {{
 }}
 
 /* ───────── SOLUCIÓN NUCLEAR: ICONO RESPONSIVE ───────── */
-
-/* 1. Bloqueamos el texto vertical de tus fotos en cualquier tamaño */
 button[data-testid="stBaseButton-secondary"] p {{
     white-space: nowrap !important;
     word-break: keep-all !important;
 }}
 
-/* 2. Media Query Agresiva (1200px para que cambie apenas muevas la ventana) */
 @media (max-width: 1200px) {{
-    
-    /* Buscamos el botón del popover específicamente */
     div[data-testid="stPopover"] > button {{
         width: 45px !important;
         height: 45px !important;
         min-width: 45px !important;
         max-width: 45px !important;
         padding: 0 !important;
-        border-radius: 50% !important; /* Lo hace circular y limpio */
+        border-radius: 50% !important; 
         position: relative !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
     }}
 
-    /* OCULTAMOS TODO EL CONTENIDO ORIGINAL (Texto y Flecha) */
     div[data-testid="stPopover"] > button * {{
-        display: none !important; /* Esto mata el texto vertical de raíz */
+        display: none !important; 
     }}
 
-    /* INYECTAMOS EL ICONO SOLO */
     div[data-testid="stPopover"] > button::after {{
         content: "☰";
         display: block !important;
@@ -791,7 +726,6 @@ button[data-testid="stBaseButton-secondary"] p {{
         transform: translate(-50%, -50%) !important;
     }}
 }}
-
 </style>
 """, unsafe_allow_html=True)
 
