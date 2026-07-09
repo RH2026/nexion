@@ -493,6 +493,45 @@ div[data-testid="stNumberInput"] button:hover {{
     color: #00FFAA !important;
 }}
 
+/* --- FORZAR DATE INPUT (CALENDARIO) A 34PX --- */
+div[data-testid="stDateInput"] > div > div {{
+    min-height: 34px !important;
+    height: 34px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    transition: all 0.3s ease-in-out !important;
+    display: flex !important;
+    align-items: center !important;
+}}
+
+/* Focus del Date Input (Borde iluminado) */
+div[data-testid="stDateInput"] > div > div:focus-within {{
+    border: 1px solid #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+}}
+
+/* El campo de texto de las fechas */
+div[data-testid="stDateInput"] input {{
+    min-height: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: transparent !important; 
+    color: {vars_css['text']} !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    text-align: center !important; 
+    outline: none !important;
+}}
+
+/* Centrar el ícono del calendario si aparece */
+div[data-testid="stDateInput"] svg {{
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+}}
+
 /* --- FORZAR TABS (PESTAÑAS) A 30PX --- */
 div[data-testid="stTabs"] button {{
     min-height: 30px !important;
