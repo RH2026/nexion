@@ -447,8 +447,8 @@ div[data-baseweb="tag"] svg {{
 /* ───────── SELECTBOX / MULTISELECT BLINDADO ───────── */
 /* AQUÍ ESTÁ LA CORRECCIÓN PRINCIPAL PARA QUE NO TE CAMBIE LA ALTURA */
 div[data-baseweb="select"] > div {{
-    height: 35px !important; 
-    min-height: 35px !important;
+    height: 30px !important; 
+    min-height: 30px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
