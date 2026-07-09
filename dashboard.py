@@ -2701,19 +2701,30 @@ else:
                     # --- TRUCO CSS PARA VOLVER ESTA PESTAÑA COMPLETAMENTE ULTRA-ANCHA (FULL SCREEN) ---
                     st.markdown("""
                         <style>
-                            /* Rompemos los márgenes predeterminados de Streamlit para que use el 100% real de la pantalla */
-                            div[data-testid="stBlock"] {
-                                max-width: 100% !important;
-                                padding-left: 0px !important;
-                                padding-right: 0px !important;
-                            }
-                            div[data-testid="stAppViewBlockContainer"] {
-                                max-width: 100% !important;
-                                padding-left: 1rem !important;
-                                padding-right: 1rem !important;
-                            }
-                            iframe {
+                            /* 1. Reset para que el contenedor use todo el ancho */
+                            div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
+                            
+                            /* 2. Estilo para los botones personalizados */
+                            div.stButton > button {
+                                background-color: #000000 !important; /* Fondo negro */
+                                color: #FFFFFF !important;            /* Texto blanco o el color que prefieras */
+                                border: 1px solid #384A52 !important; /* Borde oscuro */
+                                border-radius: 5px !important;
+                                transition: all 0.3s ease !important;
                                 width: 100% !important;
+                            }
+                    
+                            /* 3. Efecto HOVER: El color de la segunda imagen (ejemplo: un tono azul-verde) */
+                            div.stButton > button:hover {
+                                background-color: #00BFA5 !important; /* Reemplaza este hex con el de tu imagen */
+                                color: #000000 !important;            /* Texto negro al hacer hover */
+                                border-color: #00BFA5 !important;
+                            }
+                            
+                            /* 4. Estado ACTIVO (el botón presionado) */
+                            div.stButton > button:active {
+                                background-color: #008C7A !important;
+                                border-color: #008C7A !important;
                             }
                         </style>
                     """, unsafe_allow_html=True)
