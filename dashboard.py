@@ -343,39 +343,125 @@ div.stButton > button:hover {{
     border-color: #00A3A3 !important; 
 }}
 
-/* 5. INPUTS - SOLUCIÓN DEFINITIVA PARA BORDES CORTADOS Y ALTURA */
-div[data-baseweb="input"] {{
+/* ========================================================================= */
+/* 5. SOLUCIÓN DEFINITIVA Y AGRESIVA (SELECTBOX, INPUTS Y TABS)              */
+/* ========================================================================= */
+
+/* --- FORZAR TEXT INPUT (BÚSQUEDA) A 30PX --- */
+div[data-testid="stTextInput"] > div > div {{
+    min-height: 30px !important;
+    height: 30px !important;
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
-    height: 35px !important;
-    min-height: 35px !important;
     border-radius: 4px !important;
     transition: all 0.3s ease-in-out !important;
 }}
 
-div[data-baseweb="input"]:focus-within {{
+div[data-testid="stTextInput"] > div > div:focus-within {{
     border: 1px solid #00A0A8 !important;
     box-shadow: 0 0 0 1px #00A0A8 !important;
 }}
 
-.stTextInput input {{ 
+div[data-testid="stTextInput"] input {{
+    min-height: 30px !important;
+    height: 30px !important;
+    line-height: 30px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
     background-color: transparent !important; 
     color: {vars_css['text']} !important; 
     border: none !important; 
     box-shadow: none !important; 
-    height: 35px !important;
-    line-height: 35px !important;
-    padding-top: 0px !important; /* Resetea padding interno */
-    padding-bottom: 0px !important; /* Resetea padding interno */
     text-align: center !important; 
     letter-spacing: 2px; 
     outline: none !important;
 }}
 
-div[data-baseweb="base-input"] {{
-    border: none !important;
-    background-color: transparent !important;
+div[data-testid="stTextInput"] input::placeholder {{
+    font-size: 12px !important; 
+    color: {vars_css['sub']} !important; 
+    opacity: 0.7 !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
 }}
+
+/* --- FORZAR SELECTBOX A 30PX --- */
+div[data-testid="stSelectbox"] div[role="combobox"],
+div[data-testid="stSelectbox"] div[role="button"],
+div[data-testid="stSelectbox"] > div > div {{
+    min-height: 30px !important;
+    height: 30px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+}}
+
+/* Focus del SelectBox */
+div[data-testid="stSelectbox"] > div > div:focus-within {{
+    border-color: #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+    outline: none !important;
+}}
+
+/* Centra el texto dentro del Selectbox */
+div[data-testid="stSelectbox"] div[data-testid="stMarkdownContainer"] p {{
+    line-height: 1.5 !important; 
+    margin: 0 !important;
+    font-size: 11px !important;
+    color: {vars_css['text']} !important;
+    text-transform: uppercase !important;
+}}
+
+/* El menú desplegable del Selectbox y sus colores (Mantenido intacto) */
+div[data-baseweb="popover"] ul {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    padding: 0 !important;
+}}
+div[data-baseweb="popover"] li {{
+    background-color: transparent !important;
+    color: {vars_css['text']} !important;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+    text-transform: uppercase !important;
+    transition: background 0.2s ease !important;
+}}
+div[data-baseweb="popover"] li:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+}}
+
+/* --- FORZAR TABS (PESTAÑAS) A 30PX --- */
+div[data-testid="stTabs"] button {{
+    min-height: 30px !important;
+    height: 30px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: transparent !important;
+    border: none !important;
+    color: {vars_css['sub']} !important; 
+    font-weight: 400 !important;
+    transition: all 0.3s ease !important;
+}}
+
+/* Estado activo de las Tabs */
+div[data-testid="stTabs"] button[aria-selected="true"] {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+}}
+div[data-testid="stTabs"] button:focus, 
+div[data-testid="stTabs"] button:active {{
+    outline: none !important;
+    box-shadow: none !important;
+}}
+div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
+    background-color: #00FFAA !important; 
+}}
+
+/* ========================================================================= */
 
 /* Bajar tamaño de los nombres de los filtros (Labels) */
 [data-testid="stWidgetLabel"] p {{
@@ -386,23 +472,9 @@ div[data-baseweb="base-input"] {{
     font-weight: 600 !important;
 }}
 
-div[data-baseweb="select"] div {{
-    font-size: 12px !important;
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
-}}
-
 input[data-testid="stDateInputView"] {{
     font-size: 12px !important;
     color: {vars_css['text']} !important;
-}}
-
-.stTextInput input::placeholder {{
-    font-size: 12px !important; 
-    color: {vars_css['sub']} !important; 
-    opacity: 0.7 !important;
-    letter-spacing: 1px !important;
-    text-transform: uppercase !important;
 }}
 
 /* 6. FOOTER FIJO */
@@ -430,117 +502,16 @@ div[data-baseweb="tag"] {{
     height: 22px !important;
     margin: 2px !important;
 }}
-
 div[data-baseweb="tag"] span {{
     color: #ffffff !important;
     font-size: 14px !important; 
     font-weight: 600 !important;
     text-transform: uppercase !important;
 }}
-
 div[data-baseweb="tag"] svg {{
     fill: #ffffff !important;
     height: 12px !important;
     width: 12px !important;
-}}
-
-/* ───────── SOLUCIÓN DE FUERZA BRUTA PARA ALTURAS (SELECTBOX, INPUTS Y TABS) ───────── */
-
-/* 1. Obligar al TextInput (Búsqueda) a ser pequeño */
-div[data-testid="stTextInput"] div[data-baseweb="input"] {{
-    min-height: 30px !important;
-    height: 30px !important;
-    border-radius: 4px !important;
-}}
-
-div[data-testid="stTextInput"] input {{
-    height: 30px !important;
-    min-height: 30px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-    line-height: 30px !important;
-}}
-
-/* 2. Obligar al SelectBox a ser pequeño */
-div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child {{
-    min-height: 30px !important;
-    height: 30px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-}}
-
-/* Ajuste para el texto dentro del select */
-div[data-testid="stSelectbox"] div[data-baseweb="select"] div {{
-    font-size: 11px !important;
-    color: {vars_css['text']} !important;
-    line-height: 1 !important;
-    text-transform: uppercase !important;
-}}
-
-/* 3. Pestañas (Tabs) forzadas */
-div[data-testid="stTabs"] button[data-baseweb="tab"] {{
-    min-height: 30px !important;
-    height: 30px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-}}
-
-/* Mantenemos tus colores del menú desplegable del SelectBox */
-div[data-baseweb="popover"] ul {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    padding: 0 !important;
-}}
-
-div[data-baseweb="popover"] li {{
-    background-color: transparent !important;
-    color: {vars_css['text']} !important;
-    font-size: 14px !important;
-    padding: 8px 12px !important;
-    text-transform: uppercase !important;
-    transition: background 0.2s ease !important;
-}}
-
-div[data-baseweb="popover"] li:hover {{
-    background-color: #00A3A3 !important;
-    color: #ffffff !important;
-}}
-
-div[data-baseweb="select"]:focus-within {{
-    border-color: #00A0A8 !important;
-    box-shadow: 0 0 0 1px #00A0A8 !important;
-    outline: none !important;
-}}
-
-/* ───────── TABS (PESTAÑAS) BLINDADAS ───────── */
-button[data-baseweb="tab"] {{
-    background-color: transparent !important;
-    border: none !important;
-    color: {vars_css['sub']} !important; 
-    font-weight: 400 !important;
-    transition: all 0.3s ease !important;
-    min-height: 35px !important; /* Altura forzada aquí también */
-    padding-top: 0px !important; /* Quita el espacio basura de la actualización */
-    padding-bottom: 0px !important;
-}}
-
-div[data-baseweb="tab-list"] button[aria-selected="true"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-}}
-
-div[data-baseweb="tab-list"] button:focus, 
-div[data-baseweb="tab-list"] button:active {{
-    outline: none !important;
-    box-shadow: none !important;
-}}
-
-div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important; 
 }}
 
 /* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
