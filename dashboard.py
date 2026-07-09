@@ -434,6 +434,52 @@ div[data-baseweb="popover"] li:hover {{
     color: #ffffff !important;
 }}
 
+/* --- FORZAR NUMBER INPUT (CANTIDAD DE CAJAS) A 34PX --- */
+div[data-testid="stNumberInput"] > div > div {{
+    min-height: 34px !important;
+    height: 34px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    transition: all 0.3s ease-in-out !important;
+}}
+
+/* Focus del Number Input (Borde iluminado) */
+div[data-testid="stNumberInput"] > div > div:focus-within {{
+    border: 1px solid #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+}}
+
+/* El campo de texto de los números */
+div[data-testid="stNumberInput"] input {{
+    min-height: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: transparent !important; 
+    color: {vars_css['text']} !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    text-align: center !important; 
+    outline: none !important;
+}}
+
+/* Los botones de menos (-) y más (+) */
+div[data-testid="stNumberInput"] button {{
+    min-height: 34px !important;
+    height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    color: {vars_css['sub']} !important;
+    background-color: transparent !important;
+    border: none !important;
+}}
+
+div[data-testid="stNumberInput"] button:hover {{
+    color: #00FFAA !important; /* Un toque de tu verde neón al pasar el mouse */
+}}
+
 /* --- FORZAR TABS (PESTAÑAS) A 30PX --- */
 div[data-testid="stTabs"] button {{
     min-height: 30px !important;
