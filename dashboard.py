@@ -2701,68 +2701,51 @@ else:
                     # --- TRUCO CSS PARA VOLVER ESTA PESTAÑA COMPLETAMENTE ULTRA-ANCHA (FULL SCREEN) ---
                     st.markdown("""
                         <style>
-                            /* 1. Reset para que el contenedor use todo el ancho */
-                            div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
-                            
-                            /* 2. Estilo para los botones personalizados (aislados con la clase .btn-nav-agc) */
-                            .btn-nav-agc div.stButton > button {
-                                background-color: #000000 !important; /* Fondo negro */
-                                color: #FFFFFF !important;            /* Texto blanco o el color que prefieras */
-                                border: 1px solid #384A52 !important; /* Borde oscuro */
-                                border-radius: 5px !important;
-                                transition: all 0.3s ease !important;
+                            /* Rompemos los márgenes predeterminados de Streamlit para que use el 100% real de la pantalla */
+                            div[data-testid="stBlock"] {
+                                max-width: 100% !important;
+                                padding-left: 0px !important;
+                                padding-right: 0px !important;
+                            }
+                            div[data-testid="stAppViewBlockContainer"] {
+                                max-width: 100% !important;
+                                padding-left: 1rem !important;
+                                padding-right: 1rem !important;
+                            }
+                            iframe {
                                 width: 100% !important;
-                            }
-                    
-                            /* 3. Efecto HOVER: El color de la segunda imagen */
-                            .btn-nav-agc div.stButton > button:hover {
-                                background-color: #00BFA5 !important; /* Reemplaza este hex con el de tu imagen */
-                                color: #000000 !important;            /* Texto negro al hacer hover */
-                                border-color: #00BFA5 !important;
-                            }
-                            
-                            /* 4. Estado ACTIVO (el botón presionado) */
-                            .btn-nav-agc div.stButton > button:active {
-                                background-color: #008C7A !important;
-                                border-color: #008C7A !important;
                             }
                         </style>
                     """, unsafe_allow_html=True)
-                    
+                
                     # --- Lógica de Navegación ---
                     if 'tipo_entrega' not in st.session_state:
                         st.session_state.tipo_entrega = 'C A M I O N'
-                    
+                
                     if 'mes_calendario' not in st.session_state:
                         st.session_state.mes_calendario = 6  # Por defecto inicia en Junio
-                    
+                
                     # Creamos TRES columnas para los botones de navegación superiores
                     col_btn1, col_btn2, col_btn3 = st.columns(3)
-                    
+                
                     with col_btn1:
-                        st.markdown('<div class="btn-nav-agc">', unsafe_allow_html=True)
                         btn_type_1 = "primary" if st.session_state.tipo_entrega == 'C A M I O N' else "secondary"
                         if st.button("ENTREGAS AGC CAMIÓN", use_container_width=True, type=btn_type_1):
                             st.session_state.tipo_entrega = 'C A M I O N'
                             st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    
+                
                     with col_btn2:
-                        st.markdown('<div class="btn-nav-agc">', unsafe_allow_html=True)
                         btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
                         if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
                             st.session_state.tipo_entrega = 'T R A I L E R'
                             st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    
+                
                     with col_btn3:
-                        st.markdown('<div class="btn-nav-agc">', unsafe_allow_html=True)
                         btn_type_3 = "primary" if st.session_state.tipo_entrega == 'C A L E N D A R I O' else "secondary"
                         if st.button("VISTA CALENDARIO GLOBAL", use_container_width=True, type=btn_type_3):
                             st.session_state.tipo_entrega = 'C A L E N D A R I O'
                             st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    
+                
                     # --- Encabezado de Texto Dinámico ---
                     if st.session_state.tipo_entrega == 'C A M I O N':
                         titulo_dinamico = "ENTREGAS DE CAMIONES"
@@ -2770,7 +2753,7 @@ else:
                         titulo_dinamico = "ENTREGAS DE TRAILER"
                     else:
                         titulo_dinamico = "CALENDARIO DE ENTREGAS"
-                    
+                
                     st.markdown(f"""
                         <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
                             <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
@@ -2778,7 +2761,7 @@ else:
                             </span>
                         </div>
                     """, unsafe_allow_html=True)
-                    
+                
                     # --- Función de Renderizado (Tarjetas de Entregas) ---
                     def render_logistica_flow_responsive(data):
                         html_content = f"""
@@ -2838,7 +2821,7 @@ else:
                                             <div class="text-[12px] text-sky-400 font-bold mt-1">
                                                 ITEM: {item['item_no']}
                                             </div>
-                                        </div>
+                                            </div>
                                         
                                         <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                             <div>
@@ -2854,7 +2837,7 @@ else:
                                                 </div>
                                             </div>
                                         </div>
-                        
+                
                                         <div class="w-full md:w-[420px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
                                             <div class="w-2/5 shrink-0">
                                                 <div class="label-mini">Volumen</div>
@@ -2867,14 +2850,14 @@ else:
                                                 </div>
                                             </div>
                                         </div>
-                        
+                
                                         <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
                                             <div class="label-mini md:mb-1">Estatus de Logística</div>
                                             <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter min-h-[16px]">
                                                 {item['estatus']}
                                             </div>
                                         </div>
-                        
+                
                                     </div>
                                 </div>
                                 ''' for item in data])}
@@ -2883,7 +2866,7 @@ else:
                         </html>
                         """
                         return components.html(html_content, height=800, scrolling=True)
-                    
+                
                     # --- Función: Renderizado de Calendario ---
                     def render_calendario_visual(data_camion, data_trailer, mes_num, anio=2026):
                         meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
@@ -2900,7 +2883,7 @@ else:
                                     eventos_dias[dt.day].append({"tipo": "CAMIÓN", "oc": item['oc'], "estatus": item['estatus']})
                             except:
                                 pass 
-                        
+                
                         for item in data_trailer:
                             try:
                                 fecha_str = str(item['cita']).split(" - ")[0].strip()
@@ -2911,10 +2894,10 @@ else:
                                     eventos_dias[dt.day].append({"tipo": "TRAILER", "oc": item['oc'], "estatus": item['estatus']})
                             except:
                                 pass
-                        
+                
                         cal = calendar.Calendar(firstweekday=6) 
                         semanas_mes = cal.monthdayscalendar(anio, mes_num)
-                        
+                
                         grid_html = ""
                         for semana in semanas_mes:
                             for dia in semana:
@@ -2942,7 +2925,7 @@ else:
                                         </div>
                                     </div>
                                     '''
-                        
+                
                         html_calendario = f"""
                         <!DOCTYPE html>
                         <html lang="es">
@@ -2978,7 +2961,7 @@ else:
                         </html>
                         """
                         return components.html(html_calendario, height=750, scrolling=True)
-                    
+                
                     # =====================================================================
                     # --- EXTRACCIÓN AUTOMÁTICA Y ADAPTACIÓN DE TUS ENCABEZADOS REALES ---
                     # =====================================================================
@@ -2998,9 +2981,9 @@ else:
                         else:
                             st.error(f"Amor, hubo un error al cargar los datos: {response.status_code}")
                             return pd.DataFrame()
-                    
+                
                     df_raw = get_github_data()
-                    
+                
                     if not df_raw.empty:
                         # Quitamos espacios en blanco accidentales de los nombres de tus columnas
                         df_raw.columns = df_raw.columns.str.strip()
@@ -3009,6 +2992,8 @@ else:
                         df_entregas = pd.DataFrame()
                         
                         # Asignamos la PO Customer para el título principal
+                        # Mapeamos tus columnas exactas
+                        df_entregas = pd.DataFrame()
                         df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
                         
                         # --- AQUÍ AGREGAMOS LA LÍNEA PARA EL ITEM NO ---
@@ -3073,9 +3058,9 @@ else:
                     else:
                         data_camion = []
                         data_trailer = []
-                    
+                
                     # =====================================================================
-                    
+                
                     # --- Lógica de Renderizado Condicional ---
                     if st.session_state.tipo_entrega == 'C A M I O N':
                         render_logistica_flow_responsive(data_camion)
@@ -3099,6 +3084,7 @@ else:
                                 st.rerun()
                             
                         render_calendario_visual(data_camion, data_trailer, st.session_state.mes_calendario)
+
 
                 # PESTAÑA 6: CONSIGNAS
                 with tab_consignas:
