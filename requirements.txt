@@ -17,7 +17,6 @@ numpy
 pytesseract
 matplotlib
 streamlit-camera-input-live
-qrcode[pil]
 
 
 
