@@ -837,6 +837,34 @@ button[data-testid="stBaseButton-secondary"] p {{
 """, unsafe_allow_html=True)
 
 
+st.markdown("""
+<style>
+    /* 1. SEPARACIÓN: Aumentamos el espacio entre los tabs */
+    div[data-baseweb="tab-list"] {
+        gap: 40px !important; /* Aquí controlas qué tan separados están */
+    }
+
+    /* 2. TEXTO NORMAL: Color base (el blanco/gris que tienes) */
+    button[data-baseweb="tab"] div[data-testid="stMarkdownContainer"] p {
+        color: #A4B9C8 !important; 
+        font-weight: 600 !important;
+        transition: color 0.3s ease !important;
+    }
+
+    /* 3. HOVER Y SELECCIONADO: Tu color neón #00A3A3 */
+    button[data-baseweb="tab"]:hover div[data-testid="stMarkdownContainer"] p,
+    button[data-baseweb="tab"][aria-selected="true"] div[data-testid="stMarkdownContainer"] p {
+        color: #00A3A3 !important;
+    }
+
+    /* 4. LÍNEA INFERIOR: También la pintamos de neón para que combine */
+    div[data-baseweb="tab-highlight"] {
+        background-color: #00A3A3 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
 
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
