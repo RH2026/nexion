@@ -2261,14 +2261,11 @@ else:
                             st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")   
                 
                
-                # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
-                # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)
+                # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)-
                 with tab_despachos:
-                    # --- CSS AISLADO PARA EL BOTÓN DE DESCARGA ---
                     st.markdown("""
                         <style>
-                            /* Apuntamos exclusivamente a la columna que tenga el marcador-descarga */
-                            div[data-testid="column"]:has(.marker-descarga) button {
+                            div[data-testid="stDownloadButton"] > button {
                                 background-color: #2B343B !important; 
                                 color: #FFFFFF !important;            
                                 border: 1px solid #2B343B !important; 
@@ -2276,14 +2273,18 @@ else:
                                 transition: all 0.3s ease !important;
                                 width: 100% !important;
                             }
-                            div[data-testid="column"]:has(.marker-descarga) button:hover {
+                            div[data-testid="stDownloadButton"] > button:hover {
                                 background-color: #00A3A3 !important; 
                                 color: #FFFFFF !important;            
                                 border-color: #00A3A3 !important;
                             }
-                            div[data-testid="column"]:has(.marker-descarga) button:active {
+                            div[data-testid="stDownloadButton"] > button:active {
                                 background-color: #00A3A3 !important;
                                 border-color: #00A3A3 !important;
+                            }
+                            /* Forzamos que el texto interno no se ponga gris/transparente */
+                            div[data-testid="stDownloadButton"] > button p {
+                                color: #FFFFFF !important;
                             }
                         </style>
                     """, unsafe_allow_html=True)
@@ -2452,17 +2453,15 @@ else:
                             df_excel.to_excel(writer, index=False, sheet_name='Detalle_Operacion')
                         buffer.seek(0)
                     
-                        # ENVOLVEMOS EL BOTÓN PARA INYECTAR EL MARCADOR Y AISLAR EL CSS
-                        col_descarga = st.columns([1])[0]
-                        with col_descarga:
-                            st.markdown('<span class="marker-descarga"></span>', unsafe_allow_html=True)
-                            st.download_button(
-                                label="DESCARGAR REPORTE DE OPERACIÓN (EXCEL)",
-                                data=buffer,
-                                file_name=f"Detalle_Operacion_{mes_sel}.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                use_container_width=True
-                            )
+                        # Aquí también le pusimos type="primary" para forzar a Streamlit a darle fondo oscuro
+                        st.download_button(
+                            label="DESCARGAR REPORTE DE OPERACIÓN (EXCEL)",
+                            data=buffer,
+                            file_name=f"Detalle_Operacion_{mes_sel}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True,
+                            type="primary"
+                        )
                     else:
                         st.info("No hay datos disponibles para el detalle.")
                     
