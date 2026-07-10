@@ -532,12 +532,14 @@ div[data-testid="stDateInput"] svg {{
     margin-bottom: 0px !important;
 }}
 
-/* --- FORZAR TABS (PESTAÑAS) A 30PX --- */
-div[data-testid="stTabs"] button {{
+/* --- FORZAR TABS (PESTAÑAS) A 30PX - MODO NUCLEAR --- */
+div[data-testid="stTabs"] button,
+div[data-testid="stTabs"] div[data-baseweb="tab"] {{
     min-height: 30px !important;
     height: 30px !important;
     padding-top: 0px !important;
     padding-bottom: 0px !important;
+    background: transparent !important;
     background-color: transparent !important;
     border: none !important;
     color: {vars_css['sub']} !important; 
@@ -545,28 +547,34 @@ div[data-testid="stTabs"] button {{
     transition: all 0.3s ease !important;
 }}
 
-/* 1. MATAR EL HOVER FEO POR DEFECTO */
-div[data-testid="stTabs"] button:hover {{
+/* MATAR EL HOVER Y FONDOS POR DEFECTO DE RAÍZ */
+div[data-testid="stTabs"] button:hover,
+div[data-testid="stTabs"] div[data-baseweb="tab"]:hover {{
+    background: transparent !important;
     background-color: transparent !important;
-    color: #00FFAA !important; /* Toque sutil verde esmeralda al pasar el mouse */
+    color: #00FFAA !important;
 }}
 
-/* 2. ESTADO ACTIVO LIMPIO (Sin el bloque de fondo) */
-div[data-testid="stTabs"] button[aria-selected="true"] {{
-    background-color: transparent !important; 
+/* EL ESTADO ACTIVO COMPLETAMENTE BLINDADO */
+div[data-testid="stTabs"] button[aria-selected="true"],
+div[data-testid="stTabs"] div[aria-selected="true"] {{
+    background: transparent !important; 
+    background-color: transparent !important;
     color: {vars_css['text']} !important;
     font-weight: 800 !important; 
 }}
 
-/* 3. QUITAR RESALTADOS AL HACER CLIC */
+/* QUITAR RESALTADOS NATIVOS Y BORDES DE FOCO */
 div[data-testid="stTabs"] button:focus, 
-div[data-testid="stTabs"] button:active {{
+div[data-testid="stTabs"] button:active,
+div[data-testid="stTabs"] div[data-baseweb="tab"]:focus {{
     outline: none !important;
     box-shadow: none !important;
+    background: transparent !important;
     background-color: transparent !important;
 }}
 
-/* LA LÍNEA INFERIOR NEÓN */
+/* LA LÍNEA INFERIOR NEÓN INTACTA */
 div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
