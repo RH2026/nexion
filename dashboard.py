@@ -532,51 +532,72 @@ div[data-testid="stDateInput"] svg {{
     margin-bottom: 0px !important;
 }}
 
-/* --- FORZAR TABS (PESTAÑAS) A 30PX - MODO NUCLEAR --- */
-div[data-testid="stTabs"] button,
-div[data-testid="stTabs"] div[data-baseweb="tab"] {{
-    min-height: 30px !important;
-    height: 30px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    color: {vars_css['sub']} !important; 
-    font-weight: 400 !important;
-    transition: all 0.3s ease !important;
+/* ===================== TABS - ESTILO NEXION ===================== */
+
+/* CONTENEDOR DE LAS PESTAÑAS */
+div[data-testid="stTabs"] [role="tablist"] {{
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 16px !important;          /* <-- Espacio entre pestañas */
+    margin: 0 !important;
+    padding: 0 !important;
 }}
 
-/* MATAR EL HOVER Y FONDOS POR DEFECTO DE RAÍZ */
-div[data-testid="stTabs"] button:hover,
-div[data-testid="stTabs"] div[data-baseweb="tab"]:hover {{
+/* CADA PESTAÑA */
+div[data-testid="stTabs"] button,
+div[data-testid="stTabs"] div[data-baseweb="tab"],
+div[data-testid="stTabs"] [role="tab"] {{
+    min-height: 30px !important;
+    height: 30px !important;
+
+    padding: 0px 8px !important;   /* <-- Ancho de la pestaña */
+    margin: 0 !important;
+
     background: transparent !important;
     background-color: transparent !important;
+
+    border: none !important;
+    border-radius: 0 !important;
+
+    color: {vars_css['sub']} !important;
+    font-weight: 400 !important;
+
+    transition: all .25s ease !important;
+
+    flex: 0 0 auto !important;
+}}
+
+/* HOVER */
+div[data-testid="stTabs"] button:hover,
+div[data-testid="stTabs"] div[data-baseweb="tab"]:hover,
+div[data-testid="stTabs"] [role="tab"]:hover {{
+    background: transparent !important;
     color: #00FFAA !important;
 }}
 
-/* EL ESTADO ACTIVO COMPLETAMENTE BLINDADO */
+/* TAB ACTIVA */
 div[data-testid="stTabs"] button[aria-selected="true"],
-div[data-testid="stTabs"] div[aria-selected="true"] {{
-    background: transparent !important; 
-    background-color: transparent !important;
+div[data-testid="stTabs"] div[aria-selected="true"],
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
+    background: transparent !important;
     color: {vars_css['text']} !important;
-    font-weight: 800 !important; 
+    font-weight: 700 !important;
 }}
 
-/* QUITAR RESALTADOS NATIVOS Y BORDES DE FOCO */
-div[data-testid="stTabs"] button:focus, 
+/* ELIMINAR FOCUS */
+div[data-testid="stTabs"] button:focus,
 div[data-testid="stTabs"] button:active,
-div[data-testid="stTabs"] div[data-baseweb="tab"]:focus {{
+div[data-testid="stTabs"] [role="tab"]:focus {{
     outline: none !important;
     box-shadow: none !important;
     background: transparent !important;
-    background-color: transparent !important;
 }}
 
-/* LA LÍNEA INFERIOR NEÓN INTACTA */
+/* LÍNEA INFERIOR */
 div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important; 
+    background-color: #00FFAA !important;
+    height: 2px !important;
 }}
 
 
@@ -837,35 +858,6 @@ button[data-testid="stBaseButton-secondary"] p {{
 }}
 </style>
 """, unsafe_allow_html=True)
-
-
-st.markdown("""
-<style>
-    /* 1. SEPARACIÓN: Aumentamos el espacio entre los tabs */
-    div[data-baseweb="tab-list"] {
-        gap: 40px !important; /* Aquí controlas qué tan separados están */
-    }
-
-    /* 2. TEXTO NORMAL: Color base (el blanco/gris que tienes) */
-    button[data-baseweb="tab"] div[data-testid="stMarkdownContainer"] p {
-        color: #A4B9C8 !important; 
-        font-weight: 600 !important;
-        transition: color 0.3s ease !important;
-    }
-
-    /* 3. HOVER Y SELECCIONADO: Tu color neón #00A3A3 */
-    button[data-baseweb="tab"]:hover div[data-testid="stMarkdownContainer"] p,
-    button[data-baseweb="tab"][aria-selected="true"] div[data-testid="stMarkdownContainer"] p {
-        color: #00A3A3 !important;
-    }
-
-    /* 4. LÍNEA INFERIOR: También la pintamos de neón para que combine */
-    div[data-baseweb="tab-highlight"] {
-        background-color: #00A3A3 !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 
 
 # ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
