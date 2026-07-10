@@ -532,20 +532,13 @@ div[data-testid="stDateInput"] svg {{
     margin-bottom: 0px !important;
 }}
 
-/* --- FORZAR TABS (PESTAÑAS) - MODO NUCLEAR REFORZADO --- */
-
-/* 1. SEPARACIÓN: Añadimos espacio entre los elementos del menú */
-div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
-    gap: 60px !important; /* <--- Aumenta o disminuye este número para más o menos espacio */
-    justify-content: flex-start !important;
-}}
-
-/* 2. BOTONES: Tamaño y estilo */
+/* --- FORZAR TABS (PESTAÑAS) A 30PX - MODO NUCLEAR --- */
 div[data-testid="stTabs"] button,
 div[data-testid="stTabs"] div[data-baseweb="tab"] {{
     min-height: 30px !important;
     height: 30px !important;
-    padding: 0px 10px !important; /* Espacio interno lateral */
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
     background: transparent !important;
     background-color: transparent !important;
     border: none !important;
@@ -554,36 +547,37 @@ div[data-testid="stTabs"] div[data-baseweb="tab"] {{
     transition: all 0.3s ease !important;
 }}
 
-/* 3. HOVER: Color neón #00A3A3 */
+/* MATAR EL HOVER Y FONDOS POR DEFECTO DE RAÍZ */
 div[data-testid="stTabs"] button:hover,
 div[data-testid="stTabs"] div[data-baseweb="tab"]:hover {{
     background: transparent !important;
     background-color: transparent !important;
-    color: #00A3A3 !important; 
+    color: #00FFAA !important;
 }}
 
-/* 4. ACTIVO: Color neón #00A3A3 y negrita */
+/* EL ESTADO ACTIVO COMPLETAMENTE BLINDADO */
 div[data-testid="stTabs"] button[aria-selected="true"],
 div[data-testid="stTabs"] div[aria-selected="true"] {{
     background: transparent !important; 
     background-color: transparent !important;
-    color: #00A3A3 !important; 
+    color: {vars_css['text']} !important;
     font-weight: 800 !important; 
 }}
 
-/* 5. QUITAR RESALTADOS Y FOCO */
+/* QUITAR RESALTADOS NATIVOS Y BORDES DE FOCO */
 div[data-testid="stTabs"] button:focus, 
 div[data-testid="stTabs"] button:active,
 div[data-testid="stTabs"] div[data-baseweb="tab"]:focus {{
     outline: none !important;
     box-shadow: none !important;
     background: transparent !important;
+    background-color: transparent !important;
 }}
 
-/* 6. LÍNEA INFERIOR: Color neón #00A3A3 */
+/* LA LÍNEA INFERIOR NEÓN INTACTA */
 div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
-    background-color: #00A3A3 !important; 
-}} 
+    background-color: #00FFAA !important; 
+}}
 
 
 
