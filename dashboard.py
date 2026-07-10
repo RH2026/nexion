@@ -6254,7 +6254,7 @@ else:
                     list(precios.keys()),
                     key=f"prod_select_{st.session_state.reset_key}", # <--- Esto es lo que hace la magia
                     default=st.session_state.get('seleccionados_muestras', []),
-                    placeholder=""
+                    placeholder="SELECCIONAR PRODUCTOS"
                 )
                 
                 st.session_state.seleccionados_muestras = seleccionados
