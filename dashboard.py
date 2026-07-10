@@ -539,7 +539,7 @@ div[data-testid="stTabs"] [role="tablist"] {{
     display: flex !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    gap: 16px !important;          /* <-- Espacio entre pestañas */
+    gap: 26px !important;          /* <-- Espacio entre pestañas */
     margin: 0 !important;
     padding: 0 !important;
 }}
