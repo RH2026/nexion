@@ -533,12 +533,16 @@ div[data-testid="stDateInput"] svg {{
 }}
 
 /* --- FORZAR TABS (PESTAÑAS) A 30PX - MODO NUCLEAR --- */
+div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
+    gap: 40px !important; 
+}}
+
 div[data-testid="stTabs"] button,
 div[data-testid="stTabs"] div[data-baseweb="tab"] {{
     min-height: 30px !important;
     height: 30px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
     background: transparent !important;
     background-color: transparent !important;
     border: none !important;
@@ -547,12 +551,12 @@ div[data-testid="stTabs"] div[data-baseweb="tab"] {{
     transition: all 0.3s ease !important;
 }}
 
-/* MATAR EL HOVER Y FONDOS POR DEFECTO DE RAÍZ */
+/* MATAR EL HOVER Y PONER TU COLOR #00A3A3 */
 div[data-testid="stTabs"] button:hover,
 div[data-testid="stTabs"] div[data-baseweb="tab"]:hover {{
     background: transparent !important;
     background-color: transparent !important;
-    color: #00FFAA !important;
+    color: #00A3A3 !important;
 }}
 
 /* EL ESTADO ACTIVO COMPLETAMENTE BLINDADO */
@@ -560,7 +564,7 @@ div[data-testid="stTabs"] button[aria-selected="true"],
 div[data-testid="stTabs"] div[aria-selected="true"] {{
     background: transparent !important; 
     background-color: transparent !important;
-    color: {vars_css['text']} !important;
+    color: #00A3A3 !important;
     font-weight: 800 !important; 
 }}
 
@@ -576,7 +580,7 @@ div[data-testid="stTabs"] div[data-baseweb="tab"]:focus {{
 
 /* LA LÍNEA INFERIOR NEÓN INTACTA */
 div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important; 
+    background-color: #00A3A3 !important; 
 }}
 
 /* ========================================================================= */
