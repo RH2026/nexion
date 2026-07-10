@@ -2141,8 +2141,9 @@ else:
                         busqueda_activa = busqueda_manual
                         texto_mostrar = busqueda_manual.upper()
                     
-                    # --- FILTRADO ORIGINAL (SIN ROMPER NADA) ---
-                    busqueda_aux = busqueda_activa.lower()
+                    # --- FILTRADO ORIGINAL (SIN ROMPER NADA) ---                   
+                    # Validamos que busqueda_activa no sea nula y la forzamos a ser texto seguro
+                    busqueda_aux = str(busqueda_activa).lower() if pd.notna(busqueda_activa) else ""
                     mask = (
                         df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
                         df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
