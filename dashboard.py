@@ -545,16 +545,28 @@ div[data-testid="stTabs"] button {{
     transition: all 0.3s ease !important;
 }}
 
-/* Estado activo de las Tabs */
-div[data-testid="stTabs"] button[aria-selected="true"] {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
+/* 1. MATAR EL HOVER FEO POR DEFECTO */
+div[data-testid="stTabs"] button:hover {{
+    background-color: transparent !important;
+    color: #00FFAA !important; /* Toque sutil verde esmeralda al pasar el mouse */
 }}
+
+/* 2. ESTADO ACTIVO LIMPIO (Sin el bloque de fondo) */
+div[data-testid="stTabs"] button[aria-selected="true"] {{
+    background-color: transparent !important; 
+    color: {vars_css['text']} !important;
+    font-weight: 800 !important; 
+}}
+
+/* 3. QUITAR RESALTADOS AL HACER CLIC */
 div[data-testid="stTabs"] button:focus, 
 div[data-testid="stTabs"] button:active {{
     outline: none !important;
     box-shadow: none !important;
+    background-color: transparent !important;
 }}
+
+/* LA LÍNEA INFERIOR NEÓN */
 div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
     background-color: #00FFAA !important; 
 }}
