@@ -6304,7 +6304,11 @@ else:
                                 st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
                 
                 st.markdown("---")
-                f_coment = st.text_area("💬 COMENTARIOS ADICIONALES", height=100).upper()
+                f_coment = st.text_area(
+                    "💬 COMENTARIOS ADICIONALES", 
+                    height=100, 
+                    placeholder="SI EL PRODUCTO NO ESTA EN LA LISTA SELECCIONABLE, INGRESALOS AQUI O CUALQUIER COMENTARIO ADICIONAL"
+                ).upper()
                 
                 st.write("")
                 st.write("")
