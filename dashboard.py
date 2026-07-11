@@ -6550,7 +6550,7 @@ else:
                             with c_adm1:
                                 st.subheader("1. ASIGNAR DATOS DE ENVIO")
                                 n_paq_nombre = st.selectbox("Nombre de Paquetería", 
-                                    ["NO APLICA","TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
+                                    ["AEREO", "NO APLICA","TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
                                     index=None, placeholder="Selecciona paquetería...")
                                 
                                 n_tipo_pago = st.selectbox("Modalidad de Pago", 
