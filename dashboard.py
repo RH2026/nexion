@@ -6483,8 +6483,7 @@ else:
                                             <div class="label-mini">Folio / Fecha</div>
                                             <div class="val-folio">#{str(item['FOLIO'])}</div>
                                             <div style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 5px;">{str(item['FECHA ENVÍO'])[:10]}</div>
-                                            <!-- ---> 2. INYECTAMOS EL ESTATUS NEÓN EN LA TARJETA DE BÚSQUEDA --->
-                                            {{ "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>" if str(item.get('ESTATUS', '')).upper() == 'DESPACHADO' else "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>" }}
+                                            { "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>" if str(item.get('ESTATUS', '')).upper() == 'DESPACHADO' else "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>" }
                                         </div>
                                         <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
                                             <div class="label-mini">Hotel</div>
