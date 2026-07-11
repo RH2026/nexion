@@ -6425,7 +6425,7 @@ else:
                         st.write("")
                         st.write("")
                         st.write("")
-                        with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS)", expanded=False):
+                        with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS)", expanded=True):
                             if not df_actual.empty:
                                 busqueda = st.text_input("Escribe el nombre del Hotel o Folio para filtrar:").upper()
                                 
