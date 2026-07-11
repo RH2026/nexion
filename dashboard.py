@@ -6529,6 +6529,23 @@ else:
                                 # 1. Pon esto justo DEBAJO de donde creas los tabs (t1, t2)
                                 contenedor_aviso = st.empty()
                                 if not df_actual.empty:
+                                    # --- CSS FUERZA BRUTA PARA BOTONES OSCUROS CON HOVER NEÓN ---
+                                    st.markdown("""
+                                    <style>
+                                    div[data-testid="stButton"] button {
+                                        background-color: #1E293B !important;
+                                        color: #FFFFFF !important;
+                                        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                                        transition: all 0.3s ease-in-out !important;
+                                    }
+                                    div[data-testid="stButton"] button:hover {
+                                        border-color: #00FFAA !important;
+                                        color: #00FFAA !important;
+                                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.4) !important;
+                                    }
+                                    </style>
+                                    """, unsafe_allow_html=True)
+                                    
                                     df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
                                     opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
                                     
@@ -6539,10 +6556,6 @@ else:
                                         index=None, 
                                         placeholder="Busca el folio que envió Ventas..."
                                     )
-                                    
-                                    # --- SECCIONES SIEMPRE VISIBLES ---
-                                    st.divider() # Una línea para separar
-                                    c_adm1, c_adm2 = st.columns(2)
                                     
                                     # Inicializamos variables vacías por si no hay selección
                                     datos_fol = None
@@ -6568,7 +6581,7 @@ else:
                                             borde_color = "#FF4444"
         
                                         st.markdown(f"""
-                                        <div style="background: #263238; border: 1px solid rgba(255,255,255,0.05); border-left: 6px solid {borde_color}; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                                        <div style="background: #263238; border: 1px solid rgba(255,255,255,0.05); border-left: 6px solid {borde_color}; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; margin-top: 15px; margin-bottom: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                                             <div style="flex: 1.2;">
                                                 <div style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; margin-bottom:4px;">FOLIO A PROCESAR</div>
                                                 <div style="color: {borde_color}; font-family: monospace; font-size: 22px; font-weight: 900; line-height:1;">#{datos_fol['FOLIO']}</div>
@@ -6589,6 +6602,10 @@ else:
                                         """, unsafe_allow_html=True)
                                         # <--- FIN DE LA MAGIA VISUAL --->
     
+                                    # --- SECCIONES SIEMPRE VISIBLES ---
+                                    st.divider() # Una línea para separar
+                                    c_adm1, c_adm2 = st.columns(2)
+
                                     with c_adm1:
                                         st.subheader("1. ASIGNAR DATOS DE ENVIO")
                                         n_paq_nombre = st.selectbox("Nombre de Paquetería", 
@@ -6614,7 +6631,7 @@ else:
                                             df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
                                             df_actual.at[idx, "NUMERO_GUIA"] = n_gui
                                             df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
-                                            df_actual.at[idx, "ESTATUS"] = "DESPACHADO" # <--- LÍNEA NUEVA: MARCA COMO SURTIDO
+                                            df_actual.at[idx, "ESTATUS"] = "DESPACHADO" 
                                             
                                             # 2. Subimos a GitHub
                                             if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
@@ -6626,7 +6643,7 @@ else:
                                                 import time
                                                 time.sleep(1.5)
                                                 st.rerun()
-                        
+
                                     with c_adm2:
                                         st.subheader("2. IMPRESION FINAL")
                                         st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
@@ -6634,7 +6651,6 @@ else:
                                         # El botón de imprimir también se deshabilita si no hay selección
                                         btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
                                                                   use_container_width=True, 
-                                                                  type="primary",
                                                                   disabled=not fol_sel_texto)
                                         
                                         if btn_imprimir and datos_fol is not None:
