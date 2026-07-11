@@ -6529,19 +6529,22 @@ else:
                                 # 1. Pon esto justo DEBAJO de donde creas los tabs (t1, t2)
                                 contenedor_aviso = st.empty()
                                 if not df_actual.empty:
-                                    # --- CSS FUERZA BRUTA PARA BOTONES OSCUROS CON HOVER NEÓN ---
+                                    # --- CSS CORREGIDO: BOTONES OSCUROS CON HOVER CIAN ---
                                     st.markdown("""
                                     <style>
+                                    /* Botón en estado normal (oscuro) */
                                     div[data-testid="stButton"] button {
-                                        background-color: #1E293B !important;
+                                        background-color: #263238 !important; 
                                         color: #FFFFFF !important;
-                                        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                                        border: 1px solid #44555A !important;
                                         transition: all 0.3s ease-in-out !important;
                                     }
+                                    /* Botón en hover (cian neón) */
                                     div[data-testid="stButton"] button:hover {
-                                        border-color: #00FFAA !important;
-                                        color: #00FFAA !important;
-                                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.4) !important;
+                                        background-color: #00C4B4 !important;
+                                        color: #FFFFFF !important;
+                                        border-color: #00C4B4 !important;
+                                        box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
                                     }
                                     </style>
                                     """, unsafe_allow_html=True)
