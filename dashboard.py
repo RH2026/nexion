@@ -1142,11 +1142,18 @@ else:
                 st.write("**NEXION**")
     
         with c2:
+            # --- INTERCEPTAMOS "DASHBOARD" PARA CAMBIAR EL TEXTO VISUAL ---
+            texto_principal = st.session_state.menu_main
+            
+            # Si el menú es DASHBOARD, mostramos tu marca premium
+            if texto_principal == "DASHBOARD":
+                texto_principal = "NEXION SMART LOGISTICS"
+
             # RUTA DINÁMICA
             if st.session_state.menu_sub != "GENERAL":
-                ruta = f"{st.session_state.menu_main} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
+                ruta = f"{texto_principal} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
             else:
-                ruta = st.session_state.menu_main
+                ruta = texto_principal
             
             st.markdown(f"""
                 <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
