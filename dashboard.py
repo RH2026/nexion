@@ -1145,13 +1145,14 @@ else:
             # --- INTERCEPTAMOS "DASHBOARD" PARA CAMBIAR EL TEXTO VISUAL ---
             texto_principal = st.session_state.menu_main
             
-            # Si el menú es DASHBOARD, mostramos tu marca premium
+            # Si el menú es DASHBOARD, aplicamos el diseño con la línea azul
             if texto_principal == "DASHBOARD":
-                texto_principal = "NEXION SMART LOGISTICS"
+                azul_nexion = "#82D4E6"  # El color exacto extraído de tu logo
+                texto_principal = f"NEXION <span style='color: {azul_nexion}; font-weight: 900; margin: 0 10px; font-size: 16px;'>|</span> SMART LOGISTICS"
 
             # RUTA DINÁMICA
             if st.session_state.menu_sub != "GENERAL":
-                ruta = f"{texto_principal} <span style='color:{vars_css['sub']}; opacity:0.4; margin: 0 15px;'>|</span> {st.session_state.menu_sub}"
+                ruta = f"{texto_principal} <span style='color:{vars_css['sub']}; opacity:0.3; margin: 0 15px;'>/</span> {st.session_state.menu_sub}"
             else:
                 ruta = texto_principal
             
