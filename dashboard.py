@@ -1144,15 +1144,16 @@ else:
         with c2:
             # --- INTERCEPTAMOS "DASHBOARD" PARA CAMBIAR EL TEXTO VISUAL ---
             texto_principal = st.session_state.menu_main
+            azul_nexion = "#82D4E6"  # El color exacto de tu logo
             
             # Si el menú es DASHBOARD, aplicamos el diseño con la línea azul
             if texto_principal == "DASHBOARD":
-                azul_nexion = "#82D4E6"  # El color exacto extraído de tu logo
                 texto_principal = f"NEXION <span style='color: {azul_nexion}; font-weight: 900; margin: 0 10px; font-size: 16px;'>|</span> SMART LOGISTICS"
 
             # RUTA DINÁMICA
             if st.session_state.menu_sub != "GENERAL":
-                ruta = f"{texto_principal} <span style='color:{vars_css['sub']}; opacity:0.3; margin: 0 15px;'>/</span> {st.session_state.menu_sub}"
+                # Aquí le asignamos el mismo color azul_nexion a la diagonal y ajustamos la opacidad si lo deseas
+                ruta = f"{texto_principal} <span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> {st.session_state.menu_sub}"
             else:
                 ruta = texto_principal
             
