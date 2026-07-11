@@ -5952,846 +5952,858 @@ else:
                                 
 
             elif st.session_state.menu_sub == "ENVIO DE MUESTRAS":
-                # --- 1. LLAVES DE ESTADO ---
-                if "reset_key" not in st.session_state:
-                    st.session_state.reset_key = 0
-                if "folio_guardado" not in st.session_state:
-                    st.session_state.folio_guardado = False
-    
-                
-                
-                # --- VARIABLES DE GITHUB ---
-                GITHUB_USER = "RH2026"
-                GITHUB_REPO = "nexion"
-                GITHUB_PATH = "muestras.csv"
-                GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
-                
-                # Diccionario de precios SINCRONIZADO
-                precios = {
-                    "Envio Muestras Especiales": 0.0,
-                    "Kit Accesorios Ecologicos": 47.85,
-                    "kit Accesorios Lavarino": 47.85,
-                    "Dispensador Almond": 218.33,
-                    "Dispensador Biogena": 216.00,
-                    "Dispensador Cava": 230.58,
-                    "Dispensador Persea": 275.00,
-                    "Dispensador Botánicos": 274.17,
-                    "Dispensador Dove": 125.00,
-                    "Kit Elements": 29.34,
-                    "Kit Almond": 33.83,
-                    "Kit Biogena": 48.95,
-                    "Kit Cava": 34.59,
-                    "Kit Persa": 58.02,
-                    "Kit Lavarino": 36.30,
-                    "Kit Botánicos": 29.34,
-                    "Kit Rainforest": 30.34,
-                    "JHJY-0050 Llave magnetica para soporte JH": 180.00,
-                    "68829526 Rack Dove Dove Mlac Bracket Metalized Bottle 1 Pieza": 193.90,
-                    "JHJY-0033 Rack JH  Color Blanco de 2 pzas": 65.00,
-                    "JHJY-0034 Rack JH  Color Blanco de 1 pzas": 50.00,
-                    "JHJY-0045 Soporte de acero inoxidable Jypesa INOX Cap lock individual": 679.00,
-                    "JHJY-0046 Soporte de acero inoxidable Jypesa INOX Cap lock doble": 679.00,
-                    "JHJY-0047 Soporte de acero inoxidable Jypesa INOX Cap lock triple": 679.00,
-                    "JHJY-0037 Llave para rack de acero Jypesa": 25.50,
-                    "JHJY-0026 Rack JH Individual color Negro": 40.28,
-                    "JHJY-0027 Rack JH Doble color Negro": 40.28,
-                    "JHJY-0065 KIT Bracket+Key+3M Super Glue/Screw black ANTI-THEFT Emperor Semi circular 12 Piezas/Caja": 418.2,
-                    "JHJY-0064 KIT Bracket+Key+3M Super Glue/Screw black ANTI-THEFT Easy snap 12 Piezas/Caja": 418.2,
-                    "4029-A90 NOCEAN Cepillo Dental eco amigable nOcean caja con 144 piezas": 4.1,
-                    "4029-A91 NOCEAN Peine de bambu eco amigable nOcean caja con 200 piezas": 8.74,
-                    "4029-A92 NOCEAN Kit de afeitar eco amigable nOcean caja con 200 piezas": 16.60,
-                    "4029-A93 NOCEAN Kit de vanidad eco amigable nOcean caja con 500 piezas": 3.8,
-                    "4029-A95 NOCEAN Kit de costura eco amigable nOcean caja con 500 piezas": 2.4,
-                    "4029-A96 NOCEAN Limpia calzado eco amigable nOcean caja con 500 piezas": 4.4,
-                    "4029-A97 NOCEAN Toallita desmaquillante comprimida eco amigable nOcean caja con 300 piezas": 5.2,
-                    "4029-A98 NOCEAN Esponja de celulosa comprimida eco amigable nOcean caja con 500 piezas": 3.95,
-                    "4052-L17 CAVA Shampoo Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
-                    "4052-L18 CAVA Acondicionador Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
-                    "4052-L19 CAVA Gel de baño Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
-                    "4052-L20 CAVA Crema Humectante Cava Nocean 40 ml. Caja con 150 piezas": 6.44,
-                    "4018-A23 Limpia calzado Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 3.23,
-                    "4018-A24 Gorra de baño Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 2.26,
-                    "4018-A25 KIT dental Lavarino Cosso. Cajilla Nva. Imagen Caja con 144 piezas": 11.60,
-                    "4018-A26 KIT de vanidad Lavarino Cosso. Cajilla Nva. Imagen Caja con 150 piezas": 2.95,
-                    "4018-A27 KIT de afeitar Lavarino Cosso. Cajilla Nva. Imagen Caja con 116 piezas": 7.230,
-                    "4018-A28 KIT de costura Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 1.90,
-                    "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas": 2.44
-
-                    
-        
-                }
-                
-                # --- FUNCIONES GITHUB ---
-                def obtener_datos_github():
-                    try:
-                        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
-                        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-                        r = requests.get(url, headers=headers)
-                        if r.status_code == 200:
-                            content = r.json()
-                            df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
-                            return df, content['sha']
-                    except:
-                        pass
-                    return pd.DataFrame(), None
-                
-                def subir_a_github(df, sha, msg):
-                    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
-                    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-                    csv_string = df.to_csv(index=False)
-                    payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
-                    return requests.put(url, json=payload, headers=headers).status_code == 200
-                
-                # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
-                def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago):
-                    filas_prod = ""
-                    for p in productos:
-                        filas_prod += f"""
-                        <tr>
-                            <td style='padding: 8px; border: 1px solid black;'>{str(p['desc']).upper()}</td>
-                            <td style='text-align:center; border: 1px solid black;'>-</td>
-                            <td style='text-align:center; border: 1px solid black;'>PZAS</td>
-                            <td style='text-align:center; border: 1px solid black;'>{p['cant']}</td>
-                        </tr>"""
-                
-                    html = f"""
-                    <style>
-                        @media print {{
-                            @page {{ size: letter; margin: 1cm; }}
-                            body {{ margin: 0; padding: 0; }}
-                        }}
-                    </style>
-                    
-                    <div id="printable-area" style="font-family:Arial; width:100%; box-sizing:border-box; background: white; color: black; display: flex; flex-direction: column; min-height: 95vh;">
+                        # --- 1. LLAVES DE ESTADO ---
+                        if "reset_key" not in st.session_state:
+                            st.session_state.reset_key = 0
+                        if "folio_guardado" not in st.session_state:
+                            st.session_state.folio_guardado = False
+            
                         
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-                            <div style="text-align: left;">
-                                <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000;">Jabones y Productos Especializados</h1>
-                                <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #444;">Distribución y Logística | 2026</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <h2 style="margin: 0; font-size: 16px; text-decoration: underline; font-weight: 900;">ORDEN DE EMBARQUE</h2>
-                                <p style="margin: 5px 0 0 0; font-size: 13px;"><b>{paq_nombre} - {tipo_pago}</b></p>
-                            </div>
-                        </div>
                         
-                        <table style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size: 12px;">
-                            <tr>
-                                <td style="border:1px solid black; padding:6px;"><b>FOLIO:</b> {folio}</td>
-                                <td style="border:1px solid black; padding:6px;"><b>ENVÍO:</b> {str(paq).upper()}</td>
-                                <td style="border:1px solid black; padding:6px;"><b>ENTREGA:</b> {str(entrega).upper()}</td>
-                                <td style="border:1px solid black; padding:6px;"><b>FECHA:</b> {fecha}</td>
-                            </tr>
-                        </table>
-                    
-                        <div style="display:flex; gap:10px; margin-bottom:15px;">
-                            <div style="flex:1; border:1px solid black;">
-                                <div style="background:withe; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">REMITENTE</div>
-                                <div style="padding:8px; font-size:11px; line-height:1.4;">
-                                    <b>JABONES Y PRODUCTOS ESPECIALIZADOS</b><br>
-                                    C. Cernícalo 155, La Aurora C.P.: 44460<br>
-                                    ATN: {str(atn_rem).upper()}<br>
-                                    TEL: {tel_rem}<br>
-                                    SOLICITÓ: {str(solicitante).upper()}
-                                </div>
-                            </div>
-                            <div style="flex:1; border:1px solid black;">
-                                <div style="background:#ffffff; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
-                                <div style="padding:8px; font-size:11px; line-height:1.4;">
-                                    <b>{str(hotel).upper()}</b><br>
-                                    {f"{str(calle).upper()}<br>" if calle and calle != "-" else ""}
-                                    {f"Col: {str(col).upper()} " if col and col != "-" else ""}
-                                    {f"C.P.: {cp}" if cp and cp != "-" else ""}
-                                    {"<br>" if (col and col != "-") or (cp and cp != "-") else ""}
-                                    {str(ciudad).upper()}{f", {str(estado).upper()}" if estado and estado != "-" else ""}<br>
-                                    ATN: {str(contacto).upper()}
-                                </div>
-                            </div>
-                        </div>
-                    
-                        <div style="flex-grow: 1;">
-                            <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:12px;">
-                                <tr style="background:#ffffff; color:black;">
-                                    <th style="padding: 8px; border: 1px solid black;">DESCRIPCIÓN DEL PRODUCTO</th>
-                                    <th style="border: 1px solid black; width: 100px;">CÓDIGO</th>
-                                    <th style="border: 1px solid black; width: 80px;">U.M.</th>
-                                    <th style="border: 1px solid black; width: 80px;">CANT.</th>
-                                </tr>
-                                {filas_prod}
-                            </table>
+                        # --- VARIABLES DE GITHUB ---
+                        GITHUB_USER = "RH2026"
+                        GITHUB_REPO = "nexion"
+                        GITHUB_PATH = "muestras.csv"
+                        GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
+                        
+                        # Diccionario de precios SINCRONIZADO
+                        precios = {
+                            "Envio Muestras Especiales": 0.0,
+                            "Kit Accesorios Ecologicos": 47.85,
+                            "kit Accesorios Lavarino": 47.85,
+                            "Dispensador Almond": 218.33,
+                            "Dispensador Biogena": 216.00,
+                            "Dispensador Cava": 230.58,
+                            "Dispensador Persea": 275.00,
+                            "Dispensador Botánicos": 274.17,
+                            "Dispensador Dove": 125.00,
+                            "Kit Elements": 29.34,
+                            "Kit Almond": 33.83,
+                            "Kit Biogena": 48.95,
+                            "Kit Cava": 34.59,
+                            "Kit Persa": 58.02,
+                            "Kit Lavarino": 36.30,
+                            "Kit Botánicos": 29.34,
+                            "Kit Rainforest": 30.34,
+                            "JHJY-0050 Llave magnetica para soporte JH": 180.00,
+                            "68829526 Rack Dove Dove Mlac Bracket Metalized Bottle 1 Pieza": 193.90,
+                            "JHJY-0033 Rack JH  Color Blanco de 2 pzas": 65.00,
+                            "JHJY-0034 Rack JH  Color Blanco de 1 pzas": 50.00,
+                            "JHJY-0045 Soporte de acero inoxidable Jypesa INOX Cap lock individual": 679.00,
+                            "JHJY-0046 Soporte de acero inoxidable Jypesa INOX Cap lock doble": 679.00,
+                            "JHJY-0047 Soporte de acero inoxidable Jypesa INOX Cap lock triple": 679.00,
+                            "JHJY-0037 Llave para rack de acero Jypesa": 25.50,
+                            "JHJY-0026 Rack JH Individual color Negro": 40.28,
+                            "JHJY-0027 Rack JH Doble color Negro": 40.28,
+                            "JHJY-0065 KIT Bracket+Key+3M Super Glue/Screw black ANTI-THEFT Emperor Semi circular 12 Piezas/Caja": 418.2,
+                            "JHJY-0064 KIT Bracket+Key+3M Super Glue/Screw black ANTI-THEFT Easy snap 12 Piezas/Caja": 418.2,
+                            "4029-A90 NOCEAN Cepillo Dental eco amigable nOcean caja con 144 piezas": 4.1,
+                            "4029-A91 NOCEAN Peine de bambu eco amigable nOcean caja con 200 piezas": 8.74,
+                            "4029-A92 NOCEAN Kit de afeitar eco amigable nOcean caja con 200 piezas": 16.60,
+                            "4029-A93 NOCEAN Kit de vanidad eco amigable nOcean caja con 500 piezas": 3.8,
+                            "4029-A95 NOCEAN Kit de costura eco amigable nOcean caja con 500 piezas": 2.4,
+                            "4029-A96 NOCEAN Limpia calzado eco amigable nOcean caja con 500 piezas": 4.4,
+                            "4029-A97 NOCEAN Toallita desmaquillante comprimida eco amigable nOcean caja con 300 piezas": 5.2,
+                            "4029-A98 NOCEAN Esponja de celulosa comprimida eco amigable nOcean caja con 500 piezas": 3.95,
+                            "4052-L17 CAVA Shampoo Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                            "4052-L18 CAVA Acondicionador Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                            "4052-L19 CAVA Gel de baño Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                            "4052-L20 CAVA Crema Humectante Cava Nocean 40 ml. Caja con 150 piezas": 6.44,
+                            "4018-A23 Limpia calzado Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 3.23,
+                            "4018-A24 Gorra de baño Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 2.26,
+                            "4018-A25 KIT dental Lavarino Cosso. Cajilla Nva. Imagen Caja con 144 piezas": 11.60,
+                            "4018-A26 KIT de vanidad Lavarino Cosso. Cajilla Nva. Imagen Caja con 150 piezas": 2.95,
+                            "4018-A27 KIT de afeitar Lavarino Cosso. Cajilla Nva. Imagen Caja con 116 piezas": 7.230,
+                            "4018-A28 KIT de costura Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 1.90,
+                            "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas": 2.44
+            
                             
-                            <div style="border:1px solid black; padding:10px; margin-top:15px; font-size:12px; min-height: 80px;">
-                                <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
-                            </div>
-                        </div>
-                    
-                        <div style="margin-top: 40px; padding-bottom: 20px;">
-                            <div style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:40px; border-bottom: 2px solid black; padding-bottom: 8px;">
-                                RECIBO DE CONFORMIDAD DEL CLIENTE
-                            </div>
-                            <div style="display:flex; justify-content:space-between; text-align:center; font-size:11px;">
-                                <div style="width:30%;">__________________________<br><b>FECHA RECIBO</b></div>
-                                <div style="width:35%;">__________________________<br><b>NOMBRE Y FIRMA</b></div>
-                                <div style="width:30%;">__________________________<br><b>SELLO DE RECIBIDO</b></div>
-                            </div>
-                        </div>
-                    </div>
-                    """
-                    return html
                 
-                # --- CARGA DE DATOS ---
-                # --- CARGA DE DATOS ---
-                df_actual, sha_actual = obtener_datos_github()
-                
-                if not df_actual.empty:
-                    # 1. Primero arreglamos las columnas si faltan
-                    for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL"]:
-                        if col not in df_actual.columns: 
-                            df_actual[col] = 0.0
-                    
-                    # 2. LUEGO calculamos el número (Alineado aquí adentro)
-                    nuevo_num = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1)
-                else:
-                    # 3. Si el archivo está vacío, empezamos en 1
-                    nuevo_num = 1
-                
-                # --- INTERFAZ ---
-                
-                
-                # --- CAPTURA NUEVA ---
-                st.write("")
-                with st.container():
-                    # Definimos valores por defecto (ya no se muestran a Ventas)
-                    f_paq_nombre = ""
-                    f_tipo_pago = ""
-                    
-                    # Ahora empezamos directamente con los datos que sí llena Ventas
-                    c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
-                    
-                    f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=f"JYP-{nuevo_num}", disabled=True)
-                    f_paq_sel = c2.selectbox(
-                        ":material/local_shipping: FORMA DE ENVÍO", 
-                        ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
-                    )
-                    f_ent_sel = c3.selectbox(
-                        ":material/home_pin: TIPO DE ENTREGA", 
-                        ["Domicilio", "Ocurre Oficina"]
-                    )
-                    f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
-                
-                st.divider()
-                
-                col_rem, col_dest = st.columns(2)
-                with col_rem:
-                    st.markdown(
-                        '<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">REMITENTE</div>', 
-                        unsafe_allow_html=True
-                    )
-                    st.write("")
-                    st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
-                    
-                    c_rem1, c_rem2 = st.columns([2, 1])
-                    f_atn_rem = c_rem1.text_input(":material/person: Atención", "RIGOBERTO HERNANDEZ")
-                    f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
-                    f_soli = st.text_input(
-                        ":material/badge: Solicitante / Agente", 
-                        placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS",
-                        key=f"soli_{st.session_state.reset_key}" # <--- Agregamos esta línea
-                    ).upper()
-                
-                with col_dest:
-                    st.markdown(
-                        '<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO / HOTEL</div>', 
-                        unsafe_allow_html=True
-                    )
-                    st.write("")
-                    # Agregamos la key dinámica a cada uno:
-                    f_h = st.text_input(":material/hotel: Hotel / Nombre", key=f"h_{st.session_state.reset_key}").upper()
-                    f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_{st.session_state.reset_key}").upper()
-                    
-                    cd1, cd2 = st.columns(2)
-                    f_co = cd1.text_input(":material/map: Colonia", key=f"co_{st.session_state.reset_key}").upper()
-                    f_cp = cd2.text_input(":material/mailbox: C.P.", key=f"cp_{st.session_state.reset_key}")
-                    
-                    cd3, cd4 = st.columns(2)
-                    f_ci = cd3.text_input(":material/location_city: Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
-                    f_es = cd4.text_input(":material/public: Estado", key=f"es_{st.session_state.reset_key}").upper()
-                    
-                    f_con = st.text_input(
-                        ":material/contact_phone: Contacto Receptor", 
-                        placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE",
-                        key=f"con_{st.session_state.reset_key}" # <--- La clave del éxito
-                    ).upper()
-                
-                st.divider()
-                
-                # --- PRODUCTOS ---                
-                # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO
-                st.markdown("""
-                    <style>
-                    .stMultiSelect div[data-baseweb="select"] {
-                        height: auto !important;
-                        min-height: 45px !important;
-                    }
-                    .stMultiSelect div[data-baseweb="valueContainer"] {
-                        flex-wrap: wrap !important;
-                        display: flex !important;
-                        gap: 5px !important;
-                        padding: 5px 0 !important;
-                    }
-                    .stMultiSelect div[data-baseweb="tag"] {
-                        background-color: #384A52 !important;
-                        border-radius: 5px;
-                        color: white !important;
-                    }
-                    div[data-testid="stNumberInput"] {
-                        width: 100% !important;
-                    }
-                    </style>
-                """, unsafe_allow_html=True)
-                
-                st.subheader(":material/shopping_cart: SELECCION DE PRODUCTOS")
-                
-                if "seleccionados_muestras" not in st.session_state:
-                    st.session_state.seleccionados_muestras = []
-                
-                def eliminar_producto(prod_a_borrar):
-                    st.session_state.seleccionados_muestras = [p for p in st.session_state.seleccionados_muestras if p != prod_a_borrar]
-                    st.session_state.multi_prods_main = st.session_state.seleccionados_muestras
-                
-                seleccionados = st.multiselect(
-                    ":material/search: Busca y selecciona productos:", 
-                    list(precios.keys()),
-                    key=f"prod_select_{st.session_state.reset_key}", # <--- Esto es lo que hace la magia
-                    default=st.session_state.get('seleccionados_muestras', []),
-                    placeholder="SELECCIONAR PRODUCTOS"
-                )
-                
-                st.session_state.seleccionados_muestras = seleccionados
-                
-                prods_actuales = []
-                total_cantidad = 0
-                total_costo_prods = 0
-                
-                if seleccionados:
-                    st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
-                    
-                    # --- CÁLCULO DINÁMICO DE LA ALTURA ---
-                    # Calculamos cuántas filas hay (3 productos por fila)
-                    num_filas = (len(seleccionados) + 2) // 3  
-                    # Altura base por fila (aprox 90px) + un pequeño margen
-                    # Ponemos un máximo de 500px para que no se coma toda la pantalla si son muchísimos
-                    altura_dinamica = min(max(num_filas * 95, 120), 500) 
-                    
-                    with st.container(height=altura_dinamica, border=True):
-                        col_bloque_1, col_bloque_2, col_bloque_3 = st.columns(3)
-                        
-                        for i, p in enumerate(seleccionados):
-                            if i % 3 == 0:
-                                target_col = col_bloque_1
-                            elif i % 3 == 1:
-                                target_col = col_bloque_2
-                            else:
-                                target_col = col_bloque_3
-                            
-                            with target_col:
-                                c1, c2, c3 = st.columns([1.5, 1.8, 0.5])
-                                
-                                with c1:
-                                    st.markdown(f"<div style='padding-top:10px; font-size:10px; line-height:1.1;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
-                                
-                                with c2:
-                                    q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
-                                
-                                with c3:
-                                    st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
-                
-                                if q > 0:
-                                    prods_actuales.append({"desc": p, "cant": q})
-                                    total_cantidad += q
-                                    total_costo_prods += (q * (precios.get(p, 0)))
-                                
-                                st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
-                
-                st.markdown("---")
-                f_coment = st.text_area(
-                    "💬 COMENTARIOS ADICIONALES", 
-                    height=100, 
-                    placeholder="SI EL PRODUCTO NO ESTA EN LA LISTA SELECCIONABLE, INGRESALOS AQUI O CUALQUIER COMENTARIO ADICIONAL"
-                ).upper()
-                
-                st.write("")
-                st.write("")
-                
-                # --- BOTONES PRINCIPALES ---
-                col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
-
-                # --- BOTÓN GUARDAR ---
-                if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
-                    if not f_h: 
-                        st.error("Falta el hotel")
-                    elif not f_soli:
-                        st.error("Falta el nombre de quien solicita (Solicitante / Agente)")
-                    elif not f_con: # <--- AQUÍ ESTÁ EL BLOQUEO NUEVO, AMOR
-                        st.error("Falta el nombre y teléfono de quien recibe")
-                    elif not prods_actuales: 
-                        st.error("Selecciona al menos un producto")
-                    else:
-                        direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
-                        
-                        reg = {
-                            "FOLIO": nuevo_num, 
-                            "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
-                            "NOMBRE DEL HOTEL": f_h.upper(), 
-                            "DESTINO": direccion_completa,
-                            "CONTACTO": f_con.upper(), 
-                            "SOLICITO": f_soli.upper(),
-                            "PAQUETERIA": f_paq_sel.upper(),
-                            "PAQUETERIA_NOMBRE": f_paq_nombre,
-                            "NUMERO_GUIA": "", 
-                            "COSTO_GUIA": 0.0,
-                            "CANTIDAD_TOTAL": total_cantidad,
-                            "COSTO_TOTAL": round(total_costo_prods, 2),
-                            "COMENTARIOS": f_coment # <--- LÍNEA NUEVA AGREGADA AQUÍ
                         }
                         
-                        for p in precios.keys():
-                            reg[p] = 0
-                        for item in prods_actuales:
-                            reg[item["desc"]] = item["cant"]
+                        # --- FUNCIONES GITHUB ---
+                        def obtener_datos_github():
+                            try:
+                                url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                                headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                                r = requests.get(url, headers=headers)
+                                if r.status_code == 200:
+                                    content = r.json()
+                                    df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                                    return df, content['sha']
+                            except:
+                                pass
+                            return pd.DataFrame(), None
                         
-                        df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
+                        def subir_a_github(df, sha, msg):
+                            url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                            headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                            csv_string = df.to_csv(index=False)
+                            payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
+                            return requests.put(url, json=payload, headers=headers).status_code == 200
                         
-                        if subir_a_github(df_f, sha_actual, f"Folio JYP-{nuevo_num}"):
-                            # MEMORIA: Guardamos el folio que acabamos de usar antes de que cambie
-                            st.session_state.folio_actual = nuevo_num
-                            st.session_state.folio_guardado = True 
-                            
-                            st.success(f"¡Guardado correctamente! Folio: JYP-{nuevo_num}")
-                            time.sleep(1)
-                            st.rerun()
-
-                # --- MENSAJE DE ADVERTENCIA ---
-                if not st.session_state.folio_guardado:
-                    st.markdown("""
-                        <div style="background-color: rgba(255, 165, 0, 0.1); border-left: 5px solid #FFA500; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
-                            <span style="color: white; font-size: 14px;">
-                                <b style="color: #FFA500;">BLOQUEO DE SEGURIDAD:</b> 
-                                Debes guardar el registro antes de poder imprimir.
-                            </span>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-                # --- BOTÓN GUARDAR PDF (REPARADO CON MEMORIA) ---
-                if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
-                    
-                    # LOGICA DE ORO: Si ya guardamos, usamos el folio en memoria. 
-                    # Si por algo no está (rerun), usamos nuevo_num - 1.
-                    folio_final = st.session_state.get("folio_actual", nuevo_num - 1)
-                    folio_simple = f"JYP-{folio_final}" 
-                    
-                    h_print = generar_html_impresion(
-                        folio_simple, 
-                        f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, 
-                        f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, 
-                        prods_actuales, f_coment, f_paq_nombre, f_tipo_pago
-                    )
-                    
-                    js_code = f"""
-                        <html>
-                            <head><title>{folio_simple}_{f_h}</title></head>
-                            <body>
-                                {h_print}
-                                <script>setTimeout(function(){{ window.print(); }}, 500);</script>
-                            </body>
-                        </html>
-                    """
-                    components.html(js_code, height=0)
-
-                # --- BOTÓN BORRAR ---
-                if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
-                    st.session_state.folio_guardado = False
-                    # Limpiamos el folio de la memoria para el siguiente registro
-                    if "folio_actual" in st.session_state:
-                        del st.session_state.folio_actual
-                    st.session_state.seleccionados_muestras = []
-                    st.session_state.reset_key += 1
-                    st.rerun()
-                # --- BÚSQUEDA RÁPIDA ---                
-                # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
-                st.write("")
-                st.write("")
-                st.write("")
-                with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS)", expanded=False):
-                    if not df_actual.empty:
-                        busqueda = st.text_input("Escribe el nombre del Hotel o Folio para filtrar:").upper()
+                        # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
+                        def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago):
+                            filas_prod = ""
+                            for p in productos:
+                                filas_prod += f"""
+                                <tr>
+                                    <td style='padding: 8px; border: 1px solid black;'>{str(p['desc']).upper()}</td>
+                                    <td style='text-align:center; border: 1px solid black;'>-</td>
+                                    <td style='text-align:center; border: 1px solid black;'>PZAS</td>
+                                    <td style='text-align:center; border: 1px solid black;'>{p['cant']}</td>
+                                </tr>"""
                         
-                        df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA"]].copy()
-                        df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA"]
-                        df_vista = df_vista.fillna('') 
-                        
-                        if busqueda:
-                            df_vista = df_vista[df_vista.astype(str).apply(lambda x: x.str.contains(busqueda, case=False)).any(axis=1)]
-                        
-                        df_render = df_vista.sort_values(by="FOLIO", ascending=False)
-                        data_busqueda = df_render.to_dict('records')
-                
-                        alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) # Subí un poco el alto por tarjeta
-                
-                        html_busqueda = f"""
-                        <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                            html = f"""
                             <style>
-                                body {{ background: transparent; margin: 0; padding: 0; }}
-                                ::-webkit-scrollbar {{ width: 8px; }}
-                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
-                                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
-                                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
-                
-                                .card-busqueda {{
-                                    background: #263238;
-                                    border: 1px solid rgba(255, 255, 255, 0.05);
-                                    border-radius: 10px;
-                                    padding: 15px;
-                                    margin-bottom: 10px;
-                                    display: flex;
-                                    justify-content: space-between;
-                                    align-items: center;
-                                    transition: all 0.3s ease;
+                                @media print {{
+                                    @page {{ size: letter; margin: 1cm; }}
+                                    body {{ margin: 0; padding: 0; }}
                                 }}
-                                .card-busqueda:hover {{
-                                    border-color: #38bdf8;
-                                    background: #2d3b42;
-                                    transform: translateX(5px);
-                                }}
-                                .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
-                                .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
-                                .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
-                                
-                                /* TEXTO DE LOGÍSTICA MÁS GRANDE */
-                                .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 15px; font-weight: 800; line-height: 1.2; }}
-                                .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 13px; font-weight: 700; margin-top: 4px; }}
-                                
-                                .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 11px; font-weight: 400; }}
                             </style>
-                            {"".join([f'''
-                            <div class="card-busqueda">
-                                <div style="flex: 1.1;">
-                                    <div class="label-mini">Folio / Fecha</div>
-                                    <div class="val-folio">#{str(item['FOLIO'])}</div>
-                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px;">{str(item['FECHA ENVÍO'])[:10]}</div>
-                                </div>
-                                <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
-                                    <div class="label-mini">Hotel</div>
-                                    <div class="val-hotel">{str(item['HOTEL'])[:40]}</div>
-                                </div>
-                                <div style="flex: 1.6; text-align: right;">
-                                    <div class="val-guia { 'pendiente' if item['PAQUETERÍA'] == '' or item['PAQUETERÍA'] == 'nan' else '' }">
-                                        { item['PAQUETERÍA'] if item['PAQUETERÍA'] != '' and item['PAQUETERÍA'] != 'nan' else 'PAQUETERÍA PENDIENTE' }
+                            
+                            <div id="printable-area" style="font-family:Arial; width:100%; box-sizing:border-box; background: white; color: black; display: flex; flex-direction: column; min-height: 95vh;">
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                                    <div style="text-align: left;">
+                                        <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000;">Jabones y Productos Especializados</h1>
+                                        <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #444;">Distribución y Logística | 2026</p>
                                     </div>
+                                    <div style="text-align: right;">
+                                        <h2 style="margin: 0; font-size: 16px; text-decoration: underline; font-weight: 900;">ORDEN DE EMBARQUE</h2>
+                                        <p style="margin: 5px 0 0 0; font-size: 13px;"><b>{paq_nombre} - {tipo_pago}</b></p>
+                                    </div>
+                                </div>
+                                
+                                <table style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size: 12px;">
+                                    <tr>
+                                        <td style="border:1px solid black; padding:6px;"><b>FOLIO:</b> {folio}</td>
+                                        <td style="border:1px solid black; padding:6px;"><b>ENVÍO:</b> {str(paq).upper()}</td>
+                                        <td style="border:1px solid black; padding:6px;"><b>ENTREGA:</b> {str(entrega).upper()}</td>
+                                        <td style="border:1px solid black; padding:6px;"><b>FECHA:</b> {fecha}</td>
+                                    </tr>
+                                </table>
+                            
+                                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                                    <div style="flex:1; border:1px solid black;">
+                                        <div style="background:withe; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">REMITENTE</div>
+                                        <div style="padding:8px; font-size:11px; line-height:1.4;">
+                                            <b>JABONES Y PRODUCTOS ESPECIALIZADOS</b><br>
+                                            C. Cernícalo 155, La Aurora C.P.: 44460<br>
+                                            ATN: {str(atn_rem).upper()}<br>
+                                            TEL: {tel_rem}<br>
+                                            SOLICITÓ: {str(solicitante).upper()}
+                                        </div>
+                                    </div>
+                                    <div style="flex:1; border:1px solid black;">
+                                        <div style="background:#ffffff; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
+                                        <div style="padding:8px; font-size:11px; line-height:1.4;">
+                                            <b>{str(hotel).upper()}</b><br>
+                                            {f"{str(calle).upper()}<br>" if calle and calle != "-" else ""}
+                                            {f"Col: {str(col).upper()} " if col and col != "-" else ""}
+                                            {f"C.P.: {cp}" if cp and cp != "-" else ""}
+                                            {"<br>" if (col and col != "-") or (cp and cp != "-") else ""}
+                                            {str(ciudad).upper()}{f", {str(estado).upper()}" if estado and estado != "-" else ""}<br>
+                                            ATN: {str(contacto).upper()}
+                                        </div>
+                                    </div>
+                                </div>
+                            
+                                <div style="flex-grow: 1;">
+                                    <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:12px;">
+                                        <tr style="background:#ffffff; color:black;">
+                                            <th style="padding: 8px; border: 1px solid black;">DESCRIPCIÓN DEL PRODUCTO</th>
+                                            <th style="border: 1px solid black; width: 100px;">CÓDIGO</th>
+                                            <th style="border: 1px solid black; width: 80px;">U.M.</th>
+                                            <th style="border: 1px solid black; width: 80px;">CANT.</th>
+                                        </tr>
+                                        {filas_prod}
+                                    </table>
                                     
-                                    <div class="val-sub-guia { 'pendiente' if item['NÚMERO DE GUÍA'] == '' or item['NÚMERO DE GUÍA'] == 'nan' else '' }">
-                                        { item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] != '' and item['NÚMERO DE GUÍA'] != 'nan' else 'GUÍA PENDIENTE' }
+                                    <div style="border:1px solid black; padding:10px; margin-top:15px; font-size:12px; min-height: 80px;">
+                                        <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
+                                    </div>
+                                </div>
+                            
+                                <div style="margin-top: 40px; padding-bottom: 20px;">
+                                    <div style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:40px; border-bottom: 2px solid black; padding-bottom: 8px;">
+                                        RECIBO DE CONFORMIDAD DEL CLIENTE
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; text-align:center; font-size:11px;">
+                                        <div style="width:30%;">__________________________<br><b>FECHA RECIBO</b></div>
+                                        <div style="width:35%;">__________________________<br><b>NOMBRE Y FIRMA</b></div>
+                                        <div style="width:30%;">__________________________<br><b>SELLO DE RECIBIDO</b></div>
                                     </div>
                                 </div>
                             </div>
-                            ''' for item in data_busqueda])}
-                        </div>
-                        """
-                        import streamlit.components.v1 as components
-                        components.html(html_busqueda, height=alto_busqueda, scrolling=True)
+                            """
+                            return html
                         
-                    else:
-                        st.info("No hay registros todavía.")
-                
-                # --- PANEL DE ADMIN ---
-                # --- PANEL DE ADMINISTRACIÓN (CORRECCIÓN DE NAMEERROR) ---
-                st.divider()
-                st.write("")
-                
-                # 1. Definimos la lista de quiénes mandan aquí
-                lista_admins = ["Rigoberto", "JMoreno"]
-                
-                # 2. DEFINIMOS LA VARIABLE (Esto es lo que te faltaba, amor)
-                # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
-                # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
-                usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
-                
-                if usuario_logeado in lista_admins:
-                    st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
-                    t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
-                    
-                    with t1:
-                        # 1. Pon esto justo DEBAJO de donde creas los tabs (t1, t2)
-                        contenedor_aviso = st.empty()
+                        # --- CARGA DE DATOS ---
+                        df_actual, sha_actual = obtener_datos_github()
+                        
                         if not df_actual.empty:
-                            df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
-                            opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
+                            # 1. Primero arreglamos las columnas si faltan
+                            for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL", "ESTATUS"]:
+                                if col not in df_actual.columns: 
+                                    if col == "ESTATUS":
+                                        df_actual[col] = "NO SURTIDO"
+                                    else:
+                                        df_actual[col] = 0.0
                             
-                            # 1. El selector siempre arriba
-                            fol_sel_texto = st.selectbox(
-                                "Seleccionar Folio para procesar (Logística):", 
-                                opciones_folios, 
-                                index=None, 
-                                placeholder="Busca el folio que envió Ventas..."
-                            )
-                            
-                            # --- SECCIONES SIEMPRE VISIBLES ---
-                            st.divider() # Una línea para separar
-                            c_adm1, c_adm2 = st.columns(2)
-                            
-                            # Inicializamos variables vacías por si no hay selección
-                            datos_fol = None
-                            fol_edit = None
-                
-                            if fol_sel_texto:
-                                fol_edit = int(fol_sel_texto.split(" - ")[0])
-                                datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
-                
-                            with c_adm1:
-                                st.subheader("1. ASIGNAR DATOS DE ENVIO")
-                                n_paq_nombre = st.selectbox("Nombre de Paquetería", 
-                                    ["AEREO", "NO APLICA","TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
-                                    index=None, placeholder="Selecciona paquetería...")
-                                
-                                n_tipo_pago = st.selectbox("Modalidad de Pago", 
-                                    ["NO APLICA","CREDITO", "COBRO DESTINO"],
-                                    index=None, placeholder="¿Cómo se paga?")
-                                
-                                n_gui = st.text_input("Número de Guía").upper()
-                                n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
-                
-                                # El botón solo se activa si hay un folio seleccionado
-                                btn_guardar = st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", 
-                                                        use_container_width=True, 
-                                                        disabled=not fol_sel_texto)
-                                
-                                if btn_guardar and datos_fol is not None:
-                                    # 1. Localizamos el folio en el DataFrame
-                                    # 1. Actualizamos datos
-                                    idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
-                                    df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
-                                    df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
-                                    df_actual.at[idx, "NUMERO_GUIA"] = n_gui
-                                    df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
-                                    
-                                    # 2. Subimos a GitHub
-                                    if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
-                                        
-                                        # 3. Mensaje clásico sin iconos, directo al grano
-                                        st.success(f"FOLIO JYP-{fol_edit} GUARDADO")
-                                        
-                                        # 4. Pausa breve para que alcances a leerlo y reinicio
-                                        import time
-                                        time.sleep(1.5)
-                                        st.rerun()
-                
-                            with c_adm2:
-                                st.subheader("2. IMPRESION FINAL")
-                                st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
-                                
-                                # El botón de imprimir también se deshabilita si no hay selección
-                                btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
-                                                          use_container_width=True, 
-                                                          type="primary",
-                                                          disabled=not fol_sel_texto)
-                                
-                                if btn_imprimir and datos_fol is not None:
-                                    prods_re = []
-                                    for p in precios.keys():
-                                        if p in datos_fol and datos_fol[p] > 0: 
-                                            prods_re.append({"desc": p, "cant": int(datos_fol[p])})
-                                    
-                                    paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
-                                    pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
-                
-                                    h_re = generar_html_impresion(
-                                        f"JYP-{int(datos_fol['FOLIO'])}", 
-                                        datos_fol.get("PAQUETERIA", "ENVIO"), 
-                                        datos_fol.get("TIPO_ENTREGA", "DOMICILIO"), 
-                                        datos_fol["FECHA"], 
-                                        "RIGOBERTO HERNANDEZ", 
-                                        "3319753122", 
-                                        datos_fol["SOLICITO"], 
-                                        datos_fol["NOMBRE DEL HOTEL"], 
-                                        "", "", "", 
-                                        datos_fol["DESTINO"], 
-                                        "", 
-                                        datos_fol["CONTACTO"], 
-                                        prods_re, 
-                                        datos_fol.get("COMENTARIOS", "RE-IMPRESIÓN DE LOGÍSTICA"), # <--- LECTURA DINÁMICA
-                                        paq_a_imprimir, 
-                                        pago_a_imprimir 
-                                    )
-                                    components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
-
-                    
-                    with t2:
-                        # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
-                        # --- BLOQUE DE FILTRADO POR MES (DETECTOR DE FORMATO MIXTO) ---
-                        if not df_actual.empty:
-                            st.write("")
-                            
-                            # 1. Limpieza inicial
-                            df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip()
-                        
-                            # 2. INTENTO 1: Formato Año-Mes-Día (Lo nuevo: 2026-03-20)
-                            df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], format='%Y-%m-%d', errors='coerce')
-                        
-                            # 3. INTENTO 2: Si falló, buscar formato Día/Mes/Año (Lo viejo: 18/03/2026)
-                            # El .fillna() solo llena las que el paso anterior no pudo convertir
-                            df_actual['FECHA_DT'] = df_actual['FECHA_DT'].fillna(
-                                pd.to_datetime(df_actual['FECHA'], dayfirst=True, errors='coerce')
-                            )
-                        
-                            # 4. Generar el filtro de mes
-                            df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
-                        
-                            # --- EL RESTO DE TU LÓGICA DE SELECTOR ---
-                            meses_lista = sorted([m for m in df_actual['MES_FILTRO'].unique() if m != "SIN FECHA"], reverse=True)
-                            if "SIN FECHA" in df_actual['MES_FILTRO'].values:
-                                meses_lista.append("SIN FECHA")
-                        
-                            col_f1, col_f2 = st.columns([1.5, 2.5])
-                            mes_sel = col_f1.selectbox(
-                                ":material/calendar_month: FILTRAR PERIODO", 
-                                ["MOSTRAR TODO"] + meses_lista
-                            )
-                        
-                            if mes_sel != "MOSTRAR TODO":
-                                df_render = df_actual[df_actual['MES_FILTRO'] == mes_sel].copy()
-                            else:
-                                df_render = df_actual.copy()
-                            
-                            
-                        
-                            # 1. Cálculos de lógica (Sobre el DF filtrado amor)
-                            t_prod = df_render["COSTO_TOTAL"].sum()
-                            t_flete = df_render["COSTO_GUIA"].sum()
-                            filas_html = ""
-                            tarjetas_html = ""
-                            
-                            # Limpieza y orden descendente
-                            df_render = df_render.fillna(0)
-                            df_render = df_render.sort_values(by="FOLIO", ascending=False)
-                            
-                            # --- GENERACIÓN DE CONTENIDO (TU DISEÑO IDENTICO) ---
-                            for _, r in df_render.iterrows():
-                                detalle_p = ""
-                                for p in precios.keys():
-                                    cant = r.get(p, 0)
-                                    if cant > 0: 
-                                        detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
-                                
-                                # Tu HTML de FILAS para el reporte de impresión
-                                filas_html += f"""
-                                <tr style="page-break-inside: avoid;">
-                                    <td style='border:1px solid black; padding:6px; text-align:center; font-size:10px; width:7%;'>{r['FOLIO']}</td>
-                                    <td style='border:1px solid black; padding:6px; font-size:10px; width:15%;'>
-                                        <b style='color:black;'>{str(r['SOLICITO']).upper()}</b><br>
-                                        <small style='font-size:8px; color:#444;'>{r['FECHA']}</small>
-                                    </td>
-                                    <td style='border:1px solid black; padding:6px; font-size:10px; width:25%;'>
-                                        <b>{str(r['NOMBRE DEL HOTEL']).upper()}</b><br>
-                                        <small style='font-size:8px; color:#333;'>{str(r['DESTINO']).upper()}</small>
-                                    </td>
-                                    <td style='border:1px solid black; padding:6px; font-size:9px; line-height:1.3; width:33%;'>
-                                        {detalle_p}
-                                    </td>
-                                    <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
-                                        <b>${r['COSTO_TOTAL']:,.2f}</b>
-                                    </td>
-                                    <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
-                                        ${r['COSTO_GUIA']:,.2f}
-                                    </td>
-                                </tr>"""
-
-                                # Tu HTML de TARJETAS visuales
-                                tarjetas_html += f"""
-                                <div class="card-reporte" style="padding: 20px 30px; margin-bottom: 15px;">
-                                    <div class="col-folio" style="flex: 1;">
-                                        <div class="label-mini">FOLIO</div>
-                                        <div class="val-folio" style="margin-bottom: 5px;">#{r['FOLIO']}</div>
-                                        <div class="val-sub">{r['FECHA']}</div>
-                                    </div>
-                                    <div class="col-info" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
-                                        <div class="label-mini">SOLICITANTE / DESTINO</div>
-                                        <div class="val-main" style="margin-bottom: 4px;">{str(r['SOLICITO']).upper()}</div>
-                                        <div class="val-sub">{str(r['NOMBRE DEL HOTEL']).upper()}</div>
-                                        <div class="val-sub" style="opacity: 0.7;">{str(r['DESTINO']).upper()}</div>
-                                    </div>
-                                    <div class="col-detalle" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
-                                        <div class="label-mini">DESGLOSE PRODUCTOS</div>
-                                        <div class="val-list" style="line-height: 1.6;">{detalle_p if detalle_p else 'SIN DETALLE'}</div>
-                                    </div>
-                                    <div class="col-costos" style="flex: 1.5; text-align: right; padding-left: 25px; border-left: 1px solid rgba(255,255,255,0.08);">
-                                        <div class="label-mini">INVERSIÓN</div>
-                                        <div class="val-costo" style="font-size: 14px; margin-bottom: 5px;">Prod: ${r['COSTO_TOTAL']:,.2f}</div>
-                                        <div class="val-flete" style="font-size: 14px;">Flete: ${r['COSTO_GUIA']:,.2f}</div>
-                                    </div>
-                                </div>"""
-
-                            # --- VISOR (TU CSS IDENTICO) ---
-                            st.markdown(f"""
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                                    <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>VISTA: {mes_sel}</p>
-                                    <p style='color:#FFFFFF; font-size:12px; opacity:0.6;'>Mostrando {len(df_render)} registros</p>
-                                </div>
-                            """, unsafe_allow_html=True)
-
-                            html_final = f"""
-                            <div style="font-family: 'Inter', sans-serif;">
-                                <style>
-                                    body {{ background: transparent; margin: 0; padding: 0; }}
-                                    .container-reporte {{ height: 500px; overflow-y: auto; padding-right: 10px; }}
-                                    .card-reporte {{ background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; min-width: 800px; justify-content: space-between; align-items: center; transition: 0.3s; }}
-                                    .card-reporte:hover {{ border-color: #38bdf8; background: #2d3b42; }}
-                                    .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }}
-                                    .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
-                                    .val-main {{ color: #FFFFFF; font-size: 12px; font-weight: 700; }}
-                                    .val-sub {{ color: rgba(255,255,255,0.5); font-size: 10px; }}
-                                    .val-list {{ color: #FFFFFF; font-size: 9px; line-height: 1.4; opacity: 0.8; }}
-                                    .val-costo {{ color: #38bdf8; font-size: 13px; font-weight: 700; font-family: monospace; }}
-                                    .val-flete {{ color: #a855f7; font-size: 13px; font-weight: 700; font-family: monospace; }}
-                                    ::-webkit-scrollbar {{ width: 8px; }}
-                                    ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
-                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
-                                </style>
-                                <div class="container-reporte">{tarjetas_html}</div>
-                            </div>"""
-                            components.html(html_final, height=520, scrolling=False)
-
-                            # Banner de Totales (RECALCULADO)
-                            st.markdown(f"""
-                                <div style="background:#263238; border-top: 4px solid #00FFAA; border-radius: 0 0 12px 12px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                                    <div style="color:rgba(255,255,255,0.6); font-size:12px;">PRODUCTOS: <span style="color:white; font-weight:bold;">${t_prod:,.2f}</span></div>
-                                    <div style="color:rgba(255,255,255,0.6); font-size:12px;">FLETES: <span style="color:white; font-weight:bold;">${t_flete:,.2f}</span></div>
-                                    <div style="color:#00FFAA; font-size:16px; font-weight:800; letter-spacing:1px;">TOTAL FILTRADO: ${(t_prod+t_flete):,.2f}</div>
-                                </div>
-                            """, unsafe_allow_html=True)
-
-                            # --- BOTONES DE ACCIÓN ---
-                            c1, c2, c3 = st.columns(3)
-                            with c1:
-                                # Versión corregida en una sola línea con los textos exactos de tus fotos
-                                form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;width:100% !important;font-family:sans-serif;}} .no-print{{display:none;}}}} table{{width:100% !important;border-collapse:collapse;margin-top:15px;table-layout:fixed;}} th{{background:#eee !important;border:1px solid black;padding:8px;font-size:11px;-webkit-print-color-adjust:exact;}} td{{border:1px solid black;padding:6px;font-size:10px;vertical-align:top;word-wrap:break-word;}}</style></head><body><div style='display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid black;padding-bottom:10px;'><div><h1 style='margin:0;font-size:18px;font-weight:900;'>Jabones y Productos Especializados</h1><p style='margin:0;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;'>distribucion y Logistica 2026</p></div><div style='text-align:right;'><h2 style='margin:0;font-size:16px;text-decoration:underline;'>Reporte de Envio de Muestras</h2><p style='margin:5px 0 0 0;font-size:12px;'><b>GENERADO: {date.today().strftime('%d/%m/%Y')}</b></p></div></div><table><thead><tr><th style='width:7%;'>FOLIO</th><th style='width:15%;'>SOLICITANTE</th><th style='width:25%;'>DESTINO / HOTEL</th><th style='width:33%;'>DETALLE DE PRODUCTOS</th><th style='width:10%;'>COSTO PROD.</th><th style='width:10%;'>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:2px solid black;padding-top:10px;font-family:monospace;'><p style='margin:2px 0;'>TOTAL PRODUCTOS: <b>${t_prod:,.2f}</b></p><p style='margin:2px 0;'>TOTAL FLETES: <b>${t_flete:,.2f}</b></p><h3 style='margin:8px 0;font-size:20px;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
-                                if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
-                                    components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
-                            with c2:
-                                output = BytesIO()
-                                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                                    # Descargamos solo lo filtrado
-                                    df_render.drop(columns=['FECHA_DT', 'MES_FILTRO']).to_excel(writer, index=False)
-                                st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
-                            with c3:
-                                if st.button(":material/update: ACTUALIZAR", use_container_width=True): st.rerun()
-
+                            # 2. LUEGO calculamos el número (Alineado aquí adentro)
+                            nuevo_num = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1)
                         else:
-                            st.info("No hay registros todavía.")
-                
-                else:
-                    # --- DISEÑO PRO: FRANJA ULTRA DELGADA EN UNA SOLA LÍNEA ---
-                    html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:8px solid #F7C300; padding:18px 40px; border-radius:10px; margin:15px 0; box-shadow:0 6px 20px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:25px;"><span style="font-size:28px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:900; font-size:14px; letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:4px;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:14px; font-weight:500; opacity:0.9;">El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:6px 16px; border:1px solid rgba(247,195,0,0.5); background:rgba(247,195,0,0.1); border-radius:6px; font-size:11px; color:#F7C300; font-weight:900; letter-spacing:1px;">ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
-                    st.markdown(html_restringido, unsafe_allow_html=True)
+                            # 3. Si el archivo está vacío, empezamos en 1
+                            nuevo_num = 1
+                        
+                        # --- INTERFAZ ---
+                        
+                        
+                        # --- CAPTURA NUEVA ---
+                        st.write("")
+                        with st.container():
+                            # Definimos valores por defecto (ya no se muestran a Ventas)
+                            f_paq_nombre = ""
+                            f_tipo_pago = ""
+                            
+                            # Ahora empezamos directamente con los datos que sí llena Ventas
+                            c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
+                            
+                            f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=f"JYP-{nuevo_num}", disabled=True)
+                            f_paq_sel = c2.selectbox(
+                                ":material/local_shipping: FORMA DE ENVÍO", 
+                                ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
+                            )
+                            f_ent_sel = c3.selectbox(
+                                ":material/home_pin: TIPO DE ENTREGA", 
+                                ["Domicilio", "Ocurre Oficina"]
+                            )
+                            f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
+                        
+                        st.divider()
+                        
+                        col_rem, col_dest = st.columns(2)
+                        with col_rem:
+                            st.markdown(
+                                '<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">REMITENTE</div>', 
+                                unsafe_allow_html=True
+                            )
+                            st.write("")
+                            st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
+                            
+                            c_rem1, c_rem2 = st.columns([2, 1])
+                            f_atn_rem = c_rem1.text_input(":material/person: Atención", "RIGOBERTO HERNANDEZ")
+                            f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
+                            f_soli = st.text_input(
+                                ":material/badge: Solicitante / Agente", 
+                                placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS",
+                                key=f"soli_{st.session_state.reset_key}" # <--- Agregamos esta línea
+                            ).upper()
+                        
+                        with col_dest:
+                            st.markdown(
+                                '<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO / HOTEL</div>', 
+                                unsafe_allow_html=True
+                            )
+                            st.write("")
+                            # Agregamos la key dinámica a cada uno:
+                            f_h = st.text_input(":material/hotel: Hotel / Nombre", key=f"h_{st.session_state.reset_key}").upper()
+                            f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_{st.session_state.reset_key}").upper()
+                            
+                            cd1, cd2 = st.columns(2)
+                            f_co = cd1.text_input(":material/map: Colonia", key=f"co_{st.session_state.reset_key}").upper()
+                            f_cp = cd2.text_input(":material/mailbox: C.P.", key=f"cp_{st.session_state.reset_key}")
+                            
+                            cd3, cd4 = st.columns(2)
+                            f_ci = cd3.text_input(":material/location_city: Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
+                            f_es = cd4.text_input(":material/public: Estado", key=f"es_{st.session_state.reset_key}").upper()
+                            
+                            f_con = st.text_input(
+                                ":material/contact_phone: Contacto Receptor", 
+                                placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE",
+                                key=f"con_{st.session_state.reset_key}" # <--- La clave del éxito
+                            ).upper()
+                        
+                        st.divider()
+                        
+                        # --- PRODUCTOS ---                
+                        # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO
+                        st.markdown("""
+                            <style>
+                            .stMultiSelect div[data-baseweb="select"] {
+                                height: auto !important;
+                                min-height: 45px !important;
+                            }
+                            .stMultiSelect div[data-baseweb="valueContainer"] {
+                                flex-wrap: wrap !important;
+                                display: flex !important;
+                                gap: 5px !important;
+                                padding: 5px 0 !important;
+                            }
+                            .stMultiSelect div[data-baseweb="tag"] {
+                                background-color: #384A52 !important;
+                                border-radius: 5px;
+                                color: white !important;
+                            }
+                            div[data-testid="stNumberInput"] {
+                                width: 100% !important;
+                            }
+                            </style>
+                        """, unsafe_allow_html=True)
+                        
+                        st.subheader(":material/shopping_cart: SELECCION DE PRODUCTOS")
+                        
+                        if "seleccionados_muestras" not in st.session_state:
+                            st.session_state.seleccionados_muestras = []
+                        
+                        def eliminar_producto(prod_a_borrar):
+                            st.session_state.seleccionados_muestras = [p for p in st.session_state.seleccionados_muestras if p != prod_a_borrar]
+                            st.session_state.multi_prods_main = st.session_state.seleccionados_muestras
+                        
+                        seleccionados = st.multiselect(
+                            ":material/search: Busca y selecciona productos:", 
+                            list(precios.keys()),
+                            key=f"prod_select_{st.session_state.reset_key}", # <--- Esto es lo que hace la magia
+                            default=st.session_state.get('seleccionados_muestras', []),
+                            placeholder="SELECCIONAR PRODUCTOS"
+                        )
+                        
+                        st.session_state.seleccionados_muestras = seleccionados
+                        
+                        prods_actuales = []
+                        total_cantidad = 0
+                        total_costo_prods = 0
+                        
+                        if seleccionados:
+                            st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
+                            
+                            # --- CÁLCULO DINÁMICO DE LA ALTURA ---
+                            # Calculamos cuántas filas hay (3 productos por fila)
+                            num_filas = (len(seleccionados) + 2) // 3  
+                            # Altura base por fila (aprox 90px) + un pequeño margen
+                            # Ponemos un máximo de 500px para que no se coma toda la pantalla si son muchísimos
+                            altura_dinamica = min(max(num_filas * 95, 120), 500) 
+                            
+                            with st.container(height=altura_dinamica, border=True):
+                                col_bloque_1, col_bloque_2, col_bloque_3 = st.columns(3)
+                                
+                                for i, p in enumerate(seleccionados):
+                                    if i % 3 == 0:
+                                        target_col = col_bloque_1
+                                    elif i % 3 == 1:
+                                        target_col = col_bloque_2
+                                    else:
+                                        target_col = col_bloque_3
+                                    
+                                    with target_col:
+                                        c1, c2, c3 = st.columns([1.5, 1.8, 0.5])
+                                        
+                                        with c1:
+                                            st.markdown(f"<div style='padding-top:10px; font-size:10px; line-height:1.1;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
+                                        
+                                        with c2:
+                                            q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
+                                        
+                                        with c3:
+                                            st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
+                        
+                                        if q > 0:
+                                            prods_actuales.append({"desc": p, "cant": q})
+                                            total_cantidad += q
+                                            total_costo_prods += (q * (precios.get(p, 0)))
+                                        
+                                        st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+                        
+                        st.markdown("---")
+                        f_coment = st.text_area(
+                            "💬 COMENTARIOS ADICIONALES", 
+                            height=100, 
+                            placeholder="SI EL PRODUCTO NO ESTA EN LA LISTA SELECCIONABLE, INGRESALOS AQUI O CUALQUIER COMENTARIO ADICIONAL"
+                        ).upper()
+                        
+                        st.write("")
+                        st.write("")
+                        
+                        # --- BOTONES PRINCIPALES ---
+                        col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
+            
+                        # --- BOTÓN GUARDAR ---
+                        if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
+                            if not f_h: 
+                                st.error("Falta el hotel")
+                            elif not f_soli:
+                                st.error("Falta el nombre de quien solicita (Solicitante / Agente)")
+                            elif not f_con: # <--- AQUÍ ESTÁ EL BLOQUEO NUEVO, AMOR
+                                st.error("Falta el nombre y teléfono de quien recibe")
+                            elif not prods_actuales: 
+                                st.error("Selecciona al menos un producto")
+                            else:
+                                direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
+                                
+                                reg = {
+                                    "FOLIO": nuevo_num, 
+                                    "ESTATUS": "NO SURTIDO", # <--- LÍNEA NUEVA AGREGADA AQUÍ
+                                    "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
+                                    "NOMBRE DEL HOTEL": f_h.upper(), 
+                                    "DESTINO": direccion_completa,
+                                    "CONTACTO": f_con.upper(), 
+                                    "SOLICITO": f_soli.upper(),
+                                    "PAQUETERIA": f_paq_sel.upper(),
+                                    "PAQUETERIA_NOMBRE": f_paq_nombre,
+                                    "NUMERO_GUIA": "", 
+                                    "COSTO_GUIA": 0.0,
+                                    "CANTIDAD_TOTAL": total_cantidad,
+                                    "COSTO_TOTAL": round(total_costo_prods, 2),
+                                    "COMENTARIOS": f_coment
+                                }
+                                
+                                for p in precios.keys():
+                                    reg[p] = 0
+                                for item in prods_actuales:
+                                    reg[item["desc"]] = item["cant"]
+                                
+                                df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
+                                
+                                if subir_a_github(df_f, sha_actual, f"Folio JYP-{nuevo_num}"):
+                                    # MEMORIA: Guardamos el folio que acabamos de usar antes de que cambie
+                                    st.session_state.folio_actual = nuevo_num
+                                    st.session_state.folio_guardado = True 
+                                    
+                                    st.success(f"¡Guardado correctamente! Folio: JYP-{nuevo_num}")
+                                    time.sleep(1)
+                                    st.rerun()
+            
+                        # --- MENSAJE DE ADVERTENCIA ---
+                        if not st.session_state.folio_guardado:
+                            st.markdown("""
+                                <div style="background-color: rgba(255, 165, 0, 0.1); border-left: 5px solid #FFA500; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+                                    <span style="color: white; font-size: 14px;">
+                                        <b style="color: #FFA500;">BLOQUEO DE SEGURIDAD:</b> 
+                                        Debes guardar el registro antes de poder imprimir.
+                                    </span>
+                                </div>
+                            """, unsafe_allow_html=True)
+            
+                        # --- BOTÓN GUARDAR PDF (REPARADO CON MEMORIA) ---
+                        if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
+                            
+                            # LOGICA DE ORO: Si ya guardamos, usamos el folio en memoria. 
+                            # Si por algo no está (rerun), usamos nuevo_num - 1.
+                            folio_final = st.session_state.get("folio_actual", nuevo_num - 1)
+                            folio_simple = f"JYP-{folio_final}" 
+                            
+                            h_print = generar_html_impresion(
+                                folio_simple, 
+                                f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, 
+                                f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, 
+                                prods_actuales, f_coment, f_paq_nombre, f_tipo_pago
+                            )
+                            
+                            js_code = f"""
+                                <html>
+                                    <head><title>{folio_simple}_{f_h}</title></head>
+                                    <body>
+                                        {h_print}
+                                        <script>setTimeout(function(){{ window.print(); }}, 500);</script>
+                                    </body>
+                                </html>
+                            """
+                            components.html(js_code, height=0)
+            
+                        # --- BOTÓN BORRAR ---
+                        if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
+                            st.session_state.folio_guardado = False
+                            # Limpiamos el folio de la memoria para el siguiente registro
+                            if "folio_actual" in st.session_state:
+                                del st.session_state.folio_actual
+                            st.session_state.seleccionados_muestras = []
+                            st.session_state.reset_key += 1
+                            st.rerun()
+                        # --- BÚSQUEDA RÁPIDA ---                
+                        # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
+                        st.write("")
+                        st.write("")
+                        st.write("")
+                        with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS)", expanded=False):
+                            if not df_actual.empty:
+                                busqueda = st.text_input("Escribe el nombre del Hotel o Folio para filtrar:").upper()
+                                
+                                df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA"]].copy()
+                                df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA"]
+                                df_vista = df_vista.fillna('') 
+                                
+                                if busqueda:
+                                    df_vista = df_vista[df_vista.astype(str).apply(lambda x: x.str.contains(busqueda, case=False)).any(axis=1)]
+                                
+                                df_render = df_vista.sort_values(by="FOLIO", ascending=False)
+                                data_busqueda = df_render.to_dict('records')
+                        
+                                alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) # Subí un poco el alto por tarjeta
+                        
+                                html_busqueda = f"""
+                                <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                                    <style>
+                                        body {{ background: transparent; margin: 0; padding: 0; }}
+                                        ::-webkit-scrollbar {{ width: 8px; }}
+                                        ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                        ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
+                                        ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                        
+                                        .card-busqueda {{
+                                            background: #263238;
+                                            border: 1px solid rgba(255, 255, 255, 0.05);
+                                            border-radius: 10px;
+                                            padding: 15px;
+                                            margin-bottom: 10px;
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center;
+                                            transition: all 0.3s ease;
+                                        }}
+                                        .card-busqueda:hover {{
+                                            border-color: #38bdf8;
+                                            background: #2d3b42;
+                                            transform: translateX(5px);
+                                        }}
+                                        .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
+                                        .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
+                                        .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
+                                        
+                                        /* TEXTO DE LOGÍSTICA MÁS GRANDE */
+                                        .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 15px; font-weight: 800; line-height: 1.2; }}
+                                        .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 13px; font-weight: 700; margin-top: 4px; }}
+                                        
+                                        .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 11px; font-weight: 400; }}
+                                    </style>
+                                    {"".join([f'''
+                                    <div class="card-busqueda">
+                                        <div style="flex: 1.1;">
+                                            <div class="label-mini">Folio / Fecha</div>
+                                            <div class="val-folio">#{str(item['FOLIO'])}</div>
+                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px;">{str(item['FECHA ENVÍO'])[:10]}</div>
+                                        </div>
+                                        <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                            <div class="label-mini">Hotel</div>
+                                            <div class="val-hotel">{str(item['HOTEL'])[:40]}</div>
+                                        </div>
+                                        <div style="flex: 1.6; text-align: right;">
+                                            <div class="val-guia { 'pendiente' if item['PAQUETERÍA'] == '' or item['PAQUETERÍA'] == 'nan' else '' }">
+                                                { item['PAQUETERÍA'] if item['PAQUETERÍA'] != '' and item['PAQUETERÍA'] != 'nan' else 'PAQUETERÍA PENDIENTE' }
+                                            </div>
+                                            
+                                            <div class="val-sub-guia { 'pendiente' if item['NÚMERO DE GUÍA'] == '' or item['NÚMERO DE GUÍA'] == 'nan' else '' }">
+                                                { item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] != '' and item['NÚMERO DE GUÍA'] != 'nan' else 'GUÍA PENDIENTE' }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ''' for item in data_busqueda])}
+                                </div>
+                                """
+                                import streamlit.components.v1 as components
+                                components.html(html_busqueda, height=alto_busqueda, scrolling=True)
+                                
+                            else:
+                                st.info("No hay registros todavía.")
+                        
+                        # --- PANEL DE ADMIN ---
+                        # --- PANEL DE ADMINISTRACIÓN (CORRECCIÓN DE NAMEERROR) ---
+                        st.divider()
+                        st.write("")
+                        
+                        # 1. Definimos la lista de quiénes mandan aquí
+                        lista_admins = ["Rigoberto", "JMoreno"]
+                        
+                        # 2. DEFINIMOS LA VARIABLE (Esto es lo que te faltaba, amor)
+                        # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
+                        # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
+                        usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
+                        
+                        if usuario_logeado in lista_admins:
+                            st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
+                            t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
+                            
+                            with t1:
+                                # 1. Pon esto justo DEBAJO de donde creas los tabs (t1, t2)
+                                contenedor_aviso = st.empty()
+                                if not df_actual.empty:
+                                    df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
+                                    opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
+                                    
+                                    # 1. El selector siempre arriba
+                                    fol_sel_texto = st.selectbox(
+                                        "Seleccionar Folio para procesar (Logística):", 
+                                        opciones_folios, 
+                                        index=None, 
+                                        placeholder="Busca el folio que envió Ventas..."
+                                    )
+                                    
+                                    # --- SECCIONES SIEMPRE VISIBLES ---
+                                    st.divider() # Una línea para separar
+                                    c_adm1, c_adm2 = st.columns(2)
+                                    
+                                    # Inicializamos variables vacías por si no hay selección
+                                    datos_fol = None
+                                    fol_edit = None
+                        
+                                    if fol_sel_texto:
+                                        fol_edit = int(fol_sel_texto.split(" - ")[0])
+                                        datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
+                        
+                                    with c_adm1:
+                                        st.subheader("1. ASIGNAR DATOS DE ENVIO")
+                                        n_paq_nombre = st.selectbox("Nombre de Paquetería", 
+                                            ["AEREO", "NO APLICA","TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
+                                            index=None, placeholder="Selecciona paquetería...")
+                                        
+                                        n_tipo_pago = st.selectbox("Modalidad de Pago", 
+                                            ["NO APLICA","CREDITO", "COBRO DESTINO"],
+                                            index=None, placeholder="¿Cómo se paga?")
+                                        
+                                        n_gui = st.text_input("Número de Guía").upper()
+                                        n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
+                        
+                                        # El botón solo se activa si hay un folio seleccionado
+                                        btn_guardar = st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", 
+                                                                use_container_width=True, 
+                                                                disabled=not fol_sel_texto)
+                                        
+                                        if btn_guardar and datos_fol is not None:
+                                            # 1. Actualizamos datos
+                                            idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
+                                            df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
+                                            df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
+                                            df_actual.at[idx, "NUMERO_GUIA"] = n_gui
+                                            df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
+                                            df_actual.at[idx, "ESTATUS"] = "DESPACHADO" # <--- LÍNEA NUEVA: MARCA COMO SURTIDO
+                                            
+                                            # 2. Subimos a GitHub
+                                            if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
+                                                
+                                                # 3. Mensaje clásico sin iconos, directo al grano
+                                                st.success(f"FOLIO JYP-{fol_edit} GUARDADO")
+                                                
+                                                # 4. Pausa breve para que alcances a leerlo y reinicio
+                                                import time
+                                                time.sleep(1.5)
+                                                st.rerun()
+                        
+                                    with c_adm2:
+                                        st.subheader("2. IMPRESION FINAL")
+                                        st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
+                                        
+                                        # El botón de imprimir también se deshabilita si no hay selección
+                                        btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
+                                                                  use_container_width=True, 
+                                                                  type="primary",
+                                                                  disabled=not fol_sel_texto)
+                                        
+                                        if btn_imprimir and datos_fol is not None:
+                                            prods_re = []
+                                            for p in precios.keys():
+                                                if p in datos_fol and datos_fol[p] > 0: 
+                                                    prods_re.append({"desc": p, "cant": int(datos_fol[p])})
+                                            
+                                            paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
+                                            pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
+                        
+                                            h_re = generar_html_impresion(
+                                                f"JYP-{int(datos_fol['FOLIO'])}", 
+                                                datos_fol.get("PAQUETERIA", "ENVIO"), 
+                                                datos_fol.get("TIPO_ENTREGA", "DOMICILIO"), 
+                                                datos_fol["FECHA"], 
+                                                "RIGOBERTO HERNANDEZ", 
+                                                "3319753122", 
+                                                datos_fol["SOLICITO"], 
+                                                datos_fol["NOMBRE DEL HOTEL"], 
+                                                "", "", "", 
+                                                datos_fol["DESTINO"], 
+                                                "", 
+                                                datos_fol["CONTACTO"], 
+                                                prods_re, 
+                                                datos_fol.get("COMENTARIOS", "RE-IMPRESIÓN DE LOGÍSTICA"), 
+                                                paq_a_imprimir, 
+                                                pago_a_imprimir 
+                                            )
+                                            components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
+            
+                            
+                            with t2:
+                                # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
+                                # --- BLOQUE DE FILTRADO POR MES (DETECTOR DE FORMATO MIXTO) ---
+                                if not df_actual.empty:
+                                    st.write("")
+                                    
+                                    # 1. Limpieza inicial
+                                    df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip()
+                                
+                                    # 2. INTENTO 1: Formato Año-Mes-Día (Lo nuevo: 2026-03-20)
+                                    df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], format='%Y-%m-%d', errors='coerce')
+                                
+                                    # 3. INTENTO 2: Si falló, buscar formato Día/Mes/Año (Lo viejo: 18/03/2026)
+                                    # El .fillna() solo llena las que el paso anterior no pudo convertir
+                                    df_actual['FECHA_DT'] = df_actual['FECHA_DT'].fillna(
+                                        pd.to_datetime(df_actual['FECHA'], dayfirst=True, errors='coerce')
+                                    )
+                                
+                                    # 4. Generar el filtro de mes
+                                    df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
+                                
+                                    # --- EL RESTO DE TU LÓGICA DE SELECTOR ---
+                                    meses_lista = sorted([m for m in df_actual['MES_FILTRO'].unique() if m != "SIN FECHA"], reverse=True)
+                                    if "SIN FECHA" in df_actual['MES_FILTRO'].values:
+                                        meses_lista.append("SIN FECHA")
+                                
+                                    col_f1, col_f2 = st.columns([1.5, 2.5])
+                                    mes_sel = col_f1.selectbox(
+                                        ":material/calendar_month: FILTRAR PERIODO", 
+                                        ["MOSTRAR TODO"] + meses_lista
+                                    )
+                                
+                                    if mes_sel != "MOSTRAR TODO":
+                                        df_render = df_actual[df_actual['MES_FILTRO'] == mes_sel].copy()
+                                    else:
+                                        df_render = df_actual.copy()
+                                    
+                                    
+                                
+                                    # 1. Cálculos de lógica (Sobre el DF filtrado amor)
+                                    t_prod = df_render["COSTO_TOTAL"].sum()
+                                    t_flete = df_render["COSTO_GUIA"].sum()
+                                    filas_html = ""
+                                    tarjetas_html = ""
+                                    
+                                    # Limpieza y orden descendente
+                                    df_render = df_render.fillna(0)
+                                    df_render = df_render.sort_values(by="FOLIO", ascending=False)
+                                    
+                                    # --- GENERACIÓN DE CONTENIDO (TU DISEÑO IDENTICO) ---
+                                    for _, r in df_render.iterrows():
+                                        detalle_p = ""
+                                        for p in precios.keys():
+                                            cant = r.get(p, 0)
+                                            if cant > 0: 
+                                                detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
+                                        
+                                        # --- NUEVO: LÓGICA DE ETIQUETA VISUAL ---
+                                        estatus_bd = str(r.get('ESTATUS', 'NO SURTIDO')).upper()
+                                        if estatus_bd == "DESPACHADO":
+                                            badge_html = "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 8px; border-radius:12px; font-size:9px; font-weight:800; letter-spacing:1px; margin-top:5px;'>✓ DESPACHADO</div>"
+                                        else:
+                                            badge_html = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 8px; border-radius:12px; font-size:9px; font-weight:800; letter-spacing:1px; margin-top:5px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>"
+                                        # ----------------------------------------
+                                        
+                                        # Tu HTML de FILAS para el reporte de impresión
+                                        filas_html += f"""
+                                        <tr style="page-break-inside: avoid;">
+                                            <td style='border:1px solid black; padding:6px; text-align:center; font-size:10px; width:7%;'>{r['FOLIO']}</td>
+                                            <td style='border:1px solid black; padding:6px; font-size:10px; width:15%;'>
+                                                <b style='color:black;'>{str(r['SOLICITO']).upper()}</b><br>
+                                                <small style='font-size:8px; color:#444;'>{r['FECHA']}</small>
+                                            </td>
+                                            <td style='border:1px solid black; padding:6px; font-size:10px; width:25%;'>
+                                                <b>{str(r['NOMBRE DEL HOTEL']).upper()}</b><br>
+                                                <small style='font-size:8px; color:#333;'>{str(r['DESTINO']).upper()}</small>
+                                            </td>
+                                            <td style='border:1px solid black; padding:6px; font-size:9px; line-height:1.3; width:33%;'>
+                                                {detalle_p}
+                                            </td>
+                                            <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
+                                                <b>${r['COSTO_TOTAL']:,.2f}</b>
+                                            </td>
+                                            <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
+                                                ${r['COSTO_GUIA']:,.2f}
+                                            </td>
+                                        </tr>"""
+            
+                                        # Tu HTML de TARJETAS visuales
+                                        tarjetas_html += f"""
+                                        <div class="card-reporte" style="padding: 20px 30px; margin-bottom: 15px;">
+                                            <div class="col-folio" style="flex: 1;">
+                                                <div class="label-mini">FOLIO</div>
+                                                <div class="val-folio" style="margin-bottom: 5px;">#{r['FOLIO']}</div>
+                                                <div class="val-sub">{r['FECHA']}</div>
+                                                {badge_html} <!-- <--- SE INYECTA LA ETIQUETA AQUÍ -->
+                                            </div>
+                                            <div class="col-info" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div class="label-mini">SOLICITANTE / DESTINO</div>
+                                                <div class="val-main" style="margin-bottom: 4px;">{str(r['SOLICITO']).upper()}</div>
+                                                <div class="val-sub">{str(r['NOMBRE DEL HOTEL']).upper()}</div>
+                                                <div class="val-sub" style="opacity: 0.7;">{str(r['DESTINO']).upper()}</div>
+                                            </div>
+                                            <div class="col-detalle" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div class="label-mini">DESGLOSE PRODUCTOS</div>
+                                                <div class="val-list" style="line-height: 1.6;">{detalle_p if detalle_p else 'SIN DETALLE'}</div>
+                                            </div>
+                                            <div class="col-costos" style="flex: 1.5; text-align: right; padding-left: 25px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div class="label-mini">INVERSIÓN</div>
+                                                <div class="val-costo" style="font-size: 14px; margin-bottom: 5px;">Prod: ${r['COSTO_TOTAL']:,.2f}</div>
+                                                <div class="val-flete" style="font-size: 14px;">Flete: ${r['COSTO_GUIA']:,.2f}</div>
+                                            </div>
+                                        </div>"""
+            
+                                    # --- VISOR (TU CSS IDENTICO) ---
+                                    st.markdown(f"""
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                            <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>VISTA: {mes_sel}</p>
+                                            <p style='color:#FFFFFF; font-size:12px; opacity:0.6;'>Mostrando {len(df_render)} registros</p>
+                                        </div>
+                                    """, unsafe_allow_html=True)
+            
+                                    html_final = f"""
+                                    <div style="font-family: 'Inter', sans-serif;">
+                                        <style>
+                                            body {{ background: transparent; margin: 0; padding: 0; }}
+                                            .container-reporte {{ height: 500px; overflow-y: auto; padding-right: 10px; }}
+                                            .card-reporte {{ background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; min-width: 800px; justify-content: space-between; align-items: center; transition: 0.3s; }}
+                                            .card-reporte:hover {{ border-color: #38bdf8; background: #2d3b42; }}
+                                            .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }}
+                                            .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
+                                            .val-main {{ color: #FFFFFF; font-size: 12px; font-weight: 700; }}
+                                            .val-sub {{ color: rgba(255,255,255,0.5); font-size: 10px; }}
+                                            .val-list {{ color: #FFFFFF; font-size: 9px; line-height: 1.4; opacity: 0.8; }}
+                                            .val-costo {{ color: #38bdf8; font-size: 13px; font-weight: 700; font-family: monospace; }}
+                                            .val-flete {{ color: #a855f7; font-size: 13px; font-weight: 700; font-family: monospace; }}
+                                            ::-webkit-scrollbar {{ width: 8px; }}
+                                            ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                            ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                        </style>
+                                        <div class="container-reporte">{tarjetas_html}</div>
+                                    </div>"""
+                                    components.html(html_final, height=520, scrolling=False)
+            
+                                    # Banner de Totales (RECALCULADO)
+                                    st.markdown(f"""
+                                        <div style="background:#263238; border-top: 4px solid #00FFAA; border-radius: 0 0 12px 12px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                                            <div style="color:rgba(255,255,255,0.6); font-size:12px;">PRODUCTOS: <span style="color:white; font-weight:bold;">${t_prod:,.2f}</span></div>
+                                            <div style="color:rgba(255,255,255,0.6); font-size:12px;">FLETES: <span style="color:white; font-weight:bold;">${t_flete:,.2f}</span></div>
+                                            <div style="color:#00FFAA; font-size:16px; font-weight:800; letter-spacing:1px;">TOTAL FILTRADO: ${(t_prod+t_flete):,.2f}</div>
+                                        </div>
+                                    """, unsafe_allow_html=True)
+            
+                                    # --- BOTONES DE ACCIÓN ---
+                                    c1, c2, c3 = st.columns(3)
+                                    with c1:
+                                        # Versión corregida en una sola línea con los textos exactos de tus fotos
+                                        form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;width:100% !important;font-family:sans-serif;}} .no-print{{display:none;}}}} table{{width:100% !important;border-collapse:collapse;margin-top:15px;table-layout:fixed;}} th{{background:#eee !important;border:1px solid black;padding:8px;font-size:11px;-webkit-print-color-adjust:exact;}} td{{border:1px solid black;padding:6px;font-size:10px;vertical-align:top;word-wrap:break-word;}}</style></head><body><div style='display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid black;padding-bottom:10px;'><div><h1 style='margin:0;font-size:18px;font-weight:900;'>Jabones y Productos Especializados</h1><p style='margin:0;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;'>distribucion y Logistica 2026</p></div><div style='text-align:right;'><h2 style='margin:0;font-size:16px;text-decoration:underline;'>Reporte de Envio de Muestras</h2><p style='margin:5px 0 0 0;font-size:12px;'><b>GENERADO: {date.today().strftime('%d/%m/%Y')}</b></p></div></div><table><thead><tr><th style='width:7%;'>FOLIO</th><th style='width:15%;'>SOLICITANTE</th><th style='width:25%;'>DESTINO / HOTEL</th><th style='width:33%;'>DETALLE DE PRODUCTOS</th><th style='width:10%;'>COSTO PROD.</th><th style='width:10%;'>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:2px solid black;padding-top:10px;font-family:monospace;'><p style='margin:2px 0;'>TOTAL PRODUCTOS: <b>${t_prod:,.2f}</b></p><p style='margin:2px 0;'>TOTAL FLETES: <b>${t_flete:,.2f}</b></p><h3 style='margin:8px 0;font-size:20px;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
+                                        if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
+                                            components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
+                                    with c2:
+                                        output = BytesIO()
+                                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                                            # Descargamos solo lo filtrado
+                                            df_render.drop(columns=['FECHA_DT', 'MES_FILTRO']).to_excel(writer, index=False)
+                                        st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
+                                    with c3:
+                                        if st.button(":material/update: ACTUALIZAR", use_container_width=True): st.rerun()
+            
+                                else:
+                                    st.info("No hay registros todavía.")
+                        
+                        else:
+                            # --- DISEÑO PRO: FRANJA ULTRA DELGADA EN UNA SOLA LÍNEA ---
+                            html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:8px solid #F7C300; padding:18px 40px; border-radius:10px; margin:15px 0; box-shadow:0 6px 20px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:25px;"><span style="font-size:28px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:900; font-size:14px; letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:4px;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:14px; font-weight:500; opacity:0.9;">El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:6px 16px; border:1px solid rgba(247,195,0,0.5); background:rgba(247,195,0,0.1); border-radius:6px; font-size:11px; color:#F7C300; font-weight:900; letter-spacing:1px;">ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
+                            st.markdown(html_restringido, unsafe_allow_html=True)
         
     
         # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
