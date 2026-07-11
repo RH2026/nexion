@@ -6429,8 +6429,9 @@ else:
                             if not df_actual.empty:
                                 busqueda = st.text_input("Escribe el nombre del Hotel o Folio para filtrar:").upper()
                                 
-                                df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA"]].copy()
-                                df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA"]
+                                # ---> 1. AGREGAMOS "ESTATUS" PARA QUE LA VISTA LO RECONOZCA
+                                df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA", "ESTATUS"]].copy()
+                                df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA", "ESTATUS"]
                                 df_vista = df_vista.fillna('') 
                                 
                                 if busqueda:
@@ -6439,7 +6440,7 @@ else:
                                 df_render = df_vista.sort_values(by="FOLIO", ascending=False)
                                 data_busqueda = df_render.to_dict('records')
                         
-                                alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) # Subí un poco el alto por tarjeta
+                                alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) 
                         
                                 html_busqueda = f"""
                                 <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
@@ -6481,7 +6482,9 @@ else:
                                         <div style="flex: 1.1;">
                                             <div class="label-mini">Folio / Fecha</div>
                                             <div class="val-folio">#{str(item['FOLIO'])}</div>
-                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px;">{str(item['FECHA ENVÍO'])[:10]}</div>
+                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 5px;">{str(item['FECHA ENVÍO'])[:10]}</div>
+                                            <!-- ---> 2. INYECTAMOS EL ESTATUS NEÓN EN LA TARJETA DE BÚSQUEDA --->
+                                            {{ "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>" if str(item.get('ESTATUS', '')).upper() == 'DESPACHADO' else "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>" }}
                                         </div>
                                         <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
                                             <div class="label-mini">Hotel</div>
@@ -6505,7 +6508,7 @@ else:
                                 
                             else:
                                 st.info("No hay registros todavía.")
-                        
+                                
                         # --- PANEL DE ADMIN ---
                         # --- PANEL DE ADMINISTRACIÓN (CORRECCIÓN DE NAMEERROR) ---
                         st.divider()
