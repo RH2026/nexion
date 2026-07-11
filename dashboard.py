@@ -6551,7 +6551,44 @@ else:
                                     if fol_sel_texto:
                                         fol_edit = int(fol_sel_texto.split(" - ")[0])
                                         datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
-                        
+        
+                                        # ---> AQUI ENTRA LA MAGIA VISUAL (RENDER DEL FOLIO SELECCIONADO) --->
+                                        detalle_p_admin = ""
+                                        for p in precios.keys():
+                                            cant_admin = datos_fol.get(p, 0)
+                                            if cant_admin > 0:
+                                                detalle_p_admin += f"• {int(cant_admin)} PZAS {str(p).upper()}<br>"
+                                        
+                                        estatus_admin = str(datos_fol.get('ESTATUS', 'NO SURTIDO')).upper()
+                                        if estatus_admin == "DESPACHADO":
+                                            badge_admin = "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:1px; margin-top:8px;'>✓ DESPACHADO</div>"
+                                            borde_color = "#00FFAA"
+                                        else:
+                                            badge_admin = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:1px; margin-top:8px; box-shadow: 0 0 10px rgba(255,68,68,0.3);'>⚠️ NO SURTIDO</div>"
+                                            borde_color = "#FF4444"
+        
+                                        st.markdown(f"""
+                                        <div style="background: #263238; border: 1px solid rgba(255,255,255,0.05); border-left: 6px solid {borde_color}; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                                            <div style="flex: 1.2;">
+                                                <div style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; margin-bottom:4px;">FOLIO A PROCESAR</div>
+                                                <div style="color: {borde_color}; font-family: monospace; font-size: 22px; font-weight: 900; line-height:1;">#{datos_fol['FOLIO']}</div>
+                                                <div style="color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 4px;">{datos_fol['FECHA']}</div>
+                                                {badge_admin}
+                                            </div>
+                                            <div style="flex: 2.5; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; margin-bottom:4px;">DESTINO / HOTEL</div>
+                                                <div style="color: #FFFFFF; font-size: 14px; font-weight: 800; margin-bottom: 2px;">{str(datos_fol.get('NOMBRE DEL HOTEL','')).upper()}</div>
+                                                <div style="color: #38bdf8; font-size: 11px; font-weight: 700; margin-bottom: 4px;">Atn: {str(datos_fol.get('CONTACTO','')).upper()}</div>
+                                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; line-height:1.4;">{str(datos_fol.get('DESTINO','')).upper()}</div>
+                                            </div>
+                                            <div style="flex: 2.5; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; margin-bottom:6px;">PRODUCTOS SOLICITADOS</div>
+                                                <div style="color: #FFFFFF; font-size: 10px; line-height: 1.6; opacity: 0.9;">{detalle_p_admin if detalle_p_admin else '<i>Sin detalle de productos</i>'}</div>
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        # <--- FIN DE LA MAGIA VISUAL --->
+    
                                     with c_adm1:
                                         st.subheader("1. ASIGNAR DATOS DE ENVIO")
                                         n_paq_nombre = st.selectbox("Nombre de Paquetería", 
