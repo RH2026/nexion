@@ -6541,9 +6541,9 @@ else:
                                     }
                                     /* Botón en hover (cian neón) */
                                     div[data-testid="stButton"] button:hover {
-                                        background-color: #00C4B4 !important;
+                                        background-color: #00A3A3 !important;
                                         color: #FFFFFF !important;
-                                        border-color: #00C4B4 !important;
+                                        border-color: #00A3A3 !important;
                                         box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
                                     }
                                     </style>
