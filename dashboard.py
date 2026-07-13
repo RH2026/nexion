@@ -6425,12 +6425,12 @@ else:
                         # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
                         st.write("")
                         st.write("")
-                        st.write("")
+                        st.write("")                        
                         with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS", expanded=True):
                             if not df_actual.empty:
                                 busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:").upper()
                                 
-                                # Mantenemos tus columnas originales y agregamos SOLICITO
+                                # Aseguramos la existencia de las columnas necesarias
                                 df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA", "ESTATUS", "SOLICITO"]].copy()
                                 df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA", "ESTATUS", "SOLICITANTE"]
                                 df_vista = df_vista.fillna('') 
@@ -6441,18 +6441,24 @@ else:
                                 df_render = df_vista.sort_values(by="FOLIO", ascending=False)
                                 data_busqueda = df_render.to_dict('records')
                                 
+                                # Calculamos altura
                                 alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) 
                                 
                                 html_busqueda = f"""
-                                <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                                <div style="font-family: 'Inter', sans-serif; padding-right: 10px; height: {alto_busqueda}px; overflow-y: auto;">
                                     <style>
                                         body {{ background: transparent; margin: 0; padding: 0; }}
+                                        ::-webkit-scrollbar {{ width: 8px; }}
+                                        ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                        ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
+                                        ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                                        
                                         .card-busqueda {{
                                             background: #263238; border: 1px solid rgba(255, 255, 255, 0.05);
                                             border-radius: 10px; padding: 15px; margin-bottom: 10px;
                                             display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;
                                         }}
-                                        .card-busqueda:hover {{ border-color: #38bdf8; background: #263238; transform: translateX(5px); }}
+                                        .card-busqueda:hover {{ border-color: #38bdf8; background: #2d3b42; transform: translateX(5px); }}
                                         .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
                                         .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
                                         .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
@@ -6475,10 +6481,10 @@ else:
                                             <div class="val-soli">SOLICITÓ: {str(item['SOLICITANTE'])[:30]}</div>
                                         </div>
                                         <div style="flex: 1.6; text-align: right;">
-                                            <div class="val-guia {{ 'pendiente' if item['PAQUETERÍA'] == '' else '' }}">
+                                            <div class="val-guia {'pendiente' if item['PAQUETERÍA'] == '' else ''}">
                                                 { item['PAQUETERÍA'] if item['PAQUETERÍA'] != '' else 'PAQUETERÍA PENDIENTE' }
                                             </div>
-                                            <div class="val-sub-guia {{ 'pendiente' if item['NÚMERO DE GUÍA'] == '' else '' }}">
+                                            <div class="val-sub-guia {'pendiente' if item['NÚMERO DE GUÍA'] == '' else ''}">
                                                 { item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] != '' else 'GUÍA PENDIENTE' }
                                             </div>
                                         </div>
@@ -6487,7 +6493,8 @@ else:
                                 </div>
                                 """
                                 import streamlit.components.v1 as components
-                                components.html(html_busqueda, height=alto_busqueda, scrolling=True)
+                                # Aquí forzamos el scroll=False para usar el diseño del CSS interno
+                                components.html(html_busqueda, height=alto_busqueda, scrolling=False)
                             else:
                                 st.info("No hay registros todavía.")
                                 
