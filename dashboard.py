@@ -5971,12 +5971,13 @@ else:
                             "Envio Muestras Especiales": 0.0,
                             "Kit Accesorios Ecologicos": 47.85,
                             "kit Accesorios Lavarino": 47.85,
-                            "Dispensador Almond": 218.33,
-                            "Dispensador Biogena": 216.00,
-                            "Dispensador Cava": 230.58,
-                            "Dispensador Persea": 275.00,
-                            "Dispensador Botánicos": 274.17,
-                            "Dispensador Dove": 125.00,
+                            "kit Dispensador Almond 250": 218.33,
+                            "kit Dispensador Biogena 250": 216.00,
+                            "kit Dispensador Cava 250": 230.58,
+                            "kit Dispensador Persea 250": 275.00,
+                            "kit Dispensador Botánicos 250": 274.17,
+                            "kit Dispensador Dove 250": 125.00,
+                            "kit Dispensador Rainforest 250": 216.00,
                             "Kit Elements": 29.34,
                             "Kit Almond": 33.83,
                             "Kit Biogena": 48.95,
@@ -5986,7 +5987,6 @@ else:
                             "Kit Botánicos": 29.34,
                             "Kit Rainforest": 30.34,
                             "JHJY-0050 Llave magnetica para soporte JH": 180.00,
-                            "68829526 Rack Dove Dove Mlac Bracket Metalized Bottle 1 Pieza": 193.90,
                             "JHJY-0033 Rack JH  Color Blanco de 2 pzas": 65.00,
                             "JHJY-0034 Rack JH  Color Blanco de 1 pzas": 50.00,
                             "JHJY-0045 Soporte de acero inoxidable Jypesa INOX Cap lock individual": 679.00,
@@ -6015,7 +6015,8 @@ else:
                             "4018-A26 KIT de vanidad Lavarino Cosso. Cajilla Nva. Imagen Caja con 150 piezas": 2.95,
                             "4018-A27 KIT de afeitar Lavarino Cosso. Cajilla Nva. Imagen Caja con 116 piezas": 7.230,
                             "4018-A28 KIT de costura Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 1.90,
-                            "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas": 2.44
+                            "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas": 2.44,
+                            "68829526 Rack Dove Dove Mlac Bracket Metalized Bottle 1 Pieza": 193.90
             
                             
                 
