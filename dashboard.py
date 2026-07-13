@@ -6430,7 +6430,7 @@ else:
                             if not df_actual.empty:
                                 busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:").upper()
                                 
-                                # 1. Aseguramos que "SOLICITO" esté en la vista (ajusta el nombre si en tu CSV es distinto)
+                                # Mantenemos tus columnas originales y agregamos SOLICITO
                                 df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA", "ESTATUS", "SOLICITO"]].copy()
                                 df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA", "ESTATUS", "SOLICITANTE"]
                                 df_vista = df_vista.fillna('') 
@@ -6440,38 +6440,47 @@ else:
                                 
                                 df_render = df_vista.sort_values(by="FOLIO", ascending=False)
                                 data_busqueda = df_render.to_dict('records')
-                        
-                                alto_busqueda = min(len(data_busqueda) * 130 + 20, 500) # Aumenté un poco la altura para que quepa el solicitante
+                                
+                                alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) 
                                 
                                 html_busqueda = f"""
                                 <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
                                     <style>
+                                        body {{ background: transparent; margin: 0; padding: 0; }}
                                         .card-busqueda {{
                                             background: #263238; border: 1px solid rgba(255, 255, 255, 0.05);
-                                            border-radius: 10px; padding: 12px; margin-bottom: 10px;
+                                            border-radius: 10px; padding: 15px; margin-bottom: 10px;
                                             display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;
                                         }}
-                                        .card-busqueda:hover {{ border-color: #38bdf8; background: #2d3b42; transform: translateX(5px); }}
-                                        .label-mini {{ font-size: 7px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
-                                        .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 14px; font-weight: 800; }}
-                                        .val-hotel {{ color: #FFFFFF; font-size: 12px; font-weight: 700; }}
-                                        .val-soli {{ color: #FFD700; font-size: 11px; font-weight: 600; margin-top: 2px; font-style: italic; }}
-                                        .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 13px; font-weight: 800; }}
+                                        .card-busqueda:hover {{ border-color: #38bdf8; background: #263238; transform: translateX(5px); }}
+                                        .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
+                                        .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
+                                        .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
+                                        .val-soli {{ color: #FFD700; font-size: 10px; font-weight: 600; margin-top: 2px; opacity: 0.8; }}
+                                        .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 15px; font-weight: 800; line-height: 1.2; }}
+                                        .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 13px; font-weight: 700; margin-top: 4px; }}
+                                        .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 11px; font-weight: 400; }}
                                     </style>
                                     {"".join([f'''
                                     <div class="card-busqueda">
-                                        <div style="flex: 1;">
-                                            <div class="label-mini">Folio</div>
+                                        <div style="flex: 1.1;">
+                                            <div class="label-mini">Folio / Fecha</div>
                                             <div class="val-folio">#{str(item['FOLIO'])}</div>
+                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 5px;">{str(item['FECHA ENVÍO'])[:10]}</div>
+                                            { "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>" if str(item.get('ESTATUS', '')).upper() == 'DESPACHADO' else "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>" }
                                         </div>
-                                        <div style="flex: 2.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
-                                            <div class="label-mini">Hotel / Solicitante</div>
+                                        <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                            <div class="label-mini">Hotel</div>
                                             <div class="val-hotel">{str(item['HOTEL'])[:30]}</div>
-                                            <div class="val-soli">👤 {str(item['SOLICITANTE'])[:30]}</div>
+                                            <div class="val-soli">SOLICITÓ: {str(item['SOLICITANTE'])[:30]}</div>
                                         </div>
-                                        <div style="flex: 1.5; text-align: right;">
-                                            <div class="label-mini">Guía</div>
-                                            <div class="val-guia">{item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] else 'PENDIENTE'}</div>
+                                        <div style="flex: 1.6; text-align: right;">
+                                            <div class="val-guia {{ 'pendiente' if item['PAQUETERÍA'] == '' else '' }}">
+                                                { item['PAQUETERÍA'] if item['PAQUETERÍA'] != '' else 'PAQUETERÍA PENDIENTE' }
+                                            </div>
+                                            <div class="val-sub-guia {{ 'pendiente' if item['NÚMERO DE GUÍA'] == '' else '' }}">
+                                                { item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] != '' else 'GUÍA PENDIENTE' }
+                                            </div>
                                         </div>
                                     </div>
                                     ''' for item in data_busqueda])}
