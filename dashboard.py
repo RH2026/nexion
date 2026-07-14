@@ -7628,6 +7628,8 @@ else:
                     return out_io.getvalue()
                 
                 # --- BLOQUE 1: PREPARACIÓN S&T ---
+                # --- BLOQUE 1: PREPARACIÓN S&T (MODIFICACIÓN) ---
+                # --- BLOQUE 1: PREPARACIÓN S&T ---
                 st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T PREPARATION MODULE</p>", unsafe_allow_html=True)
                 uploaded_file = st.file_uploader("Subir archivo ERP", type=["xlsx", "csv"], label_visibility="collapsed")
                 
@@ -7646,15 +7648,26 @@ else:
                                 
                         df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
                         col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower() or 'folio' in c.lower()), df.columns[0])
+                        df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
                         
                         col_left, col_right = st.columns([1, 2], gap="large")
+                        
                         with col_left:
                             st.markdown(f"<p class='op-query-text'>FILTROS</p>", unsafe_allow_html=True)
-                            serie = pd.to_numeric(df[col_folio], errors='coerce').dropna()
+                            
+                            # NUEVO: Input para folios manuales
+                            folios_manuales = st.text_input("Folios específicos (separados por coma):", placeholder="Ej: 1001, 1002, 1005")
+                            
+                            serie = df[col_folio].dropna()
                             inicio = st.number_input("Desde:", value=int(serie.min()) if not serie.empty else 0)
                             final = st.number_input("Hasta:", value=int(serie.max()) if not serie.empty else 0)
-                            df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
-                            df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
+                            
+                            # Lógica híbrida
+                            if folios_manuales:
+                                lista_manual = [int(x.strip()) for x in folios_manuales.split(",") if x.strip().isdigit()]
+                                df_rango = df[df[col_folio].isin(lista_manual)].copy()
+                            else:
+                                df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
                             
                         with col_right:
                             st.markdown(f"<p class='op-query-text'>SELECCIÓN</p>", unsafe_allow_html=True)
@@ -7664,6 +7677,7 @@ else:
                                 edited_df = st.data_editor(info, hide_index=True, use_container_width=True, key="ed_v4")
                             else: 
                                 st.warning("Rango vacío")
+                                edited_df = pd.DataFrame()
                                 
                         if not df_rango.empty and not edited_df.empty:
                             folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
@@ -7729,7 +7743,6 @@ else:
                                     except Exception as e: 
                                         st.error(f"Error en el motor de asignación: {e}")
                 
-                    # AQUÍ ESTÁ LA MAGIA: Faltaba cerrar el try principal de la carga de archivos
                     except Exception as e:
                         st.error(f"Error procesando el archivo ERP: {e}")
                 
