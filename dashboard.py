@@ -5016,24 +5016,26 @@ else:
                                 time.sleep(1)
                                 st.rerun()
                 
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (GRID PROFESIONAL Y HOVER) ───────────
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ───────────────────────────────────────────────
                 st.markdown("""
                 <style>
                     .card-hover {
+                        /* Mantenemos el borde sólido de 5px siempre activo */
+                        border-left: 5px solid;
                         transition: transform 0.2s, background-color 0.2s, border-left-color 0.3s !important;
                     }
                     .card-hover:hover {
                         transform: scale(1.01);
                         background-color: #313a40 !important;
-                        border-left-color: #38bdf8 !important; 
+                        /* Aquí forzamos que el borde sea sólido y del color azul Nexion */
+                        border-left: 5px solid #38bdf8 !important; 
                         cursor: pointer;
                         box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
                     }
                 </style>
                 """, unsafe_allow_html=True)
                 
-                st.subheader("📋 MONITOR DE PENDIENTES E INCIDENCIAS")
+                
                 prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                 estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
                 
