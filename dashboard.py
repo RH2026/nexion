@@ -4987,18 +4987,22 @@ else:
                         
                         if enviar:
                             folio_final = t_folio_input if t_folio_input else sugerencia_folio
-                            busqueda_final = n_pedido if n_pedido else (incidencia_existente['VINCULO_BUSQUEDA'] if incidencia_existente is not None else "")
+                            
+                            # --- AQUÍ ESTÁ EL BLINDAJE ---
+                            # Nos aseguramos de que sea string y si es None, lo convertimos a "" vacío
+                            valor_busqueda = n_pedido if n_pedido else (incidencia_existente.get('VINCULO_BUSQUEDA', '') if incidencia_existente is not None else "")
+                            busqueda_final = str(valor_busqueda).upper() if valor_busqueda is not None else ""
                             
                             nueva_data = {
                                 "FOLIO": folio_final,
                                 "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO HERNÁNDEZ'),
                                 "PRIORIDAD": t_prior,
-                                "VINCULO_BUSQUEDA": busqueda_final.upper(),
-                                "CLIENTE_DESTINO": t_cliente_destino.upper(),
-                                "PEDIDO_GUIA": t_pedido_guia.upper(),
-                                "ID_SEGUIMIENTO": t_id_seguimiento.upper(),
-                                "ID_QUEJA": t_id_queja.upper(),
-                                "RESPONSABLE": t_responsable.upper(),
+                                "VINCULO_BUSQUEDA": busqueda_final, # Ya viene limpio arriba
+                                "CLIENTE_DESTINO": str(t_cliente_destino).upper(),
+                                "PEDIDO_GUIA": str(t_pedido_guia).upper(),
+                                "ID_SEGUIMIENTO": str(t_id_seguimiento).upper(),
+                                "ID_QUEJA": str(t_id_queja).upper(),
+                                "RESPONSABLE": str(t_responsable).upper(),
                                 "DETALLE_INCIDENCIA": t_detalle,
                                 "ACCIONES": t_acciones,
                                 "ESTATUS": t_estatus
