@@ -4784,7 +4784,7 @@ else:
                 COLUMNAS_INCIDENCIAS = [
                     "FOLIO", "USUARIO", "PRIORIDAD", "VINCULO_BUSQUEDA", 
                     "CLIENTE_DESTINO", "PEDIDO_GUIA", "ID_SEGUIMIENTO", "ID_QUEJA", 
-                    "ESTATUS"
+                    "RESPONSABLE", "DETALLE_INCIDENCIA", "ACCIONES", "ESTATUS"
                 ]
                 
                 @st.cache_data(ttl=600)
@@ -4864,7 +4864,12 @@ else:
                 
                 if "df_incidencias" not in st.session_state:
                     st.session_state.df_incidencias = cargar_datos_seguro()
-                    
+                
+                # Parche de seguridad para registros viejos en session_state
+                for c in COLUMNAS_INCIDENCIAS:
+                    if c not in st.session_state.df_incidencias.columns:
+                        st.session_state.df_incidencias[c] = ""
+                
                 df_master = st.session_state.df_incidencias.copy()
                 
                 # ── INYECCIÓN DE INTERFAZ CSS LIMPIA ─────────────────────────────────────────────────
@@ -4943,21 +4948,32 @@ else:
                         f2_c1, f2_c2 = st.columns([1, 1])
                         
                         with f2_c1:
-                            # Estos se llenan solitos por la matriz, pero te los dejo editables por si necesitas corregir algo rápido
                             val_cd = info_matriz["cliente_destino"] if info_matriz["cliente_destino"] else (incidencia_existente['CLIENTE_DESTINO'] if incidencia_existente is not None else "")
                             t_cliente_destino = st.text_input("CLIENTE / DESTINO", value=val_cd)
                             
                             val_pg = info_matriz["pedido_guia"] if info_matriz["pedido_guia"] else (incidencia_existente['PEDIDO_GUIA'] if incidencia_existente is not None else "")
                             t_pedido_guia = st.text_input("PEDIDO / GUÍA", value=val_pg)
                             
+                            # --- NUEVO IMPUT ---
+                            val_resp = incidencia_existente['RESPONSABLE'] if incidencia_existente is not None else ""
+                            t_responsable = st.text_input("RESPONSABLE", value=val_resp)
+                            
                         with f2_c2:
-                            # Tus nuevos campos manuales amor
                             val_id_seg = incidencia_existente['ID_SEGUIMIENTO'] if incidencia_existente is not None else ""
                             t_id_seguimiento = st.text_input("ID SEGUIMIENTO", value=val_id_seg)
                             
                             val_id_queja = incidencia_existente['ID_QUEJA'] if incidencia_existente is not None else ""
                             t_id_queja = st.text_input("ID DE QUEJA", value=val_id_queja)
                             
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # --- NUEVOS IMPUTS DE TEXTO LARGO ---
+                        val_det = incidencia_existente['DETALLE_INCIDENCIA'] if incidencia_existente is not None else ""
+                        t_detalle = st.text_area("DETALLE DE INCIDENCIA", value=val_det)
+                        
+                        val_acc = incidencia_existente['ACCIONES'] if incidencia_existente is not None else ""
+                        t_acciones = st.text_area("ACCIONES", value=val_acc)
+                        
                         st.markdown("<br>", unsafe_allow_html=True)
                         
                         # Estatus abarcando el ancho completo abajo de los inputs
@@ -4982,6 +4998,9 @@ else:
                                 "PEDIDO_GUIA": t_pedido_guia.upper(),
                                 "ID_SEGUIMIENTO": t_id_seguimiento.upper(),
                                 "ID_QUEJA": t_id_queja.upper(),
+                                "RESPONSABLE": t_responsable.upper(),
+                                "DETALLE_INCIDENCIA": t_detalle,
+                                "ACCIONES": t_acciones,
                                 "ESTATUS": t_estatus
                             }
                             
@@ -4998,140 +5017,71 @@ else:
                                 st.rerun()
                 
                 # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
                 with st.expander("📋 Monitor de Pendientes e Incidencias", expanded=True):
-                    prioridad_colores = {
-                        "Urgente": "#ff4b4b",
-                        "Alta": "#f97316",
-                        "Media": "#38bdf8",
-                        "Baja": "#00FFAA"
-                    }
+                    prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                     
                     if df_master.empty:
                         st.info("No hay incidencias registradas en este momento.")
                     else:
-                        for index, row in df_master.iterrows():
-                            if not str(row["FOLIO"]).strip():
-                                continue
-                                
-                            color_p = prioridad_colores.get(row["PRIORIDAD"], "#94a3b8")
+                        for _, row in df_master.iterrows():
+                            if not str(row.get("FOLIO", "")).strip(): continue
+                            color_p = prioridad_colores.get(row.get("PRIORIDAD", "Baja"), "#94a3b8")
                             
-                            html_card = f"""
+                            # Tarjeta limpia, sin lógica compleja adentro
+                            st.markdown(f"""
                             <div style="border-left: 5px solid {color_p}; padding: 15px; margin-bottom: 15px; background: rgba(30, 39, 46, 0.7); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
-                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                                    <div style="flex: 1; min-width: 120px;">
-                                        <span style="font-size: 10px; color: {color_p}; font-weight: 800; letter-spacing: 1px;">FOLIO INCIDENCIA</span>
-                                        <div style="font-size: 18px; font-weight: 800; color: white;">{row['FOLIO']}</div>
-                                        <span style="font-size: 11px; color: #a855f7; font-weight: bold;">{row['PEDIDO_GUIA']}</span>
-                                    </div>
-                                    <div style="flex: 3; min-width: 250px; padding: 0 10px;">
-                                        <div style="font-size: 13px; font-weight: 700; color: #e2e8f0;">{row['CLIENTE_DESTINO']}</div>
-                                        <div style="font-size: 11px; color: #64748b; margin-top: 8px; font-weight: bold;">
-                                            ID SEGUIMIENTO: <span style="color:#e2e8f0;">{row['ID_SEGUIMIENTO']}</span> | 
-                                            ID QUEJA: <span style="color:#e2e8f0;">{row['ID_QUEJA']}</span>
-                                        </div>
-                                        <div style="font-size: 10px; color: #38bdf8; margin-top: 5px;">
-                                            👤 Registró: {row['USUARIO']}
-                                        </div>
-                                    </div>
-                                    <div style="flex: 1; text-align: right; min-width: 100px;">
-                                        <span style="font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 800;">ESTATUS</span>
-                                        <div style="font-size: 14px; font-weight: bold; color: white; background: {color_p}33; padding: 4px 8px; border-radius: 5px; border: 1px solid {color_p}; text-align: center; margin-top: 5px;">
-                                            {row['ESTATUS']}
-                                        </div>
-                                    </div>
-                                </div>
+                                <div style="font-size: 18px; font-weight: 800; color: white;">{row.get('FOLIO', '')}</div>
+                                <div style="font-size: 11px; color: #a855f7; font-weight: bold;">{row.get('PEDIDO_GUIA', '')}</div>
+                                <div style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin-top:5px;">{row.get('CLIENTE_DESTINO', '')}</div>
+                                <div style="font-size: 11px; color: #64748b; font-weight: bold;">RESPONSABLE: {row.get('RESPONSABLE', '')}</div>
+                                <div style="font-size: 11px; color: #38bdf8; margin-top: 5px;">👤 Registró: {row.get('USUARIO', '')}</div>
                             </div>
-                            """
-                            st.markdown(html_card, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
                 
-                # ── 3. EDITOR DE AVANZADO (SOLO ADMINISTRACIÓN) & EXPORTADORES ───────────────────────
+                # ── 3. EDITOR DE AVANZADO ───────────────────────────────────────────────────────────
                 with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
                     st.subheader("Modo edición avanzada")
-                    
                     df_editor = df_master.copy()
+                    
+                    # Aseguramos columnas
                     for col in COLUMNAS_INCIDENCIAS:
+                        if col not in df_editor.columns: df_editor[col] = ""
                         df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
                         
-                    df_editado = st.data_editor(
-                        df_editor,
-                        hide_index=True,
-                        use_container_width=True,
-                        num_rows="dynamic",
-                        column_config={
-                            "FOLIO": st.column_config.TextColumn("Folio ID"),
-                            "USUARIO": st.column_config.TextColumn("Registró"),
-                            "PRIORIDAD": st.column_config.SelectboxColumn("Prioridad", options=["Urgente", "Alta", "Media", "Baja"]),
-                            "VINCULO_BUSQUEDA": st.column_config.TextColumn("Vínculo Buscado"),
-                            "CLIENTE_DESTINO": st.column_config.TextColumn("Cliente / Destino"),
-                            "PEDIDO_GUIA": st.column_config.TextColumn("Pedido / Guía"),
-                            "ID_SEGUIMIENTO": st.column_config.TextColumn("ID Seguimiento"),
-                            "ID_QUEJA": st.column_config.TextColumn("ID Queja"),
-                            "ESTATUS": st.column_config.SelectboxColumn("Estatus", options=["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]),
-                        }
-                    )
+                    df_editado = st.data_editor(df_editor, hide_index=True, use_container_width=True, num_rows="dynamic")
                     
+                    # --- CONSTRUCCIÓN SEGURA DE HTML ---
+                    cabeceras = "".join([f"<th>{c}</th>" for c in COLUMNAS_INCIDENCIAS if c != 'VINCULO_BUSQUEDA'])
+                    cuerpo = ""
+                    for _, fila in df_editado.iterrows():
+                        cuerpo += "<tr>" + "".join([f"<td>{str(fila.get(c, ''))}</td>" for c in COLUMNAS_INCIDENCIAS if c != 'VINCULO_BUSQUEDA']) + "</tr>"
+                
                     html_print = f"""
-                    <style>
-                        @media print {{
-                            @page {{ size: letter landscape; margin: 0.5cm; }}
-                            body {{ margin: 0; padding: 0; color: black; background: white; }}
-                        }}
-                        #printableArea {{ font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid black; padding: 10px; }}
-                        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-                        th {{ background-color: #000 !important; color: #fff !important; font-size: 10px; border: 1px solid black; padding: 5px; }}
-                        td {{ border: 1px solid black; padding: 5px; font-size: 9px; word-wrap: break-word; }}
-                    </style>
-                    <div id="printableArea">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 5px;">
-                            <div>
-                                <h2 style="margin: 0; font-size: 16px;">JYPESA - Logística NEXION</h2>
-                                <small style="font-size: 9px;">Reporte de Incidencias y Quejas</small>
-                            </div>
-                            <div style="text-align: right;">
-                                <p style="margin: 0; font-size: 10px;">FECHA: {datetime.now().strftime('%Y-%m-%d')}</p>
-                            </div>
-                        </div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    {"".join([f'<th>{col}</th>' for col in COLUMNAS_INCIDENCIAS if col != 'VINCULO_BUSQUEDA'])}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {"".join([
-                                    f'<tr>{"".join([f"<td>{row[col]}</td>" for col in COLUMNAS_INCIDENCIAS if col != "VINCULO_BUSQUEDA"])}</tr>'
-                                    for _, row in df_editado.iterrows()
-                                ])}
-                            </tbody>
+                    <div id="printableArea" style="font-family: sans-serif;">
+                        <h2>JYPESA - Logística NEXION</h2>
+                        <table border="1" style="width:100%; border-collapse: collapse;">
+                            <thead><tr>{cabeceras}</tr></thead>
+                            <tbody>{cuerpo}</tbody>
                         </table>
                     </div>
                     """
-                
-                    col1, col2, col3 = st.columns(3)
                     
+                    col1, col2, col3 = st.columns(3)
                     with col1:
                         if st.button("🔄 SINCRONIZAR", use_container_width=True):
                             if guardar_en_github(df_editado):
                                 st.session_state.df_incidencias = df_editado
                                 st.rerun()
-                                
                     with col2:
                         import streamlit.components.v1 as components
                         if st.button("🖨️ IMPRIMIR", use_container_width=True):
                             components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
-                            
                     with col3:
                         buffer = io.BytesIO()
                         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
                             df_editado.to_excel(writer, index=False, sheet_name='Incidencias')
-                            
-                        st.download_button(
-                            label="📊 BAJAR EXCEL",
-                            data=buffer.getvalue(),
-                            file_name="incidencias_nexion.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            use_container_width=True
-                        )
+                        st.download_button("📊 BAJAR EXCEL", data=buffer.getvalue(), file_name="incidencias_nexion.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
     
         # 3. REPORTES
         elif st.session_state.menu_main == "REPORTES":
