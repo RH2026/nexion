@@ -5017,23 +5017,23 @@ else:
                                 st.rerun()
                 
                 # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (VISIBLE Y CON EFECTO HOVER) ───────────
-                # Inyectamos el estilo hover en el bloque CSS global de tu app
                 st.markdown("""
                 <style>
                     .card-hover {
-                        transition: transform 0.2s, background-color 0.2s;
+                        transition: transform 0.2s, background-color 0.2s, border-left-color 0.3s;
                         border-left: 5px solid;
                     }
                     .card-hover:hover {
                         transform: scale(1.01);
                         background-color: #313a40 !important;
+                        /* Aquí forzamos el color azul Nexion en el borde al pasar el mouse */
+                        border-left-color: #38bdf8 !important; 
                         cursor: pointer;
                     }
                 </style>
                 """, unsafe_allow_html=True)
                 
-                st.subheader("📋 Monitor de Pendientes e Incidencias")
+                st.subheader("📋 MONITOR DE PENDIENTES E INCIDENCIAS")
                 prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                 estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
                 
