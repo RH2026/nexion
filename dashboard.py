@@ -645,7 +645,7 @@ div[data-baseweb="tag"] {{
 }}
 div[data-baseweb="tag"] span {{
     color: #ffffff !important;
-    font-size: 14px !important; 
+    font-size: 12px !important; 
     font-weight: 600 !important;
     text-transform: uppercase !important;
 }}
@@ -803,7 +803,7 @@ div[data-baseweb="popover"] span {{
 }}
 
 div[data-baseweb="popover"] button[kind="primary"] {{
-    font-size: 12px !important;
+    font-size: 10px !important;
     height: 26px !important;
     min-height: 26px !important;
     line-height: 26px !important;
