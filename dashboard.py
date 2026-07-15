@@ -5017,34 +5017,49 @@ else:
                                 st.rerun()
                 
                 # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
-                with st.expander("📋 Monitor de Pendientes e Incidencias", expanded=True):
-                    prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
-                    estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
-                    
-                    if df_master.empty:
-                        st.info("No hay incidencias registradas.")
-                    else:
-                        for _, row in df_master.iterrows():
-                            if not str(row.get("FOLIO", "")).strip(): continue
-                            
-                            color_p = prioridad_colores.get(row.get("PRIORIDAD", "Baja"), "#94a3b8")
-                            f_est = row.get('ESTATUS', 'PENDIENTE')
-                            color_e = estatus_colores.get(f_est, "#64748b")
-                            
-                            st.markdown(f"""
-                            <div style="border-left: 5px solid {color_p}; padding: 15px; margin-bottom: 15px; background: #262e33; border-radius: 8px; border: 1px solid #3d474d;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <b style="color: {color_p}; font-size: 1.2em;">{row.get('FOLIO', 'INC-???')}</b>
-                                    <span style="background: {color_e}33; color: {color_e}; border: 1px solid {color_e}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em;">{f_est}</span>
-                                </div>
-                                <div style="margin-top: 10px; color: #fff; font-size: 1em;"><b>{row.get('CLIENTE_DESTINO', 'N/A')}</b></div>
-                                <div style="color: #bbb; font-size: 0.9em;">📦 {row.get('PEDIDO_GUIA', 'N/A')} | 👤 <b>Resp:</b> {row.get('RESPONSABLE', 'N/A')}</div>
-                                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #444;">
-                                <div style="color: #ddd; font-size: 0.95em;"><b>Detalle:</b> {row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div>
-                                <div style="color: #38bdf8; font-size: 0.9em; margin-top: 5px;"><b>Acciones:</b> {row.get('ACCIONES', 'Sin acciones...')}</div>
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (VISIBLE Y CON EFECTO HOVER) ───────────
+                # Inyectamos el estilo hover en el bloque CSS global de tu app
+                st.markdown("""
+                <style>
+                    .card-hover {
+                        transition: transform 0.2s, background-color 0.2s;
+                        border-left: 5px solid;
+                    }
+                    .card-hover:hover {
+                        transform: scale(1.01);
+                        background-color: #313a40 !important;
+                        cursor: pointer;
+                    }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                st.subheader("📋 Monitor de Pendientes e Incidencias")
+                prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
+                estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
+                
+                if df_master.empty:
+                    st.info("No hay incidencias registradas.")
+                else:
+                    for _, row in df_master.iterrows():
+                        if not str(row.get("FOLIO", "")).strip(): continue
+                        
+                        color_p = prioridad_colores.get(row.get("PRIORIDAD", "Baja"), "#94a3b8")
+                        f_est = row.get('ESTATUS', 'PENDIENTE')
+                        color_e = estatus_colores.get(f_est, "#64748b")
+                        
+                        st.markdown(f"""
+                        <div class="card-hover" style="border-left-color: {color_p}; padding: 15px; margin-bottom: 15px; background: #262e33; border-radius: 8px; border: 1px solid #3d474d;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <b style="color: {color_p}; font-size: 1.2em;">{row.get('FOLIO', 'INC-???')}</b>
+                                <span style="background: {color_e}33; color: {color_e}; border: 1px solid {color_e}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em;">{f_est}</span>
                             </div>
-                            """, unsafe_allow_html=True)
+                            <div style="margin-top: 10px; color: #fff; font-size: 1em;"><b>{row.get('CLIENTE_DESTINO', 'N/A')}</b></div>
+                            <div style="color: #bbb; font-size: 0.9em;">📦 {row.get('PEDIDO_GUIA', 'N/A')} | 👤 <b>Resp:</b> {row.get('RESPONSABLE', 'N/A')}</div>
+                            <hr style="margin: 10px 0; border: 0; border-top: 1px solid #444;">
+                            <div style="color: #ddd; font-size: 0.95em;"><b>Detalle:</b> {row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div>
+                            <div style="color: #38bdf8; font-size: 0.9em; margin-top: 5px;"><b>Acciones:</b> {row.get('ACCIONES', 'Sin acciones...')}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
                 
                 # ── 3. EDITOR DE AVANZADO ───────────────────────────────────────────────────────────
                 with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
