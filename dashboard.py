@@ -5017,17 +5017,10 @@ else:
                                 st.rerun()
                 
                 # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (VERSION MEJORADA) ─────────────────────
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
                 with st.expander("📋 Monitor de Pendientes e Incidencias", expanded=True):
                     prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
-                    
-                    # Colores específicos para cada estatus
-                    estatus_colores = {
-                        "PENDIENTE": "#fbbf24",    # Ámbar
-                        "EN PROCESO": "#60a5fa",   # Azul
-                        "SOLUCIONADO": "#22c55e",  # Verde
-                        "RECHAZADO": "#ef4444"     # Rojo
-                    }
+                    estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
                     
                     if df_master.empty:
                         st.info("No hay incidencias registradas.")
@@ -5037,27 +5030,19 @@ else:
                             
                             color_p = prioridad_colores.get(row.get("PRIORIDAD", "Baja"), "#94a3b8")
                             f_est = row.get('ESTATUS', 'PENDIENTE')
-                            # Obtenemos color del estatus, usamos gris si no está en la lista
                             color_e = estatus_colores.get(f_est, "#64748b")
                             
-                            # Extraemos datos
-                            f_pedido = row.get('PEDIDO_GUIA', 'N/A')
-                            f_cliente = row.get('CLIENTE_DESTINO', 'N/A')
-                            f_resp = row.get('RESPONSABLE', 'N/A')
-                            f_det = row.get('DETALLE_INCIDENCIA', 'Sin detalle...')
-                            f_acc = row.get('ACCIONES', 'Sin acciones...')
-                            
                             st.markdown(f"""
-                            <div style="border-left: 5px solid {color_p}; padding: 15px; margin-bottom: 15px; background: #1a1e23; border-radius: 8px; border: 1px solid #333;">
+                            <div style="border-left: 5px solid {color_p}; padding: 15px; margin-bottom: 15px; background: #262e33; border-radius: 8px; border: 1px solid #3d474d;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <b style="color: {color_p}; font-size: 1.2em;">{row.get('FOLIO', 'INC-???')}</b>
                                     <span style="background: {color_e}33; color: {color_e}; border: 1px solid {color_e}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em;">{f_est}</span>
                                 </div>
-                                <div style="margin-top: 10px; color: #fff; font-size: 1em;"><b>{f_cliente}</b></div>
-                                <div style="color: #bbb; font-size: 0.9em;">📦 {f_pedido} | 👤 <b>Resp:</b> {f_resp}</div>
+                                <div style="margin-top: 10px; color: #fff; font-size: 1em;"><b>{row.get('CLIENTE_DESTINO', 'N/A')}</b></div>
+                                <div style="color: #bbb; font-size: 0.9em;">📦 {row.get('PEDIDO_GUIA', 'N/A')} | 👤 <b>Resp:</b> {row.get('RESPONSABLE', 'N/A')}</div>
                                 <hr style="margin: 10px 0; border: 0; border-top: 1px solid #444;">
-                                <div style="color: #ddd; font-size: 0.95em;"><b>Detalle:</b> {f_det}</div>
-                                <div style="color: #38bdf8; font-size: 0.9em; margin-top: 5px;"><b>Acciones:</b> {f_acc}</div>
+                                <div style="color: #ddd; font-size: 0.95em;"><b>Detalle:</b> {row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div>
+                                <div style="color: #38bdf8; font-size: 0.9em; margin-top: 5px;"><b>Acciones:</b> {row.get('ACCIONES', 'Sin acciones...')}</div>
                             </div>
                             """, unsafe_allow_html=True)
                 
