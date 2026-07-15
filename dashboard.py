@@ -5017,22 +5017,7 @@ else:
                                 st.rerun()
                 
                 # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
-                st.markdown("""
-                <style>
-                    .card-hover {
-                        transition: transform 0.2s, background-color 0.2s, border-left-color 0.3s;
-                        border-left: 5px solid;
-                    }
-                    .card-hover:hover {
-                        transform: scale(1.01);
-                        background-color: #313a40 !important;
-                        /* Aquí forzamos el color azul Nexion en el borde al pasar el mouse */
-                        border-left-color: #38bdf8 !important; 
-                        cursor: pointer;
-                    }
-                </style>
-                """, unsafe_allow_html=True)
-                
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────
                 st.subheader("📋 MONITOR DE PENDIENTES E INCIDENCIAS")
                 prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                 estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
@@ -5048,16 +5033,16 @@ else:
                         color_e = estatus_colores.get(f_est, "#64748b")
                         
                         st.markdown(f"""
-                        <div class="card-hover" style="border-left-color: {color_p}; padding: 15px; margin-bottom: 15px; background: #262e33; border-radius: 8px; border: 1px solid #3d474d;">
+                        <div class="card-hover" style="border-left: 5px solid {color_p}; padding: 18px; margin-bottom: 15px; background: #333c44; border-radius: 8px; border-top: 1px solid #4a555e; border-right: 1px solid #4a555e; border-bottom: 1px solid #4a555e;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <b style="color: {color_p}; font-size: 1.2em;">{row.get('FOLIO', 'INC-???')}</b>
-                                <span style="background: {color_e}33; color: {color_e}; border: 1px solid {color_e}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em;">{f_est}</span>
+                                <b style="color: {color_p}; font-size: 1.3em;">{row.get('FOLIO', 'INC-???')}</b>
+                                <span style="background: {color_e}33; color: #ffffff; border: 1px solid {color_e}; padding: 3px 10px; border-radius: 5px; font-weight: bold; font-size: 0.85em;">{f_est}</span>
                             </div>
-                            <div style="margin-top: 10px; color: #fff; font-size: 1em;"><b>{row.get('CLIENTE_DESTINO', 'N/A')}</b></div>
-                            <div style="color: #bbb; font-size: 0.9em;">📦 {row.get('PEDIDO_GUIA', 'N/A')} | 👤 <b>Resp:</b> {row.get('RESPONSABLE', 'N/A')}</div>
-                            <hr style="margin: 10px 0; border: 0; border-top: 1px solid #444;">
-                            <div style="color: #ddd; font-size: 0.95em;"><b>Detalle:</b> {row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div>
-                            <div style="color: #38bdf8; font-size: 0.9em; margin-top: 5px;"><b>Acciones:</b> {row.get('ACCIONES', 'Sin acciones...')}</div>
+                            <div style="margin: 12px 0; color: #ffffff; font-size: 1.1em;"><b>{row.get('CLIENTE_DESTINO', 'N/A')}</b></div>
+                            <div style="color: #e0e0e0; font-size: 0.95em;">📦 {row.get('PEDIDO_GUIA', 'N/A')} | 👤 <b>Resp:</b> {row.get('RESPONSABLE', 'N/A')}</div>
+                            <hr style="margin: 12px 0; border: 0; border-top: 1px solid #555;">
+                            <div style="color: #ffffff; font-size: 1em; line-height: 1.4;"><b>Detalle:</b> {row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div>
+                            <div style="color: #7dd3fc; font-size: 1em; margin-top: 8px;"><b>Acciones:</b> {row.get('ACCIONES', 'Sin acciones...')}</div>
                         </div>
                         """, unsafe_allow_html=True)
                 
