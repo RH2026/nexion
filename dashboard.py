@@ -4774,274 +4774,387 @@ else:
             
             elif st.session_state.menu_sub == "QUEJAS":
                 st.markdown("<br><br>", unsafe_allow_html=True)
-                # ── CONFIGURACIÓN GITHUB (QUEJAS) ──
+                # ── CONFIGURACIÓN DEL REPOSITORIO DE INCIDENCIAS ─────────────────────────────────────
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
-                FILE_PATH = "gastos.csv"
+                FILE_PATH = "incidencias.csv"  # <--- Cambiado a incidencias.csv mi amor
                 CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+                MATRIZ_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/Matriz_Excel_Dashboard.csv"
                 
-                # ── FUNCIONES DE SOPORTE ──
-                def cargar_datos_gastos():
-                    columnas_base = ["FECHA", "ID", "QUEJA", "ESTATUS", "INCONFORMIDAD", "AGENTE", "ULTIMA ACCION", "GASTOS ADICIONALES"]
-                    
-                    mapeo_nombres = {
-                        "PAQUETERIA": "ID",
-                        "CLIENTE": "QUEJA",
-                        "SOLICITO": "ESTATUS",
-                        "DESTINO": "INCONFORMIDAD",
-                        "CANTIDAD": "AGENTE",
-                        "UM": "ULTIMA ACCION",
-                        "COSTO": "GASTOS ADICIONALES"
+                # Definición de las nuevas columnas para tu módulo de quejas
+                COLUMNAS_INCIDENCIAS = [
+                    "FOLIO", "USUARIO", "PRIORIDAD", "PEDIDO_FACTURA", 
+                    "CAMPO_MANUAL_1", "CAMPO_MANUAL_2", "CAMPO_MANUAL_3", "CAMPO_MANUAL_4", 
+                    "ESTATUS"
+                ]
+                
+                @st.cache_data(ttl=600)
+                def cargar_matriz_global():
+                    try:
+                        r = requests.get(f"{MATRIZ_URL}?t={int(time.time())}")
+                        if r.status_code == 200:
+                            df = pd.read_csv(StringIO(r.text))
+                            df.columns = [c.strip().upper() for c in df.columns]
+                            return df
+                    except:
+                        return None
+                    return None
+                
+                df_global = cargar_matriz_global()
+                
+                # ── FUNCIÓN PARA SINCRONIZAR Y CREAR ARCHIVO EN GITHUB ──────────────────────────────
+                def guardar_en_github(df):
+                    """Sincroniza el DataFrame con el repositorio. Crea el archivo si no existe."""
+                    import base64
+                    if not TOKEN:
+                        st.error("No se encontró el GITHUB_TOKEN en los secrets.")
+                        return False
+                        
+                    csv_content = df.to_csv(index=False)
+                    api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+                    headers = {
+                        "Authorization": f"token {TOKEN}",
+                        "Accept": "application/vnd.github.v3+json"
                     }
+                    
+                    try:
+                        r = requests.get(api_url, headers=headers)
+                        sha = r.json().get("sha") if r.status_code == 200 else None
+                        
+                        payload = {
+                            "message": f"Actualización de incidencias {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                            "content": base64.b64encode(csv_content.encode()).decode(),
+                            "branch": "main"
+                        }
+                        if sha:
+                            payload["sha"] = sha
+                            
+                        response = requests.put(api_url, headers=headers, json=payload)
+                        
+                        if response.status_code in [200, 201]:
+                            st.success("✅ ¡Incidencias sincronizadas con éxito en GitHub!")
+                            return True
+                        else:
+                            st.error(f"Error de GitHub: {response.json().get('message')}")
+                            return False
+                    except Exception as e:
+                        st.error(f"Error de conexión: {e}")
+                        return False
                 
+                # ── CARGA SEGURA CON AUTO-CREACIÓN SI NO EXISTE ─────────────────────────────────────
+                def cargar_datos_seguro():
                     try:
                         r = requests.get(f"{CSV_URL}?t={int(time.time())}")
                         if r.status_code == 200:
-                            df = pd.read_csv(io.StringIO(r.text))
-                
-                            # Normalizar columnas
-                            df.columns = [str(c).strip().upper() for c in df.columns]
-                
-                            # Renombrar si aplica
-                            df = df.rename(columns=mapeo_nombres)
-                
-                            # Crear columnas faltantes
-                            for col in columnas_base:
-                                if col not in df.columns:
-                                    df[col] = ""
-                
-                            # Orden exacto
-                            df = df[columnas_base]
-                
-                            # 🔥 LIMPIEZA FUERTE DE NUMÉRICOS
-                            df["GASTOS ADICIONALES"] = (
-                                df["GASTOS ADICIONALES"]
-                                .astype(str)
-                                .str.replace("$", "", regex=False)
-                                .str.replace(",", "", regex=False)
-                                .str.strip()
-                            )
-                
-                            df["GASTOS ADICIONALES"] = pd.to_numeric(
-                                df["GASTOS ADICIONALES"], errors="coerce"
-                            ).fillna(0.0)
-                
-                            return df
-                
+                            df = pd.read_csv(StringIO(r.text))
+                            df.columns = [c.strip().upper() for c in df.columns]
+                            
+                            # Validar que no falte ninguna columna
+                            for c in COLUMNAS_INCIDENCIAS:
+                                if c not in df.columns:
+                                    df[c] = ""
+                            return df[COLUMNAS_INCIDENCIAS]
+                            
+                        elif r.status_code == 404:
+                            # Si el archivo no existe amor, lo inicializamos vacío y lo creamos automáticamente
+                            df_nuevo = pd.DataFrame(columns=COLUMNAS_INCIDENCIAS)
+                            guardar_en_github(df_nuevo)
+                            return df_nuevo
                     except Exception as e:
-                        print("Error cargando gastos:", e)
+                        st.error(f"Error al cargar el módulo de incidencias: {e}")
+                        
+                    return pd.DataFrame(columns=COLUMNAS_INCIDENCIAS)
                 
-                    return pd.DataFrame(columns=columnas_base)
+                # ── GESTIÓN DE ESTADO DE SESIÓN ──────────────────────────────────────────────────────
+                if "df_incidencias" not in st.session_state:
+                    st.session_state.df_incidencias = cargar_datos_seguro()
+                    
+                df_master = st.session_state.df_incidencias.copy()
                 
-                
-                def guardar_en_github(df_to_save):
-                    if not TOKEN:
-                        return False
-                    try:
-                        from github import Github
-                        g = Github(TOKEN)
-                        repo = g.get_repo(REPO_NAME)
-                
-                        # 🔥 FORZAR NUMÉRICO ANTES DE GUARDAR
-                        df_to_save["GASTOS ADICIONALES"] = pd.to_numeric(
-                            df_to_save["GASTOS ADICIONALES"], errors="coerce"
-                        ).fillna(0.0)
-                
-                        csv_data = df_to_save.to_csv(index=False)
-                
-                        try:
-                            contents = repo.get_contents(FILE_PATH)
-                            repo.update_file(
-                                contents.path,
-                                f"Update gastos {datetime.now()}",
-                                csv_data,
-                                contents.sha
-                            )
-                        except:
-                            repo.create_file(
-                                FILE_PATH,
-                                "Initial gastos",
-                                csv_data
-                            )
-                
-                        return True
-                    except Exception as e:
-                        print("Error guardando en GitHub:", e)
-                        return False
-                
-                
-                # ── INTERFAZ ──                
-                if "df_gastos" not in st.session_state:
-                    st.session_state.df_gastos = cargar_datos_gastos()
-                               
-                
-                # 👇 AQUÍ VA EL CSS
+                # ── INYECCIÓN DE INTERFAZ CSS LIMPIA ─────────────────────────────────────────────────
                 st.markdown("""
-                <style>
-                
-                /* Forzar wrap real dentro del DataEditor */
-                [data-testid="stDataEditor"] [role="gridcell"] {
-                    white-space: normal !important;
-                    line-height: 1.4 !important;
-                }
-                
-                /* El texto interno del cell */
-                [data-testid="stDataEditor"] [role="gridcell"] div {
-                    white-space: normal !important;
-                    overflow: visible !important;
-                    text-overflow: unset !important;
-                    word-break: break-word !important;
-                }
-                
-                /* Quitar ellipsis */
-                [data-testid="stDataEditor"] span {
-                    white-space: normal !important;
-                    overflow: visible !important;
-                    text-overflow: unset !important;
-                }
-                
-                /* Permitir que la fila crezca */
-                [data-testid="stDataEditor"] [role="row"] {
-                    align-items: stretch !important;
-                    height: auto !important;
-                }
-                
-                </style>
+                    <style>
+                    input[type=number]::-webkit-inner-spin-button, 
+                    input[type=number]::-webkit-outer-spin-button { 
+                        -webkit-appearance: none; margin: 0; 
+                    }
+                    .search-container-pro {
+                        border-left: 4px solid #f43f5e;
+                        padding-left: 15px;
+                        margin-bottom: 20px;
+                        background: rgba(244, 63, 94, 0.05);
+                        padding-top: 10px;
+                        padding-bottom: 1px;
+                        border-radius: 0 10px 10px 0;
+                    }
+                    </style>
                 """, unsafe_allow_html=True)
                 
+                st.title("⚠️ Módulo de Quejas e Incidencias")
                 
-                # ── COPIA SEGURA PARA EDITOR ──
-                df_base = st.session_state.df_gastos.copy()
+                # ── 1. PANEL DE CAPTURA MANUAL E INTELIGENTE ─────────────────────────────────────────
+                with st.expander("➕ Registrar o Editar Incidencia / Queja", expanded=True):
+                    
+                    # --- FILA SUPERIOR: BÚSQUEDA Y CONTROL ---
+                    c1, c2, c3 = st.columns([2, 1, 1])
+                    
+                    with c1:
+                        n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Buscar datos en la Matriz Global...").strip().upper()
+                    
+                    # Lógica de Folios Automáticos para las Incidencias (Ej: INC-001)
+                    if not st.session_state.df_incidencias.empty and "FOLIO" in st.session_state.df_incidencias.columns:
+                        folios_numeros = st.session_state.df_incidencias['FOLIO'].str.extract(r'INC-(\d+)')[0].dropna().astype(int)
+                        if not folios_numeros.empty:
+                            ultimo_folio = folios_numeros.max()
+                            sugerencia_folio = f"INC-{ultimo_folio + 1:03d}"
+                        else:
+                            sugerencia_folio = "INC-001"
+                    else:
+                        sugerencia_folio = "INC-001"
+                        
+                    with c2:
+                        t_folio_input = st.text_input("Folio ID (Buscar o Nuevo)", value=sugerencia_folio).strip().upper()
+                        
+                    # Lógica para detectar si estamos editando una incidencia existente
+                    incidencia_existente = None
+                    mask = None
+                    if t_folio_input and not st.session_state.df_incidencias.empty:
+                        mask = st.session_state.df_incidencias['FOLIO'] == t_folio_input
+                        if mask.any():
+                            incidencia_existente = st.session_state.df_incidencias[mask].iloc[0]
+                            st.info(f"✨ Modo Edición Activado: Cargando datos del Folio {t_folio_input}")
+                            
+                    with c3:
+                        prioridades = ["Media", "Urgente", "Alta", "Baja"]
+                        idx_prio = prioridades.index(incidencia_existente['PRIORIDAD']) if incidencia_existente is not None else 0
+                        t_prior = st.selectbox("Gravedad / Prioridad", prioridades, index=idx_prio)
                 
-                # 🔥 Forzar tipos exactos
-                columnas_texto = [
-                    "FECHA", "ID", "QUEJA", "ESTATUS",
-                    "INCONFORMIDAD", "AGENTE", "ULTIMA ACCION"
-                ]
+                    # Auto-relleno desde la Matriz Global si se detecta número de pedido
+                    info_matriz = {"cliente_destino": "", "detalle": ""}
+                    if n_pedido and df_global is not None:
+                        res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
+                        if not res.empty:
+                            fila_m = res.iloc[0]
+                            guia = fila_m.get('NÚMERO DE GUÍA', 'N/A')
+                            cliente = fila_m.get('NOMBRE DEL CLIENTE', 'N/A')
+                            destino = fila_m.get('DESTINO', 'N/A')
+                            info_matriz["cliente_destino"] = f"CLIENTE: {cliente} | DESTINO: {destino}"
+                            info_matriz["detalle"] = f"PEDIDO: {n_pedido} | GUIA: {guia}"
+                        else:
+                            st.error("❌ Pedido no localizado en la Matriz Global. Puedes llenar los campos a mano.")
                 
-                for col in columnas_texto:
-                    df_base[col] = df_base[col].astype("string")
+                    # --- FORMULARIO DE CAPTURA CON ENTRADAS MANUALES ---
+                    with st.form("form_incidencias_manual", clear_on_submit=True):
+                        f2_c1, f2_c2 = st.columns([1, 1])
+                        
+                        with f2_c1:
+                            val_pedido = n_pedido if n_pedido else (incidencia_existente['PEDIDO_FACTURA'] if incidencia_existente is not None else "")
+                            t_pedido_final = st.text_input("Número de Pedido / Factura", value=val_pedido)
+                            
+                            # Puedes renombrar las etiquetas de estos campos manuales según lo que venía en tu imagen, cielo:
+                            val_m1 = info_matriz["cliente_destino"] if info_matriz["cliente_destino"] else (incidencia_existente['CAMPO_MANUAL_1'] if incidencia_existente is not None else "")
+                            t_manual_1 = st.text_input("Campo Manual 1 (Ej. Cliente / Destino)", value=val_m1)
+                            
+                            val_m2 = info_matriz["detalle"] if info_matriz["detalle"] else (incidencia_existente['CAMPO_MANUAL_2'] if incidencia_existente is not None else "")
+                            t_manual_2 = st.text_input("Campo Manual 2 (Ej. Detalle de la Falla)", value=val_m2)
+                            
+                        with f2_c2:
+                            val_m3 = incidencia_existente['CAMPO_MANUAL_3'] if incidencia_existente is not None else ""
+                            t_manual_3 = st.text_input("Campo Manual 3 (Ej. Responsable / Transportista)", value=val_m3)
+                            
+                            val_m4 = incidencia_existente['CAMPO_MANUAL_4'] if incidencia_existente is not None else ""
+                            t_manual_4 = st.text_input("Campo Manual 4 (Ej. Solución / Compromiso)", value=val_m4)
+                            
+                            estatus_opciones = ["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]
+                            idx_estatus = estatus_opciones.index(incidencia_existente['ESTATUS']) if incidencia_existente is not None else 0
+                            t_estatus = st.selectbox("Estatus de la Incidencia", estatus_opciones, index=idx_estatus)
                 
-                df_base["GASTOS ADICIONALES"] = pd.to_numeric(
-                    df_base["GASTOS ADICIONALES"],
-                    errors="coerce"
-                ).fillna(0.0).astype("float64")  # 👈 esto es CLAVE
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        texto_boton = "🔄 ACTUALIZAR INCIDENCIA" if incidencia_existente is not None else "💾 REGISTRAR QUEJA / INCIDENCIA"
+                        enviar = st.form_submit_button(texto_boton, use_container_width=True)
+                        
+                        if enviar:
+                            # Consolidamos los datos
+                            folio_final = t_folio_input if t_folio_input else sugerencia_folio
+                            
+                            nueva_data = {
+                                "FOLIO": folio_final,
+                                "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO HERNÁNDEZ'),
+                                "PRIORIDAD": t_prior,
+                                "PEDIDO_FACTURA": t_pedido_final.upper(),
+                                "CAMPO_MANUAL_1": t_manual_1.upper(),
+                                "CAMPO_MANUAL_2": t_manual_2.upper(),
+                                "CAMPO_MANUAL_3": t_manual_3.upper(),
+                                "CAMPO_MANUAL_4": t_manual_4.upper(),
+                                "ESTATUS": t_estatus
+                            }
+                            
+                            if incidencia_existente is not None and mask is not None:
+                                df_temp = st.session_state.df_incidencias[~mask]
+                                df_final = pd.concat([df_temp, pd.DataFrame([nueva_data])], ignore_index=True)
+                            else:
+                                df_final = pd.concat([st.session_state.df_incidencias, pd.DataFrame([nueva_data])], ignore_index=True)
+                                
+                            if guardar_en_github(df_final):
+                                st.session_state.df_incidencias = df_final
+                                st.success("✅ ¡Registro procesado correctamente!")
+                                time.sleep(1)
+                                st.rerun()
                 
-                # ── EDITOR DE DATOS ──
-                df_editado = st.data_editor(
-                    df_base,
-                    use_container_width=True,
-                    num_rows="dynamic",
-                    row_height=90, 
-                    key="editor_gastos_v_final_secure",
-                    column_config={
-                        "FECHA": st.column_config.TextColumn("FECHA"),
-                        "ID": st.column_config.TextColumn("ID"),
-                        "QUEJA": st.column_config.TextColumn("QUEJA"),
-                        "ESTATUS": st.column_config.TextColumn("ESTATUS"),
-                        "INCONFORMIDAD": st.column_config.TextColumn("INCONFORMIDAD"),
-                        "AGENTE": st.column_config.TextColumn("AGENTE"),
-                        "ULTIMA ACCION": st.column_config.TextColumn("ÚLTIMA ACCIÓN"),
-                        "GASTOS ADICIONALES": st.column_config.NumberColumn(
-                            "GASTOS ADICIONALES",
-                            format="$%.2f"
-                        )
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ESTILIZADO ─────────────────────────────────────
+                with st.expander("📋 Monitor de Pendientes e Incidencias", expanded=True):
+                    prioridad_colores = {
+                        "Urgente": "#ff4b4b",
+                        "Alta": "#f97316",
+                        "Media": "#38bdf8",
+                        "Baja": "#00FFAA"
                     }
-                )
+                    
+                    if df_master.empty:
+                        st.info("No hay incidencias registradas en este momento, amor.")
+                    else:
+                        for index, row in df_master.iterrows():
+                            if not str(row["FOLIO"]).strip():
+                                continue
+                                
+                            color_p = prioridad_colores.get(row["PRIORIDAD"], "#94a3b8")
+                            
+                            html_card = f"""
+                            <div style="border-left: 5px solid {color_p}; padding: 15px; margin-bottom: 15px; background: rgba(30, 39, 46, 0.7); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                    <div style="flex: 1; min-width: 120px;">
+                                        <span style="font-size: 10px; color: {color_p}; font-weight: 800; letter-spacing: 1px;">FOLIO INCIDENCIA</span>
+                                        <div style="font-size: 18px; font-weight: 800; color: white;">{row['FOLIO']}</div>
+                                        <span style="font-size: 11px; color: #a855f7; font-weight: bold;">DOC: {row['PEDIDO_FACTURA']}</span>
+                                    </div>
+                                    <div style="flex: 3; min-width: 250px; padding: 0 10px;">
+                                        <div style="font-size: 13px; font-weight: 700; color: #e2e8f0;"><strong style="color:#94a3b8;">Ref 1:</strong> {row['CAMPO_MANUAL_1']}</div>
+                                        <div style="font-size: 13px; font-weight: 700; color: #e2e8f0;"><strong style="color:#94a3b8;">Ref 2:</strong> {row['CAMPO_MANUAL_2']}</div>
+                                        <div style="font-size: 11px; color: #64748b; margin-top: 5px;">
+                                            ✍️ Por: {row['USUARIO']} | 📂 M1: {row['CAMPO_MANUAL_3']} | 📂 M2: {row['CAMPO_MANUAL_4']}
+                                        </div>
+                                    </div>
+                                    <div style="flex: 1; text-align: right; min-width: 100px;">
+                                        <span style="font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 800;">ESTATUS</span>
+                                        <div style="font-size: 14px; font-weight: bold; color: white; background: {color_p}33; padding: 4px 8px; border-radius: 5px; border: 1px solid {color_p}; text-align: center; margin-top: 5px;">
+                                            {row['ESTATUS']}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            """
+                            st.markdown(html_card, unsafe_allow_html=True)
                 
-                # 🔥 BLINDAJE POST-EDICIÓN
-                df_editado["GASTOS ADICIONALES"] = (
-                    df_editado["GASTOS ADICIONALES"]
-                    .astype(str)
-                    .str.replace("$", "", regex=False)
-                    .str.replace(",", "", regex=False)
-                    .str.strip()
-                )
-                
-                df_editado["GASTOS ADICIONALES"] = pd.to_numeric(
-                    df_editado["GASTOS ADICIONALES"], errors="coerce"
-                ).fillna(0.0)
-                
-                
-                # ── PREPARACIÓN DE IMPRESIÓN ──
-                df_editado.columns = [str(c).upper().strip() for c in df_editado.columns]
-                
-                filas_v = df_editado[
-                    df_editado["ID"].notna() &
-                    (df_editado["ID"].astype(str).str.strip() != "")
-                ].copy()
-                
-                tabla_html = ""
-                
-                if not filas_v.empty:
-                    for _, r in filas_v.iterrows():
-                        costo_fmt = f"${float(r.get('GASTOS ADICIONALES', 0)):,.2f}"
-                        tabla_html += f"""
-                        <tr>
-                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('FECHA', '')}</td>
-                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ID', '')}</td>
-                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('QUEJA', '')}</td>
-                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ESTATUS', '')}</td>
-                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('INCONFORMIDAD', '')}</td>
-                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('AGENTE', '')}</td>
-                            <td style='border:1px solid #000;padding:5px;font-size:10px;'>{r.get('ULTIMA ACCION', '')}</td>
-                            <td style='border:1px solid #000;padding:5px;font-size:10px;text-align:right;'>{costo_fmt}</td>
-                        </tr>"""
-                
-                total_c = filas_v["GASTOS ADICIONALES"].sum() if not filas_v.empty else 0
-                
-                form_print = f"""
-                <div style="font-family:Arial; padding:20px; color:black; background:white;">
-                    <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:10px; margin-bottom:15px;">
-                        <div><h2 style="margin:0; letter-spacing:2px;">JYPESA</h2><p style="margin:0; font-size:9px; letter-spacing:1px;">AUTOMATIZACIÓN DE PROCESOS</p></div>
-                        <div style="text-align:right; font-size:10px;"><b>FECHA REPORTE:</b> {datetime.now().strftime('%d/%m/%Y')}<br><b>HORA:</b> {datetime.now().strftime('%I:%M %p').lower()}</div>
+                # ── 3. EDITOR DE AVANZADO (SOLO ADMINISTRACIÓN) & BOTONES EXPORTADORES ─────────────────
+                with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
+                    st.subheader("Modo edición avanzada de Incidencias")
+                    
+                    df_editor = df_master.copy()
+                    for col in COLUMNAS_INCIDENCIAS:
+                        df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+                        
+                    df_editado = st.data_editor(
+                        df_editor,
+                        hide_index=True,
+                        use_container_width=True,
+                        num_rows="dynamic",
+                        column_config={
+                            "FOLIO": st.column_config.TextColumn("Folio ID"),
+                            "USUARIO": st.column_config.TextColumn("Registró"),
+                            "PRIORIDAD": st.column_config.SelectboxColumn("Prioridad", options=["Urgente", "Alta", "Media", "Baja"]),
+                            "PEDIDO_FACTURA": st.column_config.TextColumn("Pedido/Factura"),
+                            "CAMPO_MANUAL_1": st.column_config.TextColumn("Manual 1"),
+                            "CAMPO_MANUAL_2": st.column_config.TextColumn("Manual 2"),
+                            "CAMPO_MANUAL_3": st.column_config.TextColumn("Manual 3"),
+                            "CAMPO_MANUAL_4": st.column_config.TextColumn("Manual 4"),
+                            "ESTATUS": st.column_config.SelectboxColumn("Estatus", options=["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]),
+                        }
+                    )
+                    
+                    # Preparación de HTML optimizado para la impresión física
+                    html_print = f"""
+                    <style>
+                        @media print {{
+                            @page {{ size: letter; margin: 0.5cm; }}
+                            body {{ margin: 0; padding: 0; color: black; background: white; }}
+                        }}
+                        #printableArea {{
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            width: 100%;
+                            border: 2px solid black;
+                            padding: 10px;
+                        }}
+                        table {{
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 10px;
+                        }}
+                        th {{
+                            background-color: #000 !important;
+                            color: #fff !important;
+                            font-size: 11px;
+                            border: 1px solid black;
+                            padding: 5px;
+                        }}
+                        td {{
+                            border: 1px solid black;
+                            padding: 5px;
+                            font-size: 10px;
+                        }}
+                    </style>
+                    <div id="printableArea">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 5px;">
+                            <div>
+                                <h2 style="margin: 0; font-size: 16px;">JYPESA - Control de Logística</h2>
+                                <small style="font-size: 9px;">Módulo de Administración de Incidencias y Quejas</small>
+                            </div>
+                            <div style="text-align: right;">
+                                <h3 style="margin: 0; font-size: 14px;">REPORTE GLOBAL</h3>
+                                <p style="margin: 0; font-size: 10px;">FECHA: {datetime.now().strftime('%Y-%m-%d')}</p>
+                            </div>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    {"".join([f'<th>{col}</th>' for col in COLUMNAS_INCIDENCIAS])}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {"".join([
+                                    f'<tr>{"".join([f"<td>{row[col]}</td>" for col in COLUMNAS_INCIDENCIAS])}</tr>'
+                                    for _, row in df_editado.iterrows()
+                                ])}
+                            </tbody>
+                        </table>
                     </div>
-                    <h4 style="text-align:center; text-transform:uppercase; margin-bottom:20px;">Reporte Detallado de Seguimiento de Quejas</h4>
-                    <table style="width:100%; border-collapse:collapse;">
-                        <thead><tr style="background:#eee; font-size:10px;">
-                            <th>FECHA</th><th>ID</th><th>QUEJA</th><th>ESTATUS</th><th>INCONFORMIDAD</th><th>AGENTE</th><th>ÚLTIMA ACCIÓN</th><th>GASTOS ADICIONALES</th>
-                        </tr></thead>
-                        <tbody>{tabla_html}</tbody>
-                        <tfoot><tr style="font-weight:bold; background:#eee; font-size:11px;">
-                            <td colspan="7" style="border:1px solid #000; text-align:right; padding:5px;">TOTAL GENERAL:</td>
-                            <td style="border:1px solid #000; text-align:right; padding:5px;">${total_c:,.2f}</td>
-                        </tr></tfoot>
-                    </table>
-                    <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center; font-size:10px;">
-                        <div style="width:40%; border-top:1px solid black;">ELABORÓ<br>Rigoberto Hernandez / Cord. Logística</div>
-                        <div style="width:40%; border-top:1px solid black;">AUTORIZÓ<br>Dirección de Operaciones</div>
-                    </div>
-                </div>"""
+                    """
                 
-                
-                # ── BOTONES ──
-                st.markdown("<br>", unsafe_allow_html=True)
-                c1, c2, c3 = st.columns(3)
-                
-                with c1:
-                    if st.button(":material/refresh: ACTUALIZAR", use_container_width=True):
-                        st.session_state.df_gastos = cargar_datos_gastos()
-                        st.rerun()
-                
-                with c2:
-                    if st.button(":material/save: GUARDAR", type="primary", use_container_width=True):
-                        if guardar_en_github(df_editado):
-                            st.session_state.df_gastos = df_editado
-                            st.toast("Sincronización exitosa", icon="✅")
-                            time.sleep(1)
-                            st.rerun()
-                
-                with c3:
-                    if st.button(":material/print: IMPRIMIR", use_container_width=True):
-                        components.html(
-                            f"<html><body>{form_print}<script>window.print();</script></body></html>",
-                            height=0
+                    # --- FILA DE ACCIONES Y BOTONES DE BAJADA ---
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        if st.button("🔄 SINCRONIZAR", use_container_width=True):
+                            if guardar_en_github(df_editado):
+                                st.session_state.df_incidencias = df_editado
+                                st.rerun()
+                                
+                    with col2:
+                        import streamlit.components.v1 as components
+                        if st.button("🖨️ IMPRIMIR REPORTES", use_container_width=True):
+                            components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
+                            
+                    with col3:
+                        buffer = io.BytesIO()
+                        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                            df_editado.to_excel(writer, index=False, sheet_name='Incidencias')
+                            
+                        st.download_button(
+                            label="📊 BAJAR EXCEL",
+                            data=buffer.getvalue(),
+                            file_name="incidencias_nexion.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
                         )
-                        st.toast("Generando vista previa", icon="🖨️")
-                
-            else:
-                st.subheader("MÓDULO DE SEGUIMIENTO")
-                st.write("Seleccione una sub-categoría en la barra superior.")
     
         # 3. REPORTES
         elif st.session_state.menu_main == "REPORTES":
