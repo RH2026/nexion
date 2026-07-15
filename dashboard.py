@@ -5016,29 +5016,28 @@ else:
                                 time.sleep(1)
                                 st.rerun()
                 
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ───────────────────────────────────────────────
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (HOVER AZUL NEXION EN CONTORNO) ───────────
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ──────────────────────────────────────────────
                 st.markdown("""
                 <style>
                     .card-hover {
-                        /* Borde inicial sutil para que combine con el diseño */
+                        /* Borde inicial sutil */
                         border: 1px solid #3d474d;
-                        border-left: 5px solid; /* Mantenemos la franja de prioridad original */
+                        border-left: 5px solid;
                         transition: transform 0.2s, background-color 0.2s, border-color 0.3s !important;
                     }
                     .card-hover:hover {
                         transform: scale(1.01);
                         background-color: #313a40 !important;
-                        /* Aquí está el cambio: contorno completo en Azul Nexion al hacer hover */
+                        /* Contorno completo en Azul Nexion */
                         border: 1px solid #38bdf8 !important;
                         border-left: 5px solid #38bdf8 !important;
                         cursor: pointer;
-                        box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
+                        /* AQUÍ QUITAMOS EL box-shadow PARA ELIMINAR EL RESPLANDOR */
                     }
                 </style>
                 """, unsafe_allow_html=True)
                 
-                st.subheader("📋 MONITOR DE PENDIENTES E INCIDENCIAS")
+                
                 prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                 estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
                 
