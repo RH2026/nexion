@@ -4773,18 +4773,17 @@ else:
     
             
             elif st.session_state.menu_sub == "QUEJAS":
-                st.markdown("<br><br>", unsafe_allow_html=True)
                 # ── CONFIGURACIÓN DEL REPOSITORIO DE INCIDENCIAS ─────────────────────────────────────
                 TOKEN = st.secrets.get("GITHUB_TOKEN", None)
                 REPO_NAME = "RH2026/nexion"
-                FILE_PATH = "incidencias.csv"  # <--- Cambiado a incidencias.csv mi amor
+                FILE_PATH = "incidencias.csv"
                 CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
                 MATRIZ_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/Matriz_Excel_Dashboard.csv"
                 
-                # Definición de las nuevas columnas para tu módulo de quejas
+                # Actualizamos las columnas con los nombres correctos que me pediste amor
                 COLUMNAS_INCIDENCIAS = [
-                    "FOLIO", "USUARIO", "PRIORIDAD", "PEDIDO_FACTURA", 
-                    "CAMPO_MANUAL_1", "CAMPO_MANUAL_2", "CAMPO_MANUAL_3", "CAMPO_MANUAL_4", 
+                    "FOLIO", "USUARIO", "PRIORIDAD", "VINCULO_BUSQUEDA", 
+                    "CLIENTE_DESTINO", "PEDIDO_GUIA", "ID_SEGUIMIENTO", "ID_QUEJA", 
                     "ESTATUS"
                 ]
                 
@@ -4849,14 +4848,12 @@ else:
                             df = pd.read_csv(StringIO(r.text))
                             df.columns = [c.strip().upper() for c in df.columns]
                             
-                            # Validar que no falte ninguna columna
                             for c in COLUMNAS_INCIDENCIAS:
                                 if c not in df.columns:
                                     df[c] = ""
                             return df[COLUMNAS_INCIDENCIAS]
                             
                         elif r.status_code == 404:
-                            # Si el archivo no existe amor, lo inicializamos vacío y lo creamos automáticamente
                             df_nuevo = pd.DataFrame(columns=COLUMNAS_INCIDENCIAS)
                             guardar_en_github(df_nuevo)
                             return df_nuevo
@@ -4865,7 +4862,6 @@ else:
                         
                     return pd.DataFrame(columns=COLUMNAS_INCIDENCIAS)
                 
-                # ── GESTIÓN DE ESTADO DE SESIÓN ──────────────────────────────────────────────────────
                 if "df_incidencias" not in st.session_state:
                     st.session_state.df_incidencias = cargar_datos_seguro()
                     
@@ -4892,16 +4888,16 @@ else:
                 
                 st.title("⚠️ Módulo de Quejas e Incidencias")
                 
-                # ── 1. PANEL DE CAPTURA MANUAL E INTELIGENTE ─────────────────────────────────────────
+                # ── 1. PANEL DE CAPTURA INTELIGENTE ──────────────────────────────────────────────────
                 with st.expander("➕ Registrar o Editar Incidencia / Queja", expanded=True):
                     
                     # --- FILA SUPERIOR: BÚSQUEDA Y CONTROL ---
                     c1, c2, c3 = st.columns([2, 1, 1])
                     
                     with c1:
-                        n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Buscar datos en la Matriz Global...").strip().upper()
+                        n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Escribe pedido para autollenar...").strip().upper()
                     
-                    # Lógica de Folios Automáticos para las Incidencias (Ej: INC-001)
+                    # Lógica de Folios
                     if not st.session_state.df_incidencias.empty and "FOLIO" in st.session_state.df_incidencias.columns:
                         folios_numeros = st.session_state.df_incidencias['FOLIO'].str.extract(r'INC-(\d+)')[0].dropna().astype(int)
                         if not folios_numeros.empty:
@@ -4915,7 +4911,6 @@ else:
                     with c2:
                         t_folio_input = st.text_input("Folio ID (Buscar o Nuevo)", value=sugerencia_folio).strip().upper()
                         
-                    # Lógica para detectar si estamos editando una incidencia existente
                     incidencia_existente = None
                     mask = None
                     if t_folio_input and not st.session_state.df_incidencias.empty:
@@ -4926,11 +4921,11 @@ else:
                             
                     with c3:
                         prioridades = ["Media", "Urgente", "Alta", "Baja"]
-                        idx_prio = prioridades.index(incidencia_existente['PRIORIDAD']) if incidencia_existente is not None else 0
+                        idx_prio = prioridades.index(incidencia_existente['PRIORIDAD']) if incidencia_existente is not None and incidencia_existente['PRIORIDAD'] in prioridades else 0
                         t_prior = st.selectbox("Gravedad / Prioridad", prioridades, index=idx_prio)
                 
-                    # Auto-relleno desde la Matriz Global si se detecta número de pedido
-                    info_matriz = {"cliente_destino": "", "detalle": ""}
+                    # Auto-relleno desde la Matriz Global
+                    info_matriz = {"cliente_destino": "", "pedido_guia": ""}
                     if n_pedido and df_global is not None:
                         res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
                         if not res.empty:
@@ -4939,53 +4934,54 @@ else:
                             cliente = fila_m.get('NOMBRE DEL CLIENTE', 'N/A')
                             destino = fila_m.get('DESTINO', 'N/A')
                             info_matriz["cliente_destino"] = f"CLIENTE: {cliente} | DESTINO: {destino}"
-                            info_matriz["detalle"] = f"PEDIDO: {n_pedido} | GUIA: {guia}"
+                            info_matriz["pedido_guia"] = f"PEDIDO: {n_pedido} | GUIA: {guia}"
                         else:
-                            st.error("❌ Pedido no localizado en la Matriz Global. Puedes llenar los campos a mano.")
+                            st.warning("⚠️ Pedido no localizado en la Matriz. Puedes llenar o modificar los campos abajo a mano.")
                 
-                    # --- FORMULARIO DE CAPTURA CON ENTRADAS MANUALES ---
-                    with st.form("form_incidencias_manual", clear_on_submit=True):
+                    # --- FORMULARIO DE CAPTURA ---
+                    with st.form("form_incidencias", clear_on_submit=True):
                         f2_c1, f2_c2 = st.columns([1, 1])
                         
                         with f2_c1:
-                            val_pedido = n_pedido if n_pedido else (incidencia_existente['PEDIDO_FACTURA'] if incidencia_existente is not None else "")
-                            t_pedido_final = st.text_input("Número de Pedido / Factura", value=val_pedido)
+                            # Estos se llenan solitos por la matriz, pero te los dejo editables por si necesitas corregir algo rápido
+                            val_cd = info_matriz["cliente_destino"] if info_matriz["cliente_destino"] else (incidencia_existente['CLIENTE_DESTINO'] if incidencia_existente is not None else "")
+                            t_cliente_destino = st.text_input("CLIENTE / DESTINO", value=val_cd)
                             
-                            # Puedes renombrar las etiquetas de estos campos manuales según lo que venía en tu imagen, cielo:
-                            val_m1 = info_matriz["cliente_destino"] if info_matriz["cliente_destino"] else (incidencia_existente['CAMPO_MANUAL_1'] if incidencia_existente is not None else "")
-                            t_manual_1 = st.text_input("Campo Manual 1 (Ej. Cliente / Destino)", value=val_m1)
-                            
-                            val_m2 = info_matriz["detalle"] if info_matriz["detalle"] else (incidencia_existente['CAMPO_MANUAL_2'] if incidencia_existente is not None else "")
-                            t_manual_2 = st.text_input("Campo Manual 2 (Ej. Detalle de la Falla)", value=val_m2)
+                            val_pg = info_matriz["pedido_guia"] if info_matriz["pedido_guia"] else (incidencia_existente['PEDIDO_GUIA'] if incidencia_existente is not None else "")
+                            t_pedido_guia = st.text_input("PEDIDO / GUÍA", value=val_pg)
                             
                         with f2_c2:
-                            val_m3 = incidencia_existente['CAMPO_MANUAL_3'] if incidencia_existente is not None else ""
-                            t_manual_3 = st.text_input("Campo Manual 3 (Ej. Responsable / Transportista)", value=val_m3)
+                            # Tus nuevos campos manuales amor
+                            val_id_seg = incidencia_existente['ID_SEGUIMIENTO'] if incidencia_existente is not None else ""
+                            t_id_seguimiento = st.text_input("ID SEGUIMIENTO", value=val_id_seg)
                             
-                            val_m4 = incidencia_existente['CAMPO_MANUAL_4'] if incidencia_existente is not None else ""
-                            t_manual_4 = st.text_input("Campo Manual 4 (Ej. Solución / Compromiso)", value=val_m4)
+                            val_id_queja = incidencia_existente['ID_QUEJA'] if incidencia_existente is not None else ""
+                            t_id_queja = st.text_input("ID DE QUEJA", value=val_id_queja)
                             
-                            estatus_opciones = ["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]
-                            idx_estatus = estatus_opciones.index(incidencia_existente['ESTATUS']) if incidencia_existente is not None else 0
-                            t_estatus = st.selectbox("Estatus de la Incidencia", estatus_opciones, index=idx_estatus)
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # Estatus abarcando el ancho completo abajo de los inputs
+                        estatus_opciones = ["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]
+                        idx_estatus = estatus_opciones.index(incidencia_existente['ESTATUS']) if incidencia_existente is not None and incidencia_existente['ESTATUS'] in estatus_opciones else 0
+                        t_estatus = st.selectbox("Estatus de la Incidencia", estatus_opciones, index=idx_estatus)
                 
                         st.markdown("<br>", unsafe_allow_html=True)
                         texto_boton = "🔄 ACTUALIZAR INCIDENCIA" if incidencia_existente is not None else "💾 REGISTRAR QUEJA / INCIDENCIA"
                         enviar = st.form_submit_button(texto_boton, use_container_width=True)
                         
                         if enviar:
-                            # Consolidamos los datos
                             folio_final = t_folio_input if t_folio_input else sugerencia_folio
+                            busqueda_final = n_pedido if n_pedido else (incidencia_existente['VINCULO_BUSQUEDA'] if incidencia_existente is not None else "")
                             
                             nueva_data = {
                                 "FOLIO": folio_final,
                                 "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO HERNÁNDEZ'),
                                 "PRIORIDAD": t_prior,
-                                "PEDIDO_FACTURA": t_pedido_final.upper(),
-                                "CAMPO_MANUAL_1": t_manual_1.upper(),
-                                "CAMPO_MANUAL_2": t_manual_2.upper(),
-                                "CAMPO_MANUAL_3": t_manual_3.upper(),
-                                "CAMPO_MANUAL_4": t_manual_4.upper(),
+                                "VINCULO_BUSQUEDA": busqueda_final.upper(),
+                                "CLIENTE_DESTINO": t_cliente_destino.upper(),
+                                "PEDIDO_GUIA": t_pedido_guia.upper(),
+                                "ID_SEGUIMIENTO": t_id_seguimiento.upper(),
+                                "ID_QUEJA": t_id_queja.upper(),
                                 "ESTATUS": t_estatus
                             }
                             
@@ -4997,11 +4993,11 @@ else:
                                 
                             if guardar_en_github(df_final):
                                 st.session_state.df_incidencias = df_final
-                                st.success("✅ ¡Registro procesado correctamente!")
+                                st.success("✅ ¡Registro procesado correctamente, amor!")
                                 time.sleep(1)
                                 st.rerun()
                 
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ESTILIZADO ─────────────────────────────────────
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
                 with st.expander("📋 Monitor de Pendientes e Incidencias", expanded=True):
                     prioridad_colores = {
                         "Urgente": "#ff4b4b",
@@ -5011,7 +5007,7 @@ else:
                     }
                     
                     if df_master.empty:
-                        st.info("No hay incidencias registradas en este momento, amor.")
+                        st.info("No hay incidencias registradas en este momento.")
                     else:
                         for index, row in df_master.iterrows():
                             if not str(row["FOLIO"]).strip():
@@ -5025,13 +5021,16 @@ else:
                                     <div style="flex: 1; min-width: 120px;">
                                         <span style="font-size: 10px; color: {color_p}; font-weight: 800; letter-spacing: 1px;">FOLIO INCIDENCIA</span>
                                         <div style="font-size: 18px; font-weight: 800; color: white;">{row['FOLIO']}</div>
-                                        <span style="font-size: 11px; color: #a855f7; font-weight: bold;">DOC: {row['PEDIDO_FACTURA']}</span>
+                                        <span style="font-size: 11px; color: #a855f7; font-weight: bold;">{row['PEDIDO_GUIA']}</span>
                                     </div>
                                     <div style="flex: 3; min-width: 250px; padding: 0 10px;">
-                                        <div style="font-size: 13px; font-weight: 700; color: #e2e8f0;"><strong style="color:#94a3b8;">Ref 1:</strong> {row['CAMPO_MANUAL_1']}</div>
-                                        <div style="font-size: 13px; font-weight: 700; color: #e2e8f0;"><strong style="color:#94a3b8;">Ref 2:</strong> {row['CAMPO_MANUAL_2']}</div>
-                                        <div style="font-size: 11px; color: #64748b; margin-top: 5px;">
-                                            ✍️ Por: {row['USUARIO']} | 📂 M1: {row['CAMPO_MANUAL_3']} | 📂 M2: {row['CAMPO_MANUAL_4']}
+                                        <div style="font-size: 13px; font-weight: 700; color: #e2e8f0;">{row['CLIENTE_DESTINO']}</div>
+                                        <div style="font-size: 11px; color: #64748b; margin-top: 8px; font-weight: bold;">
+                                            ID SEGUIMIENTO: <span style="color:#e2e8f0;">{row['ID_SEGUIMIENTO']}</span> | 
+                                            ID QUEJA: <span style="color:#e2e8f0;">{row['ID_QUEJA']}</span>
+                                        </div>
+                                        <div style="font-size: 10px; color: #38bdf8; margin-top: 5px;">
+                                            👤 Registró: {row['USUARIO']}
                                         </div>
                                     </div>
                                     <div style="flex: 1; text-align: right; min-width: 100px;">
@@ -5045,9 +5044,9 @@ else:
                             """
                             st.markdown(html_card, unsafe_allow_html=True)
                 
-                # ── 3. EDITOR DE AVANZADO (SOLO ADMINISTRACIÓN) & BOTONES EXPORTADORES ─────────────────
+                # ── 3. EDITOR DE AVANZADO (SOLO ADMINISTRACIÓN) & EXPORTADORES ───────────────────────
                 with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
-                    st.subheader("Modo edición avanzada de Incidencias")
+                    st.subheader("Modo edición avanzada")
                     
                     df_editor = df_master.copy()
                     for col in COLUMNAS_INCIDENCIAS:
@@ -5062,66 +5061,45 @@ else:
                             "FOLIO": st.column_config.TextColumn("Folio ID"),
                             "USUARIO": st.column_config.TextColumn("Registró"),
                             "PRIORIDAD": st.column_config.SelectboxColumn("Prioridad", options=["Urgente", "Alta", "Media", "Baja"]),
-                            "PEDIDO_FACTURA": st.column_config.TextColumn("Pedido/Factura"),
-                            "CAMPO_MANUAL_1": st.column_config.TextColumn("Manual 1"),
-                            "CAMPO_MANUAL_2": st.column_config.TextColumn("Manual 2"),
-                            "CAMPO_MANUAL_3": st.column_config.TextColumn("Manual 3"),
-                            "CAMPO_MANUAL_4": st.column_config.TextColumn("Manual 4"),
+                            "VINCULO_BUSQUEDA": st.column_config.TextColumn("Vínculo Buscado"),
+                            "CLIENTE_DESTINO": st.column_config.TextColumn("Cliente / Destino"),
+                            "PEDIDO_GUIA": st.column_config.TextColumn("Pedido / Guía"),
+                            "ID_SEGUIMIENTO": st.column_config.TextColumn("ID Seguimiento"),
+                            "ID_QUEJA": st.column_config.TextColumn("ID Queja"),
                             "ESTATUS": st.column_config.SelectboxColumn("Estatus", options=["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]),
                         }
                     )
                     
-                    # Preparación de HTML optimizado para la impresión física
                     html_print = f"""
                     <style>
                         @media print {{
-                            @page {{ size: letter; margin: 0.5cm; }}
+                            @page {{ size: letter landscape; margin: 0.5cm; }}
                             body {{ margin: 0; padding: 0; color: black; background: white; }}
                         }}
-                        #printableArea {{
-                            font-family: 'Segoe UI', Arial, sans-serif;
-                            width: 100%;
-                            border: 2px solid black;
-                            padding: 10px;
-                        }}
-                        table {{
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin-top: 10px;
-                        }}
-                        th {{
-                            background-color: #000 !important;
-                            color: #fff !important;
-                            font-size: 11px;
-                            border: 1px solid black;
-                            padding: 5px;
-                        }}
-                        td {{
-                            border: 1px solid black;
-                            padding: 5px;
-                            font-size: 10px;
-                        }}
+                        #printableArea {{ font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid black; padding: 10px; }}
+                        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+                        th {{ background-color: #000 !important; color: #fff !important; font-size: 10px; border: 1px solid black; padding: 5px; }}
+                        td {{ border: 1px solid black; padding: 5px; font-size: 9px; word-wrap: break-word; }}
                     </style>
                     <div id="printableArea">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 5px;">
                             <div>
-                                <h2 style="margin: 0; font-size: 16px;">JYPESA - Control de Logística</h2>
-                                <small style="font-size: 9px;">Módulo de Administración de Incidencias y Quejas</small>
+                                <h2 style="margin: 0; font-size: 16px;">JYPESA - Logística NEXION</h2>
+                                <small style="font-size: 9px;">Reporte de Incidencias y Quejas</small>
                             </div>
                             <div style="text-align: right;">
-                                <h3 style="margin: 0; font-size: 14px;">REPORTE GLOBAL</h3>
                                 <p style="margin: 0; font-size: 10px;">FECHA: {datetime.now().strftime('%Y-%m-%d')}</p>
                             </div>
                         </div>
                         <table>
                             <thead>
                                 <tr>
-                                    {"".join([f'<th>{col}</th>' for col in COLUMNAS_INCIDENCIAS])}
+                                    {"".join([f'<th>{col}</th>' for col in COLUMNAS_INCIDENCIAS if col != 'VINCULO_BUSQUEDA'])}
                                 </tr>
                             </thead>
                             <tbody>
                                 {"".join([
-                                    f'<tr>{"".join([f"<td>{row[col]}</td>" for col in COLUMNAS_INCIDENCIAS])}</tr>'
+                                    f'<tr>{"".join([f"<td>{row[col]}</td>" for col in COLUMNAS_INCIDENCIAS if col != "VINCULO_BUSQUEDA"])}</tr>'
                                     for _, row in df_editado.iterrows()
                                 ])}
                             </tbody>
@@ -5129,7 +5107,6 @@ else:
                     </div>
                     """
                 
-                    # --- FILA DE ACCIONES Y BOTONES DE BAJADA ---
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
@@ -5140,7 +5117,7 @@ else:
                                 
                     with col2:
                         import streamlit.components.v1 as components
-                        if st.button("🖨️ IMPRIMIR REPORTES", use_container_width=True):
+                        if st.button("🖨️ IMPRIMIR", use_container_width=True):
                             components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
                             
                     with col3:
