@@ -982,11 +982,11 @@ if not st.session_state.get('splash_completado', False):
     ]
     
     for m in mensajes:
-        # Círculo más grande (90px) y más delgado (2px) para un look ultra minimalista
+        # Círculo minimalista azul con texto en blanco
         splash_html = f'''
         <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
             <div style="width:90px;height:90px;border:2px solid rgba(130, 212, 230, 0.15);border-top:2px solid #82D4E6;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:25px;"></div>
-            <p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#82D4E6;text-transform:uppercase;">
+            <p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#FFFFFF;text-transform:uppercase;">
                 {m}
             </p>
             <style>
