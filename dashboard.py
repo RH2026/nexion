@@ -982,18 +982,16 @@ if not st.session_state.get('splash_completado', False):
     ]
     
     for m in mensajes:
-        # Construimos el HTML dinámicamente con el mensaje 'm'
+        # Círculo con tu azul #82D4E6
         splash_html = f'''
         <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
-            <div style="font-size:24px;font-weight:800;color:#82D4E6;margin-bottom:20px;letter-spacing:2px;">
-                NEXION <span style="color:#ffffff;">LOGISTICS</span>
-            </div>
-            <div style="width:200px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
-                <div style="height:100%;width:100%;background:#82D4E6;box-shadow:0 0 10px #82D4E6;"></div>
-            </div>
-            <p style="margin-top:20px;font-family:monospace;font-size:10px;letter-spacing:3px;color:#82D4E6;text-transform:uppercase;">
+            <div style="width:60px;height:60px;border:4px solid rgba(130, 212, 230, 0.2);border-top:4px solid #82D4E6;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px;"></div>
+            <p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#82D4E6;text-transform:uppercase;">
                 {m}
             </p>
+            <style>
+                @keyframes spin {{ 100% {{ transform: rotate(360deg); }} }}
+            </style>
         </div>
         '''
         
