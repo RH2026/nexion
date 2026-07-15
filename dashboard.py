@@ -5021,14 +5021,14 @@ else:
                 <style>
                     .card-hover {
                         /* Mantenemos el borde sólido de 5px siempre activo */
-                        border-left: 5px solid;
+                        border-left: 3px solid;
                         transition: transform 0.2s, background-color 0.2s, border-left-color 0.3s !important;
                     }
                     .card-hover:hover {
                         transform: scale(1.01);
                         background-color: #313a40 !important;
                         /* Aquí forzamos que el borde sea sólido y del color azul Nexion */
-                        border-left: 5px solid #38bdf8 !important; 
+                        border-left: 3px solid #38bdf8 !important; 
                         cursor: pointer;
                         box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
                     }
