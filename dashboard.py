@@ -5017,55 +5017,50 @@ else:
                                 st.rerun()
                 
                 # ── 2. MONITOR DE QUEJAS Y PENDIENTES ────────────────────────────────────────────────
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (GRID PROFESIONAL Y HOVER) ───────────
-                st.markdown("""
-                <style>
-                    .card-hover {
-                        transition: transform 0.2s, background-color 0.2s, border-left-color 0.3s !important;
-                        border-left: 5px solid;
-                    }
-                    .card-hover:hover {
-                        transform: scale(1.02);
-                        background-color: #313a40 !important;
-                        border-left-color: #38bdf8 !important; 
-                        cursor: pointer;
-                        box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
-                    }
-                </style>
-                """, unsafe_allow_html=True)
-                
-                
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (GRID ESTILO SEGUIMIENTO) ───────────
                 prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                 estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
                 
                 if df_master.empty:
                     st.info("No hay incidencias registradas.")
                 else:
-                    # Usamos un iterador para poner las tarjetas en columnas (dos por fila)
-                    for i in range(0, len(df_master), 2):
-                        cols = st.columns(2)
-                        for j in range(2):
-                            if i + j < len(df_master):
-                                row = df_master.iloc[i + j]
-                                if not str(row.get("FOLIO", "")).strip(): continue
+                    for _, row in df_master.iterrows():
+                        if not str(row.get("FOLIO", "")).strip(): continue
+                        
+                        color_p = prioridad_colores.get(row.get("PRIORIDAD", "Baja"), "#94a3b8")
+                        f_est = row.get('ESTATUS', 'PENDIENTE')
+                        color_e = estatus_colores.get(f_est, "#64748b")
+                        
+                        # Estructura tipo Grid para aprovechar el ancho total
+                        st.markdown(f"""
+                        <div class="card-hover" style="border-left: 5px solid {color_p}; padding: 15px; margin-bottom: 10px; background: #262e33; border-radius: 5px; border: 1px solid #3d474d;">
+                            <div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr 1fr; gap: 15px; align-items: center;">
                                 
-                                color_p = prioridad_colores.get(row.get("PRIORIDAD", "Baja"), "#94a3b8")
-                                f_est = row.get('ESTATUS', 'PENDIENTE')
-                                color_e = estatus_colores.get(f_est, "#64748b")
+                                <div>
+                                    <div style="font-size: 0.7em; color: #888;">FOLIO / ESTATUS</div>
+                                    <div style="color: {color_p}; font-weight: bold; font-size: 1.1em;">{row.get('FOLIO', 'INC-???')}</div>
+                                    <span style="background: {color_e}33; color: {color_e}; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span>
+                                </div>
                                 
-                                with cols[j]:
-                                    st.markdown(f"""
-                                    <div class="card-hover" style="border-left-color: {color_p}; padding: 12px; margin-bottom: 15px; background: #262e33; border-radius: 8px; border: 1px solid #3d474d;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                            <b style="color: {color_p}; font-size: 1.1em;">{row.get('FOLIO', 'INC-???')}</b>
-                                            <span style="background: {color_e}33; color: {color_e}; border: 1px solid {color_e}; padding: 1px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75em;">{f_est}</span>
-                                        </div>
-                                        <div style="color: #fff; font-size: 0.95em;"><b>{row.get('CLIENTE_DESTINO', 'N/A')}</b></div>
-                                        <div style="color: #bbb; font-size: 0.8em; margin-bottom: 8px;">📦 {row.get('PEDIDO_GUIA', 'N/A')} | 👤 {row.get('RESPONSABLE', 'N/A')}</div>
-                                        <div style="color: #ddd; font-size: 0.85em;"><i>Detalle:</i> {row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div>
-                                        <div style="color: #38bdf8; font-size: 0.85em; margin-top: 4px;"><i>Acciones:</i> {row.get('ACCIONES', 'Sin acciones...')}</div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                                <div>
+                                    <div style="font-size: 0.7em; color: #888;">CLIENTE / PEDIDO</div>
+                                    <div style="color: #fff; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div>
+                                    <div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div>
+                                </div>
+                                
+                                <div>
+                                    <div style="font-size: 0.7em; color: #888;">DETALLE / ACCIONES</div>
+                                    <div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div>
+                                    <div style="font-size: 0.85em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div>
+                                </div>
+                                
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.7em; color: #888;">RESPONSABLE</div>
+                                    <div style="color: #fff; font-size: 0.9em;">👤 {row.get('RESPONSABLE', 'N/A')}</div>
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
                 
                 # ── 3. EDITOR DE AVANZADO ───────────────────────────────────────────────────────────
                 with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
