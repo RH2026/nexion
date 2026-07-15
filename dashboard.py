@@ -970,23 +970,24 @@ def login_screen():
                     st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
                     
 # ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP)
-#1. ¿FALTA MOSTRAR EL SPLASH?
+# 1. ¿FALTA MOSTRAR EL SPLASH?
 if not st.session_state.get('splash_completado', False):
     p = st.empty()
     
     mensajes = [
         "ESTABLISHING SECURE ACCESS...",
-        "LOADING LOGISTICS DATA...",
-        "SYNCHRONIZING WITH GITHUB REPO...",
+        "AUTHENTICATING NEXION GATEWAY...",
+        "LOGISTICS DATA FLOW INITIALIZING...",
         "SYSTEM READY..."
     ]
     
-    # Círculo con degradado de colores Mundial + Neón en una sola línea
-    circulo_mundial = '<div style="display:flex;justify-content:center;align-items:center;margin-bottom:30px;"><div style="width:80px;height:80px;border:3px solid transparent;border-top:3px solid #FFD700;border-bottom:3px solid #00FFAA;border-radius:50%;animation:spin 1s linear infinite;box-shadow:0 0 15px rgba(255,215,0,0.3);"><style>@keyframes spin{100%{transform:rotate(360deg);}}</style></div></div>'
+    # Barra de carga estilo Courier (DHL/FedEx) en una sola línea
+    # Usamos tu azul #82D4E6 para el progreso
+    splash_html = '<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><div style="font-size:24px;font-weight:800;color:#82D4E6;margin-bottom:20px;letter-spacing:2px;">NEXION <span style="color:#ffffff;">LOGISTICS</span></div><div style="width:200px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;"><div style="height:100%;width:0%;background:#82D4E6;box-shadow:0 0 10px #82D4E6;animation:load 2.8s linear forwards;"></div></div><p style="margin-top:20px;font-family:monospace;font-size:10px;letter-spacing:3px;color:#82D4E6;text-transform:uppercase;">{m}</p><style>@keyframes load{0%{width:0%;}100%{width:100%;}}</style></div>'
     
     for m in mensajes:
         with p.container():
-            st.markdown('<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">' + circulo_mundial + '<p style="margin-top:20px;font-family:monospace;font-size:11px;letter-spacing:4px;color:#EAEAEA;text-transform:uppercase;">' + m + '</p></div>', unsafe_allow_html=True)
+            st.markdown(splash_html.format(m=m), unsafe_allow_html=True)
             time.sleep(0.7)
             
     p.empty()
