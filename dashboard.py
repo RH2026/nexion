@@ -785,20 +785,20 @@ button[kind="secondary"]:hover {{
 
 /* ───────── REFINAMIENTO GENERAL DEL POPOVER ───────── */
 div[data-baseweb="popover"] button {{
-    font-size: 12px !important;
+    font-size: 10px !important;
     letter-spacing: 1px !important;
     text-transform: uppercase !important;
 }}
 
 div[data-baseweb="popover"] .st-expanderHeader p {{
-    font-size: 12px !important;
+    font-size: 10px !important;
     letter-spacing: 1.5px !important;
     font-weight: 600 !important;
 }}
 
 div[data-baseweb="popover"] p, 
 div[data-baseweb="popover"] span {{
-    font-size: 12px !important;
+    font-size: 10px !important;
     letter-spacing: 1px !important;
 }}
 
