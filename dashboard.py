@@ -5017,25 +5017,28 @@ else:
                                 st.rerun()
                 
                 # ── 2. MONITOR DE QUEJAS Y PENDIENTES ───────────────────────────────────────────────
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (HOVER AZUL NEXION EN CONTORNO) ───────────
                 st.markdown("""
                 <style>
                     .card-hover {
-                        /* Mantenemos el borde sólido de 5px siempre activo */
-                        border-left: 3px solid;
-                        transition: transform 0.2s, background-color 0.2s, border-left-color 0.3s !important;
+                        /* Borde inicial sutil para que combine con el diseño */
+                        border: 1px solid #3d474d;
+                        border-left: 5px solid; /* Mantenemos la franja de prioridad original */
+                        transition: transform 0.2s, background-color 0.2s, border-color 0.3s !important;
                     }
                     .card-hover:hover {
                         transform: scale(1.01);
                         background-color: #313a40 !important;
-                        /* Aquí forzamos que el borde sea sólido y del color azul Nexion */
-                        border-left: 3px solid #38bdf8 !important; 
+                        /* Aquí está el cambio: contorno completo en Azul Nexion al hacer hover */
+                        border: 1px solid #38bdf8 !important;
+                        border-left: 5px solid #38bdf8 !important;
                         cursor: pointer;
                         box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
                     }
                 </style>
                 """, unsafe_allow_html=True)
                 
-                
+                st.subheader("📋 MONITOR DE PENDIENTES E INCIDENCIAS")
                 prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                 estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
                 
@@ -5049,9 +5052,8 @@ else:
                         f_est = row.get('ESTATUS', 'PENDIENTE')
                         color_e = estatus_colores.get(f_est, "#64748b")
                         
-                        # HTML en una línea con la clase .card-hover para activar el efecto
-                        st.markdown(f"""<div class="card-hover" style="border-left: 5px solid {color_p}; padding: 15px; margin-bottom: 10px; background: #262e33; border-radius: 5px; border: 1px solid #3d474d;"><div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr 1fr; gap: 15px; align-items: center;"><div><div style="font-size: 0.7em; color: #888;">FOLIO / ESTATUS</div><div style="color: {color_p}; font-weight: bold; font-size: 1.1em;">{row.get('FOLIO', 'INC-???')}</div><span style="background: {color_e}33; color: {color_e}; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span></div><div><div style="font-size: 0.7em; color: #888;">CLIENTE / PEDIDO</div><div style="color: #fff; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div><div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div></div><div><div style="font-size: 0.7em; color: #888;">DETALLE / ACCIONES</div><div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div><div style="font-size: 0.85em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div></div><div style="text-align: right;"><div style="font-size: 0.7em; color: #888;">RESPONSABLE</div><div style="color: #fff; font-size: 0.9em;">👤 {row.get('RESPONSABLE', 'N/A')}</div></div></div></div>""", unsafe_allow_html=True)
-                
+                        # Clase card-hover aplicada, y le pasamos el color de prioridad como borde izquierdo
+                        st.markdown(f"""<div class="card-hover" style="border-left-color: {color_p}; padding: 15px; margin-bottom: 10px; background: #262e33; border-radius: 5px;"><div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr 1fr; gap: 15px; align-items: center;"><div><div style="font-size: 0.7em; color: #888;">FOLIO / ESTATUS</div><div style="color: {color_p}; font-weight: bold; font-size: 1.1em;">{row.get('FOLIO', 'INC-???')}</div><span style="background: {color_e}33; color: {color_e}; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span></div><div><div style="font-size: 0.7em; color: #888;">CLIENTE / PEDIDO</div><div style="color: #fff; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div><div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div></div><div><div style="font-size: 0.7em; color: #888;">DETALLE / ACCIONES</div><div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div><div style="font-size: 0.85em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div></div><div style="text-align: right;"><div style="font-size: 0.7em; color: #888;">RESPONSABLE</div><div style="color: #fff; font-size: 0.9em;">👤 {row.get('RESPONSABLE', 'N/A')}</div></div></div></div>""", unsafe_allow_html=True)
                 # ── 3. EDITOR DE AVANZADO ───────────────────────────────────────────────────────────
                 with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
                     st.subheader("Modo edición avanzada")
