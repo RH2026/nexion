@@ -981,13 +981,24 @@ if not st.session_state.get('splash_completado', False):
         "SYSTEM READY..."
     ]
     
-    # Barra de carga estilo Courier (DHL/FedEx) en una sola línea
-    # Usamos tu azul #82D4E6 para el progreso
-    splash_html = '<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><div style="font-size:24px;font-weight:800;color:#82D4E6;margin-bottom:20px;letter-spacing:2px;">NEXION <span style="color:#ffffff;">LOGISTICS</span></div><div style="width:200px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;"><div style="height:100%;width:0%;background:#82D4E6;box-shadow:0 0 10px #82D4E6;animation:load 2.8s linear forwards;"></div></div><p style="margin-top:20px;font-family:monospace;font-size:10px;letter-spacing:3px;color:#82D4E6;text-transform:uppercase;">{m}</p><style>@keyframes load{0%{width:0%;}100%{width:100%;}}</style></div>'
-    
     for m in mensajes:
+        # Construimos el HTML dinámicamente con el mensaje 'm'
+        splash_html = f'''
+        <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+            <div style="font-size:24px;font-weight:800;color:#82D4E6;margin-bottom:20px;letter-spacing:2px;">
+                NEXION <span style="color:#ffffff;">LOGISTICS</span>
+            </div>
+            <div style="width:200px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
+                <div style="height:100%;width:100%;background:#82D4E6;box-shadow:0 0 10px #82D4E6;"></div>
+            </div>
+            <p style="margin-top:20px;font-family:monospace;font-size:10px;letter-spacing:3px;color:#82D4E6;text-transform:uppercase;">
+                {m}
+            </p>
+        </div>
+        '''
+        
         with p.container():
-            st.markdown(splash_html.format(m=m), unsafe_allow_html=True)
+            st.markdown(splash_html, unsafe_allow_html=True)
             time.sleep(0.7)
             
     p.empty()
