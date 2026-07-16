@@ -7245,197 +7245,116 @@ else:
             # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
             elif st.session_state.menu_sub == "CONTRARRECIBOS":
                 
-                tz_gdl = pytz.timezone('America/Mexico_City')
-                now_gdl = datetime.now(tz_gdl)
+                jypesa_azul = "#003A70" 
+                jypesa_amarillo = "#FFC72C"
                 
-                # ── A. INICIALIZACIÓN DE ESTADO ──
-                if 'reset_counter' not in st.session_state:
-                    st.session_state.reset_counter = 0
-
-                # Lista para almacenar los registros capturados en la sesión
-                if 'lista_contrarecibos' not in st.session_state:
-                    st.session_state.lista_contrarecibos = []
-
-                # ── B. INTERFAZ DE CAPTURA ESTILO ELITE ──
-                st.write("")
+                st.markdown("### :material/checklist: CHECKLIST DE INSPECCIÓN DE TARIMAS")
                 
-                with st.container(border=True):
-                    c_h1, c_h2, c_h3 = st.columns([1, 1, 1])
-                    f_fecha_c = c_h1.date_input(":material/calendar_today: FECHA", date.today())
-                    f_hora_c = c_h2.text_input(":material/schedule: HORA", value=now_gdl.strftime('%I:%M %p').lower())
-                    f_paq_c = c_h3.selectbox(":material/local_shipping: PAQUETERÍA", ["TP DISTRIBUIDORA","TP LOGISTICA","SANCHEZ BARCELATA","FEDEX", "PAQMEX", "TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES","FLETES DE REGRESO", "TINY PACK"])
-
-                    c_d1, c_d2 = st.columns([2, 1])
-                    f_cod_c = c_d1.text_input(":material/barcode: CÓDIGO / FACTURA", placeholder="Escribe el código y presiona Enter")
-                    f_cant_c = c_d2.number_input(":material/format_list_numbered: CANTIDAD", min_value=1, value=1)
+                with st.container():
+                    st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
                     
-                    if st.button(":material/add: AGREGAR A LA LISTA", use_container_width=True):
-                        if f_cod_c:
-                            nuevo_item = {
-                                "FECHA": f_fecha_c.strftime('%d/%m/%Y'),
-                                "CODIGO": f_cod_c.upper(),
-                                "PAQUETERIA": f_paq_c,
-                                "CANTIDAD": str(f_cant_c)
-                            }
-                            st.session_state.lista_contrarecibos.append(nuevo_item)
-                            st.toast(f"Código {f_cod_c} agregado", icon="✅")
-                        else:
-                            st.error("Ingresa al menos un código.")
-
-                # ── C. VISTA PREVIA DE LO CAPTURADO ──
-                if st.session_state.lista_contrarecibos:
-                    st.write("### :material/list_alt: Registros para Impresión")
-                    df_preview = pd.DataFrame(st.session_state.lista_contrarecibos)
-                    st.dataframe(df_preview, use_container_width=True)
-                    
-                    if st.button(":material/delete: LIMPIAR LISTA", type="secondary"):
-                        st.session_state.lista_contrarecibos = []
-                        st.rerun()
-
-                # ── D. RENDERIZADO PARA IMPRESIÓN (MANTENIENDO TU FORMATO) ──
-                filas_c_data = st.session_state.lista_contrarecibos
-                tabla_c_html = "".join([
-                    f"<tr>"
-                    f"<td style='border-bottom:1px solid black;padding:8px;'>{r['FECHA']}</td>"
-                    f"<td style='border-bottom:1px solid black;padding:8px;'>{r['CODIGO']}</td>"
-                    f"<td style='border-bottom:1px solid black;padding:8px;'>{r['PAQUETERIA']}</td>"
-                    f"<td style='border-bottom:1px solid black;padding:8px;text-align:center;'>{r['CANTIDAD']}</td>"
-                    f"</tr>"
-                    for r in filas_c_data
-                ])
-                
-                # Rellenar espacios vacíos sin bordes, solo para empujar las firmas al final
-                num_filas = len(filas_c_data)
-                # Ajustamos el espacio para que las firmas siempre queden abajo
-                espacios = "".join(["<tr style='height:30px;'><td colspan='4'></td></tr>"] * max(0, 15 - num_filas))
-                
-                form_c_html = f"""
-                <html>
-                <head>
-                    <style>
-                        @media print {{
-                            @page {{ size: letter; margin: 15mm; }}
-                            body {{ -webkit-print-color-adjust: exact; }}
-                            header, footer {{ display: none !important; }}
-                        }}
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        orden_carga = st.text_input("ORDEN DE CARGA / GUÍA", placeholder="Ej. OC-98765")
+                    with c2:
+                        inspector = st.text_input("INSPECTOR / AUDITOR", value="Rigoberto Hernández")
+                    with c3:
+                        transporte = st.text_input("TRANSPORTE / DESTINO", placeholder="Ej. Tres Guerras - MTY")
                         
-                        body {{ 
-                            font-family: 'Helvetica', Arial, sans-serif; 
-                            background: white; 
-                            color: #222; 
-                            margin: 0; 
-                            padding: 0;
-                        }}
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                st.write("") 
                 
-                        .print-box {{ 
-                            padding: 10px;
-                            display: flex;
-                            flex-direction: column;
-                            min-height: 90vh; /* Esto ayuda a que el contenido estire hacia abajo */
-                        }}
+                def generar_checklist_html():
+                    ahora = datetime.now()
+                    ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+                    fecha_texto = f"{ahora.day} de {ms[ahora.month - 1]} del {ahora.year}"
+                    
+                    # Generar las 30 filas dinámicamente
+                    filas_html = ""
+                    for i in range(1, 31):
+                        filas_html += f"""
+                        <tr>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center; font-weight: bold; background-color: #f9f9f9;">{i}</td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                        </tr>
+                        """
                 
-                        /* Cabezal con estilo limpio */
-                        .header {{
-                            display: flex; 
-                            justify-content: space-between; 
-                            border-bottom: 2px solid black; 
-                            padding-bottom: 15px;
-                            align-items: flex-end;
-                        }}
+                    return f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            @media print {{
+                                @page {{ margin: 0; size: letter portrait; }}
+                                body {{ margin: 1cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+                            }}
+                        </style>
+                    </head>
+                    <body style="margin: 0; padding: 0; background: white;">
+                        <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 20px; color: #1a1a1a; max-width: 800px; margin: auto; line-height: 1.3;">
+                            
+                            <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 5px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: baseline;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 1.1em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                    <span style="font-size: 0.85em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | Control de Calidad</span>
+                                </div>
+                                <span style="font-size: 0.85em; color: #444; font-weight: 700;">{fecha_texto}</span>
+                            </div>
                 
-                        /* Tabla sin bordes en las filas de datos */
-                        table {{ 
-                            width: 100%; 
-                            border-collapse: collapse; 
-                            margin-top: 30px; 
-                        }}
-                
-                        thead th {{ 
-                            border-bottom: 2px solid black; 
-                            padding: 10px 5px; 
-                            font-size: 12px; 
-                            text-align: left;
-                            text-transform: uppercase;
-                            letter-spacing: 1px;
-                        }}
-                
-                        tbody td {{ 
-                            padding: 12px 5px; 
-                            font-size: 13px; 
-                            border: none; /* Quitamos las filas para que se vea más 'chingón' */
-                        }}
-                
-                        /* Contenedor de firmas al final */
-                        .signature-container {{
-                            margin-top: auto; /* Empuja las firmas al fondo */
-                            padding-top: 50px;
-                            display: flex;
-                            justify-content: space-between;
-                            text-align: center;
-                            font-size: 12px;
-                        }}
-                
-                        .sig-box {{
-                            width: 40%;
-                            border-top: 1px solid black;
-                            padding-top: 8px;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="print-box">
-                        <div class="header">
-                            <div>
-                                <h2 style="margin:0; letter-spacing:1.5px; font-weight: 900; font-size: 14px; text-transform: uppercase;">
-                                    Jabones y Productos Especializados
+                            <div style="margin-bottom: 15px; background-color: #fefdf5; padding: 8px 12px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo}; display: flex; justify-content: space-between; align-items: center;">
+                                <h2 style="font-size: 0.95em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
+                                    CHECKLIST DE INSPECCIÓN (30 TARIMAS)
                                 </h2>
-                                <p style="margin:0; font-size:11px; color: #555; letter-spacing:1px;">Distribución y Logística | 2026</p>
+                                <div style="font-size: 0.8em; color: #333; text-align: right;">
+                                    <strong>Orden/Guía:</strong> {orden_carga if orden_carga else '___'}<br>
+                                    <strong>Transporte:</strong> {transporte if transporte else '___'}
+                                </div>
                             </div>
-                            <div style="text-align:right;">
-                                <span style="font-weight:bold; border: 1.5px solid black; padding: 4px 12px; font-size: 14px;">{f_hora_c}</span>
-                                <p style="margin:8px 0 0 0; font-size:10px; font-weight: bold;">FECHA IMPRESIÓN: {now_gdl.strftime('%d/%m/%Y')}</p>
+                
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.75em; margin-bottom: 15px;">
+                                <thead>
+                                    <tr style="background-color: {jypesa_azul}; color: white; text-align: center;">
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 6%;">Tarima</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 15%;">Emplayo</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 15%;">Esquineros</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Tacón sin Logos</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Estiba Alineada</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Estado de Cajas</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">QR Correcto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filas_html}
+                                </tbody>
+                            </table>
+                
+                            <div style="margin-top: 20px; display: flex; justify-content: space-around; text-align: center; font-size: 0.85em; color: #333;">
+                                <div>
+                                    <div style="border-bottom: 1px solid #000; width: 200px; height: 40px; margin: auto;"></div>
+                                    <p style="margin: 5px 0 0 0; font-weight: bold;">{inspector if inspector else 'Firma del Inspector'}</p>
+                                    <p style="margin: 0; color: #666; font-size: 0.9em;">Auditor de Carga</p>
+                                </div>
+                                <div>
+                                    <div style="border-bottom: 1px solid #000; width: 200px; height: 40px; margin: auto;"></div>
+                                    <p style="margin: 5px 0 0 0; font-weight: bold;">Vo. Bo. Almacén / Logística</p>
+                                    <p style="margin: 0; color: #666; font-size: 0.9em;">JYPESA</p>
+                                </div>
                             </div>
+                
                         </div>
+                    </body>
+                    </html>
+                    """
                 
-                        <h4 style="text-align:center; margin-top:40px; letter-spacing:2px; text-transform: uppercase;">Reporte Entrega de Facturas de Contrarecibo</h4>
-                
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Código</th>
-                                    <th>Paquetería</th>
-                                    <th style="text-align:center;">Cantidad</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {tabla_c_html}
-                                {espacios}
-                            </tbody>
-                        </table>
-                
-                        <div class="signature-container">
-                            <div class="sig-box">
-                                <b>ELABORÓ</b><br>
-                                Rigoberto Hernandez - Cord de Logística
-                            </div>
-                            <div class="sig-box">
-                                <b>RECIBIÓ</b><br>
-                                Nombre y Firma
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """
-
-                # ── E. ACCIONES DE IMPRESIÓN ──
-                st.write("---")
-                if st.button(":material/print: IMPRIMIR REPORTE DE CONTRARECIBOS", type="primary", use_container_width=True):
-                    if not st.session_state.lista_contrarecibos:
-                        st.warning("Agrega al menos un código antes de imprimir.")
-                    else:
-                        components.html(f"<html><body>{form_c_html}<script>window.onload = function() {{ window.print(); }}</script></body></html>", height=0)
+                if st.button(":material/print: IMPRIMIR CHECKLIST", type="primary", use_container_width=True):
+                    checklist_html = generar_checklist_html()
+                    components.html(f"{checklist_html}<script>window.print();</script>", height=0)
 
             # --- SUBSECCIÓN C: PROFORMA ---
             elif st.session_state.menu_sub == "PROFORMA": # <-- Alineado con 'elif ... == "CONTRARRECIBOS"'
