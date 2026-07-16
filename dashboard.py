@@ -7255,7 +7255,7 @@ else:
                     with c1:
                         orden_carga = st.text_input("ORDEN DE CARGA / GUÍA", placeholder="Ej. OC-98765")
                     with c2:
-                        inspector = st.text_input("INSPECTOR / AUDITOR", value="Carlos Vazquezz")
+                        inspector = st.text_input("INSPECTOR / AUDITOR", value="Carlos Vazquez")
                     with c3:
                         transporte = st.text_input("TRANSPORTE", placeholder="Ej. Tres Guerras - MTY")
                         
