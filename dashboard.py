@@ -7476,12 +7476,10 @@ else:
                 jypesa_azul = "#003A70" 
                 jypesa_amarillo = "#FFC72C"
                 
-                st.markdown("### :material/request_quote: GENERADOR DE COTIZACIONES")
-                
                 with st.container():
                     st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
                     
-                    st.markdown("<h4 style='color: #39ff14; font-family: \"Segoe UI\", sans-serif; font-weight: 400; letter-spacing: 1px; margin-bottom: 0px;'>DATOS GENERALES</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color: #FFFFFF; font-size: 12px; font-family: \"Segoe UI\", sans-serif; font-weight: 400; letter-spacing: 1px; margin-bottom: 0px;'>DATOS GENERALES</h4>", unsafe_allow_html=True)
                     c1, c2, c3 = st.columns(3)
                     with c1:
                         cliente = st.text_input("CLIENTE / EMPRESA", placeholder="Ej. Comercializadora ABC")
@@ -7492,7 +7490,7 @@ else:
                     
                     st.write("") # Un pequeño espacio visual
                     
-                    st.markdown("<h4 style='color: #39ff14; font-family: \"Segoe UI\", sans-serif; font-weight: 400; letter-spacing: 1px; margin-bottom: 0px;'>DETALLES DEL SERVICIO</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color: #FFFFFF; font-size: 12px; font-family: \"Segoe UI\", sans-serif; font-weight: 400; letter-spacing: 1px; margin-bottom: 0px;'>DETALLES DEL SERVICIO</h4>", unsafe_allow_html=True)
                     col1, col2, col3 = st.columns(3)
                     with col1:
                         transporte = st.text_input("FLETERA / TRANSPORTE")
