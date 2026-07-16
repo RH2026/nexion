@@ -4971,26 +4971,22 @@ else:
                         st.markdown("<br>", unsafe_allow_html=True)
                         
                         # --- NUEVOS IMPUTS DE TEXTO LARGO (Con guía) ---
+                        # --- NUEVOS INPUTS DE TEXTO LARGO (Mejorados para el navegador) ---
                         val_det = incidencia_existente['DETALLE_INCIDENCIA'] if incidencia_existente is not None else ""
-                        t_detalle = st.text_area("DETALLE DE INCIDENCIA", value=val_det, help="Describe el problema de forma clara. (Ej. 'Producto llegó dañado')")
+                        t_detalle = st.text_area(
+                            "DETALLE DE INCIDENCIA", 
+                            value=val_det, 
+                            key="area_detalle",
+                            help="Describe el problema de forma clara."
+                        )
                         
                         val_acc = incidencia_existente['ACCIONES'] if incidencia_existente is not None else ""
-                        t_acciones = st.text_area("ACCIONES", value=val_acc, help="Indica las acciones tomadas para resolver la incidencia.")
-                        
-                        # Inyectamos el activador de corrector ortográfico para estos dos campos
-                        st.markdown("""
-                        <script>
-                            var inputs = document.querySelectorAll('textarea');
-                            inputs.forEach(function(el) {
-                                var label = el.getAttribute('aria-label');
-                                if (label === 'DETALLE DE INCIDENCIA' || label === 'ACCIONES') {
-                                    el.setAttribute('spellcheck', 'true');
-                                }
-                            });
-                        </script>
-                        """, unsafe_allow_html=True)
-                        
-                        st.markdown("<br>", unsafe_allow_html=True)
+                        t_acciones = st.text_area(
+                            "ACCIONES", 
+                            value=val_acc, 
+                            key="area_acciones",
+                            help="Indica las acciones tomadas para resolver la incidencia."
+                        )
                         
                         # Estatus abarcando el ancho completo abajo de los inputs
                         estatus_opciones = ["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]
