@@ -5116,7 +5116,6 @@ else:
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
                 # Asumiendo que ya tienes estas variables en tu código principal, 
-                # si no, aquí te dejo unos tonos que combinan hermoso:
                 jypesa_azul = "#003A70" 
                 jypesa_amarillo = "#FFC72C"
                 
@@ -5150,9 +5149,9 @@ else:
                         
                     st.markdown('</div>', unsafe_allow_html=True)
                     
-                st.write("") # Espacio
+                st.write("") 
                 
-                # --- LÓGICA DE IMPRESIÓN CON EL NUEVO DISEÑO ---
+                # --- LÓGICA DE IMPRESIÓN COMPACTA Y SIN ENCABEZADOS ---
                 def generar_cotizacion_html():
                     ahora = datetime.now()
                     ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
@@ -5160,92 +5159,103 @@ else:
                     
                     cliente_txt = cliente if cliente else "A QUIEN CORRESPONDA"
                     
-                    # Bloque HTML para observaciones (solo se muestra si escribes algo)
                     obs_html = f"""
-                    <div style="margin-top: 20px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid {jypesa_amarillo}; border-radius: 4px;">
-                        <p style="margin: 0; font-size: 0.9em; font-weight: bold; color: #333;">OBSERVACIONES / CONDICIONES:</p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #444; white-space: pre-wrap;">{observaciones}</p>
+                    <div style="margin-top: 15px; padding: 12px; background-color: #f9f9f9; border-left: 4px solid {jypesa_amarillo}; border-radius: 4px;">
+                        <p style="margin: 0; font-size: 0.85em; font-weight: bold; color: #333;">OBSERVACIONES / CONDICIONES:</p>
+                        <p style="margin: 4px 0 0 0; font-size: 0.85em; color: #444; white-space: pre-wrap;">{observaciones}</p>
                     </div>
                     """ if observaciones else ""
                 
                     return f"""
-                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4; border: 1px solid #eee;">
-                        <div style="height: 60px;"></div> 
-                        
-                        <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: baseline;">
-                            <div style="display: flex; flex-direction: column;">
-                                <span style="font-size: 1.15em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
-                                <span style="font-size: 0.9em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
-                            </div>
-                            <span style="font-size: 0.9em; color: #444; font-weight: 700;">{fecha_texto}</span>
-                        </div>
-                
-                        <div style="margin-bottom: 35px;">
-                            <p style="margin: 0; font-size: 0.8em; color: #666; text-transform: uppercase;">Cotización preparada para:</p>
-                            <p style="margin: 0; font-weight: bold; font-size: 1.15em; color: #000; text-transform: uppercase;">{cliente_txt}</p>
-                        </div>
-                
-                        <div style="margin-bottom: 25px; background-color: #fefdf5; padding: 15px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo};">
-                            <h2 style="font-size: 1.1em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
-                                PROPUESTA DE SERVICIO LOGÍSTICO
-                            </h2>
-                        </div>
-                
-                        <div style="margin-bottom: 30px; font-size: 1.05em; color: #222;">
-                            <p style="margin-bottom: 20px;">Por medio de la presente, ponemos a su consideración la siguiente propuesta económica para el servicio de transporte, de acuerdo con los requerimientos solicitados:</p>
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            @media print {{
+                                /* Esto quita la URL, fecha y números de página por defecto del navegador */
+                                @page {{ margin: 0; size: letter; }}
+                                /* Margen seguro para que el contenido no quede pegado a la orilla del papel */
+                                body {{ margin: 1.5cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+                            }}
+                        </style>
+                    </head>
+                    <body style="margin: 0; padding: 0; background: white;">
+                        <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 15px 30px; color: #1a1a1a; max-width: 700px; margin: auto; line-height: 1.35; border: 1px solid #eee;">
                             
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95em;">
-                                <tr style="background-color: {jypesa_azul}; color: white;">
-                                    <th style="padding: 10px; text-align: left; border: 1px solid {jypesa_azul};" colspan="2">DETALLES DEL SERVICIO</th>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border: 1px solid #ddd; width: 35%; font-weight: 700; color: #444; background-color: #fafafa;">Ruta:</td>
-                                    <td style="padding: 10px; border: 1px solid #ddd;"><b>{origen if origen else 'N/A'}</b> ➔ <b>{destino if destino else 'N/A'}</b></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Transporte / Unidad:</td>
-                                    <td style="padding: 10px; border: 1px solid #ddd;">{transporte} - {unidad}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Volumen de Carga:</td>
-                                    <td style="padding: 10px; border: 1px solid #ddd;">{cant_pallets} Pallets / {cant_cajas} Cajas</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Tiempo estimado:</td>
-                                    <td style="padding: 10px; border: 1px solid #ddd;">{tiempo_transito if tiempo_transito else 'Sujeto a disponibilidad y ruta'}</td>
-                                </tr>
-                            </table>
+                            <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: baseline;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 1.1em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                    <span style="font-size: 0.85em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
+                                </div>
+                                <span style="font-size: 0.85em; color: #444; font-weight: 700;">{fecha_texto}</span>
+                            </div>
                 
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                                <tr style="background-color: #f4f4f4;">
-                                    <td style="padding: 15px; font-weight: bold; font-size: 1.1em; color: #000; border: 1px solid #ddd; text-align: right; width: 65%;">INVERSIÓN TOTAL (Antes de IVA):</td>
-                                    <td style="padding: 15px; text-align: right; font-weight: 800; font-size: 1.25em; color: {jypesa_azul}; border: 1px solid #ddd;">${costo:,.2f}</td>
-                                </tr>
-                            </table>
+                            <div style="margin-bottom: 20px;">
+                                <p style="margin: 0; font-size: 0.75em; color: #666; text-transform: uppercase;">Cotización preparada para:</p>
+                                <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000; text-transform: uppercase;">{cliente_txt}</p>
+                            </div>
                 
-                            {obs_html}
-                        </div>
+                            <div style="margin-bottom: 15px; background-color: #fefdf5; padding: 10px 15px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo};">
+                                <h2 style="font-size: 1em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
+                                    PROPUESTA DE SERVICIO LOGÍSTICO
+                                </h2>
+                            </div>
                 
-                        <div style="margin-top: 55px; margin-bottom: 40px; border-top: 2px solid #eee; padding-top: 20px;">
-                            <p style="margin-bottom: 35px; color: #333;">Quedo a sus órdenes para cualquier duda o comentario sobre esta propuesta.</p>
-                            <p style="margin: 0; font-weight: 800; font-size: 1.2em; color: {jypesa_azul};">Rigoberto Hernández</p>
-                            <p style="margin: 0; font-size: 0.95em; font-weight: 700; color: #333;">Coordinador de Distribución y Logística</p>
-                            <p style="margin: 0; font-size: 0.85em; color: #555;">JYPESA | S.A. de C.V.</p>
-                            
-                            <div style="margin-top: 15px; font-size: 0.9em; color: #444; background-color: #f9f9f9; padding: 10px; border-radius: 4px; display: inline-block; border: 1px solid #eee;">
-                                <span style="color: {jypesa_azul}; font-weight: bold;">📱 33 19 75 31 22</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
-                                <span>📞 (52) 33 3540 2939 Ext. 157</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
-                                <span style="color: {jypesa_azul}; text-decoration: none;">✉ rhernandez@jypesa.com</span>
+                            <div style="margin-bottom: 20px; font-size: 0.95em; color: #222;">
+                                <p style="margin-bottom: 15px;">Por medio de la presente, ponemos a su consideración la siguiente propuesta económica para el servicio de transporte, de acuerdo con los requerimientos solicitados:</p>
+                                
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em;">
+                                    <tr style="background-color: {jypesa_azul}; color: white;">
+                                        <th style="padding: 8px; text-align: left; border: 1px solid {jypesa_azul};" colspan="2">DETALLES DEL SERVICIO</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd; width: 35%; font-weight: 700; color: #444; background-color: #fafafa;">Ruta:</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;"><b>{origen if origen else 'N/A'}</b> ➔ <b>{destino if destino else 'N/A'}</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Transporte / Unidad:</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">{transporte} - {unidad}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Volumen de Carga:</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">{cant_pallets} Pallets / {cant_cajas} Cajas</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Tiempo estimado:</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">{tiempo_transito if tiempo_transito else 'Sujeto a disponibilidad y ruta'}</td>
+                                    </tr>
+                                </table>
+                
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                                    <tr style="background-color: #f4f4f4;">
+                                        <td style="padding: 12px; font-weight: bold; font-size: 1.05em; color: #000; border: 1px solid #ddd; text-align: right; width: 65%;">INVERSIÓN TOTAL (Antes de IVA):</td>
+                                        <td style="padding: 12px; text-align: right; font-weight: 800; font-size: 1.15em; color: {jypesa_azul}; border: 1px solid #ddd;">${costo:,.2f}</td>
+                                    </tr>
+                                </table>
+                
+                                {obs_html}
+                            </div>
+                
+                            <div style="margin-top: 25px; margin-bottom: 10px; border-top: 2px solid #eee; padding-top: 15px;">
+                                <p style="margin-bottom: 20px; font-size: 0.9em; color: #333;">Quedo a sus órdenes para cualquier duda o comentario sobre esta propuesta.</p>
+                                <p style="margin: 0; font-weight: 800; font-size: 1.1em; color: {jypesa_azul};">Rigoberto Hernández</p>
+                                <p style="margin: 0; font-size: 0.9em; font-weight: 700; color: #333;">Coordinador de Distribución y Logística</p>
+                                <p style="margin: 0; font-size: 0.8em; color: #555;">JYPESA | S.A. de C.V.</p>
+                                
+                                <div style="margin-top: 10px; font-size: 0.85em; color: #444; background-color: #f9f9f9; padding: 8px; border-radius: 4px; display: inline-block; border: 1px solid #eee;">
+                                    <span style="color: {jypesa_azul}; font-weight: bold;">📱 33 19 75 31 22</span> <span style="margin: 0 8px; color: #ccc;">|</span> 
+                                    <span>📞 (52) 33 3540 2939 Ext. 157</span> <span style="margin: 0 8px; color: #ccc;">|</span> 
+                                    <span style="color: {jypesa_azul}; text-decoration: none;">✉ rhernandez@jypesa.com</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </body>
+                    </html>
                     """
                 
-                # --- BOTÓN DE IMPRESIÓN CORREGIDO ---
                 if st.button(":material/print: IMPRIMIR COTIZACIÓN TÉCNICA", type="primary", use_container_width=True):
                     cot_html = generar_cotizacion_html()
-                    # Usamos exactamente el mismo método elegante del primer código
-                    components.html(f"<html><body>{cot_html}<script>window.print();</script></body></html>", height=0)
+                    components.html(f"{cot_html}<script>window.print();</script>", height=0)
     
             elif st.session_state.menu_sub == "ANALISIS MENSUAL":
          
