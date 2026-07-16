@@ -5020,11 +5020,10 @@ else:
                                 time.sleep(1)
                                 st.rerun()
                 
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES ──────────────────────────────────────────────
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (GRID PROFESIONAL - HTML EN UNA LÍNEA) ───────────
                 st.markdown("""
                 <style>
                     .card-hover {
-                        /* Borde inicial sutil */
                         border: 1px solid #3d474d;
                         border-left: 5px solid;
                         transition: transform 0.2s, background-color 0.2s, border-color 0.3s !important;
@@ -5032,16 +5031,14 @@ else:
                     .card-hover:hover {
                         transform: scale(1.01);
                         background-color: #313a40 !important;
-                        /* Contorno completo en Azul Nexion */
                         border: 1px solid #38bdf8 !important;
                         border-left: 5px solid #38bdf8 !important;
                         cursor: pointer;
-                        /* AQUÍ QUITAMOS EL box-shadow PARA ELIMINAR EL RESPLANDOR */
                     }
                 </style>
                 """, unsafe_allow_html=True)
                 
-                
+                st.subheader("📋 MONITOR DE PENDIENTES E INCIDENCIAS")
                 prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                 estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
                 
@@ -5055,8 +5052,8 @@ else:
                         f_est = row.get('ESTATUS', 'PENDIENTE')
                         color_e = estatus_colores.get(f_est, "#64748b")
                         
-                        # Clase card-hover aplicada, y le pasamos el color de prioridad como borde izquierdo
-                        st.markdown(f"""<div class="card-hover" style="border-left: 5px solid {color_p}; padding: 15px; margin-bottom: 10px; background: #262e33; border-radius: 5px; border: 1px solid #3d474d;"><div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr 1fr; gap: 15px; align-items: center;"><div><div style="font-size: 0.7em; color: #888;">FOLIO / ESTATUS</div><div style="color: {color_p}; font-weight: bold; font-size: 1.1em;">{row.get('FOLIO', 'INC-???')}</div><span style="background: {color_e}33; color: {color_e}; border: 1px solid {color_e}; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span></div><div><div style="font-size: 0.7em; color: #888;">CLIENTE / PEDIDO</div><div style="color: #fff; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div><div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div></div><div><div style="font-size: 0.7em; color: #888;">DETALLE / ACCIONES</div><div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div><div style="font-size: 0.85em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div></div><div style="text-align: right;"><div style="font-size: 0.7em; color: #888;">RESPONSABLE / REGISTRÓ</div><div style="color: #fff; font-size: 0.9em;">👤 {row.get('RESPONSABLE', 'N/A')}</div><div style="font-size: 0.7em; color: #38bdf8;">📝 {row.get('USUARIO', 'N/A')}</div></div></div></div>""", unsafe_allow_html=True)
+                        # HTML en UNA SOLA LÍNEA para evitar errores de renderizado
+                        st.markdown(f"""<div class="card-hover" style="border-left-color: {color_p}; padding: 12px; margin-bottom: 10px; background: #262e33; border-radius: 5px;"><div style="display: grid; grid-template-columns: 0.8fr 1.5fr 1.2fr 2fr 1fr; gap: 10px; align-items: center;"><div><div style="font-size: 0.65em; color: #888;">FOLIO/EST</div><div style="color: {color_p}; font-weight: bold; font-size: 1em;">{row.get('FOLIO', 'INC-???')}</div><span style="background: {color_e}33; color: {color_e}; padding: 1px 4px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span></div><div><div style="font-size: 0.65em; color: #888;">CLIENTE/PEDIDO</div><div style="color: #fff; font-size: 0.9em; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div><div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">ID SEGUIMIENTO / QUEJA</div><div style="font-size: 0.85em; color: #eee;">🔍 {row.get('ID_SEGUIMIENTO', 'N/A')}</div><div style="font-size: 0.85em; color: #eee;">⚠️ {row.get('ID_QUEJA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">DETALLE / ACCIONES</div><div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div><div style="font-size: 0.8em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div></div><div style="text-align: right;"><div style="font-size: 0.65em; color: #888;">RESPONSABLE/REG</div><div style="color: #fff; font-size: 0.85em;">👤 {row.get('RESPONSABLE', 'N/A')}</div><div style="font-size: 0.7em; color: #38bdf8;">📝 {row.get('USUARIO', 'N/A')}</div></div></div></div>""", unsafe_allow_html=True)  
                 
                 # ── 3. EDITOR DE AVANZADO ───────────────────────────────────────────────────────────
                 with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
