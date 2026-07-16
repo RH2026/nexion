@@ -4894,6 +4894,7 @@ else:
                 
                 
                 # ── 1. PANEL DE CAPTURA INTELIGENTE ──────────────────────────────────────────────────
+                # ── 1. PANEL DE CAPTURA INTELIGENTE ──────────────────────────────────────────────────
                 with st.expander("➕ Registrar o Editar Incidencia / Queja", expanded=False):
                     
                     # --- FILA SUPERIOR: BÚSQUEDA Y CONTROL ---
@@ -4944,7 +4945,7 @@ else:
                             st.warning("⚠️ Pedido no localizado en la Matriz. Puedes llenar o modificar los campos abajo a mano.")
                 
                     # --- FORMULARIO DE CAPTURA ---
-                    with st.form("form_incidencias", clear_on_submit=True):
+                    with st.form("form_incidencias", clear_on_submit=False): # Cambiado a False para no perder datos en recargas
                         f2_c1, f2_c2 = st.columns([1, 1])
                         
                         with f2_c1:
@@ -4954,25 +4955,27 @@ else:
                             val_pg = info_matriz["pedido_guia"] if info_matriz["pedido_guia"] else (incidencia_existente['PEDIDO_GUIA'] if incidencia_existente is not None else "")
                             t_pedido_guia = st.text_input("PEDIDO / GUÍA", value=val_pg)
                             
-                            # --- NUEVO IMPUT ---
                             val_resp = incidencia_existente['RESPONSABLE'] if incidencia_existente is not None else ""
                             t_responsable = st.text_input("RESPONSABLE", value=val_resp)
                             
                         with f2_c2:
-                            val_id_seg = incidencia_existente['ID_SEGUIMIENTO'] if incidencia_existente is not None else ""
-                            t_id_seguimiento = st.text_input("ID SEGUIMIENTO", value=val_id_seg)
+                            # Aquí está la magia: Sugiere el folio actual, pero permite sobreescribir
+                            val_id_seg_default = incidencia_existente['ID_SEGUIMIENTO'] if incidencia_existente is not None else t_folio_input
+                            val_id_seg = val_id_seg_default if val_id_seg_default else ""
+                            t_id_seguimiento = st.text_input("ID SEGUIMIENTO (Sugerido por defecto)", value=val_id_seg)
                             
-                            val_id_queja = incidencia_existente['ID_QUEJA'] if incidencia_existente is not None else ""
-                            t_id_queja = st.text_input("ID DE QUEJA", value=val_id_queja)
+                            val_id_queja_default = incidencia_existente['ID_QUEJA'] if incidencia_existente is not None else t_folio_input
+                            val_id_queja = val_id_queja_default if val_id_queja_default else ""
+                            t_id_queja = st.text_input("ID DE QUEJA (Sugerido por defecto)", value=val_id_queja)
                             
                         st.markdown("<br>", unsafe_allow_html=True)
                         
-                        # --- NUEVOS IMPUTS DE TEXTO LARGO ---
+                        # --- NUEVOS IMPUTS DE TEXTO LARGO (Con guía) ---
                         val_det = incidencia_existente['DETALLE_INCIDENCIA'] if incidencia_existente is not None else ""
-                        t_detalle = st.text_area("DETALLE DE INCIDENCIA", value=val_det)
+                        t_detalle = st.text_area("DETALLE DE INCIDENCIA", value=val_det, help="Describe el problema de forma clara. (Ej. 'Producto llegó dañado')")
                         
                         val_acc = incidencia_existente['ACCIONES'] if incidencia_existente is not None else ""
-                        t_acciones = st.text_area("ACCIONES", value=val_acc)
+                        t_acciones = st.text_area("ACCIONES", value=val_acc, help="Indica las acciones tomadas para resolver la incidencia.")
                         
                         st.markdown("<br>", unsafe_allow_html=True)
                         
@@ -4988,8 +4991,7 @@ else:
                         if enviar:
                             folio_final = t_folio_input if t_folio_input else sugerencia_folio
                             
-                            # --- AQUÍ ESTÁ EL BLINDAJE ---
-                            # Nos aseguramos de que sea string y si es None, lo convertimos a "" vacío
+                            # --- BLINDAJE ---
                             valor_busqueda = n_pedido if n_pedido else (incidencia_existente.get('VINCULO_BUSQUEDA', '') if incidencia_existente is not None else "")
                             busqueda_final = str(valor_busqueda).upper() if valor_busqueda is not None else ""
                             
@@ -4997,7 +4999,7 @@ else:
                                 "FOLIO": folio_final,
                                 "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO HERNÁNDEZ'),
                                 "PRIORIDAD": t_prior,
-                                "VINCULO_BUSQUEDA": busqueda_final, # Ya viene limpio arriba
+                                "VINCULO_BUSQUEDA": busqueda_final, 
                                 "CLIENTE_DESTINO": str(t_cliente_destino).upper(),
                                 "PEDIDO_GUIA": str(t_pedido_guia).upper(),
                                 "ID_SEGUIMIENTO": str(t_id_seguimiento).upper(),
