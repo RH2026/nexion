@@ -5115,7 +5115,20 @@ else:
             
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
+                st.markdown("### :material/gavel: CORPORATIVOS")
+                st.write("")
                 
+                # Diseño de alerta "En Construcción"
+                st.markdown("""
+                <div style="background-color: #0a0a0a; border: 1px solid #222; border-left: 5px solid #39ff14; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                    <h2 style="color: #39ff14; margin-top: 0; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">
+                        Módulo en Construcción
+                    </h2>
+                    <p style="color: #e0e0e0; font-size: 1.1em; margin-bottom: 0;">
+                        Estamos trabajando en la programación de esta sección para que quede impecable. ¡Pronto estará lista para operar!
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
     
             elif st.session_state.menu_sub == "ANALISIS MENSUAL":
          
