@@ -7243,13 +7243,11 @@ else:
                         st.rerun()
     
             # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
-            elif st.session_state.menu_sub == "CONTRARRECIBOS":
+            elif st.session_state.menu_sub == "CHECK LIST AGC":
                 
                 jypesa_azul = "#003A70" 
                 jypesa_amarillo = "#FFC72C"
-                
-                st.markdown("### :material/checklist: CHECKLIST DE INSPECCIÓN DE TARIMAS")
-                
+                                
                 with st.container():
                     st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
                     
@@ -7257,9 +7255,9 @@ else:
                     with c1:
                         orden_carga = st.text_input("ORDEN DE CARGA / GUÍA", placeholder="Ej. OC-98765")
                     with c2:
-                        inspector = st.text_input("INSPECTOR / AUDITOR", value="Rigoberto Hernández")
+                        inspector = st.text_input("INSPECTOR / AUDITOR", value="Carlos Vazquezz")
                     with c3:
-                        transporte = st.text_input("TRANSPORTE / DESTINO", placeholder="Ej. Tres Guerras - MTY")
+                        transporte = st.text_input("TRANSPORTE", placeholder="Ej. Tres Guerras - MTY")
                         
                     st.markdown('</div>', unsafe_allow_html=True)
                     
@@ -7309,7 +7307,7 @@ else:
                 
                             <div style="margin-bottom: 15px; background-color: #fefdf5; padding: 8px 12px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo}; display: flex; justify-content: space-between; align-items: center;">
                                 <h2 style="font-size: 0.95em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
-                                    CHECKLIST DE INSPECCIÓN (30 TARIMAS)
+                                    CHECKLIST DE INSPECCIÓN AGC
                                 </h2>
                                 <div style="font-size: 0.8em; color: #333; text-align: right;">
                                     <strong>Orden/Guía:</strong> {orden_carga if orden_carga else '___'}<br>
