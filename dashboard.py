@@ -1300,7 +1300,7 @@ else:
                 # --- FORMATOS: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        opciones_for = ["SALIDA DE PT", "CONTRARRECIBOS", "PROFORMA", "CARTA RECLAMO"]                        
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "PROFORMA", "CARTA RECLAMO"]                        
                         for s in opciones_for:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
