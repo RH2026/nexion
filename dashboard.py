@@ -1300,7 +1300,7 @@ else:
                 # --- FORMATOS: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "PROFORMA", "CARTA RECLAMO"]                        
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "PROFORMA", "CARTA RECLAMO", "COTIZACIONES"]                        
                         for s in opciones_for:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -7597,6 +7597,23 @@ else:
                     info_rec = {"paqueteria": paq_rec, "asunto": dict_asuntos_rec[inc_rec], "fecha_texto": fec_txt_rec, "cuerpo_texto": cuerpo_final_rec}
                     html_final_rec = generar_carta_pro_html(rem_rec, info_rec)
                     components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)
+             
+            elif st.session_state.menu_sub == "COTIZACIONES":
+                st.markdown("### :material/gavel: COTIZACIONES")
+                st.write("")
+                
+                # Diseño de alerta "En Construcción"
+                st.markdown("""
+                <div style="background-color: #0a0a0a; border: 1px solid #222; border-left: 5px solid #39ff14; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                    <h2 style="color: #39ff14; margin-top: 0; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">
+                        🚧 Módulo en Construcción 🚧
+                    </h2>
+                    <p style="color: #e0e0e0; font-size: 1.1em; margin-bottom: 0;">
+                        Estamos trabajando en la programación de esta sección para que quede impecable. ¡Pronto estará lista para operar!
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+
                 
         # 5. HUB LOG
         elif st.session_state.menu_main == "CENTRO DE DATOS":
