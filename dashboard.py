@@ -3595,7 +3595,7 @@ else:
                             <style>
                             /* ESTADO NORMAL: Gris oscuro con borde sutil */
                             div[data-testid="stFormSubmitButton"] button {
-                                background-color: #262730 !important; 
+                                background-color: #506874 !important; 
                                 border: 1px solid rgba(255, 255, 255, 0.2) !important;
                                 transition: all 0.2s ease-in-out !important;
                                 box-shadow: none !important;
