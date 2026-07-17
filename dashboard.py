@@ -5087,6 +5087,10 @@ else:
                 </style>
                 """, unsafe_allow_html=True)
                 
+                # Inicializar estado para impresión
+                if 'imprimir_reporte' not in st.session_state:
+                    st.session_state.imprimir_reporte = False
+                
                 # --- 2. FUNCIONES DE PROCESAMIENTO ---
                 def limpiar_columnas(txt):
                     if not isinstance(txt, str): return txt
@@ -5099,23 +5103,20 @@ else:
                 def generar_reporte_impresion(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target):
                     ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
                     return f"""
-                    <html>
-                    <body style="font-family: 'Segoe UI', Arial; padding: 40px; color: #000;">
-                        <div style="border-bottom: 4px solid #000; padding-bottom: 20px; margin-bottom: 20px;">
-                            <h1 style="margin: 0; font-size: 20px;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
-                            <p>ANÁLISIS REGIONAL | 2026</p>
-                        </div>
+                    <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
+                        <h1 style="text-align: center;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
+                        <p style="text-align: center;">ANÁLISIS REGIONAL | 2026</p>
+                        <hr>
                         <p><b>FECHA:</b> {ahora} | <b>MES:</b> {mes_sel} | <b>SEDE:</b> {sede_sel}</p>
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                             <tr style="background: #000; color: #fff;"><th style="padding: 10px;">MÉTRICA</th><th style="padding: 10px;">VALOR</th></tr>
                             <tr><td style="border: 1px solid #000; padding: 10px;">Gasto Flete</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">${total_flete:,.2f}</td></tr>
                             <tr><td style="border: 1px solid #000; padding: 10px;">Facturación</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">${total_fact:,.2f}</td></tr>
                             <tr><td style="border: 1px solid #000; padding: 10px;">Cajas Enviadas</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">{total_cajas:,.0f}</td></tr>
                             <tr><td style="border: 1px solid #000; padding: 10px;"><b>Costo Logístico</b></td><td style="border: 1px solid #000; padding: 10px; text-align: center;"><b>{pct_log:.2f}%</b> (Target: {target}%)</td></tr>
                         </table>
-                        <script>window.print();</script>
-                    </body>
-                    </html>
+                    </div>
+                    <script>window.print();</script>
                     """
                 
                 # --- 4. CARGA Y PROCESAMIENTO ---
@@ -5128,7 +5129,6 @@ else:
                     if col_concepto and col_cajas:
                         df_actual[col_concepto] = df_actual[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
                         df_regional = df_actual[df_actual[col_concepto].str.contains('TRASLADO CEDIS PLAYA|CEDIS MONTERREY', regex=True, na=False)].copy()
-                        
                         for col in ['COSTO DE LA GUIA', 'FACTURACION', col_cajas]:
                             if col in df_regional.columns: df_regional[col] = limpiar_dinero(df_regional[col])
                         
@@ -5136,10 +5136,7 @@ else:
                         
                         c1, c2 = st.columns(2)
                         with c1: mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional['MES'].unique().tolist()))
-                        with c2: 
-                            opciones_sede = ["TRASLADO CEDIS PLAYA", "CEDIS MONTERREY", "AMBAS"]
-                            # Definimos el index 0 para que TRASLADO CEDIS PLAYA sea el default
-                            sede_sel = st.selectbox("FILTRAR POR SEDE:", opciones_sede, index=0)
+                        with c2: sede_sel = st.selectbox("FILTRAR POR SEDE:", ["TRASLADO CEDIS PLAYA", "CEDIS MONTERREY", "AMBAS"], index=0)
                         
                         df_final = df_regional.copy()
                         if mes_sel != "TODOS": df_final = df_final[df_final['MES'] == mes_sel]
@@ -5157,10 +5154,14 @@ else:
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         
-                        # El botón de impresión ahora usa un componente dedicado para forzar la acción
+                        # Botón de impresión funcional
                         if st.button(":material/print: IMPRIMIR REPORTE"):
+                            st.session_state.imprimir_reporte = True
+                            
+                        if st.session_state.imprimir_reporte:
                             html = generar_reporte_impresion(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target)
-                            components.html(f"<script>var w=window.open(); w.document.write('{html}');</script>", height=0)
+                            components.html(f"<script>var w=window.open(); w.document.write('{html}'); w.print();</script>", height=0)
+                            st.session_state.imprimir_reporte = False
                 
                     else:
                         st.error("Error: Columnas 'CONCEPTO' o 'CAJAS' no encontradas.")
