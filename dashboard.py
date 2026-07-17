@@ -5069,7 +5069,6 @@ else:
             
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
-                st.markdown("### :material/gavel: CORPORATIVOS")
                 # --- CONFIGURACIÓN Y ESTILO (ELITE/ONYX) ---
                 st.set_page_config(page_title="Nexion | Módulo Regional", layout="wide")
                 st.markdown("""
@@ -5137,10 +5136,10 @@ else:
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         
-                        # --- LÓGICA DE IMPRESIÓN (EL MÉTODO QUE SÍ JALA) ---
-                        def generar_html_reporte():
+                        # --- EL BOTÓN QUE SÍ VA A FUNCIONAR ---
+                        if st.button(":material/print: IMPRIMIR REPORTE"):
                             ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
-                            return f"""
+                            st.session_state.reporte_a_imprimir = f"""
                             <div style="font-family: Arial; padding: 20px;">
                                 <h1>REPORTE REGIONAL: {sede_sel}</h1>
                                 <p><b>Fecha:</b> {ahora} | <b>Mes:</b> {mes_sel}</p>
@@ -5151,9 +5150,7 @@ else:
                                     <tr><th>Costo Logístico</th><td>{pct_log:.2f}% (Target: {target}%)</td></tr>
                                 </table>
                             </div>"""
-                
-                        if st.button(":material/print: IMPRIMIR REPORTE"):
-                            st.session_state.reporte_a_imprimir = generar_html_reporte()
+                            st.rerun() # Esto es clave: fuerza la actualización inmediata
                 
                         if st.session_state.reporte_a_imprimir:
                             components.html(f"""
@@ -5161,7 +5158,8 @@ else:
                                     var win = window.open('', '_blank', 'height=800,width=800');
                                     win.document.write('{st.session_state.reporte_a_imprimir}');
                                     win.document.close();
-                                    win.onload = function() {{ win.print(); }};
+                                    win.focus();
+                                    setTimeout(function(){{ win.print(); }}, 500);
                                 </script>
                             """, height=0)
                             st.session_state.reporte_a_imprimir = None
