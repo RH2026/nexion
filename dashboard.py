@@ -3590,30 +3590,28 @@ else:
                         
                         with st.form("nexion_editor_form_safe"):
         
-                            # CSS Agresivo para someter al botón rebelde
+                            # CSS para forzar el hover sólido cyan/esmeralda de la foto
                             st.markdown("""
                             <style>
-                            /* Forzar el fondo gris sólido y borde sutil */
+                            /* ESTADO NORMAL: Gris oscuro con borde sutil */
                             div[data-testid="stFormSubmitButton"] button {
                                 background-color: #262730 !important; 
-                                border: 1px solid rgba(250, 250, 250, 0.2) !important;
-                                transition: all 0.3s ease !important;
+                                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                                transition: all 0.2s ease-in-out !important;
                                 box-shadow: none !important;
                             }
-                            /* Forzar el texto en blanco */
                             div[data-testid="stFormSubmitButton"] button p {
                                 color: #ffffff !important;
                                 font-weight: 600 !important;
-                                transition: color 0.3s ease !important;
                             }
                             
-                            /* Hover perrón en verde neón */
+                            /* ESTADO HOVER: Fondo relleno sólido exacto como la foto */
                             div[data-testid="stFormSubmitButton"] button:hover {
-                                border-color: #00A0A8 !important;
-                                background-color: rgba(57, 255, 20, 0.05) !important; /* Un brillito verde al fondo */
+                                background-color: #00a896 !important; /* Tono cyan/esmeralda sólido */
+                                border-color: #00a896 !important;
                             }
                             div[data-testid="stFormSubmitButton"] button:hover p {
-                                color: #00A0A8 !important;
+                                color: #ffffff !important; /* Letra blanca pura */
                             }
                             </style>
                             """, unsafe_allow_html=True)
