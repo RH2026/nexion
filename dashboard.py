@@ -5070,12 +5070,11 @@ else:
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
                 st.markdown("### :material/gavel: CORPORATIVOS")
-                # --- 1. CONFIGURACIÓN Y ESTILO (ESTILO ELITE/ONYX) ---
+                # --- 1. CONFIGURACIÓN Y ESTILO ---
                 st.set_page_config(page_title="Nexion | Módulo Regional", layout="wide")
                 st.markdown("""
                 <style>
                 .main { background-color: #0B1014; }
-                /* Tarjetas del mismo tamaño y estilo uniforme */
                 [data-testid="stMetric"] { 
                     background-color: #1A252F; padding: 20px; border-radius: 12px; 
                     border-left: 5px solid #D4AF37; height: 120px;
@@ -5100,28 +5099,23 @@ else:
                 def generar_reporte_impresion(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target):
                     ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
                     return f"""
-                    <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
-                        <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
-                            <tr>
-                                <td>
-                                    <h1 style="margin: 0; font-size: 16px;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
-                                    <p style="margin: 0; font-size: 12px;">ANÁLISIS REGIONAL | 2026</p>
-                                </td>
-                                <td style="text-align: right; font-size: 12px;">
-                                    <b>FECHA:</b> {ahora}<br><b>MES:</b> {mes_sel}<br><b>SEDE:</b> {sede_sel}
-                                </td>
-                            </tr>
-                        </table>
-                        <h2 style="text-align: center; text-transform: uppercase;">Reporte Operativo Regional</h2>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <html>
+                    <body style="font-family: 'Segoe UI', Arial; padding: 40px; color: #000;">
+                        <div style="border-bottom: 4px solid #000; padding-bottom: 20px; margin-bottom: 20px;">
+                            <h1 style="margin: 0; font-size: 20px;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
+                            <p>ANÁLISIS REGIONAL | 2026</p>
+                        </div>
+                        <p><b>FECHA:</b> {ahora} | <b>MES:</b> {mes_sel} | <b>SEDE:</b> {sede_sel}</p>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                             <tr style="background: #000; color: #fff;"><th style="padding: 10px;">MÉTRICA</th><th style="padding: 10px;">VALOR</th></tr>
-                            <tr><td style="border: 1px solid #000; padding: 8px;">Gasto Flete</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_flete:,.2f}</td></tr>
-                            <tr><td style="border: 1px solid #000; padding: 8px;">Facturación</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_fact:,.2f}</td></tr>
-                            <tr><td style="border: 1px solid #000; padding: 8px;">Cajas Enviadas</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{total_cajas:,.0f}</td></tr>
-                            <tr><td style="border: 1px solid #000; padding: 8px;"><b>Costo Logístico</b></td><td style="border: 1px solid #000; padding: 8px; text-align: center;"><b>{pct_log:.2f}%</b> (Target: {target}%)</td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 10px;">Gasto Flete</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">${total_flete:,.2f}</td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 10px;">Facturación</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">${total_fact:,.2f}</td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 10px;">Cajas Enviadas</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">{total_cajas:,.0f}</td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 10px;"><b>Costo Logístico</b></td><td style="border: 1px solid #000; padding: 10px; text-align: center;"><b>{pct_log:.2f}%</b> (Target: {target}%)</td></tr>
                         </table>
-                    </div>
-                    <script>window.print(); window.close();</script>
+                        <script>window.print();</script>
+                    </body>
+                    </html>
                     """
                 
                 # --- 4. CARGA Y PROCESAMIENTO ---
@@ -5139,9 +5133,13 @@ else:
                             if col in df_regional.columns: df_regional[col] = limpiar_dinero(df_regional[col])
                         
                         st.title(":material/map: MÓDULO: ANÁLISIS CEDIS PLAYA & MONTERREY")
+                        
                         c1, c2 = st.columns(2)
                         with c1: mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional['MES'].unique().tolist()))
-                        with c2: sede_sel = st.selectbox("FILTRAR POR SEDE:", ["AMBAS", "TRASLADO CEDIS PLAYA", "CEDIS MONTERREY"])
+                        with c2: 
+                            opciones_sede = ["TRASLADO CEDIS PLAYA", "CEDIS MONTERREY", "AMBAS"]
+                            # Definimos el index 0 para que TRASLADO CEDIS PLAYA sea el default
+                            sede_sel = st.selectbox("FILTRAR POR SEDE:", opciones_sede, index=0)
                         
                         df_final = df_regional.copy()
                         if mes_sel != "TODOS": df_final = df_final[df_final['MES'] == mes_sel]
@@ -5159,9 +5157,10 @@ else:
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         
+                        # El botón de impresión ahora usa un componente dedicado para forzar la acción
                         if st.button(":material/print: IMPRIMIR REPORTE"):
-                            html_report = generar_reporte_impresion(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target)
-                            components.html(f"<script>var w=window.open(); w.document.write('{html_report}');</script>", height=0)
+                            html = generar_reporte_impresion(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target)
+                            components.html(f"<script>var w=window.open(); w.document.write('{html}');</script>", height=0)
                 
                     else:
                         st.error("Error: Columnas 'CONCEPTO' o 'CAJAS' no encontradas.")
