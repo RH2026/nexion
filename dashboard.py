@@ -6457,7 +6457,6 @@ else:
                             if not df_actual.empty:
                                 busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:", key="busqueda_input").upper()
                                 
-                                # Lógica de filtrado
                                 df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA", "ESTATUS", "SOLICITO"]].copy()
                                 df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA", "ESTATUS", "SOLICITANTE"]
                                 df_vista = df_vista.fillna('') 
@@ -6467,7 +6466,6 @@ else:
                                 
                                 df_render = df_vista.sort_values(by="FOLIO", ascending=False)
                                 
-                                # --- FUNCIÓN DE RENDER PERRÓN ---
                                 @st.dialog("DETALLE COMPLETO DEL ENVÍO", width="large")
                                 def abrir_detalle(folio_id):
                                     datos = df_actual[df_actual["FOLIO"] == int(folio_id)].iloc[0]
@@ -6484,38 +6482,18 @@ else:
                                     if datos.get('COMENTARIOS'):
                                         st.warning(f"💬 Comentarios: {datos['COMENTARIOS']}")
                         
-                                # --- TARJETAS CLICABLES (EL TRUCO: USAMOS EL HTML COMO ETIQUETA DEL BOTÓN) ---
                                 for _, item in df_render.iterrows():
-                                    # Construimos tu diseño perrón en una variable
-                                    tarjeta_html = f"""
-                                        <div style="background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px; width: 100%; display: flex; justify-content: space-between; align-items: center;">
-                                            <div style="flex: 1.1;">
-                                                <div style="font-size: 8px; color: #888; text-transform: uppercase;">Folio / Fecha</div>
-                                                <div style="color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800;">#{item['FOLIO']}</div>
-                                                <div style="color: rgba(255,255,255,0.5); font-size: 10px;">{str(item['FECHA ENVÍO'])[:10]}</div>
-                                            </div>
-                                            <div style="flex: 1.8; padding: 0 10px;">
-                                                <div style="font-size: 8px; color: #888; text-transform: uppercase;">Hotel</div>
-                                                <div style="font-weight: 700; color: white;">{str(item['HOTEL'])[:30]}</div>
-                                                <div style="font-size: 10px; color: #FFD700; font-weight: 600;">SOLICITÓ: {str(item['SOLICITANTE'])[:30]}</div>
-                                            </div>
-                                            <div style="flex: 1.6; text-align: right;">
-                                                <div style="color: #38bdf8; font-weight: 800;">{item['PAQUETERÍA'] or 'PENDIENTE'}</div>
-                                            </div>
-                                        </div>
-                                    """
+                                    # ESTA ES LA TARJETA EN UNA SOLA LÍNEA, AMOR:
+                                    tarjeta_minificada = f'<div style="background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 10px; width: 100%; display: flex; justify-content: space-between; align-items: center;"><div style="flex: 1;"><div style="font-size: 8px; color: #888;">FOLIO</div><div style="color: #00FFAA; font-weight: 800;">#{item["FOLIO"]}</div></div><div style="flex: 2; padding: 0 10px;"><div style="font-weight: 700; color: white;">{str(item["HOTEL"])[:25]}</div><div style="font-size: 9px; color: #FFD700;">SOLICITÓ: {str(item["SOLICITANTE"])[:20]}</div></div><div style="flex: 1; text-align: right;"><div style="color: #38bdf8; font-weight: 800; font-size: 11px;">{item["PAQUETERÍA"] or "PENDIENTE"}</div></div></div>'
                                     
-                                    # EL BOTÓN TRANSPARENTE: Streamlit permite HTML en el label del botón
-                                    if st.button(label=tarjeta_html, key=f"btn_{item['FOLIO']}", use_container_width=True):
+                                    if st.button(label=tarjeta_minificada, key=f"btn_{item['FOLIO']}", use_container_width=True):
                                         st.session_state.folio_abierto = item['FOLIO']
                                         st.rerun()
                         
-                                # Disparamos el diálogo
                                 if "folio_abierto" in st.session_state:
                                     f = st.session_state.folio_abierto
                                     del st.session_state.folio_abierto
                                     abrir_detalle(f)
-                                    
                             else:
                                 st.info("No hay registros todavía.")
                                 
