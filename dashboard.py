@@ -5136,33 +5136,23 @@ else:
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         
-                        # --- EL BOTÓN QUE SÍ VA A FUNCIONAR ---
-                        if st.button(":material/print: IMPRIMIR REPORTE"):
-                            ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
-                            st.session_state.reporte_a_imprimir = f"""
-                            <div style="font-family: Arial; padding: 20px;">
-                                <h1>REPORTE REGIONAL: {sede_sel}</h1>
-                                <p><b>Fecha:</b> {ahora} | <b>Mes:</b> {mes_sel}</p>
-                                <table border="1" style="width:100%; border-collapse: collapse;">
-                                    <tr><th>Flete</th><td>${total_flete:,.2f}</td></tr>
-                                    <tr><th>Facturación</th><td>${total_fact:,.2f}</td></tr>
-                                    <tr><th>Cajas</th><td>{total_cajas:,.0f}</td></tr>
-                                    <tr><th>Costo Logístico</th><td>{pct_log:.2f}% (Target: {target}%)</td></tr>
-                                </table>
-                            </div>"""
-                            st.rerun() # Esto es clave: fuerza la actualización inmediata
+                        st.markdown("""
+                        <style>
+                        @media print {
+                            .no-print { display: none !important; }
+                            #printable-report { display: block !important; }
+                        }
+                        </style>
+                        """, unsafe_allow_html=True)
                 
-                        if st.session_state.reporte_a_imprimir:
-                            components.html(f"""
+                        if st.button(":material/print: IMPRIMIR REPORTE"):
+                            # Usamos un script extremadamente simple que solo lanza el print
+                            # sin intentar abrir ventanas nuevas con document.write
+                            components.html("""
                                 <script>
-                                    var win = window.open('', '_blank', 'height=800,width=800');
-                                    win.document.write('{st.session_state.reporte_a_imprimir}');
-                                    win.document.close();
-                                    win.focus();
-                                    setTimeout(function(){{ win.print(); }}, 500);
+                                    window.print();
                                 </script>
                             """, height=0)
-                            st.session_state.reporte_a_imprimir = None
                 
                     else:
                         st.error("Error: Columnas 'CONCEPTO' o 'CAJAS' no encontradas.")
