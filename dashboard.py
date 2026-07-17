@@ -6037,33 +6037,33 @@ else:
                                         st.rerun() # FORZAMOS RERUN para que el aviso aparezca al instante
                         
                         def renderizar_alerta_persistente():
-                        if "alerta_folio_pendiente" in st.session_state:
-                            folio = st.session_state.alerta_folio_pendiente
-                            
-                            # Diseño profesional tipo Central Data Hub
-                            st.markdown(f"""
-                            <div style="
-                                background-color: #3b4d5a; 
-                                border-left: 6px solid #5a9bd5; 
-                                padding: 20px 25px; 
-                                border-radius: 5px; 
-                                margin-bottom: 20px;
-                                color: white;
-                                font-family: sans-serif;
-                            ">
-                                <h2 style="margin: 0; padding: 0; font-size: 24px; color: #ffffff;">
-                                    NUEVO FOLIO: JYP-{folio}
-                                </h2>
-                                <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                                    Nexion Logistic Node // Nueva Solicitud Recibida
-                                </p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            # Mantenemos tu botón que sí te gustó
-                            if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
-                                del st.session_state.alerta_folio_pendiente
-                                st.rerun()
+                            if "alerta_folio_pendiente" in st.session_state:
+                                folio = st.session_state.alerta_folio_pendiente
+                                
+                                # Diseño profesional tipo Central Data Hub
+                                st.markdown(f"""
+                                <div style="
+                                    background-color: #3b4d5a; 
+                                    border-left: 6px solid #5a9bd5; 
+                                    padding: 20px 25px; 
+                                    border-radius: 5px; 
+                                    margin-bottom: 20px;
+                                    color: white;
+                                    font-family: sans-serif;
+                                ">
+                                    <h2 style="margin: 0; padding: 0; font-size: 24px; color: #ffffff;">
+                                        NUEVO FOLIO: JYP-{folio}
+                                    </h2>
+                                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                                        Nexion Logistic Node // Nueva Solicitud Recibida
+                                    </p>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                # Mantenemos tu botón que sí te gustó
+                                if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
+                                    del st.session_state.alerta_folio_pendiente
+                                    st.rerun()
                         
                         # --- LLAMADA ESTRATÉGICA ---
                         # Coloca esto justo después de tus definiciones de funciones al inicio de tu script
