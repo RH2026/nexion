@@ -5070,120 +5070,105 @@ else:
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
                 st.markdown("### :material/gavel: CORPORATIVOS")
-                # --- 1. CONFIGURACIÓN Y ESTILO (ESTILO ELITE/ONYX) ---
+                ## --- 1. CONFIGURACIÓN Y ESTILO (ESTILO ELITE/ONYX) ---
                 st.set_page_config(page_title="Nexion | Módulo Regional", layout="wide")
                 st.markdown("""
                 <style>
                 .main { background-color: #0B1014; }
+                /* Tarjetas del mismo tamaño */
                 [data-testid="stMetric"] { 
-                    background-color: #1A252F; padding: 15px; border-radius: 10px; 
-                    border-left: 4px solid #D4AF37; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                    background-color: #1A252F; padding: 20px; border-radius: 12px; 
+                    border-left: 5px solid #D4AF37; height: 120px;
+                    display: flex; flex-direction: column; justify-content: center;
                 }
                 div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.2rem !important; }
-                div[data-testid="stMetricLabel"] { color: #D4AF37; letter-spacing: 1px; text-transform: uppercase; font-size: 0.7rem !important; }
+                div[data-testid="stMetricLabel"] { color: #D4AF37; font-size: 0.7rem !important; text-transform: uppercase; }
                 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
-                .analysis-box {
-                    background-color: #1A252F; padding: 20px; border-radius: 12px;
-                    border: 1px solid #243441; color: #A4B9C8; line-height: 1.6; font-size: 0.9rem;
-                }
+                .analysis-box { background-color: #1A252F; padding: 20px; border-radius: 12px; border: 1px solid #243441; color: #A4B9C8; font-size: 0.9rem; }
                 </style>
                 """, unsafe_allow_html=True)
                 
                 # --- 2. FUNCIONES DE PROCESAMIENTO ---
                 def limpiar_columnas(txt):
                     if not isinstance(txt, str): return txt
-                    texto = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
-                    return texto.strip().upper()
+                    return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn').strip().upper()
                 
                 def limpiar_dinero(col):
                     return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
                 
-                # --- 3. CARGA Y PROCESAMIENTO ---
+                # --- 3. LÓGICA DE IMPRESIÓN REPOTENCIADA ---
+                def generar_reporte_impresion(mes_sel, total_flete, total_fact, total_cajas, pct_log, target):
+                    ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
+                    return f"""
+                    <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
+                        <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
+                            <tr>
+                                <td>
+                                    <h1 style="margin: 0; font-size: 16px;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
+                                    <p style="margin: 0; font-size: 12px;">ANÁLISIS REGIONAL | 2026</p>
+                                </td>
+                                <td style="text-align: right; font-size: 12px;">
+                                    <b>FECHA:</b> {ahora}<br><b>MES:</b> {mes_sel}
+                                </td>
+                            </tr>
+                        </table>
+                        <h2 style="text-align: center; text-transform: uppercase;">Reporte Operativo Regional</h2>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <tr style="background: #000; color: #fff;"><th style="padding: 10px;">MÉTRICA</th><th style="padding: 10px;">VALOR</th></tr>
+                            <tr><td style="border: 1px solid #000; padding: 8px;">Gasto Flete</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_flete:,.2f}</td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 8px;">Facturación</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_fact:,.2f}</td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 8px;">Cajas Enviadas</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{total_cajas:,.0f}</td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 8px;"><b>Costo Logístico</b></td><td style="border: 1px solid #000; padding: 8px; text-align: center;"><b>{pct_log:.2f}%</b> (Target: {target}%)</td></tr>
+                        </table>
+                    </div>
+                    <script>window.print();</script>
+                    """
+                
+                # --- 4. CARGA Y PROCESAMIENTO ---
                 try:
                     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
-                    
                     col_concepto = next((c for c in df_actual.columns if 'CONCEPTO' in c), None)
-                    col_cajas = next((c for c in df_actual.columns if 'CAJAS' in c), None)
+                    col_cajas = next((c for c in df_actual.columns if 'CAJAS FACTURA' in c), None)
                     
                     if col_concepto and col_cajas:
                         df_actual[col_concepto] = df_actual[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
-                        
-                        df_regional = df_actual[
-                            df_actual[col_concepto].str.contains('TRASLADO CEDIS PLAYA|CEDIS MONTERREY', regex=True, na=False)
-                        ].copy()
+                        df_regional = df_actual[df_actual[col_concepto].str.contains('TRASLADO CEDIS PLAYA|CEDIS MONTERREY', regex=True, na=False)].copy()
                         
                         for col in ['COSTO DE LA GUIA', 'FACTURACION', col_cajas]:
-                            if col in df_regional.columns:
-                                df_regional[col] = limpiar_dinero(df_regional[col])
+                            if col in df_regional.columns: df_regional[col] = limpiar_dinero(df_regional[col])
                         
-                        # --- 4. INTERFAZ ---
                         st.title(":material/map: MÓDULO: ANÁLISIS CEDIS PLAYA & MONTERREY")
-                        
                         c1, c2 = st.columns(2)
-                        with c1: 
-                            mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional['MES'].unique().tolist()))
-                        with c2: 
-                            sede_sel = st.selectbox("FILTRAR POR SEDE:", ["AMBAS", "TRASLADO CEDIS PLAYA", "CEDIS MONTERREY"])
+                        with c1: mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional['MES'].unique().tolist()))
+                        with c2: sede_sel = st.selectbox("FILTRAR POR SEDE:", ["AMBAS", "TRASLADO CEDIS PLAYA", "CEDIS MONTERREY"])
                         
                         df_final = df_regional.copy()
                         if mes_sel != "TODOS": df_final = df_final[df_final['MES'] == mes_sel]
-                        if sede_sel != "AMBAS": 
-                            df_final = df_final[df_final[col_concepto].str.contains(sede_sel, regex=False)]
+                        if sede_sel != "AMBAS": df_final = df_final[df_final[col_concepto].str.contains(sede_sel, regex=False)]
                         
-                        # --- 5. CÁLCULOS ---
                         total_flete = df_final['COSTO DE LA GUIA'].sum()
                         total_fact = df_final['FACTURACION'].sum()
                         total_cajas = df_final[col_cajas].sum()
                         pct_log = (total_flete / total_fact * 100) if total_fact > 0 else 0
+                        target = 9.0 if sede_sel == "TRASLADO CEDIS PLAYA" else (7.5 if sede_sel == "CEDIS MONTERREY" else 8.25)
                         
-                        # Lógica de Target Dinámico
-                        if sede_sel == "TRASLADO CEDIS PLAYA": target = 9.0
-                        elif sede_sel == "CEDIS MONTERREY": target = 7.5
-                        else: target = 8.25 # Promedio si seleccionan "AMBAS"
-                        
-                        # --- 6. VISTA DE TARJETAS ---
+                        # Tarjetas uniformes
                         k1, k2, k3, k4 = st.columns(4)
                         k1.metric("GASTO FLETE", f"${total_flete:,.0f}")
                         k2.metric("FACTURACIÓN", f"${total_fact:,.0f}")
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
-                        k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target {target}%", delta_color="inverse")
+                        k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% Target", delta_color="inverse")
                         
-                        # --- 7. DIAGNÓSTICO ESTRATÉGICO ---
-                        st.markdown("### DIAGNÓSTICO ESTRATÉGICO REGIONAL")
-                        status = "🟢 Dentro de parámetros" if pct_log <= target else "🔴 Desviación detectada"
-                        st.markdown(f'''
-                        <div class="analysis-box">
-                            • <b>Análisis:</b> Operación filtrada para <b>{sede_sel}</b>, mes <b>{mes_sel}</b>.<br>
-                            • <b>Volumen:</b> {total_cajas:,.0f} unidades (Cajas Factura).<br>
-                            • <b>Costo Logístico:</b> {pct_log:.2f}% vs Target de {target}%.<br>
-                            • <b>Estado:</b> {status}
-                        </div>
-                        ''', unsafe_allow_html=True)
-                
-                        # --- 8. BOTONES DE IMPRESIÓN ---
-                        st.write("---")
-                        if st.button(":material/print: GENERAR REPORTE PDF/IMPRESIÓN", type="primary"):
-                            ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
-                            reporte_html = f"""
-                            <div style="font-family: Arial; padding: 20px; border: 2px solid #000;">
-                                <h1 style="text-align: center;">REPORTE OPERATIVO: {sede_sel}</h1>
-                                <p><b>Fecha:</b> {ahora}</p>
-                                <hr>
-                                <p><b>Gastos:</b> ${total_flete:,.2f} | <b>Facturación:</b> ${total_fact:,.2f}</p>
-                                <p><b>Eficiencia:</b> {pct_log:.2f}% (Target: {target}%)</p>
-                                <p><b>Volumen:</b> {total_cajas:,.0f} unidades</p>
-                                <br><br>
-                                <p style="text-align: center; border-top: 1px solid #000; width: 300px; margin: auto;">Firma de Autorización</p>
-                            </div>
-                            """
-                            components.html(f"<script>var w=window.open(); w.document.write('{reporte_html}'); w.print(); w.close();</script>", height=0)
+                        # Botón Impresión
+                        if st.button(":material/print: IMPRIMIR REPORTE"):
+                            html_report = generar_reporte_impresion(mes_sel, total_flete, total_fact, total_cajas, pct_log, target)
+                            components.html(f"<script>var w=window.open(); w.document.write('{html_report}');</script>", height=0)
                 
                     else:
-                        st.error("¡No encuentro las columnas 'CONCEPTO' o 'CAJAS'! Verifica el nombre.")
-                
+                        st.error("Error: Columnas 'CONCEPTO' o 'CAJAS FACTURA' no encontradas.")
                 except Exception as e:
-                    st.error(f"Error crítico en el módulo: {e}")
+                    st.error(f"Error: {e}")
     
             elif st.session_state.menu_sub == "ANALISIS MENSUAL":
          
