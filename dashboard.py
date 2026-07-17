@@ -3594,7 +3594,7 @@ else:
                             st.markdown("""
                             <style>
                             [data-testid="stFormSubmitButton"] button {
-                                background-color: #2b2b30 !important;
+                                background-color: #000000 !important;
                                 border: 1px solid rgba(255, 255, 255, 0.2) !important;
                                 color: #ffffff !important;
                                 font-weight: 600 !important;
