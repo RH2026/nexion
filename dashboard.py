@@ -5109,12 +5109,10 @@ else:
                     if col_concepto and col_cajas:
                         df_actual[col_concepto] = df_actual[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
                         
-                        # Filtro regional
                         df_regional = df_actual[
                             df_actual[col_concepto].str.contains('TRASLADO CEDIS PLAYA|CEDIS MONTERREY', regex=True, na=False)
                         ].copy()
                         
-                        # Limpieza de valores numéricos
                         for col in ['COSTO DE LA GUIA', 'FACTURACION', col_cajas]:
                             if col in df_regional.columns:
                                 df_regional[col] = limpiar_dinero(df_regional[col])
@@ -5124,11 +5122,9 @@ else:
                         
                         c1, c2 = st.columns(2)
                         with c1: 
-                            meses = ["TODOS"] + sorted(df_regional['MES'].unique().tolist())
-                            mes_sel = st.selectbox("FILTRAR POR MES:", meses)
+                            mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional['MES'].unique().tolist()))
                         with c2: 
-                            opciones_sede = ["AMBAS", "TRASLADO CEDIS PLAYA", "CEDIS MONTERREY"]
-                            sede_sel = st.selectbox("FILTRAR POR SEDE:", opciones_sede)
+                            sede_sel = st.selectbox("FILTRAR POR SEDE:", ["AMBAS", "TRASLADO CEDIS PLAYA", "CEDIS MONTERREY"])
                         
                         df_final = df_regional.copy()
                         if mes_sel != "TODOS": df_final = df_final[df_final['MES'] == mes_sel]
@@ -5141,26 +5137,50 @@ else:
                         total_cajas = df_final[col_cajas].sum()
                         pct_log = (total_flete / total_fact * 100) if total_fact > 0 else 0
                         
-                        # --- 6. VISTA DE TARJETAS (4 columnas para mejor distribución) ---
+                        # Lógica de Target Dinámico
+                        if sede_sel == "TRASLADO CEDIS PLAYA": target = 9.0
+                        elif sede_sel == "CEDIS MONTERREY": target = 7.5
+                        else: target = 8.25 # Promedio si seleccionan "AMBAS"
+                        
+                        # --- 6. VISTA DE TARJETAS ---
                         k1, k2, k3, k4 = st.columns(4)
                         k1.metric("GASTO FLETE", f"${total_flete:,.0f}")
                         k2.metric("FACTURACIÓN", f"${total_fact:,.0f}")
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
-                        k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%")
+                        k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target {target}%", delta_color="inverse")
                         
                         # --- 7. DIAGNÓSTICO ESTRATÉGICO ---
                         st.markdown("### DIAGNÓSTICO ESTRATÉGICO REGIONAL")
+                        status = "🟢 Dentro de parámetros" if pct_log <= target else "🔴 Desviación detectada"
                         st.markdown(f'''
                         <div class="analysis-box">
                             • <b>Análisis:</b> Operación filtrada para <b>{sede_sel}</b>, mes <b>{mes_sel}</b>.<br>
-                            • <b>Volumen Total:</b> {total_cajas:,.0f} unidades (Cajas).<br>
-                            • <b>Costo Logístico:</b> El gasto representa el <b>{pct_log:.2f}%</b> de la facturación.<br>
-                            • <b>Estado Operativo:</b> { "🟢 Dentro de parámetros" if pct_log <= 7.5 else "🔴 Desviación en costos" }
+                            • <b>Volumen:</b> {total_cajas:,.0f} unidades (Cajas Factura).<br>
+                            • <b>Costo Logístico:</b> {pct_log:.2f}% vs Target de {target}%.<br>
+                            • <b>Estado:</b> {status}
                         </div>
                         ''', unsafe_allow_html=True)
                 
+                        # --- 8. BOTONES DE IMPRESIÓN ---
+                        st.write("---")
+                        if st.button(":material/print: GENERAR REPORTE PDF/IMPRESIÓN", type="primary"):
+                            ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
+                            reporte_html = f"""
+                            <div style="font-family: Arial; padding: 20px; border: 2px solid #000;">
+                                <h1 style="text-align: center;">REPORTE OPERATIVO: {sede_sel}</h1>
+                                <p><b>Fecha:</b> {ahora}</p>
+                                <hr>
+                                <p><b>Gastos:</b> ${total_flete:,.2f} | <b>Facturación:</b> ${total_fact:,.2f}</p>
+                                <p><b>Eficiencia:</b> {pct_log:.2f}% (Target: {target}%)</p>
+                                <p><b>Volumen:</b> {total_cajas:,.0f} unidades</p>
+                                <br><br>
+                                <p style="text-align: center; border-top: 1px solid #000; width: 300px; margin: auto;">Firma de Autorización</p>
+                            </div>
+                            """
+                            components.html(f"<script>var w=window.open(); w.document.write('{reporte_html}'); w.print(); w.close();</script>", height=0)
+                
                     else:
-                        st.error("¡No encuentro las columnas 'CONCEPTO' o 'CAJAS FACTURA'! Verifica el nombre en tu CSV.")
+                        st.error("¡No encuentro las columnas 'CONCEPTO' o 'CAJAS'! Verifica el nombre.")
                 
                 except Exception as e:
                     st.error(f"Error crítico en el módulo: {e}")
