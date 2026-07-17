@@ -6051,11 +6051,11 @@ else:
                                     color: white;
                                     font-family: sans-serif;
                                 ">
-                                    <h2 style="margin: 0; padding: 0; font-size: 24px; color: #ffffff;">
-                                        NUEVO FOLIO: JYP-{folio}
+                                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
+                                        NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
                                     </h2>
                                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                                        Nexion Logistic Node // Alerta de Alta Prioridad
+                                        Nexion Logistic Node // Alerta 
                                     </p>
                                 </div>
                                 """, unsafe_allow_html=True)
