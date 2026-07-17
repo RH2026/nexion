@@ -5070,28 +5070,28 @@ else:
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
                 st.markdown("### :material/gavel: CORPORATIVOS")
-                # --- 1. CONFIGURACIÓN Y ESTILO ---
+                # --- CONFIGURACIÓN Y ESTILO (ELITE/ONYX) ---
                 st.set_page_config(page_title="Nexion | Módulo Regional", layout="wide")
                 st.markdown("""
                 <style>
                 .main { background-color: #0B1014; }
                 [data-testid="stMetric"] { 
-                    background-color: #1A252F; padding: 20px; border-radius: 12px; 
+                    background-color: #1A252F; padding: 25px; border-radius: 12px; 
                     border-left: 5px solid #D4AF37; height: 120px;
                     display: flex; flex-direction: column; justify-content: center;
                 }
-                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.2rem !important; }
-                div[data-testid="stMetricLabel"] { color: #D4AF37; font-size: 0.7rem !important; text-transform: uppercase; }
+                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.1rem; }
+                div[data-testid="stMetricLabel"] { color: #D4AF37; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
                 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
-                .analysis-box { background-color: #1A252F; padding: 20px; border-radius: 12px; border: 1px solid #243441; color: #A4B9C8; font-size: 0.9rem; }
+                .analysis-box { background-color: #1A252F; padding: 25px; border-radius: 12px; border: 1px solid #243441; color: #A4B9C8; line-height: 1.8; font-size: 0.95rem; }
                 </style>
                 """, unsafe_allow_html=True)
                 
                 # Inicializar estado para impresión
-                if 'imprimir_reporte' not in st.session_state:
-                    st.session_state.imprimir_reporte = False
+                if 'reporte_a_imprimir' not in st.session_state:
+                    st.session_state.reporte_a_imprimir = None
                 
-                # --- 2. FUNCIONES DE PROCESAMIENTO ---
+                # --- FUNCIONES ---
                 def limpiar_columnas(txt):
                     if not isinstance(txt, str): return txt
                     return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn').strip().upper()
@@ -5099,36 +5099,18 @@ else:
                 def limpiar_dinero(col):
                     return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
                 
-                # --- 3. LÓGICA DE IMPRESIÓN REPOTENCIADA ---
-                def generar_reporte_impresion(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target):
-                    ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
-                    return f"""
-                    <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
-                        <h1 style="text-align: center;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
-                        <p style="text-align: center;">ANÁLISIS REGIONAL | 2026</p>
-                        <hr>
-                        <p><b>FECHA:</b> {ahora} | <b>MES:</b> {mes_sel} | <b>SEDE:</b> {sede_sel}</p>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                            <tr style="background: #000; color: #fff;"><th style="padding: 10px;">MÉTRICA</th><th style="padding: 10px;">VALOR</th></tr>
-                            <tr><td style="border: 1px solid #000; padding: 10px;">Gasto Flete</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">${total_flete:,.2f}</td></tr>
-                            <tr><td style="border: 1px solid #000; padding: 10px;">Facturación</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">${total_fact:,.2f}</td></tr>
-                            <tr><td style="border: 1px solid #000; padding: 10px;">Cajas Enviadas</td><td style="border: 1px solid #000; padding: 10px; text-align: center;">{total_cajas:,.0f}</td></tr>
-                            <tr><td style="border: 1px solid #000; padding: 10px;"><b>Costo Logístico</b></td><td style="border: 1px solid #000; padding: 10px; text-align: center;"><b>{pct_log:.2f}%</b> (Target: {target}%)</td></tr>
-                        </table>
-                    </div>
-                    <script>window.print();</script>
-                    """
-                
-                # --- 4. CARGA Y PROCESAMIENTO ---
+                # --- CARGA Y PROCESAMIENTO ---
                 try:
                     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
+                    
                     col_concepto = next((c for c in df_actual.columns if 'CONCEPTO' in c), None)
                     col_cajas = next((c for c in df_actual.columns if 'CAJAS' in c), None)
                     
                     if col_concepto and col_cajas:
                         df_actual[col_concepto] = df_actual[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
                         df_regional = df_actual[df_actual[col_concepto].str.contains('TRASLADO CEDIS PLAYA|CEDIS MONTERREY', regex=True, na=False)].copy()
+                        
                         for col in ['COSTO DE LA GUIA', 'FACTURACION', col_cajas]:
                             if col in df_regional.columns: df_regional[col] = limpiar_dinero(df_regional[col])
                         
@@ -5148,25 +5130,46 @@ else:
                         pct_log = (total_flete / total_fact * 100) if total_fact > 0 else 0
                         target = 9.0 if sede_sel == "TRASLADO CEDIS PLAYA" else (7.5 if sede_sel == "CEDIS MONTERREY" else 8.25)
                         
+                        # --- TARJETAS ---
                         k1, k2, k3, k4 = st.columns(4)
                         k1.metric("GASTO FLETE", f"${total_flete:,.0f}")
                         k2.metric("FACTURACIÓN", f"${total_fact:,.0f}")
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         
-                        # Botón de impresión funcional
+                        # --- LÓGICA DE IMPRESIÓN (EL MÉTODO QUE SÍ JALA) ---
+                        def generar_html_reporte():
+                            ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
+                            return f"""
+                            <div style="font-family: Arial; padding: 20px;">
+                                <h1>REPORTE REGIONAL: {sede_sel}</h1>
+                                <p><b>Fecha:</b> {ahora} | <b>Mes:</b> {mes_sel}</p>
+                                <table border="1" style="width:100%; border-collapse: collapse;">
+                                    <tr><th>Flete</th><td>${total_flete:,.2f}</td></tr>
+                                    <tr><th>Facturación</th><td>${total_fact:,.2f}</td></tr>
+                                    <tr><th>Cajas</th><td>{total_cajas:,.0f}</td></tr>
+                                    <tr><th>Costo Logístico</th><td>{pct_log:.2f}% (Target: {target}%)</td></tr>
+                                </table>
+                            </div>"""
+                
                         if st.button(":material/print: IMPRIMIR REPORTE"):
-                            st.session_state.imprimir_reporte = True
-                            
-                        if st.session_state.imprimir_reporte:
-                            html = generar_reporte_impresion(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target)
-                            components.html(f"<script>var w=window.open(); w.document.write('{html}'); w.print();</script>", height=0)
-                            st.session_state.imprimir_reporte = False
+                            st.session_state.reporte_a_imprimir = generar_html_reporte()
+                
+                        if st.session_state.reporte_a_imprimir:
+                            components.html(f"""
+                                <script>
+                                    var win = window.open('', '_blank', 'height=800,width=800');
+                                    win.document.write('{st.session_state.reporte_a_imprimir}');
+                                    win.document.close();
+                                    win.onload = function() {{ win.print(); }};
+                                </script>
+                            """, height=0)
+                            st.session_state.reporte_a_imprimir = None
                 
                     else:
                         st.error("Error: Columnas 'CONCEPTO' o 'CAJAS' no encontradas.")
                 except Exception as e:
-                    st.error(f"Error crítico: {e}")
+                    st.error(f"¡Atención, amor! Detalle en el código: {e}")
     
             elif st.session_state.menu_sub == "ANALISIS MENSUAL":
          
