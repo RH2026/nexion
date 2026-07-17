@@ -5069,7 +5069,7 @@ else:
             
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
-                # --- CONFIGURACIÓN Y ESTILO (ELITE/ONYX) ---
+                # --- 1. CONFIGURACIÓN Y ESTILO (ELITE/ONYX) ---
                 st.set_page_config(page_title="Nexion | Módulo Regional", layout="wide")
                 st.markdown("""
                 <style>
@@ -5083,14 +5083,17 @@ else:
                 div[data-testid="stMetricLabel"] { color: #D4AF37; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
                 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
                 .analysis-box { background-color: #1A252F; padding: 25px; border-radius: 12px; border: 1px solid #243441; color: #A4B9C8; line-height: 1.8; font-size: 0.95rem; }
+                
+                /* CSS PARA IMPRESIÓN */
+                @media print {
+                    body * { visibility: hidden !important; }
+                    #printable-report, #printable-report * { visibility: visible !important; }
+                    #printable-report { position: absolute; left: 0; top: 0; width: 100%; }
+                }
                 </style>
                 """, unsafe_allow_html=True)
                 
-                # Inicializar estado para impresión
-                if 'reporte_a_imprimir' not in st.session_state:
-                    st.session_state.reporte_a_imprimir = None
-                
-                # --- FUNCIONES ---
+                # --- 2. FUNCIONES ---
                 def limpiar_columnas(txt):
                     if not isinstance(txt, str): return txt
                     return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn').strip().upper()
@@ -5098,7 +5101,7 @@ else:
                 def limpiar_dinero(col):
                     return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
                 
-                # --- CARGA Y PROCESAMIENTO ---
+                # --- 3. CARGA Y PROCESAMIENTO ---
                 try:
                     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
@@ -5136,18 +5139,27 @@ else:
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         
-                        st.markdown("""
-                        <style>
-                        @media print {
-                            .no-print { display: none !important; }
-                            #printable-report { display: block !important; }
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
-                
+                        # --- REPORTE PARA IMPRESIÓN ---
+                        ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
+                        reporte_html = f"""
+                        <div id="printable-report">
+                            <h1>REPORTE REGIONAL: {sede_sel}</h1>
+                            <p><b>Fecha:</b> {ahora} | <b>Mes:</b> {mes_sel}</p>
+                            <table border="1" style="width:100%; border-collapse: collapse;">
+                                <tr><th style="padding:10px;">Métrica</th><th style="padding:10px;">Valor</th></tr>
+                                <tr><td style="padding:10px;">Gasto Flete</td><td style="padding:10px;">${total_flete:,.2f}</td></tr>
+                                <tr><td style="padding:10px;">Facturación</td><td style="padding:10px;">${total_fact:,.2f}</td></tr>
+                                <tr><td style="padding:10px;">Cajas Enviadas</td><td style="padding:10px;">{total_cajas:,.0f}</td></tr>
+                                <tr><td style="padding:10px;">Costo Logístico</td><td style="padding:10px;">{pct_log:.2f}% (Target: {target}%)</td></tr>
+                            </table>
+                        </div>
+                        """
+                        
+                        # Mostrar el reporte (invisible en pantalla normal si quieres, o déjalo visible)
+                        st.markdown(reporte_html, unsafe_allow_html=True)
+                        
+                        # Botón que dispara el print del navegador
                         if st.button(":material/print: IMPRIMIR REPORTE"):
-                            # Usamos un script extremadamente simple que solo lanza el print
-                            # sin intentar abrir ventanas nuevas con document.write
                             components.html("""
                                 <script>
                                     window.print();
