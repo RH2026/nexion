@@ -1154,22 +1154,23 @@ else:
         with c2:
             # --- INTERCEPTAMOS "DASHBOARD" PARA CAMBIAR EL TEXTO VISUAL ---
             texto_principal = st.session_state.menu_main
-            azul_nexion = "#82D4E6"  # El color exacto de tu logo
+            azul_nexion = "#82D4E6"
+            oro_nexion = "#D4AF37"  # Definimos el color dorado aquí
             
             # Si el menú es DASHBOARD, aplicamos el diseño con la línea azul
             if texto_principal == "DASHBOARD":
                 texto_principal = f"NEXION <span style='color: {azul_nexion}; font-weight: 900; margin: 0 10px; font-size: 16px;'>|</span> SMART LOGISTICS"
-
+            
             # RUTA DINÁMICA
             if st.session_state.menu_sub != "GENERAL":
-                # Aquí le asignamos el mismo color azul_nexion a la diagonal y ajustamos la opacidad si lo deseas
-                ruta = f"{texto_principal} <span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> {st.session_state.menu_sub}"
+                # Aplicamos el oro_nexion al submenú para que resalte
+                ruta = f"{texto_principal} <span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> <span style='color: {oro_nexion}; font-weight: bold;'>{st.session_state.menu_sub}</span>"
             else:
                 ruta = texto_principal
             
             st.markdown(f"""
                 <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
-                    <p style='font-size: 13px; letter-spacing: 8px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
+                    <p style='font-size: 13px; letter-spacing: 5px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
                         {ruta}
                     </p>
                 </div>
@@ -5114,7 +5115,7 @@ else:
                         for col in ["COSTO DE LA GUIA", "FACTURACION", col_cajas]:
                             if col in df_regional.columns: df_regional[col] = limpiar_dinero(df_regional[col])
             
-                        st.title(":material/map: MÓDULO: ANÁLISIS CEDIS PLAYA & MONTERREY")
+                        
                         c1, c2 = st.columns(2)
                         with c1: mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional["MES"].unique().tolist()))
                         with c2: sede_sel = st.selectbox("FILTRAR POR SEDE:", ["TRASLADO CEDIS PLAYA", "CEDIS MONTERREY", "AMBAS"], index=0)
