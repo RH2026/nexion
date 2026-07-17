@@ -1168,7 +1168,7 @@ else:
                 ruta = (
                     f"{texto_principal} "
                     f"<span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> "
-                    f"<span style='color: {oro_brillante}; font-weight: 900; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>"
+                    f"<span style='color: {oro_brillante}; font-weight: 700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>"
                     f"{st.session_state.menu_sub}</span>"
                 )
             else:
