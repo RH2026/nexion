@@ -5076,15 +5076,15 @@ else:
                 <style>
                 .main { background-color: #0B1014; }
                 [data-testid="stMetric"] { 
-                    background-color: #1A252F; padding: 25px; border-radius: 12px; 
-                    border-left: 5px solid #D4AF37; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                    background-color: #1A252F; padding: 15px; border-radius: 10px; 
+                    border-left: 4px solid #D4AF37; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
                 }
-                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; }
-                div[data-testid="stMetricLabel"] { color: #D4AF37; letter-spacing: 1.5px; text-transform: uppercase; }
+                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.2rem !important; }
+                div[data-testid="stMetricLabel"] { color: #D4AF37; letter-spacing: 1px; text-transform: uppercase; font-size: 0.7rem !important; }
                 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
                 .analysis-box {
-                    background-color: #1A252F; padding: 25px; border-radius: 12px;
-                    border: 1px solid #243441; color: #A4B9C8; line-height: 1.8;
+                    background-color: #1A252F; padding: 20px; border-radius: 12px;
+                    border: 1px solid #243441; color: #A4B9C8; line-height: 1.6; font-size: 0.9rem;
                 }
                 </style>
                 """, unsafe_allow_html=True)
@@ -5098,25 +5098,24 @@ else:
                 def limpiar_dinero(col):
                     return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
                 
-                # --- 3. CARGA Y PROCESAMIENTO A PRUEBA DE ERRORES ---
+                # --- 3. CARGA Y PROCESAMIENTO ---
                 try:
                     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
                     
-                    # Buscamos la columna CONCEPTO dinámicamente
                     col_concepto = next((c for c in df_actual.columns if 'CONCEPTO' in c), None)
+                    col_cajas = next((c for c in df_actual.columns if 'CAJAS FACTURA' in c), None)
                     
-                    if col_concepto:
-                        # Limpieza de texto en la columna clave
+                    if col_concepto and col_cajas:
                         df_actual[col_concepto] = df_actual[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
                         
-                        # Filtro: Extraemos solo lo que corresponde a Playa o Monterrey
+                        # Filtro regional
                         df_regional = df_actual[
                             df_actual[col_concepto].str.contains('TRASLADO CEDIS PLAYA|CEDIS MONTERREY', regex=True, na=False)
                         ].copy()
                         
                         # Limpieza de valores numéricos
-                        for col in ['COSTO DE LA GUIA', 'FACTURACION', 'CAJAS']:
+                        for col in ['COSTO DE LA GUIA', 'FACTURACION', col_cajas]:
                             if col in df_regional.columns:
                                 df_regional[col] = limpiar_dinero(df_regional[col])
                         
@@ -5131,37 +5130,37 @@ else:
                             opciones_sede = ["AMBAS", "TRASLADO CEDIS PLAYA", "CEDIS MONTERREY"]
                             sede_sel = st.selectbox("FILTRAR POR SEDE:", opciones_sede)
                         
-                        # Filtrado final para cálculos
                         df_final = df_regional.copy()
                         if mes_sel != "TODOS": df_final = df_final[df_final['MES'] == mes_sel]
                         if sede_sel != "AMBAS": 
                             df_final = df_final[df_final[col_concepto].str.contains(sede_sel, regex=False)]
                         
-                        # --- 5. CÁLCULOS PRINCIPALES ---
+                        # --- 5. CÁLCULOS ---
                         total_flete = df_final['COSTO DE LA GUIA'].sum()
                         total_fact = df_final['FACTURACION'].sum()
-                        total_cajas = df_final['CAJAS'].sum()
+                        total_cajas = df_final[col_cajas].sum()
                         pct_log = (total_flete / total_fact * 100) if total_fact > 0 else 0
                         
-                        # --- 6. VISTA DE TARJETAS ---
-                        k1, k2, k3 = st.columns(3)
-                        k1.metric("GASTO FLETE TOTAL", f"${total_flete:,.2f}")
-                        k2.metric("FACTURACIÓN TOTAL", f"${total_fact:,.2f}")
-                        k3.metric("CAJAS ENVIADAS", f"{total_cajas:,.0f}")
+                        # --- 6. VISTA DE TARJETAS (4 columnas para mejor distribución) ---
+                        k1, k2, k3, k4 = st.columns(4)
+                        k1.metric("GASTO FLETE", f"${total_flete:,.0f}")
+                        k2.metric("FACTURACIÓN", f"${total_fact:,.0f}")
+                        k3.metric("CAJAS", f"{total_cajas:,.0f}")
+                        k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%")
                         
                         # --- 7. DIAGNÓSTICO ESTRATÉGICO ---
                         st.markdown("### DIAGNÓSTICO ESTRATÉGICO REGIONAL")
                         st.markdown(f'''
                         <div class="analysis-box">
-                            • <b>Análisis:</b> Operación filtrada bajo el criterio de <b>{sede_sel}</b> para el mes de <b>{mes_sel}</b>.<br>
-                            • <b>Volumen:</b> Se han gestionado un total de {total_cajas:,.0f} unidades físicas.<br>
-                            • <b>Rentabilidad Logística:</b> El costo operativo representa el <b>{pct_log:.2f}%</b> de la facturación total.<br>
-                            • <b>Estado:</b> { "Operación dentro de parámetros" if pct_log <= 7.5 else "⚠️ Atención: Desviación en costos operativos." }
+                            • <b>Análisis:</b> Operación filtrada para <b>{sede_sel}</b>, mes <b>{mes_sel}</b>.<br>
+                            • <b>Volumen Total:</b> {total_cajas:,.0f} unidades (Cajas Factura).<br>
+                            • <b>Costo Logístico:</b> El gasto representa el <b>{pct_log:.2f}%</b> de la facturación.<br>
+                            • <b>Estado Operativo:</b> { "🟢 Dentro de parámetros" if pct_log <= 7.5 else "🔴 Desviación en costos" }
                         </div>
                         ''', unsafe_allow_html=True)
                 
                     else:
-                        st.error("¡Amor, no encuentro la columna 'CONCEPTO' en tu CSV! Por favor verifica el nombre.")
+                        st.error("¡No encuentro las columnas 'CONCEPTO' o 'CAJAS FACTURA'! Verifica el nombre en tu CSV.")
                 
                 except Exception as e:
                     st.error(f"Error crítico en el módulo: {e}")
