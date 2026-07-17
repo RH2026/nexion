@@ -1155,7 +1155,8 @@ else:
             # --- INTERCEPTAMOS "DASHBOARD" PARA CAMBIAR EL TEXTO VISUAL ---
             texto_principal = st.session_state.menu_main
             azul_nexion = "#82D4E6"
-            oro_nexion = "#D4AF37"  # Definimos el color dorado aquí
+            # Usamos un dorado mucho más vivo y brillante
+            oro_brillante = "#FFD700" 
             
             # Si el menú es DASHBOARD, aplicamos el diseño con la línea azul
             if texto_principal == "DASHBOARD":
@@ -1163,8 +1164,13 @@ else:
             
             # RUTA DINÁMICA
             if st.session_state.menu_sub != "GENERAL":
-                # Aplicamos el oro_nexion al submenú para que resalte
-                ruta = f"{texto_principal} <span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> <span style='color: {oro_nexion}; font-weight: bold;'>{st.session_state.menu_sub}</span>"
+                # Aplicamos el color brillante y un efecto de sombra sutil para el resplandor
+                ruta = (
+                    f"{texto_principal} "
+                    f"<span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> "
+                    f"<span style='color: {oro_brillante}; font-weight: 900; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>"
+                    f"{st.session_state.menu_sub}</span>"
+                )
             else:
                 ruta = texto_principal
             
