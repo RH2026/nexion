@@ -6483,20 +6483,36 @@ else:
                                         st.warning(f"💬 Comentarios: {datos['COMENTARIOS']}")
                         
                                 # --- CICLO DE TARJETAS (REPARADO) ---
-                                # --- CICLO DE TARJETAS (COMPRIMIDO EN UNA SOLA LÍNEA PARA EVITAR ERRORES) ---
+                                # --- CICLO DE TARJETAS (ESTA VEZ SIN METER HTML EN BOTONES) ---
                                 for _, item in df_render.iterrows():
-                                    is_desp = str(item['ESTATUS']).upper() == 'DESPACHADO'
-                                    badge = '<div style="display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 8px; border-radius:12px; font-size:8px; font-weight:800; margin-top:5px;">✓ DESPACHADO</div>' if is_desp else '<div style="display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 8px; border-radius:12px; font-size:8px; font-weight:800; margin-top:5px;">⚠️ NO SURTIDO</div>'
+                                    # 1. Creamos dos columnas: una para el diseño perrón, otra para el botón
+                                    col_card, col_btn = st.columns([0.9, 0.1])
                                     
-                                    # --- TODO EL DISEÑO EN UNA SOLA LÍNEA DE CÓDIGO ---
-                                    tarjeta_html = f'<div style="background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; width: 100%;"><div style="flex: 1;"><div style="font-size: 8px; color: #888;">FOLIO / FECHA</div><div style="color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800;">#{item["FOLIO"]}</div><div style="color: rgba(255,255,255,0.5); font-size: 10px;">{str(item["FECHA ENVÍO"])[:10]}</div>{badge}</div><div style="flex: 2; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);"><div style="font-size: 8px; color: #888;">HOTEL</div><div style="font-weight: 700; color: white;">{str(item["HOTEL"])[:30]}</div><div style="font-size: 10px; color: #FFD700; font-weight: 600;">SOLICITÓ: {str(item["SOLICITANTE"])[:30]}</div></div><div style="flex: 1.5; text-align: right;"><div style="color: #38bdf8; font-weight: 800; font-size: 12px;">{item["PAQUETERÍA"] or "PENDIENTE"}</div><div style="font-family: monospace; font-size: 11px; color: #fff;">{item["NÚMERO DE GUÍA"] or "SIN GUÍA"}</div></div></div>'
+                                    with col_card:
+                                        # Aquí el HTML sí se va a renderizar bien porque no es un label de botón
+                                        st.markdown(f"""
+                                            <div style="background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                                <div style="flex: 1;">
+                                                    <div style="font-size: 8px; color: #888;">FOLIO</div>
+                                                    <div style="color: #00FFAA; font-weight: 800;">#{item['FOLIO']}</div>
+                                                </div>
+                                                <div style="flex: 2;">
+                                                    <div style="font-weight: 700; color: white;">{str(item['HOTEL'])[:25]}</div>
+                                                    <div style="font-size: 9px; color: #FFD700;">SOLICITÓ: {str(item['SOLICITANTE'])[:20]}</div>
+                                                </div>
+                                                <div style="flex: 1; text-align: right;">
+                                                    <div style="color: #38bdf8; font-weight: 800; font-size: 11px;">{item['PAQUETERÍA'] or 'PENDIENTE'}</div>
+                                                </div>
+                                            </div>
+                                        """, unsafe_allow_html=True)
                                     
-                                    # Botón invisible sobre el HTML
-                                    if st.button(label=tarjeta_html, key=f"btn_{item['FOLIO']}", use_container_width=True):
-                                        st.session_state.folio_abierto = item['FOLIO']
-                                        st.rerun()
-                        
-                                # Disparo del diálogo
+                                    with col_btn:
+                                        # El botón va en su propia columna, sin ensuciar el HTML
+                                        if st.button("👁️", key=f"btn_{item['FOLIO']}"):
+                                            st.session_state.folio_abierto = item['FOLIO']
+                                            st.rerun()
+                                
+                                # 2. Disparo del diálogo
                                 if "folio_abierto" in st.session_state:
                                     f = st.session_state.folio_abierto
                                     del st.session_state.folio_abierto
