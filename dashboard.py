@@ -5139,30 +5139,35 @@ else:
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         
-                        # --- REPORTE PARA IMPRESIÓN ---
-                        ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
-                        reporte_html = f"""
-                        <div id="printable-report">
-                            <h1>REPORTE REGIONAL: {sede_sel}</h1>
-                            <p><b>Fecha:</b> {ahora} | <b>Mes:</b> {mes_sel}</p>
-                            <table border="1" style="width:100%; border-collapse: collapse;">
-                                <tr><th style="padding:10px;">Métrica</th><th style="padding:10px;">Valor</th></tr>
-                                <tr><td style="padding:10px;">Gasto Flete</td><td style="padding:10px;">${total_flete:,.2f}</td></tr>
-                                <tr><td style="padding:10px;">Facturación</td><td style="padding:10px;">${total_fact:,.2f}</td></tr>
-                                <tr><td style="padding:10px;">Cajas Enviadas</td><td style="padding:10px;">{total_cajas:,.0f}</td></tr>
-                                <tr><td style="padding:10px;">Costo Logístico</td><td style="padding:10px;">{pct_log:.2f}% (Target: {target}%)</td></tr>
-                            </table>
-                        </div>
-                        """
-                        
-                        # Mostrar el reporte (invisible en pantalla normal si quieres, o déjalo visible)
-                        st.markdown(reporte_html, unsafe_allow_html=True)
-                        
-                        # Botón que dispara el print del navegador
+                        # 1. Definimos la función que crea el HTML LIMPIO (sin mezclarse con Streamlit)
+                        def preparar_html_reporte(mes, sede, flete, fact, cajas, log, target):
+                            ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
+                            return f"""
+                            <html>
+                                <head><style>body {{ font-family: Arial; padding: 40px; }} table {{ width: 100%; border-collapse: collapse; }} th, td {{ border: 1px solid #000; padding: 10px; text-align: left; }}</style></head>
+                                <body>
+                                    <h1>REPORTE REGIONAL: {sede}</h1>
+                                    <p><b>Fecha:</b> {ahora} | <b>Mes:</b> {mes}</p>
+                                    <table>
+                                        <tr><th>Métrica</th><th>Valor</th></tr>
+                                        <tr><td>Gasto Flete</td><td>${flete:,.2f}</td></tr>
+                                        <tr><td>Facturación</td><td>${fact:,.2f}</td></tr>
+                                        <tr><td>Cajas Enviadas</td><td>{cajas:,.0f}</td></tr>
+                                        <tr><td>Costo Logístico</td><td>{log:.2f}% (Target: {target}%)</td></tr>
+                                    </table>
+                                    <script>window.print();</script>
+                                </body>
+                            </html>
+                            """
+                
+                        # 2. BOTÓN DE IMPRESIÓN (SIN ENSUCIAR LA VISTA)
                         if st.button(":material/print: IMPRIMIR REPORTE"):
-                            components.html("""
+                            html_final = preparar_html_reporte(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target)
+                            components.html(f"""
                                 <script>
-                                    window.print();
+                                    var win = window.open('', '_blank', 'width=800,height=600');
+                                    win.document.write('{html_final}');
+                                    win.document.close();
                                 </script>
                             """, height=0)
                 
