@@ -3612,22 +3612,24 @@ else:
                             )
                             
                             btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar_efectivo else "🔒 MODO LECTURA"
-                            submit_button = st.form_submit_button(btn_label, type="primary", use_container_width=True, disabled=not puede_editar_efectivo)
+                            # Le quitamos el type="primary" para que obedezca tus estilos globales y el hover
+                            submit_button = st.form_submit_button(btn_label, use_container_width=True, disabled=not puede_editar_efectivo)
                         
-                        # ── BOTÓN DE DESCARGA (AL FINAL DE TODO HASTA ABAJO Y SIN EMOJIS) ──
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        df_descarga_limpio = df_filtrado.copy()
-                        if 'ESTATUS' in df_descarga_limpio.columns:
-                            df_descarga_limpio['ESTATUS'] = df_descarga_limpio['ESTATUS'].apply(quitar_iconos)
-                        
-                        csv_descarga = df_descarga_limpio.to_csv(index=False).encode('utf-8')
-                        st.download_button(
-                            label="📥 DESCARGAR TABLA ACTUAL EN CSV",
-                            data=csv_descarga,
-                            file_name=f"pedidos_nexion_{datetime.now(tz_gdl).strftime('%Y%m%d_%H%M%S')}.csv",
-                            mime="text/csv",
-                            use_container_width=True
-                        )
+                        # ── BOTÓN DE DESCARGA (SOLO VISIBLE SI TIENES PERMISO DE EDICIÓN) ──
+                        if puede_editar_efectivo:
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            df_descarga_limpio = df_filtrado.copy()
+                            if 'ESTATUS' in df_descarga_limpio.columns:
+                                df_descarga_limpio['ESTATUS'] = df_descarga_limpio['ESTATUS'].apply(quitar_iconos)
+                            
+                            csv_descarga = df_descarga_limpio.to_csv(index=False).encode('utf-8')
+                            st.download_button(
+                                label="📥 DESCARGAR TABLA ACTUAL EN CSV",
+                                data=csv_descarga,
+                                file_name=f"pedidos_nexion_{datetime.now(tz_gdl).strftime('%Y%m%d_%H%M%S')}.csv",
+                                mime="text/csv",
+                                use_container_width=True
+                            )
                         
                         # ── 5. LÓGICA DE ACTUALIZACIÓN LIMPIA ──
                         if puede_editar_efectivo and submit_button:
