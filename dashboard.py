@@ -5131,26 +5131,61 @@ else:
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         st.divider()
                         
-                        # ---------------- BOTÓN ----------------
+                        # ---------------- BOTÓN E IMPRESIÓN ----------------
                         if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
-                            ahora = datetime.now().strftime("%d/%m/%Y %H:%M")
+                            ahora_gdl = datetime.utcnow() - timedelta(hours=6)
+                            fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
+                            hora_hoy = ahora_gdl.strftime('%H:%M')
+                            estatus_rep = "DENTRO DE PARÁMETROS" if pct_log <= target else "FUERA DE PARÁMETROS"
+                            # Calculamos el % de cumplimiento relativo al target para la barra
+                            pct_cumplimiento_target = max(0, min(100, (target / pct_log) * 100)) if pct_log > 0 else 0
+            
                             st.session_state.reporte_a_imprimir = f"""
-                            <div style="font-family:Arial;padding:40px;color:#000;">
-                            <h1 style="text-align:center;">REPORTE REGIONAL</h1><hr>
-                            <p><b>SEDE:</b> {sede_sel}<br><b>MES:</b> {mes_sel}<br><b>FECHA:</b> {ahora}</p>
-                            <table style="width:100%;border-collapse:collapse;">
-                            <tr style="background:#222;color:white;"><th style="padding:10px;border:1px solid black;">Métrica</th><th style="padding:10px;border:1px solid black;">Valor</th></tr>
-                            <tr><td style="padding:10px;border:1px solid black;">Gasto de Flete</td><td style="padding:10px;border:1px solid black;">${total_flete:,.2f}</td></tr>
-                            <tr><td style="padding:10px;border:1px solid black;">Facturación</td><td style="padding:10px;border:1px solid black;">${total_fact:,.2f}</td></tr>
-                            <tr><td style="padding:10px;border:1px solid black;">Cajas</td><td style="padding:10px;border:1px solid black;">{total_cajas:,.0f}</td></tr>
-                            <tr><td style="padding:10px;border:1px solid black;">Costo Logístico</td><td style="padding:10px;border:1px solid black;">{pct_log:.2f} %</td></tr>
-                            <tr><td style="padding:10px;border:1px solid black;">Target</td><td style="padding:10px;border:1px solid black;">{target:.2f} %</td></tr>
-                            </table></div>"""
-                        
+                            <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
+                                <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
+                                    <tr>
+                                        <td style="width: 50%;">
+                                            <h1 style="margin: 0; font-size: 14px; font-weight: 900; color: #000; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                            <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #666;">Distribución y Logística | 2026</p>
+                                        </td>
+                                        <td style="width: 50%; text-align: right; font-size: 11px; line-height: 1.6;">
+                                            <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper() if mes_sel != "TODOS" else "GEN"}-2026<br>
+                                            <b>FECHA:</b> {fecha_hoy} | <b>HORA:</b> {hora_hoy} (ZMG)<br>
+                                            <span style="border: 2px solid #000; padding: 4px 10px; font-weight: bold; display: inline-block; margin-top: 8px;">{estatus_rep}</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <h2 style="text-align: center; text-transform: uppercase; font-size: 18px; text-decoration: underline;">Análisis Operativo: {sede_sel}</h2>
+                                <div style="margin-bottom: 30px;">
+                                    <p style="font-size: 12px; font-weight: bold;">RENDIMIENTO VS META (TARGET {target:.2f}%):</p>
+                                    <div style="width: 100%; border: 2px solid #000; height: 35px; position: relative; background: #f0f0f0;">
+                                        <div style="width: {pct_cumplimiento_target}%; background: #444; height: 100%;"></div>
+                                        <div style="position: absolute; top: 8px; left: 10px; color: #fff; font-weight: bold;">ACTUAL: {pct_log:.2f}%</div>
+                                        <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold;">OBJETIVO: {target:.2f}%</div>
+                                    </div>
+                                </div>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
+                                    <tr style="background: #000; color: #fff;"><th style="padding: 10px; text-align: left;">MÉTRICA</th><th style="padding: 10px; text-align: center;">VALOR</th></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Gasto Total Flete</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_flete:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Facturación Bruta</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_fact:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Volumen (Cajas)</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{total_cajas:,.0f} Uds.</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px; font-weight:bold;">Costo Logístico sobre Ventas</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">{pct_log:.2f}%</td></tr>
+                                </table>
+                                <div style="margin-top: 40px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
+                                    <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
+                                        <b>Rigoberto Hernández</b><br>Coordinador de Logística Nacional
+                                    </div>
+                                    <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
+                                        <b>Dirección General</b><br>Autorizado
+                                    </div>
+                                </div>
+                            </div>"""
+            
+                        # Lógica de apertura de ventana para impresión
                         if st.session_state.reporte_a_imprimir:
                             html_template = f"""<script>
                             var win = window.open("", "_blank", "height=850,width=900");
-                            win.document.write("<html><head><title>Reporte</title></head><body>" + `{st.session_state.reporte_a_imprimir}` + "</body></html>");
+                            win.document.write("<html><head><title>Reporte Operativo</title></head><body>" + `{st.session_state.reporte_a_imprimir}` + "</body></html>");
                             win.document.close(); win.onload = function(){{ win.focus(); win.print(); }};
                             </script>"""
                             components.html(html_template, height=0)
