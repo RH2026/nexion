@@ -5070,19 +5070,82 @@ else:
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
                 st.markdown("### :material/gavel: CORPORATIVOS")
-                st.write("")
-                
-                # Diseño de alerta "En Construcción"
+                # --- MOTOR DE DISEÑO (ESTILO ELITE/ONYX) ---
                 st.markdown("""
-                <div style="background-color: #0a0a0a; border: 1px solid #222; border-left: 5px solid #39ff14; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-                    <h2 style="color: #39ff14; margin-top: 0; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">
-                        Módulo en Construcción
-                    </h2>
-                    <p style="color: #e0e0e0; font-size: 1.1em; margin-bottom: 0;">
-                        Estamos trabajando en la programación de esta sección para que quede impecable. ¡Pronto estará lista para operar!
-                    </p>
-                </div>
+                <style>
+                .main { background-color: #0B1014; }
+                [data-testid="stMetric"] { 
+                    background-color: #1A252F; padding: 25px; border-radius: 12px; 
+                    border-left: 5px solid #D4AF37; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                }
+                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; }
+                div[data-testid="stMetricLabel"] { color: #D4AF37; letter-spacing: 1.5px; text-transform: uppercase; }
+                h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #D4AF37; }
+                .analysis-box {
+                    background-color: #1A252F; padding: 25px; border-radius: 12px;
+                    border: 1px solid #243441; color: #A4B9C8; line-height: 1.8;
+                }
+                </style>
                 """, unsafe_allow_html=True)
+                
+                # --- FUNCIONES DE SOPORTE ---
+                def limpiar_columnas(txt):
+                    if not isinstance(txt, str): return txt
+                    texto = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
+                    return texto.strip().upper()
+                
+                def limpiar_dinero(col):
+                    return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
+                
+                # --- CARGA Y PROCESAMIENTO ---
+                try:
+                    df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
+                    df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
+                    
+                    # --- FILTRO GEOGRÁFICO INTELIGENTE ---
+                    sedes_objetivo = ['CEDIS PLAYA DEL CARMEN', 'CEDIS MONTERREY']
+                    df_regional = df_actual[df_actual['CEDIS'].isin(sedes_objetivo)].copy()
+                    
+                    # Aplicar limpiezas necesarias
+                    for col in ['COSTO DE LA GUIA', 'FACTURACION', 'CAJAS']:
+                        if col in df_regional.columns:
+                            df_regional[col] = limpiar_dinero(df_regional[col])
+                            
+                    # --- INTERFAZ DEL MÓDULO ---
+                    st.title(":material/map: MÓDULO DE ANÁLISIS: CEDIS PLAYA & MONTERREY")
+                    
+                    c1, c2 = st.columns(2)
+                    with c1: mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional['MES'].unique().tolist()))
+                    with c2: sede_sel = st.selectbox("FILTRAR POR SEDE:", ["AMBAS"] + sedes_objetivo)
+                    
+                    # Aplicar filtros
+                    df_final = df_regional.copy()
+                    if mes_sel != "TODOS": df_final = df_final[df_final['MES'] == mes_sel]
+                    if sede_sel != "AMBAS": df_final = df_final[df_final['CEDIS'] == sede_sel]
+                    
+                    # --- CÁLCULOS ---
+                    total_flete = df_final['COSTO DE LA GUIA'].sum()
+                    total_fact = df_final['FACTURACION'].sum()
+                    total_cajas = df_final['CAJAS'].sum()
+                    
+                    # --- VISTA DE TARJETAS ---
+                    k1, k2, k3 = st.columns(3)
+                    k1.metric("GASTO FLETE TOTAL", f"${total_flete:,.2f}")
+                    k2.metric("FACTURACIÓN TOTAL", f"${total_fact:,.2f}")
+                    k3.metric("CAJAS ENVIADAS", f"{total_cajas:,.0f}")
+                    
+                    # --- SECCIÓN DE DIAGNÓSTICO ---
+                    st.markdown("### DIAGNÓSTICO ESTRATÉGICO REGIONAL")
+                    st.markdown(f'''
+                    <div class="analysis-box">
+                        • <b>Análisis:</b> Operación consolidada para <b>{sede_sel}</b> durante el periodo <b>{mes_sel}</b>.<br>
+                        • <b>Volumen:</b> Se gestionaron {total_cajas:,.0f} unidades con un costo operativo de ${total_flete:,.2f}.<br>
+                        • <b>Rentabilidad:</b> {(total_flete/total_fact*100):.2f}% sobre facturación bruta.
+                    </div>
+                    ''', unsafe_allow_html=True)
+                
+                except Exception as e:
+                    st.error(f"Error en el módulo regional: {e}")
     
             elif st.session_state.menu_sub == "ANALISIS MENSUAL":
          
