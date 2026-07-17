@@ -5104,7 +5104,7 @@ else:
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
                     
                     col_concepto = next((c for c in df_actual.columns if 'CONCEPTO' in c), None)
-                    col_cajas = next((c for c in df_actual.columns if 'CAJAS FACTURA' in c), None)
+                    col_cajas = next((c for c in df_actual.columns if 'CAJAS' in c), None)
                     
                     if col_concepto and col_cajas:
                         df_actual[col_concepto] = df_actual[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
@@ -5153,7 +5153,7 @@ else:
                         st.markdown(f'''
                         <div class="analysis-box">
                             • <b>Análisis:</b> Operación filtrada para <b>{sede_sel}</b>, mes <b>{mes_sel}</b>.<br>
-                            • <b>Volumen Total:</b> {total_cajas:,.0f} unidades (Cajas Factura).<br>
+                            • <b>Volumen Total:</b> {total_cajas:,.0f} unidades (Cajas).<br>
                             • <b>Costo Logístico:</b> El gasto representa el <b>{pct_log:.2f}%</b> de la facturación.<br>
                             • <b>Estado Operativo:</b> { "🟢 Dentro de parámetros" if pct_log <= 7.5 else "🔴 Desviación en costos" }
                         </div>
