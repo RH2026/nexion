@@ -3609,11 +3609,11 @@ else:
                             
                             /* Hover perrón en verde neón */
                             div[data-testid="stFormSubmitButton"] button:hover {
-                                border-color: #39ff14 !important;
+                                border-color: #00A0A8 !important;
                                 background-color: rgba(57, 255, 20, 0.05) !important; /* Un brillito verde al fondo */
                             }
                             div[data-testid="stFormSubmitButton"] button:hover p {
-                                color: #39ff14 !important;
+                                color: #00A0A8 !important;
                             }
                             </style>
                             """, unsafe_allow_html=True)
