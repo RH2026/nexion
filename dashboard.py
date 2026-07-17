@@ -6036,34 +6036,34 @@ else:
                                         st.session_state.ultimo_folio_visto = folio_actual_nube
                                         st.rerun() # FORZAMOS RERUN para que el aviso aparezca al instante
                         
-                        # --- 2. RENDERIZADO PERSISTENTE (Coloca esto al mero inicio de tu app) ---
                         def renderizar_alerta_persistente():
-                            # Este contenedor vive fuera de cualquier lógica de botones
-                            if "alerta_folio_pendiente" in st.session_state:
-                                folio = st.session_state.alerta_folio_pendiente
-                                
-                                container = st.container()
-                                with container:
-                                    st.markdown(f"""
-                                    <div style="
-                                        background: #1a1a1a; 
-                                        border: 3px solid #39ff14; 
-                                        padding: 30px; 
-                                        border-radius: 15px; 
-                                        margin-bottom: 30px;
-                                        box-shadow: 0 0 30px rgba(57, 255, 20, 0.4);
-                                        text-align: center;
-                                        position: relative;
-                                    ">
-                                        <h2 style="color: #39ff14; margin: 0 0 10px 0; letter-spacing: 4px; text-transform: uppercase;">
-                                            🚨 NUEVO FOLIO DETECTADO: JYP-{folio}
-                                        </h2>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                                    
-                                    if st.button("✅ DAR POR ENTERADO Y CERRAR", key="btn_cerrar_alerta", use_container_width=True):
-                                        del st.session_state.alerta_folio_pendiente
-                                        st.rerun()
+                        if "alerta_folio_pendiente" in st.session_state:
+                            folio = st.session_state.alerta_folio_pendiente
+                            
+                            # Diseño profesional tipo Central Data Hub
+                            st.markdown(f"""
+                            <div style="
+                                background-color: #3b4d5a; 
+                                border-left: 6px solid #5a9bd5; 
+                                padding: 20px 25px; 
+                                border-radius: 5px; 
+                                margin-bottom: 20px;
+                                color: white;
+                                font-family: sans-serif;
+                            ">
+                                <h2 style="margin: 0; padding: 0; font-size: 24px; color: #ffffff;">
+                                    NUEVO FOLIO: JYP-{folio}
+                                </h2>
+                                <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                                    Nexion Logistic Node // Nueva Solicitud Recibida
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # Mantenemos tu botón que sí te gustó
+                            if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
+                                del st.session_state.alerta_folio_pendiente
+                                st.rerun()
                         
                         # --- LLAMADA ESTRATÉGICA ---
                         # Coloca esto justo después de tus definiciones de funciones al inicio de tu script
