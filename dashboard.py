@@ -6011,6 +6011,30 @@ else:
                             payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
                             return requests.put(url, json=payload, headers=headers).status_code == 200
                         
+                        # --- MONITOR DE ALERTAS EN TIEMPO REAL ---
+                        @st.fragment(run_every=15)
+                        def monitorear_nuevos_folios():
+                            # Carga silenciosa del archivo
+                            df_actual, _ = obtener_datos_github() # Usamos tu función existente
+                            
+                            if not df_actual.empty:
+                                # Obtenemos el folio máximo actual en la nube
+                                folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
+                                
+                                # Si es la primera vez que corre, inicializamos la memoria
+                                if "ultimo_folio_visto" not in st.session_state:
+                                    st.session_state.ultimo_folio_visto = folio_actual_nube
+                                
+                                # Si detectamos que hay un folio nuevo
+                                elif folio_actual_nube > st.session_state.ultimo_folio_visto:
+                                    st.toast(f"🚨 ¡NUEVO FOLIO DETECTADO: JYP-{folio_actual_nube}!", icon="📦")
+                                    # Actualizamos la memoria para no estar notificando el mismo folio
+                                    st.session_state.ultimo_folio_visto = folio_actual_nube
+                        
+                        # --- EJECUCIÓN ---
+                        # Llamamos a la función para que el monitor siempre esté activo
+                        monitorear_nuevos_folios()
+                
                         # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
                         def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago):
                             filas_prod = ""
