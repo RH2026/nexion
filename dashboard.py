@@ -3590,20 +3590,30 @@ else:
                         
                         with st.form("nexion_editor_form_safe"):
         
-                            # Inyectamos CSS para domar a la fuerza el botón rebelde del formulario
+                            # CSS Agresivo para someter al botón rebelde
                             st.markdown("""
                             <style>
-                            [data-testid="stFormSubmitButton"] button {
-                                background-color: #000000 !important;
-                                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                            /* Forzar el fondo gris sólido y borde sutil */
+                            div[data-testid="stFormSubmitButton"] button {
+                                background-color: #262730 !important; 
+                                border: 1px solid rgba(250, 250, 250, 0.2) !important;
+                                transition: all 0.3s ease !important;
+                                box-shadow: none !important;
+                            }
+                            /* Forzar el texto en blanco */
+                            div[data-testid="stFormSubmitButton"] button p {
                                 color: #ffffff !important;
                                 font-weight: 600 !important;
-                                transition: all 0.3s ease !important;
+                                transition: color 0.3s ease !important;
                             }
-                            [data-testid="stFormSubmitButton"] button:hover {
-                                border: 1px solid #39ff14 !important;
+                            
+                            /* Hover perrón en verde neón */
+                            div[data-testid="stFormSubmitButton"] button:hover {
+                                border-color: #39ff14 !important;
+                                background-color: rgba(57, 255, 20, 0.05) !important; /* Un brillito verde al fondo */
+                            }
+                            div[data-testid="stFormSubmitButton"] button:hover p {
                                 color: #39ff14 !important;
-                                background-color: rgba(57, 255, 20, 0.05) !important;
                             }
                             </style>
                             """, unsafe_allow_html=True)
