@@ -5070,7 +5070,8 @@ else:
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
                 st.markdown("### :material/gavel: CORPORATIVOS")
-                # --- MOTOR DE DISEÑO (ESTILO ELITE/ONYX) ---
+                # --- 1. CONFIGURACIÓN Y ESTILO (ESTILO ELITE/ONYX) ---
+                st.set_page_config(page_title="Nexion | Módulo Regional", layout="wide")
                 st.markdown("""
                 <style>
                 .main { background-color: #0B1014; }
@@ -5080,7 +5081,7 @@ else:
                 }
                 div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; }
                 div[data-testid="stMetricLabel"] { color: #D4AF37; letter-spacing: 1.5px; text-transform: uppercase; }
-                h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #D4AF37; }
+                h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
                 .analysis-box {
                     background-color: #1A252F; padding: 25px; border-radius: 12px;
                     border: 1px solid #243441; color: #A4B9C8; line-height: 1.8;
@@ -5088,7 +5089,7 @@ else:
                 </style>
                 """, unsafe_allow_html=True)
                 
-                # --- FUNCIONES DE SOPORTE ---
+                # --- 2. FUNCIONES DE PROCESAMIENTO ---
                 def limpiar_columnas(txt):
                     if not isinstance(txt, str): return txt
                     texto = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
@@ -5097,55 +5098,73 @@ else:
                 def limpiar_dinero(col):
                     return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
                 
-                # --- CARGA Y PROCESAMIENTO ---
+                # --- 3. CARGA Y PROCESAMIENTO A PRUEBA DE ERRORES ---
                 try:
                     df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
                     
-                    # --- FILTRO GEOGRÁFICO INTELIGENTE ---
-                    sedes_objetivo = ['CEDIS PLAYA DEL CARMEN', 'CEDIS MONTERREY']
-                    df_regional = df_actual[df_actual['CEDIS'].isin(sedes_objetivo)].copy()
+                    # Buscamos la columna CONCEPTO dinámicamente
+                    col_concepto = next((c for c in df_actual.columns if 'CONCEPTO' in c), None)
                     
-                    # Aplicar limpiezas necesarias
-                    for col in ['COSTO DE LA GUIA', 'FACTURACION', 'CAJAS']:
-                        if col in df_regional.columns:
-                            df_regional[col] = limpiar_dinero(df_regional[col])
-                            
-                    # --- INTERFAZ DEL MÓDULO ---
-                    st.title(":material/map: MÓDULO DE ANÁLISIS: CEDIS PLAYA & MONTERREY")
-                    
-                    c1, c2 = st.columns(2)
-                    with c1: mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional['MES'].unique().tolist()))
-                    with c2: sede_sel = st.selectbox("FILTRAR POR SEDE:", ["AMBAS"] + sedes_objetivo)
-                    
-                    # Aplicar filtros
-                    df_final = df_regional.copy()
-                    if mes_sel != "TODOS": df_final = df_final[df_final['MES'] == mes_sel]
-                    if sede_sel != "AMBAS": df_final = df_final[df_final['CEDIS'] == sede_sel]
-                    
-                    # --- CÁLCULOS ---
-                    total_flete = df_final['COSTO DE LA GUIA'].sum()
-                    total_fact = df_final['FACTURACION'].sum()
-                    total_cajas = df_final['CAJAS'].sum()
-                    
-                    # --- VISTA DE TARJETAS ---
-                    k1, k2, k3 = st.columns(3)
-                    k1.metric("GASTO FLETE TOTAL", f"${total_flete:,.2f}")
-                    k2.metric("FACTURACIÓN TOTAL", f"${total_fact:,.2f}")
-                    k3.metric("CAJAS ENVIADAS", f"{total_cajas:,.0f}")
-                    
-                    # --- SECCIÓN DE DIAGNÓSTICO ---
-                    st.markdown("### DIAGNÓSTICO ESTRATÉGICO REGIONAL")
-                    st.markdown(f'''
-                    <div class="analysis-box">
-                        • <b>Análisis:</b> Operación consolidada para <b>{sede_sel}</b> durante el periodo <b>{mes_sel}</b>.<br>
-                        • <b>Volumen:</b> Se gestionaron {total_cajas:,.0f} unidades con un costo operativo de ${total_flete:,.2f}.<br>
-                        • <b>Rentabilidad:</b> {(total_flete/total_fact*100):.2f}% sobre facturación bruta.
-                    </div>
-                    ''', unsafe_allow_html=True)
+                    if col_concepto:
+                        # Limpieza de texto en la columna clave
+                        df_actual[col_concepto] = df_actual[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
+                        
+                        # Filtro: Extraemos solo lo que corresponde a Playa o Monterrey
+                        df_regional = df_actual[
+                            df_actual[col_concepto].str.contains('TRASLADO CEDIS PLAYA|CEDIS MONTERREY', regex=True, na=False)
+                        ].copy()
+                        
+                        # Limpieza de valores numéricos
+                        for col in ['COSTO DE LA GUIA', 'FACTURACION', 'CAJAS']:
+                            if col in df_regional.columns:
+                                df_regional[col] = limpiar_dinero(df_regional[col])
+                        
+                        # --- 4. INTERFAZ ---
+                        st.title(":material/map: MÓDULO: ANÁLISIS CEDIS PLAYA & MONTERREY")
+                        
+                        c1, c2 = st.columns(2)
+                        with c1: 
+                            meses = ["TODOS"] + sorted(df_regional['MES'].unique().tolist())
+                            mes_sel = st.selectbox("FILTRAR POR MES:", meses)
+                        with c2: 
+                            opciones_sede = ["AMBAS", "TRASLADO CEDIS PLAYA", "CEDIS MONTERREY"]
+                            sede_sel = st.selectbox("FILTRAR POR SEDE:", opciones_sede)
+                        
+                        # Filtrado final para cálculos
+                        df_final = df_regional.copy()
+                        if mes_sel != "TODOS": df_final = df_final[df_final['MES'] == mes_sel]
+                        if sede_sel != "AMBAS": 
+                            df_final = df_final[df_final[col_concepto].str.contains(sede_sel, regex=False)]
+                        
+                        # --- 5. CÁLCULOS PRINCIPALES ---
+                        total_flete = df_final['COSTO DE LA GUIA'].sum()
+                        total_fact = df_final['FACTURACION'].sum()
+                        total_cajas = df_final['CAJAS'].sum()
+                        pct_log = (total_flete / total_fact * 100) if total_fact > 0 else 0
+                        
+                        # --- 6. VISTA DE TARJETAS ---
+                        k1, k2, k3 = st.columns(3)
+                        k1.metric("GASTO FLETE TOTAL", f"${total_flete:,.2f}")
+                        k2.metric("FACTURACIÓN TOTAL", f"${total_fact:,.2f}")
+                        k3.metric("CAJAS ENVIADAS", f"{total_cajas:,.0f}")
+                        
+                        # --- 7. DIAGNÓSTICO ESTRATÉGICO ---
+                        st.markdown("### DIAGNÓSTICO ESTRATÉGICO REGIONAL")
+                        st.markdown(f'''
+                        <div class="analysis-box">
+                            • <b>Análisis:</b> Operación filtrada bajo el criterio de <b>{sede_sel}</b> para el mes de <b>{mes_sel}</b>.<br>
+                            • <b>Volumen:</b> Se han gestionado un total de {total_cajas:,.0f} unidades físicas.<br>
+                            • <b>Rentabilidad Logística:</b> El costo operativo representa el <b>{pct_log:.2f}%</b> de la facturación total.<br>
+                            • <b>Estado:</b> { "Operación dentro de parámetros" if pct_log <= 7.5 else "⚠️ Atención: Desviación en costos operativos." }
+                        </div>
+                        ''', unsafe_allow_html=True)
+                
+                    else:
+                        st.error("¡Amor, no encuentro la columna 'CONCEPTO' en tu CSV! Por favor verifica el nombre.")
                 
                 except Exception as e:
-                    st.error(f"Error en el módulo regional: {e}")
+                    st.error(f"Error crítico en el módulo: {e}")
     
             elif st.session_state.menu_sub == "ANALISIS MENSUAL":
          
