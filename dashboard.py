@@ -5070,28 +5070,9 @@ else:
             # Aquí creamos el "espacio" para cada uno
             if st.session_state.menu_sub == "CORPORATIVOS":
                 # --- 1. CONFIGURACIÓN Y ESTILO (ELITE/ONYX) ---
-                st.set_page_config(page_title="Nexion | Módulo Regional", layout="wide")
-                st.markdown("""
-                <style>
-                .main { background-color: #0B1014; }
-                [data-testid="stMetric"] { 
-                    background-color: #1A252F; padding: 25px; border-radius: 12px; 
-                    border-left: 5px solid #D4AF37; height: 120px;
-                    display: flex; flex-direction: column; justify-content: center;
-                }
-                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.1rem; }
-                div[data-testid="stMetricLabel"] { color: #D4AF37; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
-                h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
-                .analysis-box { background-color: #1A252F; padding: 25px; border-radius: 12px; border: 1px solid #243441; color: #A4B9C8; line-height: 1.8; font-size: 0.95rem; }
-                
-                /* CSS PARA IMPRESIÓN */
-                @media print {
-                    body * { visibility: hidden !important; }
-                    #printable-report, #printable-report * { visibility: visible !important; }
-                    #printable-report { position: absolute; left: 0; top: 0; width: 100%; }
-                }
-                </style>
-                """, unsafe_allow_html=True)
+                # (Asegúrate de que st.set_page_config esté solo una vez al inicio de tu app principal)
+                if 'imprimir_reporte' not in st.session_state:
+                    st.session_state.imprimir_reporte = False
                 
                 # --- 2. FUNCIONES ---
                 def limpiar_columnas(txt):
@@ -5139,38 +5120,39 @@ else:
                         k3.metric("CAJAS", f"{total_cajas:,.0f}")
                         k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
                         
-                        # 1. Definimos la función que crea el HTML LIMPIO (sin mezclarse con Streamlit)
-                        def preparar_html_reporte(mes, sede, flete, fact, cajas, log, target):
+                        # --- LÓGICA DE IMPRESIÓN ---
+                        if st.button(":material/print: IMPRIMIR REPORTE"):
+                            st.session_state.imprimir_reporte = True
+                
+                        if st.session_state.imprimir_reporte:
                             ahora = datetime.now().strftime('%d/%m/%Y %H:%M')
-                            return f"""
+                            html_content = f"""
                             <html>
-                                <head><style>body {{ font-family: Arial; padding: 40px; }} table {{ width: 100%; border-collapse: collapse; }} th, td {{ border: 1px solid #000; padding: 10px; text-align: left; }}</style></head>
+                                <head><style>body {{ font-family: Arial; padding: 40px; }} table {{ width: 100%; border-collapse: collapse; }} th, td {{ border: 1px solid #000; padding: 10px; }}</style></head>
                                 <body>
-                                    <h1>REPORTE REGIONAL: {sede}</h1>
-                                    <p><b>Fecha:</b> {ahora} | <b>Mes:</b> {mes}</p>
+                                    <h1>REPORTE REGIONAL: {sede_sel}</h1>
+                                    <p><b>Fecha:</b> {ahora} | <b>Mes:</b> {mes_sel}</p>
                                     <table>
                                         <tr><th>Métrica</th><th>Valor</th></tr>
-                                        <tr><td>Gasto Flete</td><td>${flete:,.2f}</td></tr>
-                                        <tr><td>Facturación</td><td>${fact:,.2f}</td></tr>
-                                        <tr><td>Cajas Enviadas</td><td>{cajas:,.0f}</td></tr>
-                                        <tr><td>Costo Logístico</td><td>{log:.2f}% (Target: {target}%)</td></tr>
+                                        <tr><td>Gasto Flete</td><td>${total_flete:,.2f}</td></tr>
+                                        <tr><td>Facturación</td><td>${total_fact:,.2f}</td></tr>
+                                        <tr><td>Cajas</td><td>{total_cajas:,.0f}</td></tr>
+                                        <tr><td>Costo Logístico</td><td>{pct_log:.2f}%</td></tr>
                                     </table>
                                     <script>window.print();</script>
                                 </body>
                             </html>
                             """
-                
-                        # 2. BOTÓN DE IMPRESIÓN (SIN ENSUCIAR LA VISTA)
-                        if st.button(":material/print: IMPRIMIR REPORTE"):
-                            html_final = preparar_html_reporte(mes_sel, sede_sel, total_flete, total_fact, total_cajas, pct_log, target)
-                            components.html(f"""
-                                <script>
-                                    var win = window.open('', '_blank', 'width=800,height=600');
-                                    win.document.write('{html_final}');
-                                    win.document.close();
-                                </script>
-                            """, height=0)
-                
+                            # Usamos un script de JS simple para abrir y cerrar
+                            js_code = f"""
+                            <script>
+                                var win = window.open('', '_blank', 'width=800,height=600');
+                                win.document.write('{html_content}');
+                                win.document.close();
+                            </script>
+                            """
+                            components.html(js_code, height=0)
+                            st.session_state.imprimir_reporte = False # Reseteamos el estado
                     else:
                         st.error("Error: Columnas 'CONCEPTO' o 'CAJAS' no encontradas.")
                 except Exception as e:
