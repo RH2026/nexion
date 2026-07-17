@@ -6011,41 +6011,58 @@ else:
                             payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
                             return requests.put(url, json=payload, headers=headers).status_code == 200
                         
-                        # --- MONITOR DE ALERTAS SOLO PARA TI ---
+                        # --- 1. MONITOR DE ALERTAS EXCLUSIVO PARA TI (A INSERTAR DONDE VAN TUS FUNCIONES) ---
                         @st.fragment(run_every=15)
                         def monitorear_nuevos_folios_para_ti():
-                            df_actual, _ = obtener_datos_github()
-                            
-                            if not df_actual.empty:
-                                # Folio máximo actual en la nube
-                                folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
+                            # Solo se ejecuta si el usuario eres tú
+                            if st.session_state.get("usuario_activo") == "Rigoberto":
+                                df_actual, _ = obtener_datos_github() # Usa tu función existente
                                 
-                                # Inicializar memoria si no existe
-                                if "ultimo_folio_visto" not in st.session_state:
-                                    st.session_state.ultimo_folio_visto = folio_actual_nube
-                                    return
+                                if not df_actual.empty and "FOLIO" in df_actual.columns:
+                                    # Obtenemos el folio máximo actual
+                                    folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
+                                    
+                                    # Inicializamos memoria la primera vez
+                                    if "ultimo_folio_visto" not in st.session_state:
+                                        st.session_state.ultimo_folio_visto = folio_actual_nube
+                                        return
                         
-                                # Si hay un folio nuevo y TÚ no fuiste quien lo creó
-                                if folio_actual_nube > st.session_state.ultimo_folio_visto:
-                                    # Guardamos el folio en la sesión para que aparezca el aviso permanente
-                                    st.session_state.alerta_folio_pendiente = folio_actual_nube
-                                    st.session_state.ultimo_folio_visto = folio_actual_nube
+                                    # Si hay uno nuevo, guardamos el folio en sesión para la alerta persistente
+                                    if folio_actual_nube > st.session_state.ultimo_folio_visto:
+                                        st.session_state.alerta_folio_pendiente = folio_actual_nube
+                                        st.session_state.ultimo_folio_visto = folio_actual_nube
                         
-                        # --- RENDERIZADO DEL AVISO PERSISTENTE (Esto va al inicio de tu app) ---
-                        def renderizar_alerta_persistente():
-                            if "alerta_folio_pendiente" in st.session_state:
-                                folio_alerta = st.session_state.alerta_folio_pendiente
+                                # --- 2. RENDERIZADO DEL AVISO NEÓN (A INSERTAR AL INICIO DE TU APP) ---
+                                def renderizar_alerta_persistente():
+                                    if "alerta_folio_pendiente" in st.session_state:
+                                        folio = st.session_state.alerta_folio_pendiente
+                                        
+                                        # HTML Chingón
+                                        st.markdown(f"""
+                                        <div style="
+                                            background: #1a1a1a; 
+                                            border: 2px solid #39ff14; 
+                                            padding: 25px; 
+                                            border-radius: 12px; 
+                                            margin-bottom: 25px;
+                                            box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+                                            text-align: center;
+                                        ">
+                                            <h2 style="color: #39ff14; margin: 0 0 10px 0; letter-spacing: 3px; text-transform: uppercase; font-weight: 900;">
+                                                 ¡ALERTA: NUEVO FOLIO JYP-{folio}!
+                                            </h2>
+                                            <p style="color: white; font-size: 1.1em; margin: 0;">Se ha detectado una nueva solicitud en el sistema.</p>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        
+                                        if st.button("✅ CERRAR", use_container_width=True):
+                                            del st.session_state.alerta_folio_pendiente
+                                            st.rerun()
                                 
-                                # Este aviso se queda ahí hasta que tú lo cierres
-                                with st.container():
-                                    st.warning(f"**¡ATENCIÓN! NUEVO FOLIO DETECTADO: JYP-{folio_alerta}**")
-                                    if st.button("✅ Ya lo vi / Cerrar aviso"):
-                                        del st.session_state.alerta_folio_pendiente
-                                        st.rerun()
+                                # --- LLAMADA AL MONITOR ---
+                                monitorear_nuevos_folios_para_ti()
+                                renderizar_alerta_persistente()
                         
-                        # --- EJECUCIÓN ---
-                        monitorear_nuevos_folios_para_ti()
-                        renderizar_alerta_persistente()
                 
                         # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
                         def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago):
