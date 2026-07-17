@@ -6040,11 +6040,11 @@ else:
                             if "alerta_folio_pendiente" in st.session_state:
                                 folio = st.session_state.alerta_folio_pendiente
                                 
-                                # Diseño profesional tipo Central Data Hub
+                                # Diseño profesional con fondo más oscuro y acento en NARANJA ROJIZO
                                 st.markdown(f"""
                                 <div style="
-                                    background-color: #3b4d5a; 
-                                    border-left: 6px solid #5a9bd5; 
+                                    background-color: #202c36; 
+                                    border-left: 6px solid #FF4500; 
                                     padding: 20px 25px; 
                                     border-radius: 5px; 
                                     margin-bottom: 20px;
@@ -6055,12 +6055,11 @@ else:
                                         NUEVO FOLIO: JYP-{folio}
                                     </h2>
                                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                                        Nexion Logistic Node // Nueva Solicitud Recibida
+                                        Nexion Logistic Node // Alerta de Alta Prioridad
                                     </p>
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
-                                # Mantenemos tu botón que sí te gustó
                                 if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
                                     del st.session_state.alerta_folio_pendiente
                                     st.rerun()
