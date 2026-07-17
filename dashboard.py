@@ -6011,29 +6011,41 @@ else:
                             payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
                             return requests.put(url, json=payload, headers=headers).status_code == 200
                         
-                        # --- MONITOR DE ALERTAS EN TIEMPO REAL ---
+                        # --- MONITOR DE ALERTAS SOLO PARA TI ---
                         @st.fragment(run_every=15)
-                        def monitorear_nuevos_folios():
-                            # Carga silenciosa del archivo
-                            df_actual, _ = obtener_datos_github() # Usamos tu función existente
+                        def monitorear_nuevos_folios_para_ti():
+                            df_actual, _ = obtener_datos_github()
                             
                             if not df_actual.empty:
-                                # Obtenemos el folio máximo actual en la nube
+                                # Folio máximo actual en la nube
                                 folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
                                 
-                                # Si es la primera vez que corre, inicializamos la memoria
+                                # Inicializar memoria si no existe
                                 if "ultimo_folio_visto" not in st.session_state:
                                     st.session_state.ultimo_folio_visto = folio_actual_nube
-                                
-                                # Si detectamos que hay un folio nuevo
-                                elif folio_actual_nube > st.session_state.ultimo_folio_visto:
-                                    st.toast(f"🚨 ¡NUEVO FOLIO DETECTADO: JYP-{folio_actual_nube}!", icon="📦")
-                                    # Actualizamos la memoria para no estar notificando el mismo folio
+                                    return
+                        
+                                # Si hay un folio nuevo y TÚ no fuiste quien lo creó
+                                if folio_actual_nube > st.session_state.ultimo_folio_visto:
+                                    # Guardamos el folio en la sesión para que aparezca el aviso permanente
+                                    st.session_state.alerta_folio_pendiente = folio_actual_nube
                                     st.session_state.ultimo_folio_visto = folio_actual_nube
                         
+                        # --- RENDERIZADO DEL AVISO PERSISTENTE (Esto va al inicio de tu app) ---
+                        def renderizar_alerta_persistente():
+                            if "alerta_folio_pendiente" in st.session_state:
+                                folio_alerta = st.session_state.alerta_folio_pendiente
+                                
+                                # Este aviso se queda ahí hasta que tú lo cierres
+                                with st.container():
+                                    st.warning(f"**¡ATENCIÓN! NUEVO FOLIO DETECTADO: JYP-{folio_alerta}**")
+                                    if st.button("✅ Ya lo vi / Cerrar aviso"):
+                                        del st.session_state.alerta_folio_pendiente
+                                        st.rerun()
+                        
                         # --- EJECUCIÓN ---
-                        # Llamamos a la función para que el monitor siempre esté activo
-                        monitorear_nuevos_folios()
+                        monitorear_nuevos_folios_para_ti()
+                        renderizar_alerta_persistente()
                 
                         # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
                         def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago):
