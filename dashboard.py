@@ -6453,10 +6453,11 @@ else:
                         st.write("")
                         st.write("")
                         st.write("")                        
-                        with st.expander("🔍 CONSULTA DE FOLIOS Y GUÍAS", expanded=True):
+                        with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS", expanded=True):
                             if not df_actual.empty:
-                                busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:", key="busqueda_input").upper()
+                                busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:").upper()
                                 
+                                # Aseguramos la existencia de las columnas necesarias
                                 df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA", "ESTATUS", "SOLICITO"]].copy()
                                 df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA", "ESTATUS", "SOLICITANTE"]
                                 df_vista = df_vista.fillna('') 
@@ -6465,60 +6466,65 @@ else:
                                     df_vista = df_vista[df_vista.astype(str).apply(lambda x: x.str.contains(busqueda, case=False)).any(axis=1)]
                                 
                                 df_render = df_vista.sort_values(by="FOLIO", ascending=False)
+                                data_busqueda = df_render.to_dict('records')
                                 
-                                @st.dialog("DETALLE COMPLETO DEL ENVÍO", width="large")
-                                def abrir_detalle(folio_id):
-                                    datos = df_actual[df_actual["FOLIO"] == int(folio_id)].iloc[0]
-                                    st.markdown(f"### <b style='color:#00FFAA;'>JYP-{int(datos['FOLIO'])}</b> - {datos['NOMBRE DEL HOTEL']}", unsafe_allow_html=True)
-                                    st.write(f"**Fecha:** {datos['FECHA']} | **Solicitó:** {datos['SOLICITO']}")
-                                    st.divider()
-                                    col1, col2 = st.columns(2)
-                                    col1.write(f"**Destino:** {datos['DESTINO']}")
-                                    col2.write(f"**Contacto:** {datos['CONTACTO']}")
-                                    st.subheader("📋 PRODUCTOS SOLICITADOS")
-                                    for p in precios.keys():
-                                        if datos.get(p, 0) > 0:
-                                            st.text(f"• {int(datos[p])} PZAS | {p}")
-                                    if datos.get('COMENTARIOS'):
-                                        st.warning(f"💬 Comentarios: {datos['COMENTARIOS']}")
-                        
-                                # --- CICLO DE TARJETAS (REPARADO) ---
-                                # --- CICLO DE TARJETAS (ESTA VEZ SIN METER HTML EN BOTONES) ---
-                                for _, item in df_render.iterrows():
-                                    # 1. Creamos dos columnas: una para el diseño perrón, otra para el botón
-                                    col_card, col_btn = st.columns([0.9, 0.1])
-                                    
-                                    with col_card:
-                                        # Aquí el HTML sí se va a renderizar bien porque no es un label de botón
-                                        st.markdown(f"""
-                                            <div style="background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                                <div style="flex: 1;">
-                                                    <div style="font-size: 8px; color: #888;">FOLIO</div>
-                                                    <div style="color: #00FFAA; font-weight: 800;">#{item['FOLIO']}</div>
-                                                </div>
-                                                <div style="flex: 2;">
-                                                    <div style="font-weight: 700; color: white;">{str(item['HOTEL'])[:25]}</div>
-                                                    <div style="font-size: 9px; color: #FFD700;">SOLICITÓ: {str(item['SOLICITANTE'])[:20]}</div>
-                                                </div>
-                                                <div style="flex: 1; text-align: right;">
-                                                    <div style="color: #38bdf8; font-weight: 800; font-size: 11px;">{item['PAQUETERÍA'] or 'PENDIENTE'}</div>
-                                                </div>
+                                # Calculamos altura
+                                alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) 
+                                
+                                html_busqueda = f"""
+                                <div style="font-family: 'Inter', sans-serif; padding-right: 10px; height: {alto_busqueda}px; overflow-y: auto;">
+                                    <style>
+                                        body {{ background: transparent; margin: 0; padding: 0; }}
+                                        ::-webkit-scrollbar {{ width: 8px; }}
+                                        ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                        ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
+                                        ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                                        
+                                        .card-busqueda {{
+                                            background: #263238; border: 1px solid rgba(255, 255, 255, 0.05);
+                                            border-radius: 10px; padding: 15px; margin-bottom: 10px;
+                                            display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;
+                                        }}
+                                        .card-busqueda:hover {{ border-color: #38bdf8; background: #2d3b42; transform: translateX(5px); }}
+                                        .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
+                                        .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
+                                        .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
+                                        .val-soli {{ color: #FFD700; font-size: 10px; font-weight: 600; margin-top: 2px; opacity: 0.8; }}
+                                        .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 15px; font-weight: 800; line-height: 1.2; }}
+                                        .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 13px; font-weight: 700; margin-top: 4px; }}
+                                        .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 11px; font-weight: 400; }}
+                                    </style>
+                                    {"".join([f'''
+                                    <div class="card-busqueda">
+                                        <div style="flex: 1.1;">
+                                            <div class="label-mini">Folio / Fecha</div>
+                                            <div class="val-folio">#{str(item['FOLIO'])}</div>
+                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 5px;">{str(item['FECHA ENVÍO'])[:10]}</div>
+                                            { "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>" if str(item.get('ESTATUS', '')).upper() == 'DESPACHADO' else "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>" }
+                                        </div>
+                                        <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                            <div class="label-mini">Hotel</div>
+                                            <div class="val-hotel">{str(item['HOTEL'])[:30]}</div>
+                                            <div class="val-soli">SOLICITÓ: {str(item['SOLICITANTE'])[:30]}</div>
+                                        </div>
+                                        <div style="flex: 1.6; text-align: right;">
+                                            <div class="val-guia {'pendiente' if item['PAQUETERÍA'] == '' else ''}">
+                                                { item['PAQUETERÍA'] if item['PAQUETERÍA'] != '' else 'PAQUETERÍA PENDIENTE' }
                                             </div>
-                                        """, unsafe_allow_html=True)
-                                    
-                                    with col_btn:
-                                        # El botón va en su propia columna, sin ensuciar el HTML
-                                        if st.button("👁️", key=f"btn_{item['FOLIO']}"):
-                                            st.session_state.folio_abierto = item['FOLIO']
-                                            st.rerun()
-                                
-                                # 2. Disparo del diálogo
-                                if "folio_abierto" in st.session_state:
-                                    f = st.session_state.folio_abierto
-                                    del st.session_state.folio_abierto
-                                    abrir_detalle(f)
+                                            <div class="val-sub-guia {'pendiente' if item['NÚMERO DE GUÍA'] == '' else ''}">
+                                                { item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] != '' else 'GUÍA PENDIENTE' }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ''' for item in data_busqueda])}
+                                </div>
+                                """
+                                import streamlit.components.v1 as components
+                                # Aquí forzamos el scroll=False para usar el diseño del CSS interno
+                                components.html(html_busqueda, height=alto_busqueda, scrolling=False)
                             else:
                                 st.info("No hay registros todavía.")
+
                                 
                         # --- PANEL DE ADMIN ---
                         # --- PANEL DE ADMINISTRACIÓN (CORRECCIÓN DE NAMEERROR) ---
