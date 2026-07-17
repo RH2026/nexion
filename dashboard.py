@@ -3589,6 +3589,25 @@ else:
                             df_filtrado = df_filtrado[df_filtrado["ESTATUS"] == f_estatus]
                         
                         with st.form("nexion_editor_form_safe"):
+        
+                            # Inyectamos CSS para domar a la fuerza el botón rebelde del formulario
+                            st.markdown("""
+                            <style>
+                            [data-testid="stFormSubmitButton"] button {
+                                background-color: #2b2b30 !important;
+                                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                                color: #ffffff !important;
+                                font-weight: 600 !important;
+                                transition: all 0.3s ease !important;
+                            }
+                            [data-testid="stFormSubmitButton"] button:hover {
+                                border: 1px solid #39ff14 !important;
+                                color: #39ff14 !important;
+                                background-color: rgba(57, 255, 20, 0.05) !important;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                            
                             edited_df = st.data_editor(
                                 df_filtrado,
                                 use_container_width=True,
@@ -3612,7 +3631,6 @@ else:
                             )
                             
                             btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar_efectivo else "🔒 MODO LECTURA"
-                            # Le quitamos el type="primary" para que obedezca tus estilos globales y el hover
                             submit_button = st.form_submit_button(btn_label, use_container_width=True, disabled=not puede_editar_efectivo)
                         
                         # ── BOTÓN DE DESCARGA (SOLO VISIBLE SI TIENES PERMISO DE EDICIÓN) ──
