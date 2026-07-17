@@ -6482,14 +6482,35 @@ else:
                                     if datos.get('COMENTARIOS'):
                                         st.warning(f"💬 Comentarios: {datos['COMENTARIOS']}")
                         
+                                # --- CICLO DE TARJETAS (REPARADO) ---
+                                # --- CICLO DE TARJETAS (CORREGIDO Y LIMPIO) ---
                                 for _, item in df_render.iterrows():
-                                    # ESTA ES LA TARJETA EN UNA SOLA LÍNEA, AMOR:
-                                    tarjeta_minificada = f'<div style="background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 10px; width: 100%; display: flex; justify-content: space-between; align-items: center;"><div style="flex: 1;"><div style="font-size: 8px; color: #888;">FOLIO</div><div style="color: #00FFAA; font-weight: 800;">#{item["FOLIO"]}</div></div><div style="flex: 2; padding: 0 10px;"><div style="font-weight: 700; color: white;">{str(item["HOTEL"])[:25]}</div><div style="font-size: 9px; color: #FFD700;">SOLICITÓ: {str(item["SOLICITANTE"])[:20]}</div></div><div style="flex: 1; text-align: right;"><div style="color: #38bdf8; font-weight: 800; font-size: 11px;">{item["PAQUETERÍA"] or "PENDIENTE"}</div></div></div>'
+                                    # 1. Definimos el HTML de tu tarjeta bonita aquí mismo
+                                    tarjeta_html = f"""
+                                        <div style="background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px; width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="flex: 1.1;">
+                                                <div style="font-size: 8px; color: #888;">FOLIO / FECHA</div>
+                                                <div style="color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800;">#{item['FOLIO']}</div>
+                                                <div style="color: rgba(255,255,255,0.5); font-size: 10px;">{str(item['FECHA ENVÍO'])[:10]}</div>
+                                            </div>
+                                            <div style="flex: 1.8; padding: 0 10px;">
+                                                <div style="font-size: 8px; color: #888;">HOTEL</div>
+                                                <div style="font-weight: 700; color: white;">{str(item['HOTEL'])[:30]}</div>
+                                                <div style="font-size: 10px; color: #FFD700; font-weight: 600;">SOLICITÓ: {str(item['SOLICITANTE'])[:30]}</div>
+                                            </div>
+                                            <div style="flex: 1.6; text-align: right;">
+                                                <div style="color: #38bdf8; font-weight: 800;">{item['PAQUETERÍA'] or '...'}</div>
+                                            </div>
+                                        </div>
+                                    """
                                     
-                                    if st.button(label=tarjeta_minificada, key=f"btn_{item['FOLIO']}", use_container_width=True):
+                                    # 2. El botón que contiene tu diseño HTML. 
+                                    # Si el usuario hace clic, se guarda el folio y se hace rerun
+                                    if st.button(label=tarjeta_html, key=f"btn_{item['FOLIO']}", use_container_width=True):
                                         st.session_state.folio_abierto = item['FOLIO']
                                         st.rerun()
                         
+                                # 3. Disparamos el diálogo solo cuando hay un folio en sesión
                                 if "folio_abierto" in st.session_state:
                                     f = st.session_state.folio_abierto
                                     del st.session_state.folio_abierto
