@@ -5074,6 +5074,7 @@ else:
                     st.session_state.reporte_a_imprimir = None
                 
                 # ---------------- ESTILOS ----------------
+                # 2. ACTUALIZA TU CSS PARA ELIMINAR EL BORDE AMARILLO (dentro de st.markdown):
                 st.markdown("""
                 <style>
                 .main{ background:#0B1014; }
@@ -5084,7 +5085,10 @@ else:
                 }
                 div[data-testid="stMetricValue"]{ color:#E0E6ED; font-weight:900; font-size:1.1rem; }
                 div[data-testid="stMetricLabel"]{ color:#D4AF37; letter-spacing:1.5px; text-transform:uppercase; font-size:.85rem; font-weight:bold; }
-                h1{ color:#FFFFFF; font-family:'Arial Black'; border-bottom:2px solid #D4AF37; padding-bottom:10px; }
+                
+                /* BORDE AMARILLO ELIMINADO AQUÍ */
+                h1{ color:#FFFFFF; font-family:'Arial Black'; }
+                
                 .analysis-box{ background:#1A252F; padding:25px; border-radius:12px; border:1px solid #243441; color:#A4B9C8; line-height:1.8; font-size:.95rem; }
                 </style>
                 """, unsafe_allow_html=True)
