@@ -1292,7 +1292,7 @@ else:
                 if not es_atencion3g:
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                         if es_admin:
-                            opciones_rep = ["CORPORATIVOS", "ANALISIS MENSUAL", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                            opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         else:
                             opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
                             
@@ -5075,7 +5075,7 @@ else:
         elif st.session_state.menu_main == "REPORTES":
             
             # Aquí creamos el "espacio" para cada uno
-            if st.session_state.menu_sub == "CORPORATIVOS":
+            if st.session_state.menu_sub == "COSTOS CEDIS":
                 # ---------------- ESTADO ----------------
                 if "reporte_a_imprimir" not in st.session_state:
                     st.session_state.reporte_a_imprimir = None
