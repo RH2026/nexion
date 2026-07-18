@@ -5216,7 +5216,7 @@ else:
                     background-color: #1A252F; 
                     padding: 25px; 
                     border-radius: 12px; 
-                    border-left: 5px solid #B8860B; 
+                    border-left: 5px solid #A4B9C8; 
                     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
                     min-height: 100px !important;
                     max-height: 100px !important;
