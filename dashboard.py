@@ -8185,17 +8185,23 @@ else:
                     if uploaded_files:
                         archivos_validos = []
                         errores = False
-                        
-                        # Al detectar archivos, activamos la alerta de sincronización pendiente
-                        st.session_state.sync_pending = True 
-
+                
                         for uploaded_file in uploaded_files:
                             if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
-                                # ... (tu código de validación existente) ...
+                                st.markdown(f"""
+                                    <div class="protocol-violation-card">
+                                        <div style="font-size: 30px;">⚠️</div>
+                                        <div class="violation-text">
+                                            <strong style="color: #EF4444;">CRITICAL: PROTOCOL VIOLATION</strong><br>
+                                            Unauthorized asset: <span style="color: white;">`{uploaded_file.name}`</span><br>
+                                            <small>SYSTEM_ACTION: Uplink Blocked.</small>
+                                        </div>
+                                    </div>
+                                """, unsafe_allow_html=True)
                                 errores = True
                             else:
                                 archivos_validos.append(uploaded_file)
-                        
+                
                         if archivos_validos and not errores:
                             with st.expander(":material/list: Batch Preview", expanded=True):
                                 for f in archivos_validos:
@@ -8203,33 +8209,22 @@ else:
                             
                             hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
                             commit_msg = st.text_input("Global Sync Message", value=f"BATCH_UPDATE // {hora_actual_gdl}")
-                            
-                            # ── BOTÓN CON LÓGICA DE ALERTA ROJA ──
-                            # Definimos el estilo dinámico
-                            btn_color = "secondary" if not st.session_state.get("sync_pending", False) else "primary"
-                            
-                            # CSS para forzar el color rojo si está pendiente
-                            if st.session_state.get("sync_pending", False):
-                                st.markdown("""
-                                <style>
-                                div.stButton > button:first-child {
-                                    background-color: #EF4444 !important;
-                                    color: white !important;
-                                    border: 2px solid #991B1B !important;
-                                }
-                                div.stButton > button:first-child:hover {
-                                    background-color: #B91C1C !important;
-                                }
-                                </style>
-                                """, unsafe_allow_html=True)
-
-                            if st.button("EXECUTE GLOBAL SINCRONIZATION", use_container_width=True):
+                
+                            if st.button("EXECUTE GLOBAL SINCRONIZATION", type="primary", use_container_width=True):
                                 with st.status("Initializing Batch Uplink...", expanded=True) as status:
                                     try:
-                                        # ... (tu código de conexión a GitHub) ...
+                                        from github import Github
+                                        g = Github(TOKEN)
+                                        repo = g.get_repo(REPO_NAME)
                                         
-                                        # ── AQUÍ MARCAMOS QUE YA SE SINCRONIZÓ ──
-                                        st.session_state.sync_pending = False 
+                                        for f in archivos_validos:
+                                            status.write(f"Syncing `{f.name}`...")
+                                            content = f.getvalue()
+                                            try:
+                                                target = repo.get_contents(f.name)
+                                                repo.update_file(target.path, commit_msg, content, target.sha)
+                                            except:
+                                                repo.create_file(f.name, commit_msg, content)
                                         
                                         status.update(label="All Assets Synced Successfully", state="complete", expanded=False)
                                         st.toast("Nexion Repositories Updated", icon="🛡️")
