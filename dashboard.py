@@ -7408,8 +7408,6 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
-                
-                
                 # Datos y selección en inputs limpios
                 np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10185"]
                 numero_parte = st.selectbox("Número de Parte", np_opt)
@@ -7440,18 +7438,18 @@ else:
                     f_np, f_info, f_bot = get_font(52), get_font(44), get_font(56)
                 
                     # ==========================
-                    # LOGO (Arriba a la izquierda)
+                    # LOGO (Ligeramente más grande: nw=430)
                     # ==========================
                     try:
                         logo = Image.open("agc.png").convert("RGBA")
-                        nw = 380
+                        nw = 430
                         nh = int(logo.size[1] * nw / logo.size[0])
                         etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), Image.Resampling.LANCZOS))
                     except Exception as e:
                         st.warning(f"No se encontró agc.png ({e})")
                 
                     # ==========================
-                    # TEXTOS PRINCIPALES (Bajados a Y=220 para separarlos por completo del logo)
+                    # TEXTOS PRINCIPALES (En su posición segura Y=220)
                     # ==========================
                     x = 55
                     draw.text((x, 220), numero_parte, fill="#222222", font=f_np)
@@ -7459,10 +7457,10 @@ else:
                     draw.text((x, 340), f"{valor_fijo}", fill="#222222", font=f_info)
                 
                     # ==========================
-                    # QR (Ajustado a 750px para dar espacio perfecto)
+                    # QR (Ligeramente más chico: qr_sz=670 para mejor balance)
                     # ==========================
-                    qr_sz = 750
-                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 400))
+                    qr_sz = 670
+                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 390))
                 
                     # ==========================
                     # TEXTO INFERIOR
