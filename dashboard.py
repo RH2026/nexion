@@ -7398,28 +7398,15 @@ else:
                     .nexion-card li strong {
                         color: #edf2f7;
                     }
-                    .preview-card {
-                        background-color: #1e252b;
-                        border: 1px solid #2d3748;
-                        padding: 15px;
-                        border-radius: 8px;
-                        text-align: center;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                    }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # Contenedor central acotado para los inputs de selección (Ancho compacto)
-                c_esp1, c_form, c_esp2 = st.columns([1, 2, 1])
-                with c_form:
-                    np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10184"]
-                    numero_parte = st.selectbox("Número de Parte", np_opt)
-                    lote = st.text_input("Lote (Ej. 6181)")
+                st.subheader("🏷️ Generador de Etiquetas Nexion")
                 
+                # Datos y selección en inputs limpios
+                np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10184"]
+                numero_parte = st.selectbox("Número de Parte", np_opt)
+                lote = st.text_input("Lote (Ej. 6181)")
                 valor_fijo = "140"
                 
                 def get_font(size):
@@ -7468,19 +7455,18 @@ else:
                     bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
                     draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 980), texto_qr, fill="#222222", font=f_bot)
                 
-                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("### Vista previa e Instrucciones")
                     
-                    # Estructura compacta central usando columnas simétricas estilo tu esquema
-                    col_L, col_prev, col_inst, col_R = st.columns([0.5, 2, 2.5, 0.5])
+                    # Columnas simétricas directas para evitar desalineaciones
+                    col_prev, col_inst = st.columns([1, 1.2], vertical_alignment="top")
                     
                     buf_img = BytesIO()
                     etiqueta.save(buf_img, format="PNG")
                     
                     with col_prev:
-                        st.markdown('<div class="preview-card">', unsafe_allow_html=True)
-                        st.image(buf_img.getvalue(), width=230)
+                        st.image(buf_img.getvalue(), width=320)
                         
-                        # Generación de PDF dentro del flujo compacto
+                        # Generación de PDF para descarga directa abajo de la vista previa
                         pdf_buf = BytesIO()
                         c = canvas.Canvas(pdf_buf, pagesize=(8.5 * cm, 10.4 * cm))
                         buf_img.seek(0)
@@ -7488,8 +7474,7 @@ else:
                         c.showPage()
                         c.save()
                         
-                        st.download_button("🖨️ Descargar PDF", pdf_buf.getvalue(), file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", mime="application/pdf", use_container_width=True)
-                        st.markdown('</div>', unsafe_allow_html=True)
+                        st.download_button("🖨️ Descargar Etiqueta PDF", pdf_buf.getvalue(), file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", mime="application/pdf", use_container_width=True)
                         
                     with col_inst:
                         st.markdown("""
