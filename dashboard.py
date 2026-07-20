@@ -7408,7 +7408,7 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
-                st.subheader("🏷️ Generador de Etiquetas Nexion")
+                
                 
                 # Datos y selección en inputs limpios
                 np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10185"]
@@ -7423,7 +7423,7 @@ else:
                     return ImageFont.load_default()
                 
                 if lote:
-                    texto_qr = f"{numero_parte} - {lote} - {valor_fijo}$"
+                    texto_qr = f"{numero_parte} - {lote} - {valor_fijo}C"
                     
                     # Generación QR
                     qr = qrcode.QRCode(version=2, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=15, border=1)
@@ -7437,7 +7437,7 @@ else:
                     draw = ImageDraw.Draw(etiqueta)
                 
                     # Fuentes
-                    f_np, f_info, f_bot = get_font(52), get_font(44), get_font(42)
+                    f_np, f_info, f_bot = get_font(52), get_font(44), get_font(50)
                 
                     # ==========================
                     # LOGO (Arriba a la izquierda)
