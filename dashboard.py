@@ -1290,14 +1290,39 @@ else:
                                 st.rerun()
             
                 # --- REPORTES: Oculto para Atencion3G ---
+                # --- DASHBOARD: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
+                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
+                        st.session_state.busqueda_activa = False
+                        st.rerun()
+            
+                # --- SEGUIMIENTO: Aquí es donde entra Atencion3G ---
+                if not es_ventas:
+                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                        if es_admin:
+                            opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
+                        else:
+                            opciones_seg = ["ALERTAS"] # Atencion3G y otros solo ven esto
+                            
+                        for s in opciones_seg:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                                st.session_state.menu_main = "SEGUIMIENTO"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+            
+                # --- REPORTES: Oculto para Atencion3G ---
                 if not es_atencion3g:
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                         
-                        # Obtenemos el usuario de la sesión tal cual lo guarda el sistema
-                        usuario_actual = str(st.session_state.get("usuario", "")).strip()
+                        # Obtenemos el usuario de la sesión cubriendo ambas claves comunes
+                        usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
                         
-                        # Verificamos si es admin o si el usuario es Carlos (usando .lower() para evitar broncas con mayúsculas)
-                        if es_admin or usuario_actual.lower() == "carlos":
+                        # Verificamos si es admin o si el usuario es exactamente Carlos
+                        if es_admin or usuario_actual == "Carlos":
                             opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         else:
                             opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
@@ -1309,6 +1334,61 @@ else:
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
                                 st.rerun()
+            
+                # --- FORMATOS: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
+                    with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PROFORMA", "CARTA RECLAMO", "COTIZACIONES"]                        
+                        for s in opciones_for:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+                                st.session_state.menu_main = "FORMATOS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+            
+                # --- HUB LOG: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
+                    with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
+                        for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "HERRAMIENTAS"]:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                                st.session_state.menu_main = "CENTRO DE DATOS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+
+                # --- FINANZAS: Estrictamente confidencial ---
+                if st.session_state.get("usuario_activo") == "Rigoberto": 
+                    with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
+                        opciones_fin = ["WALLET", "CAJA CHICA", "GASTOS"] 
+                        for s in opciones_fin:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
+                                st.session_state.menu_main = "FINANZAS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+
+                # --- NUEVO: SECCIÓN ENFOQUE (Solo visible para Rigoberto, Jmoreno y Carlos) ---
+                usuario_actual = st.session_state.get("usuario_activo", "").upper()
+                if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
+                    with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
+                        for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
+                            label = f"» {s}" if st.session_state.get("menu_sub") == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
+                                st.session_state.menu_main = "ENFOQUE"
+                                st.session_state.menu_sub = s
+                                st.rerun()
+            
+                # 3. SECCIÓN DE CIERRE DE SESIÓN
+                st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+                if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
+                    for key in list(st.session_state.keys()):
+                        del st.session_state[key]
+                    st.session_state.autenticado = False
+                    st.session_state.splash_completado = False
+                    st.rerun()
             
                 # --- FORMATOS: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
