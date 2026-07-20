@@ -7497,7 +7497,7 @@ else:
                         </div>
                         """, unsafe_allow_html=True)
                         
-                    # ==========================
+                    # ==========================-
                     # 1. GENERACIÓN DE PDF
                     # ==========================
                     pdf_buf = BytesIO()
@@ -7508,21 +7508,18 @@ else:
                     c.save()
                 
                     # ==========================
-                    # 2. GENERACIÓN DE ARCHIVO .NLBL (ZPL directo)
+                    # 2. GENERACIÓN DE ARCHIVO ZPL SEGURO (Zebra)
                     # ==========================
-                    zpl_content = f"""
-                ^XA
+                    zpl_content = f"""^XA
                 ^PW1004
                 ^LL1228
-                ^FO50,20^XGAGC.PNG,1,1^FS
                 ^FO55,250^A0N,52,52^FD{numero_parte}^FS
                 ^FO55,312^A0N,44,44^FD{lote}^FS
                 ^FO55,362^A0N,44,44^FD{valor_fijo}^FS
                 ^FO167,420^BQ,2,15,H^FDQA,{texto_qr}^FS
                 ^FO{(w_px - (bbox[2] - bbox[0])) // 2},1095^A0N,56,56^FD{texto_qr}^FS
-                ^XZ
-                    """
-                    nlbl_buf = BytesIO(zpl_content.encode('utf-8'))
+                ^XZ"""
+                    zpl_buf = BytesIO(zpl_content.encode('utf-8'))
                     
                     # Botones de descarga duales a todo lo ancho
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -7539,9 +7536,9 @@ else:
                         
                     with col_btn2:
                         st.download_button(
-                            ":material/print: DESCARGAR .NLBL (ZEBRA)", 
-                            nlbl_buf.getvalue(), 
-                            file_name=f"Etiqueta_{numero_parte}_{lote}.nlbl", 
+                            ":material/print: DESCARGAR ARCHIVO ZPL (ZEBRA)", 
+                            zpl_buf.getvalue(), 
+                            file_name=f"Etiqueta_{numero_parte}_{lote}.zpl", 
                             mime="text/plain", 
                             use_container_width=True
                         )
