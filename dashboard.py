@@ -7466,7 +7466,7 @@ else:
                     # TEXTO INFERIOR (Subido a Y=1110 para que no quede tan abajo)
                     # ==========================
                     bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
-                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1110), texto_qr, fill="#222222", font=f_bot)
+                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1095), texto_qr, fill="#222222", font=f_bot)
                 
                     st.markdown("### Vista previa e Instrucciones")
                     
