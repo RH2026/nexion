@@ -93,7 +93,7 @@ if lote:
         logo = Image.open("agc.png").convert("RGBA")
         logo_w, logo_h = logo.size
 
-        nuevo_ancho = 620
+        nuevo_ancho = 600
         nuevo_alto = int(logo_h * nuevo_ancho / logo_w)
 
         logo = logo.resize(
@@ -101,9 +101,10 @@ if lote:
             Image.Resampling.LANCZOS
         )
 
+        # Margen superior incrementado a 60px para evitar que la impresora lo corte
         etiqueta.paste(
             logo,
-            ((ancho_px - nuevo_ancho)//2, 30),
+            ((ancho_px - nuevo_ancho)//2, 60),
             logo
         )
 
@@ -111,27 +112,27 @@ if lote:
         st.warning(f"No se encontró agc.png ({e})")
 
     # ==========================
-    # TEXTO
+    # TEXTO (Reubicado hacia abajo de forma proporcional)
     # ==========================
 
     x = 90
 
     draw.text(
-        (x, 210),
+        (x, 240),
         numero_parte,
         fill="#222222",
         font=font_np
     )
 
     draw.text(
-        (x, 280),
+        (x, 310),
         f"Lote: {lote}",
         fill="#222222",
         font=font_info
     )
 
     draw.text(
-        (x, 345),
+        (x, 375),
         f"Cantidad: {valor_fijo}",
         fill="#222222",
         font=font_info
@@ -142,13 +143,13 @@ if lote:
     # ==========================
 
     qr_img = qr_img.resize(
-        (560, 560),
+        (540, 540),
         Image.Resampling.NEAREST
     )
 
     etiqueta.paste(
         qr_img,
-        ((ancho_px-560)//2, 420)
+        ((ancho_px-540)//2, 450)
     )
 
     # ==========================
@@ -196,7 +197,6 @@ if lote:
     ancho_pdf = 8.5 * cm
     alto_pdf = 10.4 * cm
 
-    # Se crea el lienzo con el tamaño exacto de la etiqueta (vertical)
     c = canvas.Canvas(
         pdf_buffer,
         pagesize=(ancho_pdf, alto_pdf)
@@ -205,7 +205,6 @@ if lote:
     buffer_img.seek(0)
     img_reader = ImageReader(buffer_img)
 
-    # Se dibuja la imagen ocupando todo el espacio de la página sin rotaciones
     c.drawImage(
         img_reader,
         0,
