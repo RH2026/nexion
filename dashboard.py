@@ -7411,9 +7411,9 @@ else:
                 st.subheader("🏷️ Generador de Etiquetas Nexion")
                 
                 # Datos y selección en inputs limpios
-                np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10184"]
+                np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10185"]
                 numero_parte = st.selectbox("Número de Parte", np_opt)
-                lote = st.text_input("Lote (Ej. 6181)")
+                lote = st.text_input("Lote (Ej. 6198)")
                 valor_fijo = "140"
                 
                 def get_font(size):
@@ -7423,7 +7423,7 @@ else:
                     return ImageFont.load_default()
                 
                 if lote:
-                    texto_qr = f"{numero_parte} - {lote} - {valor_fijo}C"
+                    texto_qr = f"{numero_parte} - {lote} - {valor_fijo}$"
                     
                     # Generación QR
                     qr = qrcode.QRCode(version=2, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=15, border=1)
@@ -7437,34 +7437,43 @@ else:
                     draw = ImageDraw.Draw(etiqueta)
                 
                     # Fuentes
-                    f_np, f_info, f_bot = get_font(54), get_font(46), get_font(42)
+                    f_np, f_info, f_bot = get_font(52), get_font(44), get_font(42)
                 
-                    # Logo
+                    # ==========================
+                    # LOGO (Arriba a la izquierda, sin padding excesivo)
+                    # ==========================
                     try:
                         logo = Image.open("agc.png").convert("RGBA")
-                        nw = 560
+                        nw = 480
                         nh = int(logo.size[1] * nw / logo.size[0])
-                        etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), ((w_px - nw) // 2, 150), logo.resize((nw, nh), Image.Resampling.LANCZOS))
+                        # Posicionado a la izquierda arriba (x=50, y=30)
+                        etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), (50, 30), logo.resize((nw, nh), Image.Resampling.LANCZOS))
                     except Exception as e:
                         st.warning(f"No se encontró agc.png ({e})")
                 
-                    # Textos principales
-                    x = 90
-                    draw.text((x, 300), numero_parte, fill="#222222", font=f_np)
-                    draw.text((x, 370), f"Lote: {lote}", fill="#222222", font=f_info)
-                    draw.text((x, 435), f"Cantidad: {valor_fijo}", fill="#222222", font=f_info)
+                    # ==========================
+                    # TEXTOS PRINCIPALES (Izquierda)
+                    # ==========================
+                    x = 55
+                    draw.text((x, 210), numero_parte, fill="#222222", font=f_np)
+                    draw.text((x, 275), f"{lote}", fill="#222222", font=f_info)
+                    draw.text((x, 335), f"{valor_fijo}", fill="#222222", font=f_info)
                 
-                    # Pegar QR
-                    qr_sz = 450
-                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 510))
+                    # ==========================
+                    # QR (Mucho más grande y centrado)
+                    # ==========================
+                    qr_sz = 680
+                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 410))
                 
-                    # Texto inferior centrado
+                    # ==========================
+                    # TEXTO INFERIOR
+                    # ==========================
                     bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
-                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 980), texto_qr, fill="#222222", font=f_bot)
+                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1120), texto_qr, fill="#222222", font=f_bot)
                 
                     st.markdown("### Vista previa e Instrucciones")
                     
-                    # Columnas simétricas principales (Solo para la imagen y las instrucciones)
+                    # Columnas simétricas principales
                     col_prev, col_inst = st.columns([1, 1.2], vertical_alignment="top")
                     
                     buf_img = BytesIO()
@@ -7498,10 +7507,10 @@ else:
                     c.showPage()
                     c.save()
                     
-                    # Botón de descarga principal a todo lo ancho de la pantalla, idéntico a tus otros módulos
+                    # Botón de descarga principal a todo lo ancho de la pantalla
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.download_button(
-                        ":material/print: IMPRIMOR / DESCARGAR ETIQUETA PDF", 
+                        ":material/print: IMPRIMIR / DESCARGAR ETIQUETA PDF", 
                         pdf_buf.getvalue(), 
                         file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", 
                         mime="application/pdf", 
