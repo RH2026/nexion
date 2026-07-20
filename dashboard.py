@@ -7413,7 +7413,7 @@ else:
                 # Datos y selección en inputs limpios
                 np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10185"]
                 numero_parte = st.selectbox("Número de Parte", np_opt)
-                lote = st.text_input("Lote (Ej. 6198)")
+                lote = st.text_input("Lote (Ej. 6080)")
                 valor_fijo = "140"
                 
                 def get_font(size):
@@ -7440,36 +7440,35 @@ else:
                     f_np, f_info, f_bot = get_font(52), get_font(44), get_font(42)
                 
                     # ==========================
-                    # LOGO (Arriba a la izquierda, sin padding excesivo)
+                    # LOGO (Arriba a la izquierda)
                     # ==========================
                     try:
                         logo = Image.open("agc.png").convert("RGBA")
                         nw = 480
                         nh = int(logo.size[1] * nw / logo.size[0])
-                        # Posicionado a la izquierda arriba (x=50, y=30)
-                        etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), (50, 30), logo.resize((nw, nh), Image.Resampling.LANCZOS))
+                        etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), Image.Resampling.LANCZOS))
                     except Exception as e:
                         st.warning(f"No se encontró agc.png ({e})")
                 
                     # ==========================
-                    # TEXTOS PRINCIPALES (Izquierda)
+                    # TEXTOS PRINCIPALES (Espaciados para que no choquen con el logo)
                     # ==========================
                     x = 55
-                    draw.text((x, 210), numero_parte, fill="#222222", font=f_np)
-                    draw.text((x, 275), f"{lote}", fill="#222222", font=f_info)
-                    draw.text((x, 335), f"{valor_fijo}", fill="#222222", font=f_info)
+                    draw.text((x, 155), numero_parte, fill="#222222", font=f_np)
+                    draw.text((x, 220), f"{lote}", fill="#222222", font=f_info)
+                    draw.text((x, 275), f"{valor_fijo}", fill="#222222", font=f_info)
                 
                     # ==========================
-                    # QR (Mucho más grande y centrado)
+                    # QR (Más grande: 760px)
                     # ==========================
-                    qr_sz = 680
-                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 410))
+                    qr_sz = 760
+                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 345))
                 
                     # ==========================
                     # TEXTO INFERIOR
                     # ==========================
                     bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
-                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1120), texto_qr, fill="#222222", font=f_bot)
+                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1130), texto_qr, fill="#222222", font=f_bot)
                 
                     st.markdown("### Vista previa e Instrucciones")
                     
