@@ -7440,35 +7440,35 @@ else:
                     f_np, f_info, f_bot = get_font(52), get_font(44), get_font(42)
                 
                     # ==========================
-                    # LOGO (Arriba a la izquierda)
+                    # LOGO (Reducido a 380px para evitar que baje de más)
                     # ==========================
                     try:
                         logo = Image.open("agc.png").convert("RGBA")
-                        nw = 480
+                        nw = 380
                         nh = int(logo.size[1] * nw / logo.size[0])
-                        etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), Image.Resampling.LANCZOS))
+                        etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), (50, 25), logo.resize((nw, nh), Image.Resampling.LANCZOS))
                     except Exception as e:
                         st.warning(f"No se encontró agc.png ({e})")
                 
                     # ==========================
-                    # TEXTOS PRINCIPALES (Espaciados para que no choquen con el logo)
+                    # TEXTOS PRINCIPALES (Bajados a Y=195 para total separación)
                     # ==========================
                     x = 55
-                    draw.text((x, 155), numero_parte, fill="#222222", font=f_np)
-                    draw.text((x, 220), f"{lote}", fill="#222222", font=f_info)
-                    draw.text((x, 275), f"{valor_fijo}", fill="#222222", font=f_info)
+                    draw.text((x, 195), numero_parte, fill="#222222", font=f_np)
+                    draw.text((x, 260), f"{lote}", fill="#222222", font=f_info)
+                    draw.text((x, 315), f"{valor_fijo}", fill="#222222", font=f_info)
                 
                     # ==========================
-                    # QR (Más grande: 760px)
+                    # QR (Amplio y dominante: 780px)
                     # ==========================
-                    qr_sz = 760
-                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 345))
+                    qr_sz = 780
+                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 375))
                 
                     # ==========================
                     # TEXTO INFERIOR
                     # ==========================
                     bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
-                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1130), texto_qr, fill="#222222", font=f_bot)
+                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1165), texto_qr, fill="#222222", font=f_bot)
                 
                     st.markdown("### Vista previa e Instrucciones")
                     
