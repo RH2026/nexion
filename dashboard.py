@@ -1293,11 +1293,11 @@ else:
                 if not es_atencion3g:
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                         
-                        # Obtenemos el usuario de la sesión de forma segura y pasamos todo a minúsculas
-                        usuario_actual = str(st.session_state.get("usuario", "")).strip().lower()
+                        # Obtenemos el usuario de la sesión tal cual lo guarda el sistema
+                        usuario_actual = str(st.session_state.get("usuario", "")).strip()
                         
-                        # Verificamos si es admin o si el usuario es carlos (sin importar si lo escribieron con C mayúscula o minúscula)
-                        if es_admin or usuario_actual == "carlos":
+                        # Verificamos si es admin o si el usuario es Carlos (usando .lower() para evitar broncas con mayúsculas)
+                        if es_admin or usuario_actual.lower() == "carlos":
                             opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         else:
                             opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
