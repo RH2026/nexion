@@ -6,6 +6,41 @@ from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
+# ==========================
+# ESTILO Y DISEÑO NEXION (MATCH VISUAL)
+# ==========================
+st.markdown("""
+    <style>
+    .nexion-card {
+        background-color: #1e252b;
+        border: 1px solid #2d3748;
+        border-left: 4px solid #d4af37;
+        padding: 20px;
+        border-radius: 8px;
+        color: #e2e8f0;
+        font-family: sans-serif;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    .nexion-card h4 {
+        color: #f7fafc;
+        margin-top: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .nexion-card ol {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #cbd5e0;
+    }
+    .nexion-card li strong {
+        color: #edf2f7;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 st.subheader("🏷️ Generador de Etiquetas Nexion")
 
 # Datos y selección
@@ -60,7 +95,7 @@ if lote:
     bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
     draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 980), texto_qr, fill="#222222", font=f_bot)
 
-    # Vista previa e Instrucciones lado a lado
+    # Vista previa e Instrucciones personalizadas (A juego con la paleta de JYPESA)
     st.markdown("### Vista previa e Instrucciones")
     col1, col2 = st.columns([1, 1.2])
     
@@ -69,16 +104,21 @@ if lote:
     
     with col1:
         st.image(buf_img.getvalue(), width=280)
+        
     with col2:
-        st.info("""
-        **Instrucciones de impresión:**
-        1. **Abrir el PDF** descargado.
-        2. Presionar **CTRL + P** (imprimir).
-        3. Seleccionar la impresora **Zebra 200**.
-        4. Configurar la orientación en **Horizontal**.
-        5. Entrar a **Propiedades** y ajustar tamaño a **10.40 x 8.00 cm**.
-        6. Dar clic en **Aceptar** y **Imprimir**. ¡Listo! 🚀
-        """)
+        st.markdown("""
+        <div class="nexion-card">
+            <h4>Instrucciones de Impresión</h4>
+            <ol>
+                <li><strong>Abrir el PDF</strong> generado.</li>
+                <li>Presionar <strong>CTRL + P</strong> en el teclado.</li>
+                <li>Seleccionar la impresora <strong>Zebra 200</strong>.</li>
+                <li>Ajustar la orientación a <strong>Horizontal</strong>.</li>
+                <li>Entrar a <strong>Propiedades</strong> y fijar dimensiones en <strong>10.40 x 8.00 cm</strong>.</li>
+                <li>Confirmar con <strong>Aceptar</strong> e imprimir.</li>
+            </ol>
+        </div>
+        """, unsafe_allow_html=True)
 
     # Generación de PDF
     pdf_buf = BytesIO()
