@@ -7501,7 +7501,7 @@ else:
                     # Botón de descarga principal a todo lo ancho de la pantalla, idéntico a tus otros módulos
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.download_button(
-                        "🖨️ DESCARGAR ETIQUETA PDF", 
+                        ":material/print: IMPRIMOR / DESCARGAR ETIQUETA PDF", 
                         pdf_buf.getvalue(), 
                         file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", 
                         mime="application/pdf", 
