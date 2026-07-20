@@ -1292,7 +1292,10 @@ else:
                 # --- REPORTES: Oculto para Atencion3G ---
                 if not es_atencion3g:
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                        if es_admin:
+                        # Verificamos si es admin o si el usuario actual es Carlos
+                        es_carlos = st.session_state.get("usuario") == "Carlos" # O ajusta la variable con la que identifiques a Carlos
+                        
+                        if es_admin or es_carlos:
                             opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         else:
                             opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
