@@ -7407,19 +7407,19 @@ else:
                     }
                     </style>
                 """, unsafe_allow_html=True)
-                
+                    
                 # Datos y selección en inputs limpios
                 np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10185"]
                 numero_parte = st.selectbox("Número de Parte", np_opt)
                 lote = st.text_input("Lote (Ej. 6080)")
                 valor_fijo = "140"
-                
+                    
                 def get_font(size):
                     for ruta in ["DejaVuSans-Bold.ttf", "arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf", "C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/Arial.ttf"]:
                         try: return ImageFont.truetype(ruta, size)
                         except: pass
                     return ImageFont.load_default()
-                
+                    
                 if lote:
                     texto_qr = f"{numero_parte} - {lote} - {valor_fijo}C"
                     
@@ -7428,15 +7428,15 @@ else:
                     qr.add_data(texto_qr)
                     qr.make(fit=True)
                     qr_img = qr.make_image(fill_color="#27272A", back_color="white").convert("RGB")
-                
+                    
                     # Lienzo de Etiqueta (1004 x 1228 px)
                     w_px, h_px = 1004, 1228
                     etiqueta = Image.new("RGB", (w_px, h_px), "white")
                     draw = ImageDraw.Draw(etiqueta)
-                
+                    
                     # Fuentes
                     f_np, f_info, f_bot = get_font(52), get_font(44), get_font(56)
-                
+                    
                     # ==========================
                     # LOGO (Ajustado a nw=320 para dar aire perfecto)
                     # ==========================
@@ -7447,7 +7447,7 @@ else:
                         etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), Image.Resampling.LANCZOS))
                     except Exception as e:
                         st.warning(f"No se encontró agc.png ({e})")
-                
+                    
                     # ==========================
                     # TEXTOS PRINCIPALES (Bajados a Y=250 para total separación del logo)
                     # ==========================
@@ -7455,19 +7455,19 @@ else:
                     draw.text((x, 250), numero_parte, fill="#222222", font=f_np)
                     draw.text((x, 312), f"{lote}", fill="#222222", font=f_info)
                     draw.text((x, 362), f"{valor_fijo}", fill="#222222", font=f_info)
-                
+                    
                     # ==========================
                     # QR
                     # ==========================
                     qr_sz = 670
                     etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 420))
-                
+                    
                     # ==========================
-                    # TEXTO INFERIOR (Subido a Y=1110 para que no quede tan abajo)
+                    # TEXTO INFERIOR
                     # ==========================
                     bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
                     draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1095), texto_qr, fill="#222222", font=f_bot)
-                
+                    
                     st.markdown("### Vista previa e Instrucciones")
                     
                     # Columnas simétricas principales
@@ -7491,28 +7491,60 @@ else:
                                 <li>Seleccionar la impresora <strong>Zebra 200</strong>.</li>
                                 <li>Ajustar la orientación a <strong>Horizontal</strong>.</li>
                                 <li>Entrar a <strong>Propiedades</strong> y fijar dimensiones en <strong>10.40 x 8.00 cm</strong>.</li>
+                                <li>Ajustar el <strong>Zoom al 96%</strong>.</li>
                                 <li>Confirmar con <strong>Aceptar</strong> e imprimir.</li>
                             </ol>
                         </div>
                         """, unsafe_allow_html=True)
                         
-                    # Generación de PDF
+                    # ==========================
+                    # 1. GENERACIÓN DE PDF
+                    # ==========================
                     pdf_buf = BytesIO()
                     c = canvas.Canvas(pdf_buf, pagesize=(8.5 * cm, 10.4 * cm))
                     buf_img.seek(0)
                     c.drawImage(ImageReader(buf_img), 0, 0, width=8.5 * cm, height=10.4 * cm)
                     c.showPage()
                     c.save()
+                
+                    # ==========================
+                    # 2. GENERACIÓN DE ARCHIVO .NLBL (ZPL directo)
+                    # ==========================
+                    zpl_content = f"""
+                ^XA
+                ^PW1004
+                ^LL1228
+                ^FO50,20^XGAGC.PNG,1,1^FS
+                ^FO55,250^A0N,52,52^FD{numero_parte}^FS
+                ^FO55,312^A0N,44,44^FD{lote}^FS
+                ^FO55,362^A0N,44,44^FD{valor_fijo}^FS
+                ^FO167,420^BQ,2,15,H^FDQA,{texto_qr}^FS
+                ^FO{(w_px - (bbox[2] - bbox[0])) // 2},1095^A0N,56,56^FD{texto_qr}^FS
+                ^XZ
+                    """
+                    nlbl_buf = BytesIO(zpl_content.encode('utf-8'))
                     
-                    # Botón de descarga principal a todo lo ancho de la pantalla
+                    # Botones de descarga duales a todo lo ancho
                     st.markdown("<br>", unsafe_allow_html=True)
-                    st.download_button(
-                        ":material/print: IMPRIMIR / DESCARGAR ETIQUETA PDF", 
-                        pdf_buf.getvalue(), 
-                        file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", 
-                        mime="application/pdf", 
-                        use_container_width=True
-                    )
+                    col_btn1, col_btn2 = st.columns(2)
+                    
+                    with col_btn1:
+                        st.download_button(
+                            ":material/picture_as_pdf: DESCARGAR PDF", 
+                            pdf_buf.getvalue(), 
+                            file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", 
+                            mime="application/pdf", 
+                            use_container_width=True
+                        )
+                        
+                    with col_btn2:
+                        st.download_button(
+                            ":material/print: DESCARGAR .NLBL (ZEBRA)", 
+                            nlbl_buf.getvalue(), 
+                            file_name=f"Etiqueta_{numero_parte}_{lote}.nlbl", 
+                            mime="text/plain", 
+                            use_container_width=True
+                        )
                         
             
             
