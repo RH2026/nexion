@@ -9,16 +9,17 @@ import requests
 from io import StringIO, BytesIO
 from datetime import datetime, date, timedelta
 import base64
-import altair as alt
+import math
+import random
+import calendar
 
 import pandas as pd
-import numpy as np  # Opcional, pero suele ir de la mano con pandas
+import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
 import altair as alt
 import plotly.graph_objects as go
 import plotly.express as px
-import math
 
 import pytz
 from github import Github
@@ -27,11 +28,11 @@ from fpdf import FPDF
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
-from reportlab.lib.utils import simpleSplit
+from reportlab.lib.utils import simpleSplit, ImageReader
 
 import google.generativeai as genai
-import random
-import calendar
+import qrcode
+from PIL import Image, ImageDraw, ImageFont
 
 # 1. Inicialización del estado para controlar qué se debe imprimir
 if "reporte_a_imprimir" not in st.session_state:
