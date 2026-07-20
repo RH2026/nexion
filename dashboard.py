@@ -1295,7 +1295,7 @@ else:
                         # Verificamos si es admin o si el usuario actual es Carlos
                         es_carlos = st.session_state.get("usuario") == "Carlos" # O ajusta la variable con la que identifiques a Carlos
                         
-                        if es_admin or es_carlos:
+                        if es_admin or es_Carlos:
                             opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         else:
                             opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
