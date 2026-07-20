@@ -7366,7 +7366,7 @@ else:
 
             if st.session_state.menu_sub == "QR AGC":
                 # ==========================
-                # ESTILO Y DISEÑO NEXION (MATCH VISUAL)
+                # ESTILO Y DISEÑO NEXION (MATCH VISUAL COMPACTO)
                 # ==========================
                 st.markdown("""
                     <style>
@@ -7379,6 +7379,7 @@ else:
                         color: #e2e8f0;
                         font-family: sans-serif;
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                        height: 100%;
                     }
                     .nexion-card h4 {
                         color: #f7fafc;
@@ -7397,14 +7398,28 @@ else:
                     .nexion-card li strong {
                         color: #edf2f7;
                     }
+                    .preview-card {
+                        background-color: #1e252b;
+                        border: 1px solid #2d3748;
+                        padding: 15px;
+                        border-radius: 8px;
+                        text-align: center;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                    }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                                
-                # Datos y selección
-                np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10184"]
-                numero_parte = st.selectbox("Número de Parte", np_opt)
-                lote = st.text_input("Lote (Ej. 6181)")
+                # Contenedor central acotado para los inputs de selección (Ancho compacto)
+                c_esp1, c_form, c_esp2 = st.columns([1, 2, 1])
+                with c_form:
+                    np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10184"]
+                    numero_parte = st.selectbox("Número de Parte", np_opt)
+                    lote = st.text_input("Lote (Ej. 6181)")
+                
                 valor_fijo = "140"
                 
                 def get_font(size):
@@ -7453,17 +7468,30 @@ else:
                     bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
                     draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 980), texto_qr, fill="#222222", font=f_bot)
                 
-                    # Vista previa e Instrucciones personalizadas (A juego con la paleta de JYPESA)
-                    st.markdown("### Vista previa e Instrucciones")
-                    col1, col2 = st.columns([1, 1.2])
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # Estructura compacta central usando columnas simétricas estilo tu esquema
+                    col_L, col_prev, col_inst, col_R = st.columns([0.5, 2, 2.5, 0.5])
                     
                     buf_img = BytesIO()
                     etiqueta.save(buf_img, format="PNG")
                     
-                    with col1:
-                        st.image(buf_img.getvalue(), width=280)
+                    with col_prev:
+                        st.markdown('<div class="preview-card">', unsafe_allow_html=True)
+                        st.image(buf_img.getvalue(), width=230)
                         
-                    with col2:
+                        # Generación de PDF dentro del flujo compacto
+                        pdf_buf = BytesIO()
+                        c = canvas.Canvas(pdf_buf, pagesize=(8.5 * cm, 10.4 * cm))
+                        buf_img.seek(0)
+                        c.drawImage(ImageReader(buf_img), 0, 0, width=8.5 * cm, height=10.4 * cm)
+                        c.showPage()
+                        c.save()
+                        
+                        st.download_button("🖨️ Descargar PDF", pdf_buf.getvalue(), file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", mime="application/pdf", use_container_width=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
+                        
+                    with col_inst:
                         st.markdown("""
                         <div class="nexion-card">
                             <h4>Instrucciones de Impresión</h4>
@@ -7477,17 +7505,6 @@ else:
                             </ol>
                         </div>
                         """, unsafe_allow_html=True)
-                
-                    # Generación de PDF
-                    pdf_buf = BytesIO()
-                    c = canvas.Canvas(pdf_buf, pagesize=(8.5 * cm, 10.4 * cm))
-                    buf_img.seek(0)
-                    c.drawImage(ImageReader(buf_img), 0, 0, width=8.5 * cm, height=10.4 * cm)
-                    c.showPage()
-                    c.save()
-                
-                    st.markdown("---")
-                    st.download_button("🖨️ Descargar Etiqueta PDF", pdf_buf.getvalue(), file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", mime="application/pdf")
             
             
             
