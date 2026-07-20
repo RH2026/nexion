@@ -7408,7 +7408,8 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
-                                
+                st.subheader("🏷️ Generador de Etiquetas Nexion")
+                
                 # Datos y selección en inputs limpios
                 np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10184"]
                 numero_parte = st.selectbox("Número de Parte", np_opt)
@@ -7463,7 +7464,7 @@ else:
                 
                     st.markdown("### Vista previa e Instrucciones")
                     
-                    # Columnas simétricas
+                    # Columnas simétricas principales
                     col_prev, col_inst = st.columns([1, 1.2], vertical_alignment="top")
                     
                     buf_img = BytesIO()
@@ -7471,9 +7472,10 @@ else:
                     
                     with col_prev:
                         st.markdown('<div class="centered-preview">', unsafe_allow_html=True)
-                        st.image(buf_img.getvalue(), width=300)
+                        st.image(buf_img.getvalue(), width=320)
+                        st.markdown('</div>', unsafe_allow_html=True)
                         
-                        # Generación de PDF para descarga centrada
+                        # Generación de PDF fuera de la card, usando todo el ancho de su columna
                         pdf_buf = BytesIO()
                         c = canvas.Canvas(pdf_buf, pagesize=(8.5 * cm, 10.4 * cm))
                         buf_img.seek(0)
@@ -7481,8 +7483,13 @@ else:
                         c.showPage()
                         c.save()
                         
-                        st.download_button("🖨️ Descargar Etiqueta PDF", pdf_buf.getvalue(), file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", mime="application/pdf")
-                        st.markdown('</div>', unsafe_allow_html=True)
+                        st.download_button(
+                            "🖨️ Descargar Etiqueta PDF", 
+                            pdf_buf.getvalue(), 
+                            file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", 
+                            mime="application/pdf", 
+                            use_container_width=True
+                        )
                         
                     with col_inst:
                         st.markdown("""
