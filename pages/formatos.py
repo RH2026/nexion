@@ -71,29 +71,28 @@ if lote:
     ).convert("RGB")
 
     # ==========================
-    # TAMAÑO ETIQUETA
-    # 7.62 x 5.08 cm (Proporción Horizontal)
+    # TAMAÑO ETIQUETA (Vertical: 5.08 x 7.62 cm proporciones)
     # ==========================
 
-    ancho_px = 900
-    alto_px = 600
+    ancho_px = 600
+    alto_px = 900
 
     etiqueta = Image.new("RGB", (ancho_px, alto_px), "white")
     draw = ImageDraw.Draw(etiqueta)
 
-    font_np = cargar_fuente(42)
-    font_info = cargar_fuente(36)
+    font_np = cargar_fuente(38)
+    font_info = cargar_fuente(32)
     font_bottom = cargar_fuente(28)
 
     # ==========================
-    # LOGO (Esquina superior izquierda)
+    # LOGO (Margen superior seguro para que no se corte)
     # ==========================
 
     try:
         logo = Image.open("agc.png").convert("RGBA")
         logo_w, logo_h = logo.size
 
-        nuevo_ancho = 320
+        nuevo_ancho = 380
         nuevo_alto = int(logo_h * nuevo_ancho / logo_w)
 
         logo = logo.resize(
@@ -103,7 +102,7 @@ if lote:
 
         etiqueta.paste(
             logo,
-            (50, 40),
+            ((ancho_px - nuevo_ancho)//2, 60),
             logo
         )
 
@@ -111,37 +110,37 @@ if lote:
         st.warning(f"No se encontró agc.png ({e})")
 
     # ==========================
-    # TEXTO PRINCIPAL (Lado izquierdo)
+    # TEXTO PRINCIPAL
     # ==========================
 
-    x = 50
+    x = 45
 
     draw.text(
-        (x, 140),
+        (x, 180),
         numero_parte,
         fill="#222222",
         font=font_np
     )
 
     draw.text(
-        (x, 200),
+        (x, 235),
         f"Lote: {lote}",
         fill="#222222",
         font=font_info
     )
 
     draw.text(
-        (x, 255),
+        (x, 285),
         f"Cant: {valor_fijo}",
         fill="#222222",
         font=font_info
     )
 
     # ==========================
-    # QR (Lado derecho)
+    # QR (Acomodado en la parte central-baja)
     # ==========================
 
-    qr_tamanio = 360
+    qr_tamanio = 320
     qr_img = qr_img.resize(
         (qr_tamanio, qr_tamanio),
         Image.Resampling.NEAREST
@@ -149,11 +148,11 @@ if lote:
 
     etiqueta.paste(
         qr_img,
-        (500, 45)
+        ((ancho_px - qr_tamanio)//2, 360)
     )
 
     # ==========================
-    # TEXTO INFERIOR (Centrado abajo)
+    # TEXTO INFERIOR
     # ==========================
 
     bbox = draw.textbbox(
@@ -167,7 +166,7 @@ if lote:
     draw.text(
         (
             (ancho_px - ancho_texto)//2,
-            530
+            720
         ),
         texto_qr,
         fill="#222222",
@@ -185,17 +184,17 @@ if lote:
 
     st.image(
         buffer_img.getvalue(),
-        width=400
+        width=300
     )
 
     # ==========================
-    # PDF (A medida exacta: 7.62 x 5.08 cm)
+    # PDF (Vertical: 5.08 cm de ancho x 7.62 cm de alto)
     # ==========================
 
     pdf_buffer = BytesIO()
 
-    ancho_pdf = 7.62 * cm
-    alto_pdf = 5.08 * cm
+    ancho_pdf = 5.08 * cm
+    alto_pdf = 7.62 * cm
 
     c = canvas.Canvas(
         pdf_buffer,
