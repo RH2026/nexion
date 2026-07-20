@@ -7398,11 +7398,17 @@ else:
                     .nexion-card li strong {
                         color: #edf2f7;
                     }
+                    .centered-preview {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                    }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                st.subheader("🏷️ Generador de Etiquetas Nexion")
-                
+                                
                 # Datos y selección en inputs limpios
                 np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10184"]
                 numero_parte = st.selectbox("Número de Parte", np_opt)
@@ -7457,16 +7463,17 @@ else:
                 
                     st.markdown("### Vista previa e Instrucciones")
                     
-                    # Columnas simétricas directas para evitar desalineaciones
+                    # Columnas simétricas
                     col_prev, col_inst = st.columns([1, 1.2], vertical_alignment="top")
                     
                     buf_img = BytesIO()
                     etiqueta.save(buf_img, format="PNG")
                     
                     with col_prev:
-                        st.image(buf_img.getvalue(), width=320)
+                        st.markdown('<div class="centered-preview">', unsafe_allow_html=True)
+                        st.image(buf_img.getvalue(), width=300)
                         
-                        # Generación de PDF para descarga directa abajo de la vista previa
+                        # Generación de PDF para descarga centrada
                         pdf_buf = BytesIO()
                         c = canvas.Canvas(pdf_buf, pagesize=(8.5 * cm, 10.4 * cm))
                         buf_img.seek(0)
@@ -7474,7 +7481,8 @@ else:
                         c.showPage()
                         c.save()
                         
-                        st.download_button("🖨️ Descargar Etiqueta PDF", pdf_buf.getvalue(), file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", mime="application/pdf", use_container_width=True)
+                        st.download_button("🖨️ Descargar Etiqueta PDF", pdf_buf.getvalue(), file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", mime="application/pdf")
+                        st.markdown('</div>', unsafe_allow_html=True)
                         
                     with col_inst:
                         st.markdown("""
@@ -7490,7 +7498,7 @@ else:
                             </ol>
                         </div>
                         """, unsafe_allow_html=True)
-            
+                        
             
             
             # --- SUBSECCIÓN C: PROFORMA ---
