@@ -86,14 +86,14 @@ if lote:
     font_bottom = cargar_fuente(42)
 
     # ==========================
-    # LOGO
+    # LOGO (Más abajo para evitar corte superior)
     # ==========================
 
     try:
         logo = Image.open("agc.png").convert("RGBA")
         logo_w, logo_h = logo.size
 
-        nuevo_ancho = 600
+        nuevo_ancho = 580
         nuevo_alto = int(logo_h * nuevo_ancho / logo_w)
 
         logo = logo.resize(
@@ -101,10 +101,10 @@ if lote:
             Image.Resampling.LANCZOS
         )
 
-        # Margen superior incrementado a 60px para evitar que la impresora lo corte
+        # Margen superior incrementado a 110px para dar un respiro amplio arriba
         etiqueta.paste(
             logo,
-            ((ancho_px - nuevo_ancho)//2, 60),
+            ((ancho_px - nuevo_ancho)//2, 110),
             logo
         )
 
@@ -112,44 +112,45 @@ if lote:
         st.warning(f"No se encontró agc.png ({e})")
 
     # ==========================
-    # TEXTO (Reubicado hacia abajo de forma proporcional)
+    # TEXTO PRINCIPAL (Reubicado en proporción)
     # ==========================
 
     x = 90
 
     draw.text(
-        (x, 240),
+        (x, 270),
         numero_parte,
         fill="#222222",
         font=font_np
     )
 
     draw.text(
-        (x, 310),
+        (x, 340),
         f"Lote: {lote}",
         fill="#222222",
         font=font_info
     )
 
     draw.text(
-        (x, 375),
+        (x, 405),
         f"Cantidad: {valor_fijo}",
         fill="#222222",
         font=font_info
     )
 
     # ==========================
-    # QR
+    # QR (Ajustado al centro)
     # ==========================
 
+    qr_tamanio = 460
     qr_img = qr_img.resize(
-        (540, 540),
+        (qr_tamanio, qr_tamanio),
         Image.Resampling.NEAREST
     )
 
     etiqueta.paste(
         qr_img,
-        ((ancho_px-540)//2, 450)
+        ((ancho_px - qr_tamanio)//2, 480)
     )
 
     # ==========================
@@ -166,8 +167,8 @@ if lote:
 
     draw.text(
         (
-            (ancho_px-ancho_texto)//2,
-            1080
+            (ancho_px - ancho_texto)//2,
+            970
         ),
         texto_qr,
         fill="#222222",
@@ -228,7 +229,6 @@ if lote:
         file_name=f"Etiqueta_{numero_parte}_{lote}.pdf",
         mime="application/pdf"
     )
-
 
 
 
