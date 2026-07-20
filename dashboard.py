@@ -7437,7 +7437,7 @@ else:
                     draw = ImageDraw.Draw(etiqueta)
                 
                     # Fuentes
-                    f_np, f_info, f_bot = get_font(52), get_font(44), get_font(50)
+                    f_np, f_info, f_bot = get_font(52), get_font(44), get_font(56)
                 
                     # ==========================
                     # LOGO (Arriba a la izquierda)
@@ -7493,6 +7493,7 @@ else:
                                 <li>Seleccionar la impresora <strong>Zebra 200</strong>.</li>
                                 <li>Ajustar la orientación a <strong>Horizontal</strong>.</li>
                                 <li>Entrar a <strong>Propiedades</strong> y fijar dimensiones en <strong>10.40 x 8.00 cm</strong>.</li>
+                                <li>Ajustar el <strong>Zoom al 96%</strong>.</li>
                                 <li>Confirmar con <strong>Aceptar</strong> e imprimir.</li>
                             </ol>
                         </div>
