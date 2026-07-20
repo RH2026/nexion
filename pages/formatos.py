@@ -4,7 +4,6 @@ from io import BytesIO
 import qrcode
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
-from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
@@ -31,7 +30,6 @@ valor_fijo = "140"
 # ==========================
 
 def cargar_fuente(size):
-
     posibles = [
         "DejaVuSans-Bold.ttf",
         "arial.ttf",
@@ -51,7 +49,6 @@ def cargar_fuente(size):
 
 
 if lote:
-
     texto_qr = f"{numero_parte} - {lote} - {valor_fijo}C"
 
     # ==========================
@@ -75,7 +72,7 @@ if lote:
 
     # ==========================
     # TAMAÑO ETIQUETA
-    # 10.40 x 8.50 cm
+    # 8.50 x 10.40 cm (Vertical)
     # ==========================
 
     ancho_px = 1004
@@ -93,9 +90,7 @@ if lote:
     # ==========================
 
     try:
-
         logo = Image.open("agc.png").convert("RGBA")
-
         logo_w, logo_h = logo.size
 
         nuevo_ancho = 620
@@ -193,36 +188,28 @@ if lote:
     )
 
     # ==========================
-    # PDF
+    # PDF (A medida de la etiqueta, vertical)
     # ==========================
 
     pdf_buffer = BytesIO()
 
-    c = canvas.Canvas(
-        pdf_buffer,
-        pagesize=letter
-    )
-
-    ancho_carta, alto_carta = letter
-
     ancho_pdf = 8.5 * cm
     alto_pdf = 10.4 * cm
 
-    margen = 0.0 * cm
+    # Se crea el lienzo con el tamaño exacto de la etiqueta (vertical)
+    c = canvas.Canvas(
+        pdf_buffer,
+        pagesize=(ancho_pdf, alto_pdf)
+    )
 
     buffer_img.seek(0)
-
     img_reader = ImageReader(buffer_img)
 
-    c.rotate(90)
-
-    x = alto_carta - margen - ancho_pdf
-    y = -alto_pdf + (0.10 * cm)
-
+    # Se dibuja la imagen ocupando todo el espacio de la página sin rotaciones
     c.drawImage(
         img_reader,
-        x,
-        y,
+        0,
+        0,
         width=ancho_pdf,
         height=alto_pdf
     )
@@ -242,7 +229,6 @@ if lote:
         file_name=f"Etiqueta_{numero_parte}_{lote}.pdf",
         mime="application/pdf"
     )
-
 
 
 
