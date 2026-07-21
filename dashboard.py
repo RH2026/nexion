@@ -5905,12 +5905,27 @@ else:
 
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         with tab_cli:
+                            # ---------------- ESTILOS CSS (SCROLL AZUL A VERDE Y TARJETAS EN UNA LÍNEA) ----------------
+                            st.markdown("""
+                            <style>
+                            .scroll-container { max-height: 550px; overflow-y: auto; padding-right: 8px; margin-bottom: 20px; }
+                            .scroll-container::-webkit-scrollbar { width: 8px; }
+                            .scroll-container::-webkit-scrollbar-track { background: #0B1014; border-radius: 4px; }
+                            .scroll-container::-webkit-scrollbar-thumb { background: #2980B9; border-radius: 4px; }
+                            .scroll-container::-webkit-scrollbar-thumb:hover, .scroll-container::-webkit-scrollbar-thumb:active { background: #2ECC71; }
+
+                            .row-card-light { background: #212C36 !important; border-radius: 8px; border-left: 5px solid #2980B9; padding: 15px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+                            .row-item { flex: 1; padding: 0 10px; }
+                            .row-title { color: #95A5A6; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+                            .row-val { color: #FFFFFF; font-size: 0.95rem; font-weight: bold; margin-top: 4px; }
+                            </style>
+                            """, unsafe_allow_html=True)
+
                             st.subheader(f"Análisis de Facturación: {cliente_sel}")
                             
                             df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
                             total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
 
-                            # Tarjetas de métricas
                             mk1, mk2 = st.columns(2)
                             with mk1:
                                 st.metric("MONTO TOTAL FACTURADO", f"${total_facturacion:,.2f}")
@@ -5942,31 +5957,8 @@ else:
                                     flete_val = limpiar_dinero(pd.Series([row.get("COSTO DE LA GUIA", 0)]))[0]
                                     fact_val = limpiar_dinero(pd.Series([row.get("FACTURACION", 0)]))[0]
 
-                                    html_cards += f"""
-                                    <div class="row-card-light">
-                                        <div class="row-item">
-                                            <div class="row-title">PEDIDO / GUÍA</div>
-                                            <div class="row-val" style="color: #5DADE2;">{folio}</div>
-                                            <div style="color: #FFFFFF; font-size: 0.75rem; margin-top:2px; font-weight: 500;">Guía: {num_guia} | {fecha}</div>
-                                        </div>
-                                        <div class="row-item">
-                                            <div class="row-title">DESTINO</div>
-                                            <div class="row-val">{destino}</div>
-                                        </div>
-                                        <div class="row-item">
-                                            <div class="row-title">CAJAS</div>
-                                            <div class="row-val">{cajas:,.0f} Uds.</div>
-                                        </div>
-                                        <div class="row-item">
-                                            <div class="row-title">FACTURACIÓN</div>
-                                            <div class="row-val">${fact_val:,.2f}</div>
-                                        </div>
-                                        <div class="row-item" style="text-align: right;">
-                                            <div class="row-title">COSTO DE LA GUÍA</div>
-                                            <div class="row-val" style="color: #F39C12;">${flete_val:,.2f}</div>
-                                        </div>
-                                    </div>
-                                    """
+                                    # HTML estrictamente en una sola línea para evitar que se truene el render
+                                    html_cards += f"<div class='row-card-light'><div class='row-item'><div class='row-title'>PEDIDO / GUÍA</div><div class='row-val' style='color: #5DADE2;'>{folio}</div><div style='color: #FFFFFF; font-size: 0.75rem; margin-top:2px; font-weight: 500;'>Guía: {num_guia} | {fecha}</div></div><div class='row-item'><div class='row-title'>DESTINO</div><div class='row-val'>{destino}</div></div><div class='row-item'><div class='row-title'>CAJAS</div><div class='row-val'>{cajas:,.0f} Uds.</div></div><div class='row-item'><div class='row-title'>FACTURACIÓN</div><div class='row-val'>${fact_val:,.2f}</div></div><div class='row-item' style='text-align: right;'><div class='row-title'>COSTO DE LA GUÍA</div><div class='row-val' style='color: #F39C12;'>${flete_val:,.2f}</div></div></div>"
                                 
                                 html_cards += "</div>"
                                 st.markdown(html_cards, unsafe_allow_html=True)
