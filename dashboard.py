@@ -5795,10 +5795,32 @@ else:
                 }
                 div[data-testid="stMetricValue"]{ color: #FFFFFF !important; font-weight: 900; font-size: 1.3rem; }
                 div[data-testid="stMetricLabel"]{ color: #D4AF37 !important; letter-spacing: 1px; text-transform: uppercase; font-size: 0.8rem; font-weight: bold; }
-    
-                /* Estilo para contenedores tipo fila con borde lateral (inspirado en tu segunda imagen) */
-                .row-card {
-                    background: #161D22;
+
+                /* Contenedor con altura fija y scroll estilizado webkit */
+                .scroll-container {
+                    max-height: 550px;
+                    overflow-y: auto;
+                    padding-right: 8px;
+                    margin-bottom: 20px;
+                }
+                .scroll-container::-webkit-scrollbar {
+                    width: 8px;
+                }
+                .scroll-container::-webkit-scrollbar-track {
+                    background: #0B1014;
+                    border-radius: 4px;
+                }
+                .scroll-container::-webkit-scrollbar-thumb {
+                    background: #2E4053;
+                    border-radius: 4px;
+                }
+                .scroll-container::-webkit-scrollbar-thumb:hover {
+                    background: #D4AF37;
+                }
+
+                /* Estilo para contenedores tipo fila con fondo más claro y borde lateral azul */
+                .row-card-light {
+                    background: #212C36 !important;
                     border-radius: 8px;
                     border-left: 5px solid #2980B9;
                     padding: 15px 20px;
@@ -5806,63 +5828,61 @@ else:
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
                 }
                 .row-item {
                     flex: 1;
                     padding: 0 10px;
                 }
-                .row-title { color: #85929E; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+                .row-title { color: #95A5A6; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
                 .row-val { color: #FFFFFF; font-size: 0.95rem; font-weight: bold; margin-top: 4px; }
                 </style>
                 """, unsafe_allow_html=True)
-    
-                st.markdown("<h1>PANEL DE RENDIMIENTO</h1>", unsafe_allow_html=True)
-                st.markdown("<p style='color: #A4B9C8; margin-bottom: 20px;'>Monitoreo integral de KPIs, costos y tiempos operativos.</p>", unsafe_allow_html=True)
-    
+
+                
+
                 # ---------------- FUNCIONES DE APOYO ----------------
                 def limpiar_columnas(txt):
                     if not isinstance(txt, str): return txt
                     return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn').strip().upper()
-    
+
                 def limpiar_dinero(col):
                     return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors="coerce").fillna(0)
-    
+
                 # ---------------- CARGA DE DATOS ----------------
                 try:
                     df_actual = pd.read_csv("Matriz_Excel_Dashboard.csv")
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
-    
+
                     col_cliente = "NOMBRE DEL CLIENTE"
                     col_paqueteria = "FLETERA"
-    
+
                     if col_cliente in df_actual.columns and col_paqueteria in df_actual.columns:
                         df_actual[col_cliente] = df_actual[col_cliente].fillna("SIN CLIENTE").astype(str).str.strip().str.upper()
                         df_actual[col_paqueteria] = df_actual[col_paqueteria].fillna("SIN FLETERA").astype(str).str.strip().str.upper()
-    
+
                         # ---------------- FILTROS DINÁMICOS EN CASCADA ----------------
-                        st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1.5px;'>FILTROS GENERALES</p>", unsafe_allow_html=True)
                         f1, f2, f3 = st.columns(3)
                         
                         lista_meses = ["TODOS"] + sorted(df_actual["MES"].dropna().unique().tolist()) if "MES" in df_actual.columns else ["TODOS"]
                         with f3:
                             mes_sel = st.selectbox("FILTRAR POR MES:", lista_meses)
-    
+
                         df_temp = df_actual.copy()
                         if mes_sel != "TODOS" and "MES" in df_temp.columns:
                             df_temp = df_temp[df_temp["MES"] == mes_sel]
-    
+
                         lista_clientes = ["TODOS"] + sorted(df_temp[col_cliente].unique().tolist())
                         with f1:
                             cliente_sel = st.selectbox("FILTRAR POR CLIENTE:", lista_clientes)
-    
+
                         if cliente_sel != "TODOS":
                             df_temp = df_temp[df_temp[col_cliente] == cliente_sel]
-    
+
                         lista_paqueterias = ["TODAS"] + sorted(df_temp[col_paqueteria].unique().tolist())
                         with f2:
                             paqueteria_sel = st.selectbox("FILTRAR POR FLETERA:", lista_paqueterias)
-    
+
                         # Aplicación final de filtros
                         df_filtrado = df_actual.copy()
                         if mes_sel != "TODOS" and "MES" in df_filtrado.columns:
@@ -5871,9 +5891,9 @@ else:
                             df_filtrado = df_filtrado[df_filtrado[col_cliente] == cliente_sel]
                         if paqueteria_sel != "TODAS":
                             df_filtrado = df_filtrado[df_filtrado[col_paqueteria] == paqueteria_sel]
-    
+
                         st.divider()
-    
+
                         # ---------------- TABS DE RENDIMIENTO ----------------
                         tab_cli, tab_paq, tab_lead, tab_caja, tab_top20 = st.tabs([
                             "Facturación por Cliente", 
@@ -5882,54 +5902,52 @@ else:
                             "Costo por Caja", 
                             "Top 20 Clientes"
                         ])
-    
-                        # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
+
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         with tab_cli:
                             st.subheader(f"Análisis de Facturación: {cliente_sel}")
                             
                             df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
                             total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
-    
+
                             # Tarjetas de métricas
                             mk1, mk2 = st.columns(2)
                             with mk1:
                                 st.metric("MONTO TOTAL FACTURADO", f"${total_facturacion:,.2f}")
                             with mk2:
                                 st.metric("REGISTROS ENCONTRADOS", f"{len(df_filtrado):,}")
-    
+
                             st.markdown("<br>", unsafe_allow_html=True)
                             st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem;'>DESGLOSE DE DESTINOS Y ENVIOS</p>", unsafe_allow_html=True)
-    
+
                             if not df_filtrado.empty:
+                                html_cards = "<div class='scroll-container'>"
+                                
                                 for index, row in df_filtrado.iterrows():
-                                    # Usamos las columnas limpias sin acentos
                                     folio = str(row.get("NUMERO DE PEDIDO", row.get("FACTURA", "S/N")))
                                     if folio == "nan" or not folio.strip(): folio = "S/N"
                                     
                                     num_guia = str(row.get("NUMERO DE GUIA", "S/G"))
                                     if num_guia == "nan" or not num_guia.strip(): num_guia = "S/G"
-    
+
                                     destino = str(row.get("DESTINO", "N/D"))
                                     fecha = str(row.get("FECHA DE ENVIO", row.get("FECHA DE ENVÍO", "S/F")))
                                     
-                                    # Manejo de cajas
                                     cajas_val = row.get("CAJAS", row.get("CANTIDAD DE CAJAS", 0))
                                     try:
                                         cajas = float(cajas_val) if pd.notna(cajas_val) else 0
                                     except:
                                         cajas = 0
-    
-                                    # Valores monetarios limpios (usando COSTO DE LA GUIA sin acento)
+
                                     flete_val = limpiar_dinero(pd.Series([row.get("COSTO DE LA GUIA", 0)]))[0]
                                     fact_val = limpiar_dinero(pd.Series([row.get("FACTURACION", 0)]))[0]
-    
-                                    st.markdown(f"""
-                                    <div class="row-card">
+
+                                    html_cards += f"""
+                                    <div class="row-card-light">
                                         <div class="row-item">
                                             <div class="row-title">PEDIDO / GUÍA</div>
                                             <div class="row-val" style="color: #5DADE2;">{folio}</div>
-                                            <div style="color: #85929E; font-size: 0.7rem; margin-top:2px;">Guía: {num_guia} | {fecha}</div>
+                                            <div style="color: #FFFFFF; font-size: 0.75rem; margin-top:2px; font-weight: 500;">Guía: {num_guia} | {fecha}</div>
                                         </div>
                                         <div class="row-item">
                                             <div class="row-title">DESTINO</div>
@@ -5948,7 +5966,10 @@ else:
                                             <div class="row-val" style="color: #F39C12;">${flete_val:,.2f}</div>
                                         </div>
                                     </div>
-                                    """, unsafe_allow_html=True)
+                                    """
+                                
+                                html_cards += "</div>"
+                                st.markdown(html_cards, unsafe_allow_html=True)
                             else:
                                 st.info("No hay registros disponibles para los filtros seleccionados.")
     
