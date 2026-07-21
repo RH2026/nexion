@@ -5958,15 +5958,15 @@ else:
                                         </div>
                                         <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
                                             <div class="label">CAJAS</div>
-                                            <div class="v-txt">{int(float(str(item.get('CAJAS') or item.get('CANTIDAD DE CAJAS') or 0).replace('$','').replace(',',''))):,} Uds.</div>
+                                            <div class="v-txt">{{int(pd.to_numeric(str(item.get('CAJAS') or item.get('CANTIDAD DE CAJAS') or 0).replace('$','').replace(',',''), errors='coerce') or 0):,}} Uds.</div>
                                         </div>
                                         <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
                                             <div class="label">FACTURACIÓN</div>
-                                            <div class="v-txt">${float(str(item.get('FACTURACION', 0)).replace('$','').replace(',','') or 0):,.2f}</div>
+                                            <div class="v-txt">${pd.to_numeric(str(item.get('FACTURACION', 0)).replace('$','').replace(',',''), errors='coerce'):,.2f}</div>
                                         </div>
                                         <div style="text-align: right; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
                                             <div class="label">COSTO DE LA GUIA</div>
-                                            <div style="color:#F39C12; font-size:14px; font-weight:900; margin-top:2px;">${float(str(item.get('COSTO DE LA GUIA', 0)).replace('$','').replace(',','') or 0):,.2f}</div>
+                                            <div style="color:#F39C12; font-size:14px; font-weight:900; margin-top:2px;">${pd.to_numeric(str(item.get('COSTO DE LA GUIA', 0)).replace('$','').replace(',',''), errors='coerce'):,.2f}</div>
                                         </div>
                                     </div>
                                     ''' for item in data_dict])}
