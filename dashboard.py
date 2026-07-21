@@ -5892,7 +5892,6 @@ else:
                         if paqueteria_sel != "TODAS":
                             df_filtrado = df_filtrado[df_filtrado[col_paqueteria] == paqueteria_sel]
 
-                        st.divider()
 
                         # ---------------- TABS DE RENDIMIENTO ----------------
                         tab_cli, tab_paq, tab_lead, tab_caja, tab_top20 = st.tabs([
@@ -5911,7 +5910,6 @@ else:
                             df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
                             total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
     
-                            # Tarjetas de métricas superiores
                             mk1, mk2 = st.columns(2)
                             with mk1:
                                 st.metric("MONTO TOTAL FACTURADO", f"${total_facturacion:,.2f}")
@@ -5921,8 +5919,53 @@ else:
                             st.markdown("<br>", unsafe_allow_html=True)
                             st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem;'>DESGLOSE DE DESTINOS Y ENVIOS</p>", unsafe_allow_html=True)
     
-                            # Preparar datos en diccionario para el bloque HTML estilizado
-                            data_dict = df_filtrado.fillna('').to_dict('records')
+                            # Preparamos los registros limpios en Python puro para evitar errores de renderizado
+                            lista_tarjetas_html = []
+                            for index, row in df_filtrado.iterrows():
+                                folio = str(row.get("NUMERO DE PEDIDO") or row.get("FACTURA") or "S/N")
+                                num_guia = str(row.get("NUMERO DE GUIA") or "S/G")
+                                destino = str(row.get("DESTINO", "N/D"))
+                                fecha = str(row.get("FECHA DE ENVIO") or row.get("FECHA DE ENVÍO") or "S/F")
+                                
+                                # Limpieza segura de cajas en Python
+                                val_caja_raw = str(row.get("CAJAS") or row.get("CANTIDAD DE CAJAS") or "0")
+                                cajas_limpias = int(pd.to_numeric(val_caja_raw.replace("$", "").replace(",", ""), errors='coerce') or 0)
+                                
+                                # Limpieza segura de montos
+                                val_fact_raw = str(row.get("FACTURACION", "0"))
+                                fact_val = float(pd.to_numeric(val_fact_raw.replace("$", "").replace(",", ""), errors='coerce') or 0)
+                                
+                                val_flete_raw = str(row.get("COSTO DE LA GUIA", "0"))
+                                flete_val = float(pd.to_numeric(val_flete_raw.replace("$", "").replace(",", ""), errors='coerce') or 0)
+    
+                                # HTML limpio y responsivo en una sola línea por tarjeta
+                                card_html = f"""
+                                <div class="card-row">
+                                    <div>
+                                        <div class="label">PEDIDO / GUÍA</div>
+                                        <div class="v-main">{folio}</div>
+                                        <div style="font-size:10px; color:#FFFFFF; font-weight:500; margin-top:2px;">Guía: {num_guia}</div>
+                                    </div>
+                                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                        <div class="label">DESTINO</div>
+                                        <div class="v-txt">{destino}</div>
+                                        <div style="font-size:10px; color:#95A5A6;">{fecha}</div>
+                                    </div>
+                                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                        <div class="label">CAJAS</div>
+                                        <div class="v-txt">{cajas_limpias:,} Uds.</div>
+                                    </div>
+                                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                        <div class="label">FACTURACIÓN</div>
+                                        <div class="v-txt">${fact_val:,.2f}</div>
+                                    </div>
+                                    <div style="text-align: right; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                        <div class="label">COSTO DE LA GUIA</div>
+                                        <div style="color:#F39C12; font-size:14px; font-weight:900; margin-top:2px;">${flete_val:,.2f}</div>
+                                    </div>
+                                </div>
+                                """
+                                lista_tarjetas_html.append(card_html)
     
                             html_content = f"""
                             <!DOCTYPE html>
@@ -5932,44 +5975,22 @@ else:
                                 <style>
                                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
                                     body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
-                                    .scroller {{ height: 500px; overflow-y: auto; padding-right: 10px; margin-bottom: 10px; }}
+                                    .scroller {{ height: 500px; overflow-y: auto; padding-right: 10px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }}
                                     ::-webkit-scrollbar {{ width: 6px; }}
                                     ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
                                     .scroller:hover::-webkit-scrollbar-thumb, .scroller::-webkit-scrollbar-thumb:active {{ background: #2ecc71; }}
-                                    .card-row {{ background: #212C36; border-radius: 10px; margin-bottom: 10px; padding: 15px 20px; display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 1.2fr 1.2fr; gap: 15px; align-items: center; border-left: 5px solid #2980B9; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
+                                    .card-row {{ background: #212C36; border-radius: 10px; margin-bottom: 10px; padding: 15px 20px; display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 1.2fr 1.2fr; gap: 15px; align-items: center; border-left: 5px solid #2980B9; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 100%; box-sizing: border-box; }}
                                     .label {{ font-size: 8px; color: #95A5A6; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }}
                                     .v-main {{ font-size: 13px; font-weight: 800; color: #5DADE2; }}
                                     .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; margin-top: 2px; }}
+                                    @media (max-width: 768px) {{
+                                        .card-row {{ grid-template-columns: 1fr; gap: 10px; }}
+                                    }}
                                 </style>
                             </head>
                             <body>
                                 <div class="scroller">
-                                    {"".join([f'''
-                                    <div class="card-row">
-                                        <div>
-                                            <div class="label">PEDIDO / GUÍA</div>
-                                            <div class="v-main">{str(item.get('NUMERO DE PEDIDO') or item.get('FACTURA') or 'S/N')}</div>
-                                            <div style="font-size:10px; color:#FFFFFF; font-weight:500; margin-top:2px;">Guía: {str(item.get('NUMERO DE GUIA') or 'S/G')}</div>
-                                        </div>
-                                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
-                                            <div class="label">DESTINO</div>
-                                            <div class="v-txt">{str(item.get('DESTINO', 'N/D'))}</div>
-                                            <div style="font-size:10px; color:#95A5A6;">{str(item.get('FECHA DE ENVIO') or item.get('FECHA DE ENVÍO') or 'S/F')}</div>
-                                        </div>
-                                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
-                                            <div class="label">CAJAS</div>
-                                            <div class="v-txt">{{int(pd.to_numeric(str(item.get('CAJAS') or item.get('CANTIDAD DE CAJAS') or 0).replace('$','').replace(',',''), errors='coerce') or 0):,}} Uds.</div>
-                                        </div>
-                                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
-                                            <div class="label">FACTURACIÓN</div>
-                                            <div class="v-txt">${pd.to_numeric(str(item.get('FACTURACION', 0)).replace('$','').replace(',',''), errors='coerce'):,.2f}</div>
-                                        </div>
-                                        <div style="text-align: right; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
-                                            <div class="label">COSTO DE LA GUIA</div>
-                                            <div style="color:#F39C12; font-size:14px; font-weight:900; margin-top:2px;">${pd.to_numeric(str(item.get('COSTO DE LA GUIA', 0)).replace('$','').replace(',',''), errors='coerce'):,.2f}</div>
-                                        </div>
-                                    </div>
-                                    ''' for item in data_dict])}
+                                    {"".join(lista_tarjetas_html)}
                                 </div>
                             </body>
                             </html>
