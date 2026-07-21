@@ -5781,9 +5781,7 @@ else:
                     st.error(f"¡Atención, amor! Detalle en el código: {e}")
                             
             elif st.session_state.menu_sub == "PANEL DE RENDIMIENTO":
-                st.markdown("<h1>PANEL DE RENDIMIENTO</h1>", unsafe_allow_html=True)
-                st.markdown("<p style='color: #A4B9C8; margin-bottom: 20px;'>Monitoreo integral de KPIs, costos y tiempos operativos.</p>", unsafe_allow_html=True)
-    
+                    
                 # ---------------- FUNCIONES DE APOYO ----------------
                 def limpiar_columnas(txt):
                     if not isinstance(txt, str): return txt
@@ -5809,7 +5807,7 @@ else:
     
                         # ---------------- FILTROS SUPERIORES ----------------
                         st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1.5px;'>FILTROS GENERALES</p>", unsafe_allow_html=True)
-                        f1, f2 = st.columns(2)
+                        f1, f2, f3 = st.columns(3)
                         
                         with f1:
                             lista_clientes = ["TODOS"] + sorted(df_actual[col_cliente].unique().tolist())
@@ -5819,12 +5817,18 @@ else:
                             lista_paqueterias = ["TODAS"] + sorted(df_actual[col_paqueteria].unique().tolist())
                             paqueteria_sel = st.selectbox("FILTRAR POR FLETERA:", lista_paqueterias)
     
+                        with f3:
+                            lista_meses = ["TODOS"] + sorted(df_actual["MES"].dropna().unique().tolist()) if "MES" in df_actual.columns else ["TODOS"]
+                            mes_sel = st.selectbox("FILTRAR POR MES:", lista_meses)
+    
                         # Aplicación de filtros al DataFrame
                         df_filtrado = df_actual.copy()
                         if cliente_sel != "TODOS":
                             df_filtrado = df_filtrado[df_filtrado[col_cliente] == cliente_sel]
                         if paqueteria_sel != "TODAS":
                             df_filtrado = df_filtrado[df_filtrado[col_paqueteria] == paqueteria_sel]
+                        if mes_sel != "TODOS" and "MES" in df_filtrado.columns:
+                            df_filtrado = df_filtrado[df_filtrado["MES"] == mes_sel]
     
                         st.divider()
     
@@ -5839,9 +5843,35 @@ else:
     
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         with tab_cli:
-                            st.subheader("Análisis de Facturación por Cliente")
-                            total_reg = len(df_filtrado)
-                            st.info(f"Registros encontrados con los filtros actualizados: {total_reg:,}")
+                            st.subheader(f"Análisis de Facturación: {cliente_sel}")
+                            
+                            # Limpiar y sumar la columna FACTURACION
+                            df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
+                            total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
+    
+                            # Métrica principal del total facturado
+                            c1, c2 = st.columns(2)
+                            with c1:
+                                st.metric("MONTO TOTAL FACTURADO", f"${total_facturacion:,.2f}")
+                            with c2:
+                                st.metric("REGISTROS ENCONTRADOS", f"{len(df_filtrado):,}")
+    
+                            st.markdown("---")
+                            st.markdown("<p style='color: #D4AF37; font-weight: bold;'>DESTINOS ASOCIADOS EN ESTE PERIODO:</p>", unsafe_allow_html=True)
+    
+                            # Extraer la lista de destinos únicos para este filtro
+                            if "DESTINO" in df_filtrado.columns:
+                                destinos_unicos = df_filtrado["DESTINO"].dropna().unique().tolist()
+                                if destinos_unicos:
+                                    # Mostramos los destinos de forma limpia en una tablita o viñetas
+                                    df_destinos = df_filtrado.groupby("DESTINO")["FACTURACION_NUM"].sum().reset_index()
+                                    df_destinos.columns = ["DESTINO", "FACTURACION"]
+                                    df_destinos["FACTURACION"] = df_destinos["FACTURACION"].apply(lambda x: f"${x:,.2f}")
+                                    st.dataframe(df_destinos, use_container_width=True, hide_index=True)
+                                else:
+                                    st.info("No hay destinos registrados para esta selección.")
+                            else:
+                                st.warning("No se encontró la columna 'DESTINO' en la matriz.")
     
                         # ---------------- TAB 2: FACTURACIÓN POR FLETERA ----------------
                         with tab_paq:
