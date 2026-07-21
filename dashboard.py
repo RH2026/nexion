@@ -1299,7 +1299,7 @@ else:
                         
                         # Verificamos si es admin o si el usuario es exactamente Carlos
                         if es_admin or usuario_actual == "Carlos":
-                            opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                            opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "PANEL DE RENDIMIENTO", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         else:
                             opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
                             
@@ -5780,6 +5780,95 @@ else:
                 except Exception as e:
                     st.error(f"¡Atención, amor! Detalle en el código: {e}")
                             
+            elif st.session_state.menu_sub == "PANEL DE RENDIMIENTO":
+                st.markdown("<h1>PANEL DE RENDIMIENTO</h1>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #A4B9C8; margin-bottom: 20px;'>Monitoreo integral de KPIs, costos y tiempos operativos.</p>", unsafe_allow_html=True)
+    
+                # ---------------- FUNCIONES DE APOYO ----------------
+                def limpiar_columnas(txt):
+                    if not isinstance(txt, str): return txt
+                    return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn').strip().upper()
+    
+                def limpiar_dinero(col):
+                    return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors="coerce").fillna(0)
+    
+                # ---------------- CARGA DE DATOS ----------------
+                try:
+                    df_actual = pd.read_csv("Matriz_Excel_Dashboard.csv")
+                    df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
+    
+                    # Detección inteligente de columnas clave
+                    col_cliente = next((c for c in df_actual.columns if "CLIENTE" in c or "RAZON SOCIAL" in c), None)
+                    col_paqueteria = next((c for c in df_actual.columns if "PAQUETERIA" in c or "TRANSPORTISTA" in c or "LINEA" in c), None)
+    
+                    if col_cliente and col_paqueteria:
+                        # Limpieza básica de texto en columnas de filtro
+                        df_actual[col_cliente] = df_actual[col_cliente].fillna("SIN CLIENTE").astype(str).str.strip().str.upper()
+                        df_actual[col_paqueteria] = df_actual[col_paqueteria].fillna("SIN PAQUETERIA").astype(str).str.strip().str.upper()
+    
+                        # ---------------- FILTROS SUPERIORES ----------------
+                        st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1.5px;'>FILTROS GENERALES</p>", unsafe_allow_html=True)
+                        f1, f2 = st.columns(2)
+                        
+                        with f1:
+                            lista_clientes = ["TODOS"] + sorted(df_actual[col_cliente].unique().tolist())
+                            cliente_sel = st.selectbox("FILTRAR POR CLIENTE:", lista_clientes)
+                        
+                        with f2:
+                            lista_paqueterias = ["TODAS"] + sorted(df_actual[col_paqueteria].unique().tolist())
+                            paqueteria_sel = st.selectbox("FILTRAR POR PAQUETERÍA:", lista_paqueterias)
+    
+                        # Aplicación de filtros al DataFrame
+                        df_filtrado = df_actual.copy()
+                        if cliente_sel != "TODOS":
+                            df_filtrado = df_filtrado[df_filtrado[col_cliente] == cliente_sel]
+                        if paqueteria_sel != "TODAS":
+                            df_filtrado = df_filtrado[df_filtrado[col_paqueteria] == paqueteria_sel]
+    
+                        st.divider()
+    
+                        # ---------------- TABS DE RENDIMIENTO ----------------
+                        tab_cli, tab_paq, tab_lead, tab_caja, tab_top20 = st.tabs([
+                            "Facturación por Cliente", 
+                            "Facturación por Paquetería", 
+                            "Lead Time", 
+                            "Costo por Caja", 
+                            "Top 20 Clientes"
+                        ])
+    
+                        # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
+                        with tab_cli:
+                            st.subheader("Análisis de Facturación por Cliente")
+                            total_reg = len(df_filtrado)
+                            st.info(f"Registros encontrados con los filtros actualizados: {total_reg:,}")
+    
+                        # ---------------- TAB 2: FACTURACIÓN POR PAQUETERÍA ----------------
+                        with tab_paq:
+                            st.subheader("Distribución de Facturación por Paquetería")
+                            st.markdown("<div class='analysis-box'>Aquí se desglosará el impacto financiero por cada línea de transporte o paquetería según tu selección.</div>", unsafe_allow_html=True)
+    
+                        # ---------------- TAB 3: LEAD TIME ----------------
+                        with tab_lead:
+                            st.subheader("Tiempos de Entrega (Lead Time)")
+                            st.markdown("<div class='analysis-box'>Métricas de tiempo de tránsito para el cliente y paquetería seleccionados.</div>", unsafe_allow_html=True)
+    
+                        # ---------------- TAB 4: COSTO POR CAJA ----------------
+                        with tab_caja:
+                            st.subheader("Costo Logístico por Caja")
+                            st.markdown("<div class='analysis-box'>Eficiencia en costos unitarios por volumen de caja procesada.</div>", unsafe_allow_html=True)
+    
+                        # ---------------- TAB 5: TOP 20 CLIENTES EN FACTURACIÓN ----------------
+                        with tab_top20:
+                            st.subheader("Top 20 Clientes en Facturación")
+                            st.markdown("<div class='analysis-box'>Listado ponderado de los principales socios comerciales.</div>", unsafe_allow_html=True)
+    
+                    else:
+                        st.error("No se pudo localizar automáticamente la columna de 'CLIENTE' o 'PAQUETERÍA' en tu matriz. Revisa los nombres de tus cabeceras.")
+    
+                except Exception as e:
+                    st.error(f"¡Atención! Detalle al cargar la matriz para el panel: {e}")
+
+            
             
             elif st.session_state.menu_sub == "ENVIOS ESPECIALES":
                 # [Aquí va tu código o función para el reporte OTD]
