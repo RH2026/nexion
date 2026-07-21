@@ -2832,23 +2832,16 @@ else:
                         </style>
                     """, unsafe_allow_html=True)
                 
-                    # --- PANEL DE ACCESO RESTRINGIDO (CON CONTRASEÑA ESTILO PRO) ---
-                    with st.expander("🔐 Panel de Seguridad / Modo Edición Admin", expanded=False):
-                        col_pass1, col_pass2 = st.columns([2, 3])
-                        with col_pass1:
-                            admin_password_input = st.text_input("Contraseña de Administrador", type="password", key="pwd_admin_agc_secure")
-                        
-                        # Obtenemos la contraseña desde los secretos
-                        PASSWORD_REAL = st.secrets.get("ADMIN_PASSWORD", "tu_contraseña_por_defecto")
-                        es_admin = (admin_password_input == PASSWORD_REAL)
-                        
-                        if es_admin:
-                            st.success("Acceso Concedido: Modo Administrador Activado 🔓")
-                            modo_edicion = st.checkbox("Activar Modo Edición de Citas en Pantalla", value=False, key="check_modo_edicion_secure")
-                        else:
-                            if admin_password_input:
-                                st.error("Credenciales incorrectas")
-                            modo_edicion = False
+                    # --- VALIDACIÓN DIRECTA CON TU VARIABLE DE SESIÓN DE ADMINISTRADOR ---
+                    usuario_actual = st.session_state.get("usuario_activo", "").upper()
+                    es_admin = (usuario_actual == "RIGOBERTO")
+                
+                    if es_admin:
+                        with st.expander("🔐 Panel de Seguridad / Modo Edición Admin", expanded=False):
+                            st.success("Acceso Concedido: Administrador Reconocido 🔓")
+                            modo_edicion = st.checkbox("Activar Modo Edición de Citas en Pantalla", value=False, key="check_modo_edicion_session")
+                    else:
+                        modo_edicion = False
                 
                     # --- Lógica de Navegación ---
                     if 'tipo_entrega' not in st.session_state:
@@ -3130,7 +3123,7 @@ else:
                         content_encoded = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
                         
                         payload = {
-                            "message": "Actualización automática de citas desde panel admin seguro",
+                            "message": "Actualización automática de citas desde panel admin seguro de Rigoberto",
                             "content": content_encoded,
                             "sha": sha_actual
                         }
@@ -3149,13 +3142,13 @@ else:
                     if not df_raw.empty:
                         df_raw.columns = df_raw.columns.str.strip()
                 
-                        # --- MODO EDICIÓN PROTEGIDO POR CONTRASEÑA ---
+                        # --- MODO EDICIÓN BASADO EN TU SESIÓN DE ADMIN ---
                         if modo_edicion:
                             st.warning("⚠️ Modo edición activo. Modifica las celdas abajo y haz clic en el botón de guardar para actualizar GitHub automáticamente.")
                             
-                            df_editado = st.data_editor(df_raw, use_container_width=True, num_rows="dynamic", key="editor_agc_secure")
+                            df_editado = st.data_editor(df_raw, use_container_width=True, num_rows="dynamic", key="editor_agc_admin_session")
                             
-                            if st.button("💾 Guardar Cambios en GitHub", key="btn_guardar_github_secure"):
+                            if st.button("💾 Guardar Cambios en GitHub", key="btn_guardar_github_session"):
                                 if guardar_cambios_github(df_editado):
                                     st.rerun()
                             st.markdown("---")
@@ -3213,7 +3206,7 @@ else:
                         render_logistica_flow_responsive(data_camion)
                     elif st.session_state.tipo_entrega == 'T R A I L E R':
                         render_logistica_flow_responsive(data_trailer)
-                    elif st.session_state.tipo_entrega == 'C A L E N D A R I O':
+                    elif st.session_state.tipo_entrega == 'C A L E N D A R IO':
                         col_mes_sel, _ = st.columns([2, 4])
                         with col_mes_sel:
                             opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
