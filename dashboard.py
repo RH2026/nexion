@@ -5795,16 +5795,17 @@ else:
                 # ---------------- CARGA DE DATOS ----------------
                 try:
                     df_actual = pd.read_csv("Matriz_Excel_Dashboard.csv")
+                    # Limpiamos espacios y acentos de las columnas, asegurando formato estándar
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
     
-                    # Detección inteligente de columnas clave
-                    col_cliente = next((c for c in df_actual.columns if "CLIENTE" in c or "RAZON SOCIAL" in c), None)
-                    col_paqueteria = next((c for c in df_actual.columns if "PAQUETERIA" in c or "TRANSPORTISTA" in c or "LINEA" in c), None)
+                    # Nombres exactos basados en tu estructura
+                    col_cliente = "NOMBRE DEL CLIENTE"
+                    col_paqueteria = "FLETERA" # O puedes cambiar a "TRANSPORTE" si prefieres esa columna
     
-                    if col_cliente and col_paqueteria:
+                    if col_cliente in df_actual.columns and col_paqueteria in df_actual.columns:
                         # Limpieza básica de texto en columnas de filtro
                         df_actual[col_cliente] = df_actual[col_cliente].fillna("SIN CLIENTE").astype(str).str.strip().str.upper()
-                        df_actual[col_paqueteria] = df_actual[col_paqueteria].fillna("SIN PAQUETERIA").astype(str).str.strip().str.upper()
+                        df_actual[col_paqueteria] = df_actual[col_paqueteria].fillna("SIN FLETERA").astype(str).str.strip().str.upper()
     
                         # ---------------- FILTROS SUPERIORES ----------------
                         st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1.5px;'>FILTROS GENERALES</p>", unsafe_allow_html=True)
@@ -5816,7 +5817,7 @@ else:
                         
                         with f2:
                             lista_paqueterias = ["TODAS"] + sorted(df_actual[col_paqueteria].unique().tolist())
-                            paqueteria_sel = st.selectbox("FILTRAR POR PAQUETERÍA:", lista_paqueterias)
+                            paqueteria_sel = st.selectbox("FILTRAR POR FLETERA:", lista_paqueterias)
     
                         # Aplicación de filtros al DataFrame
                         df_filtrado = df_actual.copy()
@@ -5830,7 +5831,7 @@ else:
                         # ---------------- TABS DE RENDIMIENTO ----------------
                         tab_cli, tab_paq, tab_lead, tab_caja, tab_top20 = st.tabs([
                             "Facturación por Cliente", 
-                            "Facturación por Paquetería", 
+                            "Facturación por Fletera", 
                             "Lead Time", 
                             "Costo por Caja", 
                             "Top 20 Clientes"
@@ -5842,28 +5843,28 @@ else:
                             total_reg = len(df_filtrado)
                             st.info(f"Registros encontrados con los filtros actualizados: {total_reg:,}")
     
-                        # ---------------- TAB 2: FACTURACIÓN POR PAQUETERÍA ----------------
+                        # ---------------- TAB 2: FACTURACIÓN POR FLETERA ----------------
                         with tab_paq:
-                            st.subheader("Distribución de Facturación por Paquetería")
-                            st.markdown("<div class='analysis-box'>Aquí se desglosará el impacto financiero por cada línea de transporte o paquetería según tu selección.</div>", unsafe_allow_html=True)
+                            st.subheader("Distribución de Facturación por Fletera")
+                            st.markdown("<div class='analysis-box'>Desglose financiero por línea de transporte.</div>", unsafe_allow_html=True)
     
                         # ---------------- TAB 3: LEAD TIME ----------------
                         with tab_lead:
                             st.subheader("Tiempos de Entrega (Lead Time)")
-                            st.markdown("<div class='analysis-box'>Métricas de tiempo de tránsito para el cliente y paquetería seleccionados.</div>", unsafe_allow_html=True)
+                            st.markdown("<div class='analysis-box'>Evaluación de fechas de envío vs entrega real.</div>", unsafe_allow_html=True)
     
                         # ---------------- TAB 4: COSTO POR CAJA ----------------
                         with tab_caja:
                             st.subheader("Costo Logístico por Caja")
-                            st.markdown("<div class='analysis-box'>Eficiencia en costos unitarios por volumen de caja procesada.</div>", unsafe_allow_html=True)
+                            st.markdown("<div class='analysis-box'>Cálculo de eficiencia unitaria.</div>", unsafe_allow_html=True)
     
                         # ---------------- TAB 5: TOP 20 CLIENTES EN FACTURACIÓN ----------------
                         with tab_top20:
                             st.subheader("Top 20 Clientes en Facturación")
-                            st.markdown("<div class='analysis-box'>Listado ponderado de los principales socios comerciales.</div>", unsafe_allow_html=True)
+                            st.markdown("<div class='analysis-box'>Principales socios comerciales de la matriz.</div>", unsafe_allow_html=True)
     
                     else:
-                        st.error("No se pudo localizar automáticamente la columna de 'CLIENTE' o 'PAQUETERÍA' en tu matriz. Revisa los nombres de tus cabeceras.")
+                        st.error("No se encontraron las columnas exactas 'NOMBRE DEL CLIENTE' o 'FLETERA' en el DataFrame.")
     
                 except Exception as e:
                     st.error(f"¡Atención! Detalle al cargar la matriz para el panel: {e}")
