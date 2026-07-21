@@ -5897,6 +5897,15 @@ else:
                         if paqueteria_sel != "TODAS":
                             df_filtrado = df_filtrado[df_filtrado[col_paqueteria] == paqueteria_sel]
 
+                        # ---------------- TABS DE RENDIMIENTO ----------------
+                        tab_cli, tab_paq, tab_lead, tab_caja, tab_top20 = st.tabs([
+                            "Facturación por Cliente", 
+                            "Facturación por Fletera", 
+                            "Lead Time", 
+                            "Costo por Caja", 
+                            "Top 20 Clientes"
+                        ])
+                        
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         with tab_cli:
