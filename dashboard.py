@@ -5782,6 +5782,44 @@ else:
                             
             elif st.session_state.menu_sub == "PANEL DE RENDIMIENTO":
                     
+                # ---------------- ESTILOS CSS PERSONALIZADOS (ESTILO DE TUS IMÁGENES) ----------------
+                st.markdown("""
+                <style>
+                /* Estilo para las tarjetas de métricas con borde izquierdo dorado */
+                [data-testid="stMetric"]{
+                    background: #161D22 !important;
+                    padding: 20px !important;
+                    border-radius: 8px !important;
+                    border-left: 5px solid #D4AF37 !important;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                }
+                div[data-testid="stMetricValue"]{ color: #FFFFFF !important; font-weight: 900; font-size: 1.3rem; }
+                div[data-testid="stMetricLabel"]{ color: #D4AF37 !important; letter-spacing: 1px; text-transform: uppercase; font-size: 0.8rem; font-weight: bold; }
+    
+                /* Estilo para contenedores tipo fila con borde lateral (inspirado en tu segunda imagen) */
+                .row-card {
+                    background: #161D22;
+                    border-radius: 8px;
+                    border-left: 5px solid #2980B9;
+                    padding: 15px 20px;
+                    margin-bottom: 12px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                }
+                .row-item {
+                    flex: 1;
+                    padding: 0 10px;
+                }
+                .row-title { color: #85929E; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+                .row-val { color: #FFFFFF; font-size: 0.95rem; font-weight: bold; margin-top: 4px; }
+                </style>
+                """, unsafe_allow_html=True)
+    
+                st.markdown("<h1>PANEL DE RENDIMIENTO</h1>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #A4B9C8; margin-bottom: 20px;'>Monitoreo integral de KPIs, costos y tiempos operativos.</p>", unsafe_allow_html=True)
+    
                 # ---------------- FUNCIONES DE APOYO ----------------
                 def limpiar_columnas(txt):
                     if not isinstance(txt, str): return txt
@@ -5793,15 +5831,12 @@ else:
                 # ---------------- CARGA DE DATOS ----------------
                 try:
                     df_actual = pd.read_csv("Matriz_Excel_Dashboard.csv")
-                    # Limpiamos espacios y acentos de las columnas, asegurando formato estándar
                     df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
     
-                    # Nombres exactos basados en tu estructura
                     col_cliente = "NOMBRE DEL CLIENTE"
-                    col_paqueteria = "FLETERA" # O puedes cambiar a "TRANSPORTE" si prefieres esa columna
+                    col_paqueteria = "FLETERA"
     
                     if col_cliente in df_actual.columns and col_paqueteria in df_actual.columns:
-                        # Limpieza básica de texto en columnas de filtro
                         df_actual[col_cliente] = df_actual[col_cliente].fillna("SIN CLIENTE").astype(str).str.strip().str.upper()
                         df_actual[col_paqueteria] = df_actual[col_paqueteria].fillna("SIN FLETERA").astype(str).str.strip().str.upper()
     
@@ -5809,31 +5844,26 @@ else:
                         st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1.5px;'>FILTROS GENERALES</p>", unsafe_allow_html=True)
                         f1, f2, f3 = st.columns(3)
                         
-                        # 1. Filtro de Mes (Base)
                         lista_meses = ["TODOS"] + sorted(df_actual["MES"].dropna().unique().tolist()) if "MES" in df_actual.columns else ["TODOS"]
                         with f3:
                             mes_sel = st.selectbox("FILTRAR POR MES:", lista_meses)
     
-                        # DataFrame intermedio para acotar clientes y fleteras según el mes seleccionado
                         df_temp = df_actual.copy()
                         if mes_sel != "TODOS" and "MES" in df_temp.columns:
                             df_temp = df_temp[df_temp["MES"] == mes_sel]
     
-                        # 2. Filtro de Cliente (Dinámico según el mes)
                         lista_clientes = ["TODOS"] + sorted(df_temp[col_cliente].unique().tolist())
                         with f1:
                             cliente_sel = st.selectbox("FILTRAR POR CLIENTE:", lista_clientes)
     
-                        # Si ya seleccionaron un cliente, acotamos el df temporal para que la fletera se filtre sola
                         if cliente_sel != "TODOS":
                             df_temp = df_temp[df_temp[col_cliente] == cliente_sel]
     
-                        # 3. Filtro de Fletera (Dinámico según el mes y el cliente elegido)
                         lista_paqueterias = ["TODAS"] + sorted(df_temp[col_paqueteria].unique().tolist())
                         with f2:
                             paqueteria_sel = st.selectbox("FILTRAR POR FLETERA:", lista_paqueterias)
     
-                        # ---------------- APLICACIÓN FINAL DE FILTROS ----------------
+                        # Aplicación final de filtros
                         df_filtrado = df_actual.copy()
                         if mes_sel != "TODOS" and "MES" in df_filtrado.columns:
                             df_filtrado = df_filtrado[df_filtrado["MES"] == mes_sel]
@@ -5857,33 +5887,56 @@ else:
                         with tab_cli:
                             st.subheader(f"Análisis de Facturación: {cliente_sel}")
                             
-                            # Limpiar y sumar la columna FACTURACION
                             df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
                             total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
     
-                            # Métrica principal del total facturado
-                            c1, c2 = st.columns(2)
-                            with c1:
+                            # Tarjetas de métricas con el estilo exacto de la primera imagen
+                            mk1, mk2 = st.columns(2)
+                            with mk1:
                                 st.metric("MONTO TOTAL FACTURADO", f"${total_facturacion:,.2f}")
-                            with c2:
+                            with mk2:
                                 st.metric("REGISTROS ENCONTRADOS", f"{len(df_filtrado):,}")
     
-                            st.markdown("---")
-                            st.markdown("<p style='color: #D4AF37; font-weight: bold;'>DESTINOS ASOCIADOS EN ESTE PERIODO:</p>", unsafe_allow_html=True)
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem;'>DESGLOSE DE DESTINOS Y ENVIOS</p>", unsafe_allow_html=True)
     
-                            # Extraer la lista de destinos únicos para este filtro
-                            if "DESTINO" in df_filtrado.columns:
-                                destinos_unicos = df_filtrado["DESTINO"].dropna().unique().tolist()
-                                if destinos_unicos:
-                                    # Mostramos los destinos de forma limpia en una tablita o viñetas
-                                    df_destinos = df_filtrado.groupby("DESTINO")["FACTURACION_NUM"].sum().reset_index()
-                                    df_destinos.columns = ["DESTINO", "FACTURACION"]
-                                    df_destinos["FACTURACION"] = df_destinos["FACTURACION"].apply(lambda x: f"${x:,.2f}")
-                                    st.dataframe(df_destinos, use_container_width=True, hide_index=True)
-                                else:
-                                    st.info("No hay destinos registrados para esta selección.")
+                            # Renderizado de registros con estilo de filas estilizadas (similar a la segunda imagen)
+                            if not df_filtrado.empty:
+                                for index, row in df_filtrado.iterrows():
+                                    folio = row.get("NÚMERO DE GUÍA", row.get("NÚMERO DE PEDIDO", "S/N"))
+                                    destino = row.get("DESTINO", "N/D")
+                                    fecha = row.get("FECHA DE ENVÍO", "S/F")
+                                    cajas = row.get("CAJAS", row.get("CANTIDAD DE CAJAS", 0))
+                                    flete_val = limpiar_dinero(pd.Series([row.get("COSTO DE LA GUÍA", 0)]))[0]
+                                    fact_val = limpiar_dinero(pd.Series([row.get("FACTURACION", 0)]))[0]
+    
+                                    st.markdown(f"""
+                                    <div class="row-card">
+                                        <div class="row-item">
+                                            <div class="row-title">FOLIO / GUÍA</div>
+                                            <div class="row-val" style="color: #5DADE2;">{folio}</div>
+                                            <div style="color: #85929E; font-size: 0.7rem; margin-top:2px;">{fecha}</div>
+                                        </div>
+                                        <div class="row-item">
+                                            <div class="row-title">DESTINO</div>
+                                            <div class="row-val">{destino}</div>
+                                        </div>
+                                        <div class="row-item">
+                                            <div class="row-title">CAJAS</div>
+                                            <div class="row-val">{cajas:,.0f} Uds.</div>
+                                        </div>
+                                        <div class="row-item">
+                                            <div class="row-title">FACTURACIÓN</div>
+                                            <div class="row-val">${fact_val:,.2f}</div>
+                                        </div>
+                                        <div class="row-item" style="text-align: right;">
+                                            <div class="row-title">TOTAL FLETE</div>
+                                            <div class="row-val" style="color: #F39C12;">${flete_val:,.2f}</div>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
                             else:
-                                st.warning("No se encontró la columna 'DESTINO' en la matriz.")
+                                st.info("No hay registros disponibles para los filtros seleccionados.")
     
                         # ---------------- TAB 2: FACTURACIÓN POR FLETERA ----------------
                         with tab_paq:
