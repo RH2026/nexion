@@ -3233,134 +3233,134 @@ else:
                         render_calendario_visual(data_camion, data_trailer, st.session_state.mes_calendario)
                 
                 
-                                # PESTAÑA 6: CONSIGNAS
-                                with tab_consignas:
-                                    # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
-                                    GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
-                                    REPO_NAME = "RH2026/nexion"
-                                    FILE_PATH_CON = "consignas.csv"
-                                    URL_CONSIGNAS = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_CON}"
-                                    
-                                    @st.cache_data(ttl=600)
-                                    def load_consignas():
-                                        try:
-                                            headers = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
-                                            df = pd.read_csv(URL_CONSIGNAS, storage_options=headers, low_memory=False)
-                                            df.columns = [c.strip() for c in df.columns]
-                                            
-                                            # Lógica de ordenamiento por fecha
-                                            if 'F.DOC' in df.columns:
-                                                df['F_TEMP'] = pd.to_datetime(df['F.DOC'], errors='coerce', dayfirst=True)
-                                                df = df.sort_values(by='F_TEMP', ascending=False).drop(columns=['F_TEMP'])
-                                            return df
-                                        except Exception as e:
-                                            st.error(f"Error cargando consignas: {e}")
-                                            return None
-                                    
-                                    def render_expediente_chingon(df):
-                                        df_clean = df.fillna('')
-                                        data = df_clean.to_dict('records')
-                                        
-                                        html_content = f"""
-                                        <!DOCTYPE html>
-                                        <html>
-                                        <head>
-                                            <script src="https://cdn.tailwindcss.com"></script>
-                                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-                                            <style>
-                                                body {{ background-color: #384A52; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 10px 15px; }}
-                                                ::-webkit-scrollbar {{ width: 8px; height: 10px; }}
-                                                ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); border-radius: 10px; }}
-                                                ::-webkit-scrollbar-thumb {{ background: rgba(56, 189, 248, 0.6); border-radius: 10px; border: 2px solid #384A52; }}
-                                                ::-webkit-scrollbar-thumb:hover {{ background: rgba(0, 255, 170, 0.8); }}
-                                                .row-expediente {{ background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin-bottom: 12px; padding: 18px 24px; transition: all 0.3s ease; width: 100%; box-sizing: border-box; }}
-                                                .row-expediente:hover {{ border-color: #00FFAA; background-color: #2d3b42; transform: scale(1.001); }}
-                                                .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 800; letter-spacing: 1.5px; }}
-                                                .valor {{ font-size: 14px; font-weight: 700; color: #FFFFFF; }}
-                                                .highlight {{ color: #00FFAA; font-family: monospace; }}
-                                                .text-muted-claro {{ color: rgba(255,255,255,0.7); font-style: italic; }}
-                                            </style>
-                                        </head>
-                                        <body>
-                                            <div class="w-full">
-                                                {"".join([f'''
-                                                <div class="row-expediente">
-                                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
-                                                        <div>
-                                                            <div class="label-mini">Talon / Folio</div>
-                                                            <div class="valor highlight text-xl leading-none">{str(item.get('TALON', ''))}</div>
-                                                            <div class="text-[10px] text-blue-300 mt-1 opacity-90 italic">F. Doc: {str(item.get('F.DOC', ''))}</div>
-                                                        </div>
-                                                        <div class="md:border-l md:border-white/10 md:pl-6">
-                                                            <div class="label-mini">Destinatario</div>
-                                                            <div class="valor truncate text-sm uppercase">{str(item.get('DESTINATARIO', ''))[:45]}</div>
-                                                            <div class="text-[10px] text-muted-claro">{str(item.get('ORIGEN', ''))} → {str(item.get('DESTINO', ''))}</div>
-                                                        </div>
-                                                        <div class="md:border-l md:border-white/10 md:pl-6">
-                                                            <div class="label-mini">Resumen Financiero</div>
-                                                            <div class="flex justify-between items-center"><span class="label-mini">Bultos:</span> <span class="valor text-xs">{str(item.get('BULTOS', '0'))}</span></div>
-                                                            <div class="flex justify-between items-center"><span class="label-mini">Total Cargo:</span> <span class="valor text-emerald-400 text-sm">${str(item.get('TOTAL', '0'))}</span></div>
-                                                        </div>
-                                                        <div class="text-right md:border-l md:border-white/10 md:pl-6">
-                                                            <div class="label-mini">Estatus Entrega</div>
-                                                            <div class="valor text-sm {'text-orange-400' if not item.get('F.ENTREGA') else 'text-white'}">{str(item.get('F.ENTREGA', 'PENDIENTE'))}</div>
-                                                            <div class="text-[10px] text-blue-300 font-bold uppercase tracking-tighter">{str(item.get('QUIEN RECIBIO', ''))[:25]}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mt-4 pt-3 border-t border-white/10 flex flex-col md:flex-row justify-between gap-4">
-                                                        <div class="flex-1"><span class="label-mini text-blue-200">Domicilio:</span> <span class="text-[11px] text-white/80 ml-2">{str(item.get('DOMICILIO DEL DESTINATARIO', ''))}</span></div>
-                                                        <div class="text-right flex gap-4">
-                                                            <div><span class="label-mini text-orange-200">Ref:</span> <span class="text-[11px] text-white/80 italic ml-1">{str(item.get('REFERENCIA', '--'))}</span></div>
-                                                            <div><span class="label-mini text-white/60">Notas:</span> <span class="text-[11px] text-white/70 italic ml-1">{str(item.get('OBSERVACION 1', '--'))}</span></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                ''' for item in data])}
-                                            </div>
-                                        </body>
-                                        </html>
-                                        """
-                                        return components.html(html_content, height=1200, scrolling=True)
-                                    
-                                    # --- EJECUCIÓN PRINCIPAL ---
-                                    df_consignas = load_consignas()
-                                    
-                                    if df_consignas is not None:
-                                        st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>CONSIGNAS BARCELO</h3>", unsafe_allow_html=True)
-                                        
-                                        # --- FILTROS LINEALES ---
-                                        df_filtrado = df_consignas.copy()
-                                        
-                                        # Preparamos la columna de mes para el filtro
-                                        df_filtrado['MES_TEMP'] = pd.to_datetime(df_filtrado['F.DOC'], errors='coerce', dayfirst=True).dt.strftime('%B')
-                                        
-                                        col1, col2, col3, col4 = st.columns(4)
-                                        
-                                        # Filtro Mes (Selectbox única)
-                                        with col1:
-                                            meses_opciones = ["TODOS"] + sorted([m for m in df_filtrado['MES_TEMP'].dropna().unique()])
-                                            mes_sel = st.selectbox("Mes", meses_opciones)
-                                            
-                                        # Filtros de búsqueda libre
-                                        with col2:
-                                            cliente_busq = st.text_input("Buscar Cliente")
-                                        with col3:
-                                            talon_busq = st.text_input("Buscar Talón")
-                                        with col4:
-                                            ref_busqueda = st.text_input("Ref. (Observación 1)")
-                                    
-                                        # Aplicar filtros
-                                        if mes_sel != "TODOS":
-                                            df_filtrado = df_filtrado[df_filtrado['MES_TEMP'] == mes_sel]
-                                        if cliente_busq:
-                                            df_filtrado = df_filtrado[df_filtrado['DESTINATARIO'].astype(str).str.contains(cliente_busq, case=False, na=False)]
-                                        if talon_busq:
-                                            df_filtrado = df_filtrado[df_filtrado['TALON'].astype(str).str.contains(talon_busq, case=False, na=False)]
-                                        if ref_busqueda:
-                                            df_filtrado = df_filtrado[df_filtrado['OBSERVACION 1'].astype(str).str.contains(ref_busqueda, case=False, na=False)]
-                                    
-                                        # Renderizado final
-                                        render_expediente_chingon(df_filtrado)
+                # PESTAÑA 6: CONSIGNAS
+                with tab_consignas:
+                    # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
+                    GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+                    REPO_NAME = "RH2026/nexion"
+                    FILE_PATH_CON = "consignas.csv"
+                    URL_CONSIGNAS = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_CON}"
+                    
+                    @st.cache_data(ttl=600)
+                    def load_consignas():
+                        try:
+                            headers = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
+                            df = pd.read_csv(URL_CONSIGNAS, storage_options=headers, low_memory=False)
+                            df.columns = [c.strip() for c in df.columns]
+                            
+                            # Lógica de ordenamiento por fecha
+                            if 'F.DOC' in df.columns:
+                                df['F_TEMP'] = pd.to_datetime(df['F.DOC'], errors='coerce', dayfirst=True)
+                                df = df.sort_values(by='F_TEMP', ascending=False).drop(columns=['F_TEMP'])
+                            return df
+                        except Exception as e:
+                            st.error(f"Error cargando consignas: {e}")
+                            return None
+                    
+                    def render_expediente_chingon(df):
+                        df_clean = df.fillna('')
+                        data = df_clean.to_dict('records')
+                        
+                        html_content = f"""
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <script src="https://cdn.tailwindcss.com"></script>
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+                            <style>
+                                body {{ background-color: #384A52; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 10px 15px; }}
+                                ::-webkit-scrollbar {{ width: 8px; height: 10px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: rgba(56, 189, 248, 0.6); border-radius: 10px; border: 2px solid #384A52; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: rgba(0, 255, 170, 0.8); }}
+                                .row-expediente {{ background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin-bottom: 12px; padding: 18px 24px; transition: all 0.3s ease; width: 100%; box-sizing: border-box; }}
+                                .row-expediente:hover {{ border-color: #00FFAA; background-color: #2d3b42; transform: scale(1.001); }}
+                                .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 800; letter-spacing: 1.5px; }}
+                                .valor {{ font-size: 14px; font-weight: 700; color: #FFFFFF; }}
+                                .highlight {{ color: #00FFAA; font-family: monospace; }}
+                                .text-muted-claro {{ color: rgba(255,255,255,0.7); font-style: italic; }}
+                            </style>
+                        </head>
+                        <body>
+                            <div class="w-full">
+                                {"".join([f'''
+                                <div class="row-expediente">
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                                        <div>
+                                            <div class="label-mini">Talon / Folio</div>
+                                            <div class="valor highlight text-xl leading-none">{str(item.get('TALON', ''))}</div>
+                                            <div class="text-[10px] text-blue-300 mt-1 opacity-90 italic">F. Doc: {str(item.get('F.DOC', ''))}</div>
+                                        </div>
+                                        <div class="md:border-l md:border-white/10 md:pl-6">
+                                            <div class="label-mini">Destinatario</div>
+                                            <div class="valor truncate text-sm uppercase">{str(item.get('DESTINATARIO', ''))[:45]}</div>
+                                            <div class="text-[10px] text-muted-claro">{str(item.get('ORIGEN', ''))} → {str(item.get('DESTINO', ''))}</div>
+                                        </div>
+                                        <div class="md:border-l md:border-white/10 md:pl-6">
+                                            <div class="label-mini">Resumen Financiero</div>
+                                            <div class="flex justify-between items-center"><span class="label-mini">Bultos:</span> <span class="valor text-xs">{str(item.get('BULTOS', '0'))}</span></div>
+                                            <div class="flex justify-between items-center"><span class="label-mini">Total Cargo:</span> <span class="valor text-emerald-400 text-sm">${str(item.get('TOTAL', '0'))}</span></div>
+                                        </div>
+                                        <div class="text-right md:border-l md:border-white/10 md:pl-6">
+                                            <div class="label-mini">Estatus Entrega</div>
+                                            <div class="valor text-sm {'text-orange-400' if not item.get('F.ENTREGA') else 'text-white'}">{str(item.get('F.ENTREGA', 'PENDIENTE'))}</div>
+                                            <div class="text-[10px] text-blue-300 font-bold uppercase tracking-tighter">{str(item.get('QUIEN RECIBIO', ''))[:25]}</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-3 border-t border-white/10 flex flex-col md:flex-row justify-between gap-4">
+                                        <div class="flex-1"><span class="label-mini text-blue-200">Domicilio:</span> <span class="text-[11px] text-white/80 ml-2">{str(item.get('DOMICILIO DEL DESTINATARIO', ''))}</span></div>
+                                        <div class="text-right flex gap-4">
+                                            <div><span class="label-mini text-orange-200">Ref:</span> <span class="text-[11px] text-white/80 italic ml-1">{str(item.get('REFERENCIA', '--'))}</span></div>
+                                            <div><span class="label-mini text-white/60">Notas:</span> <span class="text-[11px] text-white/70 italic ml-1">{str(item.get('OBSERVACION 1', '--'))}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                ''' for item in data])}
+                            </div>
+                        </body>
+                        </html>
+                        """
+                        return components.html(html_content, height=1200, scrolling=True)
+                    
+                    # --- EJECUCIÓN PRINCIPAL ---
+                    df_consignas = load_consignas()
+                    
+                    if df_consignas is not None:
+                        st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>CONSIGNAS BARCELO</h3>", unsafe_allow_html=True)
+                        
+                        # --- FILTROS LINEALES ---
+                        df_filtrado = df_consignas.copy()
+                        
+                        # Preparamos la columna de mes para el filtro
+                        df_filtrado['MES_TEMP'] = pd.to_datetime(df_filtrado['F.DOC'], errors='coerce', dayfirst=True).dt.strftime('%B')
+                        
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        # Filtro Mes (Selectbox única)
+                        with col1:
+                            meses_opciones = ["TODOS"] + sorted([m for m in df_filtrado['MES_TEMP'].dropna().unique()])
+                            mes_sel = st.selectbox("Mes", meses_opciones)
+                            
+                        # Filtros de búsqueda libre
+                        with col2:
+                            cliente_busq = st.text_input("Buscar Cliente")
+                        with col3:
+                            talon_busq = st.text_input("Buscar Talón")
+                        with col4:
+                            ref_busqueda = st.text_input("Ref. (Observación 1)")
+                    
+                        # Aplicar filtros
+                        if mes_sel != "TODOS":
+                            df_filtrado = df_filtrado[df_filtrado['MES_TEMP'] == mes_sel]
+                        if cliente_busq:
+                            df_filtrado = df_filtrado[df_filtrado['DESTINATARIO'].astype(str).str.contains(cliente_busq, case=False, na=False)]
+                        if talon_busq:
+                            df_filtrado = df_filtrado[df_filtrado['TALON'].astype(str).str.contains(talon_busq, case=False, na=False)]
+                        if ref_busqueda:
+                            df_filtrado = df_filtrado[df_filtrado['OBSERVACION 1'].astype(str).str.contains(ref_busqueda, case=False, na=False)]
+                    
+                        # Renderizado final
+                        render_expediente_chingon(df_filtrado)
                 
                 # PESTAÑA 7: AMAZON
                 with tab_amazon:
