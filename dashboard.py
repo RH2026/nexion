@@ -5884,6 +5884,7 @@ else:
                         ])
     
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
+                        # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         with tab_cli:
                             st.subheader(f"Análisis de Facturación: {cliente_sel}")
                             
@@ -5897,31 +5898,40 @@ else:
                             with mk2:
                                 st.metric("REGISTROS ENCONTRADOS", f"{len(df_filtrado):,}")
     
+                            # --- DIAGNÓSTICO DE COLUMNAS (Para verlas en pantalla y salir de dudas) ---
+                            with st.expander("🛠️ Ver nombres de columnas exactas detectadas"):
+                                st.write(df_filtrado.columns.tolist())
+    
                             st.markdown("<br>", unsafe_allow_html=True)
                             st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem;'>DESGLOSE DE DESTINOS Y ENVIOS</p>", unsafe_allow_html=True)
     
-                            # Renderizado usando FACTURA como Folio y NÚMERO DE GUÍA
                             if not df_filtrado.empty:
                                 for index, row in df_filtrado.iterrows():
-                                    # Factura como Folio principal
-                                    folio = str(row.get("FACTURA", "S/N"))
+                                    # Buscamos la columna de factura dinámicamente
+                                    col_fac_real = next((c for c in df_filtrado.columns if "FACTURA" in c or "EMISION" in c), None)
+                                    folio = str(row.get(col_fac_real, "S/N")) if col_fac_real else "S/N"
                                     if folio == "nan" or not folio.strip(): folio = "S/N"
-                                    
-                                    # Número de guía independiente
-                                    num_guia = str(row.get("NÚMERO DE GUÍA", "S/G"))
+    
+                                    # Buscamos la columna de guía dinámicamente
+                                    col_guia_real = next((c for c in df_filtrado.columns if "GUIA" in c), None)
+                                    num_guia = str(row.get(col_guia_real, "S/G")) if col_guia_real else "S/G"
                                     if num_guia == "nan" or not num_guia.strip(): num_guia = "S/G"
     
                                     destino = str(row.get("DESTINO", "N/D"))
-                                    fecha = str(row.get("FECHA DE ENVÍO", "S/F"))
                                     
-                                    # Manejo de cajas
-                                    cajas_val = row.get("CAJAS", row.get("CANTIDAD DE CAJAS", 0))
+                                    # Fecha de envío
+                                    col_fec_real = next((c for c in df_filtrado.columns if "FECHA" in c and "ENVIO" in c), "S/F")
+                                    fecha = str(row.get(col_fec_real, "S/F"))
+    
+                                    # Cajas (buscando CAJAS o CANTIDAD DE CAJAS)
+                                    col_caja_real = next((c for c in df_filtrado.columns if c == "CAJAS" or "CANTIDAD" in c), None)
+                                    cajas_val = row.get(col_caja_real, 0) if col_caja_real else 0
                                     try:
                                         cajas = float(cajas_val) if pd.notna(cajas_val) else 0
                                     except:
                                         cajas = 0
     
-                                    # Limpieza correcta de dinero
+                                    # Valores monetarios
                                     flete_val = limpiar_dinero(pd.Series([row.get("COSTO DE LA GUÍA", 0)]))[0]
                                     fact_val = limpiar_dinero(pd.Series([row.get("FACTURACION", 0)]))[0]
     
