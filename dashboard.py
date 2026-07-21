@@ -2801,8 +2801,9 @@ else:
                                 st.warning(f"No se encontraron registros para '{tipo_mov}' en el mes seleccionado.")
                 
                 # PESTAÑA 5: AGC---
+                # PESTAÑA 5: AGC ---
                 with tab_entregas_agc:
-    
+                
                     st.markdown("""
                         <style>
                             /* 1. Reset para que el contenedor use todo el ancho */
@@ -2810,28 +2811,43 @@ else:
                             
                             /* 2. Estilo para los botones personalizados */
                             div.stButton > button {
-                                background-color: #2B343B !important; /* Fondo negro */
-                                color: #FFFFFF !important;            /* Texto blanco o el color que prefieras */
-                                border: 1px solid #2B343B !important; /* Borde oscuro */
+                                background-color: #2B343B !important; 
+                                color: #FFFFFF !important;            
+                                border: 1px solid #2B343B !important; 
                                 border-radius: 5px !important;
                                 transition: all 0.3s ease !important;
                                 width: 100% !important;
                             }
                     
-                            /* 3. Efecto HOVER: El color de la segunda imagen (ejemplo: un tono azul-verde) */
                             div.stButton > button:hover {
-                                background-color: #00A3A3 !important; /* Reemplaza este hex con el de tu imagen */
-                                color: #FFFFFF !important;            /* Texto negro al hacer hover */
+                                background-color: #00A3A3 !important; 
+                                color: #FFFFFF !important;            
                                 border-color: #00A3A3 !important;
                             }
                             
-                            /* 4. Estado ACTIVO (el botón presionado) */
                             div.stButton > button:active {
                                 background-color: #00A3A3 !important;
                                 border-color: #00A3A3 !important;
                             }
                         </style>
                     """, unsafe_allow_html=True)
+                
+                    # --- PANEL DE ADMIN INTEGRADO (SIN SIDEBAR) ---
+                    with st.expander("🔐 Acceso Administrador / Modo Edición", expanded=False):
+                        col_pass1, col_pass2 = st.columns([2, 3])
+                        with col_pass1:
+                            admin_password_input = st.text_input("Contraseña Admin", type="password", key="pwd_admin_agc")
+                        
+                        PASSWORD_REAL = st.secrets.get("ADMIN_PASSWORD", "tu_contraseña_por_defecto")
+                        es_admin = (admin_password_input == PASSWORD_REAL)
+                        
+                        if es_admin:
+                            st.success("Modo Administrador Activado 🔓")
+                            modo_edicion = st.checkbox("Activar Modo Edición de Citas en Pantalla", value=False, key="check_modo_edicion")
+                        else:
+                            if admin_password_input:
+                                st.error("Contraseña incorrecta")
+                            modo_edicion = False
                 
                     # --- Lógica de Navegación ---
                     if 'tipo_entrega' not in st.session_state:
@@ -2936,7 +2952,7 @@ else:
                                             <div class="text-[12px] text-sky-400 font-bold mt-1">
                                                 ITEM: {item['item_no']}
                                             </div>
-                                            </div>
+                                        </div>
                                         
                                         <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                             <div>
@@ -3031,7 +3047,7 @@ else:
                                                 {texto_badge}
                                             </div>
                                             '''
-                                    
+                
                                     grid_html += f'''
                                     <div class="bg-[#263238] min-h-[115px] p-2 border border-white/5 flex flex-col justify-between hover:bg-[#2c3b42] transition-colors">
                                         <span class="text-xs font-black text-slate-400 text-left">{dia}</span>
@@ -3078,68 +3094,90 @@ else:
                         return components.html(html_calendario, height=750, scrolling=True)
                 
                     # =====================================================================
-                    # --- EXTRACCIÓN AUTOMÁTICA Y ADAPTACIÓN DE TUS ENCABEZADOS REALES ---
+                    # --- EXTRACCIÓN Y GUARDADO AUTOMÁTICO EN GITHUB ---
                     # =====================================================================
                     
-                    @st.cache_data(ttl=60)
+                    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                    REPO_NAME = "RH2026/nexion"
+                    FILE_PATH = "agc.csv"
+                    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+                
                     def get_github_data():
-                        TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-                        REPO_NAME = "RH2026/nexion"
-                        FILE_PATH = "agc.csv"
-                        CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
-                        
                         headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
                         response = requests.get(CSV_URL, headers=headers)
-                        
                         if response.status_code == 200:
                             return pd.read_csv(io.StringIO(response.text))
                         else:
                             st.error(f"Amor, hubo un error al cargar los datos: {response.status_code}")
                             return pd.DataFrame()
                 
+                    def guardar_cambios_github(df_nuevo):
+                        import base64
+                        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+                        api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+                        
+                        r_get = requests.get(api_url, headers=headers)
+                        if r_get.status_code != 200:
+                            st.error("No se pudo obtener el identificador actual del archivo en GitHub.")
+                            return False
+                        sha_actual = r_get.json().get("sha")
+                        
+                        csv_buffer = io.StringIO()
+                        df_nuevo.to_csv(csv_buffer, index=False)
+                        csv_content = csv_buffer.getvalue()
+                        
+                        content_encoded = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+                        
+                        payload = {
+                            "message": "Actualización automática de citas desde panel admin",
+                            "content": content_encoded,
+                            "sha": sha_actual
+                        }
+                        
+                        r_put = requests.put(api_url, json=payload, headers=headers)
+                        if r_put.status_code in [200, 201]:
+                            st.success("¡Citas y cambios guardados en GitHub con éxito, mi amor! 🚀")
+                            st.cache_data.clear()
+                            return True
+                        else:
+                            st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
+                            return False
+                
                     df_raw = get_github_data()
                 
                     if not df_raw.empty:
-                        # Quitamos espacios en blanco accidentales de los nombres de tus columnas
                         df_raw.columns = df_raw.columns.str.strip()
-                        
-                        # Mapeamos tus columnas exactas a las variables que usa el HTML
-                        df_entregas = pd.DataFrame()
-                        
-                        # Asignamos la PO Customer para el título principal
-                        # Mapeamos tus columnas exactas
+                
+                        # --- MODO EDICIÓN ACTIVO (DENTRO DE LA PESTAÑA) ---
+                        if modo_edicion:
+                            st.warning("⚠️ Modo edición activo. Modifica las celdas abajo y haz clic en el botón de guardar para actualizar GitHub automáticamente.")
+                            
+                            df_editado = st.data_editor(df_raw, use_container_width=True, num_rows="dynamic", key="editor_agc_main")
+                            
+                            if st.button("💾 Guardar Cambios en GitHub", key="btn_guardar_github"):
+                                if guardar_cambios_github(df_editado):
+                                    st.rerun()
+                            st.markdown("---")
+                
+                        # --- PROCESAMIENTO PARA LAS TARJETAS Y CALENDARIO ---
                         df_entregas = pd.DataFrame()
                         df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
-                        
-                        # --- AQUÍ AGREGAMOS LA LÍNEA PARA EL ITEM NO ---
                         df_entregas['item_no'] = df_raw.get('Item No.', pd.Series(dtype=str)).fillna('').astype(str)
-                        # -----------------------------------------------
-                        
                         df_entregas['producto'] = df_raw.get('PRODUCTO', pd.Series(dtype=str)).fillna('').astype(str)
                         
-                        # Combinamos Cajas y Tarimas para el Volumen (limpiando "nan")
                         cajas = df_raw.get('Cajas a Entregar', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
                         tarimas = df_raw.get('Tarimas', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
-                        
-                        # Reemplazamos los ceros puros para que no se vea el string vacío o "0.0" suelto
                         cajas = cajas.replace({'': '0', '0.0': '0'})
                         tarimas = tarimas.replace({'': '0', '0.0': '0'})
                         
                         df_entregas['cantidad'] = cajas + " CXS / " + tarimas + " TAR"
-                        
-                        # Usamos la OV de Jypesa como identificador secundario (semana)
                         df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', pd.Series(dtype=str)).fillna('').astype(str)
-                        
-                        # Pasamos la fecha literal para el texto gris
                         df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', pd.Series(dtype=str)).fillna('').astype(str)
                         
-                        # Extraemos CITA y HORA validando los ceros indeseados
                         cita_series = df_raw.get('CITA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
                         hora_series = df_raw.get('HORA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
                         
-                        # LISTA NEGRA: Todo esto será considerado como "espacio en blanco"
                         valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat']
-                        
                         citas_combinadas = []
                         for c, h in zip(cita_series, hora_series):
                             es_cita_vacia = str(c).lower() in valores_nulos
@@ -3155,26 +3193,19 @@ else:
                                 citas_combinadas.append(f"{c} - {h}")
                                 
                         df_entregas['cita'] = citas_combinadas
-                        
-                        # Estatus
                         df_entregas['estatus'] = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
-                        df_entregas['estatus'] = df_entregas['estatus'].replace('NAN', 'PENDIENTE') # Por si viene vacío
+                        df_entregas['estatus'] = df_entregas['estatus'].replace('NAN', 'PENDIENTE')
                         
-                        # Tipo de unidad para separar pestañas (CAMION o TRAILER)
                         df_entregas['tipo'] = df_raw.get('Unidad', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
                         df_entregas['tipo'] = df_entregas['tipo'].str.replace('Ó', 'O') 
                         
-                        # Limpieza final profunda de cualquier "nan" esporádico
                         df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
                         
-                        # Separación final de listas
                         data_camion = df_entregas[df_entregas['tipo'] == 'CAMION'].to_dict('records')
                         data_trailer = df_entregas[df_entregas['tipo'] == 'TRAILER'].to_dict('records')
                     else:
                         data_camion = []
                         data_trailer = []
-                
-                    # =====================================================================
                 
                     # --- Lógica de Renderizado Condicional ---
                     if st.session_state.tipo_entrega == 'C A M I O N':
