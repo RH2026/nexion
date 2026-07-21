@@ -5805,30 +5805,42 @@ else:
                         df_actual[col_cliente] = df_actual[col_cliente].fillna("SIN CLIENTE").astype(str).str.strip().str.upper()
                         df_actual[col_paqueteria] = df_actual[col_paqueteria].fillna("SIN FLETERA").astype(str).str.strip().str.upper()
     
-                        # ---------------- FILTROS SUPERIORES ----------------
+                        # ---------------- FILTROS DINÁMICOS EN CASCADA ----------------
                         st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1.5px;'>FILTROS GENERALES</p>", unsafe_allow_html=True)
                         f1, f2, f3 = st.columns(3)
                         
-                        with f1:
-                            lista_clientes = ["TODOS"] + sorted(df_actual[col_cliente].unique().tolist())
-                            cliente_sel = st.selectbox("FILTRAR POR CLIENTE:", lista_clientes)
-                        
-                        with f2:
-                            lista_paqueterias = ["TODAS"] + sorted(df_actual[col_paqueteria].unique().tolist())
-                            paqueteria_sel = st.selectbox("FILTRAR POR FLETERA:", lista_paqueterias)
-    
+                        # 1. Filtro de Mes (Base)
+                        lista_meses = ["TODOS"] + sorted(df_actual["MES"].dropna().unique().tolist()) if "MES" in df_actual.columns else ["TODOS"]
                         with f3:
-                            lista_meses = ["TODOS"] + sorted(df_actual["MES"].dropna().unique().tolist()) if "MES" in df_actual.columns else ["TODOS"]
                             mes_sel = st.selectbox("FILTRAR POR MES:", lista_meses)
     
-                        # Aplicación de filtros al DataFrame
+                        # DataFrame intermedio para acotar clientes y fleteras según el mes seleccionado
+                        df_temp = df_actual.copy()
+                        if mes_sel != "TODOS" and "MES" in df_temp.columns:
+                            df_temp = df_temp[df_temp["MES"] == mes_sel]
+    
+                        # 2. Filtro de Cliente (Dinámico según el mes)
+                        lista_clientes = ["TODOS"] + sorted(df_temp[col_cliente].unique().tolist())
+                        with f1:
+                            cliente_sel = st.selectbox("FILTRAR POR CLIENTE:", lista_clientes)
+    
+                        # Si ya seleccionaron un cliente, acotamos el df temporal para que la fletera se filtre sola
+                        if cliente_sel != "TODOS":
+                            df_temp = df_temp[df_temp[col_cliente] == cliente_sel]
+    
+                        # 3. Filtro de Fletera (Dinámico según el mes y el cliente elegido)
+                        lista_paqueterias = ["TODAS"] + sorted(df_temp[col_paqueteria].unique().tolist())
+                        with f2:
+                            paqueteria_sel = st.selectbox("FILTRAR POR FLETERA:", lista_paqueterias)
+    
+                        # ---------------- APLICACIÓN FINAL DE FILTROS ----------------
                         df_filtrado = df_actual.copy()
+                        if mes_sel != "TODOS" and "MES" in df_filtrado.columns:
+                            df_filtrado = df_filtrado[df_filtrado["MES"] == mes_sel]
                         if cliente_sel != "TODOS":
                             df_filtrado = df_filtrado[df_filtrado[col_cliente] == cliente_sel]
                         if paqueteria_sel != "TODAS":
                             df_filtrado = df_filtrado[df_filtrado[col_paqueteria] == paqueteria_sel]
-                        if mes_sel != "TODOS" and "MES" in df_filtrado.columns:
-                            df_filtrado = df_filtrado[df_filtrado["MES"] == mes_sel]
     
                         st.divider()
     
