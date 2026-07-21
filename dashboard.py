@@ -5905,8 +5905,7 @@ else:
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         with tab_cli:
-                            st.subheader(f"Análisis de Facturación: {cliente_sel}")
-                            
+                                                        
                             df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
                             total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
     
