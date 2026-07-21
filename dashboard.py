@@ -5787,7 +5787,7 @@ else:
                 <style>
                 /* Estilo para las tarjetas de métricas con borde izquierdo dorado */
                 [data-testid="stMetric"]{
-                    background: #161D22 !important;
+                    background: #212C36 !important;
                     padding: 20px !important;
                     border-radius: 8px !important;
                     border-left: 5px solid #D4AF37 !important;
