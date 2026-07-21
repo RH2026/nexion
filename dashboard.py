@@ -5904,66 +5904,77 @@ else:
                         ])
 
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
+                        # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         with tab_cli:
-                            # ---------------- ESTILOS CSS (SCROLL AZUL A VERDE Y TARJETAS EN UNA LÍNEA) ----------------
-                            st.markdown("""
-                            <style>
-                            .scroll-container { max-height: 550px; overflow-y: auto; padding-right: 8px; margin-bottom: 20px; }
-                            .scroll-container::-webkit-scrollbar { width: 8px; }
-                            .scroll-container::-webkit-scrollbar-track { background: #0B1014; border-radius: 4px; }
-                            .scroll-container::-webkit-scrollbar-thumb { background: #2980B9; border-radius: 4px; }
-                            .scroll-container::-webkit-scrollbar-thumb:hover, .scroll-container::-webkit-scrollbar-thumb:active { background: #2ECC71; }
-
-                            .row-card-light { background: #212C36 !important; border-radius: 8px; border-left: 5px solid #2980B9; padding: 15px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-                            .row-item { flex: 1; padding: 0 10px; }
-                            .row-title { color: #95A5A6; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
-                            .row-val { color: #FFFFFF; font-size: 0.95rem; font-weight: bold; margin-top: 4px; }
-                            </style>
-                            """, unsafe_allow_html=True)
-
                             st.subheader(f"Análisis de Facturación: {cliente_sel}")
                             
                             df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
                             total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
-
+    
+                            # Tarjetas de métricas superiores
                             mk1, mk2 = st.columns(2)
                             with mk1:
                                 st.metric("MONTO TOTAL FACTURADO", f"${total_facturacion:,.2f}")
                             with mk2:
                                 st.metric("REGISTROS ENCONTRADOS", f"{len(df_filtrado):,}")
-
+    
                             st.markdown("<br>", unsafe_allow_html=True)
                             st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem;'>DESGLOSE DE DESTINOS Y ENVIOS</p>", unsafe_allow_html=True)
-
-                            if not df_filtrado.empty:
-                                html_cards = "<div class='scroll-container'>"
-                                
-                                for index, row in df_filtrado.iterrows():
-                                    folio = str(row.get("NUMERO DE PEDIDO", row.get("FACTURA", "S/N")))
-                                    if folio == "nan" or not folio.strip(): folio = "S/N"
-                                    
-                                    num_guia = str(row.get("NUMERO DE GUIA", "S/G"))
-                                    if num_guia == "nan" or not num_guia.strip(): num_guia = "S/G"
-
-                                    destino = str(row.get("DESTINO", "N/D"))
-                                    fecha = str(row.get("FECHA DE ENVIO", row.get("FECHA DE ENVÍO", "S/F")))
-                                    
-                                    cajas_val = row.get("CAJAS", row.get("CANTIDAD DE CAJAS", 0))
-                                    try:
-                                        cajas = float(cajas_val) if pd.notna(cajas_val) else 0
-                                    except:
-                                        cajas = 0
-
-                                    flete_val = limpiar_dinero(pd.Series([row.get("COSTO DE LA GUIA", 0)]))[0]
-                                    fact_val = limpiar_dinero(pd.Series([row.get("FACTURACION", 0)]))[0]
-
-                                    # HTML estrictamente en una sola línea para evitar que se truene el render
-                                    html_cards += f"<div class='row-card-light'><div class='row-item'><div class='row-title'>PEDIDO / GUÍA</div><div class='row-val' style='color: #5DADE2;'>{folio}</div><div style='color: #FFFFFF; font-size: 0.75rem; margin-top:2px; font-weight: 500;'>Guía: {num_guia} | {fecha}</div></div><div class='row-item'><div class='row-title'>DESTINO</div><div class='row-val'>{destino}</div></div><div class='row-item'><div class='row-title'>CAJAS</div><div class='row-val'>{cajas:,.0f} Uds.</div></div><div class='row-item'><div class='row-title'>FACTURACIÓN</div><div class='row-val'>${fact_val:,.2f}</div></div><div class='row-item' style='text-align: right;'><div class='row-title'>COSTO DE LA GUÍA</div><div class='row-val' style='color: #F39C12;'>${flete_val:,.2f}</div></div></div>"
-                                
-                                html_cards += "</div>"
-                                st.markdown(html_cards, unsafe_allow_html=True)
-                            else:
-                                st.info("No hay registros disponibles para los filtros seleccionados.")
+    
+                            # Preparar datos en diccionario para el bloque HTML estilizado
+                            data_dict = df_filtrado.fillna('').to_dict('records')
+    
+                            html_content = f"""
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <script src="https://cdn.tailwindcss.com"></script>
+                                <style>
+                                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                                    body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
+                                    .scroller {{ height: 500px; overflow-y: auto; padding-right: 10px; margin-bottom: 10px; }}
+                                    ::-webkit-scrollbar {{ width: 6px; }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                    .scroller:hover::-webkit-scrollbar-thumb, .scroller::-webkit-scrollbar-thumb:active {{ background: #2ecc71; }}
+                                    .card-row {{ background: #212C36; border-radius: 10px; margin-bottom: 10px; padding: 15px 20px; display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 1.2fr 1.2fr; gap: 15px; align-items: center; border-left: 5px solid #2980B9; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
+                                    .label {{ font-size: 8px; color: #95A5A6; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }}
+                                    .v-main {{ font-size: 13px; font-weight: 800; color: #5DADE2; }}
+                                    .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; margin-top: 2px; }}
+                                </style>
+                            </head>
+                            <body>
+                                <div class="scroller">
+                                    {"".join([f'''
+                                    <div class="card-row">
+                                        <div>
+                                            <div class="label">PEDIDO / GUÍA</div>
+                                            <div class="v-main">{str(item.get('NUMERO DE PEDIDO') or item.get('FACTURA') or 'S/N')}</div>
+                                            <div style="font-size:10px; color:#FFFFFF; font-weight:500; margin-top:2px;">Guía: {str(item.get('NUMERO DE GUIA') or 'S/G')}</div>
+                                        </div>
+                                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                            <div class="label">DESTINO</div>
+                                            <div class="v-txt">{str(item.get('DESTINO', 'N/D'))}</div>
+                                            <div style="font-size:10px; color:#95A5A6;">{str(item.get('FECHA DE ENVIO') or item.get('FECHA DE ENVÍO') or 'S/F')}</div>
+                                        </div>
+                                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                            <div class="label">CAJAS</div>
+                                            <div class="v-txt">{int(float(str(item.get('CAJAS') or item.get('CANTIDAD DE CAJAS') or 0).replace('$','').replace(',',''))):,} Uds.</div>
+                                        </div>
+                                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                            <div class="label">FACTURACIÓN</div>
+                                            <div class="v-txt">${float(str(item.get('FACTURACION', 0)).replace('$','').replace(',','') or 0):,.2f}</div>
+                                        </div>
+                                        <div style="text-align: right; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                            <div class="label">COSTO DE LA GUIA</div>
+                                            <div style="color:#F39C12; font-size:14px; font-weight:900; margin-top:2px;">${float(str(item.get('COSTO DE LA GUIA', 0)).replace('$','').replace(',','') or 0):,.2f}</div>
+                                        </div>
+                                    </div>
+                                    ''' for item in data_dict])}
+                                </div>
+                            </body>
+                            </html>
+                            """
+                            components.html(html_content, height=540, scrolling=False)
     
                         # ---------------- TAB 2: FACTURACIÓN POR FLETERA ----------------
                         with tab_paq:
