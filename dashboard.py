@@ -5890,7 +5890,7 @@ else:
                             df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
                             total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
     
-                            # Tarjetas de métricas con el estilo exacto de la primera imagen
+                            # Tarjetas de métricas
                             mk1, mk2 = st.columns(2)
                             with mk1:
                                 st.metric("MONTO TOTAL FACTURADO", f"${total_facturacion:,.2f}")
@@ -5900,22 +5900,37 @@ else:
                             st.markdown("<br>", unsafe_allow_html=True)
                             st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem;'>DESGLOSE DE DESTINOS Y ENVIOS</p>", unsafe_allow_html=True)
     
-                            # Renderizado de registros con estilo de filas estilizadas (similar a la segunda imagen)
+                            # Renderizado usando FACTURA como Folio y NÚMERO DE GUÍA
                             if not df_filtrado.empty:
                                 for index, row in df_filtrado.iterrows():
-                                    folio = row.get("NÚMERO DE GUÍA", row.get("NÚMERO DE PEDIDO", "S/N"))
-                                    destino = row.get("DESTINO", "N/D")
-                                    fecha = row.get("FECHA DE ENVÍO", "S/F")
-                                    cajas = row.get("CAJAS", row.get("CANTIDAD DE CAJAS", 0))
+                                    # Factura como Folio principal
+                                    folio = str(row.get("FACTURA", "S/N"))
+                                    if folio == "nan" or not folio.strip(): folio = "S/N"
+                                    
+                                    # Número de guía independiente
+                                    num_guia = str(row.get("NÚMERO DE GUÍA", "S/G"))
+                                    if num_guia == "nan" or not num_guia.strip(): num_guia = "S/G"
+    
+                                    destino = str(row.get("DESTINO", "N/D"))
+                                    fecha = str(row.get("FECHA DE ENVÍO", "S/F"))
+                                    
+                                    # Manejo de cajas
+                                    cajas_val = row.get("CAJAS", row.get("CANTIDAD DE CAJAS", 0))
+                                    try:
+                                        cajas = float(cajas_val) if pd.notna(cajas_val) else 0
+                                    except:
+                                        cajas = 0
+    
+                                    # Limpieza correcta de dinero
                                     flete_val = limpiar_dinero(pd.Series([row.get("COSTO DE LA GUÍA", 0)]))[0]
                                     fact_val = limpiar_dinero(pd.Series([row.get("FACTURACION", 0)]))[0]
     
                                     st.markdown(f"""
                                     <div class="row-card">
                                         <div class="row-item">
-                                            <div class="row-title">FOLIO / GUÍA</div>
+                                            <div class="row-title">FACTURA / GUÍA</div>
                                             <div class="row-val" style="color: #5DADE2;">{folio}</div>
-                                            <div style="color: #85929E; font-size: 0.7rem; margin-top:2px;">{fecha}</div>
+                                            <div style="color: #85929E; font-size: 0.7rem; margin-top:2px;">Guía: {num_guia} | {fecha}</div>
                                         </div>
                                         <div class="row-item">
                                             <div class="row-title">DESTINO</div>
@@ -5930,7 +5945,7 @@ else:
                                             <div class="row-val">${fact_val:,.2f}</div>
                                         </div>
                                         <div class="row-item" style="text-align: right;">
-                                            <div class="row-title">TOTAL FLETE</div>
+                                            <div class="row-title">COSTO DE LA GUÍA</div>
                                             <div class="row-val" style="color: #F39C12;">${flete_val:,.2f}</div>
                                         </div>
                                     </div>
