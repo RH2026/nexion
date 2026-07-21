@@ -5861,29 +5861,34 @@ else:
                         df_actual[col_cliente] = df_actual[col_cliente].fillna("SIN CLIENTE").astype(str).str.strip().str.upper()
                         df_actual[col_paqueteria] = df_actual[col_paqueteria].fillna("SIN FLETERA").astype(str).str.strip().str.upper()
 
-                        # ---------------- FILTROS DINÁMICOS EN CASCADA ----------------
+                        # ---------------- FILTROS DINÁMICOS EN CASCADA CORREGIDOS ----------------
                         f1, f2, f3 = st.columns(3)
                         
+                        # 1. Filtro de Mes
                         lista_meses = ["TODOS"] + sorted(df_actual["MES"].dropna().unique().tolist()) if "MES" in df_actual.columns else ["TODOS"]
                         with f3:
                             mes_sel = st.selectbox("FILTRAR POR MES:", lista_meses)
 
+                        # DataFrame temporal filtrado por Mes
                         df_temp = df_actual.copy()
                         if mes_sel != "TODOS" and "MES" in df_temp.columns:
                             df_temp = df_temp[df_temp["MES"] == mes_sel]
 
+                        # 2. Filtro de Cliente (depende del mes seleccionado)
                         lista_clientes = ["TODOS"] + sorted(df_temp[col_cliente].unique().tolist())
                         with f1:
                             cliente_sel = st.selectbox("FILTRAR POR CLIENTE:", lista_clientes)
 
+                        # Actualizamos df_temp también con el cliente seleccionado
                         if cliente_sel != "TODOS":
                             df_temp = df_temp[df_temp[col_cliente] == cliente_sel]
 
+                        # 3. Filtro de Fletera (depende del mes Y del cliente seleccionados)
                         lista_paqueterias = ["TODAS"] + sorted(df_temp[col_paqueteria].unique().tolist())
                         with f2:
                             paqueteria_sel = st.selectbox("FILTRAR POR FLETERA:", lista_paqueterias)
 
-                        # Aplicación final de filtros
+                        # ---------------- APLICACIÓN FINAL DE FILTROS PARA EL DATAFRAME ----------------
                         df_filtrado = df_actual.copy()
                         if mes_sel != "TODOS" and "MES" in df_filtrado.columns:
                             df_filtrado = df_filtrado[df_filtrado["MES"] == mes_sel]
@@ -5892,22 +5897,12 @@ else:
                         if paqueteria_sel != "TODAS":
                             df_filtrado = df_filtrado[df_filtrado[col_paqueteria] == paqueteria_sel]
 
-
-                        # ---------------- TABS DE RENDIMIENTO ----------------
-                        tab_cli, tab_paq, tab_lead, tab_caja, tab_top20 = st.tabs([
-                            "Facturación por Cliente", 
-                            "Facturación por Fletera", 
-                            "Lead Time", 
-                            "Costo por Caja", 
-                            "Top 20 Clientes"
-                        ])
-
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
                         with tab_cli:
-
-                            st.write("")
-                                                        
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            st.subheader(f"Análisis de Facturación: {cliente_sel}")
+                            
                             df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
                             total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
     
@@ -5926,6 +5921,8 @@ else:
                                 folio = str(row.get("NUMERO DE PEDIDO") or row.get("FACTURA") or "S/N")
                                 num_guia = str(row.get("NUMERO DE GUIA") or "S/G")
                                 destino = str(row.get("DESTINO", "N/D"))
+                                
+                                # Mostramos la fecha limpia o un texto por defecto si no aplica
                                 fecha = str(row.get("FECHA DE ENVIO") or row.get("FECHA DE ENVÍO") or "S/F")
                                 
                                 # Limpieza segura de cajas en Python
