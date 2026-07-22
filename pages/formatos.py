@@ -74,7 +74,6 @@ if not df_facturacion.empty:
       "colonia": str(registro.get("Colonia", "")),
       "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",
       "estado": str(registro.get("Estado", "")),
-      "contacto": str(registro.get("Nombre_Cliente", "")),
       "telefono": str(registro.get("TELEFONO", "No registrado")),
   }
 
