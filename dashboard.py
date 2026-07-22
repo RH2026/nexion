@@ -7953,8 +7953,7 @@ else:
                         tel_val = ""
                 
                     st.markdown("---")
-                    st.markdown("### 👁️ Previsualización y Edición Manual de Datos")
-                
+                                    
                     # --- ESTILOS DE TÍTULOS TIPO BARRA ---
                     def titulo_seccion(texto, color_fondo="#4169E1"):
                         st.markdown(
