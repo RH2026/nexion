@@ -7856,35 +7856,45 @@ else:
                 
                   facturas_disponibles = df_facturacion["Factura"].unique()
                 
-                  # Selector de Factura o opción de escribir manual si no está el folio
-                  modo_busqueda = st.radio(
-                      "Método de selección:", ["Seleccionar de la lista", "Escribir folio manual"]
-                  )
-                
-                  if modo_busqueda == "Seleccionar de la lista":
-                    num_factura = st.selectbox(
-                        "Selecciona el número de Factura:", facturas_disponibles
-                    )
-                    registro = df_facturacion[
-                        df_facturacion["Factura"] == str(num_factura)
-                    ].iloc[0]
-                  else:
-                    num_factura = st.text_input("Ingresa el número de Factura / Folio manual:")
-                    if (
-                        num_factura
-                        and str(num_factura) in df_facturacion["Factura"].values
-                    ):
-                      registro = df_facturacion[
-                          df_facturacion["Factura"] == str(num_factura)
-                      ].iloc[0]
-                    else:
-                      # Si no existe, creamos un registro vacío por defecto para que puedas llenarlo a mano
-                      registro = pd.Series()
-                
-                  tipo_pago = st.radio(
-                      "Selecciona Tipo de Pago:", ["CRÉDITO", "POR COBRAR", "PAGADO"]
-                  )
-                
+                  # --- SECCIÓN SUPERIOR DE CONFIGURACIÓN Y SELECCIÓN ---
+                  c_col1, c_col2, c_col3 = st.columns(3)
+  
+                  with c_col1:
+                      modo_busqueda = st.selectbox(
+                          "🔍 Método de Selección", 
+                          ["Seleccionar de la lista", "Escribir folio manual"]
+                      )
+  
+                  with c_col2:
+                      if modo_busqueda == "Seleccionar de la lista":
+                          num_factura = st.selectbox(
+                              "📦 Selecciona Factura / Folio", facturas_disponibles
+                          )
+                          if not df_facturacion.empty and num_factura in facturas_disponibles:
+                              registro = df_facturacion[
+                                  df_facturacion["Factura"] == str(num_factura)
+                              ].iloc[0]
+                          else:
+                              registro = pd.Series()
+                      else:
+                          num_factura = st.text_input("✍️ Ingresa Folio Manual")
+                          if (
+                              num_factura
+                              and not df_facturacion.empty
+                              and str(num_factura) in df_facturacion["Factura"].values
+                          ):
+                              registro = df_facturacion[
+                                  df_facturacion["Factura"] == str(num_factura)
+                              ].iloc[0]
+                          else:
+                              registro = pd.Series()
+  
+                  with c_col3:
+                      tipo_pago = st.selectbox(
+                          "💳 Tipo de Pago", 
+                          ["CRÉDITO", "POR COBRAR", "PAGADO"]
+                      )
+                  
                   # Extracción inteligente de valores con respaldo vacío si es manual
                   def_extran = (
                       str(registro.get("Nombre_Extran", ""))
