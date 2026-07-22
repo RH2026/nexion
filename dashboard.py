@@ -8121,6 +8121,9 @@ else:
                         story = []
                         styles = getSampleStyleSheet()
                 
+                        # Definimos la fecha actual aquí adentro para evitar el NameError
+                        fecha_actual = datetime.now().strftime("%d/%m/%Y")
+                
                         title_style = ParagraphStyle(
                             "TitleStyle",
                             parent=styles["Normal"],
