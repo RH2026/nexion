@@ -1300,7 +1300,7 @@ else:
                         
                         # Verificamos si es admin o si el usuario es exactamente Carlos
                         if es_admin or usuario_actual == "Carlos":
-                            opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "PANEL DE RENDIMIENTO", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                            opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         else:
                             opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
                             
@@ -5806,7 +5806,7 @@ else:
                 except Exception as e:
                     st.error(f"¡Atención, amor! Detalle en el código: {e}")
                             
-            elif st.session_state.menu_sub == "PANEL DE RENDIMIENTO":
+            elif st.session_state.menu_sub == "DETALLE COSTOS":
                     
                 # ---------------- ESTILOS CSS PERSONALIZADOS (ESTILO DE TUS IMÁGENES) ----------------
                 st.markdown("""
