@@ -1,21 +1,15 @@
 from datetime import datetime
+from io import BytesIO
 import pandas as pd
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 import streamlit as st
-from weasyprint import HTML
 
 st.subheader("Generador de Orden de Embarque - PaqMex")
 
-# 1. Cargar tu matriz de clientes (ajusta la ruta o método de carga según uses en NEXION)
-# @st.cache_data
-# def cargar_matriz():
-#     return pd.read_excel("matriz_clientes.xlsx")
-# df_clientes = cargar_matriz()
-
-# Opciones manuales o de selección
-# cliente_elegido = st.selectbox("Seleccionar Cliente Destino:", df_clientes["CLIENTE"].unique())
-# datos_cliente = df_clientes[df_clientes["CLIENTE"] == cliente_elegido].iloc[0]
-
-# Simulando la selección para el ejemplo:
+# 1. Captura de datos o carga desde tu matriz
 num_factura = st.text_input("Número de Factura:", value="241106")
 tipo_pago = st.radio(
     "Selecciona Tipo de Pago:", ["CRÉDITO", "POR COBRAR", "PAGADO"]
@@ -33,8 +27,7 @@ remitente = {
     "telefono": "33 19 75 31 22",
 }
 
-# Datos del Destinatario (Jalados dinámicamente de tu matriz)
-# (Aquí usamos campos de ejemplo que vendrían de tu DataFrame)
+# Datos del Destinatario (Jalados de tu matriz)
 destinatario = {
     "cliente": "HAMPTON REYNOSA/ZONA INDUSTRIAL, MEXICO",
     "rfc": "DBM121023M10",
@@ -46,214 +39,457 @@ destinatario = {
     "telefono": "899 970 0108",
 }
 
-# Lógica de Facturación: Si es Crédito se usan datos de Jypesa; si es Cobro Destino se usan fiscales de destinatario
+# Lógica de Facturación
 if tipo_pago == "CRÉDITO":
-    facturacion = remitente
-    credito_mark = "X"
-    por_cobrar_mark = ""
-    pagado_mark = ""
+  facturacion = remitente
+  credito_mark = "X"
+  por_cobrar_mark = ""
+  pagado_mark = ""
 else:
-    facturacion = destinatario  # O sus datos fiscales específicos de la matriz
-    credito_mark = ""
-    por_cobrar_mark = "X" if tipo_pago == "POR COBRAR" else ""
-    pagado_mark = "X" if tipo_pago == "PAGADO" else ""
+  facturacion = destinatario
+  credito_mark = ""
+  por_cobrar_mark = "X" if tipo_pago == "POR COBRAR" else ""
+  pagado_mark = "X" if tipo_pago == "PAGADO" else ""
 
-# Fecha actual
 fecha_actual = datetime.now().strftime("%d/%m/%Y")
 
-# HTML y CSS con el formato idéntico
-html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-    @page {{ size: letter; margin: 10mm; background-color: #ffffff; }}
-    * {{ box-sizing: border-box; }}
-    body {{ font-family: Helvetica, Arial, sans-serif; font-size: 8pt; color: #000000; margin: 0; padding: 0; }}
-    .header-table {{ width: 100%; margin-bottom: 5px; }}
-    .title-text {{ font-size: 16pt; font-weight: bold; letter-spacing: 0.5px; }}
-    .subtitle-text {{ font-size: 12pt; font-weight: bold; text-align: center; margin: 5px 0 10px 0; }}
-    .meta-table {{ width: 100%; margin-bottom: 8px; }}
-    .meta-table td {{ font-size: 9pt; font-weight: bold; padding: 2px 0; }}
-    .sec-table {{ width: 100%; border-collapse: collapse; margin-bottom: 6px; }}
-    .sec-table th {{ background-color: #6c8ebf; color: #ffffff; font-size: 8.5pt; font-weight: bold; text-align: center; padding: 3px; border: 1px solid #333; }}
-    .sec-table td {{ border: 1px solid #333; padding: 2.5px 4px; vertical-align: middle; font-size: 7.5pt; }}
-    .label {{ font-weight: bold; width: 18%; }}
-    .val {{ font-weight: normal; }}
-    .two-col {{ width: 100%; margin-bottom: 0px; }}
-    .two-col td {{ width: 50%; vertical-align: top; padding: 0 3px; }}
-    .two-col td:first-child {{ padding-left: 0; }}
-    .two-col td:last-child {{ padding-right: 0; }}
-    .center {{ text-align: center; }}
-    .bold {{ font-weight: bold; }}
-    .signature-table {{ width: 100%; margin-top: 30px; }}
-    .signature-table td {{ text-align: center; font-size: 7.5pt; font-weight: bold; padding-top: 25px; }}
-    .sig-line {{ border-top: 1px solid #000; width: 80%; margin: 0 auto; padding-top: 3px; }}
-</style>
-</head>
-<body>
 
-<table class="header-table">
-    <tr>
-        <td style="width: 55%; vertical-align: middle;"><div class="title-text">PAQMEX S.A. DE C.V.</div></td>
-        <td style="width: 45%; text-align: right; vertical-align: middle;">
-            <div style="font-size: 20pt; font-weight: bold; color: #003366; font-style: italic;">PaqMex</div>
-            <div style="font-size: 6pt; color: #003366; font-weight: bold;">SOLUCIONES EN LOGÍSTICA</div>
-        </td>
-    </tr>
-</table>
+def generar_pdf_reportlab():
+  buffer = BytesIO()
+  # Márgenes estrechos de 10mm (aprox 28 puntos)
+  doc = SimpleDocTemplate(
+      buffer,
+      pagesize=letter,
+      rightMargin=28,
+      leftMargin=28,
+      topMargin=28,
+      bottomMargin=28,
+  )
+  story = []
+  styles = getSampleStyleSheet()
 
-<div class="subtitle-text">ORDEN DE EMBARQUE</div>
+  # Estilos personalizados
+  title_style = ParagraphStyle(
+      "TitleStyle",
+      parent=styles["Normal"],
+      fontName="Helvetica-Bold",
+      fontSize=16,
+      leading=18,
+  )
+  logo_style = ParagraphStyle(
+      "LogoStyle",
+      parent=styles["Normal"],
+      fontName="Helvetica-BoldOblique",
+      fontSize=20,
+      leading=22,
+      textColor=colors.HexColor("#003366"),
+      alignment=2,  # Derecha
+  )
+  logo_sub = ParagraphStyle(
+      "LogoSub",
+      parent=styles["Normal"],
+      fontName="Helvetica-Bold",
+      fontSize=6,
+      leading=7,
+      textColor=colors.HexColor("#003366"),
+      alignment=2,
+  )
+  subtitle_style = ParagraphStyle(
+      "SubTitleStyle",
+      parent=styles["Normal"],
+      fontName="Helvetica-Bold",
+      fontSize=12,
+      leading=14,
+      alignment=1,  # Centro
+  )
+  th_style = ParagraphStyle(
+      "THStyle",
+      parent=styles["Normal"],
+      fontName="Helvetica-Bold",
+      fontSize=8.5,
+      leading=10,
+      textColor=colors.white,
+      alignment=1,
+  )
+  cell_bold = ParagraphStyle(
+      "CellBold",
+      parent=styles["Normal"],
+      fontName="Helvetica-Bold",
+      fontSize=7.5,
+      leading=9,
+  )
+  cell_normal = ParagraphStyle(
+      "CellNormal",
+      parent=styles["Normal"],
+      fontName="Helvetica",
+      fontSize=7.5,
+      leading=9,
+  )
+  cell_center = ParagraphStyle(
+      "CellCenter",
+      parent=styles["Normal"],
+      fontName="Helvetica-Bold",
+      fontSize=10,
+      leading=12,
+      alignment=1,
+  )
 
-<table class="meta-table">
-    <tr>
-        <td style="width: 70%;"></td>
-        <td style="width: 12%; text-align: right;">FECHA:</td>
-        <td style="width: 18%; border-bottom: 1px solid #000; text-align: center;">{fecha_actual}</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td style="text-align: right;">FACTURA:</td>
-        <td style="border-bottom: 1px solid #000; text-align: center;">{num_factura}</td>
-    </tr>
-</table>
+  # 1. Encabezado principal
+  header_data = [
+      [Paragraph("PAQMEX S.A. DE C.V.", title_style), Paragraph("PaqMex", logo_style)],
+      ["", Paragraph("SOLUCIONES EN LOGÍSTICA", logo_sub)],
+  ]
+  t_header = Table(header_data, colWidths=[280, 274])
+  t_header.setStyle(
+      TableStyle([
+          ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+          ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+          ("TOPPADDING", (0, 0), (-1, -1), 0),
+      ])
+  )
+  story.append(t_header)
+  story.append(Spacer(1, 10))
 
-<!-- REMITENTE & DESTINATARIO -->
-<table class="two-col">
-    <tr>
-        <td>
-            <table class="sec-table">
-                <tr><th colspan="2">REMITENTE</th></tr>
-                <tr><td class="label">CLIENTE:</td><td class="val bold">{remitente['cliente']}</td></tr>
-                <tr><td class="label">RFC:</td><td class="val">{remitente['rfc']}</td></tr>
-                <tr><td class="label">CALLE:</td><td class="val">{remitente['calle']}</td></tr>
-                <tr><td class="label">COLONIA:</td><td class="val">{remitente['colonia']}</td></tr>
-                <tr><td class="label">MUNICIPIO:</td><td class="val">{remitente['municipio']} <span style="margin-left: 20px;">ESTADO:</span> <span style="margin-left: 10px;">{remitente['estado']}</span></td></tr>
-                <tr><td class="label">CONTACTO:<br>TELEFONO:</td><td class="val">{remitente['contacto']}<br>{remitente['telefono']}</td></tr>
-            </table>
-        </td>
-        <td>
-            <table class="sec-table">
-                <tr><th colspan="2">DESTINATARIO</th></tr>
-                <tr><td class="label">CLIENTE:</td><td class="val bold">{destinatario['cliente']}</td></tr>
-                <tr><td class="label">RFC:</td><td class="val">{destinatario['rfc']}</td></tr>
-                <tr><td class="label">CALLE:</td><td class="val">{destinatario['calle']}</td></tr>
-                <tr><td class="label">COLONIA:</td><td class="val">{destinatario['colonia']}</td></tr>
-                <tr><td class="label">MUNICIPIO:</td><td class="val">{destinatario['municipio']} <span style="margin-left: 20px;">{destinatario['estado']}</span></td></tr>
-                <tr><td class="label">CONTACTO:<br>TELEFONO:</td><td class="val">{destinatario['contacto']}<br>{destinatario['telefono']}</td></tr>
-            </table>
-        </td>
-    </tr>
-</table>
+  story.append(Paragraph("ORDEN DE EMBARQUE", subtitle_style))
+  story.append(Spacer(1, 8))
 
-<!-- FACTURACION & SERVICIOS -->
-<table class="two-col">
-    <tr>
-        <td>
-            <table class="sec-table">
-                <tr><th colspan="2">FACTURACION</th></tr>
-                <tr><td class="label">CLIENTE:</td><td class="val bold">{facturacion['cliente']}</td></tr>
-                <tr>
-                    <td colspan="2" style="text-align: center; height: 52px; vertical-align: middle;">
-                        Privada del Gallo No. 1525<br>
-                        Col. La Aurora C.P. 44460<br>
-                        Guadalajara, JAL México<br>
-                        Tel.. 0152 (33) 35402939<br>
-                        E-mail: sbomailer@jypesa.com. Tel. 33 3540 2939 Ext 157
-                    </td>
-                </tr>
-                <tr><td class="label">RFC:</td><td class="val bold">{facturacion['rfc']}</td></tr>
-                <tr><td class="label">EMAIL:</td><td class="val">sbomailer@jypesa.com</td></tr>
-            </table>
-        </td>
-        <td>
-            <table class="sec-table">
-                <tr><th colspan="4">SERVICIOS</th></tr>
-                <tr>
-                    <td class="label" style="width: 30%;">PAGADO:</td>
-                    <td class="center bold">{pagado_mark}</td>
-                    <td class="label" style="width: 30%;">SEGURO:</td>
-                    <td style="width: 20%;">SI: X &nbsp; NO:</td>
-                </tr>
-                <tr>
-                    <td class="label">POR COBRAR:</td>
-                    <td class="center bold">{por_cobrar_mark}</td>
-                    <td colspan="2" class="label">VALOR DECLARADO:</td>
-                </tr>
-                <tr>
-                    <td class="label">CREDITO:</td>
-                    <td class="center bold" style="font-size: 11pt;">{credito_mark}</td>
-                    <td colspan="2"></td>
-                </tr>
-                <tr>
-                    <td class="label">OCURRE:</td>
-                    <td></td>
-                    <td colspan="2" rowspan="2">
-                        CITA : <span style="margin-left: 15px;">SI</span> <span style="border:1px solid #000; padding:0 8px; margin-left:5px;">&nbsp;</span> <span style="margin-left: 10px;">NO</span><br><br>
-                        CONTACTO:<br>TELEFONO:
-                    </td>
-                </tr>
-                <tr>
-                    <td class="label">A DOMICILIO:</td>
-                    <td class="center bold" style="font-size: 11pt;">X</td>
-                </tr>
-                <tr>
-                    <td colspan="4" class="label">MANIOBRAS:</td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
+  # 2. Fecha y Factura
+  meta_data = [
+      [
+          "",
+          Paragraph("<b>FECHA:</b>", ParagraphStyle("R", alignment=2, fontSize=9)),
+          Paragraph(f"<b>{fecha_actual}</b>", ParagraphStyle("C", alignment=1, fontSize=9)),
+      ],
+      [
+          "",
+          Paragraph("<b>FACTURA:</b>", ParagraphStyle("R", alignment=2, fontSize=9)),
+          Paragraph(f"<b>{num_factura}</b>", ParagraphStyle("C", alignment=1, fontSize=9)),
+      ],
+  ]
+  t_meta = Table(meta_data, colWidths=[350, 100, 104])
+  t_meta.setStyle(
+      TableStyle([
+          ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+          (
+              "LINEBELOW",
+              (2, 0),
+              (2, 0),
+              1,
+              colors.black,
+          ),  # Línea bajo fecha
+          (
+              "LINEBELOW",
+              (2, 1),
+              (2, 1),
+              1,
+              colors.black,
+          ),  # Línea bajo factura
+          ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+      ])
+  )
+  story.append(t_meta)
+  story.append(Spacer(1, 6))
 
-<!-- CONTENIDO -->
-<table class="sec-table" style="margin-top: 4px;">
-    <tr><th colspan="7">CONTENIDO</th></tr>
-    <tr>
-        <td class="center bold" style="width: 5%;">#</td>
-        <td class="center bold" style="width: 15%;">CANTIDAD</td>
-        <td class="center bold" style="width: 20%;">EMPAQUE</td>
-        <td class="center bold" style="width: 30%;">CONTENIDO</td>
-        <td class="center bold" style="width: 18%;">DIMENSIONES (ALTO/LARGO/ANCHO)</td>
-        <td class="center bold" style="width: 6%;">KG REAL</td>
-        <td class="center bold" style="width: 6%;">KG VOLUMEN</td>
-    </tr>
-    {"".join([f'<tr><td class="center">{i}</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>' for i in range(1, 5)])}
-</table>
+  # 3. Remitente y Destinatario (Dos columnas)
+  rem_data = [
+      [Paragraph("REMITENTE", th_style), ""],
+      [
+          Paragraph("CLIENTE:", cell_bold),
+          Paragraph(remitente["cliente"], cell_bold),
+      ],
+      [Paragraph("RFC:", cell_bold), Paragraph(remitente["rfc"], cell_normal)],
+      [Paragraph("CALLE:", cell_bold), Paragraph(remitente["calle"], cell_normal)],
+      [
+          Paragraph("COLONIA:", cell_bold),
+          Paragraph(remitente["colonia"], cell_normal),
+      ],
+      [
+          Paragraph("MUNICIPIO:", cell_bold),
+          Paragraph(
+              f"{remitente['municipio']} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ESTADO:</b> {remitente['estado']}",
+              cell_normal,
+          ),
+      ],
+      [
+          Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
+          Paragraph(
+              f"{remitente['contacto']}<br/>{remitente['telefono']}",
+              cell_normal,
+          ),
+      ],
+  ]
+  t_rem = Table(rem_data, colWidths=[70, 202])
+  t_rem.setStyle(
+      TableStyle([
+          ("SPAN", (0, 0), (1, 0)),
+          ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+          ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+          ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+          ("TOPPADDING", (0, 0), (-1, -1), 3),
+          ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+      ])
+  )
 
-<!-- CARTA PORTE -->
-<table class="sec-table" style="margin-top: 4px;">
-    <tr><th colspan="3">CARTA PORTE</th></tr>
-    <tr>
-        <td class="center bold" style="width: 10%;">#</td>
-        <td class="center bold" style="width: 45%;">CODIGO PRODUCTO CARTA PORTE SAT</td>
-        <td class="center bold" style="width: 45%;">CODIGO UNIDAD PESO CARTA PORTE SAT</td>
-    </tr>
-    {"".join([f'<tr><td class="center">{i}</td><td>&nbsp;</td><td>&nbsp;</td></tr>' for i in range(1, 5)])}
-</table>
+  dest_data = [
+      [Paragraph("DESTINATARIO", th_style), ""],
+      [
+          Paragraph("CLIENTE:", cell_bold),
+          Paragraph(destinatario["cliente"], cell_bold),
+      ],
+      [Paragraph("RFC:", cell_bold), Paragraph(destinatario["rfc"], cell_normal)],
+      [
+          Paragraph("CALLE:", cell_bold),
+          Paragraph(destinatario["calle"], cell_normal),
+      ],
+      [
+          Paragraph("COLONIA:", cell_bold),
+          Paragraph(destinatario["colonia"], cell_normal),
+      ],
+      [
+          Paragraph("MUNICIPIO:", cell_bold),
+          Paragraph(
+              f"{destinatario['municipio']} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {destinatario['estado']}",
+              cell_normal,
+          ),
+      ],
+      [
+          Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
+          Paragraph(
+              f"{destinatario['contacto']}<br/>{destinatario['telefono']}",
+              cell_normal,
+          ),
+      ],
+  ]
+  t_dest = Table(dest_data, colWidths=[70, 202])
+  t_dest.setStyle(
+      TableStyle([
+          ("SPAN", (0, 0), (1, 0)),
+          ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+          ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+          ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+          ("TOPPADDING", (0, 0), (-1, -1), 3),
+          ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+      ])
+  )
 
-<!-- FIRMAS -->
-<table class="signature-table">
-    <tr>
-        <td style="width: 33%;"><div class="sig-line">FIRMA Y NOMBRE DEL CLIENTE :</div></td>
-        <td style="width: 34%;"><div class="sig-line">FIRMA Y NOMBRE DE QUIEN RECIBE :</div></td>
-        <td style="width: 33%;"><div class="sig-line">NUMERO DE UNIDAD</div></td>
-    </tr>
-</table>
+  t_top_blocks = Table([[t_rem, t_dest]], colWidths=[274, 274])
+  t_top_blocks.setStyle(
+      TableStyle([
+          ("VALIGN", (0, 0), (-1, -1), "TOP"),
+          ("LEFTPADDING", (0, 0), (-1, -1), 0),
+          ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+      ])
+  )
+  story.append(t_top_blocks)
+  story.append(Spacer(1, 6))
 
-</body>
-</html>
-"""
+  # 4. Facturación y Servicios
+  fac_data = [
+      [Paragraph("FACTURACION", th_style), ""],
+      [
+          Paragraph("CLIENTE:", cell_bold),
+          Paragraph(facturacion["cliente"], cell_bold),
+      ],
+      [
+          Paragraph(
+              "RFC:<br/><br/><br/><br/>EMAIL:", cell_bold
+          ),  # Espacio simulado igual al formato
+          Paragraph(
+              "Privada del Gallo No. 1525<br/>Col. La Aurora C.P. 44460<br/>Guadalajara, JAL México<br/>Tel.. 0152 (33) 35402939<br/>E-mail: sbomailer@jypesa.com",
+              ParagraphStyle(
+                  "CF",
+                  parent=cell_normal,
+                  alignment=1,
+                  fontSize=7,
+                  leading=8.5,
+              ),
+          ),
+      ],
+      [
+          Paragraph("RFC:", cell_bold),
+          Paragraph(f"<b>{facturacion['rfc']}</b>", cell_bold),
+      ],
+      [
+          Paragraph("EMAIL:", cell_bold),
+          Paragraph("sbomailer@jypesa.com", cell_normal),
+      ],
+  ]
+  t_fac = Table(fac_data, colWidths=[70, 202])
+  t_fac.setStyle(
+      TableStyle([
+          ("SPAN", (0, 0), (1, 0)),
+          ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+          ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+          ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+          ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+          ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
+      ])
+  )
 
-if st.button("Generar PDF de Orden de Embarque"):
-  HTML(string=html_content).write_pdf("orden_embarque.pdf")
-  st.success("¡Orden de embarque generada con éxito!")
-  with open("orden_embarque.pdf", "rb") as f:
-    st.download_button(
-        "Descargar PDF", f, file_name=f"Orden_Embarque_{num_factura}.pdf"
+  serv_data = [
+      [Paragraph("SERVICIOS", th_style), "", "", ""],
+      [Paragraph("PAGADO:", cell_bold), pagado_mark, Paragraph("SEGURO:", cell_bold), "SI: X   NO:"],
+      [Paragraph("POR COBRAR:", cell_bold), por_cobrar_mark, Paragraph("VALOR DECLARADO:", cell_bold), ""],
+      [Paragraph("CREDITO:", cell_bold), credito_mark, "", ""],
+      [Paragraph("OCURRE:", cell_bold), "", Paragraph("CITA :", cell_bold), "SI [ &nbsp; ] NO"],
+      [Paragraph("A DOMICILIO:", cell_bold), "X", Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold), ""],
+      [Paragraph("MANIOBRAS:", cell_bold), "", "", ""],
+  ]
+  t_serv = Table(
+      serv_data, colWidths=[70, 45, 85, 72]
+  )  # Ancho total 274
+  t_serv.setStyle(
+      TableStyle([
+          ("SPAN", (0, 0), (3, 0)),
+          ("BACKGROUND", (0, 0), (3, 0), colors.HexColor("#6c8ebf")),
+          ("SPAN", (2, 2), (3, 2)),
+          ("SPAN", (2, 3), (3, 3)),
+          ("SPAN", (2, 4), (3, 4)),
+          ("SPAN", (0, 6), (3, 6)),
+          ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+          ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+          (
+              "ALIGN",
+              (1, 1),
+              (1, 3),
+              "CENTER",
+          ),  # Centrar X en casillas de pago
+          ("ALIGN", (1, 5), (1, 5), "CENTER"),
+          ("TOPPADDING", (0, 0), (-1, -1), 3.2),
+          ("BOTTOMPADDING", (0, 0), (-1, -1), 3.2),
+      ])
+  )
+
+  t_mid_blocks = Table([[t_fac, t_serv]], colWidths=[274, 274])
+  t_mid_blocks.setStyle(
+      TableStyle([
+          ("VALIGN", (0, 0), (-1, -1), "TOP"),
+          ("LEFTPADDING", (0, 0), (-1, -1), 0),
+          ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+      ])
+  )
+  story.append(t_mid_blocks)
+  story.append(Spacer(1, 6))
+
+  # 5. CONTENIDO
+  cont_data = [[Paragraph("CONTENIDO", th_style), "", "", "", "", "", ""]]
+  cont_headers = [
+      "#",
+      "CANTIDAD",
+      "EMPAQUE",
+      "CONTENIDO",
+      "DIMENSIONES (ALTO/LARGO/ANCHO)",
+      "KG REAL",
+      "KG VOLUMEN",
+  ]
+  cont_data.append([Paragraph(h, th_style) for h in cont_headers])
+  # Ajustar color de encabezados de columnas de contenido a un gris/azul claro o mantener oscuro
+  for i in range(1, 5):
+    cont_data.append(
+        [
+            str(i),
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+        ]
     )
 
+  t_cont = Table(
+      cont_data, colWidths=[25, 60, 80, 164, 155, 50, 64]
+  )  # Total 548
+  t_cont.setStyle(
+      TableStyle([
+          ("SPAN", (0, 0), (6, 0)),
+          ("BACKGROUND", (0, 0), (6, 0), colors.HexColor("#6c8ebf")),
+          ("BACKGROUND", (0, 1), (6, 1), colors.HexColor("#6c8ebf")),
+          ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+          ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+          ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+          ("TOPPADDING", (0, 0), (-1, -1), 3),
+          ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+      ])
+  )
+  story.append(t_cont)
+  story.append(Spacer(1, 6))
 
+  # 6. CARTA PORTE
+  cp_data = [[Paragraph("CARTA PORTE", th_style), "", ""]]
+  cp_headers = [
+      "#",
+      "CODIGO PRODUCTO CARTA PORTE SAT",
+      "CODIGO UNIDAD PESO CARTA PORTE SAT",
+  ]
+  cp_data.append([Paragraph(h, th_style) for h in cp_headers])
+  for i in range(1, 5):
+    cp_data.append([str(i), "", ""])
+
+  t_cp = Table(cp_data, colWidths=[25, 261, 262])
+  t_cp.setStyle(
+      TableStyle([
+          ("SPAN", (0, 0), (2, 0)),
+          ("BACKGROUND", (0, 0), (2, 0), colors.HexColor("#6c8ebf")),
+          ("BACKGROUND", (0, 1), (2, 1), colors.HexColor("#6c8ebf")),
+          ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+          ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+          ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+          ("TOPPADDING", (0, 0), (-1, -1), 3),
+          ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+      ])
+  )
+  story.append(t_cp)
+  story.append(Spacer(1, 30))
+
+  # 7. Firmas
+  sig_style = ParagraphStyle(
+      "Sig",
+      parent=styles["Normal"],
+      fontName="Helvetica-Bold",
+      fontSize=7.5,
+      leading=9,
+      alignment=1,
+  )
+  sig_data = [
+      [
+          Paragraph(
+              "________________________________________<br/>FIRMA Y NOMBRE DEL CLIENTE :",
+              sig_style,
+          ),
+          Paragraph(
+              "________________________________________<br/>FIRMA Y NOMBRE DE QUIEN RECIBE :",
+              sig_style,
+          ),
+          Paragraph(
+              "________________________________________<br/>NUMERO DE UNIDAD",
+              sig_style,
+          ),
+      ]
+  ]
+  t_sig = Table(sig_data, colWidths=[183, 183, 182])
+  t_sig.setStyle(
+      TableStyle([
+          ("VALIGN", (0, 0), (-1, -1), "TOP"),
+          ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+      ])
+  )
+  story.append(t_sig)
+
+  doc.build(story)
+  buffer.seek(0)
+  return buffer
+
+
+if st.button("Generar PDF de Orden de Embarque"):
+  pdf_buffer = generar_pdf_reportlab()
+  st.success("¡Orden de embarque generada con éxito con ReportLab!")
+  st.download_button(
+      label="📥 Descargar PDF",
+      data=pdf_buffer,
+      file_name=f"Orden_Embarque_{num_factura}.pdf",
+      mime="application/pdf",
+  )
 
 
 
