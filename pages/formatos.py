@@ -63,68 +63,169 @@ if not df_facturacion.empty:
   df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
 
   facturas_disponibles = df_facturacion["Factura"].unique()
-  num_factura = st.selectbox(
-      "Selecciona o busca el número de Factura:", facturas_disponibles
+
+  # Selector de Factura o opción de escribir manual si no está el folio
+  modo_busqueda = st.radio(
+      "Método de selección:", ["Seleccionar de la lista", "Escribir folio manual"]
   )
 
-  registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[
-      0
-  ]
+  if modo_busqueda == "Seleccionar de la lista":
+    num_factura = st.selectbox(
+        "Selecciona el número de Factura:", facturas_disponibles
+    )
+    registro = df_facturacion[
+        df_facturacion["Factura"] == str(num_factura)
+    ].iloc[0]
+  else:
+    num_factura = st.text_input("Ingresa el número de Factura / Folio manual:")
+    if (
+        num_factura
+        and str(num_factura) in df_facturacion["Factura"].values
+    ):
+      registro = df_facturacion[
+          df_facturacion["Factura"] == str(num_factura)
+      ].iloc[0]
+    else:
+      # Si no existe, creamos un registro vacío por defecto para que puedas llenarlo a mano
+      registro = pd.Series()
 
   tipo_pago = st.radio(
       "Selecciona Tipo de Pago:", ["CRÉDITO", "POR COBRAR", "PAGADO"]
   )
 
-  remitente = {
-      "cliente": "JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
-      "rfc": "JPE830408B35",
-      "calle": "Privada del Gallo No. 1525",
-      "colonia": "Col La Aurora",
-      "municipio": "Guadalajara",
-      "estado": "Jalisco",
-      "contacto": "Rigoberto Hernandez",
-      "telefono": "33 19 75 31 22",
-  }
+  # Extracción inteligente de valores con respaldo vacío si es manual
+  def_extran = (
+      str(registro.get("Nombre_Extran", ""))
+      if not registro.empty
+      and pd.notna(registro.get("Nombre_Extran", ""))
+      else ""
+  )
+  def_rfc = (
+      str(registro.get("RFC", ""))
+      if not registro.empty and pd.notna(registro.get("RFC", ""))
+      else ""
+  )
+  def_dom = (
+      str(registro.get("Domicilio", ""))
+      if not registro.empty and pd.notna(registro.get("Domicilio", ""))
+      else ""
+  )
+  def_col = (
+      str(registro.get("Colonia", ""))
+      if not registro.empty and pd.notna(registro.get("Colonia", ""))
+      else ""
+  )
+  def_cui = (
+      str(registro.get("Cuidad", ""))
+      if not registro.empty and pd.notna(registro.get("Cuidad", ""))
+      else ""
+  )
+  def_cp = (
+      str(registro.get("CP", ""))
+      if not registro.empty and pd.notna(registro.get("CP", ""))
+      else ""
+  )
+  def_est = (
+      str(registro.get("Estado", ""))
+      if not registro.empty and pd.notna(registro.get("Estado", ""))
+      else ""
+  )
+  def_cli = (
+      str(registro.get("Nombre_Cliente", ""))
+      if not registro.empty and pd.notna(registro.get("Nombre_Cliente", ""))
+      else ""
+  )
+  def_fiscal = (
+      str(registro.get("FISCAL", ""))
+      if not registro.empty and pd.notna(registro.get("FISCAL", ""))
+      else ""
+  )
 
-  # Captura directa del teléfono probando variaciones de la columna
+  # Buscar teléfono probando variaciones
   tel_val = ""
-  for col_posible in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
-    if col_posible in registro and pd.notna(registro[col_posible]):
-      tel_val = str(registro[col_posible]).strip()
-      break
+  if not registro.empty:
+    for col_posible in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+      if col_posible in registro and pd.notna(registro[col_posible]):
+        tel_val = str(registro[col_posible]).strip()
+        break
   if not tel_val or tel_val.lower() == "nan":
-    tel_val = "No registrado"
+    tel_val = ""
+
+  st.markdown("---")
+  st.markdown("### 👁️ Previsualización y Edición Manual de Datos")
+
+  # --- SECCIÓN VISUAL PARA COMPROBAR Y EDITAR DATOS ---
+  col1, col2 = st.columns(2)
+
+  with col1:
+    st.markdown("#### 📦 Remitente (Fijo)")
+    rem_cliente = st.text_input(
+        "Cliente Remitente",
+        value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
+    )
+    rem_rfc = st.text_input("RFC Remitente", value="JPE830408B35")
+    rem_calle = st.text_input("Calle Remitente", value="Privada del Gallo No. 1525")
+    rem_colonia = st.text_input("Colonia Remitente", value="Col La Aurora")
+    rem_mun = st.text_input("Municipio Remitente", value="Guadalajara")
+    rem_estado = st.text_input("Estado Remitente", value="Jalisco")
+    rem_contacto = st.text_input("Contacto Remitente", value="Rigoberto Hernandez")
+    rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
+
+  with col2:
+    st.markdown("#### 🚚 Destinatario / Entrega")
+    dest_cliente = st.text_input(
+        "Cliente Destino (Comercial)", value=def_extran
+    )
+    dest_rfc = st.text_input("RFC Destino", value=def_rfc)
+    dest_calle = st.text_input("Calle Destino", value=def_dom)
+    dest_colonia = st.text_input("Colonia Destino", value=def_col)
+    dest_cui = st.text_input("Ciudad Destino", value=def_cui)
+    dest_cp = st.text_input("CP Destino", value=def_cp)
+    dest_estado = st.text_input("Estado Destino", value=def_est)
+    dest_tel = st.text_input("Teléfono Destino", value=tel_val)
+
+  st.markdown("#### 📋 Datos de Facturación")
+  fac_cliente = st.text_input("Cliente de Facturación", value=def_cli)
+  fac_rfc = st.text_input("RFC Facturación", value=def_rfc)
+  fac_calle = st.text_area(
+      "Domicilio Fiscal / Datos Fiscales (FISCAL)",
+      value=def_fiscal.replace("_x000D_", " ")
+      .replace("\r", " ")
+      .replace("\n", " "),
+  )
+
+  # Diccionarios finales limpios con lo que el usuario validó/editó visualmente
+  remitente = {
+      "cliente": rem_cliente,
+      "rfc": rem_rfc,
+      "calle": rem_calle,
+      "colonia": rem_colonia,
+      "municipio": rem_mun,
+      "estado": rem_estado,
+      "contacto": rem_contacto,
+      "telefono": rem_tel,
+  }
 
   destinatario = {
-      "cliente": str(registro.get("Nombre_Extran", "")),
-      "rfc": str(registro.get("RFC", "")),
-      "calle": str(registro.get("Domicilio", "")),
-      "colonia": str(registro.get("Colonia", "")),
-      "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",
-      "estado": str(registro.get("Estado", "")),
-      "telefono": tel_val,
+      "cliente": dest_cliente,
+      "rfc": dest_rfc,
+      "calle": dest_calle,
+      "colonia": dest_colonia,
+      "municipio": f"{dest_cui} - CP: {dest_cp}",
+      "estado": dest_estado,
+      "telefono": dest_tel if dest_tel else "No registrado",
   }
 
-  # Lógica de Facturación
   if tipo_pago == "CRÉDITO":
     facturacion = remitente
     credito_mark = "X"
     por_cobrar_mark = ""
     pagado_mark = ""
   else:
-    fiscal_crudo = str(registro.get("FISCAL", ""))
-    fiscal_limpio = (
-        fiscal_crudo.replace("_x000D_", " ")
-        .replace("\r", " ")
-        .replace("\n", " ")
-    )
-    razon_social_cliente = str(registro.get("Nombre_Cliente", ""))
-    rfc_fiscal = str(registro.get("RFC", ""))
-
     facturacion = {
-        "cliente": razon_social_cliente,
-        "rfc": rfc_fiscal,
-        "calle": fiscal_limpio,
+        "cliente": fac_cliente,
+        "rfc": fac_rfc,
+        "calle": fac_calle,
         "colonia": "",
         "municipio": "",
         "estado": "",
@@ -190,7 +291,6 @@ if not df_facturacion.empty:
         leading=9,
     )
 
-    # Cargar logo original paqmex.jpg desde GitHub
     logo_io = obtener_logo_github()
     if logo_io:
       logo_element = Image(logo_io, width=130, height=45)
@@ -207,7 +307,6 @@ if not df_facturacion.empty:
           ),
       )
 
-    # Encabezado
     header_data = [
         [Paragraph("PAQMEX S.A. DE C.V.", title_style), logo_element]
     ]
@@ -222,11 +321,9 @@ if not df_facturacion.empty:
     )
     story.append(t_header)
     story.append(Spacer(1, 10))
-
     story.append(Paragraph("ORDEN DE EMBARQUE", subtitle_style))
     story.append(Spacer(1, 8))
 
-    # Fecha y Factura
     meta_data = [
         [
             "",
@@ -261,7 +358,6 @@ if not df_facturacion.empty:
     story.append(t_meta)
     story.append(Spacer(1, 6))
 
-    # Remitente y Destinatario
     rem_data = [
         [Paragraph("REMITENTE", th_style), ""],
         [
@@ -357,7 +453,6 @@ if not df_facturacion.empty:
     story.append(t_top_blocks)
     story.append(Spacer(1, 6))
 
-    # Facturación
     fac_data = [
         [Paragraph("FACTURACION", th_style), ""],
         [
@@ -448,7 +543,6 @@ if not df_facturacion.empty:
     story.append(t_mid_blocks)
     story.append(Spacer(1, 6))
 
-    # Contenido
     cont_data = [[Paragraph("CONTENIDO", th_style), "", "", "", "", "", ""]]
     cont_headers = [
         "#",
@@ -479,7 +573,6 @@ if not df_facturacion.empty:
     story.append(t_cont)
     story.append(Spacer(1, 6))
 
-    # Carta Porte
     cp_data = [[Paragraph("CARTA PORTE", th_style), "", ""]]
     cp_headers = [
         "#",
@@ -506,7 +599,6 @@ if not df_facturacion.empty:
     story.append(t_cp)
     story.append(Spacer(1, 30))
 
-    # Firmas
     sig_style = ParagraphStyle(
         "Sig",
         parent=styles["Normal"],
@@ -544,7 +636,8 @@ if not df_facturacion.empty:
     buffer.seek(0)
     return buffer
 
-  if st.button("Generar PDF con datos de CSV"):
+  st.markdown("---")
+  if st.button("Generar PDF con datos de Orden de Embarque"):
     pdf_buffer = generar_pdf_reportlab()
     st.success(
         f"¡Orden de embarque para la factura {num_factura} generada con"
