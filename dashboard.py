@@ -19,11 +19,11 @@ import google.generativeai as genai
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
-plotly.express as px
-plotly.graph_objects as go
+import plotly.express as px
+import plotly.graph_objects as go
 from pypdf import PdfReader, PdfWriter
 import pytz
-from qrcode import qrcode  # O qrcode directamente según tu uso
+import qrcode
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
