@@ -14,40 +14,35 @@ st.subheader(
 )
 
 
-# 1. Función para cargar el archivo EXCEL directamente desde tu repositorio de GitHub
+# 1. Función para leer tu matriz CSV directamente desde GitHub
 @st.cache_data(ttl=60)
-def cargar_excel_github():
+def cargar_csv_github():
   try:
-    # Usamos la URL raw de tu repositorio público o privado con token
     repo = "RH2026/nexion"
-    filename = "facturacion_moreno.xlsx"
-    branch = "main"  # O "master", según cómo se llame tu rama principal
+    filename = "facturacion_moreno.csv"  # Archivo CSV generado por tu sistema
+    branch = "main"  # O "master" según tu rama
 
-    # URL raw directa de GitHub
+    # URL raw directa de GitHub para el CSV
     url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
 
-    # Si tu repo es privado y requiere token, usamos requests con headers de autenticación
     token = st.secrets["GITHUB_TOKEN"]
     headers = {"Authorization": f"token {token}"}
 
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-      # Leemos los bytes directamente con pandas y openpyxl
-      df = pd.read_excel(BytesIO(response.content), engine="openpyxl")
+      # Leemos los bytes del CSV con pandas
+      df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
       return df
     else:
-      st.error(
-          f"Error al descargar de GitHub (Código {response.status_code})."
-          " Revisa si la rama se llama 'main' o 'master'."
-      )
+      st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
       return pd.DataFrame()
   except Exception as e:
-    st.error(f"No se pudo cargar el archivo Excel desde GitHub: {e}")
+    st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
     return pd.DataFrame()
 
 
-df_facturacion = cargar_excel_github()
+df_facturacion = cargar_csv_github()
 
 if not df_facturacion.empty:
   # Asegurar que la columna Factura sea texto para buscar bien
@@ -80,7 +75,7 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Extraer datos del Destinatario desde tus columnas de Excel:
+  # Extraer datos del Destinatario desde tus columnas del CSV:
   # Nombre_Extran, Domicilio, Colonia, Cuidad, Estado, CP, Nombre_Cliente
   destinatario = {
       "cliente": str(registro.get("Nombre_Extran", "")),
@@ -537,7 +532,7 @@ if not df_facturacion.empty:
     buffer.seek(0)
     return buffer
 
-  if st.button("Generar PDF con datos de Excel"):
+  if st.button("Generar PDF con datos de CSV"):
     pdf_buffer = generar_pdf_reportlab()
     st.success(
         f"¡Orden de embarque para la factura {num_factura} generada con"
@@ -550,7 +545,7 @@ if not df_facturacion.empty:
         mime="application/pdf",
     )
 else:
-  st.warning("No se encontraron datos en el Excel de GitHub.")
+  st.warning("No se encontraron datos en el CSV de GitHub.")
 
 
 
