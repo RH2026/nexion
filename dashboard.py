@@ -7969,7 +7969,7 @@ else:
                   col1, col2 = st.columns(2)
                   
                   with col1:
-                      titulo_seccion("REMITENTE", color_fondo="#4169E1") # Azul
+                      titulo_seccion("REMITENTE", color_fondo="#2C3E50") # Azul
                       rem_cliente = st.text_input(
                           "Cliente Remitente",
                           value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
@@ -7996,7 +7996,7 @@ else:
                           rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
                   
                   with col2:
-                      titulo_seccion("DESTINATARIO / ENTREGA", color_fondo="#E5B83B") # Amarillo / Dorado similar a la imagen
+                      titulo_seccion("DESTINATARIO / ENTREGA", color_fondo="#16A085") # Amarillo / Dorado similar a la imagen
                       dest_cliente = st.text_input(
                           "Cliente Destino (Comercial)", value=def_extran
                       )
