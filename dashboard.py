@@ -1,38 +1,39 @@
-import os
-import io
-import re
-import json
-import time
-import zipfile
-import unicodedata
-import requests
-from io import StringIO, BytesIO
-from datetime import datetime, date, timedelta
 import base64
-import math
-import random
 import calendar
+from datetime import date, datetime, timedelta
+import io
+from io import BytesIO, StringIO
+import json
+import math
+import os
+import random
+import re
+import time
+import unicodedata
+import zipfile
 
-import pandas as pd
+import altair as alt
+from fpdf import FPDF
+from github import Github
+import google.generativeai as genai
 import numpy as np
+import pandas as pd
+from PIL import Image, ImageDraw, ImageFont
+plotly.express as px
+plotly.graph_objects as go
+from pypdf import PdfReader, PdfWriter
+import pytz
+from qrcode import qrcode  # O qrcode directamente según tu uso
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader, simpleSplit
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+import requests
 import streamlit as st
 import streamlit.components.v1 as components
-import altair as alt
-import plotly.graph_objects as go
-import plotly.express as px
-
-import pytz
-from github import Github
-from pypdf import PdfReader, PdfWriter
-from fpdf import FPDF
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.units import cm
-from reportlab.lib.utils import simpleSplit, ImageReader
-
-import google.generativeai as genai
-import qrcode
-from PIL import Image, ImageDraw, ImageFont
 
 # 1. Inicialización del estado para controlar qué se debe imprimir
 if "reporte_a_imprimir" not in st.session_state:
@@ -7803,149 +7804,645 @@ else:
             # --- SUBSECCIÓN C: PROFORMA ---
             elif st.session_state.menu_sub == "PREGUIA PAQMEX": # <-- Alineado con 'elif ... == "CONTRARRECIBOS"'
                 # --- CONFIGURACIÓN DE PRODUCTOS ---
-                productos_proforma = {
-                    "Accesorios Ecologicos": ("Ecological Accessories", "3401.11", 2.50),
-                    "Dispensador Almond": ("Almond Dispenser", "3924.90", 11.50),
-                    "Kit Biogena": ("Biogena Amenities Kit", "3401.11", 3.20),
-                    "Jabón de Tocador 40g": ("Toilet Soap 40g", "3401.11", 0.45),
-                    "Shampoo Botánicos 30ml": ("Botanical Shampoo 30ml", "3305.10", 0.60),
-                    "Soporte Inoxidable": ("Stainless Steel Holder", "7324.90", 35.00)
-                }
+                # 1. Función para leer tu matriz CSV y limpiar nombres de columnas
+                @st.cache_data(ttl=60)
+                def cargar_csv_github():
+                  try:
+                    repo = "RH2026/nexion"
+                    filename = "facturacion_moreno.csv"
+                    branch = "main"
                 
-                def generar_proforma_html(datos_rem, datos_dest, items, info_envio):
-                    filas_html = ""
-                    subtotal = 0
-                    for item in items:
-                        total_item = item['cant'] * item['precio']
-                        subtotal += total_item
-                        filas_html += f"""
-                        <tr>
-                            <td style="border: 1px solid #ddd; padding: 8px;">{item['desc_es']}<br><i style="font-size:0.8em; color:#555;">{item['desc_en']}</i></td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{item['hs']}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{item['cant']}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${item['precio']:.2f}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${total_item:.2f}</td>
-                        </tr>"""
+                    url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                    token = st.secrets["GITHUB_TOKEN"]
+                    headers = {"Authorization": f"token {token}"}
                 
-                    return f"""
-                    <div style="font-family: 'Helvetica', Arial, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: auto; background: white;">
-                        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px;">
-                            <div>
-                                <h1 style="margin:0; color:#003399;">PROFORMA INVOICE</h1>
-                                <p style="margin:0;">FACTURA PROFORMA</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <p style="margin:0;"><b>Date / Fecha:</b> {info_envio['fecha']}</p>
-                                <p style="margin:0;"><b>Invoice #:</b> {info_envio['folio']}</p>
-                                <p style="margin:0; font-size: 0.8em; color: #666;"><b>Tracking:</b> {info_envio['guia']}</p>
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                            <div style="border: 1px solid #ccc; padding: 10px;">
-                                <b style="font-size: 0.9em; color: #666;">SHIPPER / REMITENTE</b>
-                                <p style="margin:5px 0; font-size: 0.85em;">
-                                    <b>{datos_rem['empresa']}</b><br>
-                                    {datos_rem['direccion']}<br>
-                                    {datos_rem['ciudad']}, {datos_rem['pais']}<br>
-                                    <b>ATN: {datos_rem['atencion']}</b><br>
-                                    TEL: {datos_rem['tel']}
-                                </p>
-                            </div>
-                            <div style="border: 1px solid #ccc; padding: 10px;">
-                                <b style="font-size: 0.9em; color: #666;">CONSIGNEE / DESTINATARIO</b>
-                                <p style="margin:5px 0; font-size: 0.85em;">
-                                    <b>{datos_dest['nombre']}</b><br>
-                                    {datos_dest['calle']}<br>
-                                    {datos_dest['ciudad']}, {datos_dest['estado']} CP: {datos_dest['cp']}<br>
-                                    {datos_dest['pais']}<br>
-                                    <b>TAX ID / RFC:</b> {datos_dest['tax_id']}<br>
-                                    TEL: {datos_dest['tel']}
-                                </p>
-                            </div>
-                        </div>
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em;">
-                            <thead><tr style="background: #f2f2f2;"><th style="border: 1px solid #ddd; padding: 8px;">Description</th><th style="border: 1px solid #ddd; padding: 8px;">HS Code</th><th style="border: 1px solid #ddd; padding: 8px;">Qty</th><th style="border: 1px solid #ddd; padding: 8px;">Unit USD</th><th style="border: 1px solid #ddd; padding: 8px;">Total USD</th></tr></thead>
-                            <tbody>{filas_html}</tbody>
-                            <tfoot><tr><td colspan="4" style="text-align:right; padding: 10px;"><b>TOTAL VALUE USD:</b></td><td style="border: 1px solid #ddd; padding: 10px; text-align:right; background: #eee;"><b>${subtotal:.2f}</b></td></tr></tfoot>
-                        </table>
-                        <div style="margin-top: 30px; font-size: 0.7em; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
-                            <p>Declaration: The values declared are for customs purposes only. No commercial value.</p>
-                        </div>
-                    </div>
-                    """
+                    response = requests.get(url, headers=headers)
                 
-                # --- LÓGICA DE FOLIO AUTOMÁTICO ---
-                if 'folio_num' not in st.session_state:
-                    st.session_state.folio_num = int(datetime.now().strftime("%m%d%H%M"))
-                
-                                
-                # SECCIÓN DE DATOS DE ENVÍO
-                c_env1, c_env2, c_env3 = st.columns([1, 1, 1])
-                f_folio = c_env1.text_input(":material/confirmation_number: FOLIO / INVOICE #", value=f"PRO-{st.session_state.folio_num}")
-                f_fecha = c_env2.date_input(":material/calendar_today: FECHA DE ENVÍO", date.today())
-                f_guia = c_env3.text_input(":material/local_shipping: NÚMERO DE GUÍA FEDEX", placeholder="0000 0000 0000")
-                
-                st.write("")
-                col_izq, col_der = st.columns(2)
-                
-                with col_izq:
-                    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">REMITENTE</div>', unsafe_allow_html=True)
-                    st.text_input(":material/corporate_fare: NOMBRE", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
-                    r1, r2 = st.columns([1.5, 1])
-                    rem_atn = r1.text_input(":material/person: ATENCIÓN", "RIGOBERTO HERNANDEZ")
-                    rem_tel = r2.text_input(":material/call: TELÉFONO", "3319753122")
-                    rem_sol = st.text_input(":material/badge: SOLICITANTE / AGENTE").upper()
-                
-                with col_der:
-                    st.markdown('<div style="background:#660099;color:withe;text-align:center;font-weight:bold;padding:8px;border-radius:4px 4px 0 0;">DESTINATARIO / HOTEL</div>', unsafe_allow_html=True)
-                    dest_nom = st.text_input(":material/hotel: HOTEL / NOMBRE").upper()
-                    dest_calle = st.text_input(":material/location_on: CALLE Y NÚMERO").upper()
-                    dp1, dp2 = st.columns(2)
-                    dest_pais = dp1.text_input(":material/public: PAÍS DESTINO").upper()
-                    dest_estado = dp2.text_input(":material/map: ESTADO / PROVINCIA").upper()
-                    dp3, dp4 = st.columns(2)
-                    dest_ciudad = dp3.text_input(":material/location_city: CIUDAD").upper()
-                    dest_tax = dp4.text_input(":material/receipt_long: TAX ID / RFC / RUC").upper()
-                    dp5, dp6 = st.columns(2)
-                    dest_contacto = dp5.text_input(":material/contact_phone: TEL. CONTACTO")
-                    dest_cp = dp6.text_input(":material/mailbox: C.P. / ZIP CODE")
-                
-                st.divider()
-                st.markdown("### :material/inventory_2: PRODUCTOS Y VALORES")
-                seleccion = st.multiselect(":material/search: Busca productos:", list(productos_proforma.keys()))
-                
-                items_capturados = []
-                if seleccion:
-                    for prod in seleccion:
-                        info = productos_proforma[prod]
-                        cp1, cp2, cp3 = st.columns([2, 1, 1])
-                        with cp1: st.write(f"**{prod}**")
-                        with cp2: cant = st.number_input(f"Cant.", min_value=1, value=1, key=f"q_{prod}")
-                        with cp3: precio = st.number_input(f"Precio (USD)", min_value=0.0, value=info[2], step=0.1, key=f"p_{prod}")
-                        items_capturados.append({"desc_es": prod, "desc_en": info[0], "hs": info[1], "cant": cant, "precio": precio})
-                
-                st.write("")
-                
-                # Botón de impresión con icono de Material
-                if st.button(":material/print: GENERAR E IMPRIMIR FACTURA", use_container_width=True, type="primary"):
-                    if not dest_nom or not items_capturados:
-                        st.error("Vida, faltan datos del hotel o productos.")
+                    if response.status_code == 200:
+                      df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                      df.columns = df.columns.astype(str).str.strip()
+                      return df
                     else:
-                        rem_info = {
-                            "empresa": "JABONES Y PRODUCTOS ESPECIALIZADOS", 
-                            "direccion": "C. Cernícalo 155, La Aurora", 
-                            "ciudad": "Guadalajara, Jalisco, 44460", 
-                            "pais": "MEXICO", 
-                            "tel": rem_tel,
-                            "atencion": rem_atn
-                        }
-                        dest_info = {"nombre": dest_nom, "calle": dest_calle, "ciudad": dest_ciudad, "estado": dest_estado, "pais": dest_pais, "tel": dest_contacto, "tax_id": dest_tax, "cp": dest_cp}
-                        
-                        proforma_html = generar_proforma_html(rem_info, dest_info, items_capturados, {"folio": f_folio, "fecha": f_fecha, "guia": f_guia})
-                        
-                        st.session_state.folio_num += 1
-                        st.success("¡Documento generado con éxito!")
-                        components.html(f"<html><body>{proforma_html}<script>window.print();</script></body></html>", height=0)
+                      st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                      return pd.DataFrame()
+                  except Exception as e:
+                    st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                    return pd.DataFrame()
+                
+                
+                # Función para descargar el logo 'paqmex.jpg' desde tu repositorio de GitHub
+                @st.cache_data(ttl=300)
+                def obtener_logo_github():
+                  try:
+                    repo = "RH2026/nexion"
+                    filename = "paqmex.jpg"
+                    branch = "main"
+                    url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                    token = st.secrets["GITHUB_TOKEN"]
+                    headers = {"Authorization": f"token {token}"}
+                
+                    response = requests.get(url, headers=headers)
+                    if response.status_code == 200:
+                      return BytesIO(response.content)
+                    return None
+                  except Exception:
+                    return None
+                
+                
+                df_facturacion = cargar_csv_github()
+                
+                if not df_facturacion.empty:
+                  df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+                
+                  facturas_disponibles = df_facturacion["Factura"].unique()
+                
+                  # Selector de Factura o opción de escribir manual si no está el folio
+                  modo_busqueda = st.radio(
+                      "Método de selección:", ["Seleccionar de la lista", "Escribir folio manual"]
+                  )
+                
+                  if modo_busqueda == "Seleccionar de la lista":
+                    num_factura = st.selectbox(
+                        "Selecciona el número de Factura:", facturas_disponibles
+                    )
+                    registro = df_facturacion[
+                        df_facturacion["Factura"] == str(num_factura)
+                    ].iloc[0]
+                  else:
+                    num_factura = st.text_input("Ingresa el número de Factura / Folio manual:")
+                    if (
+                        num_factura
+                        and str(num_factura) in df_facturacion["Factura"].values
+                    ):
+                      registro = df_facturacion[
+                          df_facturacion["Factura"] == str(num_factura)
+                      ].iloc[0]
+                    else:
+                      # Si no existe, creamos un registro vacío por defecto para que puedas llenarlo a mano
+                      registro = pd.Series()
+                
+                  tipo_pago = st.radio(
+                      "Selecciona Tipo de Pago:", ["CRÉDITO", "POR COBRAR", "PAGADO"]
+                  )
+                
+                  # Extracción inteligente de valores con respaldo vacío si es manual
+                  def_extran = (
+                      str(registro.get("Nombre_Extran", ""))
+                      if not registro.empty
+                      and pd.notna(registro.get("Nombre_Extran", ""))
+                      else ""
+                  )
+                  def_rfc = (
+                      str(registro.get("RFC", ""))
+                      if not registro.empty and pd.notna(registro.get("RFC", ""))
+                      else ""
+                  )
+                  def_dom = (
+                      str(registro.get("Domicilio", ""))
+                      if not registro.empty and pd.notna(registro.get("Domicilio", ""))
+                      else ""
+                  )
+                  def_col = (
+                      str(registro.get("Colonia", ""))
+                      if not registro.empty and pd.notna(registro.get("Colonia", ""))
+                      else ""
+                  )
+                  def_cui = (
+                      str(registro.get("Cuidad", ""))
+                      if not registro.empty and pd.notna(registro.get("Cuidad", ""))
+                      else ""
+                  )
+                  def_cp = (
+                      str(registro.get("CP", ""))
+                      if not registro.empty and pd.notna(registro.get("CP", ""))
+                      else ""
+                  )
+                  def_est = (
+                      str(registro.get("Estado", ""))
+                      if not registro.empty and pd.notna(registro.get("Estado", ""))
+                      else ""
+                  )
+                  def_cli = (
+                      str(registro.get("Nombre_Cliente", ""))
+                      if not registro.empty and pd.notna(registro.get("Nombre_Cliente", ""))
+                      else ""
+                  )
+                  def_fiscal = (
+                      str(registro.get("FISCAL", ""))
+                      if not registro.empty and pd.notna(registro.get("FISCAL", ""))
+                      else ""
+                  )
+                
+                  # Buscar teléfono probando variaciones
+                  tel_val = ""
+                  if not registro.empty:
+                    for col_posible in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+                      if col_posible in registro and pd.notna(registro[col_posible]):
+                        tel_val = str(registro[col_posible]).strip()
+                        break
+                  if not tel_val or tel_val.lower() == "nan":
+                    tel_val = ""
+                
+                  st.markdown("---")
+                  st.markdown("### 👁️ Previsualización y Edición Manual de Datos")
+                
+                  # --- SECCIÓN VISUAL PARA COMPROBAR Y EDITAR DATOS ---
+                  col1, col2 = st.columns(2)
+                
+                  with col1:
+                    st.markdown("#### 📦 Remitente (Fijo)")
+                    rem_cliente = st.text_input(
+                        "Cliente Remitente",
+                        value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
+                    )
+                    rem_rfc = st.text_input("RFC Remitente", value="JPE830408B35")
+                    rem_calle = st.text_input("Calle Remitente", value="Privada del Gallo No. 1525")
+                    rem_colonia = st.text_input("Colonia Remitente", value="Col La Aurora")
+                    rem_mun = st.text_input("Municipio Remitente", value="Guadalajara")
+                    rem_estado = st.text_input("Estado Remitente", value="Jalisco")
+                    rem_contacto = st.text_input("Contacto Remitente", value="Rigoberto Hernandez")
+                    rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
+                
+                  with col2:
+                    st.markdown("#### 🚚 Destinatario / Entrega")
+                    dest_cliente = st.text_input(
+                        "Cliente Destino (Comercial)", value=def_extran
+                    )
+                    dest_rfc = st.text_input("RFC Destino", value=def_rfc)
+                    dest_calle = st.text_input("Calle Destino", value=def_dom)
+                    dest_colonia = st.text_input("Colonia Destino", value=def_col)
+                    dest_cui = st.text_input("Ciudad Destino", value=def_cui)
+                    dest_cp = st.text_input("CP Destino", value=def_cp)
+                    dest_estado = st.text_input("Estado Destino", value=def_est)
+                    dest_tel = st.text_input("Teléfono Destino", value=tel_val)
+                
+                  st.markdown("#### 📋 Datos de Facturación")
+                  fac_cliente = st.text_input("Cliente de Facturación", value=def_cli)
+                  fac_rfc = st.text_input("RFC Facturación", value=def_rfc)
+                  fac_calle = st.text_area(
+                      "Domicilio Fiscal / Datos Fiscales (FISCAL)",
+                      value=def_fiscal.replace("_x000D_", " ")
+                      .replace("\r", " ")
+                      .replace("\n", " "),
+                  )
+                
+                  # Diccionarios finales limpios con lo que el usuario validó/editó visualmente
+                  remitente = {
+                      "cliente": rem_cliente,
+                      "rfc": rem_rfc,
+                      "calle": rem_calle,
+                      "colonia": rem_colonia,
+                      "municipio": rem_mun,
+                      "estado": rem_estado,
+                      "contacto": rem_contacto,
+                      "telefono": rem_tel,
+                  }
+                
+                  destinatario = {
+                      "cliente": dest_cliente,
+                      "rfc": dest_rfc,
+                      "calle": dest_calle,
+                      "colonia": dest_colonia,
+                      "municipio": f"{dest_cui} - CP: {dest_cp}",
+                      "estado": dest_estado,
+                      "telefono": dest_tel if dest_tel else "No registrado",
+                  }
+                
+                  if tipo_pago == "CRÉDITO":
+                    facturacion = remitente
+                    credito_mark = "X"
+                    por_cobrar_mark = ""
+                    pagado_mark = ""
+                  else:
+                    facturacion = {
+                        "cliente": fac_cliente,
+                        "rfc": fac_rfc,
+                        "calle": fac_calle,
+                        "colonia": "",
+                        "municipio": "",
+                        "estado": "",
+                        "email": "sbomailer@jypesa.com",
+                    }
+                    credito_mark = ""
+                    por_cobrar_mark = "X" if tipo_pago == "POR COBRAR" else ""
+                    pagado_mark = "X" if tipo_pago == "PAGADO" else ""
+                
+                  fecha_actual = datetime.now().strftime("%d/%m/%Y")
+                
+                
+                  # --- FUNCIÓN DE GENERACIÓN PDF (ReportLab) ---
+                  def generar_pdf_reportlab():
+                    buffer = BytesIO()
+                    doc = SimpleDocTemplate(
+                        buffer,
+                        pagesize=letter,
+                        rightMargin=28,
+                        leftMargin=28,
+                        topMargin=28,
+                        bottomMargin=28,
+                    )
+                    story = []
+                    styles = getSampleStyleSheet()
+                
+                    title_style = ParagraphStyle(
+                        "TitleStyle",
+                        parent=styles["Normal"],
+                        fontName="Helvetica-Bold",
+                        fontSize=16,
+                        leading=18,
+                    )
+                    subtitle_style = ParagraphStyle(
+                        "SubTitleStyle",
+                        parent=styles["Normal"],
+                        fontName="Helvetica-Bold",
+                        fontSize=12,
+                        leading=14,
+                        alignment=1,
+                    )
+                    th_style = ParagraphStyle(
+                        "THStyle",
+                        parent=styles["Normal"],
+                        fontName="Helvetica-Bold",
+                        fontSize=8.5,
+                        leading=10,
+                        textColor=colors.white,
+                        alignment=1,
+                    )
+                    cell_bold = ParagraphStyle(
+                        "CellBold",
+                        parent=styles["Normal"],
+                        fontName="Helvetica-Bold",
+                        fontSize=7.5,
+                        leading=9,
+                    )
+                    cell_normal = ParagraphStyle(
+                        "CellNormal",
+                        parent=styles["Normal"],
+                        fontName="Helvetica",
+                        fontSize=7.5,
+                        leading=9,
+                    )
+                
+                    logo_io = obtener_logo_github()
+                    if logo_io:
+                      logo_element = Image(logo_io, width=130, height=45)
+                    else:
+                      logo_element = Paragraph(
+                          "<b>PaqMex</b><br/><font size=6>SOLUCIONES EN LOGÍSTICA</font>",
+                          ParagraphStyle(
+                              "FallbackLogo",
+                              parent=styles["Normal"],
+                              fontName="Helvetica-BoldOblique",
+                              fontSize=16,
+                              textColor=colors.HexColor("#003366"),
+                              alignment=2,
+                          ),
+                      )
+                
+                    header_data = [
+                        [Paragraph("PAQMEX S.A. DE C.V.", title_style), logo_element]
+                    ]
+                    t_header = Table(header_data, colWidths=[280, 274])
+                    t_header.setStyle(
+                        TableStyle([
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                            ("TOPPADDING", (0, 0), (-1, -1), 0),
+                        ])
+                    )
+                    story.append(t_header)
+                    story.append(Spacer(1, 10))
+                    story.append(Paragraph("ORDEN DE EMBARQUE", subtitle_style))
+                    story.append(Spacer(1, 8))
+                
+                    meta_data = [
+                        [
+                            "",
+                            Paragraph(
+                                "<b>FECHA:</b>", ParagraphStyle("R", alignment=2, fontSize=9)
+                            ),
+                            Paragraph(
+                                f"<b>{fecha_actual}</b>",
+                                ParagraphStyle("C", alignment=1, fontSize=9),
+                            ),
+                        ],
+                        [
+                            "",
+                            Paragraph(
+                                "<b>FACTURA:</b>", ParagraphStyle("R", alignment=2, fontSize=9)
+                            ),
+                            Paragraph(
+                                f"<b>{num_factura}</b>",
+                                ParagraphStyle("C", alignment=1, fontSize=9),
+                            ),
+                        ],
+                    ]
+                    t_meta = Table(meta_data, colWidths=[350, 100, 104])
+                    t_meta.setStyle(
+                        TableStyle([
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("LINEBELOW", (2, 0), (2, 0), 1, colors.black),
+                            ("LINEBELOW", (2, 1), (2, 1), 1, colors.black),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                        ])
+                    )
+                    story.append(t_meta)
+                    story.append(Spacer(1, 6))
+                
+                    rem_data = [
+                        [Paragraph("REMITENTE", th_style), ""],
+                        [
+                            Paragraph("CLIENTE:", cell_bold),
+                            Paragraph(remitente["cliente"], cell_bold),
+                        ],
+                        [Paragraph("RFC:", cell_bold), Paragraph(remitente["rfc"], cell_normal)],
+                        [
+                            Paragraph("CALLE:", cell_bold),
+                            Paragraph(remitente["calle"], cell_normal),
+                        ],
+                        [
+                            Paragraph("COLONIA:", cell_bold),
+                            Paragraph(remitente["colonia"], cell_normal),
+                        ],
+                        [
+                            Paragraph("MUNICIPIO:", cell_bold),
+                            Paragraph(
+                                f"{remitente['municipio']} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ESTADO:</b> {remitente['estado']}",
+                                cell_normal,
+                            ),
+                        ],
+                        [
+                            Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
+                            Paragraph(
+                                f"{remitente['contacto']}<br/>{remitente['telefono']}",
+                                cell_normal,
+                            ),
+                        ],
+                    ]
+                    t_rem = Table(rem_data, colWidths=[70, 202])
+                    t_rem.setStyle(
+                        TableStyle([
+                            ("SPAN", (0, 0), (1, 0)),
+                            ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+                            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("TOPPADDING", (0, 0), (-1, -1), 3),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                        ])
+                    )
+                
+                    dest_data = [
+                        [Paragraph("DESTINATARIO", th_style), ""],
+                        [
+                            Paragraph("CLIENTE:", cell_bold),
+                            Paragraph(destinatario["cliente"], cell_bold),
+                        ],
+                        [
+                            Paragraph("RFC:", cell_bold),
+                            Paragraph(destinatario["rfc"], cell_normal),
+                        ],
+                        [
+                            Paragraph("CALLE:", cell_bold),
+                            Paragraph(destinatario["calle"], cell_normal),
+                        ],
+                        [
+                            Paragraph("COLONIA:", cell_bold),
+                            Paragraph(destinatario["colonia"], cell_normal),
+                        ],
+                        [
+                            Paragraph("MUNICIPIO:", cell_bold),
+                            Paragraph(
+                                f"{destinatario['municipio']} &nbsp;&nbsp; {destinatario['estado']}",
+                                cell_normal,
+                            ),
+                        ],
+                        [
+                            Paragraph("TELEFONO:", cell_bold),
+                            Paragraph(destinatario["telefono"], cell_normal),
+                        ],
+                    ]
+                    t_dest = Table(dest_data, colWidths=[70, 202])
+                    t_dest.setStyle(
+                        TableStyle([
+                            ("SPAN", (0, 0), (1, 0)),
+                            ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+                            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("TOPPADDING", (0, 0), (-1, -1), 3),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                        ])
+                    )
+                
+                    t_top_blocks = Table([[t_rem, t_dest]], colWidths=[274, 274])
+                    t_top_blocks.setStyle(
+                        TableStyle([
+                            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                        ])
+                    )
+                    story.append(t_top_blocks)
+                    story.append(Spacer(1, 6))
+                
+                    fac_data = [
+                        [Paragraph("FACTURACION", th_style), ""],
+                        [
+                            Paragraph("CLIENTE:", cell_bold),
+                            Paragraph(facturacion["cliente"], cell_bold),
+                        ],
+                        [
+                            Paragraph("DATOS / RFC:", cell_bold),
+                            Paragraph(
+                                f"{facturacion.get('calle', '')}<br/><b>RFC: {facturacion['rfc']}</b>",
+                                cell_normal,
+                            ),
+                        ],
+                        [
+                            Paragraph("EMAIL:", cell_bold),
+                            Paragraph(
+                                facturacion.get("email", "sbomailer@jypesa.com"), cell_normal
+                            ),
+                        ],
+                    ]
+                    t_fac = Table(fac_data, colWidths=[70, 202])
+                    t_fac.setStyle(
+                        TableStyle([
+                            ("SPAN", (0, 0), (1, 0)),
+                            ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+                            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("TOPPADDING", (0, 0), (-1, -1), 4),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                        ])
+                    )
+                
+                    serv_data = [
+                        [Paragraph("SERVICIOS", th_style), "", "", ""],
+                        [
+                            Paragraph("PAGADO:", cell_bold),
+                            pagado_mark,
+                            Paragraph("SEGURO:", cell_bold),
+                            "SI: X   NO:",
+                        ],
+                        [
+                            Paragraph("POR COBRAR:", cell_bold),
+                            por_cobrar_mark,
+                            Paragraph("VALOR DECLARADO:", cell_bold),
+                            "",
+                        ],
+                        [Paragraph("CREDITO:", cell_bold), credito_mark, "", ""],
+                        [
+                            Paragraph("OCURRE:", cell_bold),
+                            "",
+                            Paragraph("CITA :", cell_bold),
+                            "SI [ &nbsp; ] NO",
+                        ],
+                        [
+                            Paragraph("A DOMICILIO:", cell_bold),
+                            "X",
+                            Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
+                            "",
+                        ],
+                        [Paragraph("MANIOBRAS:", cell_bold), "", "", ""],
+                    ]
+                    t_serv = Table(serv_data, colWidths=[70, 45, 85, 72])
+                    t_serv.setStyle(
+                        TableStyle([
+                            ("SPAN", (0, 0), (3, 0)),
+                            ("BACKGROUND", (0, 0), (3, 0), colors.HexColor("#6c8ebf")),
+                            ("SPAN", (2, 2), (3, 2)),
+                            ("SPAN", (2, 3), (3, 3)),
+                            ("SPAN", (2, 4), (3, 4)),
+                            ("SPAN", (0, 6), (3, 6)),
+                            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("ALIGN", (1, 1), (1, 3), "CENTER"),
+                            ("ALIGN", (1, 5), (1, 5), "CENTER"),
+                            ("TOPPADDING", (0, 0), (-1, -1), 3.2),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 3.2),
+                        ])
+                    )
+                
+                    t_mid_blocks = Table([[t_fac, t_serv]], colWidths=[274, 274])
+                    t_mid_blocks.setStyle(
+                        TableStyle([
+                            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                        ])
+                    )
+                    story.append(t_mid_blocks)
+                    story.append(Spacer(1, 6))
+                
+                    cont_data = [[Paragraph("CONTENIDO", th_style), "", "", "", "", "", ""]]
+                    cont_headers = [
+                        "#",
+                        "CANTIDAD",
+                        "EMPAQUE",
+                        "CONTENIDO",
+                        "DIMENSIONES (ALTO/LARGO/ANCHO)",
+                        "KG REAL",
+                        "KG VOLUMEN",
+                    ]
+                    cont_data.append([Paragraph(h, th_style) for h in cont_headers])
+                    for i in range(1, 5):
+                      cont_data.append([str(i), "", "", "", "", "", ""])
+                
+                    t_cont = Table(cont_data, colWidths=[25, 60, 80, 164, 155, 50, 64])
+                    t_cont.setStyle(
+                        TableStyle([
+                            ("SPAN", (0, 0), (6, 0)),
+                            ("BACKGROUND", (0, 0), (6, 0), colors.HexColor("#6c8ebf")),
+                            ("BACKGROUND", (0, 1), (6, 1), colors.HexColor("#6c8ebf")),
+                            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                            ("TOPPADDING", (0, 0), (-1, -1), 3),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                        ])
+                    )
+                    story.append(t_cont)
+                    story.append(Spacer(1, 6))
+                
+                    cp_data = [[Paragraph("CARTA PORTE", th_style), "", ""]]
+                    cp_headers = [
+                        "#",
+                        "CODIGO PRODUCTO CARTA PORTE SAT",
+                        "CODIGO UNIDAD PESO CARTA PORTE SAT",
+                    ]
+                    cp_data.append([Paragraph(h, th_style) for h in cp_headers])
+                    for i in range(1, 5):
+                      cp_data.append([str(i), "", ""])
+                
+                    t_cp = Table(cp_data, colWidths=[25, 261, 262])
+                    t_cp.setStyle(
+                        TableStyle([
+                            ("SPAN", (0, 0), (2, 0)),
+                            ("BACKGROUND", (0, 0), (2, 0), colors.HexColor("#6c8ebf")),
+                            ("BACKGROUND", (0, 1), (2, 1), colors.HexColor("#6c8ebf")),
+                            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                            ("TOPPADDING", (0, 0), (-1, -1), 3),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                        ])
+                    )
+                    story.append(t_cp)
+                    story.append(Spacer(1, 30))
+                
+                    sig_style = ParagraphStyle(
+                        "Sig",
+                        parent=styles["Normal"],
+                        fontName="Helvetica-Bold",
+                        fontSize=7.5,
+                        leading=9,
+                        alignment=1,
+                    )
+                    sig_data = [
+                        [
+                            Paragraph(
+                                "________________________________________<br/>FIRMA Y NOMBRE DEL CLIENTE :",
+                                sig_style,
+                            ),
+                            Paragraph(
+                                "________________________________________<br/>FIRMA Y NOMBRE DE QUIEN RECIBE :",
+                                sig_style,
+                            ),
+                            Paragraph(
+                                "________________________________________<br/>NUMERO DE UNIDAD",
+                                sig_style,
+                            ),
+                        ]
+                    ]
+                    t_sig = Table(sig_data, colWidths=[183, 183, 182])
+                    t_sig.setStyle(
+                        TableStyle([
+                            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                        ])
+                    )
+                    story.append(t_sig)
+                
+                    doc.build(story)
+                    buffer.seek(0)
+                    return buffer
+                
+                  st.markdown("---")
+                  if st.button("Generar PDF con datos de Orden de Embarque"):
+                    pdf_buffer = generar_pdf_reportlab()
+                    st.success(
+                        f"¡Orden de embarque para la factura {num_factura} generada con"
+                        " éxito!"
+                    )
+                    st.download_button(
+                        label="📥 Descargar PDF de Orden de Embarque",
+                        data=pdf_buffer,
+                        file_name=f"Orden_Embarque_{num_factura}.pdf",
+                        mime="application/pdf",
+                    )
+                else:
+                  st.warning("No se encontraron datos en el CSV de GitHub.")
          
             
             # --- SUBSECCIÓN D: CARTA RECLAMO ------
