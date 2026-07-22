@@ -66,7 +66,7 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Destinatario (Datos de Entrega) usando Nombre_Cliente y TELEFONO limpio
+  # Destinatario (Arriba): Usa Nombre_Cliente (Nombre comercial) y TELEFONO exacto
   destinatario = {
       "cliente": str(registro.get("Nombre_Cliente", "")),  #[cite: 2]
       "rfc": str(registro.get("RFC", "")),  #[cite: 2]
@@ -74,7 +74,7 @@ if not df_facturacion.empty:
       "colonia": str(registro.get("Colonia", "")),  #[cite: 2]
       "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",  #[cite: 2]
       "estado": str(registro.get("Estado", "")),  #[cite: 2]
-      "contacto": "",  # Sin nombre de contacto, solo teléfono
+      "contacto": "",
       "telefono": str(registro.get("TELEFONO", "No registrado")),  #[cite: 2]
   }
 
@@ -85,7 +85,7 @@ if not df_facturacion.empty:
     por_cobrar_mark = ""
     pagado_mark = ""
   else:
-    # Si es Cobro Destino, usamos estrictamente Nombre_Extran para la Razón Social
+    # Facturación (Abajo): Usa Nombre_Extran (Nombre fiscal / razón social) y los datos fiscales limpios
     fiscal_crudo = str(registro.get("FISCAL", ""))  #[cite: 2]
     fiscal_limpio = (
         fiscal_crudo.replace("_x000D_", " ")
@@ -96,9 +96,9 @@ if not df_facturacion.empty:
     rfc_fiscal = str(registro.get("RFC", ""))  #[cite: 2]
 
     facturacion = {
-        "cliente": razon_social_extran,  # Razón Social exacta desde Nombre_Extran[cite: 2]
+        "cliente": razon_social_extran,  # Nombre de abajo (Nombre_Extran) pasa arriba en Facturación[cite: 2]
         "rfc": rfc_fiscal,  #[cite: 2]
-        "calle": fiscal_limpio,  # Domicilio fiscal limpio[cite: 2]
+        "calle": fiscal_limpio,  # Datos fiscales limpios[cite: 2]
         "colonia": "",
         "municipio": "",
         "estado": "",
@@ -337,7 +337,7 @@ if not df_facturacion.empty:
     story.append(t_top_blocks)
     story.append(Spacer(1, 6))
 
-    # Facturación (Con Nombre_Extran)
+    # Facturación
     fac_data = [
         [Paragraph("FACTURACION", th_style), ""],
         [
