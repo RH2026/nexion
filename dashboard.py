@@ -1314,7 +1314,7 @@ else:
                 # --- FORMATOS: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PROFORMA", "CARTA RECLAMO", "COTIZACIONES"]                        
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "CARTA RECLAMO", "COTIZACIONES"]                        
                         for s in opciones_for:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -7801,7 +7801,7 @@ else:
             
             
             # --- SUBSECCIÓN C: PROFORMA ---
-            elif st.session_state.menu_sub == "PROFORMA": # <-- Alineado con 'elif ... == "CONTRARRECIBOS"'
+            elif st.session_state.menu_sub == "PREGUIA PAQMEX": # <-- Alineado con 'elif ... == "CONTRARRECIBOS"'
                 # --- CONFIGURACIÓN DE PRODUCTOS ---
                 productos_proforma = {
                     "Accesorios Ecologicos": ("Ecological Accessories", "3401.11", 2.50),
