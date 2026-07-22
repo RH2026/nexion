@@ -8059,40 +8059,25 @@ else:
                         "telefono": dest_tel if dest_tel else "No registrado",
                     }
                 
-                    # LÓGICA DE CONDICIONES DE PAGO ACTUALIZADA PARA SELECTBOX
+                    # --- LÓGICA DE CONDICIONES DE PAGO Y FACTURACIÓN ---
                     if tipo_pago == "CRÉDITO":
+                        # Crédito usa los datos fiscales de Jypesa (remitente)
                         facturacion = remitente
                         credito_mark = "X"
                         por_cobrar_mark = ""
                         pagado_mark = ""
                     elif tipo_pago == "POR COBRAR":
-                        facturacion = {
-                            "cliente": fac_cliente,
-                            "rfc": fac_rfc,
-                            "calle": fac_calle,
-                            "colonia": "",
-                            "municipio": "",
-                            "estado": "",
-                            "email": "sbomailer@jypesa.com",
-                        }
+                        # Por cobrar usa los datos fiscales del destinatario
+                        facturacion = destinatario
                         credito_mark = ""
                         por_cobrar_mark = "X"
                         pagado_mark = ""
                     else:  # PAGADO
-                        facturacion = {
-                            "cliente": fac_cliente,
-                            "rfc": fac_rfc,
-                            "calle": fac_calle,
-                            "colonia": "",
-                            "municipio": "",
-                            "estado": "",
-                            "email": "sbomailer@jypesa.com",
-                        }
+                        # Pagado usa los datos fiscales de Jypesa (remitente)
+                        facturacion = remitente
                         credito_mark = ""
                         por_cobrar_mark = ""
                         pagado_mark = "X"
-                
-                    fecha_actual = datetime.now().strftime("%d/%m/%Y")
                 
                 
                     # --- FUNCIÓN DE GENERACIÓN PDF (ReportLab) ---
