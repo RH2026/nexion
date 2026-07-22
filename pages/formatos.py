@@ -9,16 +9,20 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 import requests
 import streamlit as st
 
-st.subheader("Generador de Orden de Embarque - Conectado a Facturación Moreno")
+st.subheader(
+    "Generador de Orden de Embarque - Conectado a Excel (Facturación Moreno)"
+)
 
 
-# 1. Función para cargar el CSV directamente desde tu repositorio de GitHub
+# 1. Función para cargar el archivo EXCEL directamente desde tu repositorio de GitHub
 @st.cache_data(ttl=60)
-def cargar_datos_github():
+def cargar_excel_github():
   try:
     token = st.secrets["GITHUB_TOKEN"]
     repo = "RH2026/nexion"
-    filename = "facturacion_moreno.csv"
+    filename = (
+        "facturacion_moreno.xlsx"  # Cambiado a xlsx según me indicaste
+    )
     url = f"https://api.github.com/repos/{repo}/contents/{filename}"
 
     headers = {
@@ -30,17 +34,18 @@ def cargar_datos_github():
     if response.status_code == 200:
       file_content_encoded = response.json()["content"]
       file_content_bytes = base64.b64decode(file_content_encoded)
-      df = pd.read_csv(BytesIO(file_content_bytes))
+      # Leemos como Excel usando BytesIO
+      df = pd.read_excel(BytesIO(file_content_bytes))
       return df
     else:
       st.error(f"Error al conectar con GitHub: {response.status_code}")
       return pd.DataFrame()
   except Exception as e:
-    st.error(f"No se pudo cargar el archivo desde GitHub: {e}")
+    st.error(f"No se pudo cargar el archivo Excel desde GitHub: {e}")
     return pd.DataFrame()
 
 
-df_facturacion = cargar_datos_github()
+df_facturacion = cargar_excel_github()
 
 if not df_facturacion.empty:
   # Asegurar que la columna Factura sea texto para buscar bien
@@ -73,8 +78,8 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Extraer datos del Destinatario desde las columnas de tu CSV
-  # Domicilio, Colonia, Cuidad, Estado, CP
+  # Extraer datos del Destinatario desde tus columnas de Excel:
+  # Nombre_Extran, Domicilio, Colonia, Cuidad, Estado, CP, Nombre_Cliente
   destinatario = {
       "cliente": str(registro.get("Nombre_Extran", "")),
       "rfc": str(registro.get("RFC", "")),
@@ -97,14 +102,14 @@ if not df_facturacion.empty:
     por_cobrar_mark = ""
     pagado_mark = ""
   else:
-    # Si es Por Cobrar o Pagado, jalamos los datos fiscales concatenados de la columna FISCAL
+    # Si es Por Cobrar o Pagado, jalamos los datos fiscales de la columna FISCAL y el RFC
     fiscal_texto = str(registro.get("FISCAL", ""))
     rfc_fiscal = str(registro.get("RFC", ""))
 
     facturacion = {
         "cliente": str(registro.get("Nombre_Extran", "")),
         "rfc": rfc_fiscal,
-        "calle": fiscal_texto,  # Contiene los datos fiscales completos
+        "calle": fiscal_texto,  # Contiene los datos fiscales completos concatenados
         "colonia": "",
         "municipio": "",
         "estado": "",
@@ -115,6 +120,7 @@ if not df_facturacion.empty:
     pagado_mark = "X" if tipo_pago == "PAGADO" else ""
 
   fecha_actual = datetime.now().strftime("%d/%m/%Y")
+
 
   # --- FUNCIÓN DE GENERACIÓN PDF (ReportLab) ---
   def generar_pdf_reportlab():
@@ -529,7 +535,7 @@ if not df_facturacion.empty:
     buffer.seek(0)
     return buffer
 
-  if st.button("Generar PDF con datos de GitHub"):
+  if st.button("Generar PDF con datos de Excel"):
     pdf_buffer = generar_pdf_reportlab()
     st.success(
         f"¡Orden de embarque para la factura {num_factura} generada con"
@@ -542,7 +548,7 @@ if not df_facturacion.empty:
         mime="application/pdf",
     )
 else:
-  st.warning("No se encontraron datos en el CSV de GitHub.")
+  st.warning("No se encontraron datos en el Excel de GitHub.")
 
 
 
