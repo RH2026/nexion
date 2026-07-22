@@ -5,13 +5,11 @@ import pandas as pd
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 import requests
 import streamlit as st
 
-st.subheader(
-    "Generador de Orden de Embarque - Depuración de Columnas y Teléfono"
-)
+st.subheader("Generador de Orden de Embarque - Facturación Moreno")
 
 
 # 1. Función para leer tu matriz CSV y limpiar nombres de columnas
@@ -30,7 +28,6 @@ def cargar_csv_github():
 
     if response.status_code == 200:
       df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-      # Limpiar espacios en blanco en los nombres de las columnas
       df.columns = df.columns.astype(str).str.strip()
       return df
     else:
@@ -41,13 +38,28 @@ def cargar_csv_github():
     return pd.DataFrame()
 
 
+# Función para descargar el logo 'paqmex.jpg' desde tu repositorio de GitHub
+@st.cache_data(ttl=300)
+def obtener_logo_github():
+  try:
+    repo = "RH2026/nexion"
+    filename = "paqmex.jpg"
+    branch = "main"
+    url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+    token = st.secrets["GITHUB_TOKEN"]
+    headers = {"Authorization": f"token {token}"}
+
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+      return BytesIO(response.content)
+    return None
+  except Exception:
+    return None
+
+
 df_facturacion = cargar_csv_github()
 
 if not df_facturacion.empty:
-  # TRUCO DEPURADOR 1: Muestra todas las columnas disponibles en tu CSV en la pantalla de Streamlit
-  with st.expander("🔍 Ver columnas detectadas en el CSV"):
-    st.write(df_facturacion.columns.tolist())
-
   df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
 
   facturas_disponibles = df_facturacion["Factura"].unique()
@@ -58,10 +70,6 @@ if not df_facturacion.empty:
   registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[
       0
   ]
-
-  # TRUCO DEPURADOR 2: Muestra exactamente los datos que lee de esta factura en pantalla
-  with st.expander(f"🔍 Ver datos de la Factura {num_factura}"):
-    st.write(registro.to_dict())
 
   tipo_pago = st.radio(
       "Selecciona Tipo de Pago:", ["CRÉDITO", "POR COBRAR", "PAGADO"]
@@ -78,7 +86,7 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Buscamos el teléfono probando varias opciones comunes por si la columna se llama ligeramente diferente
+  # Captura directa del teléfono probando variaciones de la columna
   tel_val = ""
   for col_posible in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
     if col_posible in registro and pd.notna(registro[col_posible]):
@@ -150,24 +158,6 @@ if not df_facturacion.empty:
         fontSize=16,
         leading=18,
     )
-    logo_style = ParagraphStyle(
-        "LogoStyle",
-        parent=styles["Normal"],
-        fontName="Helvetica-BoldOblique",
-        fontSize=20,
-        leading=22,
-        textColor=colors.HexColor("#003366"),
-        alignment=2,
-    )
-    logo_sub = ParagraphStyle(
-        "LogoSub",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=6,
-        leading=7,
-        textColor=colors.HexColor("#003366"),
-        alignment=2,
-    )
     subtitle_style = ParagraphStyle(
         "SubTitleStyle",
         parent=styles["Normal"],
@@ -200,24 +190,39 @@ if not df_facturacion.empty:
         leading=9,
     )
 
+    # Cargar logo original paqmex.jpg desde GitHub
+    logo_io = obtener_logo_github()
+    if logo_io:
+      logo_element = Image(logo_io, width=130, height=45)
+    else:
+      logo_element = Paragraph(
+          "<b>PaqMex</b><br/><font size=6>SOLUCIONES EN LOGÍSTICA</font>",
+          ParagraphStyle(
+              "FallbackLogo",
+              parent=styles["Normal"],
+              fontName="Helvetica-BoldOblique",
+              fontSize=16,
+              textColor=colors.HexColor("#003366"),
+              alignment=2,
+          ),
+      )
+
     # Encabezado
     header_data = [
-        [
-            Paragraph("PAQMEX S.A. DE C.V.", title_style),
-            Paragraph("PaqMex", logo_style),
-        ],
-        ["", Paragraph("SOLUCIONES EN LOGÍSTICA", logo_sub)],
+        [Paragraph("PAQMEX S.A. DE C.V.", title_style), logo_element]
     ]
     t_header = Table(header_data, colWidths=[280, 274])
     t_header.setStyle(
         TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (1, 0), (1, 0), "RIGHT"),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
             ("TOPPADDING", (0, 0), (-1, -1), 0),
         ])
     )
     story.append(t_header)
     story.append(Spacer(1, 10))
+
     story.append(Paragraph("ORDEN DE EMBARQUE", subtitle_style))
     story.append(Spacer(1, 8))
 
