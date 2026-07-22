@@ -8005,7 +8005,7 @@ else:
                             rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
                 
                     with col2:
-                        titulo_seccion("DESTINATARIO / ENTREGA", color_fondo="#16A085")
+                        titulo_seccion("DESTINATARIO / ENTREGA", color_fondo="#4B6B94")
                         dest_cliente = st.text_input(
                             "Cliente Destino (Comercial)", value=def_extran
                         )
