@@ -7946,11 +7946,30 @@ else:
                   st.markdown("---")
                   st.markdown("### 👁️ Previsualización y Edición Manual de Datos")
                   
+                  # --- ESTILOS DE TÍTULOS TIPO BARRA ---
+                  def titulo_seccion(texto, color_fondo="#4169E1"):
+                      st.markdown(
+                          f"""
+                          <div style="
+                              background-color: {color_fondo}; 
+                              padding: 10px; 
+                              border-radius: 5px; 
+                              text-align: center; 
+                              color: white; 
+                              font-weight: bold; 
+                              font-size: 16px;
+                              margin-bottom: 15px;">
+                              {texto}
+                          </div>
+                          """,
+                          unsafe_allow_html=True
+                      )
+  
                   # --- SECCIÓN VISUAL PARA COMPROBAR Y EDITAR DATOS ---
                   col1, col2 = st.columns(2)
                   
                   with col1:
-                      st.markdown("#### 📦 Remitente (Fijo)")
+                      titulo_seccion("REMITENTE", color_fondo="#4169E1") # Azul
                       rem_cliente = st.text_input(
                           "Cliente Remitente",
                           value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
@@ -7962,7 +7981,7 @@ else:
                       with r_col1:
                           rem_colonia = st.text_input("Colonia Remitente", value="Col La Aurora")
                       with r_col2:
-                          rem_cp = st.text_input("CP Remitente", value="44430") # Ajusta si tienes CP fijo
+                          rem_cp = st.text_input("CP Remitente", value="44430")
                           
                       r_col3, r_col4 = st.columns(2)
                       with r_col3:
@@ -7977,21 +7996,19 @@ else:
                           rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
                   
                   with col2:
-                      st.markdown("#### 🚚 Destinatario / Entrega")
+                      titulo_seccion("DESTINATARIO / ENTREGA", color_fondo="#E5B83B") # Amarillo / Dorado similar a la imagen
                       dest_cliente = st.text_input(
                           "Cliente Destino (Comercial)", value=def_extran
                       )
                       dest_rfc = st.text_input("RFC Destino", value=def_rfc)
                       dest_calle = st.text_input("Calle Destino", value=def_dom)
                       
-                      # Colonia y CP compartiendo la misma línea horizontalmente
                       d_col1, d_col2 = st.columns(2)
                       with d_col1:
                           dest_colonia = st.text_input("Colonia Destino", value=def_col)
                       with d_col2:
                           dest_cp = st.text_input("CP Destino", value=def_cp)
                       
-                      # Ciudad y Estado compartiendo línea
                       d_col3, d_col4 = st.columns(2)
                       with d_col3:
                           dest_cui = st.text_input("Ciudad Destino", value=def_cui)
@@ -8000,7 +8017,8 @@ else:
                           
                       dest_tel = st.text_input("Teléfono Destino", value=tel_val)
                   
-                  st.markdown("#### 📋 Datos de Facturación")
+                  # Encabezado de Facturación ocupando todo el ancho inferior
+                  titulo_seccion("FACTURACIÓN", color_fondo="#4B6B94") # Tono gris/azulado elegante para facturación
                   fac_cliente = st.text_input("Cliente de Facturación", value=def_cli)
                   fac_rfc = st.text_input("RFC Facturación", value=def_rfc)
                   fac_calle = st.text_area(
