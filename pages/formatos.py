@@ -28,6 +28,8 @@ def cargar_csv_github():
 
     if response.status_code == 200:
       df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+      # Limpiar espacios en blanco en los nombres de las columnas por si acaso
+      df.columns = df.columns.str.strip()
       return df
     else:
       st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
@@ -35,7 +37,6 @@ def cargar_csv_github():
   except Exception as e:
     st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
     return pd.DataFrame()
-
 
 df_facturacion = cargar_csv_github()
 
