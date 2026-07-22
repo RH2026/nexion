@@ -9,7 +9,9 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 import requests
 import streamlit as st
 
-st.subheader("Generador de Orden de Embarque - Facturación Moreno")
+st.subheader(
+    "Generador de Orden de Embarque - Depuración de Columnas y Teléfono"
+)
 
 
 # 1. Función para leer tu matriz CSV y limpiar nombres de columnas
@@ -29,7 +31,7 @@ def cargar_csv_github():
     if response.status_code == 200:
       df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
       # Limpiar espacios en blanco en los nombres de las columnas
-      df.columns = df.columns.str.strip()
+      df.columns = df.columns.astype(str).str.strip()
       return df
     else:
       st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
@@ -42,6 +44,10 @@ def cargar_csv_github():
 df_facturacion = cargar_csv_github()
 
 if not df_facturacion.empty:
+  # TRUCO DEPURADOR 1: Muestra todas las columnas disponibles en tu CSV en la pantalla de Streamlit
+  with st.expander("🔍 Ver columnas detectadas en el CSV"):
+    st.write(df_facturacion.columns.tolist())
+
   df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
 
   facturas_disponibles = df_facturacion["Factura"].unique()
@@ -52,6 +58,10 @@ if not df_facturacion.empty:
   registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[
       0
   ]
+
+  # TRUCO DEPURADOR 2: Muestra exactamente los datos que lee de esta factura en pantalla
+  with st.expander(f"🔍 Ver datos de la Factura {num_factura}"):
+    st.write(registro.to_dict())
 
   tipo_pago = st.radio(
       "Selecciona Tipo de Pago:", ["CRÉDITO", "POR COBRAR", "PAGADO"]
@@ -68,9 +78,13 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Captura directa del teléfono de la columna TELEFONO
-  tel_val = str(registro.get("TELEFONO", ""))
-  if pd.isna(tel_val) or tel_val.strip() == "" or tel_val.lower() == "nan":
+  # Buscamos el teléfono probando varias opciones comunes por si la columna se llama ligeramente diferente
+  tel_val = ""
+  for col_posible in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+    if col_posible in registro and pd.notna(registro[col_posible]):
+      tel_val = str(registro[col_posible]).strip()
+      break
+  if not tel_val or tel_val.lower() == "nan":
     tel_val = "No registrado"
 
   destinatario = {
@@ -285,7 +299,6 @@ if not df_facturacion.empty:
         ])
     )
 
-    # Destinatario con TELEFONO limpio (sin contacto arriba)
     dest_data = [
         [Paragraph("DESTINATARIO", th_style), ""],
         [
@@ -540,7 +553,6 @@ if not df_facturacion.empty:
     )
 else:
   st.warning("No se encontraron datos en el CSV de GitHub.")
-
 
 
 
