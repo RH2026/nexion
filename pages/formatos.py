@@ -35,7 +35,8 @@ def cargar_excel_github():
       file_content_encoded = response.json()["content"]
       file_content_bytes = base64.b64decode(file_content_encoded)
       # Leemos como Excel usando BytesIO
-      df = pd.read_excel(BytesIO(file_content_bytes))
+      # Leemos como Excel usando BytesIO y especificando el motor openpyxl
+      df = pd.read_excel(BytesIO(file_content_bytes), engine="openpyxl")
       return df
     else:
       st.error(f"Error al conectar con GitHub: {response.status_code}")
