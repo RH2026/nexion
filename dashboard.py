@@ -7969,7 +7969,7 @@ else:
                   col1, col2 = st.columns(2)
                   
                   with col1:
-                      titulo_seccion("REMITENTE", color_fondo="#16A085") # Azul
+                      titulo_seccion("REMITENTE", color_fondo="#4e73df") # Azul
                       rem_cliente = st.text_input(
                           "Cliente Remitente",
                           value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
