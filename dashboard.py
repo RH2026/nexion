@@ -8508,8 +8508,23 @@ else:
                         buffer.seek(0)
                         return buffer
                 
-                    st.markdown("---")
-                    if st.button("Generar PDF con datos de Orden de Embarque"):
+                    st.markdown("---")                    
+                    # CSS personalizado para hacer los botones de todo el ancho (full-width)
+                    st.markdown(
+                        """
+                        <style>
+                        div.stButton > button, div.stDownloadButton > button {
+                            width: 100%;
+                            border-radius: 6px;
+                            font-weight: bold;
+                            padding: 0.6rem 1rem;
+                        }
+                        </style>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                
+                    if st.button("🚀 Generar PDF con datos de Orden de Embarque", use_container_width=True):
                         pdf_buffer = generar_pdf_reportlab()
                         st.success(
                             f"¡Orden de embarque para la factura {num_factura} generada con éxito!"
@@ -8519,6 +8534,7 @@ else:
                             data=pdf_buffer,
                             file_name=f"Orden_Embarque_{num_factura}.pdf",
                             mime="application/pdf",
+                            use_container_width=True,
                         )
                 else:
                     st.warning("No se encontraron datos en el CSV de GitHub.")
