@@ -18,28 +18,29 @@ st.subheader(
 @st.cache_data(ttl=60)
 def cargar_excel_github():
   try:
-    token = st.secrets["GITHUB_TOKEN"]
+    # Usamos la URL raw de tu repositorio público o privado con token
     repo = "RH2026/nexion"
-    filename = (
-        "facturacion_moreno.xlsx"  # Cambiado a xlsx según me indicaste
-    )
-    url = f"https://api.github.com/repos/{repo}/contents/{filename}"
+    filename = "facturacion_moreno.xlsx"
+    branch = "main"  # O "master", según cómo se llame tu rama principal
 
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
-    }
+    # URL raw directa de GitHub
+    url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+
+    # Si tu repo es privado y requiere token, usamos requests con headers de autenticación
+    token = st.secrets["GITHUB_TOKEN"]
+    headers = {"Authorization": f"token {token}"}
+
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-      file_content_encoded = response.json()["content"]
-      file_content_bytes = base64.b64decode(file_content_encoded)
-      # Leemos como Excel usando BytesIO
-      # Leemos como Excel usando BytesIO y especificando el motor openpyxl
-      df = pd.read_excel(BytesIO(file_content_bytes), engine="openpyxl")
+      # Leemos los bytes directamente con pandas y openpyxl
+      df = pd.read_excel(BytesIO(response.content), engine="openpyxl")
       return df
     else:
-      st.error(f"Error al conectar con GitHub: {response.status_code}")
+      st.error(
+          f"Error al descargar de GitHub (Código {response.status_code})."
+          " Revisa si la rama se llama 'main' o 'master'."
+      )
       return pd.DataFrame()
   except Exception as e:
     st.error(f"No se pudo cargar el archivo Excel desde GitHub: {e}")
