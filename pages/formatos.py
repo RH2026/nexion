@@ -66,9 +66,10 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Destinatario (Arriba): Usa Nombre_Cliente (Nombre comercial) y TELEFONO exacto
+  # --- CORRECCIÓN EXACTA AQUÍ ---
+  # Destinatario (Arriba): Usa Nombre_Extran para el cliente y TELEFONO exacto para el teléfono
   destinatario = {
-      "cliente": str(registro.get("Nombre_Cliente", "")),  #[cite: 2]
+      "cliente": str(registro.get("Nombre_Extran", "")),  #[cite: 2]
       "rfc": str(registro.get("RFC", "")),  #[cite: 2]
       "calle": str(registro.get("Domicilio", "")),  #[cite: 2]
       "colonia": str(registro.get("Colonia", "")),  #[cite: 2]
@@ -85,18 +86,18 @@ if not df_facturacion.empty:
     por_cobrar_mark = ""
     pagado_mark = ""
   else:
-    # Facturación (Abajo): Usa Nombre_Extran (Nombre fiscal / razón social) y los datos fiscales limpios
+    # Facturación (Abajo): Usa Nombre_Cliente (Razón Social) y los datos fiscales limpios de FISCAL
     fiscal_crudo = str(registro.get("FISCAL", ""))  #[cite: 2]
     fiscal_limpio = (
         fiscal_crudo.replace("_x000D_", " ")
         .replace("\r", " ")
         .replace("\n", " ")
     )
-    razon_social_extran = str(registro.get("Nombre_Extran", ""))  #[cite: 2]
+    razon_social_cliente = str(registro.get("Nombre_Cliente", ""))  #[cite: 2]
     rfc_fiscal = str(registro.get("RFC", ""))  #[cite: 2]
 
     facturacion = {
-        "cliente": razon_social_extran,  # Nombre de abajo (Nombre_Extran) pasa arriba en Facturación[cite: 2]
+        "cliente": razon_social_cliente,  # Razón Social (Nombre_Cliente) va abajo en Facturación[cite: 2]
         "rfc": rfc_fiscal,  #[cite: 2]
         "calle": fiscal_limpio,  # Datos fiscales limpios[cite: 2]
         "colonia": "",
