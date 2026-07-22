@@ -8026,18 +8026,7 @@ else:
                           
                         dest_tel = st.text_input("Teléfono Destino", value=tel_val)
                 
-                    # Encabezado de Facturación ocupando todo el ancho inferior
-                    titulo_seccion("FACTURACIÓN", color_fondo="#4B6B94")
-                    fac_cliente = st.text_input("Cliente de Facturación", value=def_cli)
-                    fac_rfc = st.text_input("RFC Facturación", value=def_rfc)
-                    fac_calle = st.text_area(
-                        "Domicilio Fiscal / Datos Fiscales (FISCAL)",
-                        value=def_fiscal.replace("_x000D_", " ")
-                        .replace("\r", " ")
-                        .replace("\n", " "),
-                    )
-                
-                    # Diccionarios finales limpios con lo que el usuario validó/editó visualmente
+                    # Diccionarios base para remitente y destinatario
                     remitente = {
                         "cliente": rem_cliente,
                         "rfc": rem_rfc,
@@ -8059,25 +8048,46 @@ else:
                         "telefono": dest_tel if dest_tel else "No registrado",
                     }
                 
-                    # --- LÓGICA DE CONDICIONES DE PAGO Y FACTURACIÓN ---
+                    # Encabezado de Facturación Dinámico según Tipo de Pago
+                    titulo_seccion("FACTURACIÓN", color_fondo="#4B6B94")
+                    
+                    val_cli_fac = remitente["cliente"] if tipo_pago in ["CRÉDITO", "PAGADO"] else def_cli
+                    val_rfc_fac = remitente["rfc"] if tipo_pago in ["CRÉDITO", "PAGADO"] else def_rfc
+                    val_calle_fac = remitente["calle"] if tipo_pago in ["CRÉDITO", "PAGADO"] else def_fiscal
+                
+                    fac_cliente = st.text_input("Cliente de Facturación", value=val_cli_fac)
+                    fac_rfc = st.text_input("RFC Facturación", value=val_rfc_fac)
+                    fac_calle = st.text_area(
+                        "Domicilio Fiscal / Datos Fiscales (FISCAL)",
+                        value=str(val_calle_fac).replace("_x000D_", " ").replace("\r", " ").replace("\n", " "),
+                    )
+                
+                    # Definición de marcas y diccionario final de facturación para el PDF
                     if tipo_pago == "CRÉDITO":
-                        # Crédito usa los datos fiscales de Jypesa (remitente)
                         facturacion = remitente
                         credito_mark = "X"
                         por_cobrar_mark = ""
                         pagado_mark = ""
                     elif tipo_pago == "POR COBRAR":
-                        # Por cobrar usa los datos fiscales del destinatario
-                        facturacion = destinatario
+                        facturacion = {
+                            "cliente": fac_cliente,
+                            "rfc": fac_rfc,
+                            "calle": fac_calle,
+                            "colonia": "",
+                            "municipio": "",
+                            "estado": "",
+                            "email": "sbomailer@jypesa.com",
+                        }
                         credito_mark = ""
                         por_cobrar_mark = "X"
                         pagado_mark = ""
                     else:  # PAGADO
-                        # Pagado usa los datos fiscales de Jypesa (remitente)
                         facturacion = remitente
                         credito_mark = ""
                         por_cobrar_mark = ""
                         pagado_mark = "X"
+                
+                    fecha_actual = datetime.now().strftime("%d/%m/%Y")
                 
                 
                     # --- FUNCIÓN DE GENERACIÓN PDF (ReportLab) ---
