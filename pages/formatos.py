@@ -9,9 +9,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 import requests
 import streamlit as st
 
-st.subheader(
-    "Generador de Orden de Embarque - Conectado a Excel (Facturación Moreno)"
-)
+st.subheader("Generador de Orden de Embarque - Facturación Moreno")
 
 
 # 1. Función para leer tu matriz CSV directamente desde GitHub
@@ -19,19 +17,16 @@ st.subheader(
 def cargar_csv_github():
   try:
     repo = "RH2026/nexion"
-    filename = "facturacion_moreno.csv"  # Archivo CSV generado por tu sistema
-    branch = "main"  # O "master" según tu rama
+    filename = "facturacion_moreno.csv"
+    branch = "main"
 
-    # URL raw directa de GitHub para el CSV
     url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
-
     token = st.secrets["GITHUB_TOKEN"]
     headers = {"Authorization": f"token {token}"}
 
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-      # Leemos los bytes del CSV con pandas
       df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
       return df
     else:
@@ -45,16 +40,13 @@ def cargar_csv_github():
 df_facturacion = cargar_csv_github()
 
 if not df_facturacion.empty:
-  # Asegurar que la columna Factura sea texto para buscar bien
   df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
 
-  # Selector de Factura
   facturas_disponibles = df_facturacion["Factura"].unique()
   num_factura = st.selectbox(
       "Selecciona o busca el número de Factura:", facturas_disponibles
   )
 
-  # Filtrar el registro correspondiente a la factura seleccionada
   registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[
       0
   ]
@@ -63,7 +55,6 @@ if not df_facturacion.empty:
       "Selecciona Tipo de Pago:", ["CRÉDITO", "POR COBRAR", "PAGADO"]
   )
 
-  # Datos fijos del Remitente (Jypesa)
   remitente = {
       "cliente": "JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
       "rfc": "JPE830408B35",
@@ -75,8 +66,7 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Extraer datos del Destinatario desde tus columnas del CSV:
-  # Nombre_Extran, Domicilio, Colonia, Cuidad, Estado, CP, Nombre_Cliente
+  # Extraer datos del Destinatario (Teléfono directo de la columna Telefono)
   destinatario = {
       "cliente": str(registro.get("Nombre_Extran", "")),
       "rfc": str(registro.get("RFC", "")),
@@ -84,29 +74,36 @@ if not df_facturacion.empty:
       "colonia": str(registro.get("Colonia", "")),
       "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",
       "estado": str(registro.get("Estado", "")),
-      "contacto": str(registro.get("Nombre_Cliente", "")),
+      "contacto": str(
+          registro.get("Nombre_Cliente", "")
+      ),  # Nombre comercial / contacto
       "telefono": str(
-          registro.get("Telefono", "")
-          if "Telefono" in registro
-          else "No registrado"
-      ),
+          registro.get("Telefono", "No registrado")
+      ),  # Columna Telefono directa
   }
 
-  # Lógica de Facturación según el tipo de pago elegido
+  # Lógica de Facturación
   if tipo_pago == "CRÉDITO":
     facturacion = remitente
     credito_mark = "X"
     por_cobrar_mark = ""
     pagado_mark = ""
   else:
-    # Si es Por Cobrar o Pagado, jalamos los datos fiscales de la columna FISCAL y el RFC
-    fiscal_texto = str(registro.get("FISCAL", ""))
+    # Limpiamos los caracteres raros '_x000D_' de la columna FISCAL
+    fiscal_crudo = str(registro.get("FISCAL", ""))
+    fiscal_limpio = (
+        fiscal_crudo.replace("_x000D_", " ")
+        .replace("\r", " ")
+        .replace("\n", " ")
+    )
     rfc_fiscal = str(registro.get("RFC", ""))
 
     facturacion = {
-        "cliente": str(registro.get("Nombre_Extran", "")),
+        "cliente": str(
+            registro.get("Nombre_Extran", "")
+        ),  # Razón Social (Nombre_Extran)
         "rfc": rfc_fiscal,
-        "calle": fiscal_texto,  # Contiene los datos fiscales completos concatenados
+        "calle": fiscal_limpio,  # Datos fiscales limpios sin símbolos raros
         "colonia": "",
         "municipio": "",
         "estado": "",
@@ -345,7 +342,7 @@ if not df_facturacion.empty:
     story.append(t_top_blocks)
     story.append(Spacer(1, 6))
 
-    # Facturación y Servicios
+    # Facturación y Servicios (Usando Razón Social Nombre_Extran y fiscal limpio)
     fac_data = [
         [Paragraph("FACTURACION", th_style), ""],
         [
