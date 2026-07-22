@@ -66,15 +66,16 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Destinatario (Datos de Entrega) usando Nombre_Cliente y TELEFONO
+  # Destinatario (Datos de Entrega) usando Nombre_Cliente y TELEFONO limpio
   destinatario = {
-      "cliente": str(registro.get("Nombre_Cliente", "")),
-      "rfc": str(registro.get("RFC", "")),
-      "calle": str(registro.get("Domicilio", "")),
-      "colonia": str(registro.get("Colonia", "")),
-      "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",
-      "estado": str(registro.get("Estado", "")),
-      "telefono": str(registro.get("TELEFONO", "No registrado")),
+      "cliente": str(registro.get("Nombre_Cliente", "")),  #[cite: 2]
+      "rfc": str(registro.get("RFC", "")),  #[cite: 2]
+      "calle": str(registro.get("Domicilio", "")),  #[cite: 2]
+      "colonia": str(registro.get("Colonia", "")),  #[cite: 2]
+      "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",  #[cite: 2]
+      "estado": str(registro.get("Estado", "")),  #[cite: 2]
+      "contacto": "",  # Sin nombre de contacto, solo teléfono
+      "telefono": str(registro.get("TELEFONO", "No registrado")),  #[cite: 2]
   }
 
   # Lógica de Facturación
@@ -84,20 +85,20 @@ if not df_facturacion.empty:
     por_cobrar_mark = ""
     pagado_mark = ""
   else:
-    # Si es Cobro Destino, usamos la columna Nombre_Extran para la Razón Social / datos fiscales
-    fiscal_crudo = str(registro.get("FISCAL", ""))
+    # Si es Cobro Destino, usamos estrictamente Nombre_Extran para la Razón Social
+    fiscal_crudo = str(registro.get("FISCAL", ""))  #[cite: 2]
     fiscal_limpio = (
         fiscal_crudo.replace("_x000D_", " ")
         .replace("\r", " ")
         .replace("\n", " ")
     )
-    razon_social_extran = str(registro.get("Nombre_Extran", ""))
-    rfc_fiscal = str(registro.get("RFC", ""))
+    razon_social_extran = str(registro.get("Nombre_Extran", ""))  #[cite: 2]
+    rfc_fiscal = str(registro.get("RFC", ""))  #[cite: 2]
 
     facturacion = {
-        "cliente": razon_social_extran,  # Razón Social exacta desde Nombre_Extran
-        "rfc": rfc_fiscal,
-        "calle": fiscal_limpio,  # Domicilio fiscal limpio
+        "cliente": razon_social_extran,  # Razón Social exacta desde Nombre_Extran[cite: 2]
+        "rfc": rfc_fiscal,  #[cite: 2]
+        "calle": fiscal_limpio,  # Domicilio fiscal limpio[cite: 2]
         "colonia": "",
         "municipio": "",
         "estado": "",
