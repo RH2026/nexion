@@ -12,7 +12,7 @@ import streamlit as st
 st.subheader("Generador de Orden de Embarque - Facturación Moreno")
 
 
-# 1. Función para leer tu matriz CSV directamente desde GitHub
+# 1. Función para leer tu matriz CSV y limpiar nombres de columnas
 @st.cache_data(ttl=60)
 def cargar_csv_github():
   try:
@@ -28,7 +28,7 @@ def cargar_csv_github():
 
     if response.status_code == 200:
       df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-      # Limpiar espacios en blanco en los nombres de las columnas por si acaso
+      # Limpiar espacios en blanco en los nombres de las columnas
       df.columns = df.columns.str.strip()
       return df
     else:
@@ -37,6 +37,7 @@ def cargar_csv_github():
   except Exception as e:
     st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
     return pd.DataFrame()
+
 
 df_facturacion = cargar_csv_github()
 
@@ -67,17 +68,19 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # --- CORRECCIÓN EXACTA AQUÍ ---
-  # Destinatario (Arriba): Usa Nombre_Extran para el cliente y TELEFONO exacto para el teléfono
+  # Captura directa del teléfono de la columna TELEFONO
+  tel_val = str(registro.get("TELEFONO", ""))
+  if pd.isna(tel_val) or tel_val.strip() == "" or tel_val.lower() == "nan":
+    tel_val = "No registrado"
+
   destinatario = {
-      "cliente": str(registro.get("Nombre_Extran", "")),  #[cite: 2]
-      "rfc": str(registro.get("RFC", "")),  #[cite: 2]
-      "calle": str(registro.get("Domicilio", "")),  #[cite: 2]
-      "colonia": str(registro.get("Colonia", "")),  #[cite: 2]
-      "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",  #[cite: 2]
-      "estado": str(registro.get("Estado", "")),  #[cite: 2]
-      "contacto": "",
-      "telefono": str(registro.get("TELEFONO", "No registrado")),  #[cite: 2]
+      "cliente": str(registro.get("Nombre_Extran", "")),
+      "rfc": str(registro.get("RFC", "")),
+      "calle": str(registro.get("Domicilio", "")),
+      "colonia": str(registro.get("Colonia", "")),
+      "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",
+      "estado": str(registro.get("Estado", "")),
+      "telefono": tel_val,
   }
 
   # Lógica de Facturación
@@ -87,20 +90,19 @@ if not df_facturacion.empty:
     por_cobrar_mark = ""
     pagado_mark = ""
   else:
-    # Facturación (Abajo): Usa Nombre_Cliente (Razón Social) y los datos fiscales limpios de FISCAL
-    fiscal_crudo = str(registro.get("FISCAL", ""))  #[cite: 2]
+    fiscal_crudo = str(registro.get("FISCAL", ""))
     fiscal_limpio = (
         fiscal_crudo.replace("_x000D_", " ")
         .replace("\r", " ")
         .replace("\n", " ")
     )
-    razon_social_cliente = str(registro.get("Nombre_Cliente", ""))  #[cite: 2]
-    rfc_fiscal = str(registro.get("RFC", ""))  #[cite: 2]
+    razon_social_cliente = str(registro.get("Nombre_Cliente", ""))
+    rfc_fiscal = str(registro.get("RFC", ""))
 
     facturacion = {
-        "cliente": razon_social_cliente,  # Razón Social (Nombre_Cliente) va abajo en Facturación[cite: 2]
-        "rfc": rfc_fiscal,  #[cite: 2]
-        "calle": fiscal_limpio,  # Datos fiscales limpios[cite: 2]
+        "cliente": razon_social_cliente,
+        "rfc": rfc_fiscal,
+        "calle": fiscal_limpio,
         "colonia": "",
         "municipio": "",
         "estado": "",
@@ -283,6 +285,7 @@ if not df_facturacion.empty:
         ])
     )
 
+    # Destinatario con TELEFONO limpio (sin contacto arriba)
     dest_data = [
         [Paragraph("DESTINATARIO", th_style), ""],
         [
@@ -309,11 +312,8 @@ if not df_facturacion.empty:
             ),
         ],
         [
-            Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
-            Paragraph(
-                f"{destinatario['contacto']}<br/>{destinatario['telefono']}",
-                cell_normal,
-            ),
+            Paragraph("TELEFONO:", cell_bold),
+            Paragraph(destinatario["telefono"], cell_normal),
         ],
     ]
     t_dest = Table(dest_data, colWidths=[70, 202])
