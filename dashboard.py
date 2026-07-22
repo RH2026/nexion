@@ -8048,12 +8048,15 @@ else:
                         "telefono": dest_tel if dest_tel else "No registrado",
                     }
                 
+                    # Dirección completa concatenada de Jypesa para Crédito o Pagado
+                    direccion_jypesa_completa = f"{rem_calle}, {rem_colonia}, {rem_mun}, {rem_estado} - CP: {rem_cp}"
+                
                     # Encabezado de Facturación Dinámico según Tipo de Pago
                     titulo_seccion("FACTURACIÓN", color_fondo="#4B6B94")
                     
                     val_cli_fac = remitente["cliente"] if tipo_pago in ["CRÉDITO", "PAGADO"] else def_cli
                     val_rfc_fac = remitente["rfc"] if tipo_pago in ["CRÉDITO", "PAGADO"] else def_rfc
-                    val_calle_fac = remitente["calle"] if tipo_pago in ["CRÉDITO", "PAGADO"] else def_fiscal
+                    val_calle_fac = direccion_jypesa_completa if tipo_pago in ["CRÉDITO", "PAGADO"] else def_fiscal
                 
                     fac_cliente = st.text_input("Cliente de Facturación", value=val_cli_fac)
                     fac_rfc = st.text_input("RFC Facturación", value=val_rfc_fac)
@@ -8064,7 +8067,15 @@ else:
                 
                     # Definición de marcas y diccionario final de facturación para el PDF
                     if tipo_pago == "CRÉDITO":
-                        facturacion = remitente
+                        facturacion = {
+                            "cliente": fac_cliente,
+                            "rfc": fac_rfc,
+                            "calle": fac_calle,
+                            "colonia": "",
+                            "municipio": "",
+                            "estado": "",
+                            "email": "sbomailer@jypesa.com",
+                        }
                         credito_mark = "X"
                         por_cobrar_mark = ""
                         pagado_mark = ""
@@ -8082,12 +8093,18 @@ else:
                         por_cobrar_mark = "X"
                         pagado_mark = ""
                     else:  # PAGADO
-                        facturacion = remitente
+                        facturacion = {
+                            "cliente": fac_cliente,
+                            "rfc": fac_rfc,
+                            "calle": fac_calle,
+                            "colonia": "",
+                            "municipio": "",
+                            "estado": "",
+                            "email": "sbomailer@jypesa.com",
+                        }
                         credito_mark = ""
                         por_cobrar_mark = ""
                         pagado_mark = "X"
-                
-                    fecha_actual = datetime.now().strftime("%d/%m/%Y")
                 
                 
                     # --- FUNCIÓN DE GENERACIÓN PDF (ReportLab) ---
