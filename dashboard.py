@@ -6201,7 +6201,7 @@ else:
                 
                 col_rem, col_dest = st.columns(2)
                 with col_rem:
-                    st.markdown('<div style="background:#4e73df;color:black;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">REMITENTE</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">REMITENTE</div>', unsafe_allow_html=True)
                     st.write("")
                     st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
                     c_rem1, c_rem2 = st.columns([2, 1])
