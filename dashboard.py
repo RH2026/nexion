@@ -3207,7 +3207,7 @@ else:
                         render_logistica_flow_responsive(data_camion)
                     elif st.session_state.tipo_entrega == 'T R A I L E R':
                         render_logistica_flow_responsive(data_trailer)
-                    elif st.session_state.tipo_entrega == 'C A L E N D A R IO':
+                    elif st.session_state.tipo_entrega == 'C A L E N D A R I O':
                         col_mes_sel, _ = st.columns([2, 4])
                         with col_mes_sel:
                             opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
