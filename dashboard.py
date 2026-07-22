@@ -8524,13 +8524,13 @@ else:
                         unsafe_allow_html=True
                     )
                 
-                    if st.button("🚀 Generar PDF con datos de Orden de Embarque", use_container_width=True):
+                    if st.button(":material/print: Generar PDF con datos de Orden de Embarque", use_container_width=True):
                         pdf_buffer = generar_pdf_reportlab()
                         st.success(
                             f"¡Orden de embarque para la factura {num_factura} generada con éxito!"
                         )
                         st.download_button(
-                            label="📥 Descargar PDF de Orden de Embarque",
+                            label=":material/download: Descargar PDF de Orden de Embarque",
                             data=pdf_buffer,
                             file_name=f"Orden_Embarque_{num_factura}.pdf",
                             mime="application/pdf",
