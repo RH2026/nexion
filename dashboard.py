@@ -7945,37 +7945,61 @@ else:
                 
                   st.markdown("---")
                   st.markdown("### 👁️ Previsualización y Edición Manual de Datos")
-                
+                  
                   # --- SECCIÓN VISUAL PARA COMPROBAR Y EDITAR DATOS ---
                   col1, col2 = st.columns(2)
-                
+                  
                   with col1:
-                    st.markdown("#### 📦 Remitente (Fijo)")
-                    rem_cliente = st.text_input(
-                        "Cliente Remitente",
-                        value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
-                    )
-                    rem_rfc = st.text_input("RFC Remitente", value="JPE830408B35")
-                    rem_calle = st.text_input("Calle Remitente", value="Privada del Gallo No. 1525")
-                    rem_colonia = st.text_input("Colonia Remitente", value="Col La Aurora")
-                    rem_mun = st.text_input("Municipio Remitente", value="Guadalajara")
-                    rem_estado = st.text_input("Estado Remitente", value="Jalisco")
-                    rem_contacto = st.text_input("Contacto Remitente", value="Rigoberto Hernandez")
-                    rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
-                
+                      st.markdown("#### 📦 Remitente (Fijo)")
+                      rem_cliente = st.text_input(
+                          "Cliente Remitente",
+                          value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
+                      )
+                      rem_rfc = st.text_input("RFC Remitente", value="JPE830408B35")
+                      rem_calle = st.text_input("Calle Remitente", value="Privada del Gallo No. 1525")
+                      
+                      r_col1, r_col2 = st.columns(2)
+                      with r_col1:
+                          rem_colonia = st.text_input("Colonia Remitente", value="Col La Aurora")
+                      with r_col2:
+                          rem_cp = st.text_input("CP Remitente", value="44430") # Ajusta si tienes CP fijo
+                          
+                      r_col3, r_col4 = st.columns(2)
+                      with r_col3:
+                          rem_mun = st.text_input("Municipio Remitente", value="Guadalajara")
+                      with r_col4:
+                          rem_estado = st.text_input("Estado Remitente", value="Jalisco")
+                          
+                      r_col5, r_col6 = st.columns(2)
+                      with r_col5:
+                          rem_contacto = st.text_input("Contacto Remitente", value="Rigoberto Hernandez")
+                      with r_col6:
+                          rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
+                  
                   with col2:
-                    st.markdown("#### 🚚 Destinatario / Entrega")
-                    dest_cliente = st.text_input(
-                        "Cliente Destino (Comercial)", value=def_extran
-                    )
-                    dest_rfc = st.text_input("RFC Destino", value=def_rfc)
-                    dest_calle = st.text_input("Calle Destino", value=def_dom)
-                    dest_colonia = st.text_input("Colonia Destino", value=def_col)
-                    dest_cui = st.text_input("Ciudad Destino", value=def_cui)
-                    dest_cp = st.text_input("CP Destino", value=def_cp)
-                    dest_estado = st.text_input("Estado Destino", value=def_est)
-                    dest_tel = st.text_input("Teléfono Destino", value=tel_val)
-                
+                      st.markdown("#### 🚚 Destinatario / Entrega")
+                      dest_cliente = st.text_input(
+                          "Cliente Destino (Comercial)", value=def_extran
+                      )
+                      dest_rfc = st.text_input("RFC Destino", value=def_rfc)
+                      dest_calle = st.text_input("Calle Destino", value=def_dom)
+                      
+                      # Colonia y CP compartiendo la misma línea horizontalmente
+                      d_col1, d_col2 = st.columns(2)
+                      with d_col1:
+                          dest_colonia = st.text_input("Colonia Destino", value=def_col)
+                      with d_col2:
+                          dest_cp = st.text_input("CP Destino", value=def_cp)
+                      
+                      # Ciudad y Estado compartiendo línea
+                      d_col3, d_col4 = st.columns(2)
+                      with d_col3:
+                          dest_cui = st.text_input("Ciudad Destino", value=def_cui)
+                      with d_col4:
+                          dest_estado = st.text_input("Estado Destino", value=def_est)
+                          
+                      dest_tel = st.text_input("Teléfono Destino", value=tel_val)
+                  
                   st.markdown("#### 📋 Datos de Facturación")
                   fac_cliente = st.text_input("Cliente de Facturación", value=def_cli)
                   fac_rfc = st.text_input("RFC Facturación", value=def_rfc)
