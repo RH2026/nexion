@@ -66,20 +66,16 @@ if not df_facturacion.empty:
       "telefono": "33 19 75 31 22",
   }
 
-  # Extraer datos del Destinatario (Teléfono directo de la columna Telefono)
+  # Destinatario (Datos de Entrega) usando Nombre_Cliente y TELEFONO
   destinatario = {
-      "cliente": str(registro.get("Nombre_Extran", "")),
+      "cliente": str(registro.get("Nombre_Cliente", "")),
       "rfc": str(registro.get("RFC", "")),
       "calle": str(registro.get("Domicilio", "")),
       "colonia": str(registro.get("Colonia", "")),
       "municipio": f"{registro.get('Cuidad', '')} - CP: {registro.get('CP', '')}",
       "estado": str(registro.get("Estado", "")),
-      "contacto": str(
-          registro.get("Nombre_Cliente", "")
-      ),  # Nombre comercial / contacto
-      "telefono": str(
-          registro.get("Telefono", "No registrado")
-      ),  # Columna Telefono directa
+      "contacto": str(registro.get("Nombre_Cliente", "")),
+      "telefono": str(registro.get("TELEFONO", "No registrado")),
   }
 
   # Lógica de Facturación
@@ -89,21 +85,20 @@ if not df_facturacion.empty:
     por_cobrar_mark = ""
     pagado_mark = ""
   else:
-    # Limpiamos los caracteres raros '_x000D_' de la columna FISCAL
+    # Si es Cobro Destino, usamos la columna Nombre_Extran para la Razón Social / datos fiscales
     fiscal_crudo = str(registro.get("FISCAL", ""))
     fiscal_limpio = (
         fiscal_crudo.replace("_x000D_", " ")
         .replace("\r", " ")
         .replace("\n", " ")
     )
+    razon_social_extran = str(registro.get("Nombre_Extran", ""))
     rfc_fiscal = str(registro.get("RFC", ""))
 
     facturacion = {
-        "cliente": str(
-            registro.get("Nombre_Extran", "")
-        ),  # Razón Social (Nombre_Extran)
+        "cliente": razon_social_extran,  # Razón Social exacta desde Nombre_Extran
         "rfc": rfc_fiscal,
-        "calle": fiscal_limpio,  # Datos fiscales limpios sin símbolos raros
+        "calle": fiscal_limpio,  # Domicilio fiscal limpio
         "colonia": "",
         "municipio": "",
         "estado": "",
@@ -342,7 +337,7 @@ if not df_facturacion.empty:
     story.append(t_top_blocks)
     story.append(Spacer(1, 6))
 
-    # Facturación y Servicios (Usando Razón Social Nombre_Extran y fiscal limpio)
+    # Facturación (Con Nombre_Extran)
     fac_data = [
         [Paragraph("FACTURACION", th_style), ""],
         [
@@ -433,7 +428,7 @@ if not df_facturacion.empty:
     story.append(t_mid_blocks)
     story.append(Spacer(1, 6))
 
-    # Contenido (vacío para rellenar)
+    # Contenido
     cont_data = [[Paragraph("CONTENIDO", th_style), "", "", "", "", "", ""]]
     cont_headers = [
         "#",
