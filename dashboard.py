@@ -8926,6 +8926,7 @@ else:
                         story.append(Spacer(1, 2))
                 
                         # 4. SECCIÓN FACTURAR A
+                        # 4. SECCIÓN FACTURAR A (Anchos ajustados para que no se desborde)
                         fac_data = [
                             [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
                             [Paragraph(fac_cliente, cell_center), "", ""],
@@ -8933,7 +8934,7 @@ else:
                             [Paragraph(f"Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México<br/>Tel.. 0152 (33) 35402939<br/>E-mail: sbomailer@jypesa.com", ParagraphStyle("FD", alignment=1, fontSize=6, fontName="Helvetica", leading=7.5)), "", ""],
                             [Paragraph("<b>RFC:</b>", cell_bold), Paragraph(f"RFC {fac_rfc}", cell_center), ""]
                         ]
-                        t_fac = Table(fac_data, colWidths=[75, 457, 100])
+                        t_fac = Table(fac_data, colWidths=[90, 392, 100])
                         t_fac.setStyle(TableStyle([
                             ("SPAN", (0,0), (2,0)),
                             ("SPAN", (0,1), (2,1)),
