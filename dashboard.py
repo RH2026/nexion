@@ -9676,37 +9676,41 @@ else:
                         nombre_archivo_pdf = f"Etiquetas_Manual_{m_factura}.pdf"
                 
                 # Si ya tenemos un dataframe para procesar, mostramos controles adicionales y botón de descarga
+                # Si ya tenemos un dataframe para procesar, mostramos controles adicionales y botón de descarga
                 if not df_procesar.empty:
                     st.markdown("---")
                     
-                    # Si es un solo registro, permitimos modificar cajas y transporte al vuelo
-                    if len(df_procesar) == 1:
-                        reg_unico = df_procesar.iloc[0]
-                        col_cfg1, col_cfg2 = st.columns(2)
-                        
-                        cant_inicial = 1
-                        for col_caja in ['Quantity', 'CANTIDAD', 'CAJAS', 'Bultos']:
-                            if col_caja in reg_unico and pd.notna(reg_unico[col_caja]):
-                                try:
-                                    cant_inicial = int(float(reg_unico[col_caja]))
+                    # Determinamos las cajas iniciales sumando o tomando el primer registro
+                    cant_inicial = 1
+                    for col_caja in ['Quantity', 'CANTIDAD', 'CAJAS', 'Bultos']:
+                        if col_caja in df_procesar.columns:
+                            try:
+                                suma_cajas = df_procesar[col_caja].dropna().astype(float).sum()
+                                if suma_cajas > 0:
+                                    cant_inicial = int(suma_cajas)
                                     break
-                                except:
-                                    pass
+                            except:
+                                pass
                 
-                        with col_cfg1:
-                            cant_etiquetas_sel = st.number_input(
-                                "Número de etiquetas a generar:", 
-                                min_value=1, max_value=50, 
-                                value=cant_inicial if cant_inicial > 0 else 1,
-                                step=1, key="num_etq_gen_dinamico"
-                            )
-                        with col_cfg2:
-                            transporte_default = str(reg_unico.get('RECOMENDACION', reg_unico.get('Transporte', reg_unico.get('PAQUETERIA', 'TRES GUERRAS'))))
-                            transporte_etq = st.text_input("Transporte / Paquetería", value=transporte_default, key="trans_etq_dinamico")
+                    # Buscamos el transporte por defecto del primer registro
+                    reg_unico = df_procesar.iloc[0]
+                    transporte_default = str(reg_unico.get('RECOMENDACION', reg_unico.get('Transporte', reg_unico.get('PAQUETERIA', 'TRES GUERRAS'))))
                 
-                        # Actualizamos temporalmente el registro con los valores editados
-                        df_procesar.loc[df_procesar.index[0], 'Quantity'] = cant_etiquetas_sel
-                        df_procesar.loc[df_procesar.index[0], 'Transporte'] = transporte_etq
+                    col_cfg1, col_cfg2 = st.columns(2)
+                    with col_cfg1:
+                        cant_etiquetas_sel = st.number_input(
+                            "Número de etiquetas a generar:", 
+                            min_value=1, max_value=50, 
+                            value=cant_inicial if cant_inicial > 0 else 1,
+                            step=1, key="num_etq_gen_dinamico"
+                        )
+                    with col_cfg2:
+                        transporte_etq = st.text_input("Transporte / Paquetería", value=transporte_default, key="trans_etq_dinamico")
+                
+                    # Actualizamos el DataFrame para que use la cantidad de etiquetas y el transporte elegidos
+                    # (Si tiene varias filas, asignamos la cantidad al primer registro o distribuimos, pero para etiquetas mandamos el total con quantity)
+                    df_procesar['Quantity'] = cant_etiquetas_sel
+                    df_procesar['Transporte'] = transporte_etq
                 
                     st.write("")
                 
