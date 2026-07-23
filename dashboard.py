@@ -8694,9 +8694,8 @@ else:
             # --- SRECOLECCIONES TRES GUERRAS ------
             elif st.session_state.menu_sub == "RECOLECCION 3G":
                 # --- CONFIGURACIÓN DE RECOLECCIONES TRESGUERRAS ---
-
                 # --- CONFIGURACIÓN DE RECOLECCIONES TRESGUERRAS ---
-
+                
                 @st.cache_data(ttl=60)
                 def cargar_csv_github():
                     try:
@@ -8743,25 +8742,25 @@ else:
                 
                     st.markdown("### 📦 Solicitud de Recolección - Tresguerras")
                     
-                    col_f1, col_f2 = st.columns(2)
-                    with col_f1:
-                        fecha_recoleccion_deseada = st.date_input("📅 Fecha de Recolección Deseada", value=datetime.now())
+                    # --- 4 CONTROLES PRINCIPALES EN UNA SOLA FILA ---
+                    top_col1, top_col2, top_col3, top_col4 = st.columns(4)
+                    
+                    with top_col1:
+                        fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now())
                     fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
                 
-                    c_col1, c_col2, c_col3 = st.columns(3)
-                
-                    with c_col1:
+                    with top_col2:
                         modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"])
                 
-                    with c_col2:
+                    with top_col3:
                         if modo_busqueda == "Seleccionar de la lista":
-                            num_factura = st.selectbox("Folio / Factura de Referencia", facturas_disponibles)
+                            num_factura = st.selectbox("Folio / Factura", facturas_disponibles)
                             registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura in facturas_disponibles else pd.Series()
                         else:
                             num_factura = st.text_input("✍️ Ingresa Folio Manual")
                             registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura and str(num_factura) in df_facturacion["Factura"].values else pd.Series()
                 
-                    with c_col3:
+                    with top_col4:
                         tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"])
                 
                     def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
@@ -8835,7 +8834,7 @@ else:
                     fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México")
                     fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35")
                 
-                    # --- SECCIÓN DINÁMICA DE EMBARQUE (Inputs en línea) ---
+                    # --- SECCIÓN DINÁMICA DE EMBARQUE ---
                     st.markdown("---")
                     titulo_seccion("📦 DETALLE DE EMBARQUE Y LÍNEAS DE CARGA", color_fondo="#e65100")
                     
@@ -8888,7 +8887,7 @@ else:
                         cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
                         cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
                 
-                        # 1. ENCABEZADO SUPERIOR (Logo proporcional sin estirarse)
+                        # 1. ENCABEZADO SUPERIOR
                         logo_io = obtener_logo_tresguerras()
                         logo_elem = Image(logo_io, width=85, height=22) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_center)
                         
@@ -9004,7 +9003,7 @@ else:
                         story.append(t_fac)
                         story.append(Spacer(1, 2))
                 
-                        # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA (Largo x Ancho x Alto)
+                        # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA
                         emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
                         emb_data = [
                             [Paragraph("<b>INFORMACION DE EMBARQUE</b>", th_style), "", "", Paragraph("<b>DIMENSIONES (mts)</b>", th_style), "", Paragraph("<b>VOLUMEN</b>", th_style), Paragraph("<b>PESO POR BULTO</b>", th_style)],
@@ -9170,7 +9169,7 @@ else:
                     st.markdown("---")
                     if st.button("🚀 Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True):
                         pdf_buf = generar_pdf_tresguerras_oficial()
-                        st.success("¡Formato de Tresguerras generado correctamente con el logo ajustado y las dimensiones en línea!")
+                        st.success("¡Formato de Tresguerras generado correctamente con los 4 controles en línea!")
                         st.download_button(
                             label="📥 Descargar PDF Tresguerras Oficial",
                             data=pdf_buf,
