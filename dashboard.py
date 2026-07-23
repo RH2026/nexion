@@ -7175,7 +7175,7 @@ else:
                                                 st.rerun()
 
                                     with c_adm2:
-                                        st.subheader("2. IMPRESION FINAL LOGISTICA")
+                                        st.subheader("2. IMPRESION FINAL")
                                         st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
                                         
                                         # El botón de imprimir también se deshabilita si no hay selección
@@ -7212,10 +7212,10 @@ else:
                                             )
                                             components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
                                         
-                                        # --- NUEVO BOTÓN: GENERAR ETIQUETA EN PDF (MEDIDAS EXACTAS) ---
                                         st.write("")
+                                        
+                                        # --- ETIQUETA EN PDF CON EL MISMO ASPECTO VISUAL ---
                                         if fol_sel_texto and datos_fol is not None:
-                                            # Obtenemos los valores actualizados o los que ya tiene guardados el folio
                                             transporte_etq = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", datos_fol.get("PAQUETERIA", "TRES GUERRAS"))
                                             
                                             pdf_etq_bytes = generar_etiqueta_individual_nexion(
@@ -7225,8 +7225,29 @@ else:
                                                 transporte_val=transporte_etq
                                             )
                                             
+                                            # Aplicamos un pequeño CSS específico para el botón de descarga para que imite al botón primario/secundario oscuro
+                                            st.markdown("""
+                                                <style>
+                                                div.stDownloadButton > button {
+                                                    background-color: #263238 !important;
+                                                    color: #FFFFFF !important;
+                                                    border: 1px solid #44555A !important;
+                                                    width: 100% !important;
+                                                    border-radius: 4px !important;
+                                                    font-weight: 400 !important;
+                                                    transition: all 0.3s ease-in-out !important;
+                                                }
+                                                div.stDownloadButton > button:hover {
+                                                    background-color: #00A3A3 !important;
+                                                    border-color: #00A3A3 !important;
+                                                    color: #FFFFFF !important;
+                                                    box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
+                                                }
+                                                </style>
+                                            """, unsafe_allow_html=True)
+    
                                             st.download_button(
-                                                label="🏷️ DESCARGAR ETIQUETA PDF",
+                                                label=":MATERIAL/DOWNLOAD:🏷️ DESCARGAR ETIQUETA PDF",
                                                 data=pdf_etq_bytes,
                                                 file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
                                                 mime="application/pdf",
