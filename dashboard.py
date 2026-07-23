@@ -1881,13 +1881,20 @@ else:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
                 
                 with col_busqueda_zona:
-                    # Input normal sin key conflictiva para evitar el error de Streamlit
-                    query = st.text_input("BUSQUEDA AUXILIAR DE GUIAS", placeholder="Ingresa el numero de factura...")
+                    # Inicializamos el estado del input si no existe
+                    if "busqueda_input" not in st.session_state:
+                        st.session_state.busqueda_input = ""
+                        
+                    # Usamos st.text_input conectado al session_state mediante key
+                    query = st.text_input(
+                        "BUSQUEDA AUXILIAR DE GUIAS", 
+                        placeholder="Ingresa el numero de factura...",
+                        key="busqueda_input"
+                    )
 
+                # Si el usuario escribió algo, evaluamos la búsqueda y mostramos el render + botón de cierre
                 if query:
                     encontrado = False
-                    
-                    # Variables temporales para capturar el contenido del render antes de pintarlo
                     html_resultado = ""
                     
                     # --- PASO 1: BUSCAR EN LAS FLETERAS (T1, T2, T3) ---
@@ -1929,7 +1936,7 @@ else:
                                 factura = f.get("OBSERVACION 1") or f.get("FACTURA_INTERNA") or f.get("Observaciones") or "S/N"
                                 cliente = f.get("CLIENTE_DESTINO") or f.get("DESTINATARIO") or f.get("Destinatario") or "CLIENTE NO REGISTRADO"
                                 origen = f.get("ORIGEN") or "PLANTA GDL"
-                                destino = f.get("DESTINO") or f.get("CIUDAD") or f.get("Oficina_Destino")or "N/A"
+                                destino = f.get("DESTINO") or f.get("CIUDAD") or f.get("Oficina_Destino") or "N/A"
                                 bultos = f.get("BULTOS") or f.get("PIEZAS") or f.get("Paquetes_Ampara") or "0"
                                 importe = f.get("Sub total _ Guia") or f.get("TOTAL") or f.get("SUBTOTAL") or "0.00"
                                 
@@ -1978,20 +1985,19 @@ else:
                 
                             html_resultado = f'<div class="nexion-hover-card" style="background:#263238; padding:20px; border-radius:12px; border:1px solid {v_border}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;"><h2 style="margin:0; color:white; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="font-size:10px; color:white; font-weight:600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">PROMESA</div><div style="font-size:10px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; z-index:2; box-shadow:0 0 12px {color_entrega if entregado_real else "#00000000"}"></div><div style="font-size:9px; color:{v_sub}; margin-top:8px; font-weight:800; letter-spacing:1px;">ENTREGA</div><div style="font-size:10px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; margin-top:15px;"><div style="text-align:left;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:12px; font-weight:700;">{envio["FLETERA"]}</div></div><div style="text-align:center;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:12px; font-weight:700;">{n_guia}</div></div><div style="text-align:right;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:12px; font-weight:700;">{envio["DESTINO"]}</div></div></div></div>'
                     
-                    # --- AQUÍ APARECE EL BOTÓN DISCRETO SOLO CUANDO HAY RENDERIZADO ACTIVO ---
+                    # --- RENDERIZADO DEL BOTÓN Y RESULTADOS ---
                     if encontrado:
-                        cols_header_res, col_btn_cerrar = st.columns([5, 1])
+                        _, col_btn_cerrar = st.columns([5, 1])
                         with col_btn_cerrar:
-                            # Pequeño truco estético para alinear el botón exactamente como en tu diseño
                             st.markdown('<div style="margin-top: -5px;"></div>', unsafe_allow_html=True)
+                            # Al hacer clic, vaciamos el state del input y recargamos para borrar todo de golpe
                             if st.button("✕ CERRAR", key="btn_cerrar_render", use_container_width=True):
+                                st.session_state.busqueda_input = ""
                                 st.rerun()
                         
-                        # Mostramos el resultado encontrado
                         st.markdown(html_resultado, unsafe_allow_html=True)
                     
                     else:
-                        # Renderizado de Warning si no hay coincidencias
                         st.markdown(f"""
                             <div class="nexion-hover-card" style="
                                 background-color: #1e262c; 
