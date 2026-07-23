@@ -8982,32 +8982,93 @@ else:
                         story.append(t_emb)
                         story.append(Spacer(1, 2))
                 
-                        # 6. BLOQUE MEDIO (MERCANCÍA ASEGURADA, ACUSE, PAGOS)
-                        mid_data = [
-                            [Paragraph("<b>MERCANCIA ASEGURADA</b>", th_style), Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_style), Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_style)],
+                        # 6. BLOQUE MEDIO (MERCANCÍA ASEGURADA, ACUSE, PAGOS, EAD, DOCUMENTOS)
+                        th_red = ParagraphStyle("THR", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
+                        th_green = ParagraphStyle("THG", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
+                
+                        mid_table_data = [
+                            [
+                                Paragraph("<b>MERCANCIA ASEGURADA</b>", th_red), 
+                                Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_red), 
+                                Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_red)
+                            ],
                             [
                                 Table([
-                                    [Paragraph("SI", cell_center), ""],
-                                    [Paragraph("NO", cell_center), Paragraph("X", cell_center)]
-                                ], colWidths=[35, 75]),
+                                    [Paragraph("SI", cell_center), "", Paragraph("VALOR DECLARADO", cell_bold)],
+                                    [Paragraph("NO", cell_center), Paragraph("X", cell_center), Paragraph("POR CUENTA Y RIESGO", cell_bold)]
+                                ], colWidths=[30, 30, 85], style=[
+                                    ("BACKGROUND", (2,0), (2,-1), colors.HexColor("#fff59d")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
                                 Table([
-                                    [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("N<br/>O", cell_center)]
-                                ], colWidths=[35, 35, 30]),
+                                    [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("N<br/>O", cell_center)],
+                                    ["", "", ""]
+                                ], colWidths=[30, 30, 25], style=[
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
                                 ""
                             ],
-                            [Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_style), Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_style), Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_style)],
+                            [
+                                Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_green), 
+                                Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_green), 
+                                Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_red)
+                            ],
                             [
                                 Table([
                                     [Paragraph("pagado (origen)", cell_center), Paragraph("por cobrar (destino)", cell_center), Paragraph("Credito", cell_center)],
                                     ["", "", Paragraph("X", cell_center)]
-                                ], colWidths=[50, 50, 45]),
+                                ], colWidths=[48, 52, 45], style=[
+                                    ("BACKGROUND", (2,1), (2,1), colors.HexColor("#fff59d")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
                                 Table([
                                     [Paragraph("Recolección", cell_center), Paragraph("Recepción", cell_center), Paragraph("Entrega Domicilio", cell_center)],
                                     [Paragraph("X", cell_center), "", Paragraph("X", cell_center)]
-                                ], colWidths=[50, 50, 55]),
-                                Paragraph("factura | orden de compra | pedimento | otro", cell_center)
+                                ], colWidths=[48, 45, 62], style=[
+                                    ("BACKGROUND", (0,1), (0,1), colors.HexColor("#fff59d")),
+                                    ("BACKGROUND", (2,1), (2,1), colors.HexColor("#fff59d")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                Table([
+                                    [Paragraph("factura", cell_center), Paragraph("orden de compra", cell_center), Paragraph("pedimento", cell_center), Paragraph("otro", cell_center)]
+                                ], colWidths=[70, 70, 70, 62], style=[
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 4),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                                ])
                             ]
                         ]
+                
+                        t_mid = Table(mid_table_data, colWidths=[145, 155, 302])
+                        t_mid.setStyle(TableStyle([
+                            ("SPAN", (2,1), (2,1)),
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (2,0), (2,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (2,1), (2,1), colors.HexColor("#fff59d")),
+                            ("BACKGROUND", (0,2), (0,2), colors.HexColor("#2e7d32")), # Verde idéntico
+                            ("BACKGROUND", (1,2), (1,2), colors.HexColor("#2e7d32")),
+                            ("BACKGROUND", (2,2), (2,2), colors.HexColor("#b71c1c")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "TOP"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                        ]))
+                        story.append(t_mid)
+                        story.append(Spacer(1, 2))
                         
                         # 7. DATOS DE QUIEN SOLICITA EL SERVICIO Y OBSERVACIONES (Estructura idéntica a la imagen 1)
                         t_sol = Table([
