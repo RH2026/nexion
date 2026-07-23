@@ -8693,7 +8693,7 @@ else:
             
             # --- SRECOLECCIONES TRES GUERRAS ------
             elif st.session_state.menu_sub == "RECOLECCION 3G":
-                # --- CONFIGURACIÓN DE RECOLECCIONES (TRESGUERRAS) ---
+                # --- CONFIGURACIÓN DE RECOLECCIONES TRESGUERRAS ---
 
                 @st.cache_data(ttl=60)
                 def cargar_csv_github():
@@ -8721,7 +8721,7 @@ else:
                 def obtener_logo_tresguerras():
                     try:
                         repo = "RH2026/nexion"
-                        filename = "tresguerras.jpg"  # Ajusta si el nombre del logo es distinto en tu repo
+                        filename = "tresguerras.jpg"
                         branch = "main"
                         url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
                         token = st.secrets["GITHUB_TOKEN"]
@@ -8739,7 +8739,6 @@ else:
                     df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
                     facturas_disponibles = df_facturacion["Factura"].unique()
                 
-                    # --- SECCIÓN SUPERIOR DE SELECCIÓN ---
                     st.markdown("### 📦 Solicitud de Recolección - Tresguerras")
                     c_col1, c_col2, c_col3 = st.columns(3)
                 
@@ -8757,7 +8756,6 @@ else:
                     with c_col3:
                         tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"])
                 
-                    # Extracción de datos del proveedor (Remitente de recolección)
                     def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
                     def_rfc = str(registro.get("RFC", "")) if not registro.empty and pd.notna(registro.get("RFC", "")) else ""
                     def_dom = str(registro.get("Domicilio", "")) if not registro.empty and pd.notna(registro.get("Domicilio", "")) else ""
@@ -8775,33 +8773,29 @@ else:
                 
                     st.markdown("---")
                 
-                    def titulo_seccion(texto, color_fondo="#b71c1c"): # Rojo estilo Tresguerras o azul corporativo
+                    def titulo_seccion(texto, color_fondo="#b71c1c"):
                         st.markdown(f"""
                             <div style="background-color: {color_fondo}; padding: 8px; border-radius: 4px; text-align: center; color: white; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
                                 {texto}
                             </div>
                         """, unsafe_allow_html=True)
                 
-                    # --- EDICIÓN DE DATOS EN PANTALLA ---
                     col1, col2 = st.columns(2)
                 
                     with col1:
                         titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#c62828")
                         rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran)
                         rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom)
-                        
                         rc1, rc2 = st.columns(2)
                         with rc1:
                             rem_colonia = st.text_input("Colonia (Remitente)", value=def_col)
                         with rc2:
                             rem_cp = st.text_input("CP (Remitente)", value=def_cp)
-                            
                         rc3, rc4 = st.columns(2)
                         with rc3:
-                            rem_cui = st.text_input("Ciudad / Municipio (Remitente)", value=def_cui)
+                            rem_cui = st.text_input("Ciudad / Municipio", value=def_cui)
                         with rc4:
-                            rem_estado = st.text_input("Estado (Remitente)", value=def_est)
-                            
+                            rem_estado = st.text_input("Estado", value=def_est)
                         rc5, rc6 = st.columns(2)
                         with rc5:
                             rem_contacto = st.text_input("Persona que entrega", value="")
@@ -8812,63 +8806,85 @@ else:
                         titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#1565c0")
                         dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados")
                         dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155")
-                        
                         dc1, dc2 = st.columns(2)
                         with dc1:
                             dest_colonia = st.text_input("Colonia Destino", value="La Aurora")
                         with dc2:
                             dest_cp = st.text_input("CP Destino", value="44460")
-                            
                         dc3, dc4 = st.columns(2)
                         with dc3:
                             dest_cui = st.text_input("Ciudad Destino", value="Guadalajara")
                         with dc4:
                             dest_estado = st.text_input("Estado Destino", value="Jalisco")
-                            
                         dc5, dc6 = st.columns(2)
                         with dc5:
                             dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo")
                         with dc6:
                             dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123")
                 
-                    # Datos de Facturación Fijos (JYPESA)
                     titulo_seccion("FACTURAR A (DATOS FISCALES JYPESA)", color_fondo="#37474f")
                     fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV")
                     fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México")
                     fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35")
                 
-                    # --- FUNCIÓN PDF REPORTLAB (TRESGUERRAS) ---
-                    def generar_pdf_tresguerras():
+                    # --- FUNCIÓN PDF REPORTLAB (ESTILO IDÉNTICO TRESGUERRAS) ---
+                    def generar_pdf_tresguerras_completo():
                         buffer = BytesIO()
-                        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=25, leftMargin=25, topMargin=25, bottomMargin=25)
+                        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
                         story = []
-                        styles = getSampleStyleSheet()
                         
-                        fecha_solicitud = datetime.now().strftime("%d/%m/%Y")
+                        fecha_actual = datetime.now().strftime("%d/%m/%Y")
                         
-                        # Estilos específicos
-                        th_style = ParagraphStyle("TH", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=colors.white, alignment=1)
-                        cell_bold = ParagraphStyle("CB", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=7, leading=8.5)
-                        cell_normal = ParagraphStyle("CN", parent=styles["Normal"], fontName="Helvetica", fontSize=7, leading=8.5)
+                        # Estilos
+                        th_style = ParagraphStyle("TH", fontName="Helvetica-Bold", fontSize=7, leading=8.5, textColor=colors.white, alignment=1)
+                        th_dark = ParagraphStyle("THD", fontName="Helvetica-Bold", fontSize=7, leading=8.5, textColor=colors.white, alignment=1)
+                        cell_bold = ParagraphStyle("CB", fontName="Helvetica-Bold", fontSize=6.5, leading=8)
+                        cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6.5, leading=8)
+                        cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6.5, leading=8, alignment=1)
                 
-                        # Encabezado con Logo y Títulos
+                        # 1. ENCABEZADO SUPERIOR
                         logo_io = obtener_logo_tresguerras()
-                        logo_elem = Image(logo_io, width=110, height=35) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_bold)
+                        logo_elem = Image(logo_io, width=95, height=30) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_bold)
                         
                         header_table = Table([
-                            [logo_elem, Paragraph("<b>AUTOTRANSPORTES DE CARGA TRESGUERRAS<br/>SOLICITUD DE SERVICIO</b>", ParagraphStyle("HT", alignment=1, fontSize=10, fontName="Helvetica-Bold")), 
-                             Paragraph(f"<b>FECHA SOLICITUD:</b> {fecha_solicitud}<br/><b>FOLIO:</b> {num_factura}", ParagraphStyle("H2", fontSize=7, alignment=1))]
-                        ], colWidths=[120, 300, 142])
+                            [
+                                logo_elem, 
+                                Paragraph("<b>AUTOTRANSPORTES DE CARGA TRESGUERRAS<br/>SOLICITUD DE SERVICIO</b>", ParagraphStyle("HT", alignment=1, fontSize=9, fontName="Helvetica-Bold")), 
+                                Paragraph(f"<b>FECHA SOLICITUD:</b> {fecha_actual}<br/><b>FOLIO:</b> {num_factura}", ParagraphStyle("H2", fontSize=6.5, alignment=1))
+                            ],
+                            ["", Paragraph("PAQUETERIA", ParagraphStyle("PAQ", alignment=1, fontSize=6, fontName="Helvetica-Bold")), ""]
+                        ], colWidths=[110, 392, 110])
                         header_table.setStyle(TableStyle([
+                            ("SPAN", (0,0), (0,1)),
+                            ("SPAN", (2,0), (2,1)),
                             ("GRID", (0,0), (-1,-1), 1, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                             ("BACKGROUND", (1,0), (1,0), colors.HexColor("#e0e0e0")),
                             ("BACKGROUND", (2,0), (2,0), colors.HexColor("#fff59d")),
+                            ("BACKGROUND", (1,1), (1,1), colors.HexColor("#f5f5f5")),
                         ]))
                         story.append(header_table)
-                        story.append(Spacer(1, 5))
+                        story.append(Spacer(1, 3))
                 
-                        # Bloque Remitente / Destinatario
+                        # 2. FECHAS RECOLECCIÓN / RECEPCIÓN
+                        fechas_table = Table([
+                            [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph("24/Jul/26", cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
+                            [Paragraph("<b>FECHA DE RECEPCION:</b>", cell_bold), "", Paragraph("<b>FOLIO</b>", cell_bold), ""]
+                        ], colWidths=[110, 146, 100, 156])
+                        fechas_table.setStyle(TableStyle([
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#fff59d")),
+                            ("BACKGROUND", (3,0), (3,0), colors.HexColor("#fff59d")),
+                            ("BACKGROUND", (1,1), (1,1), colors.HexColor("#fff59d")),
+                            ("BACKGROUND", (3,1), (3,1), colors.HexColor("#fff59d")),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+                        ]))
+                        story.append(fechas_table)
+                        story.append(Spacer(1, 3))
+                
+                        # 3. REMITENTE Y DESTINATARIO (BLOQUES LADOS A LADOS)
                         rem_data = [
                             [Paragraph("REMITENTE - RECOLECCION", th_style), ""],
                             [Paragraph("CLIENTE:", cell_bold), Paragraph(rem_cliente, cell_bold)],
@@ -8877,14 +8893,14 @@ else:
                             [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{rem_cui}, {rem_estado}", cell_normal)],
                             [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{rem_contacto} - {rem_tel}", cell_normal)],
                         ]
-                        t_rem = Table(rem_data, colWidths=[90, 262])
+                        t_rem = Table(rem_data, colWidths=[90, 222])
                         t_rem.setStyle(TableStyle([
                             ("SPAN", (0,0), (1,0)),
                             ("BACKGROUND", (0,0), (1,0), colors.HexColor("#c62828")),
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-                            ("TOPPADDING", (0,0), (-1,-1), 2.5),
-                            ("BOTTOMPADDING", (0,0), (-1,-1), 2.5),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
                         ]))
                 
                         dest_data = [
@@ -8895,65 +8911,107 @@ else:
                             [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{dest_cui}, {dest_estado}", cell_normal)],
                             [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{dest_contacto} - {dest_tel}", cell_normal)],
                         ]
-                        t_dest = Table(dest_data, colWidths=[90, 260])
+                        t_dest = Table(dest_data, colWidths=[90, 200])
                         t_dest.setStyle(TableStyle([
                             ("SPAN", (0,0), (1,0)),
                             ("BACKGROUND", (0,0), (1,0), colors.black),
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-                            ("TOPPADDING", (0,0), (-1,-1), 2.5),
-                            ("BOTTOMPADDING", (0,0), (-1,-1), 2.5),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
                         ]))
                 
-                        t_top = Table([[t_rem, t_dest]], colWidths=[352, 350])
+                        t_top = Table([[t_rem, t_dest]], colWidths=[312, 300])
                         story.append(t_top)
-                        story.append(Spacer(1, 4))
+                        story.append(Spacer(1, 3))
                 
-                        # Bloque Facturación a Jypesa
+                        # 4. FACTURAR A
                         fac_table_data = [
                             [Paragraph("FACTURAR A:", cell_bold), Paragraph(fac_cliente, cell_bold)],
                             [Paragraph("DOMICILIO:", cell_bold), Paragraph(f"{fac_domicilio} | RFC: {fac_rfc}", cell_normal)],
                         ]
-                        t_fac = Table(fac_table_data, colWidths=[90, 612])
+                        t_fac = Table(fac_table_data, colWidths=[90, 522])
                         t_fac.setStyle(TableStyle([
                             ("BACKGROUND", (0,0), (0,-1), colors.HexColor("#e0e0e0")),
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-                            ("TOPPADDING", (0,0), (-1,-1), 3),
-                            ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
                         ]))
                         story.append(t_fac)
-                        story.append(Spacer(1, 4))
+                        story.append(Spacer(1, 3))
                 
-                        # Tabla de Embarque / Contenido
+                        # 5. TABLA DE EMBARQUE / CONTENIDO
                         emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
                         emb_data = [[Paragraph(h, th_style) for h in emb_headers]]
-                        for i in range(1, 6):
+                        for i in range(1, 7):
                             emb_data.append([str(2 if i==1 else ""), "PALLETS" if i==1 else "", "AMENIDADES" if i==1 else "", "", "", "0", "130" if i==1 else ""])
                         
-                        t_emb = Table(emb_data, colWidths=[45, 75, 232, 80, 70, 65, 35])
+                        t_emb = Table(emb_data, colWidths=[45, 75, 232, 70, 60, 65, 65])
                         t_emb.setStyle(TableStyle([
                             ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#b71c1c")),
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                             ("ALIGN", (0,0), (-1,-1), "CENTER"),
+                            ("TOPPADDING", (0,0), (-1,-1), 2.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2.5),
+                        ]))
+                        story.append(t_emb)
+                        story.append(Spacer(1, 3))
+                
+                        # 6. SECCIÓN INFERIOR (ASEGURADA, PAGOS, OBSERVACIONES)
+                        inf_data = [
+                            [
+                                Paragraph("<b>MERCANCIA ASEGURADA</b>", cell_center), 
+                                Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", cell_center), 
+                                Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", cell_center)
+                            ],
+                            [
+                                Table([
+                                    [Paragraph("SI", cell_center), Paragraph("NO", cell_center)],
+                                    ["", "X"]
+                                ], colWidths=[50, 50]),
+                                Table([
+                                    [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("NO", cell_center)]
+                                ], colWidths=[40, 40, 40]),
+                                Paragraph("Factura &nbsp;&nbsp;|&nbsp;&nbsp; Orden de Compra &nbsp;&nbsp;|&nbsp;&nbsp; Pedimento", cell_center)
+                            ],
+                            [
+                                Paragraph("<b>TIPO DE PAGO:</b> Por Cobrar [ X ]", cell_bold),
+                                Paragraph("<b>SERVICIO:</b> Recolección [ X ] | Entrega Domicilio [ X ]", cell_bold),
+                                Paragraph("<b>OBSERVACIONES:</b> LLAMAR 1 HORA ANTES DE RECOLECCIÓN", cell_bold)
+                            ]
+                        ]
+                        
+                        t_inf = Table([
+                            [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_dark), Paragraph("<b>OBSERVACIONES / CONTACTO</b>", th_dark)],
+                            [
+                                Paragraph("<b>NOMBRE:</b> RIGOBERTO HERNANDEZ<br/><b>EMPRESA:</b> JYPESA<br/><b>TELÉFONO:</b> 33 19 75 31 22", cell_normal),
+                                Paragraph("LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN.<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)
+                            ]
+                        ], colWidths=[312, 300])
+                        t_inf.setStyle(TableStyle([
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#b71c1c")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "TOP"),
                             ("TOPPADDING", (0,0), (-1,-1), 3),
                             ("BOTTOMPADDING", (0,0), (-1,-1), 3),
                         ]))
-                        story.append(t_emb)
-                        
+                        story.append(t_inf)
+                
                         doc.build(story)
                         buffer.seek(0)
                         return buffer
                 
                     st.markdown("---")
-                    if st.button("🚀 Generar Orden de Recolección (Tresguerras)", use_container_width=True):
-                        pdf_buf = generar_pdf_tresguerras()
-                        st.success("¡Solicitud de recolección generada con éxito!")
+                    if st.button("🚀 Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True):
+                        pdf_buf = generar_pdf_tresguerras_completo()
+                        st.success("¡Formato de Tresguerras generado correctamente con el diseño completo!")
                         st.download_button(
-                            label="📥 Descargar PDF Tresguerras",
+                            label="📥 Descargar PDF Tresguerras Oficial",
                             data=pdf_buf,
-                            file_name=f"Recoleccion_Tresguerras_{num_factura}.pdf",
+                            file_name=f"Tresguerras_Recoleccion_{num_factura}.pdf",
                             mime="application/pdf",
                             use_container_width=True
                         )
