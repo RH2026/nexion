@@ -7247,7 +7247,7 @@ else:
                                             """, unsafe_allow_html=True)
     
                                             st.download_button(
-                                                label=":MATERIAL/DOWNLOAD: DESCARGAR ETIQUETA PDF",
+                                                label=":material/picture_as_pdf: DESCARGAR ETIQUETA PDF",
                                                 data=pdf_etq_bytes,
                                                 file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
                                                 mime="application/pdf",
