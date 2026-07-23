@@ -1315,7 +1315,7 @@ else:
                 # --- FORMATOS: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "CARTA RECLAMO", "COTIZACIONES"]                        
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "CARTA RECLAMO", "COTIZACIONES"]                        
                         for s in opciones_for:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -8690,7 +8690,275 @@ else:
                         )
                 else:
                     st.warning("No se encontraron datos en el CSV de GitHub.")
-         
+            
+            # --- SRECOLECCIONES TRES GUERRAS ------
+            elif st.session_state.menu_sub == "RECOLECCION 3G":
+                # --- CONFIGURACIÓN DE RECOLECCIONES (TRESGUERRAS) ---
+
+                @st.cache_data(ttl=60)
+                def cargar_csv_github():
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "facturacion_moreno.csv"
+                        branch = "main"
+                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {"Authorization": f"token {token}"}
+                        
+                        response = requests.get(url, headers=headers)
+                        if response.status_code == 200:
+                            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                            df.columns = df.columns.astype(str).str.strip()
+                            return df
+                        else:
+                            st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                            return pd.DataFrame()
+                    except Exception as e:
+                        st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                        return pd.DataFrame()
+                
+                @st.cache_data(ttl=300)
+                def obtener_logo_tresguerras():
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "tresguerras.jpg"  # Ajusta si el nombre del logo es distinto en tu repo
+                        branch = "main"
+                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {"Authorization": f"token {token}"}
+                        response = requests.get(url, headers=headers)
+                        if response.status_code == 200:
+                            return BytesIO(response.content)
+                        return None
+                    except Exception:
+                        return None
+                
+                df_facturacion = cargar_csv_github()
+                
+                if not df_facturacion.empty:
+                    df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+                    facturas_disponibles = df_facturacion["Factura"].unique()
+                
+                    # --- SECCIÓN SUPERIOR DE SELECCIÓN ---
+                    st.markdown("### 📦 Solicitud de Recolección - Tresguerras")
+                    c_col1, c_col2, c_col3 = st.columns(3)
+                
+                    with c_col1:
+                        modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"])
+                
+                    with c_col2:
+                        if modo_busqueda == "Seleccionar de la lista":
+                            num_factura = st.selectbox("Folio / Factura de Referencia", facturas_disponibles)
+                            registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura in facturas_disponibles else pd.Series()
+                        else:
+                            num_factura = st.text_input("✍️ Ingresa Folio Manual")
+                            registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura and str(num_factura) in df_facturacion["Factura"].values else pd.Series()
+                
+                    with c_col3:
+                        tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"])
+                
+                    # Extracción de datos del proveedor (Remitente de recolección)
+                    def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
+                    def_rfc = str(registro.get("RFC", "")) if not registro.empty and pd.notna(registro.get("RFC", "")) else ""
+                    def_dom = str(registro.get("Domicilio", "")) if not registro.empty and pd.notna(registro.get("Domicilio", "")) else ""
+                    def_col = str(registro.get("Colonia", "")) if not registro.empty and pd.notna(registro.get("Colonia", "")) else ""
+                    def_cui = str(registro.get("Cuidad", "")) if not registro.empty and pd.notna(registro.get("Cuidad", "")) else ""
+                    def_cp = str(registro.get("CP", "")) if not registro.empty and pd.notna(registro.get("CP", "")) else ""
+                    def_est = str(registro.get("Estado", "")) if not registro.empty and pd.notna(registro.get("Estado", "")) else ""
+                    
+                    tel_val = ""
+                    if not registro.empty:
+                        for col_p in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+                            if col_p in registro and pd.notna(registro[col_p]):
+                                tel_val = str(registro[col_p]).strip()
+                                break
+                
+                    st.markdown("---")
+                
+                    def titulo_seccion(texto, color_fondo="#b71c1c"): # Rojo estilo Tresguerras o azul corporativo
+                        st.markdown(f"""
+                            <div style="background-color: {color_fondo}; padding: 8px; border-radius: 4px; text-align: center; color: white; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
+                                {texto}
+                            </div>
+                        """, unsafe_allow_html=True)
+                
+                    # --- EDICIÓN DE DATOS EN PANTALLA ---
+                    col1, col2 = st.columns(2)
+                
+                    with col1:
+                        titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#c62828")
+                        rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran)
+                        rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom)
+                        
+                        rc1, rc2 = st.columns(2)
+                        with rc1:
+                            rem_colonia = st.text_input("Colonia (Remitente)", value=def_col)
+                        with rc2:
+                            rem_cp = st.text_input("CP (Remitente)", value=def_cp)
+                            
+                        rc3, rc4 = st.columns(2)
+                        with rc3:
+                            rem_cui = st.text_input("Ciudad / Municipio (Remitente)", value=def_cui)
+                        with rc4:
+                            rem_estado = st.text_input("Estado (Remitente)", value=def_est)
+                            
+                        rc5, rc6 = st.columns(2)
+                        with rc5:
+                            rem_contacto = st.text_input("Persona que entrega", value="")
+                        with rc6:
+                            rem_tel = st.text_input("Teléfono Remitente", value=tel_val)
+                
+                    with col2:
+                        titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#1565c0")
+                        dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados")
+                        dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155")
+                        
+                        dc1, dc2 = st.columns(2)
+                        with dc1:
+                            dest_colonia = st.text_input("Colonia Destino", value="La Aurora")
+                        with dc2:
+                            dest_cp = st.text_input("CP Destino", value="44460")
+                            
+                        dc3, dc4 = st.columns(2)
+                        with dc3:
+                            dest_cui = st.text_input("Ciudad Destino", value="Guadalajara")
+                        with dc4:
+                            dest_estado = st.text_input("Estado Destino", value="Jalisco")
+                            
+                        dc5, dc6 = st.columns(2)
+                        with dc5:
+                            dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo")
+                        with dc6:
+                            dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123")
+                
+                    # Datos de Facturación Fijos (JYPESA)
+                    titulo_seccion("FACTURAR A (DATOS FISCALES JYPESA)", color_fondo="#37474f")
+                    fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV")
+                    fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México")
+                    fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35")
+                
+                    # --- FUNCIÓN PDF REPORTLAB (TRESGUERRAS) ---
+                    def generar_pdf_tresguerras():
+                        buffer = BytesIO()
+                        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=25, leftMargin=25, topMargin=25, bottomMargin=25)
+                        story = []
+                        styles = getSampleStyleSheet()
+                        
+                        fecha_solicitud = datetime.now().strftime("%d/%m/%Y")
+                        
+                        # Estilos específicos
+                        th_style = ParagraphStyle("TH", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=colors.white, alignment=1)
+                        cell_bold = ParagraphStyle("CB", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=7, leading=8.5)
+                        cell_normal = ParagraphStyle("CN", parent=styles["Normal"], fontName="Helvetica", fontSize=7, leading=8.5)
+                
+                        # Encabezado con Logo y Títulos
+                        logo_io = obtener_logo_tresguerras()
+                        logo_elem = Image(logo_io, width=110, height=35) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_bold)
+                        
+                        header_table = Table([
+                            [logo_elem, Paragraph("<b>AUTOTRANSPORTES DE CARGA TRESGUERRAS<br/>SOLICITUD DE SERVICIO</b>", ParagraphStyle("HT", alignment=1, fontSize=10, fontName="Helvetica-Bold")), 
+                             Paragraph(f"<b>FECHA SOLICITUD:</b> {fecha_solicitud}<br/><b>FOLIO:</b> {num_factura}", ParagraphStyle("H2", fontSize=7, alignment=1))]
+                        ], colWidths=[120, 300, 142])
+                        header_table.setStyle(TableStyle([
+                            ("GRID", (0,0), (-1,-1), 1, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#e0e0e0")),
+                            ("BACKGROUND", (2,0), (2,0), colors.HexColor("#fff59d")),
+                        ]))
+                        story.append(header_table)
+                        story.append(Spacer(1, 5))
+                
+                        # Bloque Remitente / Destinatario
+                        rem_data = [
+                            [Paragraph("REMITENTE - RECOLECCION", th_style), ""],
+                            [Paragraph("CLIENTE:", cell_bold), Paragraph(rem_cliente, cell_bold)],
+                            [Paragraph("CALLE Y NUMERO:", cell_bold), Paragraph(rem_calle, cell_normal)],
+                            [Paragraph("COLONIA / CP:", cell_bold), Paragraph(f"{rem_colonia} - C.P. {rem_cp}", cell_normal)],
+                            [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{rem_cui}, {rem_estado}", cell_normal)],
+                            [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{rem_contacto} - {rem_tel}", cell_normal)],
+                        ]
+                        t_rem = Table(rem_data, colWidths=[90, 262])
+                        t_rem.setStyle(TableStyle([
+                            ("SPAN", (0,0), (1,0)),
+                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#c62828")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 2.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2.5),
+                        ]))
+                
+                        dest_data = [
+                            [Paragraph("DESTINATARIO - ENTREGA", th_style), ""],
+                            [Paragraph("CLIENTE:", cell_bold), Paragraph(dest_cliente, cell_bold)],
+                            [Paragraph("CALLE Y NUMERO:", cell_bold), Paragraph(dest_calle, cell_normal)],
+                            [Paragraph("COLONIA / CP:", cell_bold), Paragraph(f"{dest_colonia} - C.P. {dest_cp}", cell_normal)],
+                            [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{dest_cui}, {dest_estado}", cell_normal)],
+                            [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{dest_contacto} - {dest_tel}", cell_normal)],
+                        ]
+                        t_dest = Table(dest_data, colWidths=[90, 260])
+                        t_dest.setStyle(TableStyle([
+                            ("SPAN", (0,0), (1,0)),
+                            ("BACKGROUND", (0,0), (1,0), colors.black),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 2.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2.5),
+                        ]))
+                
+                        t_top = Table([[t_rem, t_dest]], colWidths=[352, 350])
+                        story.append(t_top)
+                        story.append(Spacer(1, 4))
+                
+                        # Bloque Facturación a Jypesa
+                        fac_table_data = [
+                            [Paragraph("FACTURAR A:", cell_bold), Paragraph(fac_cliente, cell_bold)],
+                            [Paragraph("DOMICILIO:", cell_bold), Paragraph(f"{fac_domicilio} | RFC: {fac_rfc}", cell_normal)],
+                        ]
+                        t_fac = Table(fac_table_data, colWidths=[90, 612])
+                        t_fac.setStyle(TableStyle([
+                            ("BACKGROUND", (0,0), (0,-1), colors.HexColor("#e0e0e0")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 3),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+                        ]))
+                        story.append(t_fac)
+                        story.append(Spacer(1, 4))
+                
+                        # Tabla de Embarque / Contenido
+                        emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
+                        emb_data = [[Paragraph(h, th_style) for h in emb_headers]]
+                        for i in range(1, 6):
+                            emb_data.append([str(2 if i==1 else ""), "PALLETS" if i==1 else "", "AMENIDADES" if i==1 else "", "", "", "0", "130" if i==1 else ""])
+                        
+                        t_emb = Table(emb_data, colWidths=[45, 75, 232, 80, 70, 65, 35])
+                        t_emb.setStyle(TableStyle([
+                            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#b71c1c")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("ALIGN", (0,0), (-1,-1), "CENTER"),
+                            ("TOPPADDING", (0,0), (-1,-1), 3),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+                        ]))
+                        story.append(t_emb)
+                        
+                        doc.build(story)
+                        buffer.seek(0)
+                        return buffer
+                
+                    st.markdown("---")
+                    if st.button("🚀 Generar Orden de Recolección (Tresguerras)", use_container_width=True):
+                        pdf_buf = generar_pdf_tresguerras()
+                        st.success("¡Solicitud de recolección generada con éxito!")
+                        st.download_button(
+                            label="📥 Descargar PDF Tresguerras",
+                            data=pdf_buf,
+                            file_name=f"Recoleccion_Tresguerras_{num_factura}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
+                else:
+                    st.warning("No se encontraron datos en el CSV de GitHub.")
             
             # --- SUBSECCIÓN D: CARTA RECLAMO ------
             elif st.session_state.menu_sub == "CARTA RECLAMO":
