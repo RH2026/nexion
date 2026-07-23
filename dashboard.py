@@ -1874,15 +1874,31 @@ else:
                 df_t3 = cargar_desde_repo("T3.xlsx")
                 
                 
-                # --- ZONA DE CONTROL (FILTROS + BUSCADOR) ---
-                col_f1, col_busqueda, _ = st.columns([1, 1.5, 2]) 
+                # --- ZONA DE CONTROL (FILTROS + BUSCADOR + BOTÓN CERRAR) ---
+                col_f1, col_busqueda, col_btn = st.columns([1, 1.5, 0.5]) 
                 
+                # Inicializar el estado de la búsqueda si no existe
+                if "busqueda_input" not in st.session_state:
+                    st.session_state.busqueda_input = ""
+
                 with col_f1:
                     mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
                 
                 with col_busqueda:
-                    query = st.text_input("BUSQUEDA AUXILIAR DE GUIAS", placeholder="Ingresa el numero de factura...")
-            
+                    # Usamos st.session_state para controlar el valor del input
+                    query = st.text_input(
+                        "BUSQUEDA AUXILIAR DE GUIAS", 
+                        placeholder="Ingresa el numero de factura...",
+                        key="busqueda_input"
+                    )
+                
+                with col_btn:
+                    st.markdown('<div style="margin-top: 28px;"></div>', unsafe_allow_html=True) # Espaciador para alinear con el input
+                    # Botón discreto estilo Nexion para limpiar y cerrar
+                    if st.button("✕ CERRAR", key="btn_cerrar_busqueda", use_container_width=True):
+                        st.session_state.busqueda_input = ""
+                        st.rerun()
+
                 if query:
                     encontrado = False
                     # --- PASO 1: BUSCAR EN LAS FLETERAS (T1, T2, T3) ---
@@ -1905,25 +1921,18 @@ else:
                                 
                                 # --- LÓGICA DE ESTATUS CORREGIDA ---
                                 col_fechas = ['F.ENTREGA', 'FECHA_ENTREGA', 'FECHA DE ENTREGA']
-                                # Identificamos si alguna de las columnas objetivo existe en el DataFrame
                                 columnas_presentes = [col for col in col_fechas if col in df_source.columns]
                                 
                                 fecha_valida = False
-                                
                                 if columnas_presentes:
                                     for col in columnas_presentes:
                                         valor = f[col]
-                                        # Intentamos convertir el valor a fecha. errors='coerce' pone NaT si no es fecha (como "---" o 0)
                                         fecha_dt = pd.to_datetime(valor, errors='coerce')
-                                        
-                                        # Verificamos que no sea nulo y que la conversión haya sido exitosa
                                         if pd.notnull(fecha_dt):
                                             fecha_valida = True
                                             break
-                                    
                                     estatus = "ESTATUS: ENTREGADO" if fecha_valida else "ESTATUS: EN TRANSITO"
                                 else:
-                                    # Si ni siquiera existen las columnas en el archivo
                                     estatus = "ESTATUS: ACTUALIZANDO DATOS"
                                 
                                 # --- MAPEO DATOS ---
@@ -1951,7 +1960,6 @@ else:
                         if not res_i.empty:
                             encontrado = True
                             envio = res_i.iloc[0] 
-                            # --- PREPARACIÓN DE DATOS TIMELINE ---
                             f_envio = envio.get("FECHA DE ENVÍO", "N/A")
                             f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
                             entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
@@ -1960,13 +1968,11 @@ else:
                             tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
                             n_guia = envio["NÚMERO DE GUÍA"] if tiene_guia else ("GENERANDO GUÍA..." if trigger_val == "Enviada" else "EN ESPERA DE SURTIDO")
                 
-                            # --- LÓGICA DE FECHAS ---
                             f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
                             if pd.notnull(f_promesa_dt): f_promesa_dt = f_promesa_dt.normalize()
                             hoy = pd.Timestamp(datetime.now()).normalize()
                             v_border, v_sub = "rgba(255,255,255,0.1)", "rgba(255,255,255,0.6)"
                 
-                            # --- LÓGICA DE ESTATUS Y COLORES INTERNOS ---
                             if not tiene_guia:
                                 status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
                                 color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", v_border, v_border, v_border
@@ -1982,12 +1988,10 @@ else:
                                 color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", status_color
                                 linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", status_color
                 
-                            # --- RENDERIZADO TIMELINE ---
                             t_html = f'<div class="nexion-hover-card" style="background:#263238; padding:20px; border-radius:12px; border:1px solid {v_border}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;"><h2 style="margin:0; color:white; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="font-size:10px; color:white; font-weight:600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">PROMESA</div><div style="font-size:10px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; z-index:2; box-shadow:0 0 12px {color_entrega if entregado_real else "#00000000"}"></div><div style="font-size:9px; color:{v_sub}; margin-top:8px; font-weight:800; letter-spacing:1px;">ENTREGA</div><div style="font-size:10px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; margin-top:15px;"><div style="text-align:left;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:12px; font-weight:700;">{envio["FLETERA"]}</div></div><div style="text-align:center;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:12px; font-weight:700;">{n_guia}</div></div><div style="text-align:right;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:12px; font-weight:700;">{envio["DESTINO"]}</div></div></div></div>'
                             st.markdown(t_html, unsafe_allow_html=True)
                     
                     if not encontrado:
-                        # Renderizado de Warning con separación para los Tabs
                         st.markdown(f"""
                             <div class="nexion-hover-card" style="
                                 background-color: #1e262c; 
@@ -1995,7 +1999,7 @@ else:
                                 padding: 20px; 
                                 border-left: 5px solid #ff4b4b; 
                                 margin-top: 15px; 
-                                margin-bottom: 35px; /* <--- Este es el secreto, amor */
+                                margin-bottom: 35px;
                             ">
                                 <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px;">Estado de Búsqueda</div>
                                 <div style="color: #ff4b4b; font-weight: bold; font-size: 1.3rem; line-height: 1.1; letter-spacing: 1px;">SIN COINCIDENCIAS</div>
