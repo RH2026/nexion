@@ -9497,7 +9497,9 @@ else:
                     w_rec, h_rec = 10.5 * cm, 7.5 * cm
                     x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
                     
-                    for index, row in df_datos.iterrows():
+                    # Tomamos el primer registro para los datos generales del envío y evitamos duplicar por renglones del CSV
+                    if not df_datos.empty:
+                        row = df_datos.iloc[0]
                         try:
                             if total_etqs_manual is not None:
                                 cantidad_real = int(total_etqs_manual)
