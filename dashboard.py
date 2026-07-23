@@ -6418,30 +6418,21 @@ else:
                                 y_actual -= interlineado
                             return y_actual 
                         
-                        def generar_etiqueta_individual_nexion(reg_datos, cantidad_cajas, factura_val, transporte_val):
+                        def generar_etiquetas_limpias(reg_datos, total_etqs, factura_val, transporte_val):
                             output = io.BytesIO()
                             c = canvas.Canvas(output, pagesize=letter)
                             width_carta, height_carta = letter
                             
-                            # AJUSTE DE MÁRGENES Y MEDIDAS (Exactas de tu módulo)
+                            # Medidas exactas de la etiqueta
                             w_rec, h_rec = 10.5 * cm, 7.5 * cm
                             x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
                             
-                            try:
-                                cantidad_real = int(cantidad_cajas)
-                            except:
-                                cantidad_real = 1
-                                
-                            iteraciones = cantidad_real + 1 
-                        
                             nombre_crudo = reg_datos.get('NOMBRE DEL HOTEL', 'SIN NOMBRE')
                             nombre_final = limpiar_parentesis(nombre_crudo)
                             direccion_final = reg_datos.get('DESTINO', 'DIRECCIÓN NO DISPONIBLE')
                             transporte_final = str(transporte_val if transporte_val else 'TRES GUERRAS')
                         
-                            for i in range(iteraciones):
-                                es_archivo = (i == cantidad_real)
-                                
+                            for i in range(total_etqs):
                                 # Dibujar contorno de etiqueta
                                 c.setDash(1, 2)
                                 c.setStrokeColorRGB(0.7, 0.7, 0.7)
@@ -6483,13 +6474,9 @@ else:
                                 c.setFont("Helvetica-Bold", 13)
                                 c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(factura_val))
                         
-                                if es_archivo:
-                                    c.setFont("Helvetica-Bold", 11)
-                                    texto_moreno = f"MORENO / {cantidad_real}"
-                                    c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, texto_moreno)
-                                else:
-                                    c.setFont("Helvetica-Bold", 13)
-                                    c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
+                                # Numeración limpia (ej. 1 / 3, 2 / 3...) sin rastro de Moreno
+                                c.setFont("Helvetica-Bold", 13)
+                                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {total_etqs}")
                         
                                 c.setFont("Helvetica-Bold", 10)
                                 c.drawString(x_offset + 7.5*cm, y_linea_pie - 1.0*cm, transporte_final[:18])
@@ -7214,18 +7201,27 @@ else:
                                         
                                         st.write("")
                                         
-                                        # --- ETIQUETA EN PDF CON EL MISMO ASPECTO VISUAL ---
+                                        # --- SELECTOR Y BOTÓN DE ETIQUETAS PDF ---
                                         if fol_sel_texto and datos_fol is not None:
+                                            cant_etiquetas_sel = st.number_input(
+                                                "Número de etiquetas a generar:", 
+                                                min_value=1, 
+                                                max_value=50, 
+                                                value=int(datos_fol.get('CANTIDAD_TOTAL', 1)) if int(datos_fol.get('CANTIDAD_TOTAL', 1)) > 0 else 1,
+                                                step=1,
+                                                key=f"num_etq_{int(datos_fol['FOLIO'])}"
+                                            )
+                                            
                                             transporte_etq = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", datos_fol.get("PAQUETERIA", "TRES GUERRAS"))
                                             
-                                            pdf_etq_bytes = generar_etiqueta_individual_nexion(
+                                            pdf_etq_bytes = generar_etiquetas_limpias(
                                                 reg_datos=datos_fol,
-                                                cantidad_cajas=int(datos_fol.get('CANTIDAD_TOTAL', 1)),
+                                                total_etqs=int(cant_etiquetas_sel),
                                                 factura_val=f"JYP-{int(datos_fol['FOLIO'])}",
                                                 transporte_val=transporte_etq
                                             )
                                             
-                                            # Aplicamos un pequeño CSS específico para el botón de descarga para que imite al botón primario/secundario oscuro
+                                            # CSS para que el botón de descarga luzca idéntico a los demás
                                             st.markdown("""
                                                 <style>
                                                 div.stDownloadButton > button {
@@ -7247,7 +7243,7 @@ else:
                                             """, unsafe_allow_html=True)
     
                                             st.download_button(
-                                                label=":material/picture_as_pdf: DESCARGAR ETIQUETA PDF",
+                                                label=":material/save: DESCARGAR ETIQUETA PDF",
                                                 data=pdf_etq_bytes,
                                                 file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
                                                 mime="application/pdf",
