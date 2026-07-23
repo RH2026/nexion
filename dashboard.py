@@ -8695,6 +8695,8 @@ else:
             elif st.session_state.menu_sub == "RECOLECCION 3G":
                 # --- CONFIGURACIÓN DE RECOLECCIONES TRESGUERRAS ---
 
+                # --- CONFIGURACIÓN DE RECOLECCIONES TRESGUERRAS ---
+
                 @st.cache_data(ttl=60)
                 def cargar_csv_github():
                     try:
@@ -8835,9 +8837,7 @@ else:
                         
                         fecha_actual = datetime.now().strftime("%d/%m/%Y")
                         
-                        # Estilos tipográficos precisos
                         th_style = ParagraphStyle("TH", fontName="Helvetica-Bold", fontSize=6.5, leading=8, textColor=colors.white, alignment=1)
-                        th_dark = ParagraphStyle("THD", fontName="Helvetica-Bold", fontSize=6.5, leading=8, textColor=colors.white, alignment=1)
                         cell_bold = ParagraphStyle("CB", fontName="Helvetica-Bold", fontSize=6, leading=7.5)
                         cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
                         cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
@@ -8925,7 +8925,7 @@ else:
                         story.append(t_top)
                         story.append(Spacer(1, 2))
                 
-                        # 4. SECCIÓN FACTURAR A (Idéntica a tu imagen de referencia)
+                        # 4. SECCIÓN FACTURAR A
                         fac_data = [
                             [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
                             [Paragraph(fac_cliente, cell_center), "", ""],
@@ -8965,7 +8965,7 @@ else:
                         ]
                         for i in range(1, 7):
                             emb_data.append([str(1 if i==1 else ""), "TARIMA" if i==1 else "", "AMENIDADES" if i==1 else "", "1.20 x 1.00 x 1.80" if i==1 else "", "", "0", "800" if i==1 else ""])
-                        emb_data.append(["", "", "", "", "", "0", "800"]) # Fila total
+                        emb_data.append(["", "", "", "", "", "0", "800"])
                         
                         t_emb = Table(emb_data, colWidths=[45, 65, 182, 95, 65, 80, 70])
                         t_emb.setStyle(TableStyle([
@@ -8982,30 +8982,20 @@ else:
                         story.append(t_emb)
                         story.append(Spacer(1, 2))
                 
-                        # 6. BLOQUE INFERIOR (ASEGURADA, PAGOS, SOLICITA, OBSERVACIONES)
-                        inf_top_table = Table([
-                            [
-                                Paragraph("<b>MERCANCIA ASEGURADA</b>", th_style), 
-                                Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_style), 
-                                Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_style)
-                            ],
+                        # 6. BLOQUE MEDIO (MERCANCÍA ASEGURADA, ACUSE, PAGOS)
+                        mid_data = [
+                            [Paragraph("<b>MERCANCIA ASEGURADA</b>", th_style), Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_style), Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_style)],
                             [
                                 Table([
-                                    [Paragraph("SI", cell_center), Paragraph("VALOR DECLARADO", cell_center)],
-                                    ["", ""],
+                                    [Paragraph("SI", cell_center), ""],
                                     [Paragraph("NO", cell_center), Paragraph("X", cell_center)]
-                                ], colWidths=[40, 100]),
+                                ], colWidths=[35, 75]),
                                 Table([
-                                    [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("N<br/>O", cell_center)],
-                                    ["", "", ""]
+                                    [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("N<br/>O", cell_center)]
                                 ], colWidths=[35, 35, 30]),
                                 ""
                             ],
-                            [
-                                Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_style),
-                                Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_style),
-                                Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_style)
-                            ],
+                            [Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_style), Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_style), Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_style)],
                             [
                                 Table([
                                     [Paragraph("pagado (origen)", cell_center), Paragraph("por cobrar (destino)", cell_center), Paragraph("Credito", cell_center)],
@@ -9017,26 +9007,140 @@ else:
                                 ], colWidths=[50, 50, 55]),
                                 Paragraph("factura | orden de compra | pedimento | otro", cell_center)
                             ]
-                        ], colWidths=[145, 135, 322])
+                        ]
                         
-                        # 7. DATOS DE QUIEN SOLICITA Y OBSERVACIONES
+                        # 7. DATOS DE QUIEN SOLICITA EL SERVICIO Y OBSERVACIONES (Estructura idéntica a la imagen 1)
                         t_sol = Table([
                             [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style)],
+                            [Paragraph("<b>NOMBRE:</b>", cell_bold), Paragraph("<b>RIGOBERTO HERNANDEZ</b>", cell_center)],
+                            [Paragraph("<b>EMPRESA:</b>", cell_bold), Paragraph("<b>JYPESA</b>", cell_center)],
+                            [Paragraph("<b>E-MAIL:</b>", cell_bold), Paragraph("seguimientoemb@jypesa.com", cell_center)],
+                            [Paragraph("<b>TELEFONO / NEXTEL:</b>", cell_bold), Paragraph("<b>Cel. 33 19 75 31 22</b>", cell_center)]
+                        ], colWidths=[90, 222])
+                        
+                        t_obs = Table([
+                            [Paragraph("<b>OBSERVACIONES</b>", th_style)],
+                            [Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCION,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELEFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)],
+                            [""]
+                        ], colWidths=[290])
+                        
+                        # Combinamos todo en la tabla inferior final
+                        t_bottom_master = Table([
                             [
-                                Paragraph("<b>NOMBRE:</b> RIGOBERTO HERNANDEZ<br/><b>EMPRESA:</b> JYPESA<br/><b>E-MAIL:</b> seguimientoemb@jypesa.com<br/><b>TELÉFONO / NEXTEL:</b> Cel. 33 19 75 31 22", cell_normal),
-                                Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCION,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELEFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)
+                                Table([
+                                    [Paragraph("<b>MERCANCIA ASEGURADA</b>", th_style), Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_style), Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_style)],
+                                    [
+                                        Table([[Paragraph("SI", cell_center), "val"], [Paragraph("NO", cell_center), Paragraph("X", cell_center)]], colWidths=[30, 80]),
+                                        Table([[Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("NO", cell_center)], ["", "", ""]], colWidths=[30, 30, 25]),
+                                        ""
+                                    ],
+                                    [Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_style), Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_style), Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_style)],
+                                    [
+                                        Table([[Paragraph("pagado", cell_center), Paragraph("por cobrar", cell_center), Paragraph("Credito", cell_center)], ["", "", Paragraph("X", cell_center)]], colWidths=[45, 50, 40]),
+                                        Table([[Paragraph("Recolección", cell_center), Paragraph("Recepción", cell_center), Paragraph("Entrega Domicilio", cell_center)], [Paragraph("X", cell_center), "", Paragraph("X", cell_center)]], colWidths=[45, 45, 45]),
+                                        Paragraph("factura | orden de compra | pedimento | otro", cell_center)
+                                    ]
+                                ], colWidths=[130, 110, 262]), ""
+                            ],
+                            [
+                                Table([
+                                    [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), ""],
+                                    [Paragraph("NOMBRE:", cell_bold), Paragraph("RIGOBERTO HERNANDEZ", cell_center)],
+                                    [Paragraph("EMPRESA:", cell_bold), Paragraph("JYPESA", cell_center)],
+                                    [Paragraph("E-MAIL:", cell_bold), Paragraph("seguimientoemb@jypesa.com", cell_center)],
+                                    [Paragraph("TELEFONO / NEXTEL:", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center)],
+                                    ["", ""]
+                                ], colWidths=[90, 222]),
+                                Table([
+                                    [Paragraph("<b>OBSERVACIONES</b>", th_style)],
+                                    [Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCION,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELEFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)],
+                                    [""]
+                                ], colWidths=[290])
                             ]
-                        ], colWidths=[310, 292])
-                        t_sol.setStyle(TableStyle([
+                        ], colWidths=[502, 100]) # Ajustado al ancho total de la hoja
+                        
+                        t_bottom_master.setStyle(TableStyle([
+                            ("SPAN", (0,0), (1,0)),
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (0,2), (0,2), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (1,2), (1,2), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (2,2), (2,2), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (0,4), (0,4), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (1,4), (1,4), colors.HexColor("#b71c1c")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "TOP"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                        
+                        # Estructura limpia y directa para los bloques inferiores estilo imagen 1
+                        inf_final_data = [
+                            [Paragraph("<b>MERCANCIA ASEGURADA</b>", th_style), Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_style), Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_style)],
+                            [
+                                Paragraph("SI [&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] VALOR DECLARADO<br/>NO [&nbsp;&nbsp;<b>X</b>&nbsp;&nbsp;] POR CUENTA Y RIESGO", cell_bold),
+                                Paragraph("SI [&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] &nbsp;&nbsp;&nbsp;&nbsp;<b>X</b> &nbsp;&nbsp;&nbsp;&nbsp;NO [&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]", cell_bold),
+                                ""
+                            ],
+                            [Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_style), Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_style), Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_style)],
+                            [
+                                Paragraph("pagado &nbsp;&nbsp;|&nbsp;&nbsp; por cobrar &nbsp;&nbsp;|&nbsp;&nbsp; Credito [ <b>X</b> ]", cell_bold),
+                                Paragraph("Recolección [ <b>X</b> ] | Recepción [ &nbsp; ] | Entrega Domicilio [ <b>X</b> ]", cell_bold),
+                                Paragraph("factura | orden de compra | pedimento | otro", cell_center)
+                            ],
+                            [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style), ""],
+                            [Paragraph("<b>NOMBRE:</b> RIGOBERTO HERNANDEZ<br/><b>EMPRESA:</b> JYPESA<br/><b>E-MAIL:</b> seguimientoemb@jypesa.com<br/><b>TELÉFONO:</b> Cel. 33 19 75 31 22", cell_normal), Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN</b><br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal), ""]
+                        ]
+                        
+                        t_inf_clean = Table([
+                            [Paragraph("<b>MERCANCIA ASEGURADA</b>", th_style), Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_style), Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_style)],
+                            [Paragraph("SI [&nbsp;&nbsp;&nbsp;&nbsp;]<br/>NO [&nbsp;&nbsp;<b>X</b>&nbsp;&nbsp;]", cell_bold), Paragraph("SI [&nbsp;&nbsp;&nbsp;&nbsp;] &nbsp;<b>X</b>&nbsp; NO [&nbsp;&nbsp;&nbsp;&nbsp;]", cell_bold), ""],
+                            [Paragraph("<b>TIPO DE PAGO</b>", th_style), Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_style), Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_style)],
+                            [Paragraph("Credito [ <b>X</b> ]", cell_bold), Paragraph("Recolección [ <b>X</b> ] | Entrega Domicilio [ <b>X</b> ]", cell_bold), Paragraph("factura | oc | pedimento", cell_center)],
+                        ], colWidths=[150, 150, 302])
+                        t_inf_clean.setStyle(TableStyle([
                             ("BACKGROUND", (0,0), (0,0), colors.HexColor("#b71c1c")),
                             ("BACKGROUND", (1,0), (1,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (2,0), (2,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (0,2), (0,2), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (1,2), (1,2), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (2,2), (2,2), colors.HexColor("#b71c1c")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+                        ]))
+                        story.append(t_inf_clean)
+                        story.append(Spacer(1, 2))
+                
+                        # Tabla final para Datos de quien solicita y observaciones idéntica a imagen 1
+                        t_final_block = Table([
+                            [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style)],
+                            [
+                                Table([
+                                    [Paragraph("<b>NOMBRE:</b>", cell_bold), Paragraph("RIGOBERTO HERNANDEZ", cell_center)],
+                                    [Paragraph("<b>EMPRESA:</b>", cell_bold), Paragraph("JYPESA", cell_center)],
+                                    [Paragraph("<b>E-MAIL:</b>", cell_bold), Paragraph("seguimientoemb@jypesa.com", cell_center)],
+                                    [Paragraph("<b>TELEFONO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center)]
+                                ], colWidths=[70, 230], style=[
+                                    ("BACKGROUND", (1,0), (1,-1), colors.HexColor("#fff59d")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                                ]),
+                                Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELÉFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)
+                            ]
+                        ], colWidths=[300, 302])
+                        t_final_block.setStyle(TableStyle([
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#b71c1c")),
+                            ("BACKGROUND", (1,1), (1,1), colors.HexColor("#fff59d")),
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "TOP"),
                             ("TOPPADDING", (0,0), (-1,-1), 2),
                             ("BOTTOMPADDING", (0,0), (-1,-1), 2),
                         ]))
-                        
-                        story.append(t_sol)
+                        story.append(t_final_block)
                 
                         doc.build(story)
                         buffer.seek(0)
