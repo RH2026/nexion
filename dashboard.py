@@ -8723,7 +8723,7 @@ else:
                 def obtener_logo_tresguerras():
                     try:
                         repo = "RH2026/nexion"
-                        filename = "tresguerras.jpg"
+                        filename = "logo_3G.png"
                         branch = "main"
                         url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
                         token = st.secrets["GITHUB_TOKEN"]
@@ -8842,12 +8842,12 @@ else:
                     
                     if "lineas_embarque" not in st.session_state:
                         st.session_state.lineas_embarque = [
-                            {"cantidad": 1, "tipo": "TARIMA", "descripcion": "AMENIDADES", "largo": 1.20, "ancho": 1.00, "alto": 1.80, "peso": 800.0}
+                            {"cantidad": 1, "tipo": "TARIMA", "descripcion": "AMENIDADES", "largo": 1.20, "ancho": 1.20, "alto": 2.00, "peso": 800.0}
                         ]
                 
                     for idx, linea in enumerate(st.session_state.lineas_embarque):
                         st.markdown(f"**Renglón {idx + 1}**")
-                        lc1, lc2, lc3, lc4, lc5, lc6 = st.columns([1, 2, 2, 1, 1, 1])
+                        lc1, lc2, lc3, lc4, lc5, lc6, lc7 = st.columns([1, 2, 2, 1, 1, 1, 1])
                         with lc1:
                             linea["cantidad"] = st.number_input("Cant.", min_value=1, value=linea["cantidad"], key=f"cant_{idx}")
                         with lc2:
@@ -8855,10 +8855,12 @@ else:
                         with lc3:
                             linea["descripcion"] = st.text_input("Descripción", value=linea["descripcion"], key=f"desc_{idx}")
                         with lc4:
-                            linea["largo"] = st.number_input("L / Diam (m)", value=float(linea["largo"]), key=f"larg_{idx}")
+                            linea["largo"] = st.number_input("Largo (m)", value=float(linea["largo"]), key=f"larg_{idx}")
                         with lc5:
-                            linea["alto"] = st.number_input("Alto (m)", value=float(linea["alto"]), key=f"alt_{idx}")
+                            linea["ancho"] = st.number_input("Ancho (m)", value=float(linea.get("ancho", 1.20)), key=f"anch_{idx}")
                         with lc6:
+                            linea["alto"] = st.number_input("Alto (m)", value=float(linea["alto"]), key=f"alt_{idx}")
+                        with lc7:
                             linea["peso"] = st.number_input("Peso (KG)", value=float(linea["peso"]), key=f"pes_{idx}")
                 
                     col_btn1, col_btn2 = st.columns(2)
@@ -8887,9 +8889,9 @@ else:
                         cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
                         cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
                 
-                        # 1. ENCABEZADO SUPERIOR
+                        # 1. ENCABEZADO SUPERIOR (Con logo_3G.png integrado)
                         logo_io = obtener_logo_tresguerras()
-                        logo_elem = Image(logo_io, width=90, height=28) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_bold)
+                        logo_elem = Image(logo_io, width=95, height=25) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_center)
                         
                         header_table = Table([
                             [
@@ -8904,6 +8906,7 @@ else:
                             ("SPAN", (2,0), (2,1)),
                             ("GRID", (0,0), (-1,-1), 1, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("ALIGN", (0,0), (0,0), "CENTER"),
                             ("BACKGROUND", (1,0), (1,0), colors.HexColor("#e0e0e0")),
                             ("BACKGROUND", (2,0), (2,0), colors.HexColor("#fff59d")),
                             ("BACKGROUND", (1,1), (1,1), colors.HexColor("#f5f5f5")),
@@ -8911,7 +8914,7 @@ else:
                         story.append(header_table)
                         story.append(Spacer(1, 2))
                 
-                        # 2. FECHAS RECOLECCIÓN / RECEPCIÓN (Con la fecha deseada seleccionada)
+                        # 2. FECHAS RECOLECCIÓN / RECEPCIÓN
                         fechas_table = Table([
                             [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph(fecha_rec_str, cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
                             [Paragraph("<b>FECHA DE RECEPCION:</b>", cell_bold), "", Paragraph("<b>FOLIO</b>", cell_bold), ""]
@@ -9002,16 +9005,16 @@ else:
                         story.append(t_fac)
                         story.append(Spacer(1, 2))
                 
-                        # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA
+                        # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA (Largo x Ancho x Alto)
                         emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
                         emb_data = [
                             [Paragraph("<b>INFORMACION DE EMBARQUE</b>", th_style), "", "", Paragraph("<b>DIMENSIONES (mts)</b>", th_style), "", Paragraph("<b>VOLUMEN</b>", th_style), Paragraph("<b>PESO POR BULTO</b>", th_style)],
                             [Paragraph(h, th_style) for h in emb_headers]
                         ]
                         
-                        # Rellenamos con las líneas dinámicas capturadas
                         for l in st.session_state.lineas_embarque:
-                            dim_str = f"{l['largo']} x {l['largo']} x {l['alto']}" if l['tipo']=="TARIMA" else f"{l['largo']} x {l['largo']} x {l['alto']}"
+                            ancho_val = l.get('ancho', 1.20)
+                            dim_str = f"{l['largo']} x {ancho_val} x {l['alto']}"
                             emb_data.append([
                                 str(l["cantidad"]), 
                                 str(l["tipo"]), 
@@ -9022,12 +9025,10 @@ else:
                                 str(l["peso"])
                             ])
                         
-                        # Completar filas vacías hasta 7 filas mínimo para mantener la estética del formato oficial si hay pocas líneas
                         filas_actuales = len(st.session_state.lineas_embarque)
                         for _ in range(max(0, 6 - filas_actuales)):
                             emb_data.append(["", "", "", "", "", "0", ""])
                             
-                        # Fila final con el total de peso
                         emb_data.append(["", "", "", "", "", "0", f"{total_peso_calc:,.1f}"])
                         
                         t_emb = Table(emb_data, colWidths=[45, 65, 182, 95, 65, 80, 70])
@@ -9045,7 +9046,7 @@ else:
                         story.append(t_emb)
                         story.append(Spacer(1, 2))
                 
-                        # 6. BLOQUE MEDIO (MERCANCÍA ASEGURADA, ACUSE, PAGOS, EAD, DOCUMENTOS)
+                        # 6. BLOQUE MEDIO
                         th_red = ParagraphStyle("THR", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
                         th_green = ParagraphStyle("THG", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
                 
@@ -9133,7 +9134,7 @@ else:
                         story.append(t_mid)
                         story.append(Spacer(1, 2))
                 
-                        # 7. BLOQUE FINAL (Datos de quien solicita y Observaciones)
+                        # 7. BLOQUE FINAL
                         t_final_block = Table([
                             [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style)],
                             [
@@ -9170,7 +9171,7 @@ else:
                     st.markdown("---")
                     if st.button("🚀 Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True):
                         pdf_buf = generar_pdf_tresguerras_oficial()
-                        st.success("¡Formato de Tresguerras generado correctamente con las líneas y fecha indicadas!")
+                        st.success("¡Formato de Tresguerras generado correctamente con el logo y las dimensiones actualizadas!")
                         st.download_button(
                             label="📥 Descargar PDF Tresguerras Oficial",
                             data=pdf_buf,
