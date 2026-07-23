@@ -9565,7 +9565,8 @@ else:
                 
                 
                 # --- 2. INTERFAZ DE USUARIO ---
-                
+                # --- 2. INTERFAZ DE USUARIO ---
+
                 st.markdown("""
                     <div style="
                         background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
@@ -9613,14 +9614,16 @@ else:
                         with c_col2:
                             if modo_busqueda == "Seleccionar de la lista":
                                 num_factura = st.selectbox("📦 Selecciona Factura / Folio", facturas_disponibles, key="sel_factura_etq_github")
-                                if num_factura in facturas_disponibles:
+                                if num_factura:
                                     df_procesar = df_facturacion[df_facturacion["Factura"] == str(num_factura)].copy()
                             else:
                                 num_factura_txt = st.text_input("✍️ Ingresa Folio Manual", key="txt_folio_manual_etq_github")
-                                if num_factura_txt and str(num_factura_txt) in df_facturacion["Factura"].values:
-                                    df_procesar = df_facturacion[df_facturacion["Factura"] == str(num_factura_txt)].copy()
-                                elif num_factura_txt:
-                                    st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
+                                if num_factura_txt:
+                                    df_encontrado = df_facturacion[df_facturacion["Factura"] == str(num_factura_txt.strip())]
+                                    if not df_encontrado.empty:
+                                        df_procesar = df_encontrado.copy()
+                                    else:
+                                        st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
                 
                 elif "Excel" in fuente_origen:
                     archivo_manual = st.file_uploader("Sube tu archivo Excel de pedidos", type=["xlsx"], key="uploader_manual_etiquetas")
@@ -9676,7 +9679,7 @@ else:
                 if not df_procesar.empty:
                     st.markdown("---")
                     
-                    # Si es un solo registro (ya sea de GitHub, Excel por folio o Manual), permitimos modificar cajas y transporte al vuelo
+                    # Si es un solo registro, permitimos modificar cajas y transporte al vuelo
                     if len(df_procesar) == 1:
                         reg_unico = df_procesar.iloc[0]
                         col_cfg1, col_cfg2 = st.columns(2)
