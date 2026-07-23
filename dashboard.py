@@ -1990,10 +1990,14 @@ else:
                         _, col_btn_cerrar = st.columns([5, 1])
                         with col_btn_cerrar:
                             st.markdown('<div style="margin-top: -5px;"></div>', unsafe_allow_html=True)
-                            # Al hacer clic, vaciamos el state del input y recargamos para borrar todo de golpe
-                            if st.button("✕ CERRAR", key="btn_cerrar_render", use_container_width=True):
+                            
+                            # Función interna para limpiar el estado de forma segura antes del rerun
+                            def limpiar_busqueda():
                                 st.session_state.busqueda_input = ""
-                                st.rerun()
+
+                            # Usamos on_click para limpiar el input limpiamente sin romper las reglas de Streamlit
+                            if st.button("✕ CERRAR", key="btn_cerrar_render", use_container_width=True, on_click=limpiar_busqueda):
+                                pass
                         
                         st.markdown(html_resultado, unsafe_allow_html=True)
                     
