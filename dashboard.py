@@ -8743,7 +8743,6 @@ else:
                 
                     st.markdown("### 📦 Solicitud de Recolección - Tresguerras")
                     
-                    # Selector de fecha de recolección deseada
                     col_f1, col_f2 = st.columns(2)
                     with col_f1:
                         fecha_recoleccion_deseada = st.date_input("📅 Fecha de Recolección Deseada", value=datetime.now())
@@ -8792,7 +8791,7 @@ else:
                     col1, col2 = st.columns(2)
                 
                     with col1:
-                        titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#c62828")
+                        titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#e65100")
                         rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran)
                         rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom)
                         rc1, rc2 = st.columns(2)
@@ -8836,7 +8835,7 @@ else:
                     fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México")
                     fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35")
                 
-                    # --- SECCIÓN DINÁMICA DE EMBARQUE ---
+                    # --- SECCIÓN DINÁMICA DE EMBARQUE (Inputs en línea) ---
                     st.markdown("---")
                     titulo_seccion("📦 DETALLE DE EMBARQUE Y LÍNEAS DE CARGA", color_fondo="#e65100")
                     
@@ -8889,9 +8888,9 @@ else:
                         cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
                         cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
                 
-                        # 1. ENCABEZADO SUPERIOR (Con logo_3G.png integrado)
+                        # 1. ENCABEZADO SUPERIOR (Logo proporcional sin estirarse)
                         logo_io = obtener_logo_tresguerras()
-                        logo_elem = Image(logo_io, width=95, height=25) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_center)
+                        logo_elem = Image(logo_io, width=85, height=22) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_center)
                         
                         header_table = Table([
                             [
@@ -8944,7 +8943,7 @@ else:
                         t_rem = Table(rem_data, colWidths=[90, 211])
                         t_rem.setStyle(TableStyle([
                             ("SPAN", (0,0), (1,0)),
-                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#e65100")),
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                             ("TOPPADDING", (0,0), (-1,-1), 1.5),
@@ -9171,7 +9170,7 @@ else:
                     st.markdown("---")
                     if st.button("🚀 Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True):
                         pdf_buf = generar_pdf_tresguerras_oficial()
-                        st.success("¡Formato de Tresguerras generado correctamente con el logo y las dimensiones actualizadas!")
+                        st.success("¡Formato de Tresguerras generado correctamente con el logo ajustado y las dimensiones en línea!")
                         st.download_button(
                             label="📥 Descargar PDF Tresguerras Oficial",
                             data=pdf_buf,
