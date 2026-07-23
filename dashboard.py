@@ -9584,7 +9584,7 @@ else:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Selector de Fuente Principal (Añadido Entrada Manual directa)
+                # Selector de Fuente Principal
                 fuente_origen = st.radio(
                     "Selecciona el origen de los datos:",
                     ["Base de Datos GitHub (facturacion_moreno.csv)", "Carga Manual (Excel)", "Escritura Manual Directa"],
@@ -9614,11 +9614,11 @@ else:
                             if modo_busqueda == "Seleccionar de la lista":
                                 num_factura = st.selectbox("📦 Selecciona Factura / Folio", facturas_disponibles, key="sel_factura_etq_github")
                                 if num_factura in facturas_disponibles:
-                                    df_procesar = df_facturacion[df_facturacion["Factura"] == str(num_factura)]
+                                    df_procesar = df_facturacion[df_facturacion["Factura"] == str(num_factura)].copy()
                             else:
                                 num_factura_txt = st.text_input("✍️ Ingresa Folio Manual", key="txt_folio_manual_etq_github")
                                 if num_factura_txt and str(num_factura_txt) in df_facturacion["Factura"].values:
-                                    df_procesar = df_facturacion[df_facturacion["Factura"] == str(num_factura_txt)]
+                                    df_procesar = df_facturacion[df_facturacion["Factura"] == str(num_factura_txt)].copy()
                                 elif num_factura_txt:
                                     st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
                 
@@ -9632,7 +9632,6 @@ else:
                             if not df_manual.empty:
                                 col_factura_key = next((c for c in df_manual.columns if 'factura' in c.lower() or 'folio' in c.lower()), df_manual.columns[0])
                                 
-                                # Opción para procesar todo o un folio particular
                                 tipo_proceso_excel = st.radio(
                                     "¿Cómo deseas procesar el Excel?",
                                     ["Generar etiquetas de TODOS los registros", "Seleccionar un folio en particular"],
@@ -9641,12 +9640,12 @@ else:
                                 )
                                 
                                 if "TODOS" in tipo_proceso_excel:
-                                    df_procesar = df_manual
+                                    df_procesar = df_manual.copy()
                                     nombre_archivo_pdf = "Etiquetas_Todos_Los_Registros.pdf"
                                 else:
                                     facturas_excel = df_manual[col_factura_key].astype(str).unique()
                                     sel_fact_excel = st.selectbox("Selecciona la Factura del Excel", facturas_excel, key="sel_fact_excel_manual")
-                                    df_procesar = df_manual[df_manual[col_factura_key].astype(str) == str(sel_fact_excel)]
+                                    df_procesar = df_manual[df_manual[col_factura_key].astype(str) == str(sel_fact_excel)].copy()
                                     nombre_archivo_pdf = f"Etiquetas_Folio_{sel_fact_excel}.pdf"
                         except Exception as e:
                             st.error(f"Error al leer el archivo Excel: {e}")
@@ -9677,7 +9676,7 @@ else:
                 if not df_procesar.empty:
                     st.markdown("---")
                     
-                    # Si es un solo registro, permitimos modificar cajas y transporte al vuelo
+                    # Si es un solo registro (ya sea de GitHub, Excel por folio o Manual), permitimos modificar cajas y transporte al vuelo
                     if len(df_procesar) == 1:
                         reg_unico = df_procesar.iloc[0]
                         col_cfg1, col_cfg2 = st.columns(2)
@@ -9701,11 +9700,11 @@ else:
                         with col_cfg2:
                             transporte_default = str(reg_unico.get('RECOMENDACION', reg_unico.get('Transporte', reg_unico.get('PAQUETERIA', 'TRES GUERRAS'))))
                             transporte_etq = st.text_input("Transporte / Paquetería", value=transporte_default, key="trans_etq_dinamico")
-                        
+                
                         # Actualizamos temporalmente el registro con los valores editados
                         df_procesar.loc[df_procesar.index[0], 'Quantity'] = cant_etiquetas_sel
                         df_procesar.loc[df_procesar.index[0], 'Transporte'] = transporte_etq
-                        
+                
                     st.write("")
                 
                     # Estilo CSS de los botones idéntico al resto de la plataforma
@@ -9730,7 +9729,7 @@ else:
                     """, unsafe_allow_html=True)
                 
                     pdf_etq_bytes = generar_etiquetas_limpias(df_procesar)
-                    
+                
                     st.download_button(
                         label="🏷️ DESCARGAR ETIQUETAS PDF",
                         data=pdf_etq_bytes,
