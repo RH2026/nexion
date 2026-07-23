@@ -8742,6 +8742,13 @@ else:
                     facturas_disponibles = df_facturacion["Factura"].unique()
                 
                     st.markdown("### 📦 Solicitud de Recolección - Tresguerras")
+                    
+                    # Selector de fecha de recolección deseada
+                    col_f1, col_f2 = st.columns(2)
+                    with col_f1:
+                        fecha_recoleccion_deseada = st.date_input("📅 Fecha de Recolección Deseada", value=datetime.now())
+                    fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
+                
                     c_col1, c_col2, c_col3 = st.columns(3)
                 
                     with c_col1:
@@ -8829,6 +8836,44 @@ else:
                     fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México")
                     fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35")
                 
+                    # --- SECCIÓN DINÁMICA DE EMBARQUE ---
+                    st.markdown("---")
+                    titulo_seccion("📦 DETALLE DE EMBARQUE Y LÍNEAS DE CARGA", color_fondo="#e65100")
+                    
+                    if "lineas_embarque" not in st.session_state:
+                        st.session_state.lineas_embarque = [
+                            {"cantidad": 1, "tipo": "TARIMA", "descripcion": "AMENIDADES", "largo": 1.20, "ancho": 1.00, "alto": 1.80, "peso": 800.0}
+                        ]
+                
+                    for idx, linea in enumerate(st.session_state.lineas_embarque):
+                        st.markdown(f"**Renglón {idx + 1}**")
+                        lc1, lc2, lc3, lc4, lc5, lc6 = st.columns([1, 2, 2, 1, 1, 1])
+                        with lc1:
+                            linea["cantidad"] = st.number_input("Cant.", min_value=1, value=linea["cantidad"], key=f"cant_{idx}")
+                        with lc2:
+                            linea["tipo"] = st.selectbox("Tipo Bulto", ["TARIMA", "CAJA", "ATADO", "TAMBO", "SACO", "OTRO"], index=["TARIMA", "CAJA", "ATADO", "TAMBO", "SACO", "OTRO"].index(linea["tipo"]) if linea["tipo"] in ["TARIMA", "CAJA", "ATADO", "TAMBO", "SACO", "OTRO"] else 0, key=f"tipo_{idx}")
+                        with lc3:
+                            linea["descripcion"] = st.text_input("Descripción", value=linea["descripcion"], key=f"desc_{idx}")
+                        with lc4:
+                            linea["largo"] = st.number_input("L / Diam (m)", value=float(linea["largo"]), key=f"larg_{idx}")
+                        with lc5:
+                            linea["alto"] = st.number_input("Alto (m)", value=float(linea["alto"]), key=f"alt_{idx}")
+                        with lc6:
+                            linea["peso"] = st.number_input("Peso (KG)", value=float(linea["peso"]), key=f"pes_{idx}")
+                
+                    col_btn1, col_btn2 = st.columns(2)
+                    with col_btn1:
+                        if st.button("➕ Agregar otra línea de carga"):
+                            st.session_state.lineas_embarque.append({"cantidad": 1, "tipo": "CAJA", "descripcion": "MERCANCIA", "largo": 0.50, "ancho": 0.50, "alto": 0.50, "peso": 50.0})
+                            st.rerun()
+                    with col_btn2:
+                        if len(st.session_state.lineas_embarque) > 1 and st.button("🗑️ Eliminar última línea"):
+                            st.session_state.lineas_embarque.pop()
+                            st.rerun()
+                
+                    total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque)
+                    st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
+                
                     # --- FUNCIÓN PDF REPORTLAB (ESTILO OFICIAL TRESGUERRAS) ---
                     def generar_pdf_tresguerras_oficial():
                         buffer = BytesIO()
@@ -8842,7 +8887,7 @@ else:
                         cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
                         cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
                 
-                        # 1. ENCABEZADO SUPERIOR (Ancho total: 602 px)
+                        # 1. ENCABEZADO SUPERIOR
                         logo_io = obtener_logo_tresguerras()
                         logo_elem = Image(logo_io, width=90, height=28) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_bold)
                         
@@ -8866,9 +8911,9 @@ else:
                         story.append(header_table)
                         story.append(Spacer(1, 2))
                 
-                        # 2. FECHAS RECOLECCIÓN / RECEPCIÓN
+                        # 2. FECHAS RECOLECCIÓN / RECEPCIÓN (Con la fecha deseada seleccionada)
                         fechas_table = Table([
-                            [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph("", cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
+                            [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph(fecha_rec_str, cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
                             [Paragraph("<b>FECHA DE RECEPCION:</b>", cell_bold), "", Paragraph("<b>FOLIO</b>", cell_bold), ""]
                         ], colWidths=[110, 150, 105, 237])
                         fechas_table.setStyle(TableStyle([
@@ -8925,7 +8970,7 @@ else:
                         story.append(t_top)
                         story.append(Spacer(1, 2))
                 
-                        # 4. SECCIÓN FACTURAR A (Alineada perfectamente a 602 px)
+                        # 4. SECCIÓN FACTURAR A
                         fac_data = [
                             [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
                             [Paragraph(fac_cliente, cell_center), "", ""],
@@ -8957,15 +9002,33 @@ else:
                         story.append(t_fac)
                         story.append(Spacer(1, 2))
                 
-                        # 5. TABLA DE EMBARQUE / CONTENIDO (Suma exacta: 602 px)
+                        # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA
                         emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
                         emb_data = [
                             [Paragraph("<b>INFORMACION DE EMBARQUE</b>", th_style), "", "", Paragraph("<b>DIMENSIONES (mts)</b>", th_style), "", Paragraph("<b>VOLUMEN</b>", th_style), Paragraph("<b>PESO POR BULTO</b>", th_style)],
                             [Paragraph(h, th_style) for h in emb_headers]
                         ]
-                        for i in range(1, 7):
-                            emb_data.append([str(1 if i==1 else ""), "TARIMA" if i==1 else "", "AMENIDADES" if i==1 else "", "1.20 x 1.00 x 1.80" if i==1 else "", "", "0", "800" if i==1 else ""])
-                        emb_data.append(["", "", "", "", "", "0", "800"])
+                        
+                        # Rellenamos con las líneas dinámicas capturadas
+                        for l in st.session_state.lineas_embarque:
+                            dim_str = f"{l['largo']} x {l['largo']} x {l['alto']}" if l['tipo']=="TARIMA" else f"{l['largo']} x {l['largo']} x {l['alto']}"
+                            emb_data.append([
+                                str(l["cantidad"]), 
+                                str(l["tipo"]), 
+                                str(l["descripcion"]), 
+                                str(dim_str), 
+                                "", 
+                                "0", 
+                                str(l["peso"])
+                            ])
+                        
+                        # Completar filas vacías hasta 7 filas mínimo para mantener la estética del formato oficial si hay pocas líneas
+                        filas_actuales = len(st.session_state.lineas_embarque)
+                        for _ in range(max(0, 6 - filas_actuales)):
+                            emb_data.append(["", "", "", "", "", "0", ""])
+                            
+                        # Fila final con el total de peso
+                        emb_data.append(["", "", "", "", "", "0", f"{total_peso_calc:,.1f}"])
                         
                         t_emb = Table(emb_data, colWidths=[45, 65, 182, 95, 65, 80, 70])
                         t_emb.setStyle(TableStyle([
@@ -9070,7 +9133,7 @@ else:
                         story.append(t_mid)
                         story.append(Spacer(1, 2))
                 
-                        # 7. BLOQUE FINAL (Datos de quien solicita y Observaciones sin duplicados)
+                        # 7. BLOQUE FINAL (Datos de quien solicita y Observaciones)
                         t_final_block = Table([
                             [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style)],
                             [
@@ -9107,7 +9170,7 @@ else:
                     st.markdown("---")
                     if st.button("🚀 Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True):
                         pdf_buf = generar_pdf_tresguerras_oficial()
-                        st.success("¡Formato de Tresguerras generado correctamente con el diseño exacto!")
+                        st.success("¡Formato de Tresguerras generado correctamente con las líneas y fecha indicadas!")
                         st.download_button(
                             label="📥 Descargar PDF Tresguerras Oficial",
                             data=pdf_buf,
