@@ -9430,6 +9430,8 @@ else:
             
             if st.session_state.menu_sub == "ETIQUETAS":  
                 # --- 1. FUNCIONES DE CONEXIÓN Y PROCESAMIENTO ---
+                # --- 1. FUNCIONES DE CONEXIÓN Y PROCESAMIENTO ---
+
                 @st.cache_data(ttl=60)
                 def cargar_csv_github():
                     try:
@@ -9473,7 +9475,7 @@ else:
                         y_actual -= interlineado
                     return y_actual 
                 
-                def generar_etiquetas_limpias(reg_datos, total_etqs, factura_val, transporte_val):
+                def generar_etiquetas_limpias(df_datos, total_etqs_manual=None):
                     output = io.BytesIO()
                     c = canvas.Canvas(output, pagesize=letter)
                     width_carta, height_carta = letter
@@ -9481,58 +9483,68 @@ else:
                     w_rec, h_rec = 10.5 * cm, 7.5 * cm
                     x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
                     
-                    nombre_crudo = reg_datos.get('Nombre_Extran', reg_datos.get('Nombre_Ext', reg_datos.get('Nombre_Cliente', 'SIN NOMBRE')))
-                    nombre_final = limpiar_parentesis(nombre_crudo)
-                    direccion_final = reg_datos.get('DIRECCION', reg_datos.get('Domicilio', 'DIRECCIÓN NO DISPONIBLE'))
-                    transporte_final = str(transporte_val if transporte_val else reg_datos.get('Transporte', 'TRES GUERRAS'))
+                    for index, row in df_datos.iterrows():
+                        try:
+                            if total_etqs_manual is not None:
+                                cantidad_real = int(total_etqs_manual)
+                            else:
+                                cantidad_real = int(row.get('Quantity', row.get('CANTIDAD', 1)))
+                        except: 
+                            cantidad_real = 1
                 
-                    for i in range(total_etqs):
-                        c.setDash(1, 2)
-                        c.setStrokeColorRGB(0.7, 0.7, 0.7)
-                        c.rect(x_offset, y_offset, w_rec, h_rec)
-                        c.setDash([])
-                        c.setStrokeColorRGB(0, 0, 0)
+                        nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', row.get('NOMBRE_CLIENTE', 'SIN NOMBRE'))))
+                        nombre_final = limpiar_parentesis(nombre_crudo)
+                        direccion_final = row.get('DIRECCION', row.get('Domicilio', row.get('DOMICILIO', 'DIRECCIÓN NO DISPONIBLE')))
+                        transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', row.get('PAQUETERIA', 'TRES GUERRAS'))))
+                        factura_val = str(row.get('Factura', row.get('FOLIO', 'S/F')))
                 
-                        # CABECERA JYPESA
-                        c.setFont("Helvetica-Bold", 7)
-                        c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
-                        c.setFont("Helvetica", 6)
-                        info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
-                        dibujar_texto_bloque_pro(c, info_contacto, x_offset + (w_rec/2), y_offset + h_rec - 0.7*cm, 10*cm, "Helvetica", 6, 0.25*cm, max_lineas=1)
-                        
-                        c.setLineWidth(0.3)
-                        c.setStrokeColorRGB(0.7, 0.7, 0.7)
-                        c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
-                        c.setStrokeColorRGB(0, 0, 0)
+                        for i in range(cantidad_real):
+                            c.setDash(1, 2)
+                            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                            c.rect(x_offset, y_offset, w_rec, h_rec)
+                            c.setDash([])
+                            c.setStrokeColorRGB(0, 0, 0)
                 
-                        # NOMBRE CLIENTE (GIGANTE)
-                        y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
+                            # CABECERA JYPESA
+                            c.setFont("Helvetica-Bold", 7)
+                            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+                            c.setFont("Helvetica", 6)
+                            info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
+                            dibujar_texto_bloque_pro(c, info_contacto, x_offset + (w_rec/2), y_offset + h_rec - 0.7*cm, 10*cm, "Helvetica", 6, 0.25*cm, max_lineas=1)
+                            
+                            c.setLineWidth(0.3)
+                            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                            c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
+                            c.setStrokeColorRGB(0, 0, 0)
                 
-                        # DIRECCIÓN
-                        y_inicio_direccion = y_termino_nombre - 0.7*cm
-                        if y_inicio_direccion > y_offset + 4.3*cm: y_inicio_direccion = y_offset + 4.3*cm
-                        if y_inicio_direccion < y_offset + 2.9*cm: y_inicio_direccion = y_offset + 2.9*cm
-                        dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 14.5, 0.5*cm, max_lineas=3)
+                            # NOMBRE CLIENTE (GIGANTE)
+                            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
                 
-                        # PIE DE ETIQUETA
-                        c.setLineWidth(0.6)
-                        y_linea_pie = y_offset + 1.4*cm
-                        c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
-                        
-                        c.setFont("Helvetica-Bold", 8.5)
-                        c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
-                        c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
-                        c.drawString(x_offset + 7.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
+                            # DIRECCIÓN
+                            y_inicio_direccion = y_termino_nombre - 0.7*cm
+                            if y_inicio_direccion > y_offset + 4.3*cm: y_inicio_direccion = y_offset + 4.3*cm
+                            if y_inicio_direccion < y_offset + 2.9*cm: y_inicio_direccion = y_offset + 2.9*cm
+                            dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 14.5, 0.5*cm, max_lineas=3)
                 
-                        c.setFont("Helvetica-Bold", 13)
-                        c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(factura_val))
+                            # PIE DE ETIQUETA
+                            c.setLineWidth(0.6)
+                            y_linea_pie = y_offset + 1.4*cm
+                            c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
+                            
+                            c.setFont("Helvetica-Bold", 8.5)
+                            c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
+                            c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
+                            c.drawString(x_offset + 7.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
                 
-                        c.setFont("Helvetica-Bold", 13)
-                        c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {total_etqs}")
+                            c.setFont("Helvetica-Bold", 13)
+                            c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, factura_val)
                 
-                        c.setFont("Helvetica-Bold", 10)
-                        c.drawString(x_offset + 7.5*cm, y_linea_pie - 1.0*cm, transporte_final[:18])
-                        c.showPage()
+                            c.setFont("Helvetica-Bold", 13)
+                            c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
+                
+                            c.setFont("Helvetica-Bold", 10)
+                            c.drawString(x_offset + 7.5*cm, y_linea_pie - 1.0*cm, transporte_final[:18])
+                            c.showPage()
                 
                     c.save()
                     return output.getvalue()
@@ -9553,22 +9565,21 @@ else:
                             Creador de Etiquetas de Embarque (Módulo Completo)
                         </div>
                         <div style="color: #808495; font-size: 14px; font-weight: 400;">
-                            Selecciona tu fuente: Base de datos GitHub (facturacion_moreno.csv) o Carga Manual (Excel)
+                            Selecciona tu fuente: Base de datos GitHub, Archivo Excel o Captura Manual
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Selector de Fuente Principal
+                # Selector de Fuente Principal (Añadido Entrada Manual directa)
                 fuente_origen = st.radio(
                     "Selecciona el origen de los datos:",
-                    ["Base de Datos GitHub (facturacion_moreno.csv)", "Carga Manual (Excel)"],
+                    ["Base de Datos GitHub (facturacion_moreno.csv)", "Carga Manual (Excel)", "Escritura Manual Directa"],
                     horizontal=True,
-                    key="radio_fuente_etiquetas"
+                    key="radio_fuente_etiquetas_pro"
                 )
                 
-                registro = pd.Series()
-                num_factura = ""
                 df_procesar = pd.DataFrame()
+                nombre_archivo_pdf = "etiquetas_nexion.pdf"
                 
                 if "GitHub" in fuente_origen:
                     df_facturacion = cargar_csv_github()
@@ -9578,7 +9589,6 @@ else:
                         facturas_disponibles = df_facturacion["Factura"].unique()
                 
                         c_col1, c_col2 = st.columns(2)
-                
                         with c_col1:
                             modo_busqueda = st.selectbox(
                                 "🔍 Método de Selección", 
@@ -9588,79 +9598,103 @@ else:
                 
                         with c_col2:
                             if modo_busqueda == "Seleccionar de la lista":
-                                num_factura = st.selectbox(
-                                    "📦 Selecciona Factura / Folio", facturas_disponibles,
-                                    key="sel_factura_etq_github"
-                                )
+                                num_factura = st.selectbox("📦 Selecciona Factura / Folio", facturas_disponibles, key="sel_factura_etq_github")
                                 if num_factura in facturas_disponibles:
-                                    registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0]
+                                    df_procesar = df_facturacion[df_facturacion["Factura"] == str(num_factura)]
                             else:
-                                num_factura = st.text_input("✍️ Ingresa Folio Manual", key="txt_folio_manual_etq_github")
-                                if num_factura and str(num_factura) in df_facturacion["Factura"].values:
-                                    registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0]
-                        
-                        if not registro.empty:
-                            df_procesar = pd.DataFrame([registro])
-                            st.success(f"Folio {num_factura} cargado correctamente desde GitHub.")
-                        elif num_factura:
-                            st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
+                                num_factura_txt = st.text_input("✍️ Ingresa Folio Manual", key="txt_folio_manual_etq_github")
+                                if num_factura_txt and str(num_factura_txt) in df_facturacion["Factura"].values:
+                                    df_procesar = df_facturacion[df_facturacion["Factura"] == str(num_factura_txt)]
+                                elif num_factura_txt:
+                                    st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
                 
-                else:
+                elif "Excel" in fuente_origen:
                     archivo_manual = st.file_uploader("Sube tu archivo Excel de pedidos", type=["xlsx"], key="uploader_manual_etiquetas")
                     if archivo_manual:
                         try:
                             df_manual = pd.read_excel(archivo_manual, sheet_name=0)
                             df_manual.columns = df_manual.columns.astype(str).str.strip()
                             
-                            # Selector para elegir qué fila procesar si es un Excel con varios registros
                             if not df_manual.empty:
                                 col_factura_key = next((c for c in df_manual.columns if 'factura' in c.lower() or 'folio' in c.lower()), df_manual.columns[0])
-                                facturas_excel = df_manual[col_factura_key].astype(str).unique()
                                 
-                                sel_fact_excel = st.selectbox("Selecciona la Factura del Excel", facturas_excel, key="sel_fact_excel_manual")
-                                registro = df_manual[df_manual[col_factura_key].astype(str) == str(sel_fact_excel)].iloc[0]
-                                num_factura = str(sel_fact_excel)
-                                df_procesar = pd.DataFrame([registro])
-                                st.success("¡Registro del Excel cargado con éxito!")
+                                # Opción para procesar todo o un folio particular
+                                tipo_proceso_excel = st.radio(
+                                    "¿Cómo deseas procesar el Excel?",
+                                    ["Generar etiquetas de TODOS los registros", "Seleccionar un folio en particular"],
+                                    horizontal=True,
+                                    key="tipo_proc_excel"
+                                )
+                                
+                                if "TODOS" in tipo_proceso_excel:
+                                    df_procesar = df_manual
+                                    nombre_archivo_pdf = "Etiquetas_Todos_Los_Registros.pdf"
+                                else:
+                                    facturas_excel = df_manual[col_factura_key].astype(str).unique()
+                                    sel_fact_excel = st.selectbox("Selecciona la Factura del Excel", facturas_excel, key="sel_fact_excel_manual")
+                                    df_procesar = df_manual[df_manual[col_factura_key].astype(str) == str(sel_fact_excel)]
+                                    nombre_archivo_pdf = f"Etiquetas_Folio_{sel_fact_excel}.pdf"
                         except Exception as e:
                             st.error(f"Error al leer el archivo Excel: {e}")
                 
-                # Si ya tenemos un registro seleccionado / cargado, mostramos controles de impresión y el botón
-                if not df_procesar.empty and num_factura:
+                else:
+                    # --- CAPTURA MANUAL DESDE CERO ---
+                    st.info("Ingresa los datos del envío manualmente (sin necesidad de archivos).")
+                    c_m1, c_m2 = st.columns(2)
+                    with c_m1:
+                        m_factura = st.text_input("Número de Factura / Folio", value="JYP-100")
+                        m_cliente = st.text_input("Nombre del Cliente / Hotel", value="HOTEL EJEMPLO")
+                        m_cajas = st.number_input("Cantidad de Cajas / Bultos", min_value=1, max_value=50, value=1, step=1)
+                    with c_m2:
+                        m_direccion = st.text_area("Dirección Completa de Destino", value="Av. Principal #123, Col. Centro, C.P. 44100, Guadalajara, Jal.")
+                        m_transporte = st.text_input("Transporte / Paquetería", value="TRES GUERRAS")
+                    
+                    if m_factura:
+                        df_procesar = pd.DataFrame([{
+                            'Factura': m_factura,
+                            'Nombre_Extran': m_cliente,
+                            'DIRECCION': m_direccion,
+                            'Quantity': m_cajas,
+                            'Transporte': m_transporte
+                        }])
+                        nombre_archivo_pdf = f"Etiquetas_Manual_{m_factura}.pdf"
+                
+                # Si ya tenemos un dataframe para procesar, mostramos controles adicionales y botón de descarga
+                if not df_procesar.empty:
                     st.markdown("---")
                     
-                    col_cfg1, col_cfg2 = st.columns(2)
-                    with col_cfg1:
+                    # Si es un solo registro, permitimos modificar cajas y transporte al vuelo
+                    if len(df_procesar) == 1:
+                        reg_unico = df_procesar.iloc[0]
+                        col_cfg1, col_cfg2 = st.columns(2)
+                        
                         cant_inicial = 1
                         for col_caja in ['Quantity', 'CANTIDAD', 'CAJAS', 'Bultos']:
-                            if col_caja in registro and pd.notna(registro[col_caja]):
+                            if col_caja in reg_unico and pd.notna(reg_unico[col_caja]):
                                 try:
-                                    cant_inicial = int(float(registro[col_caja]))
+                                    cant_inicial = int(float(reg_unico[col_caja]))
                                     break
                                 except:
                                     pass
                 
-                        cant_etiquetas_sel = st.number_input(
-                            "Número de etiquetas a generar:", 
-                            min_value=1, 
-                            max_value=50, 
-                            value=cant_inicial if cant_inicial > 0 else 1,
-                            step=1,
-                            key=f"num_etq_gen_{num_factura}"
-                        )
-                
-                    with col_cfg2:
-                        transporte_default = "TRES GUERRAS"
-                        for col_trans in ['RECOMENDACION', 'Transporte', 'PAQUETERIA', 'Paqueteria']:
-                            if col_trans in registro and pd.notna(registro[col_trans]):
-                                transporte_default = str(registro[col_trans])
-                                break
-                
-                        transporte_etq = st.text_input("Transporte / Paquetería", value=transporte_default, key=f"trans_etq_{num_factura}")
-                
+                        with col_cfg1:
+                            cant_etiquetas_sel = st.number_input(
+                                "Número de etiquetas a generar:", 
+                                min_value=1, max_value=50, 
+                                value=cant_inicial if cant_inicial > 0 else 1,
+                                step=1, key="num_etq_gen_dinamico"
+                            )
+                        with col_cfg2:
+                            transporte_default = str(reg_unico.get('RECOMENDACION', reg_unico.get('Transporte', reg_unico.get('PAQUETERIA', 'TRES GUERRAS'))))
+                            transporte_etq = st.text_input("Transporte / Paquetería", value=transporte_default, key="trans_etq_dinamico")
+                        
+                        # Actualizamos temporalmente el registro con los valores editados
+                        df_procesar.loc[df_procesar.index[0], 'Quantity'] = cant_etiquetas_sel
+                        df_procesar.loc[df_procesar.index[0], 'Transporte'] = transporte_etq
+                        
                     st.write("")
                 
-                    # Estilo CSS idéntico al resto de la plataforma para los botones
+                    # Estilo CSS de los botones idéntico al resto de la plataforma
                     st.markdown("""
                         <style>
                         div.stDownloadButton > button {
@@ -9681,22 +9715,17 @@ else:
                         </style>
                     """, unsafe_allow_html=True)
                 
-                    pdf_etq_bytes = generar_etiquetas_limpias(
-                        reg_datos=registro,
-                        total_etqs=int(cant_etiquetas_sel),
-                        factura_val=str(num_factura),
-                        transporte_val=transporte_etq
-                    )
+                    pdf_etq_bytes = generar_etiquetas_limpias(df_procesar)
                     
                     st.download_button(
                         label="🏷️ DESCARGAR ETIQUETAS PDF",
                         data=pdf_etq_bytes,
-                        file_name=f"Etiquetas_Folio_{num_factura}.pdf",
+                        file_name=nombre_archivo_pdf,
                         mime="application/pdf",
                         use_container_width=True
                     )
                 else:
-                    st.info("Selecciona una factura de GitHub o carga un archivo manual para comenzar.")
+                    st.info("Selecciona una opción o completa los datos para comenzar a generar tus etiquetas.")
             
             elif st.session_state.menu_sub == "HERRAMIENTAS":                
                 # --- 1. CONFIGURACIÓN DE PODER ---
