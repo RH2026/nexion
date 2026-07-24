@@ -10742,150 +10742,155 @@ else:
                 ]
                 
                 # ==============================================================================
-                # 2. ESTILOS CSS "JYPESA NEXION CORE" (INCLUYENDO KITWEB SCROLL)
+                # 2. ESTILOS CSS "JYPESA NEXION CORE" (FORZADOS Y DEFINITIVOS)
                 # ==============================================================================
                 st.markdown("""
                     <style>
+                    /* Barra superior del dashboard Jypesa */
+                    header[data-testid="stHeader"] { background-color: #1D2A35 !important; border-bottom: 2px solid #34495E !important;}
+                    
                     /* Tarjetas estilo Nexion Jypesa */
                     .kpi-card {
-                        background-color: #253441; 
-                        padding: 20px; 
-                        border-radius: 8px;
-                        border: 1px solid #34495E; 
-                        text-align: center; 
-                        transition: transform 0.2s;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                        background-color: #253441 !important; 
+                        padding: 20px !important; 
+                        border-radius: 8px !important;
+                        border: 1px solid #34495E !important; 
+                        text-align: center !important; 
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
+                        margin-bottom: 15px;
                     }
-                    .kpi-card:hover { transform: translateY(-2px); border-color: #00E5FF; }
-                    .kpi-label { color: #8B9BB4; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px;}
-                    .kpi-value { color: #FFFFFF; font-size: 34px; font-weight: bold; margin: 10px 0;}
-                    .kpi-trend { font-size: 13px; font-weight: bold; }
+                    .kpi-label { color: #8B9BB4 !important; font-size: 12px !important; font-weight: bold !important; text-transform: uppercase !important; letter-spacing: 1.5px !important;}
+                    .kpi-value { color: #FFFFFF !important; font-size: 34px !important; font-weight: bold !important; margin: 10px 0 !important;}
+                    .kpi-trend { font-size: 13px !important; font-weight: bold !important; }
+                    .neon-bar { height: 4px !important; border-radius: 2px !important; margin-top: 10px !important; width: 100% !important; }
                 
-                    /* Barra de progreso / Línea inferior neón estilo Jypesa */
-                    .neon-bar { height: 4px; border-radius: 2px; margin-top: 10px; width: 100%; }
-                
-                    /* --- ESTILOS DEFINITIVOS PARA BOTONES DE FORMULARIO (FONDO + HOVER) --- */
-                    div.stButton > button, div[data-testid="stFormSubmitButton"] > button {
+                    /* --- BOTONES HTML PERSONALIZADOS (Reemplazo de st.form_submit_button para control total) --- */
+                    .j-btn-container {
+                        display: flex;
+                        gap: 10px;
+                        width: 100%;
+                        margin-top: 20px;
+                    }
+                    
+                    .j-btn-base {
+                        flex: 1;
                         border-radius: 4px !important;
                         font-weight: bold !important;
                         text-transform: uppercase !important;
                         letter-spacing: 1px !important;
-                        width: 100% !important;
+                        padding: 10px 24px !important;
+                        text-align: center !important;
+                        text-decoration: none !important;
+                        display: inline-block !important;
+                        font-size: 14px !important;
                         transition: all 0.3s ease !important;
+                        cursor: pointer !important;
+                        border: none !important;
+                        box-sizing: border-box;
                     }
-                    
-                    div[data-testid="stFormSubmitButton"] button[kind="secondary"] {
-                        background-color: rgba(255, 75, 75, 0.2) !important;
+                
+                    /* Botón Gasto (Rojo Neón) */
+                    .j-btn-gasto {
+                        background-color: rgba(255, 75, 75, 0.15) !important;
                         color: #FF4B4B !important;
                         border: 1px solid #FF4B4B !important;
                     }
-                    div[data-testid="stFormSubmitButton"] button[kind="secondary"]:hover {
+                    .j-btn-gasto:hover {
                         background-color: #FF4B4B !important;
                         color: #FFFFFF !important;
                         box-shadow: 0 0 15px rgba(255, 75, 75, 0.6) !important;
-                        border-color: #FF4B4B !important;
                     }
-                    
-                    div[data-testid="stFormSubmitButton"] button[kind="primary"] {
-                        background-color: rgba(0, 255, 170, 0.2) !important;
+                
+                    /* Botón Ingreso (Verde Neón) */
+                    .j-btn-ingreso {
+                        background-color: rgba(0, 255, 170, 0.15) !important;
                         color: #00FFAA !important;
                         border: 1px solid #00FFAA !important;
                     }
-                    div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+                    .j-btn-ingreso:hover {
                         background-color: #00FFAA !important;
                         color: #1D2A35 !important;
                         box-shadow: 0 0 15px rgba(0, 255, 170, 0.6) !important;
-                        border-color: #00FFAA !important;
                     }
                 
-                    /* --- KITWEB SCROLL CONTAINER PARA REGISTROS --- */
+                    /* --- CONTENEDOR DE SCROLL FIJO PARA REGISTROS (Forzando altura) --- */
                     .kitweb-scroll-container {
-                        max-height: 420px;
-                        overflow-y: auto;
-                        padding-right: 5px;
-                        margin-top: 5px;
+                        max-height: 480px !important; /* Altura fija absoluta */
+                        overflow-y: auto !important;    /* Scroll vertical */
+                        padding-right: 10px !important; /* Espacio para la barra */
+                        margin-top: 5px !important;
+                        border-top: 1px solid #34495E !important;
+                        background-color: #1D2A35 !important;
                     }
-                    /* Estilo barra de desplazamiento personalizada para que combine con Jypesa */
-                    .kitweb-scroll-container::-webkit-scrollbar {
-                        width: 6px;
-                    }
-                    .kitweb-scroll-container::-webkit-scrollbar-track {
-                        background: #1D2A35;
-                        border-radius: 4px;
-                    }
-                    .kitweb-scroll-container::-webkit-scrollbar-thumb {
-                        background: #34495E;
-                        border-radius: 4px;
-                    }
-                    .kitweb-scroll-container::-webkit-scrollbar-thumb:hover {
-                        background: #00E5FF;
-                    }
+                    
+                    /* Estilo barra de desplazamiento */
+                    .kitweb-scroll-container::-webkit-scrollbar { width: 8px !important; }
+                    .kitweb-scroll-container::-webkit-scrollbar-track { background: #1D2A35 !important; border-radius: 4px !important; }
+                    .kitweb-scroll-container::-webkit-scrollbar-thumb { background: #34495E !important; border-radius: 4px !important; }
+                    .kitweb-scroll-container::-webkit-scrollbar-thumb:hover { background: #00E5FF !important; }
                 
                     /* --- RENDER DE REGISTROS PERRONES (ALINEADOS Y COMPACTOS) --- */
                     .r-card {
-                        background-color: #1D2A35;
-                        border: 1px solid #34495E;
-                        border-radius: 6px;
-                        padding: 10px 15px;
-                        margin-bottom: 8px;
-                        display: grid;
-                        grid-template-columns: 1.5fr 1fr 1.5fr 2fr 1.2fr 1fr;
-                        align-items: center;
-                        gap: 10px;
-                        transition: all 0.2s ease;
+                        background-color: #1D2A35 !important;
+                        border-bottom: 1px solid #34495E !important;
+                        padding: 8px 12px !important;
+                        display: grid !important;
+                        grid-template-columns: 1.5fr 0.8fr 1.5fr 2.2fr 1.2fr 1fr !important;
+                        align-items: center !important;
+                        gap: 10px !important;
+                        transition: background-color 0.2s !important;
                     }
                     .r-card:hover {
-                        border-color: #00E5FF;
-                        box-shadow: 0 4px 10px rgba(0, 229, 255, 0.1);
+                        background-color: #253441 !important;
                     }
-                    .r-field {
-                        display: flex;
-                        flex-direction: column;
-                    }
+                    .r-field { display: flex !important; flex-direction: column !important; }
                     .r-label {
-                        font-size: 9px;
-                        color: #8B9BB4;
-                        text-transform: uppercase;
-                        letter-spacing: 1px;
-                        font-weight: bold;
+                        font-size: 9px !important;
+                        color: #8B9BB4 !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                        font-weight: bold !important;
                     }
                     .r-value {
-                        font-size: 12px;
-                        color: #E0E6ED;
-                        font-weight: 600;
-                        margin-top: 2px;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
+                        font-size: 12px !important;
+                        color: #E0E6ED !important;
+                        font-weight: 600 !important;
+                        margin-top: 1px !important;
+                        white-space: nowrap !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
                     }
                     .r-type-badge {
-                        padding: 2px 6px;
-                        border-radius: 4px;
-                        font-size: 10px;
-                        font-weight: bold;
-                        text-transform: uppercase;
-                        display: inline-block;
+                        padding: 2px 6px !important;
+                        border-radius: 4px !important;
+                        font-size: 10px !important;
+                        font-weight: bold !important;
+                        text-transform: uppercase !important;
+                        display: inline-block !important;
                     }
                 
                     /* --- PESTAÑAS (TABS) ESTILO JYPESA --- */
                     div[data-baseweb="tab-list"] {
-                        gap: 20px;
-                        border-bottom: 2px solid #34495E;
-                        margin-bottom: 15px;
+                        gap: 30px !important;
+                        border-bottom: 2px solid #34495E !important;
+                        margin-bottom: 10px !important;
+                        background-color: #1D2A35 !important;
                     }
                     div[data-baseweb="tab"] {
                         background-color: transparent !important;
                         color: #8B9BB4 !important;
-                        font-weight: bold;
-                        font-size: 13px;
+                        font-weight: bold !important; font-size: 14px !important;
                         border: none !important;
-                        padding-top: 0px;
-                        padding-bottom: 10px;
+                        padding-top: 0px !important; padding-bottom: 10px !important;
                     }
                     div[aria-selected="true"] {
                         color: #00FFAA !important;
                         border-bottom: 3px solid #00FFAA !important;
                     }
+                    
+                    /* Ocultar Streamlit footer/menú */
+                    #MainMenu {visibility: hidden;}
+                    footer {visibility: hidden;}
                     </style>
                 """, unsafe_allow_html=True)
                 
@@ -10925,6 +10930,7 @@ else:
                 def get_wallet_data_from_git():
                     if 'df_wallet' not in st.session_state or st.session_state.get('force_reload', False):
                         start_date = datetime.now(tz_gdl)
+                        # Datos de ejemplo más parecidos a los reales
                         ejemplos = [
                             {"Fecha": (start_date - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Nomina", "Concepto": "Pago Quincena 1 JYPESA", "Monto": 35000.0, "Cuenta": "Banco MX (Core)"},
                             {"Fecha": (start_date - timedelta(days=8)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Renta", "Concepto": "Renta Oficinas", "Monto": -18000.0, "Cuenta": "Banco MX (Core)"},
@@ -10952,264 +10958,7 @@ else:
                 # ==============================================================================
                 # 5. RENDERIZADO DE INTERFAZ WALLET
                 # ==============================================================================
-                puede_editar_efectivo = st.session_state.get("puede_editar_efectivo", False)
-                df_actual = get_wallet_data_from_git()
-                
-                if not df_actual.empty:
-                    df_actual['Mes'] = df_actual['Fecha'].dt.strftime('%Y-%m')
-                    current_month = datetime.now(tz_gdl).strftime('%Y-%m')
-                    df_month = df_actual[df_actual['Mes'] == current_month]
-                else:
-                    df_month = pd.DataFrame()
-                
-                # Cálculos de saldos
-                saldos_actuales = {cuenta: datos['fondo_base'] for cuenta, datos in CUENTAS_MATRIX.items()}
-                if not df_actual.empty:
-                    for cuenta in CUENTAS_MATRIX.keys():
-                        saldos_actuales[cuenta] += df_actual[df_actual['Cuenta'] == cuenta]['Monto'].sum()
-                
-                total_general = sum(saldos_actuales.values())
-                inc_month = df_month[df_month['Tipo'] == "Ingreso"]['Monto'].sum() if not df_month.empty else 0
-                exp_month = abs(df_month[df_month['Tipo'] == "Gasto"]['Monto'].sum()) if not df_month.empty else 0
-                net_month = inc_month - exp_month
-                
-                # SISTEMA DE PESTAÑAS
-                tab_kpi, tab_flujos, tab_registro = st.tabs(["KPI'S WALLET", "FLUJOS DE EFECTIVO", "REGISTRO NUBE"])
-                
-                # --- PESTAÑA 1: KPI'S WALLET ---
-                with tab_kpi:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    kpi1, kpi2, kpi3 = st.columns(3)
-                    
-                    with kpi1:
-                        st.markdown(f"""
-                            <div class='kpi-card'>
-                                <div class='kpi-label'>PATRIMONIO NETO</div>
-                                <div class='kpi-value'>${total_general:,.2f}</div>
-                                <div class='kpi-trend' style='color:#00E5FF'>BALANCE GLOBAL</div>
-                                <div class='neon-bar' style='background: linear-gradient(90deg, #00E5FF, transparent);'></div>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        
-                    with kpi2:
-                        st.markdown(f"""
-                            <div class='kpi-card'>
-                                <div class='kpi-label'>INGRESOS MTD</div>
-                                <div class='kpi-value'>${inc_month:,.2f}</div>
-                                <div class='kpi-trend' style='color:#00FFAA'>FLUJO DE ENTRADA</div>
-                                <div class='neon-bar' style='background: linear-gradient(90deg, #00FFAA, transparent);'></div>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        
-                    with kpi3:
-                        st.markdown(f"""
-                            <div class='kpi-card'>
-                                <div class='kpi-label'>EGRESOS MTD</div>
-                                <div class='kpi-value'>${exp_month:,.2f}</div>
-                                <div class='kpi-trend' style='color:#FF4B4B'>GASTOS DEL MES</div>
-                                <div class='neon-bar' style='background: linear-gradient(90deg, #FF4B4B, transparent);'></div>
-                            </div>
-                        """, unsafe_allow_html=True)
-                    
-                    st.markdown("<br><hr style='border-color: #34495E;'>", unsafe_allow_html=True)
-                    
-                    col_chart, _ = st.columns([2, 1]) 
-                    with col_chart:
-                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🔍</span> DISTRIBUCIÓN DE CAPITAL POR CUENTA</p>", unsafe_allow_html=True)
-                        
-                        nombres_cuentas = list(saldos_actuales.keys())
-                        valores_saldos = list(saldos_actuales.values())
-                        colores_barras = [CUENTAS_MATRIX[c]['color'] for c in nombres_cuentas]
-                
-                        fig_bars = go.Figure(go.Bar(
-                            x=valores_saldos, y=nombres_cuentas, orientation='h',
-                            marker=dict(color=colores_barras, line=dict(color='#1D2A35', width=2)),
-                            text=valores_saldos, texttemplate='%{text:$,.2f}', textposition='auto',
-                            textfont=dict(color='#FFFFFF', size=12, family="monospace"),
-                            hovertemplate="<b>%{y}</b><br>Saldo: %{x:$,.2f}<extra></extra>"
-                        ))
-                
-                        fig_bars.update_layout(
-                            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', showlegend=False,
-                            margin=dict(t=10, b=10, l=10, r=10), height=350,
-                            xaxis=dict(showgrid=True, gridcolor="#34495E", color="#8B9BB4", tickformat="$,.0f", title=None),
-                            yaxis=dict(color="#E0E6ED", tickfont=dict(size=13), title=None, autorange="reversed"),
-                            hoverlabel=dict(bgcolor="#253441", font=dict(size=13, family="monospace"))
-                        )
-                        
-                        st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
-                
-                # --- PESTAÑA 2: FLUJOS DE EFECTIVO ---
-                with tab_flujos:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    gr_col1, gr_col2 = st.columns([2, 1.5])
-                    
-                    with gr_col1:
-                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>📉</span> TENDENCIA DE FLUJO (MES ACTUAL)</p>", unsafe_allow_html=True)
-                        if not df_month.empty:
-                            df_daily = df_month.groupby([df_month['Fecha'].dt.date, 'Tipo'])['Monto'].sum().unstack().fillna(0)
-                            if 'Gasto' in df_daily: df_daily['Gasto'] = abs(df_daily['Gasto'])
-                            else: df_daily['Gasto'] = 0
-                            if 'Ingreso' not in df_daily: df_daily['Ingreso'] = 0
-                            
-                            fig_flow = go.Figure()
-                            fig_flow.add_trace(go.Scatter(x=df_daily.index, y=df_daily['Ingreso'], name='Ingresos', mode='lines', line=dict(width=3, color='#00FFAA'), fill='tozeroy', fillcolor='rgba(0, 255, 170, 0.05)'))
-                            fig_flow.add_trace(go.Scatter(x=df_daily.index, y=df_daily['Gasto'], name='Egresos', mode='lines', line=dict(width=3, color='#FF4B4B'), fill='tozeroy', fillcolor='rgba(255, 75, 75, 0.05)'))
-                            
-                            fig_flow.update_layout(
-                                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                xaxis=dict(showgrid=False, color="#8B9BB4", tickformat="%d %b"),
-                                yaxis=dict(showgrid=True, gridcolor="#34495E", color="#8B9BB4", zeroline=False),
-                                legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center", font=dict(color="#E0E6ED")),
-                                margin=dict(t=10, b=10, l=10, r=10), height=350, hovermode="x unified"
-                            )
-                            st.plotly_chart(fig_flow, use_container_width=True, config={'displayModeBar': False})
-                        else:
-                            st.info("Sin movimientos este mes.")
-                
-                    with gr_col2:
-                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>📊</span> ANÁLISIS DE CONSUMO POR CATEGORÍA</p>", unsafe_allow_html=True)
-                        if not df_month.empty:
-                            df_gastos_cat = df_month[df_month['Tipo'] == "Gasto"].groupby('Categoria')['Monto'].sum().abs().reset_index()
-                            if not df_gastos_cat.empty:
-                                df_gastos_cat = df_gastos_cat.sort_values(by='Monto', ascending=True)
-                                fig_cat = px.bar(df_gastos_cat, x='Monto', y='Categoria', orientation='h', text_auto=',.0f')
-                                
-                                colors = ['#34495E'] * len(df_gastos_cat)
-                                if len(colors) > 0: colors[-1] = '#00FFAA' 
-                                
-                                fig_cat.update_traces(marker_color=colors, hovertemplate="%{y}: $%{x:,.2f}", textposition='outside', textfont=dict(color="#E0E6ED"))
-                                fig_cat.update_layout(
-                                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                    xaxis=dict(title=None, showgrid=True, gridcolor="#34495E", color="#8B9BB4", tickformat="$,.0f"),
-                                    yaxis=dict(title=None, color="#E0E6ED"),
-                                    margin=dict(t=10, b=10, l=10, r=10), height=350
-                                )
-                                st.plotly_chart(fig_cat, use_container_width=True, config={'displayModeBar': False})
-                            else:
-                                st.info("Sin gastos registrados este mes.")
-                
-                # --- PESTAÑA 3: REGISTRO NUBE ---
-                with tab_registro:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    
-                    if not TOKEN:
-                        st.warning("⚠️ Modo de solo lectura local. Configure GITHUB_TOKEN para registrar operaciones.")
-                    
-                    st.markdown("<p class='kpi-label' style='margin-bottom: 10px;'><span style='color:#00E5FF'>⚡</span> EJECUTAR ORDEN DE REGISTRO</p>", unsafe_allow_html=True)
-                    
-                    with st.form("elite_ops", clear_on_submit=True):
-                        # 4 INPUTS EN LÍNEA
-                        in_col1, in_col2, in_col3, in_col4 = st.columns(4)
-                        with in_col1:
-                            f_monto = st.number_input("Cantidad MXN", min_value=0.0, step=100.0)
-                        with in_col2:
-                            f_cat = st.selectbox("Categoría", CATEGORIAS)
-                        with in_col3:
-                            f_desc = st.text_input("Concepto / Referencia", placeholder="Ej. Gastos de Operación")
-                        with in_col4:
-                            f_cuenta = st.selectbox("Cuenta Destino/Origen", list(CUENTAS_MATRIX.keys()))
-                        
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        
-                        # 2 BOTONES ABAJO
-                        btn_l, btn_r = st.columns(2)
-                        block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
-                        
-                        gasto_sub = btn_l.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit, type="secondary")
-                        ingreso_sub = btn_r.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, type="primary")
-                        
-                        if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
-                            with st.status("Sincronizando con Nube Nexion...", expanded=True):
-                                try:
-                                    repo = Github(TOKEN).get_repo(REPO_NAME)
-                                    contents = repo.get_contents(FILE_PATH)
-                                    df_latest = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
-                                    
-                                    nueva_fila = {
-                                        "Fecha": datetime.now(tz_gdl).strftime("%Y-%m-%d %H:%M"),
-                                        "Tipo": "Gasto" if gasto_sub else "Ingreso",
-                                        "Categoria": f_cat,
-                                        "Concepto": f_desc,
-                                        "Monto": -f_monto if gasto_sub else f_monto,
-                                        "Cuenta": f_cuenta
-                                    }
-                                    
-                                    df_latest = pd.concat([df_latest, pd.DataFrame([nueva_fila])], ignore_index=True)
-                                    repo.update_file(path=FILE_PATH, message=f"UPDATE // {current_user} // {datetime.now(tz_gdl).strftime('%H:%M:%S')}", content=df_latest.to_csv(index=False), sha=contents.sha)
-                                    
-                                    try: repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=repo.get_contents(LOCK_FILE_PATH).sha)
-                                    except: pass
-                                    
-                                    st.session_state.force_reload = True
-                                    st.success("OPERACIÓN CLASIFICADA EXITOSAMENTE.")
-                                    time.sleep(1)
-                                    st.rerun()
-                                except Exception as e: st.error(f"Error crítico de sincronización: {e}")
-                
-                    # Espacio controlado y título de historial
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIONES EN TIEMPO REAL</p>", unsafe_allow_html=True)
-                    
-                    # RENDER DE REGISTROS PERRONES CON KITWEB SCROLL
-                    if not df_actual.empty:
-                        df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
-                        
-                        # Abrimos el contenedor con scroll fijo estilo kitweb
-                        st.markdown('<div class="kitweb-scroll-container">', unsafe_allow_html=True)
-                        
-                        for _, row in df_ledger.iterrows():
-                            fecha_str = row['Fecha'].strftime('%d/%m/%Y %H:%M') if pd.notnull(row['Fecha']) else ""
-                            tipo = row['Tipo']
-                            cat = row['Categoria']
-                            concepto = row['Concepto']
-                            monto = row['Monto']
-                            cuenta = row['Cuenta']
-                            
-                            # Estilos dinámicos según el tipo de operación
-                            color_monto = "#00FFAA" if monto > 0 else "#FF4B4B"
-                            monto_str = f"${monto:,.2f}"
-                            badge_bg = "rgba(0, 255, 170, 0.1)" if tipo == "Ingreso" else "rgba(255, 75, 75, 0.1)"
-                            badge_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
-                            border_left_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
-                            
-                            st.markdown(f"""
-                                <div class="r-card" style="border-left: 4px solid {border_left_color};">
-                                    <div class="r-field">
-                                        <div class="r-label">FECHA Y HORA</div>
-                                        <div class="r-value">{fecha_str}</div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">TIPO</div>
-                                        <div class="r-value">
-                                            <span class="r-type-badge" style="background-color: {badge_bg}; color: {badge_color};">
-                                                {tipo.upper()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">CATEGORÍA</div>
-                                        <div class="r-value">{cat}</div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">CONCEPTO</div>
-                                        <div class="r-value">{concepto}</div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">CUENTA</div>
-                                        <div class="r-value">{cuenta}</div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">MONTO</div>
-                                        <div class="r-value" style="color: {color_monto}; font-size: 14px;">{monto_str}</div>
-                                    </div>
-                                </div>
-                            """, unsafe_allow_html=True)
-                            
-                        # Cerramos el contenedor kitweb scroll
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    else:
-                        st.info("No hay registros en la nube actualmente.")
+                puede_editar_efectivo = st.session_state.get
                 
             
             #PRESUPUESTOS________________________________________________________     
