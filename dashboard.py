@@ -8226,7 +8226,7 @@ else:
                             "colonia": "",
                             "municipio": "",
                             "estado": "",
-                            "email": "sbomailer@jypesa.com",
+                            "email": "rhernandez@jypesa.com",
                         }
                         credito_mark = "X"
                         por_cobrar_mark = ""
@@ -8239,7 +8239,7 @@ else:
                             "colonia": "",
                             "municipio": "",
                             "estado": "",
-                            "email": "sbomailer@jypesa.com",
+                            "email": "",
                         }
                         credito_mark = ""
                         por_cobrar_mark = "X"
@@ -8252,7 +8252,7 @@ else:
                             "colonia": "",
                             "municipio": "",
                             "estado": "",
-                            "email": "sbomailer@jypesa.com",
+                            "email": "rhernandez@jypesa.com",
                         }
                         credito_mark = ""
                         por_cobrar_mark = ""
@@ -8808,7 +8808,7 @@ else:
                             rem_tel = st.text_input("Teléfono Remitente", value=tel_val)
                 
                     with col2:
-                        titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#305496")
+                        titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#4B6B94")
                         dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados")
                         dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155")
                         dc1, dc2 = st.columns(2)
