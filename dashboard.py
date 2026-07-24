@@ -1011,6 +1011,58 @@ elif not st.session_state.get('autenticado', False):
     # Llamamos a tu función de login existente
     login_screen()
 
+# --- MONITOR Y ALERTA DE NUEVOS FOLIOS (GLOBAL) ---
+@st.fragment(run_every=15)
+def monitor_y_alerta_folios():
+    # 1. Lógica de monitoreo en segundo plano
+    try:
+        df_actual, _ = obtener_datos_github()
+        
+        if not df_actual.empty and "FOLIO" in df_actual.columns:
+            folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
+            
+            # Inicialización del control
+            if "ultimo_folio_visto" not in st.session_state:
+                st.session_state.ultimo_folio_visto = folio_actual_nube
+            
+            # Detección de nuevo folio
+            elif folio_actual_nube > st.session_state.ultimo_folio_visto:
+                st.session_state.alerta_folio_pendiente = folio_actual_nube
+                st.session_state.ultimo_folio_visto = folio_actual_nube
+                st.rerun()
+    except Exception as e:
+        pass
+
+    # 2. Renderizado visual de la alerta en la parte superior si está pendiente
+    if "alerta_folio_pendiente" in st.session_state:
+        folio = st.session_state.alerta_folio_pendiente
+        
+        st.markdown(f"""
+        <div style="
+            background-color: #202c36; 
+            border-left: 6px solid #FF4500; 
+            padding: 20px 25px; 
+            border-radius: 5px; 
+            margin-bottom: 20px;
+            color: white;
+            font-family: sans-serif;
+        ">
+            <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
+                NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
+            </h2>
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                Nexion Logistic Node // Alerta 
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
+            del st.session_state.alerta_folio_pendiente
+            st.rerun()
+
+# Ejecutamos el monitor globalmente aquí mero
+monitor_y_alerta_folios()  
+
 
 # ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE LOGO CENTRADO) ──
 elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
@@ -1141,58 +1193,7 @@ elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state
 
    
 
-else:
-    # --- MONITOR Y ALERTA DE NUEVOS FOLIOS (GLOBAL) ---
-        @st.fragment(run_every=15)
-        def monitor_y_alerta_folios():
-            # 1. Lógica de monitoreo en segundo plano
-            try:
-                df_actual, _ = obtener_datos_github()
-                
-                if not df_actual.empty and "FOLIO" in df_actual.columns:
-                    folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
-                    
-                    # Inicialización del control
-                    if "ultimo_folio_visto" not in st.session_state:
-                        st.session_state.ultimo_folio_visto = folio_actual_nube
-                    
-                    # Detección de nuevo folio
-                    elif folio_actual_nube > st.session_state.ultimo_folio_visto:
-                        st.session_state.alerta_folio_pendiente = folio_actual_nube
-                        st.session_state.ultimo_folio_visto = folio_actual_nube
-                        st.rerun()
-            except Exception as e:
-                pass
-        
-            # 2. Renderizado visual de la alerta en la parte superior si está pendiente
-            if "alerta_folio_pendiente" in st.session_state:
-                folio = st.session_state.alerta_folio_pendiente
-                
-                st.markdown(f"""
-                <div style="
-                    background-color: #202c36; 
-                    border-left: 6px solid #FF4500; 
-                    padding: 20px 25px; 
-                    border-radius: 5px; 
-                    margin-bottom: 20px;
-                    color: white;
-                    font-family: sans-serif;
-                ">
-                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
-                        NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
-                    </h2>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                        Nexion Logistic Node // Alerta 
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
-                    del st.session_state.alerta_folio_pendiente
-                    st.rerun()
-        
-        # Ejecutamos el monitor globalmente aquí mero
-        monitor_y_alerta_folios()    
+else:      
     
     # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
     header_zone = st.container()
