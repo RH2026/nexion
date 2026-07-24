@@ -10742,7 +10742,7 @@ else:
                 ]
                 
                 # ==============================================================================
-                # 2. ESTILOS CSS "JYPESA NEXION CORE" (Específicos para el módulo)
+                # 2. ESTILOS CSS "JYPESA NEXION CORE" (OPTIMIZADOS Y CON HOVER EN BOTONES)
                 # ==============================================================================
                 st.markdown("""
                     <style>
@@ -10764,42 +10764,90 @@ else:
                     /* Barra de progreso / Línea inferior neón estilo Jypesa */
                     .neon-bar { height: 4px; border-radius: 2px; margin-top: 10px; width: 100%; }
                 
-                    /* Tarjetas HTML para el Render de Registros Perrones */
-                    .record-card {
+                    /* --- ESTILOS BOTONES FORMULARIO (CON FONDO Y HOVER) --- */
+                    div[data-testid="stFormSubmitButton"] button[kind="secondary"] {
+                        background-color: rgba(255, 75, 75, 0.15) !important;
+                        color: #FF4B4B !important;
+                        border: 1px solid #FF4B4B !important;
+                        font-weight: bold !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                        width: 100% !important;
+                        transition: all 0.3s ease !important;
+                    }
+                    div[data-testid="stFormSubmitButton"] button[kind="secondary"]:hover {
+                        background-color: #FF4B4B !important;
+                        color: #FFFFFF !important;
+                        box-shadow: 0 0 15px rgba(255, 75, 75, 0.5) !important;
+                    }
+                    
+                    div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+                        background-color: rgba(0, 255, 170, 0.15) !important;
+                        color: #00FFAA !important;
+                        border: 1px solid #00FFAA !important;
+                        font-weight: bold !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                        width: 100% !important;
+                        transition: all 0.3s ease !important;
+                    }
+                    div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+                        background-color: #00FFAA !important;
+                        color: #1D2A35 !important;
+                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.5) !important;
+                    }
+                
+                    /* --- RENDER DE REGISTROS PERRONES (ALINEADOS Y COMPACTOS) --- */
+                    .r-card {
                         background-color: #1D2A35;
                         border: 1px solid #34495E;
-                        border-left: 4px solid #00E5FF;
                         border-radius: 6px;
-                        padding: 12px 18px;
-                        margin-bottom: 10px;
-                        display: flex;
-                        justify-content: space-between;
+                        padding: 10px 15px;
+                        margin-bottom: 8px;
+                        display: grid;
+                        grid-template-columns: 1.5fr 1fr 1.5fr 2fr 1.2fr 1fr;
                         align-items: center;
+                        gap: 10px;
                         transition: all 0.2s ease;
                     }
-                    .record-card:hover {
-                        border-color: #00FFAA;
-                        box-shadow: 0 4px 12px rgba(0, 255, 170, 0.1);
+                    .r-card:hover {
+                        border-color: #00E5FF;
+                        box-shadow: 0 4px 10px rgba(0, 229, 255, 0.1);
                     }
-                    .record-field-label {
-                        font-size: 10px;
+                    .r-field {
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .r-label {
+                        font-size: 9px;
                         color: #8B9BB4;
                         text-transform: uppercase;
-                        font-weight: bold;
                         letter-spacing: 1px;
-                    }
-                    .record-field-value {
-                        font-size: 13px;
-                        color: #E0E6ED;
                         font-weight: bold;
+                    }
+                    .r-value {
+                        font-size: 12px;
+                        color: #E0E6ED;
+                        font-weight: 600;
                         margin-top: 2px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .r-type-badge {
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        font-size: 10px;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        display: inline-block;
                     }
                 
                     /* --- PESTAÑAS (TABS) ESTILO JYPESA --- */
                     div[data-baseweb="tab-list"] {
                         gap: 20px;
                         border-bottom: 2px solid #34495E;
-                        margin-bottom: 20px;
+                        margin-bottom: 15px;
                     }
                     div[data-baseweb="tab"] {
                         background-color: transparent !important;
@@ -11024,7 +11072,7 @@ else:
                     if not TOKEN:
                         st.warning("⚠️ Modo de solo lectura local. Configure GITHUB_TOKEN para registrar operaciones.")
                     
-                    st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>⚡</span> EJECUTAR ORDEN DE REGISTRO</p>", unsafe_allow_html=True)
+                    st.markdown("<p class='kpi-label' style='margin-bottom: 10px;'><span style='color:#00E5FF'>⚡</span> EJECUTAR ORDEN DE REGISTRO</p>", unsafe_allow_html=True)
                     
                     with st.form("elite_ops", clear_on_submit=True):
                         # 4 INPUTS EN LÍNEA
@@ -11040,12 +11088,14 @@ else:
                         
                         st.markdown("<br>", unsafe_allow_html=True)
                         
-                        # 2 BOTONES ABAJO
-                        btn_l, btn_r = st.columns(2)
+                        # 2 BOTONES ABAJO CENTRADOS
+                        _, c_btn1, c_btn2, _ = st.columns([1, 2, 2, 1])
                         block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
                         
-                        gasto_sub = btn_l.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit)
-                        ingreso_sub = btn_r.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit)
+                        with c_btn1:
+                            gasto_sub = st.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit, type="secondary")
+                        with c_btn2:
+                            ingreso_sub = st.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, type="primary")
                         
                         if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
                             with st.status("Sincronizando con Nube Nexion...", expanded=True):
@@ -11075,10 +11125,11 @@ else:
                                     st.rerun()
                                 except Exception as e: st.error(f"Error crítico de sincronización: {e}")
                 
-                    st.markdown("<br><hr style='border-color: #34495E;'><br>", unsafe_allow_html=True)
+                    # Menos espacio entre el formulario y el historial
+                    st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIONES EN TIEMPO REAL</p>", unsafe_allow_html=True)
                     
-                    # RENDER DE REGISTROS PERRONES CON HTML (Jubilando el st.dataframe clásico)
+                    # RENDER DE REGISTROS PERRONES CON HTML (ALINEADOS CON CSS GRID)
                     if not df_actual.empty:
                         df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
                         
@@ -11098,34 +11149,34 @@ else:
                             border_left_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
                             
                             st.markdown(f"""
-                                <div class="record-card" style="border-left-color: {border_left_color};">
-                                    <div>
-                                        <div class="record-field-label">FECHA Y HORA</div>
-                                        <div class="record-field-value">{fecha_str}</div>
+                                <div class="r-card" style="border-left: 4px solid {border_left_color};">
+                                    <div class="r-field">
+                                        <div class="r-label">FECHA Y HORA</div>
+                                        <div class="r-value">{fecha_str}</div>
                                     </div>
-                                    <div>
-                                        <div class="record-field-label">TIPO</div>
-                                        <div class="record-field-value">
-                                            <span style="background-color: {badge_bg}; color: {badge_color}; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                                    <div class="r-field">
+                                        <div class="r-label">TIPO</div>
+                                        <div class="r-value">
+                                            <span class="r-type-badge" style="background-color: {badge_bg}; color: {badge_color};">
                                                 {tipo.upper()}
                                             </span>
                                         </div>
                                     </div>
-                                    <div>
-                                        <div class="record-field-label">CATEGORÍA</div>
-                                        <div class="record-field-value">{cat}</div>
+                                    <div class="r-field">
+                                        <div class="r-label">CATEGORÍA</div>
+                                        <div class="r-value">{cat}</div>
                                     </div>
-                                    <div>
-                                        <div class="record-field-label">CONCEPTO</div>
-                                        <div class="record-field-value">{concepto}</div>
+                                    <div class="r-field">
+                                        <div class="r-label">CONCEPTO</div>
+                                        <div class="r-value">{concepto}</div>
                                     </div>
-                                    <div>
-                                        <div class="record-field-label">CUENTA</div>
-                                        <div class="record-field-value">{cuenta}</div>
+                                    <div class="r-field">
+                                        <div class="r-label">CUENTA</div>
+                                        <div class="r-value">{cuenta}</div>
                                     </div>
-                                    <div>
-                                        <div class="record-field-label">MONTO</div>
-                                        <div class="record-field-value" style="color: {color_monto}; font-size: 15px;">{monto_str}</div>
+                                    <div class="r-field">
+                                        <div class="r-label">MONTO</div>
+                                        <div class="r-value" style="color: {color_monto}; font-size: 14px;">{monto_str}</div>
                                     </div>
                                 </div>
                             """, unsafe_allow_html=True)
