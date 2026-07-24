@@ -8976,7 +8976,7 @@ else:
                             [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
                             [Paragraph(fac_cliente, cell_center), "", ""],
                             [Paragraph("<b>DOMICILIO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center), ""],
-                            [Paragraph(f"Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México<br/>Tel.. 0152 (33) 35402939<br/>E-mail: sbomailer@jypesa.com", ParagraphStyle("FD", alignment=1, fontSize=6, fontName="Helvetica", leading=7.5)), "", ""],
+                            [Paragraph(f"Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México<br/>Tel.. 0152 (33) 35402939<br/>E-mail: rhernandez@jypesa.com", ParagraphStyle("FD", alignment=1, fontSize=6, fontName="Helvetica", leading=7.5)), "", ""],
                             [Paragraph("<b>RFC:</b>", cell_bold), Paragraph(f"RFC {fac_rfc}", cell_center), ""]
                         ]
                         t_fac = Table(fac_data, colWidths=[75, 427, 100])
@@ -9139,7 +9139,7 @@ else:
                                 Table([
                                     [Paragraph("<b>NOMBRE:</b>", cell_bold), Paragraph("RIGOBERTO HERNANDEZ", cell_center)],
                                     [Paragraph("<b>EMPRESA:</b>", cell_bold), Paragraph("JYPESA", cell_center)],
-                                    [Paragraph("<b>E-MAIL:</b>", cell_bold), Paragraph("seguimientoemb@jypesa.com", cell_center)],
+                                    [Paragraph("<b>E-MAIL:</b>", cell_bold), Paragraph("rhernandez@jypesa.com", cell_center)],
                                     [Paragraph("<b>TELEFONO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center)]
                                 ], colWidths=[70, 230], style=[
                                     ("BACKGROUND", (1,0), (1,-1), colors.HexColor("#fff59d")),
