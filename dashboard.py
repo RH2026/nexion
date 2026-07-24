@@ -6577,66 +6577,7 @@ else:
                             headers = {"Authorization": f"token {GITHUB_TOKEN}"}
                             csv_string = df.to_csv(index=False)
                             payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
-                            return requests.put(url, json=payload, headers=headers).status_code == 200
-                        
-                        # --- 1. MONITOR DE ALERTAS BLINDADO ---
-                        # --- 1. MONITOR DE ALERTAS BLINDADO ---
-                        # Nota: Asegúrate de que esta función esté definida antes de llamarla
-                        @st.fragment(run_every=15)
-                        def monitorear_nuevos_folios_para_ti():
-                            # Depuración: Si quieres ver que está trabajando, descomenta la siguiente línea:
-                            # st.sidebar.write(f"Monitor activo: {datetime.now().strftime('%H:%M:%S')}")
-                            
-                            if st.session_state.get("usuario_activo") == "Rigoberto":
-                                # Usamos tu función para traer los datos reales de la nube
-                                df_actual, _ = obtener_datos_github()
-                                
-                                if not df_actual.empty and "FOLIO" in df_actual.columns:
-                                    folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
-                                    
-                                    # Inicialización
-                                    if "ultimo_folio_visto" not in st.session_state:
-                                        st.session_state.ultimo_folio_visto = folio_actual_nube
-                                    
-                                    # Lógica de detección: Si el de la nube es mayor, disparamos alerta
-                                    elif folio_actual_nube > st.session_state.ultimo_folio_visto:
-                                        st.session_state.alerta_folio_pendiente = folio_actual_nube
-                                        st.session_state.ultimo_folio_visto = folio_actual_nube
-                                        st.rerun() # FORZAMOS RERUN para que el aviso aparezca al instante
-                        
-                        def renderizar_alerta_persistente():
-                            if "alerta_folio_pendiente" in st.session_state:
-                                folio = st.session_state.alerta_folio_pendiente
-                                
-                                # Diseño profesional con fondo más oscuro y acento en NARANJA ROJIZO
-                                st.markdown(f"""
-                                <div style="
-                                    background-color: #202c36; 
-                                    border-left: 6px solid #FF4500; 
-                                    padding: 20px 25px; 
-                                    border-radius: 5px; 
-                                    margin-bottom: 20px;
-                                    color: white;
-                                    font-family: sans-serif;
-                                ">
-                                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
-                                        NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
-                                    </h2>
-                                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                                        Nexion Logistic Node // Alerta 
-                                    </p>
-                                </div>
-                                """, unsafe_allow_html=True)
-                                
-                                if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
-                                    del st.session_state.alerta_folio_pendiente
-                                    st.rerun()
-                        
-                        # --- LLAMADA ESTRATÉGICA ---
-                        # Coloca esto justo después de tus definiciones de funciones al inicio de tu script
-                        renderizar_alerta_persistente()
-                        monitorear_nuevos_folios_para_ti()
-                        
+                            return requests.put(url, json=payload, headers=headers).status_code == 200                      
                 
                         # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
                         def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago):
