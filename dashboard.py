@@ -10742,7 +10742,7 @@ else:
                 ]
                 
                 # ==============================================================================
-                # 2. ESTILOS CSS "JYPESA NEXION CORE" (OPTIMIZADOS Y CON HOVER EN BOTONES)
+                # 2. ESTILOS CSS "JYPESA NEXION CORE" (INCLUYENDO KITWEB SCROLL)
                 # ==============================================================================
                 st.markdown("""
                     <style>
@@ -10764,37 +10764,61 @@ else:
                     /* Barra de progreso / Línea inferior neón estilo Jypesa */
                     .neon-bar { height: 4px; border-radius: 2px; margin-top: 10px; width: 100%; }
                 
-                    /* --- ESTILOS BOTONES FORMULARIO (CON FONDO Y HOVER) --- */
-                    div[data-testid="stFormSubmitButton"] button[kind="secondary"] {
-                        background-color: rgba(255, 75, 75, 0.15) !important;
-                        color: #FF4B4B !important;
-                        border: 1px solid #FF4B4B !important;
+                    /* --- ESTILOS DEFINITIVOS PARA BOTONES DE FORMULARIO (FONDO + HOVER) --- */
+                    div.stButton > button, div[data-testid="stFormSubmitButton"] > button {
+                        border-radius: 4px !important;
                         font-weight: bold !important;
                         text-transform: uppercase !important;
                         letter-spacing: 1px !important;
                         width: 100% !important;
                         transition: all 0.3s ease !important;
+                    }
+                    
+                    div[data-testid="stFormSubmitButton"] button[kind="secondary"] {
+                        background-color: rgba(255, 75, 75, 0.2) !important;
+                        color: #FF4B4B !important;
+                        border: 1px solid #FF4B4B !important;
                     }
                     div[data-testid="stFormSubmitButton"] button[kind="secondary"]:hover {
                         background-color: #FF4B4B !important;
                         color: #FFFFFF !important;
-                        box-shadow: 0 0 15px rgba(255, 75, 75, 0.5) !important;
+                        box-shadow: 0 0 15px rgba(255, 75, 75, 0.6) !important;
+                        border-color: #FF4B4B !important;
                     }
                     
                     div[data-testid="stFormSubmitButton"] button[kind="primary"] {
-                        background-color: rgba(0, 255, 170, 0.15) !important;
+                        background-color: rgba(0, 255, 170, 0.2) !important;
                         color: #00FFAA !important;
                         border: 1px solid #00FFAA !important;
-                        font-weight: bold !important;
-                        text-transform: uppercase !important;
-                        letter-spacing: 1px !important;
-                        width: 100% !important;
-                        transition: all 0.3s ease !important;
                     }
                     div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
                         background-color: #00FFAA !important;
                         color: #1D2A35 !important;
-                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.5) !important;
+                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.6) !important;
+                        border-color: #00FFAA !important;
+                    }
+                
+                    /* --- KITWEB SCROLL CONTAINER PARA REGISTROS --- */
+                    .kitweb-scroll-container {
+                        max-height: 420px;
+                        overflow-y: auto;
+                        padding-right: 5px;
+                        margin-top: 5px;
+                    }
+                    /* Estilo barra de desplazamiento personalizada para que combine con Jypesa */
+                    .kitweb-scroll-container::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    .kitweb-scroll-container::-webkit-scrollbar-track {
+                        background: #1D2A35;
+                        border-radius: 4px;
+                    }
+                    .kitweb-scroll-container::-webkit-scrollbar-thumb {
+                        background: #34495E;
+                        border-radius: 4px;
+                    }
+                    .kitweb-scroll-container::-webkit-scrollbar-thumb:hover {
+                        background: #00E5FF;
                     }
                 
                     /* --- RENDER DE REGISTROS PERRONES (ALINEADOS Y COMPACTOS) --- */
@@ -11088,14 +11112,12 @@ else:
                         
                         st.markdown("<br>", unsafe_allow_html=True)
                         
-                        # 2 BOTONES ABAJO CENTRADOS
-                        _, c_btn1, c_btn2, _ = st.columns([1, 2, 2, 1])
+                        # 2 BOTONES ABAJO
+                        btn_l, btn_r = st.columns(2)
                         block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
                         
-                        with c_btn1:
-                            gasto_sub = st.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit, type="secondary")
-                        with c_btn2:
-                            ingreso_sub = st.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, type="primary")
+                        gasto_sub = btn_l.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit, type="secondary")
+                        ingreso_sub = btn_r.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, type="primary")
                         
                         if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
                             with st.status("Sincronizando con Nube Nexion...", expanded=True):
@@ -11125,13 +11147,16 @@ else:
                                     st.rerun()
                                 except Exception as e: st.error(f"Error crítico de sincronización: {e}")
                 
-                    # Menos espacio entre el formulario y el historial
+                    # Espacio controlado y título de historial
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIONES EN TIEMPO REAL</p>", unsafe_allow_html=True)
                     
-                    # RENDER DE REGISTROS PERRONES CON HTML (ALINEADOS CON CSS GRID)
+                    # RENDER DE REGISTROS PERRONES CON KITWEB SCROLL
                     if not df_actual.empty:
                         df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
+                        
+                        # Abrimos el contenedor con scroll fijo estilo kitweb
+                        st.markdown('<div class="kitweb-scroll-container">', unsafe_allow_html=True)
                         
                         for _, row in df_ledger.iterrows():
                             fecha_str = row['Fecha'].strftime('%d/%m/%Y %H:%M') if pd.notnull(row['Fecha']) else ""
@@ -11180,6 +11205,9 @@ else:
                                     </div>
                                 </div>
                             """, unsafe_allow_html=True)
+                            
+                        # Cerramos el contenedor kitweb scroll
+                        st.markdown('</div>', unsafe_allow_html=True)
                     else:
                         st.info("No hay registros en la nube actualmente.")
                 
