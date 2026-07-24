@@ -10740,7 +10740,7 @@ else:
                     "Entretenimiento", "Ropa y Calzado", "Regalos",
                     "Pago de Tarjetas", "Inversiones", "Ahorro", "Comisiones", "Varios"
                 ]
-        
+                
                 # ==============================================================================
                 # 2. ESTILOS CSS "JYPESA NEXION CORE" (Específicos para el módulo)
                 # ==============================================================================
@@ -10760,10 +10760,41 @@ else:
                     .kpi-label { color: #8B9BB4; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px;}
                     .kpi-value { color: #FFFFFF; font-size: 34px; font-weight: bold; margin: 10px 0;}
                     .kpi-trend { font-size: 13px; font-weight: bold; }
-        
+                
                     /* Barra de progreso / Línea inferior neón estilo Jypesa */
                     .neon-bar { height: 4px; border-radius: 2px; margin-top: 10px; width: 100%; }
-        
+                
+                    /* Tarjetas HTML para el Render de Registros Perrones */
+                    .record-card {
+                        background-color: #1D2A35;
+                        border: 1px solid #34495E;
+                        border-left: 4px solid #00E5FF;
+                        border-radius: 6px;
+                        padding: 12px 18px;
+                        margin-bottom: 10px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        transition: all 0.2s ease;
+                    }
+                    .record-card:hover {
+                        border-color: #00FFAA;
+                        box-shadow: 0 4px 12px rgba(0, 255, 170, 0.1);
+                    }
+                    .record-field-label {
+                        font-size: 10px;
+                        color: #8B9BB4;
+                        text-transform: uppercase;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                    }
+                    .record-field-value {
+                        font-size: 13px;
+                        color: #E0E6ED;
+                        font-weight: bold;
+                        margin-top: 2px;
+                    }
+                
                     /* --- PESTAÑAS (TABS) ESTILO JYPESA --- */
                     div[data-baseweb="tab-list"] {
                         gap: 20px;
@@ -10785,7 +10816,7 @@ else:
                     }
                     </style>
                 """, unsafe_allow_html=True)
-        
+                
                 # ==============================================================================
                 # 3. CONTROL DE CANDADO DE ARCHIVO (Para evitar que 2 editen el CSV a la vez)
                 # ==============================================================================
@@ -10815,7 +10846,7 @@ else:
                             try: repo.update_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, sha=repo.get_contents(LOCK_FILE_PATH).sha)
                             except: repo.create_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, branch="main")
                         except: pass
-        
+                
                 # ==============================================================================
                 # 4. MOTOR DE DATOS (GITHUB O LOCAL FALLBACK)
                 # ==============================================================================
@@ -10829,7 +10860,7 @@ else:
                             {"Fecha": (start_date - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Supermercado", "Concepto": "Compras Semanales", "Monto": -3500.0, "Cuenta": "Banco MX (Core)"},
                         ]
                         df_load = pd.DataFrame(ejemplos)
-        
+                
                         if TOKEN:
                             try:
                                 repo = Github(TOKEN).get_repo(REPO_NAME)
@@ -10839,13 +10870,13 @@ else:
                                     repo.create_file(path=FILE_PATH, message="INITIALIZE WALLET MATRIX", content=df_load.to_csv(index=False), branch="main")
                             except Exception as e:
                                 st.error(f"Error conexión GitHub: {e}. Usando datos locales.")
-                        
+                
                         df_load['Fecha'] = pd.to_datetime(df_load['Fecha'])
                         st.session_state.df_wallet = df_load
                         st.session_state.force_reload = False
                         
                     return st.session_state.df_wallet
-        
+                
                 # ==============================================================================
                 # 5. RENDERIZADO DE INTERFAZ WALLET
                 # ==============================================================================
@@ -10858,22 +10889,21 @@ else:
                     df_month = df_actual[df_actual['Mes'] == current_month]
                 else:
                     df_month = pd.DataFrame()
-        
+                
                 # Cálculos de saldos
                 saldos_actuales = {cuenta: datos['fondo_base'] for cuenta, datos in CUENTAS_MATRIX.items()}
                 if not df_actual.empty:
                     for cuenta in CUENTAS_MATRIX.keys():
                         saldos_actuales[cuenta] += df_actual[df_actual['Cuenta'] == cuenta]['Monto'].sum()
-        
+                
                 total_general = sum(saldos_actuales.values())
                 inc_month = df_month[df_month['Tipo'] == "Ingreso"]['Monto'].sum() if not df_month.empty else 0
                 exp_month = abs(df_month[df_month['Tipo'] == "Gasto"]['Monto'].sum()) if not df_month.empty else 0
                 net_month = inc_month - exp_month
-        
-                        
+                
                 # SISTEMA DE PESTAÑAS
                 tab_kpi, tab_flujos, tab_registro = st.tabs(["KPI'S WALLET", "FLUJOS DE EFECTIVO", "REGISTRO NUBE"])
-        
+                
                 # --- PESTAÑA 1: KPI'S WALLET ---
                 with tab_kpi:
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -10918,7 +10948,7 @@ else:
                         nombres_cuentas = list(saldos_actuales.keys())
                         valores_saldos = list(saldos_actuales.values())
                         colores_barras = [CUENTAS_MATRIX[c]['color'] for c in nombres_cuentas]
-        
+                
                         fig_bars = go.Figure(go.Bar(
                             x=valores_saldos, y=nombres_cuentas, orientation='h',
                             marker=dict(color=colores_barras, line=dict(color='#1D2A35', width=2)),
@@ -10926,7 +10956,7 @@ else:
                             textfont=dict(color='#FFFFFF', size=12, family="monospace"),
                             hovertemplate="<b>%{y}</b><br>Saldo: %{x:$,.2f}<extra></extra>"
                         ))
-        
+                
                         fig_bars.update_layout(
                             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', showlegend=False,
                             margin=dict(t=10, b=10, l=10, r=10), height=350,
@@ -10936,7 +10966,7 @@ else:
                         )
                         
                         st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
-        
+                
                 # --- PESTAÑA 2: FLUJOS DE EFECTIVO ---
                 with tab_flujos:
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -10964,7 +10994,7 @@ else:
                             st.plotly_chart(fig_flow, use_container_width=True, config={'displayModeBar': False})
                         else:
                             st.info("Sin movimientos este mes.")
-        
+                
                     with gr_col2:
                         st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>📊</span> ANÁLISIS DE CONSUMO POR CATEGORÍA</p>", unsafe_allow_html=True)
                         if not df_month.empty:
@@ -10986,7 +11016,7 @@ else:
                                 st.plotly_chart(fig_cat, use_container_width=True, config={'displayModeBar': False})
                             else:
                                 st.info("Sin gastos registrados este mes.")
-        
+                
                 # --- PESTAÑA 3: REGISTRO NUBE ---
                 with tab_registro:
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -10994,63 +11024,113 @@ else:
                     if not TOKEN:
                         st.warning("⚠️ Modo de solo lectura local. Configure GITHUB_TOKEN para registrar operaciones.")
                     
-                    op_col1, op_col2 = st.columns([1, 2])
-        
-                    with op_col1:
-                        st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>⚡</span> EJECUTAR ORDEN</p>", unsafe_allow_html=True)
-                        with st.form("elite_ops", clear_on_submit=True):
+                    st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>⚡</span> EJECUTAR ORDEN DE REGISTRO</p>", unsafe_allow_html=True)
+                    
+                    with st.form("elite_ops", clear_on_submit=True):
+                        # 4 INPUTS EN LÍNEA
+                        in_col1, in_col2, in_col3, in_col4 = st.columns(4)
+                        with in_col1:
                             f_monto = st.number_input("Cantidad MXN", min_value=0.0, step=100.0)
+                        with in_col2:
                             f_cat = st.selectbox("Categoría", CATEGORIAS)
+                        with in_col3:
                             f_desc = st.text_input("Concepto / Referencia", placeholder="Ej. Gastos de Operación")
+                        with in_col4:
                             f_cuenta = st.selectbox("Cuenta Destino/Origen", list(CUENTAS_MATRIX.keys()))
+                        
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # 2 BOTONES ABAJO
+                        btn_l, btn_r = st.columns(2)
+                        block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
+                        
+                        gasto_sub = btn_l.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit)
+                        ingreso_sub = btn_r.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit)
+                        
+                        if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
+                            with st.status("Sincronizando con Nube Nexion...", expanded=True):
+                                try:
+                                    repo = Github(TOKEN).get_repo(REPO_NAME)
+                                    contents = repo.get_contents(FILE_PATH)
+                                    df_latest = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
+                                    
+                                    nueva_fila = {
+                                        "Fecha": datetime.now(tz_gdl).strftime("%Y-%m-%d %H:%M"),
+                                        "Tipo": "Gasto" if gasto_sub else "Ingreso",
+                                        "Categoria": f_cat,
+                                        "Concepto": f_desc,
+                                        "Monto": -f_monto if gasto_sub else f_monto,
+                                        "Cuenta": f_cuenta
+                                    }
+                                    
+                                    df_latest = pd.concat([df_latest, pd.DataFrame([nueva_fila])], ignore_index=True)
+                                    repo.update_file(path=FILE_PATH, message=f"UPDATE // {current_user} // {datetime.now(tz_gdl).strftime('%H:%M:%S')}", content=df_latest.to_csv(index=False), sha=contents.sha)
+                                    
+                                    try: repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=repo.get_contents(LOCK_FILE_PATH).sha)
+                                    except: pass
+                                    
+                                    st.session_state.force_reload = True
+                                    st.success("OPERACIÓN CLASIFICADA EXITOSAMENTE.")
+                                    time.sleep(1)
+                                    st.rerun()
+                                except Exception as e: st.error(f"Error crítico de sincronización: {e}")
+                
+                    st.markdown("<br><hr style='border-color: #34495E;'><br>", unsafe_allow_html=True)
+                    st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIONES EN TIEMPO REAL</p>", unsafe_allow_html=True)
+                    
+                    # RENDER DE REGISTROS PERRONES CON HTML (Jubilando el st.dataframe clásico)
+                    if not df_actual.empty:
+                        df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
+                        
+                        for _, row in df_ledger.iterrows():
+                            fecha_str = row['Fecha'].strftime('%d/%m/%Y %H:%M') if pd.notnull(row['Fecha']) else ""
+                            tipo = row['Tipo']
+                            cat = row['Categoria']
+                            concepto = row['Concepto']
+                            monto = row['Monto']
+                            cuenta = row['Cuenta']
                             
-                            btn_l, btn_r = st.columns(2)
-                            block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
+                            # Estilos dinámicos según el tipo de operación
+                            color_monto = "#00FFAA" if monto > 0 else "#FF4B4B"
+                            monto_str = f"${monto:,.2f}"
+                            badge_bg = "rgba(0, 255, 170, 0.1)" if tipo == "Ingreso" else "rgba(255, 75, 75, 0.1)"
+                            badge_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
+                            border_left_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
                             
-                            gasto_sub = btn_l.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit)
-                            ingreso_sub = btn_r.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit)
-                            
-                            if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
-                                with st.status("Sincronizando con Nube Nexion...", expanded=True):
-                                    try:
-                                        repo = Github(TOKEN).get_repo(REPO_NAME)
-                                        contents = repo.get_contents(FILE_PATH)
-                                        df_latest = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
-                                        
-                                        nueva_fila = {
-                                            "Fecha": datetime.now(tz_gdl).strftime("%Y-%m-%d %H:%M"),
-                                            "Tipo": "Gasto" if gasto_sub else "Ingreso",
-                                            "Categoria": f_cat,
-                                            "Concepto": f_desc,
-                                            "Monto": -f_monto if gasto_sub else f_monto,
-                                            "Cuenta": f_cuenta
-                                        }
-                                        
-                                        df_latest = pd.concat([df_latest, pd.DataFrame([nueva_fila])], ignore_index=True)
-                                        repo.update_file(path=FILE_PATH, message=f"UPDATE // {current_user} // {datetime.now(tz_gdl).strftime('%H:%M:%S')}", content=df_latest.to_csv(index=False), sha=contents.sha)
-                                        
-                                        try: repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=repo.get_contents(LOCK_FILE_PATH).sha)
-                                        except: pass
-                                        
-                                        st.session_state.force_reload = True
-                                        st.success("OPERACIÓN CLASIFICADA EXITOSAMENTE.")
-                                        time.sleep(1)
-                                        st.rerun()
-                                    except Exception as e: st.error(f"Error crítico de sincronización: {e}")
-        
-                    with op_col2:
-                        st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIÓN EN TIEMPO REAL</p>", unsafe_allow_html=True)
-                        if not df_actual.empty:
-                            df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
-                            df_ledger['Fecha'] = df_ledger['Fecha'].dt.strftime('%d/%m/%Y %H:%M')
-                            
-                            st.dataframe(
-                                df_ledger[['Fecha', 'Tipo', 'Categoria', 'Concepto', 'Monto', 'Cuenta']].style
-                                .format({'Monto': '${:,.2f}'})
-                                .map(lambda val: 'color: #00FFAA; font-weight: bold;' if val > 0 else 'color: #FF4B4B; font-weight: bold;', subset=['Monto'])
-                                .map(lambda val: 'background-color: rgba(0, 229, 255, 0.05);' if val == "Ingreso" else '', subset=['Tipo']),
-                                use_container_width=True, hide_index=True, height=400
-                            )
+                            st.markdown(f"""
+                                <div class="record-card" style="border-left-color: {border_left_color};">
+                                    <div>
+                                        <div class="record-field-label">FECHA Y HORA</div>
+                                        <div class="record-field-value">{fecha_str}</div>
+                                    </div>
+                                    <div>
+                                        <div class="record-field-label">TIPO</div>
+                                        <div class="record-field-value">
+                                            <span style="background-color: {badge_bg}; color: {badge_color}; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                                                {tipo.upper()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="record-field-label">CATEGORÍA</div>
+                                        <div class="record-field-value">{cat}</div>
+                                    </div>
+                                    <div>
+                                        <div class="record-field-label">CONCEPTO</div>
+                                        <div class="record-field-value">{concepto}</div>
+                                    </div>
+                                    <div>
+                                        <div class="record-field-label">CUENTA</div>
+                                        <div class="record-field-value">{cuenta}</div>
+                                    </div>
+                                    <div>
+                                        <div class="record-field-label">MONTO</div>
+                                        <div class="record-field-value" style="color: {color_monto}; font-size: 15px;">{monto_str}</div>
+                                    </div>
+                                </div>
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.info("No hay registros en la nube actualmente.")
                 
             
             #PRESUPUESTOS________________________________________________________     
