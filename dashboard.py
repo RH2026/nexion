@@ -44,6 +44,7 @@ if "reporte_a_imprimir" not in st.session_state:
 st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
 
 
+
 def registrar_acceso(usuario):
     # Usamos tus imports globales: os, pandas (pd), datetime y pytz
     archivo_log = "log_accesos.csv"
@@ -1366,7 +1367,57 @@ else:
                     st.session_state.autenticado = False
                     st.session_state.splash_completado = False
                     st.rerun()
+    # --- MONITOR Y ALERTA DE NUEVOS FOLIOS (GLOBAL) ---
+    @st.fragment(run_every=15)
+    def monitor_y_alerta_folios():
+        # 1. Lógica de monitoreo en segundo plano
+        try:
+            df_actual, _ = obtener_datos_github()
             
+            if not df_actual.empty and "FOLIO" in df_actual.columns:
+                folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
+                
+                # Inicialización del control
+                if "ultimo_folio_visto" not in st.session_state:
+                    st.session_state.ultimo_folio_visto = folio_actual_nube
+                
+                # Detección de nuevo folio
+                elif folio_actual_nube > st.session_state.ultimo_folio_visto:
+                    st.session_state.alerta_folio_pendiente = folio_actual_nube
+                    st.session_state.ultimo_folio_visto = folio_actual_nube
+                    st.rerun()
+        except Exception as e:
+            pass
+    
+        # 2. Renderizado visual de la alerta en la parte superior si está pendiente
+        if "alerta_folio_pendiente" in st.session_state:
+            folio = st.session_state.alerta_folio_pendiente
+            
+            st.markdown(f"""
+            <div style="
+                background-color: #202c36; 
+                border-left: 6px solid #FF4500; 
+                padding: 20px 25px; 
+                border-radius: 5px; 
+                margin-bottom: 20px;
+                color: white;
+                font-family: sans-serif;
+            ">
+                <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
+                    NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
+                </h2>
+                <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                    Nexion Logistic Node // Alerta 
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
+                del st.session_state.alerta_folio_pendiente
+                st.rerun()
+    
+    # Ejecutamos el monitor globalmente aquí mero
+    monitor_y_alerta_folios()       
                 
                     
         # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
@@ -1535,64 +1586,6 @@ else:
         
         # Línea decorativa final
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
-
-    
-    # --- MONITOR Y ALERTA DE NUEVOS FOLIOS BLINDADO ---
-    @st.fragment(run_every=15)
-    def monitor_y_alerta_folios():
-        # 1. Lógica de monitoreo en segundo plano
-        if st.session_state.get("usuario_activo") == "Rigoberto":
-            try:
-                df_actual, _ = obtener_datos_github()
-                
-                if not df_actual.empty and "FOLIO" in df_actual.columns:
-                    folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
-                    
-                    # Inicialización del control
-                    if "ultimo_folio_visto" not in st.session_state:
-                        st.session_state.ultimo_folio_visto = folio_actual_nube
-                    
-                    # Detección de nuevo folio
-                    elif folio_actual_nube > st.session_state.ultimo_folio_visto:
-                        st.session_state.alerta_folio_pendiente = folio_actual_nube
-                        st.session_state.ultimo_folio_visto = folio_actual_nube
-                        st.rerun()
-            except Exception as e:
-                # Opcional: por si falla la conexión a GitHub momentáneamente
-                pass
-    
-        # 2. Renderizado visual de la alerta si está pendiente
-        if "alerta_folio_pendiente" in st.session_state:
-            folio = st.session_state.alerta_folio_pendiente
-            
-            st.markdown(f"""
-            <div style="
-                background-color: #202c36; 
-                border-left: 6px solid #FF4500; 
-                padding: 20px 25px; 
-                border-radius: 5px; 
-                margin-bottom: 20px;
-                color: white;
-                font-family: sans-serif;
-            ">
-                <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
-                    NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
-                </h2>
-                <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                    Nexion Logistic Node // Alerta 
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button("✅ CERRAR", key="btn_cerrar_nexion", use_container_width=True):
-                del st.session_state.alerta_folio_pendiente
-                st.rerun()
-    
-    # --- LLAMADA ÚNICA ---
-    # Coloca esta única línea en tu archivo principal (app.py o el entrypoint de tu multi-página)
-    monitor_y_alerta_folios()
-    
-    
     
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
