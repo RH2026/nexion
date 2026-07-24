@@ -8739,9 +8739,7 @@ else:
                 if not df_facturacion.empty:
                     df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
                     facturas_disponibles = df_facturacion["Factura"].unique()
-                
-                    st.markdown("### 📦 Solicitud de Recolección - Tresguerras")
-                    
+                                    
                     # --- 4 CONTROLES PRINCIPALES EN UNA SOLA FILA ---
                     top_col1, top_col2, top_col3, top_col4 = st.columns(4)
                     
@@ -8810,7 +8808,7 @@ else:
                             rem_tel = st.text_input("Teléfono Remitente", value=tel_val)
                 
                     with col2:
-                        titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#1565c0")
+                        titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#305496")
                         dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados")
                         dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155")
                         dc1, dc2 = st.columns(2)
