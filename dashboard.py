@@ -1613,6 +1613,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (COLUMNA CITA SEPARADA Y LIMPIA) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1622,7 +1623,7 @@ else:
                 import pandas as pd
                 from datetime import datetime, timedelta
                 
-                # Anticascadas con marca de tiempo para leer 'agc.csv' fresco de GitHub
+                # Anticascadas con marca de tiempo exacta para leer 'agc.csv' fresco de GitHub
                 t_fresco = int(time.time() * 1000)
                 url_agc = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/agc.csv?v={t_fresco}"
                 
@@ -1630,20 +1631,19 @@ else:
                 df_agc.columns = df_agc.columns.str.strip()
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
-                    # Calculamos la fecha de mañana (formato YYYY-MM-DD o el que traiga tu columna CITA)
-                    mañana = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+                    # Fecha de mañana en formato DD/MM/YYYY para empatar idéntico con tu columna CITA
+                    mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
                     
-                    # Intentamos extraer y limpiar la fecha de la columna CITA
-                    # (Asumiendo que empieza con la fecha, ej: "2026-07-26 - 10:00" o similar)
-                    fechas_citas_limpias = pd.to_datetime(df_agc["CITA"], errors='coerce').dt.strftime("%Y-%m-%d")
+                    # Limpiamos y convertimos la columna CITA de la matriz a texto plano estandarizado
+                    citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
                     
-                    # Filtramos si hay alguna cita para mañana
-                    citas_mañana = df_agc[fechas_citas_limpias == mañana]
+                    # Filtramos las filas que coincidan exactamente con la fecha de mañana
+                    citas_mañana = df_agc[citas_limpias == mañana_str]
                     
                     if not citas_mañana.empty:
-                        # Tomamos la primera coincidencia para avisarte
+                        # Tomamos la primera coincidencia
                         primera = citas_mañana.iloc[0]
-                        id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "AGC")))
+                        id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "CITA")))
                         
                         if st.session_state.get("alerta_cita_pendiente") != id_oc:
                             st.session_state.alerta_cita_pendiente = id_oc
@@ -1653,10 +1653,10 @@ else:
             except Exception as e:
                 pass
     
-            # Renderizado visual de la alerta de citas (Plana, sin sombras y con el botón estilizado a la izquierda)
-            if "alerta_cita_pendiente" in st.session_state:
+            # Renderizado visual de la alerta de citas (Plana, sin sombras y con el botón compacto a la izquierda)
+            if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
                 datos = st.session_state.get("datos_cita_alerta", {})
-                oc_ref = datos.get("PO Customer", "ORDEN GENERAL")
+                oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
                 hora_cita = datos.get("HORA", "POR DEFINIR")
                 
                 st.markdown(f"""
