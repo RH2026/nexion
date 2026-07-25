@@ -10775,7 +10775,7 @@ else:
                         border-radius: 5px !important;
                         transition: all 0.3s ease !important;
                         width: 100% !important;
-                        font-weight: bold !important;
+                        font-weight: normal !important;
                         text-transform: uppercase !important;
                         letter-spacing: 1px !important;
                     }
