@@ -11039,9 +11039,9 @@ else:
                     block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
                     
                     with btn_l:
-                        gasto_sub = st.button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit, key="btn_gasto_action")
+                        gasto_sub = st.button(":MATERIAL/REMOVE: REGISTRAR GASTO", use_container_width=True, disabled=block_submit, key="btn_gasto_action")
                     with btn_r:
-                        ingreso_sub = st.button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, key="btn_ingreso_action")
+                        ingreso_sub = st.button(":MATERIAL/SAVE: REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, key="btn_ingreso_action")
                     
                     if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
                         with st.status("Sincronizando con Nube Nexion...", expanded=True):
