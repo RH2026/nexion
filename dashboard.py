@@ -1540,10 +1540,17 @@ else:
     
     
     # ── 2. MONITOR Y ALERTA DE NUEVOS FOLIOS (GLOBAL Y AL MARGEN) ──
+    # --- MONITOR Y ALERTA DE NUEVOS FOLIOS (CON LATIDO DE PRUEBA) ---
     @st.fragment(run_every=15)
     def monitor_y_alerta_folios():
+        # Latido visual temporal para ver si el fragmento se está ejecutando cada 15s
+        st.sidebar.caption(f"🔄 Vigía activo - Último visto: {st.session_state.get('ultimo_folio_visto', 'Ninguno')}")
+
         try:
             df_actual, _ = obtener_datos_github()
+            
+            # Depuración rápida para ver qué columnas lee
+            # st.sidebar.write(df_actual.columns.tolist()) 
             
             if not df_actual.empty and "FOLIO" in df_actual.columns:
                 folio_actual_nube = int(pd.to_numeric(df_actual["FOLIO"]).max())
@@ -1556,7 +1563,7 @@ else:
                     st.session_state.ultimo_folio_visto = folio_actual_nube
                     st.rerun()
         except Exception as e:
-            pass
+            st.sidebar.error(f"Error monitor: {e}")
 
         if "alerta_folio_pendiente" in st.session_state:
             folio = st.session_state.alerta_folio_pendiente
@@ -1574,7 +1581,7 @@ else:
                 <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
                     NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
                 </h2>
-                <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                <p style="margin: 5px 0 0 0; font-size: 140px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
                     Nexion Logistic Node // Alerta 
                 </p>
             </div>
@@ -1584,9 +1591,7 @@ else:
                 del st.session_state.alerta_folio_pendiente
                 st.rerun()
 
-    # Ejecutamos el monitor aquí, libre de columnas y listo para vigilar
     monitor_y_alerta_folios()
-    
     
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
