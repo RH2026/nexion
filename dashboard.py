@@ -1610,7 +1610,93 @@ else:
                     st.rerun()
     
     monitor_global_rigoberto()
+
+
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
+    @st.fragment(run_every=3)
+    def monitor_global_citas():
+        if st.session_state.get("usuario_activo") == "Rigoberto":
+            
+            try:
+                import time
+                import pandas as pd
+                from datetime import datetime, timedelta
+                
+                # Anticascadas con marca de tiempo para leer 'agc.csv' fresco de GitHub
+                t_fresco = int(time.time() * 1000)
+                url_agc = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/agc.csv?v={t_fresco}"
+                
+                df_agc = pd.read_csv(url_agc, encoding='utf-8-sig')
+                df_agc.columns = df_agc.columns.str.strip()
+                
+                if not df_agc.empty and "CITA" in df_agc.columns:
+                    # Calculamos la fecha de mañana (formato YYYY-MM-DD o el que traiga tu columna CITA)
+                    mañana = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+                    
+                    # Intentamos extraer y limpiar la fecha de la columna CITA
+                    # (Asumiendo que empieza con la fecha, ej: "2026-07-26 - 10:00" o similar)
+                    fechas_citas_limpias = pd.to_datetime(df_agc["CITA"], errors='coerce').dt.strftime("%Y-%m-%d")
+                    
+                    # Filtramos si hay alguna cita para mañana
+                    citas_mañana = df_agc[fechas_citas_limpias == mañana]
+                    
+                    if not citas_mañana.empty:
+                        # Tomamos la primera coincidencia para avisarte
+                        primera = citas_mañana.iloc[0]
+                        id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "AGC")))
+                        
+                        if st.session_state.get("alerta_cita_pendiente") != id_oc:
+                            st.session_state.alerta_cita_pendiente = id_oc
+                            st.session_state.datos_cita_alerta = primera.to_dict()
+                            st.rerun()
+                            
+            except Exception as e:
+                pass
     
+            # Renderizado visual de la alerta de citas (Plana, sin sombras y con el botón estilizado a la izquierda)
+            if "alerta_cita_pendiente" in st.session_state:
+                datos = st.session_state.get("datos_cita_alerta", {})
+                oc_ref = datos.get("PO Customer", "ORDEN GENERAL")
+                hora_cita = datos.get("HORA", "POR DEFINIR")
+                
+                st.markdown(f"""
+                <div style="
+                    background-color: #202c36; 
+                    border-left: 6px solid #38bdf8; 
+                    padding: 20px 25px; 
+                    border-radius: 5px; 
+                    margin-bottom: 5px;
+                    color: white;
+                    font-family: sans-serif;
+                    box-shadow: none !important;
+                ">
+                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
+                        📅 ¡AVISO DE CITA PARA MAÑANA!: O.C. / REF: {oc_ref}
+                    </h2>
+                    <p style="margin: 5px 0 8px 0; font-size: 13px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                        Horario: {hora_cita} // Módulo AGC Nexion
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # CSS exclusivo para achicar y alinear el botón de cerrar a la izquierda
+                st.markdown("""
+                    <style>
+                    div[data-testid="stButton"] > button[kind="secondary"] {
+                        font-size: 11px !important;
+                        padding: 4px 12px !important;
+                        min-height: unset !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                if st.button("✖ CERRAR AVISO", key="btn_cerrar_alerta_cita"):
+                    del st.session_state.alerta_cita_pendiente
+                    if "datos_cita_alerta" in st.session_state:
+                        del st.session_state.datos_cita_alerta
+                    st.rerun()
+    
+    monitor_global_citas()
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
