@@ -1540,7 +1540,7 @@ else:
     
     
     # ── ALERTAS!!!!!!!!!!
-    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO (MODO EN CHINGUIZA) ---
+    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO (LIMPIA Y ALINEADA) ---
     @st.fragment(run_every=3)
     def monitor_global_rigoberto():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1565,39 +1565,38 @@ else:
                         st.session_state.alerta_folio_pendiente = folio_actual_nube
                         st.session_state.ultimo_folio_visto = folio_actual_nube
                         st.rerun()
-                else:
-                    st.sidebar.error("⚠️ Vigía: No se encontró la columna 'FOLIO' en muestras.csv")
-                    
+                        
             except Exception as e:
                 pass
     
-            # Renderizado visual de la alerta con botón abajo a la derecha
+            # Renderizado visual de la alerta sin sombras y con el botón nativo al margen derecho
             if "alerta_folio_pendiente" in st.session_state:
                 folio = st.session_state.alerta_folio_pendiente
                 
+                # Tarjeta plana sin sombras
                 st.markdown(f"""
                 <div style="
                     background-color: #202c36; 
                     border-left: 6px solid #FF4500; 
                     padding: 15px 20px; 
                     border-radius: 5px; 
-                    margin-bottom: 10px;
+                    margin-bottom: 5px;
                     color: white;
                     font-family: sans-serif;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                    box-shadow: none !important;
                 ">
                     <h2 style="margin: 0; padding: 0; font-size: 16px; color: #ffffff;">
-                        🚨 NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
+                        NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
                     </h2>
                     <p style="margin: 3px 0 0 0; font-size: 12px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                        Nexion Logistic Node // Alerta Exclusiva Admin
+                        Nexion Logistic // Alerta Exclusiva Admin
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Contenedor alineado a la derecha para poner el botón justo abajo y discreto
-                col_espacio, col_boton = st.columns([4, 1])
-                with col_boton:
+                # Forzamos con un pequeño contenedor de diseño para arrinconar el botón exactamente a la derecha
+                cols = st.columns([6, 1])
+                with cols[1]:
                     if st.button("✖ Cerrar", key="btn_cerrar_alerta_rigoberto"):
                         del st.session_state.alerta_folio_pendiente
                         st.rerun()
