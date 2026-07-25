@@ -1586,10 +1586,10 @@ else:
                     box-shadow: none !important;
                 ">
                     <h2 style="margin: 0; padding: 0; font-size: 16px; color: #ffffff;">
-                        NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
+                        🚨 NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
                     </h2>
                     <p style="margin: 3px 0 0 0; font-size: 12px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                        Nexion Logistic // Alerta Exclusiva Admin
+                        Nexion Logistic Node // Alerta Exclusiva Admin
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
