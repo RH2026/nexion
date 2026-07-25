@@ -10780,9 +10780,9 @@ else:
                         letter-spacing: 1px !important;
                     }
                     div.stButton > button:hover {
-                        background-color: #00FFAA !important; 
+                        background-color: #00A3A3 !important; 
                         color: #1D2A35 !important;            
-                        border-color: #00FFAA !important;
+                        border-color: #00A3A3 !important;
                         box-shadow: 0 0 15px rgba(0, 255, 170, 0.4) !important;
                     }
                     div.stButton > button:active {
@@ -11099,8 +11099,8 @@ else:
                                 }}
                                 ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
                                 ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.2); border-radius: 10px; }}
-                                ::-webkit-scrollbar-thumb {{ background: #34495E; border-radius: 10px; border: 2px solid #384A52; }}
-                                ::-webkit-scrollbar-thumb:hover {{ background: #00E5FF; }}
+                                ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 10px; border: 2px solid #384A52; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: #10b981; }}
                                 
                                 .list-row {{
                                     background-color: #263238;
