@@ -1613,7 +1613,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (CON UNIDAD Y BOTONES JUNTITOS) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (BOTONES UNIDOS Y DEL MISMO TAMAÑO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1623,10 +1623,9 @@ else:
                 import pandas as pd
                 from datetime import datetime, timedelta
                 
-                # Verificamos si hay un tiempo de aplazamiento activo (Snooze)
                 tiempo_snooze = st.session_state.get("snooze_cita_hasta", 0)
                 if time.time() < tiempo_snooze:
-                    return # Si está pausado por el "recordar más tarde", se salta este ciclo
+                    return
                 
                 t_fresco = int(time.time() * 1000)
                 url_agc = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/agc.csv?v={t_fresco}"
@@ -1651,7 +1650,6 @@ else:
             except Exception as e:
                 pass
     
-            # Renderizado visual de la alerta con tipo de unidad y botones juntitos
             if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
                 datos = st.session_state.get("datos_cita_alerta", {})
                 oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
@@ -1681,19 +1679,28 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # CSS para agrandar un poco los botones y mantenerlos juntitos
+                # CSS para hacer los botones más grandes, robustos, del mismo tamaño y pegaditos a la izquierda
                 st.markdown("""
                     <style>
+                    /* Estilo unificado para ambos botones de alerta de citas */
                     div[data-testid="stButton"] > button[kind="secondary"] {
-                        font-size: 11px !important;
-                        padding: 6px 16px !important;
+                        font-size: 09px !important;
+                        font-weight: bold !important;
+                        padding: 8px 20px !important;
                         min-height: unset !important;
+                        width: auto !important;
+                    }
+                    /* Contenedor flexible para alinear los botones juntos sin separación exagerada */
+                    .botones-citas-container {
+                        display: flex;
+                        gap: 10px;
+                        justify-content: flex-start;
                     }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # Ajustamos las proporciones para acercar los botones a la izquierda y reducir espacio
-                col_b1, col_b2, col_space = st.columns([0.9, 1.3, 5])
+                # Los metemos en una sola columna con subcolumnas estrechas y sin espacios vacíos gigantes
+                col_b1, col_b2, col_vacia = st.columns([1.1, 1.6, 6])
                 
                 with col_b1:
                     if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita"):
@@ -1704,7 +1711,6 @@ else:
                         
                 with col_b2:
                     if st.button("RECORDAR MÁS TARDE", key="btn_snooze_cita"):
-                        # Oculta la alerta temporalmente durante 1 hora (3600 segundos)
                         st.session_state.snooze_cita_hasta = time.time() + 3600
                         del st.session_state.alerta_cita_pendiente
                         if "datos_cita_alerta" in st.session_state:
