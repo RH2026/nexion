@@ -10999,8 +10999,20 @@ else:
                                 df_gastos_cat = df_gastos_cat.sort_values(by='Monto', ascending=True)
                                 fig_cat = px.bar(df_gastos_cat, x='Monto', y='Categoria', orientation='h', text_auto=',.0f')
                                 
-                                colors = ['#34495E'] * len(df_gastos_cat)
-                                if len(colors) > 0: colors[-1] = '#00FFAA' 
+                                # --- NUEVA PALETA DE COLORES ESTILO NEXION ---
+                                # Generamos un degradé dinámico desde un cian/turquesa suave hasta el verde principal (#00FFAA)
+                                # o bien usando los tonos de la paleta corporativa de la interfaz.
+                                num_bars = len(df_gastos_cat)
+                                colors = []
+                                for i in range(num_bars):
+                                    # Hacemos que la barra más alta sea brillante (#00FFAA) y las demás varíen 
+                                    # entre tonos azules/grises estilizados (#34495E, #1F618D, #00E5FF)
+                                    if i == num_bars - 1:
+                                        colors.append('#00FFAA')  # La más alta destaca en verde Nexion
+                                    elif i >= num_bars - 3:
+                                        colors.append('#00E5FF')  # Las siguientes altas en cian brillante
+                                    else:
+                                        colors.append('#34495E')  # Las menores conservan el tono base elegante
                                 
                                 fig_cat.update_traces(marker_color=colors, hovertemplate="%{y}: $%{x:,.2f}", textposition='outside', textfont=dict(color="#E0E6ED"))
                                 fig_cat.update_layout(
