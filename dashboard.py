@@ -10776,6 +10776,7 @@ else:
                         transition: all 0.3s ease !important;
                         width: 100% !important;
                         font-weight: normal !important;
+                        font-size: 12px !important; /* <--- AQUÍ CAMBIAS EL TAMAÑO (ej. 12px, 14px, etc.) */
                         text-transform: uppercase !important;
                         letter-spacing: 1px !important;
                     }
