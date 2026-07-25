@@ -1540,7 +1540,7 @@ else:
     
     
     # ── ALERTAS!!!!!!!!!!
-    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO (LIMPIA Y ALINEADA) ---
+    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO (ESTABLE Y EN CHINGUIZA) ---
     @st.fragment(run_every=3)
     def monitor_global_rigoberto():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1569,11 +1569,10 @@ else:
             except Exception as e:
                 pass
     
-            # Renderizado visual de la alerta sin sombras y con el botón nativo al margen derecho
+            # Renderizado visual de la alerta (Plana, sin sombras y con el botón a la derecha)
             if "alerta_folio_pendiente" in st.session_state:
                 folio = st.session_state.alerta_folio_pendiente
                 
-                # Tarjeta plana sin sombras
                 st.markdown(f"""
                 <div style="
                     background-color: #202c36; 
@@ -1594,9 +1593,9 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Forzamos con un pequeño contenedor de diseño para arrinconar el botón exactamente a la derecha
-                cols = st.columns([6, 1])
-                with cols[1]:
+                # Usamos un espacio grande a la izquierda [10, 1] para empujar el botón limpio a la esquina derecha
+                col_vacia, col_btn = st.columns([10, 1])
+                with col_btn:
                     if st.button("✖ Cerrar", key="btn_cerrar_alerta_rigoberto"):
                         del st.session_state.alerta_folio_pendiente
                         st.rerun()
