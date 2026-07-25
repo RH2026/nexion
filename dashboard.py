@@ -1613,7 +1613,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (CON OPCIÓN DE RECORDAR MÁS TARDE) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (CON UNIDAD Y BOTONES JUNTITOS) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1651,11 +1651,12 @@ else:
             except Exception as e:
                 pass
     
-            # Renderizado visual de la alerta con ambos botones (Cerrar y Recordar más tarde)
+            # Renderizado visual de la alerta con tipo de unidad y botones juntitos
             if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
                 datos = st.session_state.get("datos_cita_alerta", {})
                 oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
                 hora_cita = datos.get("HORA", "POR DEFINIR")
+                tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
                 
                 st.markdown(f"""
                 <div style="
@@ -1671,25 +1672,28 @@ else:
                     <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
                         📅 ¡AVISO DE CITA PARA MAÑANA AGC!: O.C. / REF: {oc_ref}
                     </h2>
-                    <p style="margin: 5px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                    <p style="margin: 5px 0 2px 0; font-size: 11px; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">
+                        Unidad: {tipo_unidad}
+                    </p>
+                    <p style="margin: 2px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
                         Horario: {hora_cita} // Módulo AGC Nexion
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # CSS exclusivo para achicar y alinear los botones a la izquierda ordenadamente
+                # CSS para agrandar un poco los botones y mantenerlos juntitos
                 st.markdown("""
                     <style>
                     div[data-testid="stButton"] > button[kind="secondary"] {
-                        font-size: 09px !important;
-                        padding: 4px 12px !important;
+                        font-size: 11px !important;
+                        padding: 6px 16px !important;
                         min-height: unset !important;
                     }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # Creamos dos columnas pequeñas para poner los dos botones lado a lado abajo a la izquierda
-                col_b1, col_b2, _ = st.columns([1.2, 1.5, 5])
+                # Ajustamos las proporciones para acercar los botones a la izquierda y reducir espacio
+                col_b1, col_b2, col_space = st.columns([0.9, 1.3, 5])
                 
                 with col_b1:
                     if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita"):
@@ -1699,7 +1703,7 @@ else:
                         st.rerun()
                         
                 with col_b2:
-                    if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_cita"):
+                    if st.button("RECORDAR MÁS TARDE", key="btn_snooze_cita"):
                         # Oculta la alerta temporalmente durante 1 hora (3600 segundos)
                         st.session_state.snooze_cita_hasta = time.time() + 3600
                         del st.session_state.alerta_cita_pendiente
