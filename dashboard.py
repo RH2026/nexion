@@ -10969,7 +10969,7 @@ else:
                     gr_col1, gr_col2 = st.columns([2, 1.5])
                     
                     with gr_col1:
-                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>📉</span> TENDENCIA DE FLUJO (MES ACTUAL)</p>", unsafe_allow_html=True)
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'></span> TENDENCIA DE FLUJO (MES ACTUAL)</p>", unsafe_allow_html=True)
                         if not df_month.empty:
                             df_daily = df_month.groupby([df_month['Fecha'].dt.date, 'Tipo'])['Monto'].sum().unstack().fillna(0)
                             if 'Gasto' in df_daily: df_daily['Gasto'] = abs(df_daily['Gasto'])
@@ -10992,7 +10992,7 @@ else:
                             st.info("Sin movimientos este mes.")
                 
                     with gr_col2:
-                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>📊</span> ANÁLISIS DE CONSUMO POR CATEGORÍA</p>", unsafe_allow_html=True)
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'></span> ANÁLISIS DE CONSUMO POR CATEGORÍA</p>", unsafe_allow_html=True)
                         if not df_month.empty:
                             df_gastos_cat = df_month[df_month['Tipo'] == "Gasto"].groupby('Categoria')['Monto'].sum().abs().reset_index()
                             if not df_gastos_cat.empty:
