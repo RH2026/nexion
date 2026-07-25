@@ -10781,13 +10781,13 @@ else:
                     }
                     div.stButton > button:hover {
                         background-color: #00A3A3 !important; 
-                        color: #1D2A35 !important;            
+                        color: #ffffff !important;            
                         border-color: #00A3A3 !important;
                         box-shadow: 0 0 15px rgba(0, 255, 170, 0.4) !important;
                     }
                     div.stButton > button:active {
-                        background-color: #00FFAA !important;
-                        border-color: #00FFAA !important;
+                        background-color: #00A3A3 !important;
+                        border-color: #00A3A3 !important;
                     }
                 
                     /* --- PESTAÑAS (TABS) ESTILO JYPESA --- */
