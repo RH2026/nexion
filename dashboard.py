@@ -1584,10 +1584,10 @@ else:
                     font-family: sans-serif;
                     box-shadow: none !important;
                 ">
-                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
+                    <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
                         NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
                     </h2>
-                    <p style="margin: 5px 0 8px 0; font-size: 13px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                    <p style="margin: 5px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
                         Nexion Logistic // Alerta Exclusiva Admin
                     </p>
                 </div>
