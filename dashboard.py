@@ -1540,7 +1540,7 @@ else:
     
     
     # ── ALERTAS!!!!!!!!!!
-    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO (ESTABLE Y EN CHINGUIZA) ---
+    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO (BOTÓN INTEGRADO A LA IZQUIERDA) ---
     @st.fragment(run_every=3)
     def monitor_global_rigoberto():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1569,7 +1569,7 @@ else:
             except Exception as e:
                 pass
     
-            # Renderizado visual de la alerta (Plana, sin sombras y con el botón a la derecha)
+            # Renderizado visual con la alerta y el botón de cierre integrado al lado izquierdo
             if "alerta_folio_pendiente" in st.session_state:
                 folio = st.session_state.alerta_folio_pendiente
                 
@@ -1577,28 +1577,26 @@ else:
                 <div style="
                     background-color: #202c36; 
                     border-left: 6px solid #FF4500; 
-                    padding: 15px 20px; 
+                    padding: 20px 25px; 
                     border-radius: 5px; 
-                    margin-bottom: 5px;
+                    margin-bottom: 10px;
                     color: white;
                     font-family: sans-serif;
                     box-shadow: none !important;
                 ">
-                    <h2 style="margin: 0; padding: 0; font-size: 16px; color: #ffffff;">
+                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
                         🚨 NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
                     </h2>
-                    <p style="margin: 3px 0 0 0; font-size: 12px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                    <p style="margin: 5px 0 8px 0; font-size: 13px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
                         Nexion Logistic Node // Alerta Exclusiva Admin
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Usamos un espacio grande a la izquierda [10, 1] para empujar el botón limpio a la esquina derecha
-                col_vacia, col_btn = st.columns([10, 1])
-                with col_btn:
-                    if st.button("✖ Cerrar", key="btn_cerrar_alerta_rigoberto"):
-                        del st.session_state.alerta_folio_pendiente
-                        st.rerun()
+                # Usamos un botón de Streamlit nativo pero colocado al margen izquierdo sin columnas rebeldes
+                if st.button("✖ CERRAR ALERTA", key="btn_cerrar_alerta_rigoberto"):
+                    del st.session_state.alerta_folio_pendiente
+                    st.rerun()
     
     monitor_global_rigoberto()
     
