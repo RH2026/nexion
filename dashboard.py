@@ -1613,7 +1613,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (BOTONES UNIDOS Y DEL MISMO TAMAÑO) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (BOTONES IGUALES Y UNIDOS) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1679,28 +1679,22 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # CSS para hacer los botones más grandes, robustos, del mismo tamaño y pegaditos a la izquierda
+                # CSS brutal para forzar un ancho exacto e idéntico en ambos botones y arrinconarlos juntos
                 st.markdown("""
                     <style>
-                    /* Estilo unificado para ambos botones de alerta de citas */
-                    div[data-testid="stButton"] > button[kind="secondary"] {
+                    div.stButton > button {
                         font-size: 09px !important;
                         font-weight: bold !important;
-                        padding: 8px 20px !important;
+                        padding: 10px 15px !important;
                         min-height: unset !important;
-                        width: auto !important;
-                    }
-                    /* Contenedor flexible para alinear los botones juntos sin separación exagerada */
-                    .botones-citas-container {
-                        display: flex;
-                        gap: 10px;
-                        justify-content: flex-start;
+                        width: 220px !important; /* Forzamos el mismo ancho exacto para los dos */
+                        text-align: center !important;
                     }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # Los metemos en una sola columna con subcolumnas estrechas y sin espacios vacíos gigantes
-                col_b1, col_b2, col_vacia = st.columns([1.1, 1.6, 6])
+                # Los metemos en columnas muy pegaditas para que no se separen
+                col_b1, col_b2, col_vacia = st.columns([1, 1.1, 4])
                 
                 with col_b1:
                     if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita"):
