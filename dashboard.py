@@ -10742,10 +10742,13 @@ else:
                 ]
                 
                 # ==============================================================================
-                # 2. ESTILOS CSS "JYPESA NEXION CORE" (DEFINITIVOS CON HOVER Y SCROLL)
+                # 2. ESTILOS CSS "JYPESA NEXION CORE" (BOTONES Y RESET)
                 # ==============================================================================
                 st.markdown("""
                     <style>
+                    /* Reset para que el contenedor use todo el ancho */
+                    div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
+                    
                     /* Barra superior del dashboard Jypesa */
                     header[data-testid="stHeader"] { background-color: #1D2A35 !important; border-bottom: 2px solid #34495E !important;}
                     
@@ -10764,101 +10767,27 @@ else:
                     .kpi-trend { font-size: 13px !important; font-weight: bold !important; }
                     .neon-bar { height: 4px !important; border-radius: 2px !important; margin-top: 10px !important; width: 100% !important; }
                 
-                    /* --- ESTILOS DE BOTONES NATIVOS CON FONDO Y HOVER NEÓN --- */
-                    /* Botón de Gasto (Rojo Neón) */
-                    div[data-testid="column"]:nth-of-type(1) div.stButton > button {
-                        background-color: rgba(255, 75, 75, 0.15) !important;
-                        color: #FF4B4B !important;
-                        border: 1px solid #FF4B4B !important;
-                        border-radius: 4px !important;
+                    /* --- ESTILO CHINGÓN PARA LOS BOTONES PERSONALIZADOS --- */
+                    div.stButton > button {
+                        background-color: #2B343B !important; 
+                        color: #FFFFFF !important;            
+                        border: 1px solid #34495E !important; 
+                        border-radius: 5px !important;
+                        transition: all 0.3s ease !important;
+                        width: 100% !important;
                         font-weight: bold !important;
                         text-transform: uppercase !important;
                         letter-spacing: 1px !important;
-                        width: 100% !important;
-                        padding: 10px !important;
-                        transition: all 0.3s ease !important;
                     }
-                    div[data-testid="column"]:nth-of-type(1) div.stButton > button:hover {
-                        background-color: #FF4B4B !important;
-                        color: #FFFFFF !important;
-                        box-shadow: 0 0 15px rgba(255, 75, 75, 0.6) !important;
-                        border-color: #FF4B4B !important;
-                    }
-                
-                    /* Botón de Ingreso (Verde Neón) */
-                    div[data-testid="column"]:nth-of-type(2) div.stButton > button {
-                        background-color: rgba(0, 255, 170, 0.15) !important;
-                        color: #00FFAA !important;
-                        border: 1px solid #00FFAA !important;
-                        border-radius: 4px !important;
-                        font-weight: bold !important;
-                        text-transform: uppercase !important;
-                        letter-spacing: 1px !important;
-                        width: 100% !important;
-                        padding: 10px !important;
-                        transition: all 0.3s ease !important;
-                    }
-                    div[data-testid="column"]:nth-of-type(2) div.stButton > button:hover {
-                        background-color: #00FFAA !important;
-                        color: #1D2A35 !important;
-                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.6) !important;
+                    div.stButton > button:hover {
+                        background-color: #00FFAA !important; 
+                        color: #1D2A35 !important;            
                         border-color: #00FFAA !important;
+                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.4) !important;
                     }
-                
-                    /* --- KITWEB SCROLL CONTAINER PARA REGISTROS --- */
-                    .kitweb-scroll-container {
-                        max-height: 420px !important;
-                        overflow-y: auto !important;
-                        padding-right: 5px !important;
-                        margin-top: 5px !important;
-                        border-top: 1px solid #34495E !important;
-                    }
-                    .kitweb-scroll-container::-webkit-scrollbar { width: 6px !important; }
-                    .kitweb-scroll-container::-webkit-scrollbar-track { background: #1D2A35 !important; border-radius: 4px !important; }
-                    .kitweb-scroll-container::-webkit-scrollbar-thumb { background: #34495E !important; border-radius: 4px !important; }
-                    .kitweb-scroll-container::-webkit-scrollbar-thumb:hover { background: #00E5FF !important; }
-                
-                    /* --- RENDER DE REGISTROS PERRONES (ALINEADOS Y COMPACTOS) --- */
-                    .r-card {
-                        background-color: #1D2A35 !important;
-                        border: 1px solid #34495E !important;
-                        border-radius: 6px !important;
-                        padding: 10px 15px !important;
-                        margin-bottom: 8px !important;
-                        display: grid !important;
-                        grid-template-columns: 1.5fr 1fr 1.5fr 2fr 1.2fr 1fr !important;
-                        align-items: center !important;
-                        gap: 10px !important;
-                        transition: all 0.2s ease !important;
-                    }
-                    .r-card:hover {
-                        border-color: #00E5FF !important;
-                        box-shadow: 0 4px 10px rgba(0, 229, 255, 0.1) !important;
-                    }
-                    .r-field { display: flex !important; flex-direction: column !important; }
-                    .r-label {
-                        font-size: 9px !important;
-                        color: #8B9BB4 !important;
-                        text-transform: uppercase !important;
-                        letter-spacing: 1px !important;
-                        font-weight: bold !important;
-                    }
-                    .r-value {
-                        font-size: 12px !important;
-                        color: #E0E6ED !important;
-                        font-weight: 600 !important;
-                        margin-top: 2px !important;
-                        white-space: nowrap !important;
-                        overflow: hidden !important;
-                        text-overflow: ellipsis !important;
-                    }
-                    .r-type-badge {
-                        padding: 2px 6px !important;
-                        border-radius: 4px !important;
-                        font-size: 10px !important;
-                        font-weight: bold !important;
-                        text-transform: uppercase !important;
-                        display: inline-block !important;
+                    div.stButton > button:active {
+                        background-color: #00FFAA !important;
+                        border-color: #00FFAA !important;
                     }
                 
                     /* --- PESTAÑAS (TABS) ESTILO JYPESA --- */
@@ -11105,12 +11034,14 @@ else:
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    # 2 BOTONES ABAJO (Nativos con control total de CSS gracias al orden de columnas)
+                    # 2 BOTONES ABAJO
                     btn_l, btn_r = st.columns(2)
                     block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
                     
-                    gasto_sub = btn_l.button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit, key="btn_gasto_action")
-                    ingreso_sub = btn_r.button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, key="btn_ingreso_action")
+                    with btn_l:
+                        gasto_sub = st.button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit, key="btn_gasto_action")
+                    with btn_r:
+                        ingreso_sub = st.button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, key="btn_ingreso_action")
                     
                     if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
                         with st.status("Sincronizando con Nube Nexion...", expanded=True):
@@ -11140,67 +11071,123 @@ else:
                                 st.rerun()
                             except Exception as e: st.error(f"Error crítico de sincronización: {e}")
                 
-                    # Espacio controlado y título de historial
+                    # Título del historial
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIONES EN TIEMPO REAL</p>", unsafe_allow_html=True)
                     
-                    # RENDER DE REGISTROS PERRONES CON KITWEB SCROLL FIJO
-                    if not df_actual.empty:
-                        df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
+                    # --- RENDER DE REGISTROS CON SCROLL INTEGRADO (ESTILO AGC TAILWIND) ---
+                    def render_wallet_flow_responsive(df_data):
+                        df_clean = df_data.fillna('')
+                        data_records = df_clean.to_dict('records')
                         
-                        # Abrimos el contenedor con kitweb scroll fijo
-                        st.markdown('<div class="kitweb-scroll-container">', unsafe_allow_html=True)
-                        
-                        for _, row in df_ledger.iterrows():
-                            fecha_str = row['Fecha'].strftime('%d/%m/%Y %H:%M') if pd.notnull(row['Fecha']) else ""
-                            tipo = row['Tipo']
-                            cat = row['Categoria']
-                            concepto = row['Concepto']
-                            monto = row['Monto']
-                            cuenta = row['Cuenta']
-                            
-                            # Estilos dinámicos según el tipo de operación
-                            color_monto = "#00FFAA" if monto > 0 else "#FF4B4B"
-                            monto_str = f"${monto:,.2f}"
-                            badge_bg = "rgba(0, 255, 170, 0.1)" if tipo == "Ingreso" else "rgba(255, 75, 75, 0.1)"
-                            badge_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
-                            border_left_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
-                            
-                            st.markdown(f"""
-                                <div class="r-card" style="border-left: 4px solid {border_left_color};">
-                                    <div class="r-field">
-                                        <div class="r-label">FECHA Y HORA</div>
-                                        <div class="r-value">{fecha_str}</div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">TIPO</div>
-                                        <div class="r-value">
-                                            <span class="r-type-badge" style="background-color: {badge_bg}; color: {badge_color};">
-                                                {tipo.upper()}
-                                            </span>
+                        html_content = f"""
+                        <!DOCTYPE html>
+                        <html lang="es">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <script src="https://cdn.tailwindcss.com"></script>
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+                            <style>
+                                body {{ 
+                                    font-family: 'Inter', sans-serif; 
+                                    background-color: #384A52; 
+                                    color: #e2e8f0; 
+                                    margin: 0; 
+                                    padding: 5px; 
+                                    width: 100%; 
+                                }}
+                                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.2); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: #34495E; border-radius: 10px; border: 2px solid #384A52; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: #00E5FF; }}
+                                
+                                .list-row {{
+                                    background-color: #263238;
+                                    border: 1px solid rgba(255, 255, 255, 0.08);
+                                    transition: all 0.2s ease;
+                                    margin-bottom: 8px;
+                                    border-radius: 8px;
+                                    overflow: hidden;
+                                    width: 100%;
+                                }}
+                                .list-row:hover {{
+                                    background-color: #2c3b42;
+                                    border-color: rgba(0, 229, 255, 0.4);
+                                }}
+                                .label-mini {{
+                                    font-size: 9px;
+                                    text-transform: uppercase;
+                                    font-weight: 800;
+                                    color: #BFBFBF;
+                                    letter-spacing: 1px;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <div class="w-full space-y-2">
+                                {"".join([f'''
+                                <div class="list-row flex items-stretch">
+                                    <div class="w-2 shrink-0 {"bg-[#00FFAA]" if float(item['Monto']) > 0 else "bg-[#FF4B4B]"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                                    <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
+                                        
+                                        <div class="w-full md:w-36 shrink-0">
+                                            <div class="label-mini">Fecha y Hora</div>
+                                            <div class="text-xs font-bold text-white font-mono mt-1">
+                                                {str(item['Fecha'])[:16]}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">CATEGORÍA</div>
-                                        <div class="r-value">{cat}</div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">CONCEPTO</div>
-                                        <div class="r-value">{concepto}</div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">CUENTA</div>
-                                        <div class="r-value">{cuenta}</div>
-                                    </div>
-                                    <div class="r-field">
-                                        <div class="r-label">MONTO</div>
-                                        <div class="r-value" style="color: {color_monto}; font-size: 14px;">{monto_str}</div>
+                
+                                        <div class="w-full md:w-28 shrink-0">
+                                            <div class="label-mini">Tipo</div>
+                                            <div class="mt-1">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase {"bg-[#00FFAA]/15 text-[#00FFAA]" if float(item['Monto']) > 0 else "bg-[#FF4B4B]/15 text-[#FF4B4B]"}"">
+                                                    {str(item['Tipo']).upper()}
+                                                </span>
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                            <div>
+                                                <div class="label-mini">Categoría</div>
+                                                <div class="text-xs font-bold text-slate-200 truncate">
+                                                    {str(item['Categoria'])}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="label-mini">Concepto</div>
+                                                <div class="text-xs font-semibold text-sky-200 truncate">
+                                                    {str(item['Concepto'])}
+                                                </div>
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:w-40 shrink-0">
+                                            <div class="label-mini">Cuenta</div>
+                                            <div class="text-xs font-bold text-slate-300 truncate mt-1">
+                                                {str(item['Cuenta'])}
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:w-32 text-right shrink-0">
+                                            <div class="label-mini">Monto</div>
+                                            <div class="text-sm font-black font-mono mt-0.5 {"text-[#00FFAA]" if float(item['Monto']) > 0 else "text-[#FF4B4B]"}"">
+                                                ${float(item['Monto']):,.2f}
+                                            </div>
+                                        </div>
+                
                                     </div>
                                 </div>
-                            """, unsafe_allow_html=True)
-                            
-                        # Cerramos el contenedor scroll
-                        st.markdown('</div>', unsafe_allow_html=True)
+                                ''' for item in data_records])}
+                            </div>
+                        </body>
+                        </html>
+                        """
+                        return st.components.v1.html(html_content, height=450, scrolling=True)
+                
+                    if not df_actual.empty:
+                        df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
+                        render_wallet_flow_responsive(df_ledger)
                     else:
                         st.info("No hay registros en la nube actualmente.")
                 
