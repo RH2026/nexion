@@ -1540,7 +1540,7 @@ else:
     
     
     # ── 2. MONITOR Y ALERTA DE NUEVOS FOLIOS (GLOBAL Y AL MARGEN) ──
-    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO --------------------
+    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO ---------------
     @st.fragment(run_every=15)
     def monitor_global_rigoberto():
         # Validamos estrictamente que el usuario activo sea Rigoberto
@@ -1577,29 +1577,35 @@ else:
             if "alerta_folio_pendiente" in st.session_state:
                 folio = st.session_state.alerta_folio_pendiente
                 
-                st.markdown(f"""
-                <div style="
-                    background-color: #202c36; 
-                    border-left: 6px solid #FF4500; 
-                    padding: 20px 25px; 
-                    border-radius: 5px; 
-                    margin-bottom: 20px;
-                    color: white;
-                    font-family: sans-serif;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-                ">
-                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
-                        🚨 NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
-                    </h2>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                        Nexion Logistic Node // Alerta Exclusiva Admin
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
+                # Usamos dos columnas: la izquierda para el aviso y la derecha para el botón discreto
+                col_alerta, col_btn = st.columns([5, 1], vertical_alignment="center")
                 
-                if st.button("✅ CERRAR ALERTA", key="btn_cerrar_alerta_rigoberto", use_container_width=True):
-                    del st.session_state.alerta_folio_pendiente
-                    st.rerun()
+                with col_alerta:
+                    st.markdown(f"""
+                    <div style="
+                        background-color: #202c36; 
+                        border-left: 6px solid #FF4500; 
+                        padding: 15px 20px; 
+                        border-radius: 5px; 
+                        margin-bottom: 10px;
+                        color: white;
+                        font-family: sans-serif;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                    ">
+                        <h2 style="margin: 0; padding: 0; font-size: 16px; color: #ffffff;">
+                            NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
+                        </h2>
+                        <p style="margin: 3px 0 0 0; font-size: 12px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                            Nexion Logistic Node // Alerta Exclusiva Admin
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                with col_btn:
+                    # Botón compacto sin ocupar todo el ancho, ubicado limpiamente a la derecha
+                    if st.button("✖ Cerrar", key="btn_cerrar_alerta_rigoberto", use_container_width=True):
+                        del st.session_state.alerta_folio_pendiente
+                        st.rerun()
     
     # --- LLAMADA GLOBAL EN EL ARCHIVO PRINCIPAL ---
     monitor_global_rigoberto()
