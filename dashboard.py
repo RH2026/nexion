@@ -1594,6 +1594,17 @@ else:
                 """, unsafe_allow_html=True)
                 
                 # Usamos un botón de Streamlit nativo pero colocado al margen izquierdo sin columnas rebeldes
+                # Inyectamos CSS exclusivo para achicar la letra y padding de este botón en específico
+                st.markdown("""
+                    <style>
+                    div[data-testid="stButton"] > button[kind="secondary"] {
+                        font-size: 09px !important;
+                        padding: 4px 12px !important;
+                        min-height: unset !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+    
                 if st.button("✖ CERRAR ALERTA", key="btn_cerrar_alerta_rigoberto"):
                     del st.session_state.alerta_folio_pendiente
                     st.rerun()
