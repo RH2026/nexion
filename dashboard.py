@@ -1540,71 +1540,69 @@ else:
     
     
     # ── 2. MONITOR Y ALERTA DE NUEVOS FOLIOS (GLOBAL Y AL MARGEN) ──
-    # --- MONITOR Y ALERTA GLOBAL DE NUEVOS FOLIOS (APARECE EN CUALQUIER MÓDULO) ---
+    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO --------------------
     @st.fragment(run_every=15)
-    def monitor_global_nexion():
-        # Depuración visual sutil para que notes que el vigía global está activo en segundo plano
-        # (Puedes comentar o borrar esta línea st.caption si no quieres que se vea el texto de estado)
-        st.caption(f"🛡️ Vigía Global Nexion // Último folio en memoria: {st.session_state.get('ultimo_folio_visto', 'Sincronizando...')}")
-    
-        try:
-            import time
-            import pandas as pd
+    def monitor_global_rigoberto():
+        # Validamos estrictamente que el usuario activo sea Rigoberto
+        if st.session_state.get("usuario_activo") == "Rigoberto":
             
-            # Leemos directo de la nube para ser 100% independientes del módulo que tengas abierto
-            t = int(time.time())
-            url_nube = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/muestras.csv?v={t}"
-            df_vigia = pd.read_csv(url_nube, encoding='utf-8-sig')
-            df_vigia.columns = df_vigia.columns.str.strip()
-            
-            if not df_vigia.empty and "FOLIO" in df_vigia.columns:
-                folio_actual_nube = int(pd.to_numeric(df_vigia["FOLIO"]).max())
+            try:
+                import time
+                import pandas as pd
                 
-                # Inicializamos la memoria si es la primera vez que entra
-                if "ultimo_folio_visto" not in st.session_state:
-                    st.session_state.ultimo_folio_visto = folio_actual_nube
+                # TRUCO DE ORO CONTRA LA CACHÉ: Añadimos una marca de tiempo exacta para forzar a GitHub a dar el archivo fresco
+                t_fresco = int(time.time() * 1000)
+                url_nube = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/muestras.csv?v={t_fresco}"
                 
-                # Si la nube tiene un folio más alto, disparamos la alerta para TODO Nexion
-                elif folio_actual_nube > st.session_state.ultimo_folio_visto:
-                    st.session_state.alerta_folio_pendiente = folio_actual_nube
-                    st.session_state.ultimo_folio_visto = folio_actual_nube
-                    st.rerun()
+                df_vigia = pd.read_csv(url_nube, encoding='utf-8-sig')
+                df_vigia.columns = df_vigia.columns.str.strip()
+                
+                if not df_vigia.empty and "FOLIO" in df_vigia.columns:
+                    folio_actual_nube = int(pd.to_numeric(df_vigia["FOLIO"]).max())
                     
-        except Exception as e:
-            # Si falla momentáneamente la red, el vigía se espera al siguiente ciclo de 15s sin romper tu pantalla
-            pass
+                    # Inicializamos la memoria la primera vez
+                    if "ultimo_folio_visto" not in st.session_state:
+                        st.session_state.ultimo_folio_visto = folio_actual_nube
+                    
+                    # Si la nube ya tiene un número mayor (ej. 162 vs 161), disparamos la alerta de inmediato
+                    elif folio_actual_nube > st.session_state.ultimo_folio_visto:
+                        st.session_state.alerta_folio_pendiente = folio_actual_nube
+                        st.session_state.ultimo_folio_visto = folio_actual_nube
+                        st.rerun()
+                        
+            except Exception as e:
+                pass
     
-        # Renderizado visual de la alerta: si hay pendiente, saldrá ¡estés en el módulo que estés!
-        if "alerta_folio_pendiente" in st.session_state:
-            folio = st.session_state.alerta_folio_pendiente
-            
-            st.markdown(f"""
-            <div style="
-                background-color: #202c36; 
-                border-left: 6px solid #FF4500; 
-                padding: 20px 25px; 
-                border-radius: 5px; 
-                margin-bottom: 20px;
-                color: white;
-                font-family: sans-serif;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            ">
-                <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
-                    🚨 NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
-                </h2>
-                <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                    Nexion Logistic Node // Alerta Global Activa
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button("✅ CERRAR ALERTA", key="btn_cerrar_alerta_global", use_container_width=True):
-                del st.session_state.alerta_folio_pendiente
-                st.rerun()
+            # Renderizado visual de la alerta (Solo aparece para Rigoberto si hay un folio pendiente)
+            if "alerta_folio_pendiente" in st.session_state:
+                folio = st.session_state.alerta_folio_pendiente
+                
+                st.markdown(f"""
+                <div style="
+                    background-color: #202c36; 
+                    border-left: 6px solid #FF4500; 
+                    padding: 20px 25px; 
+                    border-radius: 5px; 
+                    margin-bottom: 20px;
+                    color: white;
+                    font-family: sans-serif;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                ">
+                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
+                        🚨 NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
+                    </h2>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                        Nexion Logistic Node // Alerta Exclusiva Admin
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button("✅ CERRAR ALERTA", key="btn_cerrar_alerta_rigoberto", use_container_width=True):
+                    del st.session_state.alerta_folio_pendiente
+                    st.rerun()
     
-    # --- LLAMADA MAESTRA GLOBAL ---
-    # Coloca esto en tu archivo principal justo después del login y antes de pintar tus pestañas o módulos
-    monitor_global_nexion()
+    # --- LLAMADA GLOBAL EN EL ARCHIVO PRINCIPAL ---
+    monitor_global_rigoberto()
     
     
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
