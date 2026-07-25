@@ -1613,7 +1613,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (COLUMNA CITA SEPARADA Y LIMPIA) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (CON OPCIÓN DE RECORDAR MÁS TARDE) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1623,7 +1623,11 @@ else:
                 import pandas as pd
                 from datetime import datetime, timedelta
                 
-                # Anticascadas con marca de tiempo exacta para leer 'agc.csv' fresco de GitHub
+                # Verificamos si hay un tiempo de aplazamiento activo (Snooze)
+                tiempo_snooze = st.session_state.get("snooze_cita_hasta", 0)
+                if time.time() < tiempo_snooze:
+                    return # Si está pausado por el "recordar más tarde", se salta este ciclo
+                
                 t_fresco = int(time.time() * 1000)
                 url_agc = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/agc.csv?v={t_fresco}"
                 
@@ -1631,17 +1635,11 @@ else:
                 df_agc.columns = df_agc.columns.str.strip()
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
-                    # Fecha de mañana en formato DD/MM/YYYY para empatar idéntico con tu columna CITA
                     mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
-                    
-                    # Limpiamos y convertimos la columna CITA de la matriz a texto plano estandarizado
                     citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
-                    
-                    # Filtramos las filas que coincidan exactamente con la fecha de mañana
                     citas_mañana = df_agc[citas_limpias == mañana_str]
                     
                     if not citas_mañana.empty:
-                        # Tomamos la primera coincidencia
                         primera = citas_mañana.iloc[0]
                         id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "CITA")))
                         
@@ -1653,7 +1651,7 @@ else:
             except Exception as e:
                 pass
     
-            # Renderizado visual de la alerta de citas (Plana, sin sombras y con el botón compacto a la izquierda)
+            # Renderizado visual de la alerta con ambos botones (Cerrar y Recordar más tarde)
             if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
                 datos = st.session_state.get("datos_cita_alerta", {})
                 oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
@@ -1670,31 +1668,44 @@ else:
                     font-family: sans-serif;
                     box-shadow: none !important;
                 ">
-                    <h2 style="margin: 0; padding: 0; font-size: 18px; color: #ffffff;">
-                        📅 ¡AVISO DE CITA PARA MAÑANA!: O.C. / REF: {oc_ref}
+                    <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
+                        📅 ¡AVISO DE CITA PARA MAÑANA AGC!: O.C. / REF: {oc_ref}
                     </h2>
-                    <p style="margin: 5px 0 8px 0; font-size: 13px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                    <p style="margin: 5px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
                         Horario: {hora_cita} // Módulo AGC Nexion
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # CSS exclusivo para achicar y alinear el botón de cerrar a la izquierda
+                # CSS exclusivo para achicar y alinear los botones a la izquierda ordenadamente
                 st.markdown("""
                     <style>
                     div[data-testid="stButton"] > button[kind="secondary"] {
-                        font-size: 11px !important;
+                        font-size: 09px !important;
                         padding: 4px 12px !important;
                         min-height: unset !important;
                     }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                if st.button("✖ CERRAR AVISO", key="btn_cerrar_alerta_cita"):
-                    del st.session_state.alerta_cita_pendiente
-                    if "datos_cita_alerta" in st.session_state:
-                        del st.session_state.datos_cita_alerta
-                    st.rerun()
+                # Creamos dos columnas pequeñas para poner los dos botones lado a lado abajo a la izquierda
+                col_b1, col_b2, _ = st.columns([1.2, 1.5, 5])
+                
+                with col_b1:
+                    if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita"):
+                        del st.session_state.alerta_cita_pendiente
+                        if "datos_cita_alerta" in st.session_state:
+                            del st.session_state.datos_cita_alerta
+                        st.rerun()
+                        
+                with col_b2:
+                    if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_cita"):
+                        # Oculta la alerta temporalmente durante 1 hora (3600 segundos)
+                        st.session_state.snooze_cita_hasta = time.time() + 3600
+                        del st.session_state.alerta_cita_pendiente
+                        if "datos_cita_alerta" in st.session_state:
+                            del st.session_state.datos_cita_alerta
+                        st.rerun()
     
     monitor_global_citas()
     
