@@ -11008,11 +11008,11 @@ else:
                                     # Hacemos que la barra más alta sea brillante (#00FFAA) y las demás varíen 
                                     # entre tonos azules/grises estilizados (#34495E, #1F618D, #00E5FF)
                                     if i == num_bars - 1:
-                                        colors.append('#00FFAA')  # La más alta destaca en verde Nexion
+                                        colors.append('#44B3E1')  # La más alta destaca en verde Nexion
                                     elif i >= num_bars - 3:
-                                        colors.append('#00E5FF')  # Las siguientes altas en cian brillante
+                                        colors.append('#4D93D9')  # Las siguientes altas en cian brillante
                                     else:
-                                        colors.append('#34495E')  # Las menores conservan el tono base elegante
+                                        colors.append('#215C98')  # Las menores conservan el tono base elegante
                                 
                                 fig_cat.update_traces(marker_color=colors, hovertemplate="%{y}: $%{x:,.2f}", textposition='outside', textfont=dict(color="#E0E6ED"))
                                 fig_cat.update_layout(
