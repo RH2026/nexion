@@ -10312,10 +10312,21 @@ else:
                 
                     col_cfg1, col_cfg2 = st.columns(2)
                     with col_cfg1:
+                        # 1. Validamos y saneamos preventivamente el session_state si excede el máximo permitido (50)
+                        if "num_etq_gen_dinamico" in st.session_state:
+                            if st.session_state["num_etq_gen_dinamico"] > 50:
+                                st.session_state["num_etq_gen_dinamico"] = 50 if cant_inicial > 50 or cant_inicial < 1 else cant_inicial
+    
+                        # 2. Aseguramos que el value inicial nunca supere el max_value para evitar el choque en el primer render
+                        val_inicial_seguro = cant_inicial if 1 <= cant_inicial <= 50 else 1
+                        if "num_etq_gen_dinamico" in st.session_state:
+                            if st.session_state["num_etq_gen_dinamico"] < 1:
+                                st.session_state["num_etq_gen_dinamico"] = 1
+    
                         cant_etiquetas_sel = st.number_input(
                             "Número de etiquetas a generar:", 
                             min_value=1, max_value=50, 
-                            value=cant_inicial if cant_inicial > 0 else 1,
+                            value=val_inicial_seguro,
                             step=1, key="num_etq_gen_dinamico"
                         )
                     with col_cfg2:
