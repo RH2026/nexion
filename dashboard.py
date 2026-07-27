@@ -1621,8 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (DEFINITIVO) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (DISCRETO Y COMPACTO) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (MÚLTIPLES, UNIDAD Y BOTÓN IZQUIERDA) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1648,29 +1647,39 @@ else:
                     citas_mañana = df_agc[citas_limpias == mañana_str]
                     
                     if not citas_mañana.empty:
-                        primera = citas_mañana.iloc[0]
-                        id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "CITA")))
+                        # Convertimos todas las citas de mañana a lista de diccionarios para mostrarlas
+                        lista_citas_dict = citas_mañana.to_dict('records')
+                        # Creamos una firma única con los IDs para el control de sesión
+                        ids_str = "_".join([str(c.get("PO Customer", c.get("OV Jypesa", "CITA"))) for c in lista_citas_dict])
                         
-                        if st.session_state.get("alerta_cita_pendiente") != id_oc:
-                            st.session_state.alerta_cita_pendiente = id_oc
-                            st.session_state.datos_cita_alerta = primera.to_dict()
+                        if st.session_state.get("alerta_cita_pendiente") != ids_str:
+                            st.session_state.alerta_cita_pendiente = ids_str
+                            st.session_state.datos_citas_multiples = lista_citas_dict
                             st.rerun()
                             
             except Exception as e:
                 pass
         
-        # Renderizado compacto y discreto
+        # Renderizado múltiple con borde naranja y botón a la izquierda
         if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
-            datos = st.session_state.get("datos_cita_alerta", {})
-            oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
-            hora_cita = datos.get("HORA", "POR DEFINIR")
-            fecha_exacta_cita = str(datos.get("CITA", "MAÑANA"))
+            citas_data = st.session_state.get("datos_citas_multiples", [])
             
-            # Estilo barra compacta de una sola línea
+            # Construimos el texto dinámico si hay una o varias citas (Torton, Trailer, etc.)
+            textos_citas = []
+            for datos in citas_data:
+                oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN"))
+                hora_cita = datos.get("HORA", "POR DEFINIR")
+                tipo_unidad = str(datos.get("Unidad", "UNIDAD")).upper()
+                fecha_exacta = str(datos.get("CITA", "MAÑANA"))
+                textos_citas.append(f"<b>{tipo_unidad}</b> (O.C: {oc_ref} | Fecha: {fecha_exacta} | Hora: {hora_cita})")
+                
+            detalle_str = " | ".join(textos_citas) if textos_citas else "Cita pendiente para mañana"
+            
+            # Barra compacta con borde izquierdo NARANJA de advertencia (#f97316)
             st.markdown(f"""
             <div style="
                 background-color: #1a232a; 
-                border-left: 4px solid #38bdf8; 
+                border-left: 4px solid #f97316; 
                 padding: 8px 15px; 
                 border-radius: 4px; 
                 margin-bottom: 4px;
@@ -1681,11 +1690,11 @@ else:
                 align-items: center;
                 justify-content: space-between;
             ">
-                <span>📅 <b>CITA MAÑANA:</b> O.C. / REF: {oc_ref} | <b>Fecha:</b> {fecha_exacta_cita} | <b>Hora:</b> {hora_cita}</span>
+                <span>📅 <b>AVISO DE CITAS MAÑANA:</b> {detalle_str}</span>
             </div>
             """, unsafe_allow_html=True)
             
-            # Botón único estilizado, pequeño y alineado
+            # CSS para forzar el botón pequeño y alineado a la izquierda
             st.markdown("""
                 <style>
                 div.stButton > button {
@@ -1697,13 +1706,14 @@ else:
                 </style>
             """, unsafe_allow_html=True)
             
-            col_espacio, col_btn = st.columns([5, 1])
+            # Colocamos el botón en la PRIMERA columna para que esté bien pegado a la izquierda
+            col_btn, col_espacio = st.columns([1, 5])
             with col_btn:
-                if st.button("RECORDAR MÁS TARDE", key="btn_snooze_discreto"):
+                if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_izq"):
                     import time
                     st.session_state.snooze_cita_hasta = time.time() + 3600
                     st.session_state.pop("alerta_cita_pendiente", None)
-                    st.session_state.pop("datos_cita_alerta", None)
+                    st.session_state.pop("datos_citas_multiples", None)
                     st.rerun()
     
     monitor_global_citas()
