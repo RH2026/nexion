@@ -7991,7 +7991,7 @@ else:
                     qr.make(fit=True)
                     qr_img = qr.make_image(fill_color="#27272A", back_color="white").convert("RGB")
                 
-                    # Lienzo de Etiqueta (1004 x 1228 px) -> USANDO PILImage
+                    # Lienzo de Etiqueta (1004 x 1228 px)
                     w_px, h_px = int(1004), int(1228)
                     etiqueta = PILImage.new("RGB", (w_px, h_px), "white")
                     draw = ImageDraw.Draw(etiqueta)
@@ -8000,29 +8000,30 @@ else:
                     f_np, f_info, f_bot = get_font(52), get_font(44), get_font(56)
                 
                     # ==========================
-                    # LOGO (Ajustado a nw=320 para dar aire perfecto)
+                    # LOGO (Margen izquierdo ajustado a 90 para darle aire)
                     # ==========================
                     try:
                         logo = PILImage.open("agc.png").convert("RGBA")
                         nw = 320
                         nh = int(logo.size[1] * nw / logo.size[0])
-                        etiqueta.paste(logo.resize((nw, nh), PILImage.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), PILImage.Resampling.LANCZOS))
+                        etiqueta.paste(logo.resize((nw, nh), PILImage.Resampling.LANCZOS), (90, 20), logo.resize((nw, nh), PILImage.Resampling.LANCZOS))
                     except Exception as e:
                         st.warning(f"No se encontró agc.png ({e})")
                 
                     # ==========================
-                    # TEXTOS PRINCIPALES (Bajados a Y=250 para total separación del logo)
+                    # TEXTOS PRINCIPALES (Margen izquierdo ajustado a x = 90)
                     # ==========================
-                    x = 55
+                    x = 90
                     draw.text((x, 250), numero_parte, fill="#222222", font=f_np)
                     draw.text((x, 312), f"{lote}", fill="#222222", font=f_info)
                     draw.text((x, 362), f"{valor_fijo}", fill="#222222", font=f_info)
                 
                     # ==========================
-                    # QR
+                    # QR (Perfectamente centrado en el ancho de 1004px)
                     # ==========================
                     qr_sz = 670
-                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), PILImage.Resampling.NEAREST), ((w_px - qr_sz) // 2, 420))
+                    qr_x = (w_px - qr_sz) // 2
+                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), PILImage.Resampling.NEAREST), (qr_x, 420))
                 
                     # ==========================
                     # TEXTO INFERIOR
