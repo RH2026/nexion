@@ -1621,7 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (3 BOTONES FUNCIONALES) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (BLINDADO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1658,71 +1658,71 @@ else:
             except Exception as e:
                 pass
         
-            if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
-                datos = st.session_state.get("datos_cita_alerta", {})
-                oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
-                hora_cita = datos.get("HORA", "POR DEFINIR")
-                tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
-                fecha_exacta_cita = str(datos.get("CITA", "MAÑANA"))
-                
-                st.markdown(f"""
-                <div style="
-                    background-color: #202c36; 
-                    border-left: 6px solid #38bdf8; 
-                    padding: 20px 25px; 
-                    border-radius: 5px; 
-                    margin-bottom: 5px;
-                    color: white;
-                    font-family: sans-serif;
-                    box-shadow: none !important;
-                ">
-                    <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
-                        📅 ¡AVISO DE CITA AGC!: O.C. / REF: {oc_ref}
-                    </h2>
-                    <p style="margin: 5px 0 2px 0; font-size: 11px; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">
-                        Fecha de Cita: {fecha_exacta_cita} | Unidad: {tipo_unidad}
-                    </p>
-                    <p style="margin: 2px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                        Horario: {hora_cita} // Módulo AGC Nexion
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown("""
-                    <style>
-                    div.stButton > button {
-                        font-size: 09px !important;
-                        font-weight: bold !important;
-                        padding: 10px 10px !important;
-                        min-height: unset !important;
-                        width: 100% !important;
-                        text-align: center !important;
-                    }
-                    </style>
-                """, unsafe_allow_html=True)
-                
-                col_b1, col_b2, col_b3 = st.columns(3)
-                
-                with col_b1:
-                    if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_cita_fixed"):
-                        st.session_state.snooze_cita_hasta = time.time() + 3600
-                        st.session_state.pop("alerta_cita_pendiente", None)
-                        st.session_state.pop("datos_cita_alerta", None)
-                        st.rerun()
-                        
-                with col_b2:
-                    if st.button("🚚 IR AL MÓDULO AGC", key="btn_ir_agc_fixed"):
-                        st.session_state.pop("alerta_cita_pendiente", None)
-                        st.session_state.pop("datos_cita_alerta", None)
-                        # Guardamos la bandera para que la app sepa que debe enfocar Entregas AGC
-                        st.session_state.ir_a_entregas_agc = True
-                        st.rerun()
+        # Renderizado fuera de la lógica de tiempo del fragmento para evitar bloqueo de clics
+        if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
+            datos = st.session_state.get("datos_cita_alerta", {})
+            oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
+            hora_cita = datos.get("HORA", "POR DEFINIR")
+            tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
+            fecha_exacta_cita = str(datos.get("CITA", "MAÑANA"))
+            
+            st.markdown(f"""
+            <div style="
+                background-color: #202c36; 
+                border-left: 6px solid #38bdf8; 
+                padding: 20px 25px; 
+                border-radius: 5px; 
+                margin-bottom: 5px;
+                color: white;
+                font-family: sans-serif;
+                box-shadow: none !important;
+            ">
+                <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
+                    📅 ¡AVISO DE CITA AGC!: O.C. / REF: {oc_ref}
+                </h2>
+                <p style="margin: 5px 0 2px 0; font-size: 11px; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">
+                    Fecha de Cita: {fecha_exacta_cita} | Unidad: {tipo_unidad}
+                </p>
+                <p style="margin: 2px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                    Horario: {hora_cita} // Módulo AGC Nexion
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+                <style>
+                div.stButton > button {
+                    font-size: 09px !important;
+                    font-weight: bold !important;
+                    padding: 10px 10px !important;
+                    min-height: unset !important;
+                    width: 100% !important;
+                    text-align: center !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+            
+            col_b1, col_b2, col_b3 = st.columns(3)
+            
+            with col_b1:
+                if st.button("⏰ RECORDAR", key="btn_snooze_master"):
+                    import time
+                    st.session_state.snooze_cita_hasta = time.time() + 3600
+                    st.session_state.pop("alerta_cita_pendiente", None)
+                    st.session_state.pop("datos_cita_alerta", None)
+                    st.rerun()
+                    
+            with col_b2:
+                if st.button("🚚 MÓDULO AGC", key="btn_agc_master"):
+                    st.session_state.pop("alerta_cita_pendiente", None)
+                    st.session_state.pop("datos_cita_alerta", None)
+                    st.rerun()
     
-                with col_b3:
-                    if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita_fixed"):
-                        st.session_state.pop("alerta_cita_pendiente", None)
-                        st.session_state.pop("datos_cita_alerta", None)
-                        st.rerun()
+            with col_b3:
+                if st.button("✖ CERRAR", key="btn_cerrar_master"):
+                    st.session_state.pop("alerta_cita_pendiente", None)
+                    st.session_state.pop("datos_cita_alerta", None)
+                    st.rerun()
     
     monitor_global_citas()
         
