@@ -1621,7 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (BLINDADO) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (DEFINITIVO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1630,6 +1630,10 @@ else:
                 import time
                 import pandas as pd
                 from datetime import datetime, timedelta
+                
+                # Inicializar listas de control en session_state si no existen
+                if "citas_cerradas_definitivamente" not in st.session_state:
+                    st.session_state.citas_cerradas_definitivamente = set()
                 
                 tiempo_snooze = st.session_state.get("snooze_cita_hasta", 0)
                 if time.time() < tiempo_snooze:
@@ -1642,13 +1646,19 @@ else:
                 df_agc.columns = df_agc.columns.str.strip()
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
-                    mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
+                    hoy = datetime.now()
+                    mañana_str = (hoy + timedelta(days=1)).strftime("%d/%m/%Y")
+                    
                     citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
                     citas_mañana = df_agc[citas_limpias == mañana_str]
                     
                     if not citas_mañana.empty:
                         primera = citas_mañana.iloc[0]
                         id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "CITA")))
+                        
+                        # Si ya fue cerrada para toda la vida, la ignoramos por completo
+                        if id_oc in st.session_state.citas_cerradas_definitivamente:
+                            return
                         
                         if st.session_state.get("alerta_cita_pendiente") != id_oc:
                             st.session_state.alerta_cita_pendiente = id_oc
@@ -1658,7 +1668,7 @@ else:
             except Exception as e:
                 pass
         
-        # Renderizado fuera de la lógica de tiempo del fragmento para evitar bloqueo de clics
+        # Renderizado de la alerta
         if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
             datos = st.session_state.get("datos_cita_alerta", {})
             oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
@@ -1705,7 +1715,7 @@ else:
             col_b1, col_b2, col_b3 = st.columns(3)
             
             with col_b1:
-                if st.button("⏰ RECORDAR", key="btn_snooze_master"):
+                if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_def"):
                     import time
                     st.session_state.snooze_cita_hasta = time.time() + 3600
                     st.session_state.pop("alerta_cita_pendiente", None)
@@ -1713,19 +1723,27 @@ else:
                     st.rerun()
                     
             with col_b2:
-                if st.button("🚚 MÓDULO AGC", key="btn_agc_master"):
+                if st.button("🚚 IR AL MÓDULO AGC", key="btn_agc_def"):
+                    id_actual = st.session_state.get("alerta_cita_pendiente")
+                    if id_actual:
+                        st.session_state.citas_cerradas_definitivamente.add(id_actual)
                     st.session_state.pop("alerta_cita_pendiente", None)
                     st.session_state.pop("datos_cita_alerta", None)
+                    # Forzamos la bandera para saltar al módulo de AGC
+                    st.session_state.ir_a_entregas_agc = True
                     st.rerun()
     
             with col_b3:
-                if st.button("✖ CERRAR", key="btn_cerrar_master"):
+                if st.button("✖ CERRAR PARA SIEMPRE", key="btn_cerrar_def"):
+                    id_actual = st.session_state.get("alerta_cita_pendiente")
+                    if id_actual:
+                        st.session_state.citas_cerradas_definitivamente.add(id_actual)
                     st.session_state.pop("alerta_cita_pendiente", None)
                     st.session_state.pop("datos_cita_alerta", None)
                     st.rerun()
     
     monitor_global_citas()
-        
+            
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
     with main_container:
