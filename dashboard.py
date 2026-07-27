@@ -10056,8 +10056,6 @@ else:
             
             if st.session_state.menu_sub == "ETIQUETAS":  
                 # --- 1. FUNCIONES DE CONEXIÓN Y PROCESAMIENTO ---
-                # --- 1. FUNCIONES DE CONEXIÓN Y PROCESAMIENTO ---
-
                 @st.cache_data(ttl=60)
                 def cargar_csv_github():
                     try:
@@ -10101,7 +10099,7 @@ else:
                         y_actual -= interlineado
                     return y_actual 
                 
-                def generar_etiquetas_limpias(df_datos, total_etqs_manual=None):
+                def generar_etiquetas_limpias(df_datos, es_lote_completo=False):
                     output = io.BytesIO()
                     c = canvas.Canvas(output, pagesize=letter)
                     width_carta, height_carta = letter
@@ -10109,14 +10107,39 @@ else:
                     w_rec, h_rec = 10.5 * cm, 7.5 * cm
                     x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
                     
-                    # Tomamos el primer registro para los datos generales del envío y evitamos duplicar por renglones del CSV
-                    if not df_datos.empty:
-                        row = df_datos.iloc[0]
+                    if df_datos.empty:
+                        c.save()
+                        return output.getvalue()
+                
+                    # Si es un lote completo (ej. Todos los registros del Excel), iteramos por cada renglón/folio único.
+                    # Si es de GitHub o Folio Individual, agrupamos por Factura/Folio para evitar duplicar por renglones de productos.
+                    if es_lote_completo:
+                        iter_iterable = [group for _, group in df_datos.groupby(df_datos.columns[0])]
+                    else:
+                        # Si es un solo folio o GitHub, consolidamos el DataFrame en una sola entidad de envío
+                        row_base = df_datos.iloc[0]
+                        cant_total = 0
+                        for col_caja in ['Quantity', 'CANTIDAD', 'CAJAS', 'Bultos']:
+                            if col_caja in df_datos.columns:
+                                try:
+                                    val_s = df_datos[col_caja].dropna().astype(float).sum()
+                                    if val_s > 0:
+                                        cant_total = int(val_s)
+                                        break
+                                except:
+                                    pass
+                        if cant_total == 0:
+                            cant_total = int(row_base.get('Quantity', row_base.get('CANTIDAD', 1)))
+                        
+                        # Creamos un pseudo-grupo único con la cantidad total ya ajustada
+                        row_base_copy = row_base.copy()
+                        row_base_copy['Quantity'] = cant_total
+                        iter_iterable = [pd.DataFrame([row_base_copy])]
+                
+                    for df_grupo in iter_iterable:
+                        row = df_grupo.iloc[0]
                         try:
-                            if total_etqs_manual is not None:
-                                cantidad_real = int(total_etqs_manual)
-                            else:
-                                cantidad_real = int(row.get('Quantity', row.get('CANTIDAD', 1)))
+                            cantidad_real = int(row.get('Quantity', row.get('CANTIDAD', 1)))
                         except: 
                             cantidad_real = 1
                 
@@ -10359,9 +10382,15 @@ else:
                         }
                         </style>
                     """, unsafe_allow_html=True)
-                
-                    pdf_etq_bytes = generar_etiquetas_limpias(df_procesar)
-                
+                    
+                    # --- AQUÍ REEMPLAZAS LA LLAMADA AL PDF ---
+                    # Determinamos si se trata de un archivo masivo de Excel procesando todos los registros
+                    es_multiregistro_excel = ("Excel" in fuente_origen) and ('tipo_proc_excel' in locals() and "TODOS" in tipo_proceso_excel)
+    
+                    # Generamos el PDF pasando el indicador correcto
+                    pdf_etq_bytes = generar_etiquetas_limpias(df_procesar, es_lote_completo=es_multiregistro_excel)
+                    # ----------------------------------------
+    
                     st.download_button(
                         label="🏷️ DESCARGAR ETIQUETAS PDF",
                         data=pdf_etq_bytes,
