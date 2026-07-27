@@ -10111,35 +10111,24 @@ else:
                         c.save()
                         return output.getvalue()
                 
-                    # Si es un lote completo (ej. Todos los registros del Excel), iteramos por cada renglón/folio único.
-                    # Si es de GitHub o Folio Individual, agrupamos por Factura/Folio para evitar duplicar por renglones de productos.
+                    # Si es lote completo, agrupamos por la columna de factura o folio para procesar cada pedido por separado sin duplicar
                     if es_lote_completo:
-                        iter_iterable = [group for _, group in df_datos.groupby(df_datos.columns[0])]
+                        col_fac_agrupar = next((col for col in df_datos.columns if 'factura' in col.lower() or 'folio' in col.lower()), df_datos.columns[0])
+                        iter_iterable = [group for _, group in df_datos.groupby(col_fac_agrupar)]
                     else:
-                        # Si es un solo folio o GitHub, consolidamos el DataFrame en una sola entidad de envío
-                        row_base = df_datos.iloc[0]
-                        cant_total = 0
-                        for col_caja in ['Quantity', 'CANTIDAD', 'CAJAS', 'Bultos']:
-                            if col_caja in df_datos.columns:
-                                try:
-                                    val_s = df_datos[col_caja].dropna().astype(float).sum()
-                                    if val_s > 0:
-                                        cant_total = int(val_s)
-                                        break
-                                except:
-                                    pass
-                        if cant_total == 0:
-                            cant_total = int(row_base.get('Quantity', row_base.get('CANTIDAD', 1)))
-                        
-                        # Creamos un pseudo-grupo único con la cantidad total ya ajustada
-                        row_base_copy = row_base.copy()
-                        row_base_copy['Quantity'] = cant_total
-                        iter_iterable = [pd.DataFrame([row_base_copy])]
+                        iter_iterable = [df_datos]
                 
                     for df_grupo in iter_iterable:
                         row = df_grupo.iloc[0]
                         try:
-                            cantidad_real = int(row.get('Quantity', row.get('CANTIDAD', 1)))
+                            # Buscamos la cantidad real de cajas/bultos de este grupo específico de manera limpia
+                            cantidad_real = 1
+                            for col_caja in ['Quantity', 'CANTIDAD', 'CAJAS', 'Bultos']:
+                                if col_caja in df_grupo.columns:
+                                    val_s = pd.to_numeric(df_grupo[col_caja].iloc[0], errors='coerce')
+                                    if pd.notna(val_s) and val_s > 0:
+                                        cantidad_real = int(val_s)
+                                        break
                         except: 
                             cantidad_real = 1
                 
@@ -10202,8 +10191,6 @@ else:
                 
                 
                 # --- 2. INTERFAZ DE USUARIO ---
-                # --- 2. INTERFAZ DE USUARIO ---
-
                 st.markdown("""
                     <div style="
                         background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
@@ -10313,18 +10300,17 @@ else:
                         nombre_archivo_pdf = f"Etiquetas_Manual_{m_factura}.pdf"
                 
                 # Si ya tenemos un dataframe para procesar, mostramos controles adicionales y botón de descarga
-                # Si ya tenemos un dataframe para procesar, mostramos controles adicionales y botón de descarga
                 if not df_procesar.empty:
                     st.markdown("---")
                     
-                    # Determinamos las cajas iniciales sumando o tomando el primer registro
+                    # Determinamos las cajas iniciales de forma segura para el registro/folio seleccionado
                     cant_inicial = 1
                     for col_caja in ['Quantity', 'CANTIDAD', 'CAJAS', 'Bultos']:
                         if col_caja in df_procesar.columns:
                             try:
-                                suma_cajas = df_procesar[col_caja].dropna().astype(float).sum()
-                                if suma_cajas > 0:
-                                    cant_inicial = int(suma_cajas)
+                                val_reg = pd.to_numeric(df_procesar[col_caja].iloc[0], errors='coerce')
+                                if pd.notna(val_reg) and val_reg > 0:
+                                    cant_inicial = int(val_reg)
                                     break
                             except:
                                 pass
@@ -10339,13 +10325,13 @@ else:
                         if "num_etq_gen_dinamico" in st.session_state:
                             if st.session_state["num_etq_gen_dinamico"] > 50:
                                 st.session_state["num_etq_gen_dinamico"] = 50 if cant_inicial > 50 or cant_inicial < 1 else cant_inicial
-    
+                
                         # 2. Aseguramos que el value inicial nunca supere el max_value para evitar el choque en el primer render
                         val_inicial_seguro = cant_inicial if 1 <= cant_inicial <= 50 else 1
                         if "num_etq_gen_dinamico" in st.session_state:
                             if st.session_state["num_etq_gen_dinamico"] < 1:
                                 st.session_state["num_etq_gen_dinamico"] = 1
-    
+                
                         cant_etiquetas_sel = st.number_input(
                             "Número de etiquetas a generar:", 
                             min_value=1, max_value=50, 
@@ -10356,7 +10342,6 @@ else:
                         transporte_etq = st.text_input("Transporte / Paquetería", value=transporte_default, key="trans_etq_dinamico")
                 
                     # Actualizamos el DataFrame para que use la cantidad de etiquetas y el transporte elegidos
-                    # (Si tiene varias filas, asignamos la cantidad al primer registro o distribuimos, pero para etiquetas mandamos el total con quantity)
                     df_procesar['Quantity'] = cant_etiquetas_sel
                     df_procesar['Transporte'] = transporte_etq
                 
@@ -10382,15 +10367,13 @@ else:
                         }
                         </style>
                     """, unsafe_allow_html=True)
-                    
-                    # --- AQUÍ REEMPLAZAS LA LLAMADA AL PDF ---
+                
                     # Determinamos si se trata de un archivo masivo de Excel procesando todos los registros
                     es_multiregistro_excel = ("Excel" in fuente_origen) and ('tipo_proc_excel' in locals() and "TODOS" in tipo_proceso_excel)
-    
+                
                     # Generamos el PDF pasando el indicador correcto
                     pdf_etq_bytes = generar_etiquetas_limpias(df_procesar, es_lote_completo=es_multiregistro_excel)
-                    # ----------------------------------------
-    
+                
                     st.download_button(
                         label="🏷️ DESCARGAR ETIQUETAS PDF",
                         data=pdf_etq_bytes,
