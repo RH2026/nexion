@@ -36,7 +36,8 @@ from reportlab.pdfgen import canvas
 
 # CAMBIO 2: Importamos platypus completo para usar platypus.Image sin perder ningún elemento
 import reportlab.platypus as platypus
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, image
+
 
 import requests
 import streamlit as st
