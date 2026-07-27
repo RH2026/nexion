@@ -1621,7 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (3 BOTONES) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (3 BOTONES FUNCIONALES) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1663,12 +1663,10 @@ else:
                 oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
                 hora_cita = datos.get("HORA", "POR DEFINIR")
                 tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
-                # Obtenemos la fecha exacta de la columna CITA
                 fecha_exacta_cita = str(datos.get("CITA", "MAÑANA"))
                 
                 st.markdown(f"""
                 <div style="
-                    background-color:ดิน #202c36; 
                     background-color: #202c36; 
                     border-left: 6px solid #38bdf8; 
                     padding: 20px 25px; 
@@ -1690,7 +1688,6 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # CSS para estilizar los 3 botones uniformemente
                 st.markdown("""
                     <style>
                     div.stButton > button {
@@ -1704,32 +1701,31 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # Contenedor de 3 espacios (columnas) para los botones
                 col_b1, col_b2, col_b3 = st.columns(3)
                 
                 with col_b1:
-                    if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_cita"):
+                    if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_cita_fixed"):
                         st.session_state.snooze_cita_hasta = time.time() + 3600
                         st.session_state.pop("alerta_cita_pendiente", None)
                         st.session_state.pop("datos_cita_alerta", None)
                         st.rerun()
                         
                 with col_b2:
-                    if st.button("🚚 IR AL MÓDULO AGC", key="btn_ir_agc"):
+                    if st.button("🚚 IR AL MÓDULO AGC", key="btn_ir_agc_fixed"):
                         st.session_state.pop("alerta_cita_pendiente", None)
                         st.session_state.pop("datos_cita_alerta", None)
-                        # Aquí forzamos cambiar a la pestaña de Entregas AGC (índice 4 según tu estructura)
-                        st.session_state.tab_activa_agc = True 
+                        # Guardamos la bandera para que la app sepa que debe enfocar Entregas AGC
+                        st.session_state.ir_a_entregas_agc = True
                         st.rerun()
     
                 with col_b3:
-                    if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita"):
+                    if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita_fixed"):
                         st.session_state.pop("alerta_cita_pendiente", None)
                         st.session_state.pop("datos_cita_alerta", None)
                         st.rerun()
     
     monitor_global_citas()
-    
+        
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
     main_container = st.container()
     with main_container:
@@ -2236,6 +2232,9 @@ else:
                 es_admin = st.session_state.get("usuario_activo") == "Rigoberto"
                 if es_admin:
                     nombres_tabs.append("🔒 ADMIN CONTROL")
+
+                if st.session_state.get("ir_a_entregas_agc", False):
+                    st.session_state.ir_a_entregas_agc = False
 
                 # Creamos las pestañas dinámicamente
                 tabs = st.tabs(nombres_tabs)
