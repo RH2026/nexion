@@ -8003,10 +8003,10 @@ else:
                     # LOGO (Ajustado a nw=320 para dar aire perfecto)
                     # ==========================
                     try:
-                        logo = PILImage.open("agc.png").convert("RGBA") # <- USANDO PILImage
+                        logo = PILImage.open("agc.png").convert("RGBA")
                         nw = 320
                         nh = int(logo.size[1] * nw / logo.size[0])
-                        etiqueta.paste(logo.resize((nw, nh), PILImage.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), PILImage.Resampling.LANCZOS)) # <- USANDO PILImage
+                        etiqueta.paste(logo.resize((nw, nh), PILImage.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), PILImage.Resampling.LANCZOS))
                     except Exception as e:
                         st.warning(f"No se encontró agc.png ({e})")
                 
@@ -8022,7 +8022,7 @@ else:
                     # QR
                     # ==========================
                     qr_sz = 670
-                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), PILImage.Resampling.NEAREST), ((w_px - qr_sz) // 2, 420)) # <- USANDO PILImage
+                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), PILImage.Resampling.NEAREST), ((w_px - qr_sz) // 2, 420))
                 
                     # ==========================
                     # TEXTO INFERIOR
