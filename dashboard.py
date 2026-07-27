@@ -1622,6 +1622,7 @@ else:
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (DEFINITIVO) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (DISCRETO Y COMPACTO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1630,10 +1631,6 @@ else:
                 import time
                 import pandas as pd
                 from datetime import datetime, timedelta
-                
-                # Inicializar listas de control en session_state si no existen
-                if "citas_cerradas_definitivamente" not in st.session_state:
-                    st.session_state.citas_cerradas_definitivamente = set()
                 
                 tiempo_snooze = st.session_state.get("snooze_cita_hasta", 0)
                 if time.time() < tiempo_snooze:
@@ -1646,19 +1643,13 @@ else:
                 df_agc.columns = df_agc.columns.str.strip()
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
-                    hoy = datetime.now()
-                    mañana_str = (hoy + timedelta(days=1)).strftime("%d/%m/%Y")
-                    
+                    mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
                     citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
                     citas_mañana = df_agc[citas_limpias == mañana_str]
                     
                     if not citas_mañana.empty:
                         primera = citas_mañana.iloc[0]
                         id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "CITA")))
-                        
-                        # Si ya fue cerrada para toda la vida, la ignoramos por completo
-                        if id_oc in st.session_state.citas_cerradas_definitivamente:
-                            return
                         
                         if st.session_state.get("alerta_cita_pendiente") != id_oc:
                             st.session_state.alerta_cita_pendiente = id_oc
@@ -1668,76 +1659,49 @@ else:
             except Exception as e:
                 pass
         
-        # Renderizado de la alerta
+        # Renderizado compacto y discreto
         if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
             datos = st.session_state.get("datos_cita_alerta", {})
             oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
             hora_cita = datos.get("HORA", "POR DEFINIR")
-            tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
             fecha_exacta_cita = str(datos.get("CITA", "MAÑANA"))
             
+            # Estilo barra compacta de una sola línea
             st.markdown(f"""
             <div style="
-                background-color: #202c36; 
-                border-left: 6px solid #38bdf8; 
-                padding: 20px 25px; 
-                border-radius: 5px; 
-                margin-bottom: 5px;
-                color: white;
+                background-color: #1a232a; 
+                border-left: 4px solid #38bdf8; 
+                padding: 8px 15px; 
+                border-radius: 4px; 
+                margin-bottom: 4px;
+                color: #ffffff;
                 font-family: sans-serif;
-                box-shadow: none !important;
+                font-size: 11px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
             ">
-                <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
-                    📅 ¡AVISO DE CITA AGC!: O.C. / REF: {oc_ref}
-                </h2>
-                <p style="margin: 5px 0 2px 0; font-size: 11px; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">
-                    Fecha de Cita: {fecha_exacta_cita} | Unidad: {tipo_unidad}
-                </p>
-                <p style="margin: 2px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                    Horario: {hora_cita} // Módulo AGC Nexion
-                </p>
+                <span>📅 <b>CITA MAÑANA:</b> O.C. / REF: {oc_ref} | <b>Fecha:</b> {fecha_exacta_cita} | <b>Hora:</b> {hora_cita}</span>
             </div>
             """, unsafe_allow_html=True)
             
+            # Botón único estilizado, pequeño y alineado
             st.markdown("""
                 <style>
                 div.stButton > button {
-                    font-size: 09px !important;
-                    font-weight: bold !important;
-                    padding: 10px 10px !important;
+                    font-size: 08px !important;
+                    padding: 4px 8px !important;
                     min-height: unset !important;
-                    width: 100% !important;
-                    text-align: center !important;
+                    width: auto !important;
                 }
                 </style>
             """, unsafe_allow_html=True)
             
-            col_b1, col_b2, col_b3 = st.columns(3)
-        
-            with col_b1:
-                if st.button("⏰ RECORDAR", key="btn_snooze_def"):
+            col_espacio, col_btn = st.columns([5, 1])
+            with col_btn:
+                if st.button("RECORDAR MÁS TARDE", key="btn_snooze_discreto"):
                     import time
                     st.session_state.snooze_cita_hasta = time.time() + 3600
-                    st.session_state.pop("alerta_cita_pendiente", None)
-                    st.session_state.pop("datos_cita_alerta", None)
-                    st.rerun()
-                    
-            with col_b2:
-                if st.button("🚚 IR AL MÓDULO AGC", key="btn_agc_def"):
-                    id_actual = st.session_state.get("alerta_cita_pendiente")
-                    if id_actual:
-                        st.session_state.citas_cerradas_definitivamente.add(id_actual)
-                    st.session_state.pop("alerta_cita_pendiente", None)
-                    st.session_state.pop("datos_cita_alerta", None)
-                    # Usamos un parámetro en la URL de Streamlit para forzar el aviso visual de que vas al módulo
-                    st.toast("Redirigiendo a Entregas AGC... Selecciona la pestaña.", icon="🚚")
-                    st.rerun()
-    
-            with col_b3:
-                if st.button("✖ CERRAR", key="btn_cerrar_def"):
-                    id_actual = st.session_state.get("alerta_cita_pendiente")
-                    if id_actual:
-                        st.session_state.citas_cerradas_definitivamente.add(id_actual)
                     st.session_state.pop("alerta_cita_pendiente", None)
                     st.session_state.pop("datos_cita_alerta", None)
                     st.rerun()
