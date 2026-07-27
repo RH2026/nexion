@@ -1621,7 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (BOTONES IGUALES Y UNIDOS) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (3 BOTONES) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1657,15 +1657,18 @@ else:
                             
             except Exception as e:
                 pass
-    
+        
             if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
                 datos = st.session_state.get("datos_cita_alerta", {})
                 oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
                 hora_cita = datos.get("HORA", "POR DEFINIR")
                 tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
+                # Obtenemos la fecha exacta de la columna CITA
+                fecha_exacta_cita = str(datos.get("CITA", "MAÑANA"))
                 
                 st.markdown(f"""
                 <div style="
+                    background-color:ดิน #202c36; 
                     background-color: #202c36; 
                     border-left: 6px solid #38bdf8; 
                     padding: 20px 25px; 
@@ -1676,10 +1679,10 @@ else:
                     box-shadow: none !important;
                 ">
                     <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
-                        📅 ¡AVISO DE CITA PARA MAÑANA AGC!: O.C. / REF: {oc_ref}
+                        📅 ¡AVISO DE CITA AGC!: O.C. / REF: {oc_ref}
                     </h2>
                     <p style="margin: 5px 0 2px 0; font-size: 11px; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">
-                        Unidad: {tipo_unidad}
+                        Fecha de Cita: {fecha_exacta_cita} | Unidad: {tipo_unidad}
                     </p>
                     <p style="margin: 2px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
                         Horario: {hora_cita} // Módulo AGC Nexion
@@ -1687,36 +1690,42 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # CSS brutal para forzar un ancho exacto e idéntico en ambos botones y arrinconarlos juntos
+                # CSS para estilizar los 3 botones uniformemente
                 st.markdown("""
                     <style>
                     div.stButton > button {
                         font-size: 09px !important;
                         font-weight: bold !important;
-                        padding: 10px 15px !important;
+                        padding: 10px 10px !important;
                         min-height: unset !important;
-                        width: 220px !important; /* Forzamos el mismo ancho exacto para los dos */
+                        width: 100% !important;
                         text-align: center !important;
                     }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # Los metemos en columnas muy pegaditas para que no se separen
-                col_b1, col_b2, col_vacia = st.columns([1, 1.1, 4])
+                # Contenedor de 3 espacios (columnas) para los botones
+                col_b1, col_b2, col_b3 = st.columns(3)
                 
                 with col_b1:
-                    if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita"):
-                        del st.session_state.alerta_cita_pendiente
-                        if "datos_cita_alerta" in st.session_state:
-                            del st.session_state.datos_cita_alerta
+                    if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_cita"):
+                        st.session_state.snooze_cita_hasta = time.time() + 3600
+                        st.session_state.pop("alerta_cita_pendiente", None)
+                        st.session_state.pop("datos_cita_alerta", None)
                         st.rerun()
                         
                 with col_b2:
-                    if st.button("RECORDAR MÁS TARDE", key="btn_snooze_cita"):
-                        st.session_state.snooze_cita_hasta = time.time() + 3600
-                        del st.session_state.alerta_cita_pendiente
-                        if "datos_cita_alerta" in st.session_state:
-                            del st.session_state.datos_cita_alerta
+                    if st.button("🚚 IR AL MÓDULO AGC", key="btn_ir_agc"):
+                        st.session_state.pop("alerta_cita_pendiente", None)
+                        st.session_state.pop("datos_cita_alerta", None)
+                        # Aquí forzamos cambiar a la pestaña de Entregas AGC (índice 4 según tu estructura)
+                        st.session_state.tab_activa_agc = True 
+                        st.rerun()
+    
+                with col_b3:
+                    if st.button("✖ CERRAR", key="btn_cerrar_alerta_cita"):
+                        st.session_state.pop("alerta_cita_pendiente", None)
+                        st.session_state.pop("datos_cita_alerta", None)
                         st.rerun()
     
     monitor_global_citas()
