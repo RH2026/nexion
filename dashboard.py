@@ -1713,9 +1713,9 @@ else:
             """, unsafe_allow_html=True)
             
             col_b1, col_b2, col_b3 = st.columns(3)
-            
+        
             with col_b1:
-                if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_def"):
+                if st.button("⏰ RECORDAR", key="btn_snooze_def"):
                     import time
                     st.session_state.snooze_cita_hasta = time.time() + 3600
                     st.session_state.pop("alerta_cita_pendiente", None)
@@ -1729,12 +1729,12 @@ else:
                         st.session_state.citas_cerradas_definitivamente.add(id_actual)
                     st.session_state.pop("alerta_cita_pendiente", None)
                     st.session_state.pop("datos_cita_alerta", None)
-                    # Forzamos la bandera para saltar al módulo de AGC
-                    st.session_state.ir_a_entregas_agc = True
+                    # Usamos un parámetro en la URL de Streamlit para forzar el aviso visual de que vas al módulo
+                    st.toast("Redirigiendo a Entregas AGC... Selecciona la pestaña.", icon="🚚")
                     st.rerun()
     
             with col_b3:
-                if st.button("✖ CERRAR PARA SIEMPRE", key="btn_cerrar_def"):
+                if st.button("✖ CERRAR", key="btn_cerrar_def"):
                     id_actual = st.session_state.get("alerta_cita_pendiente")
                     if id_actual:
                         st.session_state.citas_cerradas_definitivamente.add(id_actual)
