@@ -10111,21 +10111,14 @@ else:
                         c.save()
                         return output.getvalue()
                 
-                    # Si es lote completo, agrupamos por la columna de factura o folio para procesar cada pedido por separado sin duplicar
-                    if es_lote_completo:
-                        col_fac_agrupar = next((col for col in df_datos.columns if 'factura' in col.lower() or 'folio' in col.lower()), df_datos.columns[0])
-                        iter_iterable = [group for _, group in df_datos.groupby(col_fac_agrupar)]
-                    else:
-                        iter_iterable = [df_datos]
-                
-                    for df_grupo in iter_iterable:
-                        row = df_grupo.iloc[0]
+                    # Iteramos fila por fila de forma directa si es lote completo o bloque único
+                    for idx, row in df_datos.iterrows():
                         try:
-                            # Buscamos la cantidad real de cajas/bultos de este grupo específico de manera limpia
+                            # Obtenemos la cantidad exacta de esta fila específica
                             cantidad_real = 1
                             for col_caja in ['Quantity', 'CANTIDAD', 'CAJAS', 'Bultos']:
-                                if col_caja in df_grupo.columns:
-                                    val_s = pd.to_numeric(df_grupo[col_caja].iloc[0], errors='coerce')
+                                if col_caja in df_datos.columns:
+                                    val_s = pd.to_numeric(row[col_caja], errors='coerce')
                                     if pd.notna(val_s) and val_s > 0:
                                         cantidad_real = int(val_s)
                                         break
