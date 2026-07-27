@@ -7984,7 +7984,7 @@ else:
                     return ImageFont.load_default()
                 
                 if lote:
-                    texto_qr = f"{numero_parte} - {lote} - {valor_fijo}C"
+                    texto_qr = f"{numero_parte}-{lote}-{valor_fijo}$"
                     
                     # Generación QR
                     qr = qrcode.QRCode(version=2, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=15, border=1)
