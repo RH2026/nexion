@@ -18,7 +18,10 @@ from github import Github
 import google.generativeai as genai
 import numpy as np
 import pandas as pd
-from PIL import Image, ImageDraw, ImageFont
+
+# CAMBIO 1: Pillow con alias para no chocar con ReportLab
+from PIL import Image as PILImage, ImageDraw, ImageFont
+
 import plotly.express as px
 import plotly.graph_objects as go
 from pypdf import PdfReader, PdfWriter
@@ -30,7 +33,11 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+# CAMBIO 2: Importamos platypus completo para usar platypus.Image sin perder ningún elemento
+import reportlab.platypus as platypus
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
@@ -7984,9 +7991,9 @@ else:
                     qr.make(fit=True)
                     qr_img = qr.make_image(fill_color="#27272A", back_color="white").convert("RGB")
                 
-                    # Lienzo de Etiqueta (1004 x 1228 px)
-                    w_px, h_px = 1004, 1228
-                    etiqueta = Image.new("RGB", (w_px, h_px), "white")
+                    # Lienzo de Etiqueta (1004 x 1228 px) -> USANDO PILImage
+                    w_px, h_px = int(1004), int(1228)
+                    etiqueta = PILImage.new("RGB", (w_px, h_px), "white")
                     draw = ImageDraw.Draw(etiqueta)
                 
                     # Fuentes
@@ -7996,10 +8003,10 @@ else:
                     # LOGO (Ajustado a nw=320 para dar aire perfecto)
                     # ==========================
                     try:
-                        logo = Image.open("agc.png").convert("RGBA")
+                        logo = PILImage.open("agc.png").convert("RGBA") # <- USANDO PILImage
                         nw = 320
                         nh = int(logo.size[1] * nw / logo.size[0])
-                        etiqueta.paste(logo.resize((nw, nh), Image.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), Image.Resampling.LANCZOS))
+                        etiqueta.paste(logo.resize((nw, nh), PILImage.Resampling.LANCZOS), (50, 20), logo.resize((nw, nh), PILImage.Resampling.LANCZOS)) # <- USANDO PILImage
                     except Exception as e:
                         st.warning(f"No se encontró agc.png ({e})")
                 
@@ -8015,7 +8022,7 @@ else:
                     # QR
                     # ==========================
                     qr_sz = 670
-                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), Image.Resampling.NEAREST), ((w_px - qr_sz) // 2, 420))
+                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), PILImage.Resampling.NEAREST), ((w_px - qr_sz) // 2, 420)) # <- USANDO PILImage
                 
                     # ==========================
                     # TEXTO INFERIOR
