@@ -26,3 +26,4 @@ Fecha,Tipo,Categoria,Concepto,Monto,Cuenta
 2026-07-25 10:17,Ingreso,Nómina,AJUSTE,1.0,Caja de Ahorros
 2026-07-27 00:18,Ingreso,Gasolina,GASOLINA DUSTER,600.0,Santander
 2026-07-27 00:19,Ingreso,Supermercado,GASTO SEMANAL,1500.0,Santander
+2026-07-27 00:20,Gasto,Supermercado,GASTO SEMANAL,-1500.0,Santander
