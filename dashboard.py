@@ -1595,7 +1595,7 @@ else:
                     <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
                         NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
                     </h2>
-                    <p style="margin: 5px 0 8px 0; font-size: 11px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                    <p style="margin: 5px 0 8px 0; font-size: 09px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
                         Nexion Logistic // Alerta Exclusiva Admin
                     </p>
                 </div>
@@ -1621,6 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (HORA LOCAL MÉXICO) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (MÚLTIPLES CITAS Y HORA MÉXICO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1651,23 +1652,32 @@ else:
                     citas_mañana = df_agc[citas_limpias == mañana_str]
                     
                     if not citas_mañana.empty:
-                        primera = citas_mañana.iloc[0]
-                        id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "CITA")))
+                        # Convertimos todas las filas encontradas a una lista de diccionarios
+                        lista_citas = citas_mañana.to_dict('records')
+                        # Creamos un identificador único basado en todas las O.C. de mañana
+                        ids_combinados = "_".join([str(c.get("PO Customer", c.get("OV Jypesa", "CITA"))) for c in lista_citas])
                         
-                        if st.session_state.get("alerta_cita_pendiente") != id_oc:
-                            st.session_state.alerta_cita_pendiente = id_oc
-                            st.session_state.datos_cita_alerta = primera.to_dict()
+                        if st.session_state.get("alerta_cita_pendiente") != ids_combinados:
+                            st.session_state.alerta_cita_pendiente = ids_combinados
+                            st.session_state.datos_citas_multiples = lista_citas
                             st.rerun()
                             
             except Exception as e:
                 pass
         
             if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
-                datos = st.session_state.get("datos_cita_alerta", {})
-                oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
-                hora_cita = datos.get("HORA", "POR DEFINIR")
-                tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
-                fecha_cita = str(datos.get("CITA", "MAÑANA"))
+                citas_data = st.session_state.get("datos_citas_multiples", [])
+                
+                # Construimos los textos para cada una de las citas encontradas
+                textos_citas = []
+                for datos in citas_data:
+                    oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
+                    hora_cita = datos.get("HORA", "POR DEFINIR")
+                    tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
+                    fecha_cita = str(datos.get("CITA", "MAÑANA"))
+                    textos_citas.append(f"O.C: {oc_ref} ({tipo_unidad} - {fecha_cita} {hora_cita})")
+                    
+                detalle_citas_str = " | ".join(textos_citas) if textos_citas else "Sin detalles"
                 
                 # Diseño compacto de una sola línea con borde naranja de advertencia
                 st.markdown(f"""
@@ -1679,12 +1689,12 @@ else:
                     margin-bottom: 4px;
                     color: white;
                     font-family: sans-serif;
-                    font-size: 14px;
+                    font-size: 13px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                 ">
-                    <span>📅 <b>CITA MAÑANA:</b> O.C: {oc_ref} | <b>Unidad:</b> {tipo_unidad} | <b>Fecha:</b> {fecha_cita} | <b>Hora:</b> {hora_cita}</span>
+                    <span>📅 <b>CITAS MAÑANA ({len(citas_data)}):</b> {detalle_citas_str}</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -1692,7 +1702,7 @@ else:
                 st.markdown("""
                     <style>
                     div.stButton > button {
-                        font-size: 08px !important;
+                        font-size: 07px !important;
                         font-weight: Normal !important;
                         padding: 6px 12px !important;
                         min-height: unset !important;
@@ -1707,11 +1717,12 @@ else:
                 with col_btn:
                     if st.button("RECORDAR MÁS TARDE", key="btn_snooze_cita_original"):
                         st.session_state.snooze_cita_hasta = time.time() + 3600
-                        del st.session_state.alerta_cita_pendiente
-                        if "datos_cita_alerta" in st.session_state:
-                            del st.session_state.datos_cita_alerta
+                        if "alerta_cita_pendiente" in st.session_state:
+                            del st.session_state.alerta_cita_pendiente
+                        if "datos_citas_multiples" in st.session_state:
+                            del st.session_state.datos_citas_multiples
                         st.rerun()
-    
+        
     monitor_global_citas()
                 
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
@@ -7559,19 +7570,19 @@ else:
                                 st.markdown("### EDICIÓN TOTAL DE MATRIZ DE MUESTRAS")
                                 st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
                             
-                                # Estilos CSS idénticos a tus botones de descarga para mantener la línea visual
-                                # Estilos específicos para los botones dentro de formularios en Streamlit
                                 st.markdown("""
                                     <style>
-                                        /* Selector específico para los botones de envío dentro de formularios */
-                                        div[data-testid="stForm"] button {
+                                        div[data-testid="stForm"] button,
+                                        div[data-testid="stForm"] button:focus,
+                                        div[data-testid="stForm"] button:active {
                                             background-color: #263238 !important;
                                             color: #FFFFFF !important;
                                             border: 1px solid #44555A !important;
                                             width: 100% !important;
                                             border-radius: 4px !important;
                                             font-weight: 400 !important;
-                                            transition: all 0.3s ease-in-out !important;
+                                            box-shadow: none !important;
+                                            outline: none !important;
                                         }
                                         div[data-testid="stForm"] button:hover {
                                             background-color: #00A3A3 !important;
@@ -7655,8 +7666,8 @@ else:
                                             # Botones de acción dentro del formulario
                                             col_btn_1, col_btn_2 = st.columns([2, 1])
                                             
-                                            guardar_cambios = col_btn_1.form_submit_button("💾 GUARDAR CAMBIOS EN ESTE FOLIO", use_container_width=True)
-                                            eliminar_registro = col_btn_2.form_submit_button("🗑️ ELIMINAR ESTE FOLIO", use_container_width=True)
+                                            guardar_cambios = col_btn_1.form_submit_button("GUARDAR CAMBIOS EN ESTE FOLIO", use_container_width=True)
+                                            eliminar_registro = col_btn_2.form_submit_button("ELIMINAR ESTE FOLIO", use_container_width=True)
                             
                                             if guardar_cambios:
                                                 # Recalcular totales
