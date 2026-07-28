@@ -7173,7 +7173,7 @@ else:
                         
                         if usuario_logeado in lista_admins:
                             st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
-                            t1, t2 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes"])
+                            t1, t2, t3 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes", "Edicion"])
                             
                             with t1:
                                 # 1. Pon esto justo DEBAJO de donde creas los tabs (t1, t2)
@@ -7554,7 +7554,130 @@ else:
             
                                 else:
                                     st.info("No hay registros todavía.")
-                        
+
+                            with t3:
+                                st.markdown("### EDICIÓN TOTAL DE MATRIZ DE MUESTRAS")
+                                st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
+                            
+                                if df_actual.empty:
+                                    st.warning("No hay registros en la matriz de muestras para editar.")
+                                else:
+                                    # Selector para buscar el folio a editar
+                                    df_sorted_edit = df_actual.sort_values(by="FOLIO", ascending=False)
+                                    opciones_edit = [f"Folio #{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']} ({r['FECHA']})" for _, r in df_sorted_edit.iterrows()]
+                                    
+                                    folio_a_editar = st.selectbox(
+                                        "Selecciona el Folio que deseas modificar o eliminar:",
+                                        opciones_edit,
+                                        index=None,
+                                        placeholder="Escribe el folio o nombre del hotel...",
+                                        key="select_folio_edicion_total"
+                                    )
+                            
+                                    if folio_a_editar:
+                                        # Extraer el número de folio seleccionado
+                                        num_folio_sel = int(folio_a_editar.split(" - ")[0].replace("Folio #", ""))
+                                        idx_fila = df_actual.index[df_actual['FOLIO'] == num_folio_sel].tolist()[0]
+                                        registro_sel = df_actual.loc[idx_fila]
+                            
+                                        st.markdown("---")
+                                        st.subheader(f"Editando: JYP-{num_folio_sel}")
+                            
+                                        # Formulario de edición dividido en columnas
+                                        with st.form(key=f"form_edicion_{num_folio_sel}"):
+                                            col_e1, col_e2, col_e3 = st.columns(3)
+                                            
+                                            with col_e1:
+                                                nuevo_hotel = st.text_input("Nombre del Hotel", value=str(registro_sel.get("NOMBRE DEL HOTEL", ""))).upper()
+                                                nuevo_solicito = st.text_input("Solicitante", value=str(registro_sel.get("SOLICITO", ""))).upper()
+                                                nuevo_estatus = st.selectbox(
+                                                    "Estatus", 
+                                                    ["NO SURTIDO", "DESPACHADO"], 
+                                                    index=0 if str(registro_sel.get("ESTATUS", "NO SURTIDO")) == "NO SURTIDO" else 1
+                                                )
+                            
+                                            with col_e2:
+                                                nuevo_destino = st.text_area("Destino / Dirección", value=str(registro_sel.get("DESTINO", ""))).upper()
+                                                nuevo_contacto = st.text_input("Contacto Receptor", value=str(registro_sel.get("CONTACTO", ""))).upper()
+                            
+                                            with col_e3:
+                                                nueva_paqueteria = st.text_input("Paquetería", value=str(registro_sel.get("PAQUETERIA_NOMBRE", registro_sel.get("PAQUETERIA", "")))).upper()
+                                                nueva_guia = st.text_input("Número de Guía", value=str(registro_sel.get("NUMERO_GUIA", ""))).upper()
+                                                nuevo_costo_guia = st.number_input("Costo Guía / Flete ($)", min_value=0.0, value=float(registro_sel.get("COSTO_GUIA", 0.0)))
+                            
+                                            st.markdown("##### 📦 Modificar Cantidades de Productos")
+                                            st.write("Ajusta las piezas de los productos incluidos en este folio:")
+                            
+                                            # Diccionario temporal para capturar las nuevas cantidades de los productos
+                                            nuevas_cantidades = {}
+                                            cols_prods = st.columns(3)
+                                            
+                                            keys_precios = list(precios.keys())
+                                            for i, prod in enumerate(keys_precios):
+                                                cant_actual = int(registro_sel.get(prod, 0))
+                                                col_target = cols_prods[i % 3]
+                                                with col_target:
+                                                    nuevas_cantidades[prod] = st.number_input(
+                                                        f"{prod[:28]}", 
+                                                        min_value=0, 
+                                                        step=1, 
+                                                        value=cant_actual, 
+                                                        key=f"edit_{num_folio_sel}_{prod}"
+                                                    )
+                            
+                                            nuevo_comentario = st.text_area("Comentarios Adicionales", value=str(registro_sel.get("COMENTARIOS", ""))).upper()
+                            
+                                            st.markdown("---")
+                                            
+                                            # Botones de acción dentro del formulario
+                                            col_btn_1, col_btn_2 = st.columns([2, 1])
+                                            
+                                            guardar_cambios = col_btn_1.form_submit_button("GUARDAR CAMBIOS EN ESTE FOLIO", use_container_width=True, type="primary")
+                                            eliminar_registro = col_btn_2.form_submit_button("ELIMINAR ESTE FOLIO", use_container_width=True)
+                            
+                                            if guardar_cambios:
+                                                # Recalcular totales
+                                                total_cants = sum(nuevas_cantidades.values())
+                                                total_cost_p = sum(qty * precios.get(p_key, 0) for p_key, qty in nuevas_cantidades.items())
+                            
+                                                # Actualizar DataFrame principal
+                                                df_actual.at[idx_fila, "NOMBRE DEL HOTEL"] = nuevo_hotel
+                                                df_actual.at[idx_fila, "SOLICITO"] = nuevo_solicito
+                                                df_actual.at[idx_fila, "ESTATUS"] = nuevo_estatus
+                                                df_actual.at[idx_fila, "DESTINO"] = nuevo_destino
+                                                df_actual.at[idx_fila, "CONTACTO"] = nuevo_contacto
+                                                df_actual.at[idx_fila, "PAQUETERIA_NOMBRE"] = nueva_paqueteria
+                                                df_actual.at[idx_fila, "NUMERO_GUIA"] = nueva_guia
+                                                df_actual.at[idx_fila, "COSTO_GUIA"] = nuevo_costo_guia
+                                                df_actual.at[idx_fila, "CANTIDAD_TOTAL"] = total_cants
+                                                df_actual.at[idx_fila, "COSTO_TOTAL"] = round(total_cost_p, 2)
+                                                df_actual.at[idx_fila, "COMENTARIOS"] = nuevo_comentario
+                            
+                                                # Actualizar columnas de productos
+                                                for p_key, qty in nuevas_cantidades.items():
+                                                    df_actual.at[idx_fila, p_key] = qty
+                            
+                                                # Subir cambios a GitHub
+                                                if subir_a_github(df_actual, sha_actual, f"Edicion total Folio JYP-{num_folio_sel}"):
+                                                    st.success(f"¡Folio JYP-{num_folio_sel} actualizado y sincronizado correctamente!")
+                                                    time.sleep(1)
+                                                    st.rerun()
+                                                else:
+                                                    st.error("Error al sincronizar con GitHub. Verifica tus credenciales.")
+                            
+                                            if eliminar_registro:
+                                                # Eliminar la fila del DataFrame
+                                                df_actual = df_actual.drop(idx_fila).reset_index(drop=True)
+                                                
+                                                if subir_a_github(df_actual, sha_actual, f"Eliminacion Folio JYP-{num_folio_sel}"):
+                                                    st.success(f"¡El folio JYP-{num_folio_sel} ha sido eliminado permanentemente!")
+                                                    time.sleep(1)
+                                                    st.rerun()
+                                                else:
+                                                    st.error("Error al eliminar el registro en GitHub.")
+
+                                
+                
                         else:
                             # --- DISEÑO PRO: FRANJA ULTRA DELGADA EN UNA SOLA LÍNEA ---
                             html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:8px solid #F7C300; padding:18px 40px; border-radius:10px; margin:15px 0; box-shadow:0 6px 20px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:25px;"><span style="font-size:28px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:900; font-size:14px; letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:4px;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:14px; font-weight:500; opacity:0.9;">El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:6px 16px; border:1px solid rgba(247,195,0,0.5); background:rgba(247,195,0,0.1); border-radius:6px; font-size:11px; color:#F7C300; font-weight:900; letter-spacing:1px;">ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
