@@ -7560,9 +7560,11 @@ else:
                                 st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
                             
                                 # Estilos CSS idénticos a tus botones de descarga para mantener la línea visual
+                                # Estilos específicos para los botones dentro de formularios en Streamlit
                                 st.markdown("""
                                     <style>
-                                        div.stButton > button {
+                                        /* Selector específico para los botones de envío dentro de formularios */
+                                        div[data-testid="stForm"] button {
                                             background-color: #263238 !important;
                                             color: #FFFFFF !important;
                                             border: 1px solid #44555A !important;
@@ -7571,7 +7573,7 @@ else:
                                             font-weight: 400 !important;
                                             transition: all 0.3s ease-in-out !important;
                                         }
-                                        div.stButton > button:hover {
+                                        div[data-testid="stForm"] button:hover {
                                             background-color: #00A3A3 !important;
                                             border-color: #00A3A3 !important;
                                             color: #FFFFFF !important;
