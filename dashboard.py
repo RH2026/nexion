@@ -1620,8 +1620,7 @@ else:
     monitor_global_rigoberto()
 
 
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (FECHA EXACTA Y ALINEADO) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (SOLO PARA MAÑANA) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1642,15 +1641,15 @@ else:
                 df_agc.columns = df_agc.columns.str.strip()
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
-                    hoy_str = datetime.now().strftime("%d/%m/%Y")
+                    # Calculamos estrictamente la fecha de mañana
                     mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
                     
                     citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
-                    # Filtramos las citas que sean para hoy o para mañana exactamente
-                    citas_vigentes = df_agc[(citas_limpias == hoy_str) | (citas_limpias == mañana_str)]
+                    # Filtramos únicamente las citas que coincidan con el día de mañana
+                    citas_mañana = df_agc[citas_limpias == mañana_str]
                     
-                    if not citas_vigentes.empty:
-                        lista_citas_dict = citas_vigentes.to_dict('records')
+                    if not citas_mañana.empty:
+                        lista_citas_dict = citas_mañana.to_dict('records')
                         ids_str = "_".join([str(c.get("PO Customer", c.get("OV Jypesa", "CITA"))) for c in lista_citas_dict])
                         
                         if st.session_state.get("alerta_cita_pendiente") != ids_str:
@@ -1685,12 +1684,12 @@ else:
                 margin-bottom: 4px;
                 color: #ffffff;
                 font-family: sans-serif;
-                font-size: 11px;
+                font-size: 14px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
             ">
-                <span>📅 <b>AVISO DE CITAS:</b> {detalle_str}</span>
+                <span>📅 <b>AVISO DE CITA MAÑANA:</b> {detalle_str}</span>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1708,7 +1707,7 @@ else:
             
             col_btn, col_espacio = st.columns([1, 5])
             with col_btn:
-                if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_izq"):
+                if st.button("RECORDAR MÁS TARDE", key="btn_snooze_izq"):
                     import time
                     st.session_state.snooze_cita_hasta = time.time() + 3600
                     st.session_state.pop("alerta_cita_pendiente", None)
