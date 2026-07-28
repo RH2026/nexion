@@ -1620,7 +1620,7 @@ else:
     monitor_global_rigoberto()
 
 
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (SOLO PARA MAÑANA) ---
+    # --- MONITOR Y LAERTA GLOBAL DE CITAS (LECTURA BLINDADA 28/07/2026) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1641,21 +1641,28 @@ else:
                 df_agc.columns = df_agc.columns.str.strip()
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
-                    # Calculamos estrictamente la fecha de mañana
-                    mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
+                    mañana_dt = datetime.now() + timedelta(days=1)
+                    mañana_str = mañana_dt.strftime("%d/%m/%Y")
                     
-                    citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
-                    # Filtramos únicamente las citas que coincidan con el día de mañana
-                    citas_mañana = df_agc[citas_limpias == mañana_str]
+                    # Limpieza profunda de la columna CITA para extraer solo la fecha DD/MM/YYYY
+                    df_agc["CITA_LIMPIA"] = df_agc["CITA"].astype(str).str.extract(r'(\d{2}/\d{2}/\d{4})')[0]
                     
-                    if not citas_mañana.empty:
-                        lista_citas_dict = citas_mañana.to_dict('records')
-                        ids_str = "_".join([str(c.get("PO Customer", c.get("OV Jypesa", "CITA"))) for c in lista_citas_dict])
-                        
-                        if st.session_state.get("alerta_cita_pendiente") != ids_str:
-                            st.session_state.alerta_cita_pendiente = ids_str
-                            st.session_state.datos_citas_multiples = lista_citas_dict
+                    citas_mañana = df_agc[df_agc["CITA_LIMPIA"] == mañana_str]
+                    
+                    if citas_mañana.empty:
+                        if "alerta_cita_pendiente" in st.session_state:
+                            st.session_state.pop("alerta_cita_pendiente", None)
+                            st.session_state.pop("datos_citas_multiples", None)
                             st.rerun()
+                        return
+                    
+                    lista_citas_dict = citas_mañana.to_dict('records')
+                    ids_str = "_".join([str(c.get("PO Customer", c.get("OV Jypesa", c.get("C09421-L07", "CITA")))) for c in lista_citas_dict])
+                    
+                    if st.session_state.get("alerta_cita_pendiente") != ids_str:
+                        st.session_state.alerta_cita_pendiente = ids_str
+                        st.session_state.datos_citas_multiples = lista_citas_dict
+                        st.rerun()
                             
             except Exception as e:
                 pass
@@ -1666,53 +1673,52 @@ else:
             
             textos_citas = []
             for datos in citas_data:
-                oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN"))
-                hora_cita = datos.get("HORA", "POR DEFINIR")
-                tipo_unidad = str(datos.get("Unidad", "UNIDAD")).upper()
-                fecha_exacta = str(datos.get("CITA", "PROGRAMADA"))
+                oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", datos.get("C09421-L07", "ORDEN")))
+                hora_cita = datos.get("HORA", datos.get("13:00:00 p.m.", "POR DEFINIR"))
+                tipo_unidad = str(datos.get("Unidad", datos.get("Trailer", "UNIDAD"))).upper()
+                fecha_exacta = str(datos.get("CITA_LIMPIA", "28/07/2026"))
                 textos_citas.append(f"<b>{tipo_unidad}</b> (O.C: {oc_ref} | Fecha: {fecha_exacta} | Hora: {hora_cita})")
                 
-            detalle_str = " | ".join(textos_citas) if textos_citas else "Cita pendiente"
+            detalle_str = " | ".join(textos_citas) if textos_citas else ""
             
-            # Barra compacta con borde izquierdo NARANJA de advertencia (#f97316)
-            st.markdown(f"""
-            <div style="
-                background-color: #1a232a; 
-                border-left: 4px solid #f97316; 
-                padding: 8px 15px; 
-                border-radius: 4px; 
-                margin-bottom: 4px;
-                color: #ffffff;
-                font-family: sans-serif;
-                font-size: 14px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-            ">
-                <span>📅 <b>AVISO DE CITA MAÑANA:</b> {detalle_str}</span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # CSS para forzar el botón pequeño y alineado a la izquierda
-            st.markdown("""
-                <style>
-                div.stButton > button {
-                    font-size: 08px !important;
-                    padding: 4px 8px !important;
-                    min-height: unset !important;
-                    width: auto !important;
-                }
-                </style>
-            """, unsafe_allow_html=True)
-            
-            col_btn, col_espacio = st.columns([1, 5])
-            with col_btn:
-                if st.button("RECORDAR MÁS TARDE", key="btn_snooze_izq"):
-                    import time
-                    st.session_state.snooze_cita_hasta = time.time() + 3600
-                    st.session_state.pop("alerta_cita_pendiente", None)
-                    st.session_state.pop("datos_citas_multiples", None)
-                    st.rerun()
+            if detalle_str:
+                st.markdown(f"""
+                <div style="
+                    background-color: #1a232a; 
+                    border-left: 4px solid #f97316; 
+                    padding: 8px 15px; 
+                    border-radius: 4px; 
+                    margin-bottom: 4px;
+                    color: #ffffff;
+                    font-family: sans-serif;
+                    font-size: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                ">
+                    <span>📅 <b>AVISO DE CITA MAÑANA:</b> {detalle_str}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("""
+                    <style>
+                    div.stButton > button {
+                        font-size: 08px !important;
+                        padding: 4px 8px !important;
+                        min-height: unset !important;
+                        width: auto !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                col_btn, col_espacio = st.columns([1, 5])
+                with col_btn:
+                    if st.button("RECORDAR MÁS TARDE", key="btn_snooze_izq"):
+                        import time
+                        st.session_state.snooze_cita_hasta = time.time() + 3600
+                        st.session_state.pop("alerta_cita_pendiente", None)
+                        st.session_state.pop("datos_citas_multiples", None)
+                        st.rerun()
     
     monitor_global_citas()
             
