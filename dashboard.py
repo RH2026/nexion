@@ -6739,7 +6739,7 @@ else:
                                         <td style="border:1px solid black; padding:6px;"><b>FOLIO:</b> {folio}</td>
                                         <td style="border:1px solid black; padding:6px;"><b>ENVÍO:</b> {str(paq).upper()}</td>
                                         <td style="border:1px solid black; padding:6px;"><b>ENTREGA:</b> {str(entrega).upper()}</td>
-                                        <td style="border:1px solid black; padding:6px;"><b>TOTAL CAJAS:</b> <span style="font-size: 13px; font-weight: 900; color: #000;">{total_cajas} BULTOS</span></td>
+                                        <td style="border:1px solid black; padding:6px;"><b>TOTAL CAJAS:</b> <span style="font-size: 13px; font-weight: 900; color: #000;">{total_cajas} </span></td>
                                         <td style="border:1px solid black; padding:6px;"><b>FECHA:</b> {fecha}</td>
                                     </tr>
                                 </table>
