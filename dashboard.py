@@ -7559,6 +7559,27 @@ else:
                                 st.markdown("### EDICIÓN TOTAL DE MATRIZ DE MUESTRAS")
                                 st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
                             
+                                # Estilos CSS idénticos a tus botones de descarga para mantener la línea visual
+                                st.markdown("""
+                                    <style>
+                                        div.stButton > button {
+                                            background-color: #263238 !important;
+                                            color: #FFFFFF !important;
+                                            border: 1px solid #44555A !important;
+                                            width: 100% !important;
+                                            border-radius: 4px !important;
+                                            font-weight: 400 !important;
+                                            transition: all 0.3s ease-in-out !important;
+                                        }
+                                        div.stButton > button:hover {
+                                            background-color: #00A3A3 !important;
+                                            border-color: #00A3A3 !important;
+                                            color: #FFFFFF !important;
+                                            box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
+                                        }
+                                    </style>
+                                """, unsafe_allow_html=True)
+                            
                                 if df_actual.empty:
                                     st.warning("No hay registros en la matriz de muestras para editar.")
                                 else:
@@ -7632,8 +7653,8 @@ else:
                                             # Botones de acción dentro del formulario
                                             col_btn_1, col_btn_2 = st.columns([2, 1])
                                             
-                                            guardar_cambios = col_btn_1.form_submit_button("GUARDAR CAMBIOS EN ESTE FOLIO", use_container_width=True, type="primary")
-                                            eliminar_registro = col_btn_2.form_submit_button("ELIMINAR ESTE FOLIO", use_container_width=True)
+                                            guardar_cambios = col_btn_1.form_submit_button("💾 GUARDAR CAMBIOS EN ESTE FOLIO", use_container_width=True)
+                                            eliminar_registro = col_btn_2.form_submit_button("🗑️ ELIMINAR ESTE FOLIO", use_container_width=True)
                             
                                             if guardar_cambios:
                                                 # Recalcular totales
