@@ -1621,7 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (EXCLUSIVO PARA RIGOBERTO - EN CHINGUIZA) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (MÚLTIPLES, UNIDAD Y BOTÓN IZQUIERDA) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (FECHA EXACTA Y ALINEADO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1642,14 +1642,15 @@ else:
                 df_agc.columns = df_agc.columns.str.strip()
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
+                    hoy_str = datetime.now().strftime("%d/%m/%Y")
                     mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
-                    citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
-                    citas_mañana = df_agc[citas_limpias == mañana_str]
                     
-                    if not citas_mañana.empty:
-                        # Convertimos todas las citas de mañana a lista de diccionarios para mostrarlas
-                        lista_citas_dict = citas_mañana.to_dict('records')
-                        # Creamos una firma única con los IDs para el control de sesión
+                    citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
+                    # Filtramos las citas que sean para hoy o para mañana exactamente
+                    citas_vigentes = df_agc[(citas_limpias == hoy_str) | (citas_limpias == mañana_str)]
+                    
+                    if not citas_vigentes.empty:
+                        lista_citas_dict = citas_vigentes.to_dict('records')
                         ids_str = "_".join([str(c.get("PO Customer", c.get("OV Jypesa", "CITA"))) for c in lista_citas_dict])
                         
                         if st.session_state.get("alerta_cita_pendiente") != ids_str:
@@ -1660,20 +1661,19 @@ else:
             except Exception as e:
                 pass
         
-        # Renderizado múltiple con borde naranja y botón a la izquierda
+        # Renderizado con borde naranja y botón a la izquierda
         if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
             citas_data = st.session_state.get("datos_citas_multiples", [])
             
-            # Construimos el texto dinámico si hay una o varias citas (Torton, Trailer, etc.)
             textos_citas = []
             for datos in citas_data:
                 oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN"))
                 hora_cita = datos.get("HORA", "POR DEFINIR")
                 tipo_unidad = str(datos.get("Unidad", "UNIDAD")).upper()
-                fecha_exacta = str(datos.get("CITA", "MAÑANA"))
+                fecha_exacta = str(datos.get("CITA", "PROGRAMADA"))
                 textos_citas.append(f"<b>{tipo_unidad}</b> (O.C: {oc_ref} | Fecha: {fecha_exacta} | Hora: {hora_cita})")
                 
-            detalle_str = " | ".join(textos_citas) if textos_citas else "Cita pendiente para mañana"
+            detalle_str = " | ".join(textos_citas) if textos_citas else "Cita pendiente"
             
             # Barra compacta con borde izquierdo NARANJA de advertencia (#f97316)
             st.markdown(f"""
@@ -1690,7 +1690,7 @@ else:
                 align-items: center;
                 justify-content: space-between;
             ">
-                <span>📅 <b>AVISO DE CITAS MAÑANA:</b> {detalle_str}</span>
+                <span>📅 <b>AVISO DE CITAS:</b> {detalle_str}</span>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1706,7 +1706,6 @@ else:
                 </style>
             """, unsafe_allow_html=True)
             
-            # Colocamos el botón en la PRIMERA columna para que esté bien pegado a la izquierda
             col_btn, col_espacio = st.columns([1, 5])
             with col_btn:
                 if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_izq"):
