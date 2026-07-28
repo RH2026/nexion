@@ -7255,9 +7255,10 @@ else:
                                         # <--- FIN DE LA MAGIA VISUAL --->
     
                                     # --- SECCIONES SIEMPRE VISIBLES ---
+                                    # --- SECCIONES SIEMPRE VISIBLES ---
                                     st.divider() # Una línea para separar
                                     c_adm1, c_adm2 = st.columns(2)
-
+                                    
                                     with c_adm1:
                                         st.subheader("1. ASIGNAR DATOS DE ENVIO")
                                         n_paq_nombre = st.selectbox("Nombre de Paquetería", 
@@ -7270,7 +7271,11 @@ else:
                                         
                                         n_gui = st.text_input("Número de Guía").upper()
                                         n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
-                        
+                                        
+                                        # NUEVO: Input para definir la cantidad de cajas/bultos totales del envío
+                                        val_def_cajas = int(datos_fol.get('CANTIDAD_TOTAL', 1)) if datos_fol is not None else 1
+                                        n_total_cajas = st.number_input("Cantidad Final de Cajas / Bultos", min_value=1, max_value=100, value=max(val_def_cajas, 1), step=1)
+                                        
                                         # El botón solo se activa si hay un folio seleccionado
                                         btn_guardar = st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", 
                                                                 use_container_width=True, 
@@ -7283,6 +7288,7 @@ else:
                                             df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
                                             df_actual.at[idx, "NUMERO_GUIA"] = n_gui
                                             df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
+                                            df_actual.at[idx, "CANTIDAD_TOTAL"] = n_total_cajas # <-- Guardamos las cajas totales aquí
                                             df_actual.at[idx, "ESTATUS"] = "DESPACHADO" 
                                             
                                             # 2. Subimos a GitHub
@@ -7295,7 +7301,7 @@ else:
                                                 import time
                                                 time.sleep(1.5)
                                                 st.rerun()
-
+                                    
                                     with c_adm2:
                                         st.subheader("2. IMPRESION FINAL")
                                         st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
@@ -7313,7 +7319,7 @@ else:
                                             
                                             paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
                                             pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
-                            
+                                    
                                             h_re = generar_html_impresion(
                                                 f"JYP-{int(datos_fol['FOLIO'])}", 
                                                 datos_fol.get("PAQUETERIA", "ENVIO"), 
@@ -7338,14 +7344,8 @@ else:
                                         
                                         # --- SELECTOR Y BOTÓN DE ETIQUETAS PDF ---
                                         if fol_sel_texto and datos_fol is not None:
-                                            cant_etiquetas_sel = st.number_input(
-                                                "Número de etiquetas a generar:", 
-                                                min_value=1, 
-                                                max_value=50, 
-                                                value=int(datos_fol.get('CANTIDAD_TOTAL', 1)) if int(datos_fol.get('CANTIDAD_TOTAL', 1)) > 0 else 1,
-                                                step=1,
-                                                key=f"num_etq_{int(datos_fol['FOLIO'])}"
-                                            )
+                                            # Usamos directamente el total de cajas definido en el input de arriba
+                                            cant_etiquetas_sel = n_total_cajas 
                                             
                                             transporte_etq = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", datos_fol.get("PAQUETERIA", "TRES GUERRAS"))
                                             
@@ -7376,7 +7376,7 @@ else:
                                                 }
                                                 </style>
                                             """, unsafe_allow_html=True)
-    
+                                    
                                             st.download_button(
                                                 label=":material/save: DESCARGAR ETIQUETA PDF",
                                                 data=pdf_etq_bytes,
