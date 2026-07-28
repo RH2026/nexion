@@ -1620,8 +1620,7 @@ else:
     monitor_global_rigoberto()
 
 
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (LECTURA 100% REAL DEL CSV) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (LÓGICA ORIGINAL + DISEÑO COMPACTO) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (HORA LOCAL MÉXICO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1630,6 +1629,7 @@ else:
                 import time
                 import pandas as pd
                 from datetime import datetime, timedelta
+                from zoneinfo import ZoneInfo
                 
                 tiempo_snooze = st.session_state.get("snooze_cita_hasta", 0)
                 if time.time() < tiempo_snooze:
@@ -1642,7 +1642,11 @@ else:
                 df_agc.columns = df_agc.columns.str.strip()
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
-                    mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
+                    # Forzamos la hora exacta de México para evitar el desface del servidor
+                    zona_gdl = ZoneInfo("America/Mexico_City")
+                    hoy_gdl = datetime.now(zona_gdl)
+                    mañana_str = (hoy_gdl + timedelta(days=1)).strftime("%d/%m/%Y")
+                    
                     citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
                     citas_mañana = df_agc[citas_limpias == mañana_str]
                     
