@@ -1621,6 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (LECTURA 100% REAL DEL CSV) ---
+    # --- MONITOR Y ALERTA GLOBAL DE CITAS (LÓGICA ORIGINAL + DISEÑO COMPACTO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") == "Rigoberto":
@@ -1642,80 +1643,69 @@ else:
                 
                 if not df_agc.empty and "CITA" in df_agc.columns:
                     mañana_str = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
+                    citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
+                    citas_mañana = df_agc[citas_limpias == mañana_str]
                     
-                    # Buscamos coincidencias exactas en la columna CITA del archivo real
-                    df_agc["CITA_STR"] = df_agc["CITA"].astype(str).str.strip()
-                    citas_mañana = df_agc[df_agc["CITA_STR"] == mañana_str]
-                    
-                    if citas_mañana.empty:
-                        if "alerta_cita_pendiente" in st.session_state:
-                            st.session_state.pop("alerta_cita_pendiente", None)
-                            st.session_state.pop("datos_citas_reales", None)
+                    if not citas_mañana.empty:
+                        primera = citas_mañana.iloc[0]
+                        id_oc = str(primera.get("PO Customer", primera.get("OV Jypesa", "CITA")))
+                        
+                        if st.session_state.get("alerta_cita_pendiente") != id_oc:
+                            st.session_state.alerta_cita_pendiente = id_oc
+                            st.session_state.datos_cita_alerta = primera.to_dict()
                             st.rerun()
-                        return
-                    
-                    lista_reales = citas_mañana.to_dict('records')
-                    ids_str = "_".join([str(r.get("PO Customer", r.get("OV Jypesa", ""))) for r in lista_reales])
-                    
-                    if st.session_state.get("alerta_cita_pendiente") != ids_str:
-                        st.session_state.alerta_cita_pendiente = ids_str
-                        st.session_state.datos_citas_reales = lista_reales
-                        st.rerun()
                             
             except Exception as e:
                 pass
         
-        # Renderizado estricto basado exclusivamente en los datos del CSV
-        if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
-            citas_data = st.session_state.get("datos_citas_reales", [])
-            
-            textos_citas = []
-            for row in citas_data:
-                oc_ref = row.get("PO Customer", row.get("OV Jypesa", "S/N"))
-                hora_cita = row.get("HORA", "POR DEFINIR")
-                tipo_unidad = str(row.get("Unidad", "UNIDAD")).upper()
-                fecha_exacta = str(row.get("CITA", ""))
-                textos_citas.append(f"<b>{tipo_unidad}</b> (O.C: {oc_ref} | Fecha: {fecha_exacta} | Hora: {hora_cita})")
+            if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
+                datos = st.session_state.get("datos_cita_alerta", {})
+                oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
+                hora_cita = datos.get("HORA", "POR DEFINIR")
+                tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
+                fecha_cita = str(datos.get("CITA", "MAÑANA"))
                 
-            detalle_str = " | ".join(textos_citas) if textos_citas else ""
-            
-            if detalle_str:
+                # Diseño compacto de una sola línea con borde naranja de advertencia
                 st.markdown(f"""
                 <div style="
-                    background-color: #1a232a; 
-                    border-left: 4px solid #f97316; 
-                    padding: 8px 15px; 
+                    background-color: #202c36; 
+                    border-left: 5px solid #f97316; 
+                    padding: 10px 15px; 
                     border-radius: 4px; 
                     margin-bottom: 4px;
-                    color: #ffffff;
+                    color: white;
                     font-family: sans-serif;
                     font-size: 11px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                 ">
-                    <span>📅 <b>AVISO DE CITA MAÑANA:</b> {detalle_str}</span>
+                    <span>📅 <b>CITA MAÑANA:</b> O.C: {oc_ref} | <b>Unidad:</b> {tipo_unidad} | <b>Fecha:</b> {fecha_cita} | <b>Hora:</b> {hora_cita}</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # CSS para mantener el botón compacto y estético
                 st.markdown("""
                     <style>
                     div.stButton > button {
                         font-size: 08px !important;
-                        padding: 4px 8px !important;
+                        font-weight: bold !important;
+                        padding: 6px 12px !important;
                         min-height: unset !important;
                         width: auto !important;
                     }
                     </style>
                 """, unsafe_allow_html=True)
                 
-                col_btn, col_espacio = st.columns([1, 5])
+                # Columnas para colocar el botón de recordar más tarde pegado a la izquierda
+                col_btn, col_vacio = st.columns([1, 5])
+                
                 with col_btn:
-                    if st.button("⏰ RECORDAR MÁS TARDE", key="btn_snooze_real"):
-                        import time
+                    if st.button("RECORDAR MÁS TARDE", key="btn_snooze_cita_original"):
                         st.session_state.snooze_cita_hasta = time.time() + 3600
-                        st.session_state.pop("alerta_cita_pendiente", None)
-                        st.session_state.pop("datos_citas_reales", None)
+                        del st.session_state.alerta_cita_pendiente
+                        if "datos_cita_alerta" in st.session_state:
+                            del st.session_state.datos_cita_alerta
                         st.rerun()
     
     monitor_global_citas()
