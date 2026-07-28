@@ -1679,7 +1679,7 @@ else:
                     margin-bottom: 4px;
                     color: white;
                     font-family: sans-serif;
-                    font-size: 11px;
+                    font-size: 14px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
@@ -1693,7 +1693,7 @@ else:
                     <style>
                     div.stButton > button {
                         font-size: 08px !important;
-                        font-weight: bold !important;
+                        font-weight: Normal !important;
                         padding: 6px 12px !important;
                         min-height: unset !important;
                         width: auto !important;
