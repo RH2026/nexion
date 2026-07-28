@@ -6739,7 +6739,7 @@ else:
                                         <td style="border:1px solid black; padding:6px;"><b>FOLIO:</b> {folio}</td>
                                         <td style="border:1px solid black; padding:6px;"><b>ENVÍO:</b> {str(paq).upper()}</td>
                                         <td style="border:1px solid black; padding:6px;"><b>ENTREGA:</b> {str(entrega).upper()}</td>
-                                        <td style="border:1px solid black; padding:6px;"><b>TOTAL CAJAS:</b> <span style="font-size: 14px; font-weight: 900; color: #000;">{total_cajas} BULTOS</span></td>
+                                        <td style="border:1px solid black; padding:6px;"><b>TOTAL CAJAS:</b> <span style="font-size: 13px; font-weight: 900; color: #000;">{total_cajas} BULTOS</span></td>
                                         <td style="border:1px solid black; padding:6px;"><b>FECHA:</b> {fecha}</td>
                                     </tr>
                                 </table>
@@ -7273,7 +7273,7 @@ else:
                                         n_gui = st.text_input("Número de Guía").upper()
                                         n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
                                         
-                                        # Input para definir la cantidad de cajas/bultos totales del envío
+                                        # Campo para definir la cantidad final de cajas/bultos totales del envío
                                         val_def_cajas = int(datos_fol.get('CANTIDAD_TOTAL', 1)) if datos_fol is not None else 1
                                         n_total_cajas = st.number_input("Cantidad Final de Cajas / Bultos", min_value=1, max_value=100, value=max(val_def_cajas, 1), step=1)
                                         
@@ -7289,7 +7289,7 @@ else:
                                             df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
                                             df_actual.at[idx, "NUMERO_GUIA"] = n_gui
                                             df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
-                                            df_actual.at[idx, "CANTIDAD_TOTAL"] = n_total_cajas # Guardamos las cajas totales
+                                            df_actual.at[idx, "CANTIDAD_TOTAL"] = n_total_cajas # Guardamos las cajas totales aquí
                                             df_actual.at[idx, "ESTATUS"] = "DESPACHADO" 
                                             
                                             # 2. Subimos a GitHub
@@ -7317,8 +7317,7 @@ else:
                                             paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
                                             pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
                                     
-                                            # AQUÍ PASAMOS LA CANTIDAD DE CAJAS A TU HTML DE IMPRESIÓN 
-                                            # (Asegúrate de que tu función 'generar_html_impresion' reciba este parámetro o agrégaselo en su definición)
+                                            # Pasamos n_total_cajas a la función de impresión HTML
                                             h_re = generar_html_impresion(
                                                 f"JYP-{int(datos_fol['FOLIO'])}", 
                                                 datos_fol.get("PAQUETERIA", "ENVIO"), 
@@ -7336,7 +7335,7 @@ else:
                                                 datos_fol.get("COMENTARIOS", "RE-IMPRESIÓN DE LOGÍSTICA"), 
                                                 paq_a_imprimir, 
                                                 pago_a_imprimir,
-                                                total_cajas=n_total_cajas  # <--- NUEVO PARÁMETRO ENVIADO
+                                                total_cajas=n_total_cajas  # <--- Enviando el parámetro de cajas a la impresión
                                             )
                                             components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
                                         
@@ -7382,7 +7381,7 @@ else:
                                                 mime="application/pdf",
                                                 use_container_width=True
                                             )
-                                                
+                                                                                    
                             
                             with t2:
                                 # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
