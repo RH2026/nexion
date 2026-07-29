@@ -1679,10 +1679,10 @@ else:
                     
                 detalle_citas_str = " | ".join(textos_citas) if textos_citas else "Sin detalles"
                 
-                # Diseño compacto de una sola línea con borde naranja de advertencia
+                # Fondo actualizado al tono azulito solicitado y borde naranja de advertencia
                 st.markdown(f"""
                 <div style="
-                    background-color: #202c36; 
+                    background-color: #2b4c7e; 
                     border-left: 5px solid #f97316; 
                     padding: 10px 15px; 
                     border-radius: 4px; 
@@ -1694,7 +1694,7 @@ else:
                     align-items: center;
                     justify-content: space-between;
                 ">
-                    <span>📅 <b>CITAS MAÑANA ({len(citas_data)}):</b> {detalle_citas_str}</span>
+                    <span>📅 <b>CITAS MAÑANA AGC({len(citas_data)}):</b> {detalle_citas_str}</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
