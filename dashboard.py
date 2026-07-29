@@ -1621,7 +1621,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (HORA LOCAL MÉXICO) ---
-    # --- MONITOR Y ALERTA GLOBAL DE CITAS (MÚLTIPLES CITAS Y HORA MÉXICO) ---
+    #--- MONITOR Y ALERTA GLOBAL DE CITAS (HOY, MAÑANA Y FILTRO DE ESTATUS) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") in ["Rigoberto", "MarthaC", "Cynthia", "Carlos"]:
@@ -1646,15 +1646,28 @@ else:
                     # Forzamos la hora exacta de México para evitar el desface del servidor
                     zona_gdl = ZoneInfo("America/Mexico_City")
                     hoy_gdl = datetime.now(zona_gdl)
+                    
+                    hoy_str = hoy_gdl.strftime("%d/%m/%Y")
                     mañana_str = (hoy_gdl + timedelta(days=1)).strftime("%d/%m/%Y")
                     
+                    # Limpiamos la columna CITA
                     citas_limpias = df_agc["CITA"].fillna("").astype(str).str.strip()
-                    citas_mañana = df_agc[citas_limpias == mañana_str]
                     
-                    if not citas_mañana.empty:
-                        # Convertimos todas las filas encontradas a una lista de diccionarios
-                        lista_citas = citas_mañana.to_dict('records')
-                        # Creamos un identificador único basado en todas las O.C. de mañana
+                    # Filtramos para que coincidan las de HOY o las de MAÑANA
+                    df_filtrado_fechas = df_agc[citas_limpias.isin([hoy_str, mañana_str])]
+                    
+                    # Si existe la columna ESTATUS, filtramos para excluir las que estén "ENTREGADA"
+                    if "ESTATUS" in df_agc.columns:
+                        estatus_limpio = df_filtrado_fechas["ESTATUS"].fillna("").astype(str).str.strip().str.upper()
+                        df_final_citas = df_filtrado_fechas[estatus_limpio != "ENTREGADA"]
+                    else:
+                        df_final_citas = df_filtrado_fechas
+                    
+                    if not df_final_citas.empty:
+                        # Convertimos las filas resultantes a una lista de diccionarios
+                        lista_citas = df_final_citas.to_dict('records')
+                        
+                        # Creamos un identificador único combinando las referencias
                         ids_combinados = "_".join([str(c.get("PO Customer", c.get("OV Jypesa", "CITA"))) for c in lista_citas])
                         
                         if st.session_state.get("alerta_cita_pendiente") != ids_combinados:
@@ -1664,7 +1677,7 @@ else:
                             
             except Exception as e:
                 pass
-        
+            
             if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
                 citas_data = st.session_state.get("datos_citas_multiples", [])
                 
@@ -1674,12 +1687,12 @@ else:
                     oc_ref = datos.get("PO Customer", datos.get("OV Jypesa", "ORDEN GENERAL"))
                     hora_cita = datos.get("HORA", "POR DEFINIR")
                     tipo_unidad = str(datos.get("Unidad", "UNIDAD NO ESPECIFICADA")).upper()
-                    fecha_cita = str(datos.get("CITA", "MAÑANA"))
+                    fecha_cita = str(datos.get("CITA", ""))
                     textos_citas.append(f"O.C: {oc_ref} ({tipo_unidad} - {fecha_cita} {hora_cita})")
                     
                 detalle_citas_str = " | ".join(textos_citas) if textos_citas else "Sin detalles"
                 
-                # Fondo actualizado al tono azulito solicitado y borde naranja de advertencia
+                # Alerta visual con el tono azulito y borde naranja
                 st.markdown(f"""
                 <div style="
                     background-color: #2b4c7e; 
@@ -1694,7 +1707,7 @@ else:
                     align-items: center;
                     justify-content: space-between;
                 ">
-                    <span>📅 <b>CITAS MAÑANA AGC({len(citas_data)}):</b> {detalle_citas_str}</span>
+                    <span>📅 <b>CITAS (HOY Y MAÑANA) AGC({len(citas_data)}):</b> {detalle_citas_str}</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -1711,7 +1724,6 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
-                # Columnas para colocar el botón de recordar más tarde pegado a la izquierda
                 col_btn, col_vacio = st.columns([1, 5])
                 
                 with col_btn:
@@ -1722,7 +1734,7 @@ else:
                         if "datos_citas_multiples" in st.session_state:
                             del st.session_state.datos_citas_multiples
                         st.rerun()
-        
+    
     monitor_global_citas()
                 
     # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
