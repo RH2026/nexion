@@ -7683,7 +7683,13 @@ else:
                                             
                                             keys_precios = list(precios.keys())
                                             for i, prod in enumerate(keys_precios):
-                                                cant_actual = int(registro_sel.get(prod, 0))
+                                                # Protección robusta contra valores nulos, vacíos o NaN
+                                                val_bruto = registro_sel.get(prod, 0)
+                                                try:
+                                                    cant_actual = int(val_bruto) if pd.notna(val_bruto) and str(val_bruto).strip() != "" else 0
+                                                except (ValueError, TypeError):
+                                                    cant_actual = 0
+                                
                                                 col_target = cols_prods[i % 3]
                                                 with col_target:
                                                     nuevas_cantidades[prod] = st.number_input(
