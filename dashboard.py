@@ -7120,8 +7120,9 @@ else:
                                 for item in data_busqueda:
                                     detalle_p_busqueda = ""
                                     for p_key in precios.keys():
-                                        cant_p = item.get(p_key, 0)
-                                        if cant_p > 0:
+                                        # Aseguramos que la cantidad sea numérica y evitamos errores con vacíos
+                                        cant_p = pd.to_numeric(item.get(p_key, 0), errors='coerce')
+                                        if pd.notna(cant_p) and cant_p > 0:
                                             detalle_p_busqueda += f"• {int(cant_p)} PZAS {str(p_key).upper()}<br>"
                                     
                                     estatus_val = str(item.get('ESTATUS', 'NO SURTIDO')).upper()
