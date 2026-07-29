@@ -1624,7 +1624,7 @@ else:
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (MÚLTIPLES CITAS Y HORA MÉXICO) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
-        if st.session_state.get("usuario_activo") in ["Rigoberto", "Cynthia"]:
+        if st.session_state.get("usuario_activo") in ["Rigoberto", "MarthaC", "Cynthia", "Carlos"]:
             
             try:
                 import time
