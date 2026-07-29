@@ -7093,16 +7093,17 @@ else:
                             st.rerun()
                         # --- BÚSQUEDA RÁPIDA ---                
                         # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
+                        # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO CON PRODUCTOS) ---
                         st.write("")
                         st.write("")
-                        st.write("")                        
+                        st.write("")                                
+                        
                         with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS", expanded=True):
                             if not df_actual.empty:
                                 busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:").upper()
                                 
                                 # Aseguramos la existencia de las columnas necesarias
-                                df_vista = df_actual[["FOLIO", "FECHA", "NOMBRE DEL HOTEL", "PAQUETERIA_NOMBRE", "NUMERO_GUIA", "ESTATUS", "SOLICITO"]].copy()
-                                df_vista.columns = ["FOLIO", "FECHA ENVÍO", "HOTEL", "PAQUETERÍA", "NÚMERO DE GUÍA", "ESTATUS", "SOLICITANTE"]
+                                df_vista = df_actual.copy()
                                 df_vista = df_vista.fillna('') 
                                 
                                 if busqueda:
@@ -7111,9 +7112,55 @@ else:
                                 df_render = df_vista.sort_values(by="FOLIO", ascending=False)
                                 data_busqueda = df_render.to_dict('records')
                                 
-                                # Calculamos altura
-                                alto_busqueda = min(len(data_busqueda) * 110 + 20, 500) 
+                                # Calculamos altura dinámica (un poco más alto para que quepan bien los productos)
+                                alto_busqueda = min(len(data_busqueda) * 130 + 20, 550) 
                                 
+                                # Generamos las tarjetas con el desglose de productos incluidos
+                                tarjetas_busqueda_html = ""
+                                for item in data_busqueda:
+                                    detalle_p_busqueda = ""
+                                    for p_key in precios.keys():
+                                        cant_p = item.get(p_key, 0)
+                                        if cant_p > 0:
+                                            detalle_p_busqueda += f"• {int(cant_p)} PZAS {str(p_key).upper()}<br>"
+                                    
+                                    estatus_val = str(item.get('ESTATUS', 'NO SURTIDO')).upper()
+                                    if estatus_val == 'DESPACHADO':
+                                        badge_status = "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>"
+                                    else:
+                                        badge_status = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>"
+                                    
+                                    paq_text = item.get('PAQUETERÍA', '') or item.get('PAQUETERIA_NOMBRE', '')
+                                    guia_text = item.get('NÚMERO DE GUÍA', '') or item.get('NUMERO_GUIA', '')
+                                    
+                                    tarjetas_busqueda_html += f"""
+                                    <div class="card-busqueda" style="padding: 15px; margin-bottom: 10px; background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="flex: 1.1;">
+                                            <div class="label-mini">Folio / Fecha</div>
+                                            <div class="val-folio">#{str(item['FOLIO'])}</div>
+                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 5px;">{str(item['FECHA'])[:10]}</div>
+                                            {badge_status}
+                                        </div>
+                                        <div style="flex: 2.0; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                            <div class="label-mini">Hotel / Destino</div>
+                                            <div class="val-hotel">{str(item.get('NOMBRE DEL HOTEL', ''))[:30]}</div>
+                                            <div class="val-soli">SOLICITÓ: {str(item.get('SOLICITO', ''))[:30]}</div>
+                                        </div>
+                                        <div style="flex: 2.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                            <div class="label-mini">Productos Solicitados</div>
+                                            <div style="color: #FFFFFF; font-size: 9px; line-height: 1.4; opacity: 0.9;">{detalle_p_busqueda if detalle_p_busqueda else '<i>Sin detalle</i>'}</div>
+                                        </div>
+                                        <div style="flex: 1.6; text-align: right; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 10px;">
+                                            <div class="val-guia {'pendiente' if not paq_text else ''}">
+                                                { paq_text if paq_text else 'PAQUETERÍA PENDIENTE' }
+                                            </div>
+                                            <div class="val-sub-guia {'pendiente' if not guia_text else ''}">
+                                                { guia_text if guia_text else 'GUÍA PENDIENTE' }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    """
+                
                                 html_busqueda = f"""
                                 <div style="font-family: 'Inter', sans-serif; padding-right: 10px; height: {alto_busqueda}px; overflow-y: auto;">
                                     <style>
@@ -7124,46 +7171,21 @@ else:
                                         ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
                                         
                                         .card-busqueda {{
-                                            background: #263238; border: 1px solid rgba(255, 255, 255, 0.05);
-                                            border-radius: 10px; padding: 15px; margin-bottom: 10px;
-                                            display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;
+                                            transition: all 0.3s ease;
                                         }}
                                         .card-busqueda:hover {{ border-color: #38bdf8; background: #2d3b42; transform: translateX(5px); }}
                                         .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
                                         .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
                                         .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
                                         .val-soli {{ color: #FFD700; font-size: 10px; font-weight: 600; margin-top: 2px; opacity: 0.8; }}
-                                        .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 15px; font-weight: 800; line-height: 1.2; }}
-                                        .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 13px; font-weight: 700; margin-top: 4px; }}
-                                        .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 11px; font-weight: 400; }}
+                                        .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 14px; font-weight: 800; line-height: 1.2; }}
+                                        .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 12px; font-weight: 700; margin-top: 4px; }}
+                                        .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 10px; font-weight: 400; }}
                                     </style>
-                                    {"".join([f'''
-                                    <div class="card-busqueda">
-                                        <div style="flex: 1.1;">
-                                            <div class="label-mini">Folio / Fecha</div>
-                                            <div class="val-folio">#{str(item['FOLIO'])}</div>
-                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 5px;">{str(item['FECHA ENVÍO'])[:10]}</div>
-                                            { "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>" if str(item.get('ESTATUS', '')).upper() == 'DESPACHADO' else "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>" }
-                                        </div>
-                                        <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
-                                            <div class="label-mini">Hotel</div>
-                                            <div class="val-hotel">{str(item['HOTEL'])[:30]}</div>
-                                            <div class="val-soli">SOLICITÓ: {str(item['SOLICITANTE'])[:30]}</div>
-                                        </div>
-                                        <div style="flex: 1.6; text-align: right;">
-                                            <div class="val-guia {'pendiente' if item['PAQUETERÍA'] == '' else ''}">
-                                                { item['PAQUETERÍA'] if item['PAQUETERÍA'] != '' else 'PAQUETERÍA PENDIENTE' }
-                                            </div>
-                                            <div class="val-sub-guia {'pendiente' if item['NÚMERO DE GUÍA'] == '' else ''}">
-                                                { item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] != '' else 'GUÍA PENDIENTE' }
-                                            </div>
-                                        </div>
-                                    </div>
-                                    ''' for item in data_busqueda])}
+                                    {tarjetas_busqueda_html}
                                 </div>
                                 """
                                 import streamlit.components.v1 as components
-                                # Aquí forzamos el scroll=False para usar el diseño del CSS interno
                                 components.html(html_busqueda, height=alto_busqueda, scrolling=False)
                             else:
                                 st.info("No hay registros todavía.")
