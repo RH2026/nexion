@@ -10761,6 +10761,47 @@ else:
                             
             
             if st.session_state.menu_sub == "ETIQUETAS":  
+                # --- ESTILOS CSS GLOBALES PARA BOTONES Y HOVERS ---
+                st.markdown("""
+                    <style>
+                    /* Estilo general para los botones principales de Streamlit (st.button) */
+                    div.stButton > button {
+                        background-color: #2e3b4e !important;
+                        color: #ffffff !important;
+                        border: 1px solid #4a90e2 !important;
+                        border-radius: 6px !important;
+                        font-weight: 600 !important;
+                        transition: all 0.3s ease !important;
+                    }
+                    
+                    /* Efecto Hover para los botones principales */
+                    div.stButton > button:hover {
+                        background-color: #3b4d66 !important;
+                        border-color: #5ca1e6 !important;
+                        color: #ffffff !important;
+                        box-shadow: 0 4px 12-px rgba(74, 144, 226, 0.3) !important;
+                    }
+                
+                    /* Estilo para los botones de descarga (st.download_button) */
+                    div.stDownloadButton > button {
+                        background-color: #0083B0 !important;
+                        color: #ffffff !important;
+                        border: 1px solid #00B4DB !important;
+                        border-radius: 6px !important;
+                        font-weight: 600 !important;
+                        transition: all 0.3s ease !important;
+                    }
+                
+                    /* Efecto Hover para los botones de descarga */
+                    div.stDownloadButton > button:hover {
+                        background-color: #009acc !important;
+                        border-color: #ffffff !important;
+                        color: #ffffff !important;
+                        box-shadow: 0 4px 12px rgba(0, 180, 219, 0.4) !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
                 # --- 1. FUNCIONES DE CONEXIÓN Y PROCESAMIENTO ---
                 @st.cache_data(ttl=60)
                 def cargar_csv_github():
@@ -10831,7 +10872,7 @@ else:
                         nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', row.get('NOMBRE_CLIENTE', 'SIN NOMBRE'))))
                         nombre_final = limpiar_parentesis(nombre_crudo)
                         direccion_final = row.get('DIRECCION', row.get('Domicilio', row.get('DOMICILIO', 'DIRECCIÓN NO DISPONIBLE')))
-                        transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', row.get('PAQUETERIA', 'TRES GUERRAS'))))
+                        transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', 'TRES GUERRAS')))
                         factura_val = str(row.get('Factura', row.get('FOLIO', 'S/F')))
                 
                         for i in range(iteraciones):
@@ -10890,13 +10931,30 @@ else:
                     c.save()
                     return output.getvalue()
                 
-                
+                # --- 2. INTERFAZ DE USUARIO CON TABS ---
+                st.markdown("""
+                    <div style="
+                        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
+                        padding: 15px 25px;
+                        border-radius: 8px;
+                        border-left: 6px solid #4a90e2;
+                        margin-top: 20px;
+                        margin-bottom: 15px;
+                    ">
+                        <div style="color: #ffffff; font-size: 20px; font-weight: 300; margin-bottom: 2px;">
+                            Creador de Etiquetas de Embarque (NEXION)
+                        </div>
+                        <div style="color: #808495; font-size: 14px; font-weight: 400;">
+                            Generación y control de etiquetas por lote, base de datos o captura libre
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 # Creación de las tres pestañas
                 tab1, tab2, tab3 = st.tabs([
-                    "Carga por Excel (Lote)", 
-                    "Base de Datos GitHub", 
-                    "Captura Manual Libre"
+                    "📁 Carga por Excel (Lote)", 
+                    "☁️ Base de Datos GitHub", 
+                    "✍️ Captura Manual Libre"
                 ])
                 
                 with tab1:
@@ -11008,7 +11066,6 @@ else:
                         if not manual_factura or not manual_nombre or not manual_direccion:
                             st.error("Por favor completa los campos obligatorios (Factura, Nombre y Dirección).")
                         else:
-                            # Creamos un DataFrame con una sola fila usando los datos manuales
                             dict_manual = {
                                 'Factura': str(manual_factura),
                                 'Nombre_Cliente': str(manual_nombre),
