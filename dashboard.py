@@ -10962,9 +10962,9 @@ else:
                 
                 # Creación de las tres pestañas
                 tab1, tab2, tab3 = st.tabs([
-                    "📁 Carga por Excel (Lote)", 
-                    "☁️ Base de Datos GitHub", 
-                    "✍️ Captura Manual Libre"
+                    "CARGAR POR EXCEL (Lote)", 
+                    "BASE DE DATOS GITHUB", 
+                    "CAPTURA MANUAL"
                 ])
                 
                 with tab1:
@@ -10994,7 +10994,7 @@ else:
                             st.error(f"Error al leer los pedidos: {e}")
                 
                 with tab2:
-                    st.subheader("Base de Datos - facturacion_moreno.csv")
+                    st.subheader("Base de Datos - facturacion.csv")
                     df_facturacion = cargar_csv_github()
                     
                     if not df_facturacion.empty:
