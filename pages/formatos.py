@@ -138,30 +138,13 @@ def generar_etiquetas_nexion(df_datos):
     c.save()
     return output.getvalue()
 
-# --- 2. INTERFAZ DE USUARIO CON TABS ---
-st.markdown("""
-    <div style="
-        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
-        padding: 15px 25px;
-        border-radius: 8px;
-        border-left: 6px solid #4a90e2;
-        margin-top: 20px;
-        margin-bottom: 15px;
-    ">
-        <div style="color: #ffffff; font-size: 20px; font-weight: 300; margin-bottom: 2px;">
-            Creador de Etiquetas de Embarque (NEXION)
-        </div>
-        <div style="color: #808495; font-size: 14px; font-weight: 400;">
-            Generación y control de etiquetas por lote, base de datos o captura libre
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+
 
 # Creación de las tres pestañas
 tab1, tab2, tab3 = st.tabs([
-    "📁 Carga por Excel (Lote)", 
-    "☁️ Base de Datos GitHub", 
-    "✍️ Captura Manual Libre"
+    "Carga por Excel (Lote)", 
+    "Base de Datos GitHub", 
+    "Captura Manual Libre"
 ])
 
 with tab1:
@@ -260,7 +243,7 @@ with tab3:
 
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        manual_factura = st.text_input("NÚMERO DE FACTURA / FOLIO", value="JYP-100", key="man_factura")
+        manual_factura = st.text_input("NÚMERO DE FACTURA / FOLIO", value="235050", key="man_factura")
         manual_nombre = st.text_input("NOMBRE DEL CLIENTE / HOTEL", value="HOTEL EJEMPLO", key="man_nombre")
         manual_cajas = st.number_input("CANTIDAD DE CAJAS / BULTOS", min_value=1, value=1, step=1, key="man_cajas")
 
