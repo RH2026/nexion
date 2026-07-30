@@ -1,656 +1,157 @@
-import base64
-from datetime import datetime
-from io import BytesIO
+import io
+import re
 import pandas as pd
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-import requests
 import streamlit as st
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import cm
+from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.utils import simpleSplit
 
-st.subheader("Generador de Orden de Embarque - Facturación Moreno")
+# --- 1. FUNCIONES DE PROCESAMIENTO ---
+def limpiar_parentesis(texto):
+    return re.sub(r'\(.*?\)', '', str(texto)).strip()
 
+def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado, max_lineas=3):
+    texto = str(texto).upper()
+    lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
+    
+    tamano_actual = tamano_max
+    while len(lineas) > max_lineas and tamano_actual > 8:
+        tamano_actual -= 0.5
+        lineas = simpleSplit(texto, fuente, tamano_actual, ancho_max)
+    
+    c.setFont(fuente, tamano_actual)
+    y_actual = y_inicio
+    for line in lineas[:max_lineas]: 
+        c.drawCentredString(x_centro, y_actual, line)
+        y_actual -= interlineado
+    return y_actual 
 
-# 1. Función para leer tu matriz CSV y limpiar nombres de columnas
-@st.cache_data(ttl=60)
-def cargar_csv_github():
-  try:
-    repo = "RH2026/nexion"
-    filename = "facturacion_moreno.csv"
-    branch = "main"
+def generar_etiquetas_nexion(df):
+    output = io.BytesIO()
+    
+    # Dimensiones exactas de la etiqueta: 10.5 cm x 7.5 cm
+    w_rec, h_rec = 10.5 * cm, 7.5 * cm
+    
+    # Configuramos el Canvas con el tamaño exacto de la etiqueta (sin hoja carta completa)
+    c = canvas.Canvas(output, pagesize=(w_rec, h_rec))
+    
+    # Como el canvas mide exactamente la etiqueta, el offset inicial es 0,0
+    x_offset, y_offset = 0.0, 0.0
 
-    url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
-    token = st.secrets["GITHUB_TOKEN"]
-    headers = {"Authorization": f"token {token}"}
+    for index, row in df.iterrows():
+        try:
+            cantidad_real = int(row['Quantity'])
+            iteraciones = cantidad_real  # Sin la copia extra de Moreno
+        except: 
+            continue 
 
-    response = requests.get(url, headers=headers)
+        nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', 'SIN NOMBRE')))
+        nombre_final = limpiar_parentesis(nombre_crudo)
+        direccion_final = row.get('DIRECCION', 'DIRECCIÓN NO DISPONIBLE')
+        transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', 'TRES GUERRAS')))
 
-    if response.status_code == 200:
-      df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-      df.columns = df.columns.astype(str).str.strip()
-      return df
-    else:
-      st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
-      return pd.DataFrame()
-  except Exception as e:
-    st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
-    return pd.DataFrame()
+        for i in range(iteraciones):
+            # Dibujar contorno de etiqueta
+            c.setDash(1, 2)
+            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+            c.rect(x_offset, y_offset, w_rec, h_rec)
+            c.setDash([])
+            c.setStrokeColorRGB(0, 0, 0)
 
+            # CABECERA JYPESA
+            c.setFont("Helvetica-Bold", 7)
+            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+            c.setFont("Helvetica", 6)
+            info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
+            dibujar_texto_bloque_pro(c, info_contacto, x_offset + (w_rec/2), y_offset + h_rec - 0.7*cm, 10*cm, "Helvetica", 6, 0.25*cm, max_lineas=1)
+            
+            c.setLineWidth(0.3)
+            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+            c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
+            c.setStrokeColorRGB(0, 0, 0)
 
-# Función para descargar el logo 'paqmex.jpg' desde tu repositorio de GitHub
-@st.cache_data(ttl=300)
-def obtener_logo_github():
-  try:
-    repo = "RH2026/nexion"
-    filename = "paqmex.jpg"
-    branch = "main"
-    url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
-    token = st.secrets["GITHUB_TOKEN"]
-    headers = {"Authorization": f"token {token}"}
+            # NOMBRE CLIENTE (GIGANTE)
+            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
+            
+            # DIRECCIÓN (14.5pt)
+            y_inicio_direccion = y_termino_nombre - 0.7*cm
+            if y_inicio_direccion > y_offset + 4.3*cm: y_inicio_direccion = y_offset + 4.3*cm
+            if y_inicio_direccion < y_offset + 2.9*cm: y_inicio_direccion = y_offset + 2.9*cm
+            dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 14.5, 0.5*cm, max_lineas=3)
 
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-      return BytesIO(response.content)
-    return None
-  except Exception:
-    return None
+            # PIE DE ETIQUETA
+            c.setLineWidth(0.6)
+            y_linea_pie = y_offset + 1.4*cm
+            c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
+            
+            c.setFont("Helvetica-Bold", 8.5)
+            c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
+            c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
+            c.drawString(x_offset + 7.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
+            
+            c.setFont("Helvetica-Bold", 13)
+            c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
+            
+            # Numeración de cajas actual (ej. 1/3, 2/3, etc.)
+            c.setFont("Helvetica-Bold", 13)
+            c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
+            
+            c.setFont("Helvetica-Bold", 10)
+            c.drawString(x_offset + 7.5*cm, y_linea_pie - 1.0*cm, transporte_final[:18])
+            
+            c.showPage()
 
+    c.save()
+    return output.getvalue()
 
-df_facturacion = cargar_csv_github()
+# --- 2. INTERFAZ DE USUARIO ---
+st.markdown("""
+    <div style="
+        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
+        padding: 15px 25px;
+        border-radius: 8px;
+        border-left: 6px solid #4a90e2;
+        margin-top: 20px;
+        margin-bottom: 10px;
+    ">
+        <div style="color: #ffffff; font-size: 20px; font-weight: 300; margin-bottom: 2px;">
+            Creador de Etiquetas de Embarque
+        </div>
+        <div style="color: #808495; font-size: 14px; font-weight: 400;">
+            Cargar Excel de Pedidos para procesamiento
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-if not df_facturacion.empty:
-  df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+archivo = st.file_uploader("", type=["xlsx"], label_visibility="collapsed", key="creador_etiquetas")
 
-  facturas_disponibles = df_facturacion["Factura"].unique()
+if archivo:
+    try:
+        df = pd.read_excel(archivo, sheet_name=0)
+    except Exception as e:
+        st.error(f"Error al leer los pedidos: {e}")
 
-  # Selector de Factura o opción de escribir manual si no está el folio
-  modo_busqueda = st.radio(
-      "Método de selección:", ["Seleccionar de la lista", "Escribir folio manual"]
-  )
+    st.subheader("Vista previa de datos")
+    st.dataframe(df[['Quantity', 'DIRECCION', 'Factura']].head(5), use_container_width=True)
 
-  if modo_busqueda == "Seleccionar de la lista":
-    num_factura = st.selectbox(
-        "Selecciona el número de Factura:", facturas_disponibles
-    )
-    registro = df_facturacion[
-        df_facturacion["Factura"] == str(num_factura)
-    ].iloc[0]
-  else:
-    num_factura = st.text_input("Ingresa el número de Factura / Folio manual:")
-    if (
-        num_factura
-        and str(num_factura) in df_facturacion["Factura"].values
-    ):
-      registro = df_facturacion[
-          df_facturacion["Factura"] == str(num_factura)
-      ].iloc[0]
-    else:
-      # Si no existe, creamos un registro vacío por defecto para que puedas llenarlo a mano
-      registro = pd.Series()
-
-  tipo_pago = st.radio(
-      "Selecciona Tipo de Pago:", ["CRÉDITO", "POR COBRAR", "PAGADO"]
-  )
-
-  # Extracción inteligente de valores con respaldo vacío si es manual
-  def_extran = (
-      str(registro.get("Nombre_Extran", ""))
-      if not registro.empty
-      and pd.notna(registro.get("Nombre_Extran", ""))
-      else ""
-  )
-  def_rfc = (
-      str(registro.get("RFC", ""))
-      if not registro.empty and pd.notna(registro.get("RFC", ""))
-      else ""
-  )
-  def_dom = (
-      str(registro.get("Domicilio", ""))
-      if not registro.empty and pd.notna(registro.get("Domicilio", ""))
-      else ""
-  )
-  def_col = (
-      str(registro.get("Colonia", ""))
-      if not registro.empty and pd.notna(registro.get("Colonia", ""))
-      else ""
-  )
-  def_cui = (
-      str(registro.get("Cuidad", ""))
-      if not registro.empty and pd.notna(registro.get("Cuidad", ""))
-      else ""
-  )
-  def_cp = (
-      str(registro.get("CP", ""))
-      if not registro.empty and pd.notna(registro.get("CP", ""))
-      else ""
-  )
-  def_est = (
-      str(registro.get("Estado", ""))
-      if not registro.empty and pd.notna(registro.get("Estado", ""))
-      else ""
-  )
-  def_cli = (
-      str(registro.get("Nombre_Cliente", ""))
-      if not registro.empty and pd.notna(registro.get("Nombre_Cliente", ""))
-      else ""
-  )
-  def_fiscal = (
-      str(registro.get("FISCAL", ""))
-      if not registro.empty and pd.notna(registro.get("FISCAL", ""))
-      else ""
-  )
-
-  # Buscar teléfono probando variaciones
-  tel_val = ""
-  if not registro.empty:
-    for col_posible in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
-      if col_posible in registro and pd.notna(registro[col_posible]):
-        tel_val = str(registro[col_posible]).strip()
-        break
-  if not tel_val or tel_val.lower() == "nan":
-    tel_val = ""
-
-  st.markdown("---")
-  st.markdown("### 👁️ Previsualización y Edición Manual de Datos")
-
-  # --- SECCIÓN VISUAL PARA COMPROBAR Y EDITAR DATOS ---
-  col1, col2 = st.columns(2)
-
-  with col1:
-    st.markdown("#### 📦 Remitente (Fijo)")
-    rem_cliente = st.text_input(
-        "Cliente Remitente",
-        value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
-    )
-    rem_rfc = st.text_input("RFC Remitente", value="JPE830408B35")
-    rem_calle = st.text_input("Calle Remitente", value="Privada del Gallo No. 1525")
-    rem_colonia = st.text_input("Colonia Remitente", value="Col La Aurora")
-    rem_mun = st.text_input("Municipio Remitente", value="Guadalajara")
-    rem_estado = st.text_input("Estado Remitente", value="Jalisco")
-    rem_contacto = st.text_input("Contacto Remitente", value="Rigoberto Hernandez")
-    rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
-
-  with col2:
-    st.markdown("#### 🚚 Destinatario / Entrega")
-    dest_cliente = st.text_input(
-        "Cliente Destino (Comercial)", value=def_extran
-    )
-    dest_rfc = st.text_input("RFC Destino", value=def_rfc)
-    dest_calle = st.text_input("Calle Destino", value=def_dom)
-    dest_colonia = st.text_input("Colonia Destino", value=def_col)
-    dest_cui = st.text_input("Ciudad Destino", value=def_cui)
-    dest_cp = st.text_input("CP Destino", value=def_cp)
-    dest_estado = st.text_input("Estado Destino", value=def_est)
-    dest_tel = st.text_input("Teléfono Destino", value=tel_val)
-
-  st.markdown("#### 📋 Datos de Facturación")
-  fac_cliente = st.text_input("Cliente de Facturación", value=def_cli)
-  fac_rfc = st.text_input("RFC Facturación", value=def_rfc)
-  fac_calle = st.text_area(
-      "Domicilio Fiscal / Datos Fiscales (FISCAL)",
-      value=def_fiscal.replace("_x000D_", " ")
-      .replace("\r", " ")
-      .replace("\n", " "),
-  )
-
-  # Diccionarios finales limpios con lo que el usuario validó/editó visualmente
-  remitente = {
-      "cliente": rem_cliente,
-      "rfc": rem_rfc,
-      "calle": rem_calle,
-      "colonia": rem_colonia,
-      "municipio": rem_mun,
-      "estado": rem_estado,
-      "contacto": rem_contacto,
-      "telefono": rem_tel,
-  }
-
-  destinatario = {
-      "cliente": dest_cliente,
-      "rfc": dest_rfc,
-      "calle": dest_calle,
-      "colonia": dest_colonia,
-      "municipio": f"{dest_cui} - CP: {dest_cp}",
-      "estado": dest_estado,
-      "telefono": dest_tel if dest_tel else "No registrado",
-  }
-
-  if tipo_pago == "CRÉDITO":
-    facturacion = remitente
-    credito_mark = "X"
-    por_cobrar_mark = ""
-    pagado_mark = ""
-  else:
-    facturacion = {
-        "cliente": fac_cliente,
-        "rfc": fac_rfc,
-        "calle": fac_calle,
-        "colonia": "",
-        "municipio": "",
-        "estado": "",
-        "email": "sbomailer@jypesa.com",
-    }
-    credito_mark = ""
-    por_cobrar_mark = "X" if tipo_pago == "POR COBRAR" else ""
-    pagado_mark = "X" if tipo_pago == "PAGADO" else ""
-
-  fecha_actual = datetime.now().strftime("%d/%m/%Y")
-
-
-  # --- FUNCIÓN DE GENERACIÓN PDF (ReportLab) ---
-  def generar_pdf_reportlab():
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=letter,
-        rightMargin=28,
-        leftMargin=28,
-        topMargin=28,
-        bottomMargin=28,
-    )
-    story = []
-    styles = getSampleStyleSheet()
-
-    title_style = ParagraphStyle(
-        "TitleStyle",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=16,
-        leading=18,
-    )
-    subtitle_style = ParagraphStyle(
-        "SubTitleStyle",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=12,
-        leading=14,
-        alignment=1,
-    )
-    th_style = ParagraphStyle(
-        "THStyle",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=8.5,
-        leading=10,
-        textColor=colors.white,
-        alignment=1,
-    )
-    cell_bold = ParagraphStyle(
-        "CellBold",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=7.5,
-        leading=9,
-    )
-    cell_normal = ParagraphStyle(
-        "CellNormal",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=7.5,
-        leading=9,
-    )
-
-    logo_io = obtener_logo_github()
-    if logo_io:
-      logo_element = Image(logo_io, width=130, height=45)
-    else:
-      logo_element = Paragraph(
-          "<b>PaqMex</b><br/><font size=6>SOLUCIONES EN LOGÍSTICA</font>",
-          ParagraphStyle(
-              "FallbackLogo",
-              parent=styles["Normal"],
-              fontName="Helvetica-BoldOblique",
-              fontSize=16,
-              textColor=colors.HexColor("#003366"),
-              alignment=2,
-          ),
-      )
-
-    header_data = [
-        [Paragraph("PAQMEX S.A. DE C.V.", title_style), logo_element]
-    ]
-    t_header = Table(header_data, colWidths=[280, 274])
-    t_header.setStyle(
-        TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-        ])
-    )
-    story.append(t_header)
-    story.append(Spacer(1, 10))
-    story.append(Paragraph("ORDEN DE EMBARQUE", subtitle_style))
-    story.append(Spacer(1, 8))
-
-    meta_data = [
-        [
-            "",
-            Paragraph(
-                "<b>FECHA:</b>", ParagraphStyle("R", alignment=2, fontSize=9)
-            ),
-            Paragraph(
-                f"<b>{fecha_actual}</b>",
-                ParagraphStyle("C", alignment=1, fontSize=9),
-            ),
-        ],
-        [
-            "",
-            Paragraph(
-                "<b>FACTURA:</b>", ParagraphStyle("R", alignment=2, fontSize=9)
-            ),
-            Paragraph(
-                f"<b>{num_factura}</b>",
-                ParagraphStyle("C", alignment=1, fontSize=9),
-            ),
-        ],
-    ]
-    t_meta = Table(meta_data, colWidths=[350, 100, 104])
-    t_meta.setStyle(
-        TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LINEBELOW", (2, 0), (2, 0), 1, colors.black),
-            ("LINEBELOW", (2, 1), (2, 1), 1, colors.black),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-        ])
-    )
-    story.append(t_meta)
-    story.append(Spacer(1, 6))
-
-    rem_data = [
-        [Paragraph("REMITENTE", th_style), ""],
-        [
-            Paragraph("CLIENTE:", cell_bold),
-            Paragraph(remitente["cliente"], cell_bold),
-        ],
-        [Paragraph("RFC:", cell_bold), Paragraph(remitente["rfc"], cell_normal)],
-        [
-            Paragraph("CALLE:", cell_bold),
-            Paragraph(remitente["calle"], cell_normal),
-        ],
-        [
-            Paragraph("COLONIA:", cell_bold),
-            Paragraph(remitente["colonia"], cell_normal),
-        ],
-        [
-            Paragraph("MUNICIPIO:", cell_bold),
-            Paragraph(
-                f"{remitente['municipio']} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ESTADO:</b> {remitente['estado']}",
-                cell_normal,
-            ),
-        ],
-        [
-            Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
-            Paragraph(
-                f"{remitente['contacto']}<br/>{remitente['telefono']}",
-                cell_normal,
-            ),
-        ],
-    ]
-    t_rem = Table(rem_data, colWidths=[70, 202])
-    t_rem.setStyle(
-        TableStyle([
-            ("SPAN", (0, 0), (1, 0)),
-            ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ])
-    )
-
-    dest_data = [
-        [Paragraph("DESTINATARIO", th_style), ""],
-        [
-            Paragraph("CLIENTE:", cell_bold),
-            Paragraph(destinatario["cliente"], cell_bold),
-        ],
-        [
-            Paragraph("RFC:", cell_bold),
-            Paragraph(destinatario["rfc"], cell_normal),
-        ],
-        [
-            Paragraph("CALLE:", cell_bold),
-            Paragraph(destinatario["calle"], cell_normal),
-        ],
-        [
-            Paragraph("COLONIA:", cell_bold),
-            Paragraph(destinatario["colonia"], cell_normal),
-        ],
-        [
-            Paragraph("MUNICIPIO:", cell_bold),
-            Paragraph(
-                f"{destinatario['municipio']} &nbsp;&nbsp; {destinatario['estado']}",
-                cell_normal,
-            ),
-        ],
-        [
-            Paragraph("TELEFONO:", cell_bold),
-            Paragraph(destinatario["telefono"], cell_normal),
-        ],
-    ]
-    t_dest = Table(dest_data, colWidths=[70, 202])
-    t_dest.setStyle(
-        TableStyle([
-            ("SPAN", (0, 0), (1, 0)),
-            ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ])
-    )
-
-    t_top_blocks = Table([[t_rem, t_dest]], colWidths=[274, 274])
-    t_top_blocks.setStyle(
-        TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-        ])
-    )
-    story.append(t_top_blocks)
-    story.append(Spacer(1, 6))
-
-    fac_data = [
-        [Paragraph("FACTURACION", th_style), ""],
-        [
-            Paragraph("CLIENTE:", cell_bold),
-            Paragraph(facturacion["cliente"], cell_bold),
-        ],
-        [
-            Paragraph("DATOS / RFC:", cell_bold),
-            Paragraph(
-                f"{facturacion.get('calle', '')}<br/><b>RFC: {facturacion['rfc']}</b>",
-                cell_normal,
-            ),
-        ],
-        [
-            Paragraph("EMAIL:", cell_bold),
-            Paragraph(
-                facturacion.get("email", "sbomailer@jypesa.com"), cell_normal
-            ),
-        ],
-    ]
-    t_fac = Table(fac_data, colWidths=[70, 202])
-    t_fac.setStyle(
-        TableStyle([
-            ("SPAN", (0, 0), (1, 0)),
-            ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ])
-    )
-
-    serv_data = [
-        [Paragraph("SERVICIOS", th_style), "", "", ""],
-        [
-            Paragraph("PAGADO:", cell_bold),
-            pagado_mark,
-            Paragraph("SEGURO:", cell_bold),
-            "SI: X   NO:",
-        ],
-        [
-            Paragraph("POR COBRAR:", cell_bold),
-            por_cobrar_mark,
-            Paragraph("VALOR DECLARADO:", cell_bold),
-            "",
-        ],
-        [Paragraph("CREDITO:", cell_bold), credito_mark, "", ""],
-        [
-            Paragraph("OCURRE:", cell_bold),
-            "",
-            Paragraph("CITA :", cell_bold),
-            "SI [ &nbsp; ] NO",
-        ],
-        [
-            Paragraph("A DOMICILIO:", cell_bold),
-            "X",
-            Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
-            "",
-        ],
-        [Paragraph("MANIOBRAS:", cell_bold), "", "", ""],
-    ]
-    t_serv = Table(serv_data, colWidths=[70, 45, 85, 72])
-    t_serv.setStyle(
-        TableStyle([
-            ("SPAN", (0, 0), (3, 0)),
-            ("BACKGROUND", (0, 0), (3, 0), colors.HexColor("#6c8ebf")),
-            ("SPAN", (2, 2), (3, 2)),
-            ("SPAN", (2, 3), (3, 3)),
-            ("SPAN", (2, 4), (3, 4)),
-            ("SPAN", (0, 6), (3, 6)),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (1, 1), (1, 3), "CENTER"),
-            ("ALIGN", (1, 5), (1, 5), "CENTER"),
-            ("TOPPADDING", (0, 0), (-1, -1), 3.2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3.2),
-        ])
-    )
-
-    t_mid_blocks = Table([[t_fac, t_serv]], colWidths=[274, 274])
-    t_mid_blocks.setStyle(
-        TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-        ])
-    )
-    story.append(t_mid_blocks)
-    story.append(Spacer(1, 6))
-
-    cont_data = [[Paragraph("CONTENIDO", th_style), "", "", "", "", "", ""]]
-    cont_headers = [
-        "#",
-        "CANTIDAD",
-        "EMPAQUE",
-        "CONTENIDO",
-        "DIMENSIONES (ALTO/LARGO/ANCHO)",
-        "KG REAL",
-        "KG VOLUMEN",
-    ]
-    cont_data.append([Paragraph(h, th_style) for h in cont_headers])
-    for i in range(1, 5):
-      cont_data.append([str(i), "", "", "", "", "", ""])
-
-    t_cont = Table(cont_data, colWidths=[25, 60, 80, 164, 155, 50, 64])
-    t_cont.setStyle(
-        TableStyle([
-            ("SPAN", (0, 0), (6, 0)),
-            ("BACKGROUND", (0, 0), (6, 0), colors.HexColor("#6c8ebf")),
-            ("BACKGROUND", (0, 1), (6, 1), colors.HexColor("#6c8ebf")),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ])
-    )
-    story.append(t_cont)
-    story.append(Spacer(1, 6))
-
-    cp_data = [[Paragraph("CARTA PORTE", th_style), "", ""]]
-    cp_headers = [
-        "#",
-        "CODIGO PRODUCTO CARTA PORTE SAT",
-        "CODIGO UNIDAD PESO CARTA PORTE SAT",
-    ]
-    cp_data.append([Paragraph(h, th_style) for h in cp_headers])
-    for i in range(1, 5):
-      cp_data.append([str(i), "", ""])
-
-    t_cp = Table(cp_data, colWidths=[25, 261, 262])
-    t_cp.setStyle(
-        TableStyle([
-            ("SPAN", (0, 0), (2, 0)),
-            ("BACKGROUND", (0, 0), (2, 0), colors.HexColor("#6c8ebf")),
-            ("BACKGROUND", (0, 1), (2, 1), colors.HexColor("#6c8ebf")),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ])
-    )
-    story.append(t_cp)
-    story.append(Spacer(1, 30))
-
-    sig_style = ParagraphStyle(
-        "Sig",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=7.5,
-        leading=9,
-        alignment=1,
-    )
-    sig_data = [
-        [
-            Paragraph(
-                "________________________________________<br/>FIRMA Y NOMBRE DEL CLIENTE :",
-                sig_style,
-            ),
-            Paragraph(
-                "________________________________________<br/>FIRMA Y NOMBRE DE QUIEN RECIBE :",
-                sig_style,
-            ),
-            Paragraph(
-                "________________________________________<br/>NUMERO DE UNIDAD",
-                sig_style,
-            ),
-        ]
-    ]
-    t_sig = Table(sig_data, colWidths=[183, 183, 182])
-    t_sig.setStyle(
-        TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-        ])
-    )
-    story.append(t_sig)
-
-    doc.build(story)
-    buffer.seek(0)
-    return buffer
-
-  st.markdown("---")
-  if st.button("Generar PDF con datos de Orden de Embarque"):
-    pdf_buffer = generar_pdf_reportlab()
-    st.success(
-        f"¡Orden de embarque para la factura {num_factura} generada con"
-        " éxito!"
-    )
-    st.download_button(
-        label="📥 Descargar PDF de Orden de Embarque",
-        data=pdf_buffer,
-        file_name=f"Orden_Embarque_{num_factura}.pdf",
-        mime="application/pdf",
-    )
-else:
-  st.warning("No se encontraron datos en el CSV de GitHub.")
+    if st.button("Generar Etiquetas", use_container_width=True):
+        with st.spinner("Generando documento..."):
+            pdf_data = generar_etiquetas_nexion(df)
+            
+            if pdf_data:
+                st.success("¡Documento generado con éxito!")
+                
+                st.download_button(
+                    label="Descargar PDF para Imprimir",
+                    data=pdf_data,
+                    file_name="etiquetas_nexion.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+                
+                st.info("El archivo se guardará en tu carpeta de descargas.")
 
 
 
