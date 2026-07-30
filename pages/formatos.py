@@ -33,7 +33,7 @@ def generar_etiquetas_nexion(df):
     w_rec, h_rec = 10.5 * cm, 7.5 * cm
     c = canvas.Canvas(output, pagesize=(w_rec, h_rec))
     
-    # Margen lateral un poco más amplio (0.8 cm a cada lado para dejar más espacio)
+    # Margen lateral amplio
     margen_h = 0.8 * cm
     w_util = w_rec - (2 * margen_h)
     x_centro = w_rec / 2
@@ -60,7 +60,7 @@ def generar_etiquetas_nexion(df):
 
             # CABECERA JYPESA
             c.setFont("Helvetica-Bold", 7)
-            c.drawCentredString(x_centro, y_rec_sup := (h_rec - 0.3*cm), "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+            c.drawCentredString(x_centro, h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
             c.setFont("Helvetica", 5.5)
             info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
             dibujar_texto_bloque_pro(c, info_contacto, x_centro, h_rec - 0.7*cm, w_util, "Helvetica", 5.5, 0.25*cm, max_lineas=1)
@@ -70,32 +70,37 @@ def generar_etiquetas_nexion(df):
             c.line(margen_h, h_rec - 0.95*cm, w_rec - margen_h, h_rec - 0.95*cm)
             c.setStrokeColorRGB(0, 0, 0)
 
-            # NOMBRE CLIENTE (Ligeramente más chico para que quepa holGado con más margen)
+            # NOMBRE CLIENTE
             y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_centro, h_rec - 1.8*cm, w_util, "Helvetica-Bold", 22, 0.65*cm, max_lineas=3)
             
-            # DIRECCIÓN (Reducida a 12pt para dar espacio y evitar que pegue abajo)
+            # DIRECCIÓN
             y_inicio_direccion = y_termino_nombre - 0.5*cm
             if y_inicio_direccion > 4.3*cm: y_inicio_direccion = 4.3*cm
             if y_inicio_direccion < 2.9*cm: y_inicio_direccion = 2.9*cm
             dibujar_texto_bloque_pro(c, direccion_final, x_centro, y_inicio_direccion, w_util, "Helvetica-Bold", 12.0, 0.45*cm, max_lineas=3)
 
-            # PIE DE ETIQUETA
+            # PIE DE ETIQUETA (Columnas mejor distribuidas)
             c.setLineWidth(0.6)
             y_linea_pie = 1.4*cm
             c.line(margen_h, y_linea_pie, w_rec - margen_h, y_linea_pie)
             
+            # Posiciones X para las 3 columnas de manera limpia
+            x_col1 = margen_h + 0.1*cm         # Factura (Izquierda)
+            x_col2 = 5.25 * cm                 # Cajas (Centro exacto)
+            x_col3 = w_rec - margen_h - 2.8*cm # Transporte (Derecha con espacio)
+
             c.setFont("Helvetica-Bold", 8)
-            c.drawString(margen_h, y_linea_pie - 0.4*cm, "FACTURA")
-            c.drawCentredString(x_centro, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
-            c.drawString(w_rec - margen_h - 3.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
+            c.drawString(x_col1, y_linea_pie - 0.4*cm, "FACTURA")
+            c.drawCentredString(x_col2, y_linea_pie - 0.4*cm, "CAJAS")
+            c.drawString(x_col3, y_linea_pie - 0.4*cm, "TRANSPORTE")
             
             c.setFont("Helvetica-Bold", 11)
-            c.drawString(margen_h, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
+            c.drawString(x_col1, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
             
-            c.drawCentredString(x_centro, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
+            c.drawCentredString(x_col2, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
             
             c.setFont("Helvetica-Bold", 9.5)
-            c.drawString(w_rec - margen_h - 3.5*cm, y_linea_pie - 1.0*cm, transporte_final[:16])
+            c.drawString(x_col3, y_linea_pie - 1.0*cm, transporte_final[:16])
             
             c.showPage()
 
