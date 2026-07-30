@@ -1,12 +1,39 @@
 import io
 import re
+import requests
 import pandas as pd
 import streamlit as st
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import cm
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import simpleSplit
 
-# --- 1. FUNCIONES DE PROCESAMIENTO ---
+# --- 1. FUNCIONES DE CONEXIÓN Y PROCESAMIENTO ---
+@st.cache_data(ttl=60)
+def cargar_csv_github():
+    try:
+        repo = "RH2026/nexion"
+        filename = "facturacion_moreno.csv"
+        branch = "main"
+        
+        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+        token = st.secrets["GITHUB_TOKEN"]
+        headers = {"Authorization": f"token {token}"}
+        
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+            df.columns = df.columns.astype(str).str.strip()
+            return df
+        else:
+            st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+            return pd.DataFrame()
+    except Exception as e:
+        st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+        return pd.DataFrame()
+
 def limpiar_parentesis(texto):
     return re.sub(r'\(.*?\)', '', str(texto)).strip()
 
@@ -26,7 +53,7 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
         y_actual -= interlineado
     return y_actual 
 
-def generar_etiquetas_nexion(df):
+def generar_etiquetas_nexion(df_datos):
     output = io.BytesIO()
     
     # Dimensiones exactas de la etiqueta: 10.5 cm x 7.5 cm
@@ -38,17 +65,22 @@ def generar_etiquetas_nexion(df):
     w_util = w_rec - (2 * margen_h)
     x_centro = w_rec / 2
 
-    for index, row in df.iterrows():
+    if df_datos.empty:
+        c.save()
+        return output.getvalue()
+
+    for index, row in df_datos.iterrows():
         try:
             cantidad_real = int(row['Quantity'])
             iteraciones = cantidad_real
         except: 
             continue 
 
-        nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', 'SIN NOMBRE')))
+        nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', row.get('NOMBRE_CLIENTE', 'SIN NOMBRE'))))
         nombre_final = limpiar_parentesis(nombre_crudo)
-        direccion_final = row.get('DIRECCION', 'DIRECCIÓN NO DISPONIBLE')
-        transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', 'TRES GUERRAS')))
+        direccion_final = row.get('DIRECCION', row.get('Domicilio', row.get('DOMICILIO', 'DIRECCIÓN NO DISPONIBLE')))
+        transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', row.get('PAQUETERIA', 'TRES GUERRAS'))))
+        factura_val = str(row.get('Factura', row.get('FOLIO', 'S/F')))
 
         for i in range(iteraciones):
             # Dibujar contorno de etiqueta
@@ -79,15 +111,14 @@ def generar_etiquetas_nexion(df):
             if y_inicio_direccion < 2.9*cm: y_inicio_direccion = 2.9*cm
             dibujar_texto_bloque_pro(c, direccion_final, x_centro, y_inicio_direccion, w_util, "Helvetica-Bold", 12.0, 0.45*cm, max_lineas=3)
 
-            # PIE DE ETIQUETA (Columnas mejor distribuidas)
+            # PIE DE ETIQUETA
             c.setLineWidth(0.6)
             y_linea_pie = 1.4*cm
             c.line(margen_h, y_linea_pie, w_rec - margen_h, y_linea_pie)
             
-            # Posiciones X para las 3 columnas de manera limpia
-            x_col1 = margen_h + 0.1*cm         # Factura (Izquierda)
-            x_col2 = 5.25 * cm                 # Cajas (Centro exacto)
-            x_col3 = w_rec - margen_h - 2.8*cm # Transporte (Derecha con espacio)
+            x_col1 = margen_h + 0.1*cm         
+            x_col2 = 5.25 * cm                 
+            x_col3 = w_rec - margen_h - 2.8*cm 
 
             c.setFont("Helvetica-Bold", 8)
             c.drawString(x_col1, y_linea_pie - 0.4*cm, "FACTURA")
@@ -95,7 +126,7 @@ def generar_etiquetas_nexion(df):
             c.drawString(x_col3, y_linea_pie - 0.4*cm, "TRANSPORTE")
             
             c.setFont("Helvetica-Bold", 11)
-            c.drawString(x_col1, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
+            c.drawString(x_col1, y_linea_pie - 1.0*cm, factura_val)
             
             c.drawCentredString(x_col2, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
             
@@ -107,7 +138,7 @@ def generar_etiquetas_nexion(df):
     c.save()
     return output.getvalue()
 
-# --- 2. INTERFAZ DE USUARIO ---
+# --- 2. INTERFAZ DE USUARIO CON TABS ---
 st.markdown("""
     <div style="
         background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
@@ -115,41 +146,108 @@ st.markdown("""
         border-radius: 8px;
         border-left: 6px solid #4a90e2;
         margin-top: 20px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     ">
         <div style="color: #ffffff; font-size: 20px; font-weight: 300; margin-bottom: 2px;">
-            Creador de Etiquetas de Embarque
+            Creador de Etiquetas de Embarque (NEXION)
         </div>
         <div style="color: #808495; font-size: 14px; font-weight: 400;">
-            Cargar Excel de Pedidos para procesamiento
+            Generación y control de etiquetas por lote o base de datos
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-archivo = st.file_uploader("", type=["xlsx"], label_visibility="collapsed", key="creador_etiquetas")
+# Creación de pestañas
+tab1, tab2 = st.tabs(["📁 Carga por Excel (Lote)", "☁️ Base de Datos GitHub (Facturación Moreno)"])
 
-if archivo:
-    try:
-        df = pd.read_excel(archivo, sheet_name=0)
-    except Exception as e:
-        st.error(f"Error al leer los pedidos: {e}")
+with tab1:
+    st.subheader("Cargar Archivo Excel de Pedidos")
+    archivo = st.file_uploader("Sube tu archivo .xlsx", type=["xlsx"], key="creador_etiquetas_excel")
+    
+    if archivo:
+        try:
+            df_excel = pd.read_excel(archivo, sheet_name=0)
+            st.subheader("Vista previa de datos")
+            st.dataframe(df_excel[['Quantity', 'DIRECCION', 'Factura']].head(5), use_container_width=True)
 
-    st.subheader("Vista previa de datos")
-    st.dataframe(df[['Quantity', 'DIRECCION', 'Factura']].head(5), use_container_width=True)
+            if st.button("Generar Etiquetas desde Excel", use_container_width=True, key="btn_gen_excel"):
+                with st.spinner("Generando documento..."):
+                    pdf_data = generar_etiquetas_nexion(df_excel)
+                    if pdf_data:
+                        st.success("¡Documento generado con éxito!")
+                        st.download_button(
+                            label="Descargar PDF de Etiquetas",
+                            data=pdf_data,
+                            file_name="etiquetas_nexion_excel.pdf",
+                            mime="application/pdf",
+                            use_container_width=True,
+                            key="dl_excel"
+                        )
+        except Exception as e:
+            st.error(f"Error al leer los pedidos: {e}")
 
-    if st.button("Generar Etiquetas", use_container_width=True):
-        with st.spinner("Generando documento..."):
-            pdf_data = generar_etiquetas_nexion(df)
+with tab2:
+    st.subheader("Base de Datos - facturacion_moreno.csv")
+    df_facturacion = cargar_csv_github()
+    
+    if not df_facturacion.empty:
+        df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+        facturas_disponibles = df_facturacion["Factura"].unique()
+
+        c_col1, c_col2 = st.columns(2)
+        with c_col1:
+            modo_busqueda = st.selectbox(
+                "🔍 Método de Selección", 
+                ["Seleccionar de la lista", "Escribir folio manual"],
+                key="modo_busq_etq_github"
+            )
+
+        num_factura_seleccionada = None
+        with c_col2:
+            if modo_busqueda == "Seleccionar de la lista":
+                num_factura_seleccionada = st.selectbox("📦 Selecciona Factura / Folio", facturas_disponibles, key="sel_factura_etq_github")
+            else:
+                num_factura_seleccionada = st.text_input("✍️ Ingresa Folio Manual", key="txt_folio_manual_etq_github")
+
+        if num_factura_seleccionada:
+            df_encontrado = df_facturacion[df_facturacion["Factura"] == str(num_factura_seleccionada).strip()]
             
-            if pdf_data:
-                st.success("¡Documento generado con éxito!")
-                st.download_button(
-                    label="Descargar PDF para Imprimir",
-                    data=pdf_data,
-                    file_name="etiquetas_nexion.pdf",
-                    mime="application/pdf",
-                    use_container_width=True
-                )
+            if not df_encontrado.empty:
+                row_data = df_encontrado.iloc[0].copy()
+                
+                st.markdown("---")
+                st.info(f"📋 **Cliente encontrado:** {row_data.get('Nombre_Extran', row_data.get('Nombre_Cliente', 'SIN NOMBRE'))}")
+                
+                # Campos manuales para Cajas y Transporte como pediste
+                col_c, col_t = st.columns(2)
+                with col_c:
+                    cajas_manual = st.number_input("📦 Cantidad de Cajas / Bultos", min_value=1, value=1, step=1, key="num_cajas_manual")
+                with col_t:
+                    transporte_manual = st.text_input("🚛 Transporte / Paquetería", value=str(row_data.get('RECOMENDACION', row_data.get('Transporte', 'TRES GUERRAS'))), key="txt_transporte_manual")
+                
+                # Actualizamos los valores para la etiqueta
+                row_data['Quantity'] = cajas_manual
+                row_data['RECOMENDACION'] = transporte_manual
+                
+                df_procesar_individual = pd.DataFrame([row_data])
+
+                if st.button("Generar Etiqueta Individual", use_container_width=True, key="btn_gen_moreno"):
+                    with st.spinner("Generando etiqueta..."):
+                        pdf_data_moreno = generar_etiquetas_nexion(df_procesar_individual)
+                        if pdf_data_moreno:
+                            st.success("¡Etiqueta generada con éxito!")
+                            st.download_button(
+                                label="Descargar PDF de Etiqueta",
+                                data=pdf_data_moreno,
+                                file_name=f"etiqueta_factura_{num_factura_seleccionada}.pdf",
+                                mime="application/pdf",
+                                use_container_width=True,
+                                key="dl_moreno"
+                            )
+            else:
+                st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
+    else:
+        st.warning("No se pudieron cargar los datos de GitHub. Verifica tu token o conexión.")
 
 
 
