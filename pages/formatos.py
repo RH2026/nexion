@@ -152,13 +152,17 @@ st.markdown("""
             Creador de Etiquetas de Embarque (NEXION)
         </div>
         <div style="color: #808495; font-size: 14px; font-weight: 400;">
-            Generación y control de etiquetas por lote o base de datos
+            Generación y control de etiquetas por lote, base de datos o captura libre
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# Creación de pestañas
-tab1, tab2 = st.tabs(["📁 Carga por Excel (Lote)", "☁️ Base de Datos GitHub (Facturación Moreno)"])
+# Creación de las tres pestañas
+tab1, tab2, tab3 = st.tabs([
+    "📁 Carga por Excel (Lote)", 
+    "☁️ Base de Datos GitHub", 
+    "✍️ Captura Manual Libre"
+])
 
 with tab1:
     st.subheader("Cargar Archivo Excel de Pedidos")
@@ -218,14 +222,12 @@ with tab2:
                 st.markdown("---")
                 st.info(f"📋 **Cliente encontrado:** {row_data.get('Nombre_Extran', row_data.get('Nombre_Cliente', 'SIN NOMBRE'))}")
                 
-                # Campos manuales para Cajas y Transporte como pediste
                 col_c, col_t = st.columns(2)
                 with col_c:
-                    cajas_manual = st.number_input("📦 Cantidad de Cajas / Bultos", min_value=1, value=1, step=1, key="num_cajas_manual")
+                    cajas_manual = st.number_input("📦 Cantidad de Cajas / Bultos", min_value=1, value=1, step=1, key="num_cajas_manual_db")
                 with col_t:
-                    transporte_manual = st.text_input("🚛 Transporte / Paquetería", value=str(row_data.get('RECOMENDACION', row_data.get('Transporte', 'TRES GUERRAS'))), key="txt_transporte_manual")
+                    transporte_manual = st.text_input("🚛 Transporte / Paquetería", value=str(row_data.get('RECOMENDACION', row_data.get('Transporte', 'TRES GUERRAS'))), key="txt_transporte_manual_db")
                 
-                # Actualizamos los valores para la etiqueta
                 row_data['Quantity'] = cajas_manual
                 row_data['RECOMENDACION'] = transporte_manual
                 
@@ -248,6 +250,51 @@ with tab2:
                 st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
     else:
         st.warning("No se pudieron cargar los datos de GitHub. Verifica tu token o conexión.")
+
+with tab3:
+    st.markdown("""
+        <div style="background-color: #263243; padding: 10px 15px; border-radius: 5px; color: #ffffff; font-size: 14px; margin-bottom: 20px;">
+            Ingresa los datos del envío manualmente (sin necesidad de archivos).
+        </div>
+    """, unsafe_allow_html=True)
+
+    col_m1, col_m2 = st.columns(2)
+    with col_m1:
+        manual_factura = st.text_input("NÚMERO DE FACTURA / FOLIO", value="JYP-100", key="man_factura")
+        manual_nombre = st.text_input("NOMBRE DEL CLIENTE / HOTEL", value="HOTEL EJEMPLO", key="man_nombre")
+        manual_cajas = st.number_input("CANTIDAD DE CAJAS / BULTOS", min_value=1, value=1, step=1, key="man_cajas")
+
+    with col_m2:
+        manual_direccion = st.text_area("DIRECCIÓN COMPLETA DE DESTINO", value="Av. Principal #123, Col. Centro, C.P. 44100, Guadalajara, Jal.", height=107, key="man_direccion")
+        manual_transporte = st.text_input("TRANSPORTE / PAQUETERÍA", value="TRES GUERRAS", key="man_transporte")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Generar Etiqueta Manual", use_container_width=True, key="btn_gen_manual_libre"):
+        if not manual_factura or not manual_nombre or not manual_direccion:
+            st.error("Por favor completa los campos obligatorios (Factura, Nombre y Dirección).")
+        else:
+            # Creamos un DataFrame con una sola fila usando los datos manuales
+            dict_manual = {
+                'Factura': str(manual_factura),
+                'Nombre_Cliente': str(manual_nombre),
+                'DIRECCION': str(manual_direccion),
+                'Quantity': int(manual_cajas),
+                'RECOMENDACION': str(manual_transporte)
+            }
+            df_manual_pro = pd.DataFrame([dict_manual])
+
+            with st.spinner("Generando etiqueta manual..."):
+                pdf_data_manual = generar_etiquetas_nexion(df_manual_pro)
+                if pdf_data_manual:
+                    st.success("¡Etiqueta manual generada con éxito!")
+                    st.download_button(
+                        label="Descargar PDF de Etiqueta Manual",
+                        data=pdf_data_manual,
+                        file_name=f"etiqueta_manual_{manual_factura}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True,
+                        key="dl_manual_libre"
+                    )
 
 
 
