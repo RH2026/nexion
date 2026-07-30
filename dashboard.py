@@ -1285,12 +1285,20 @@ else:
                         st.rerun()
             
                 # --- SEGUIMIENTO: Aquí es donde entra Atencion3G ---
+                # --- SEGUIMIENTO: Gestión de opciones según rol y usuario ---
                 if not es_ventas:
                     with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                        
+                        # Obtenemos el usuario actual de forma segura
+                        usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
+                        
+                        # Definimos las opciones según los permisos
                         if es_admin:
                             opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
+                        elif usuario_actual == "Cynthia":
+                            opciones_seg = ["ALERTAS", "QUEJAS"]  # Ve alertas y quejas, pero NO Gantt
                         else:
-                            opciones_seg = ["ALERTAS"] # Atencion3G y otros solo ven esto
+                            opciones_seg = ["ALERTAS"] # Atencion3G y otros solo ven alertas
                             
                         for s in opciones_seg:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
