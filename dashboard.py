@@ -9496,7 +9496,7 @@ else:
                     st.warning("No se encontraron datos en el CSV de GitHub.")
             
             elif st.session_state.menu_sub == "RECOLECCION ONE":
-                # --- CONFIGURACIÓN DE RECOLECCIONES ONE PAQUETERÍA (ACTUALIZADO Y BLINDADO) ---
+               # --- CONFIGURACIÓN DE RECOLECCIONES ONE PAQUETERÍA (ACTUALIZADO Y BLINDADO CON COMENTARIOS) ---
                 @st.cache_data(ttl=60)
                 def cargar_csv_github():
                     try:
@@ -9632,6 +9632,15 @@ else:
                     fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México", key="one_fac_domicilio")
                     fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35", key="one_fac_rfc")
                 
+                    # --- NUEVA ÁREA DE COMENTARIOS ---
+                    st.markdown("---")
+                    titulo_seccion("💬 OBSERVACIONES / COMENTARIOS ADICIONALES", color_fondo="#37474f")
+                    comentarios_usuario = st.text_area(
+                        "Instrucciones o notas especiales para la recolección",
+                        value="LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN, SI NO QUIEREN ENTREGAR LLAMAR AL TELÉFONO Cel. 33 19 75 31 22 Rigoberto Hernandez",
+                        key="one_comentarios"
+                    )
+                
                     # --- SECCIÓN DINÁMICA DE EMBARQUE ---
                     st.markdown("---")
                     titulo_seccion("📦 DETALLE DE EMBARQUE Y LÍNEAS DE CARGA", color_fondo="#c62828")
@@ -9681,7 +9690,7 @@ else:
                     total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque_one)
                     st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
                 
-                    # --- FUNCIÓN PDF REPORTLAB (ESTILO ONE PAQUETERÍA CON ROJO Y AZUL) ---
+                    # --- FUNCIÓN PDF REPORTLAB (ESTILO ONE PAQUETERÍA CORREGIDO) ---
                     def generar_pdf_one_paqueteria():
                         buffer = BytesIO()
                         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=15, leftMargin=15, topMargin=15, bottomMargin=15)
@@ -9694,47 +9703,53 @@ else:
                         cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
                         cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
                 
-                        # 1. NUEVO ENCABEZADO SUPERIOR (ESTILO MANIFIESTO DE EMBARQUE CON LOGO ONE)
+                        # 1. ENCABEZADO SUPERIOR (Ajustado exactamente a 582 pts de ancho total)
                         logo_io = obtener_logo_one()
-                        logo_elem = Image(logo_io, width=90, height=25) if logo_io else Paragraph("<b>ONE Paquetería</b>", cell_center)
+                        logo_elem = Image(logo_io, width=85, height=22) if logo_io else Paragraph("<b>ONE Paquetería</b>", cell_center)
                         
+                        sub_table_reco = Table([
+                            [Paragraph("<b>RECOLECCION</b>", ParagraphStyle("RH", alignment=1, fontSize=5.5, fontName="Helvetica-Bold")), Paragraph("<b>EMBARQUE EN MOSTRADOR</b>", ParagraphStyle("EM", alignment=1, fontSize=5, fontName="Helvetica-Bold"))],
+                            [Paragraph("<b>X</b>", ParagraphStyle("DOT", alignment=1, fontSize=7, fontName="Helvetica-Bold", textColor=colors.red)), ""]
+                        ], colWidths=[101, 101], style=[
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#f0f0f0")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#f0f0f0")),
+                            ("BACKGROUND", (0,1), (0,1), colors.HexColor("#ffffff")),
+                            ("TOPPADDING", (0,0), (-1,-1), 1),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                        ])
+                
                         header_table = Table([
                             [
                                 logo_elem, 
-                                Paragraph("<b>MANIFIESTO DE EMBARQUE</b>", ParagraphStyle("HT", alignment=1, fontSize=11, fontName="Helvetica-Bold", textColor=colors.HexColor("#0d47a1"))), 
-                                Table([
-                                    [Paragraph("<b>RECOLECCION</b>", ParagraphStyle("RH", alignment=1, fontSize=6, fontName="Helvetica-Bold")), Paragraph("<b>EMBARQUE EN MOSTRADOR</b>", ParagraphStyle("EM", alignment=1, fontSize=5.5, fontName="Helvetica-Bold"))],
-                                    [Paragraph("🔴", ParagraphStyle("DOT", alignment=1, fontSize=10, textColor=colors.red)), ""]
-                                ], colWidths=[105, 111], style=[
-                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
-                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-                                    ("BACKGROUND", (0,0), (0,0), colors.HexColor("#f0f0f0")),
-                                    ("BACKGROUND", (1,0), (1,0), colors.HexColor("#f0f0f0")),
-                                    ("TOPPADDING", (0,0), (-1,-1), 1),
-                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
-                                ])
+                                Paragraph("<b>MANIFIESTO DE EMBARQUE</b>", ParagraphStyle("HT", alignment=1, fontSize=10.5, fontName="Helvetica-Bold", textColor=colors.HexColor("#0d47a1"))), 
+                                sub_table_reco
                             ]
-                        ], colWidths=[130, 256, 216])
+                        ], colWidths=[130, 250, 202])
+                        
                         header_table.setStyle(TableStyle([
                             ("GRID", (0,0), (-1,-1), 1, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                             ("ALIGN", (0,0), (0,0), "CENTER"),
                             ("BACKGROUND", (0,0), (0,0), colors.white),
                             ("BACKGROUND", (1,0), (1,0), colors.white),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
                         ]))
                         story.append(header_table)
                         story.append(Spacer(1, 2))
                 
-                        # 2. FECHAS RECOLECCIÓN / FOLIO (Combinando tonos azules y rojos)
+                        # 2. FECHAS RECOLECCIÓN / FOLIO
                         fechas_table = Table([
                             [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph(fecha_rec_str, cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
                             [Paragraph("<b>FOLIO / FACTURA:</b>", cell_bold), Paragraph(str(num_factura), cell_center), Paragraph("<b>ESTATUS PAGO</b>", cell_bold), Paragraph(tipo_pago_tg, cell_center)]
-                        ], colWidths=[110, 150, 105, 237])
+                        ], colWidths=[110, 150, 105, 217])
                         fechas_table.setStyle(TableStyle([
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
-                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#e3f2fd")), # Azul claro
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#e3f2fd")),
                             ("BACKGROUND", (2,0), (2,0), colors.HexColor("#e3f2fd")),
-                            ("BACKGROUND", (0,1), (0,1), colors.HexColor("#ffebee")), # Rojo claro
+                            ("BACKGROUND", (0,1), (0,1), colors.HexColor("#ffebee")),
                             ("BACKGROUND", (2,1), (2,1), colors.HexColor("#ffebee")),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                             ("TOPPADDING", (0,0), (-1,-1), 1.5),
@@ -9752,10 +9767,10 @@ else:
                             [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{rem_cui}, {rem_estado}", cell_normal)],
                             [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{rem_contacto} - {rem_tel}", cell_normal)],
                         ]
-                        t_rem = Table(rem_data, colWidths=[90, 211])
+                        t_rem = Table(rem_data, colWidths=[85, 206])
                         t_rem.setStyle(TableStyle([
                             ("SPAN", (0,0), (1,0)),
-                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#c62828")), # Rojo institucional
+                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#c62828")),
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                             ("TOPPADDING", (0,0), (-1,-1), 1.5),
@@ -9770,17 +9785,17 @@ else:
                             [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{dest_cui}, {dest_estado}", cell_normal)],
                             [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{dest_contacto} - {dest_tel}", cell_normal)],
                         ]
-                        t_dest = Table(dest_data, colWidths=[90, 211])
+                        t_dest = Table(dest_data, colWidths=[85, 206])
                         t_dest.setStyle(TableStyle([
                             ("SPAN", (0,0), (1,0)),
-                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#1565c0")), # Azul institucional
+                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#1565c0")),
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                             ("TOPPADDING", (0,0), (-1,-1), 1.5),
                             ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
                         ]))
                 
-                        t_top = Table([[t_rem, t_dest]], colWidths=[301, 301])
+                        t_top = Table([[t_rem, t_dest]], colWidths=[291, 291])
                         story.append(t_top)
                         story.append(Spacer(1, 2))
                 
@@ -9792,7 +9807,7 @@ else:
                             [Paragraph(f"Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México<br/>Tel.. 0152 (33) 35402939<br/>E-mail: rhernandez@jypesa.com", ParagraphStyle("FD", alignment=1, fontSize=6, fontName="Helvetica", leading=7.5)), "", ""],
                             [Paragraph("<b>RFC:</b>", cell_bold), Paragraph(f"RFC {fac_rfc}", cell_center), ""]
                         ]
-                        t_fac = Table(fac_data, colWidths=[75, 427, 100])
+                        t_fac = Table(fac_data, colWidths=[75, 407, 100])
                         t_fac.setStyle(TableStyle([
                             ("SPAN", (0,0), (2,0)),
                             ("SPAN", (0,1), (2,1)),
@@ -9842,7 +9857,7 @@ else:
                             
                         emb_data.append(["", "", "", "", "", "0", f"{total_peso_calc:,.1f}"])
                         
-                        t_emb = Table(emb_data, colWidths=[45, 65, 182, 95, 65, 80, 70])
+                        t_emb = Table(emb_data, colWidths=[45, 60, 177, 90, 65, 75, 70])
                         t_emb.setStyle(TableStyle([
                             ("SPAN", (0,0), (2,0)),
                             ("SPAN", (3,0), (4,0)),
@@ -9857,7 +9872,7 @@ else:
                         story.append(t_emb)
                         story.append(Spacer(1, 2))
                 
-                        # 6. BLOQUE MEDIO (Combinando rojo y azul corporativo)
+                        # 6. BLOQUE MEDIO
                         th_red = ParagraphStyle("THR", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
                         th_blue = ParagraphStyle("THB", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
                 
@@ -9871,7 +9886,7 @@ else:
                                 Table([
                                     [Paragraph("SI", cell_center), "", Paragraph("VALOR DECLARADO", cell_bold)],
                                     [Paragraph("NO", cell_center), Paragraph("X", cell_center), Paragraph("POR CUENTA Y RIESGO", cell_bold)]
-                                ], colWidths=[30, 30, 85], style=[
+                                ], colWidths=[28, 28, 84], style=[
                                     ("BACKGROUND", (2,0), (2,-1), colors.HexColor("#e3f2fd")),
                                     ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                                     ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
@@ -9881,7 +9896,7 @@ else:
                                 Table([
                                     [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("N<br/>O", cell_center)],
                                     ["", "", ""]
-                                ], colWidths=[30, 30, 25], style=[
+                                ], colWidths=[28, 28, 24], style=[
                                     ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                                     ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                                     ("TOPPADDING", (0,0), (-1,-1), 1),
@@ -9898,7 +9913,7 @@ else:
                                 Table([
                                     [Paragraph("pagado (origen)", cell_center), Paragraph("por cobrar (destino)", cell_center), Paragraph("Credito", cell_center)],
                                     ["", "", Paragraph("X", cell_center)]
-                                ], colWidths=[48, 52, 45], style=[
+                                ], colWidths=[45, 50, 45], style=[
                                     ("BACKGROUND", (2,1), (2,1), colors.HexColor("#ffebee")),
                                     ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                                     ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
@@ -9908,7 +9923,7 @@ else:
                                 Table([
                                     [Paragraph("Recolección", cell_center), Paragraph("Recepción", cell_center), Paragraph("Entrega Domicilio", cell_center)],
                                     [Paragraph("X", cell_center), "", Paragraph("X", cell_center)]
-                                ], colWidths=[48, 45, 62], style=[
+                                ], colWidths=[45, 45, 60], style=[
                                     ("BACKGROUND", (0,1), (0,1), colors.HexColor("#e3f2fd")),
                                     ("BACKGROUND", (2,1), (2,1), colors.HexColor("#e3f2fd")),
                                     ("GRID", (0,0), (-1,-1), 0.5, colors.black),
@@ -9918,7 +9933,7 @@ else:
                                 ]),
                                 Table([
                                     [Paragraph("factura", cell_center), Paragraph("orden de compra", cell_center), Paragraph("pedimento", cell_center), Paragraph("otro", cell_center)]
-                                ], colWidths=[70, 70, 70, 62], style=[
+                                ], colWidths=[68, 68, 68, 68], style=[
                                     ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                                     ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                                     ("TOPPADDING", (0,0), (-1,-1), 4),
@@ -9927,7 +9942,7 @@ else:
                             ]
                         ]
                 
-                        t_mid = Table(mid_table_data, colWidths=[145, 155, 302])
+                        t_mid = Table(mid_table_data, colWidths=[140, 150, 292])
                         t_mid.setStyle(TableStyle([
                             ("SPAN", (2,1), (2,1)),
                             ("BACKGROUND", (0,0), (0,0), colors.HexColor("#c62828")),
@@ -9945,25 +9960,25 @@ else:
                         story.append(t_mid)
                         story.append(Spacer(1, 2))
                 
-                        # 7. BLOQUE FINAL
+                        # 7. BLOQUE FINAL (Con los comentarios dinámicos del usuario)
                         t_final_block = Table([
-                            [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_blue), Paragraph("<b>OBSERVACIONES</b>", th_red)],
+                            [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_blue), Paragraph("<b>OBSERVACIONES / COMENTARIOS</b>", th_red)],
                             [
                                 Table([
                                     [Paragraph("<b>NOMBRE:</b>", cell_bold), Paragraph("RIGOBERTO HERNANDEZ", cell_center)],
                                     [Paragraph("<b>EMPRESA:</b>", cell_bold), Paragraph("JYPESA", cell_center)],
                                     [Paragraph("<b>E-MAIL:</b>", cell_bold), Paragraph("rhernandez@jypesa.com", cell_center)],
                                     [Paragraph("<b>TELEFONO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center)]
-                                ], colWidths=[70, 230], style=[
+                                ], colWidths=[65, 225], style=[
                                     ("BACKGROUND", (1,0), (1,-1), colors.HexColor("#e3f2fd")),
                                     ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                                     ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
                                     ("TOPPADDING", (0,0), (-1,-1), 1.5),
                                     ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
                                 ]),
-                                Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELÉFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)
+                                Paragraph(f"<b>{comentarios_usuario}</b>", cell_normal)
                             ]
-                        ], colWidths=[300, 302])
+                        ], colWidths=[290, 292])
                         t_final_block.setStyle(TableStyle([
                             ("BACKGROUND", (0,0), (0,0), colors.HexColor("#1565c0")),
                             ("BACKGROUND", (1,0), (1,0), colors.HexColor("#c62828")),
@@ -9982,7 +9997,7 @@ else:
                     st.markdown("---")
                     if st.button("🚀 Generar Manifiesto de Embarque (ONE Paquetería)", use_container_width=True, key="one_btn_generar_pdf"):
                         pdf_buf = generar_pdf_one_paqueteria()
-                        st.success("¡Manifiesto de ONE Paquetería generado con el nuevo encabezado y paleta azul/roja!")
+                        st.success("¡Manifiesto de ONE Paquetería generado con éxito con tus observaciones!")
                         st.download_button(
                             label="📥 Descargar Manifiesto ONE Paquetería",
                             data=pdf_buf,
