@@ -9709,7 +9709,7 @@ else:
                         
                         sub_table_reco = Table([
                             [Paragraph("<b>RECOLECCION</b>", ParagraphStyle("RH", alignment=1, fontSize=5.5, fontName="Helvetica-Bold")), Paragraph("<b>EMBARQUE EN MOSTRADOR</b>", ParagraphStyle("EM", alignment=1, fontSize=5, fontName="Helvetica-Bold"))],
-                            [Paragraph("<b>X</b>", ParagraphStyle("DOT", alignment=1, fontSize=7, fontName="Helvetica-Bold", textColor=colors.red)), ""]
+                            [Paragraph("<b>🔴</b>", ParagraphStyle("DOT", alignment=1, fontSize=7, fontName="Helvetica-Bold", textColor=colors.red)), ""]
                         ], colWidths=[101, 101], style=[
                             ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
