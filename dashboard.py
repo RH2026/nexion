@@ -1325,7 +1325,7 @@ else:
                 # --- FORMATOS: Oculto para Ventas y Atencion3G ---
                 if not es_ventas and not es_atencion3g:
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "CARTA RECLAMO", "COTIZACIONES"]                        
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]                        
                         for s in opciones_for:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -9494,6 +9494,506 @@ else:
                         )
                 else:
                     st.warning("No se encontraron datos en el CSV de GitHub.")
+            
+            elif st.session_state.menu_sub == "RECOLECCION ONE":
+                # --- CONFIGURACIÓN DE RECOLECCIONES ONE PAQUETERÍA (ACTUALIZADO Y BLINDADO) ---
+                @st.cache_data(ttl=60)
+                def cargar_csv_github():
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "facturacion_moreno.csv"
+                        branch = "main"
+                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {"Authorization": f"token {token}"}
+                        
+                        response = requests.get(url, headers=headers)
+                        if response.status_code == 200:
+                            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                            df.columns = df.columns.astype(str).str.strip()
+                            return df
+                        else:
+                            st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                            return pd.DataFrame()
+                    except Exception as e:
+                        st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                        return pd.DataFrame()
+                
+                @st.cache_data(ttl=300)
+                def obtener_logo_one():
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "one.png"
+                        branch = "main"
+                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {"Authorization": f"token {token}"}
+                        response = requests.get(url, headers=headers)
+                        if response.status_code == 200:
+                            return BytesIO(response.content)
+                        return None
+                    except Exception:
+                        return None
+                
+                df_facturacion = cargar_csv_github()
+                
+                if not df_facturacion.empty:
+                    df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+                    facturas_disponibles = df_facturacion["Factura"].unique()
+                            
+                    # --- 4 CONTROLES PRINCIPALES EN UNA SOLA FILA ---
+                    top_col1, top_col2, top_col3, top_col4 = st.columns(4)
+                    
+                    with top_col1:
+                        fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="one_fecha_rec")
+                    fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
+                
+                    with top_col2:
+                        modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"], key="one_modo_busqueda")
+                
+                    with top_col3:
+                        if modo_busqueda == "Seleccionar de la lista":
+                            num_factura = st.selectbox("Folio / Factura", facturas_disponibles, key="one_sel_factura")
+                            registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura in facturas_disponibles else pd.Series()
+                        else:
+                            num_factura = st.text_input("✍️ Ingresa Folio Manual", key="one_txt_folio_manual")
+                            registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura and str(num_factura) in df_facturacion["Factura"].values else pd.Series()
+                
+                    with top_col4:
+                        tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="one_condicion_pago")
+                
+                    def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
+                    def_dom = str(registro.get("Domicilio", "")) if not registro.empty and pd.notna(registro.get("Domicilio", "")) else ""
+                    def_col = str(registro.get("Colonia", "")) if not registro.empty and pd.notna(registro.get("Colonia", "")) else ""
+                    def_cui = str(registro.get("Cuidad", "")) if not registro.empty and pd.notna(registro.get("Cuidad", "")) else ""
+                    def_cp = str(registro.get("CP", "")) if not registro.empty and pd.notna(registro.get("CP", "")) else ""
+                    def_est = str(registro.get("Estado", "")) if not registro.empty and pd.notna(registro.get("Estado", "")) else ""
+                    
+                    tel_val = ""
+                    if not registro.empty:
+                        for col_p in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+                            if col_p in registro and pd.notna(registro[col_p]):
+                                tel_val = str(registro[col_p]).strip()
+                                break
+                
+                    st.markdown("---")
+                
+                    def titulo_seccion(texto, color_fondo="#1565c0"):
+                        st.markdown(f"""
+                            <div style="background-color: {color_fondo}; padding: 8px; border-radius: 4px; text-align: center; color: white; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
+                                {texto}
+                            </div>
+                        """, unsafe_allow_html=True)
+                
+                    col1, col2 = st.columns(2)
+                
+                    with col1:
+                        titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#c62828") # Rojo institucional
+                        rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key="one_rem_cliente")
+                        rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key="one_rem_calle")
+                        rc1, rc2 = st.columns(2)
+                        with rc1:
+                            rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key="one_rem_colonia")
+                        with rc2:
+                            rem_cp = st.text_input("CP (Remitente)", value=def_cp, key="one_rem_cp")
+                        rc3, rc4 = st.columns(2)
+                        with rc3:
+                            rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key="one_rem_cui")
+                        with rc4:
+                            rem_estado = st.text_input("Estado", value=def_est, key="one_rem_estado")
+                        rc5, rc6 = st.columns(2)
+                        with rc5:
+                            rem_contacto = st.text_input("Persona que entrega", value="", key="one_rem_contacto")
+                        with rc6:
+                            rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key="one_rem_tel")
+                
+                    with col2:
+                        titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#1565c0") # Azul institucional
+                        dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados", key="one_dest_cliente")
+                        dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155", key="one_dest_calle")
+                        dc1, dc2 = st.columns(2)
+                        with dc1:
+                            dest_colonia = st.text_input("Colonia Destino", value="La Aurora", key="one_dest_colonia")
+                        with dc2:
+                            dest_cp = st.text_input("CP Destino", value="44460", key="one_dest_cp")
+                        dc3, dc4 = st.columns(2)
+                        with dc3:
+                            dest_cui = st.text_input("Ciudad Destino", value="Guadalajara", key="one_dest_cui")
+                        with dc4:
+                            dest_estado = st.text_input("Estado Destino", value="Jalisco", key="one_dest_estado")
+                        dc5, dc6 = st.columns(2)
+                        with dc5:
+                            dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo", key="one_dest_contacto")
+                        with dc6:
+                            dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123", key="one_dest_tel")
+                
+                    titulo_seccion("FACTURAR A (DATOS FISCALES JYPESA)", color_fondo="#37474f")
+                    fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV", key="one_fac_cliente")
+                    fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México", key="one_fac_domicilio")
+                    fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35", key="one_fac_rfc")
+                
+                    # --- SECCIÓN DINÁMICA DE EMBARQUE ---
+                    st.markdown("---")
+                    titulo_seccion("📦 DETALLE DE EMBARQUE Y LÍNEAS DE CARGA", color_fondo="#c62828")
+                    
+                    if "lineas_embarque_one" not in st.session_state:
+                        st.session_state.lineas_embarque_one = [
+                            {"id": 0, "cantidad": 1, "tipo": "TARIMA", "descripcion": "AMENIDADES", "largo": 1.20, "ancho": 1.20, "alto": 2.00, "peso": 800.0}
+                        ]
+                    if "one_next_id" not in st.session_state:
+                        st.session_state.one_next_id = 1
+                
+                    for idx, linea in enumerate(st.session_state.lineas_embarque_one):
+                        row_id = linea["id"]
+                        st.markdown(f"**Renglón {idx + 1}**")
+                        lc1, lc2, lc3, lc4, lc5, lc6, lc7 = st.columns([1, 2, 2, 1, 1, 1, 1])
+                        with lc1:
+                            linea["cantidad"] = st.number_input("Cant.", min_value=1, value=linea["cantidad"], key=f"one_cant_{row_id}")
+                        with lc2:
+                            tipos_validos = ["TARIMA", "CAJA", "ATADO", "TAMBO", "SACO", "OTRO"]
+                            idx_tipo = tipos_validos.index(linea["tipo"]) if linea["tipo"] in tipos_validos else 0
+                            linea["tipo"] = st.selectbox("Tipo Bulto", tipos_validos, index=idx_tipo, key=f"one_tipo_{row_id}")
+                        with lc3:
+                            linea["descripcion"] = st.text_input("Descripción", value=linea["descripcion"], key=f"one_desc_{row_id}")
+                        with lc4:
+                            linea["largo"] = st.number_input("Largo (m)", value=float(linea["largo"]), key=f"one_larg_{row_id}")
+                        with lc5:
+                            linea["ancho"] = st.number_input("Ancho (m)", value=float(linea.get("ancho", 1.20)), key=f"one_anch_{row_id}")
+                        with lc6:
+                            linea["alto"] = st.number_input("Alto (m)", value=float(linea["alto"]), key=f"one_alt_{row_id}")
+                        with lc7:
+                            linea["peso"] = st.number_input("Peso (KG)", value=float(linea["peso"]), key=f"one_pes_{row_id}")
+                
+                    col_btn1, col_btn2 = st.columns(2)
+                    with col_btn1:
+                        if st.button("➕ Agregar otra línea de carga", key="one_btn_agregar"):
+                            st.session_state.lineas_embarque_one.append({
+                                "id": st.session_state.one_next_id,
+                                "cantidad": 1, "tipo": "CAJA", "descripcion": "MERCANCIA", "largo": 0.50, "ancho": 0.50, "alto": 0.50, "peso": 50.0
+                            })
+                            st.session_state.one_next_id += 1
+                            st.rerun()
+                    with col_btn2:
+                        if len(st.session_state.lineas_embarque_one) > 1 and st.button("🗑️ Eliminar última línea", key="one_btn_eliminar"):
+                            st.session_state.lineas_embarque_one.pop()
+                            st.rerun()
+                
+                    total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque_one)
+                    st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
+                
+                    # --- FUNCIÓN PDF REPORTLAB (ESTILO ONE PAQUETERÍA CON ROJO Y AZUL) ---
+                    def generar_pdf_one_paqueteria():
+                        buffer = BytesIO()
+                        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=15, leftMargin=15, topMargin=15, bottomMargin=15)
+                        story = []
+                        
+                        fecha_actual = datetime.now().strftime("%d/%m/%Y")
+                        
+                        th_style = ParagraphStyle("TH", fontName="Helvetica-Bold", fontSize=6.5, leading=8, textColor=colors.white, alignment=1)
+                        cell_bold = ParagraphStyle("CB", fontName="Helvetica-Bold", fontSize=6, leading=7.5)
+                        cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
+                        cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
+                
+                        # 1. NUEVO ENCABEZADO SUPERIOR (ESTILO MANIFIESTO DE EMBARQUE CON LOGO ONE)
+                        logo_io = obtener_logo_one()
+                        logo_elem = Image(logo_io, width=90, height=25) if logo_io else Paragraph("<b>ONE Paquetería</b>", cell_center)
+                        
+                        header_table = Table([
+                            [
+                                logo_elem, 
+                                Paragraph("<b>MANIFIESTO DE EMBARQUE</b>", ParagraphStyle("HT", alignment=1, fontSize=11, fontName="Helvetica-Bold", textColor=colors.HexColor("#0d47a1"))), 
+                                Table([
+                                    [Paragraph("<b>RECOLECCION</b>", ParagraphStyle("RH", alignment=1, fontSize=6, fontName="Helvetica-Bold")), Paragraph("<b>EMBARQUE EN MOSTRADOR</b>", ParagraphStyle("EM", alignment=1, fontSize=5.5, fontName="Helvetica-Bold"))],
+                                    [Paragraph("🔴", ParagraphStyle("DOT", alignment=1, fontSize=10, textColor=colors.red)), ""]
+                                ], colWidths=[105, 111], style=[
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("BACKGROUND", (0,0), (0,0), colors.HexColor("#f0f0f0")),
+                                    ("BACKGROUND", (1,0), (1,0), colors.HexColor("#f0f0f0")),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ])
+                            ]
+                        ], colWidths=[130, 256, 216])
+                        header_table.setStyle(TableStyle([
+                            ("GRID", (0,0), (-1,-1), 1, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("ALIGN", (0,0), (0,0), "CENTER"),
+                            ("BACKGROUND", (0,0), (0,0), colors.white),
+                            ("BACKGROUND", (1,0), (1,0), colors.white),
+                        ]))
+                        story.append(header_table)
+                        story.append(Spacer(1, 2))
+                
+                        # 2. FECHAS RECOLECCIÓN / FOLIO (Combinando tonos azules y rojos)
+                        fechas_table = Table([
+                            [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph(fecha_rec_str, cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
+                            [Paragraph("<b>FOLIO / FACTURA:</b>", cell_bold), Paragraph(str(num_factura), cell_center), Paragraph("<b>ESTATUS PAGO</b>", cell_bold), Paragraph(tipo_pago_tg, cell_center)]
+                        ], colWidths=[110, 150, 105, 237])
+                        fechas_table.setStyle(TableStyle([
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#e3f2fd")), # Azul claro
+                            ("BACKGROUND", (2,0), (2,0), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (0,1), (0,1), colors.HexColor("#ffebee")), # Rojo claro
+                            ("BACKGROUND", (2,1), (2,1), colors.HexColor("#ffebee")),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                        story.append(fechas_table)
+                        story.append(Spacer(1, 2))
+                
+                        # 3. REMITENTE Y DESTINATARIO
+                        rem_data = [
+                            [Paragraph("REMITENTE - RECOLECCION", th_style), ""],
+                            [Paragraph("CLIENTE:", cell_bold), Paragraph(rem_cliente, cell_bold)],
+                            [Paragraph("CALLE Y NUMERO:", cell_bold), Paragraph(rem_calle, cell_normal)],
+                            [Paragraph("COLONIA / CP:", cell_bold), Paragraph(f"{rem_colonia} - C.P. {rem_cp}", cell_normal)],
+                            [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{rem_cui}, {rem_estado}", cell_normal)],
+                            [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{rem_contacto} - {rem_tel}", cell_normal)],
+                        ]
+                        t_rem = Table(rem_data, colWidths=[90, 211])
+                        t_rem.setStyle(TableStyle([
+                            ("SPAN", (0,0), (1,0)),
+                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#c62828")), # Rojo institucional
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                
+                        dest_data = [
+                            [Paragraph("DESTINATARIO - ENTREGA", th_style), ""],
+                            [Paragraph("CLIENTE:", cell_bold), Paragraph(dest_cliente, cell_bold)],
+                            [Paragraph("CALLE Y NUMERO:", cell_bold), Paragraph(dest_calle, cell_normal)],
+                            [Paragraph("COLONIA / CP:", cell_bold), Paragraph(f"{dest_colonia} - C.P. {dest_cp}", cell_normal)],
+                            [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{dest_cui}, {dest_estado}", cell_normal)],
+                            [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{dest_contacto} - {dest_tel}", cell_normal)],
+                        ]
+                        t_dest = Table(dest_data, colWidths=[90, 211])
+                        t_dest.setStyle(TableStyle([
+                            ("SPAN", (0,0), (1,0)),
+                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#1565c0")), # Azul institucional
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                
+                        t_top = Table([[t_rem, t_dest]], colWidths=[301, 301])
+                        story.append(t_top)
+                        story.append(Spacer(1, 2))
+                
+                        # 4. SECCIÓN FACTURAR A
+                        fac_data = [
+                            [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
+                            [Paragraph(fac_cliente, cell_center), "", ""],
+                            [Paragraph("<b>DOMICILIO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center), ""],
+                            [Paragraph(f"Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México<br/>Tel.. 0152 (33) 35402939<br/>E-mail: rhernandez@jypesa.com", ParagraphStyle("FD", alignment=1, fontSize=6, fontName="Helvetica", leading=7.5)), "", ""],
+                            [Paragraph("<b>RFC:</b>", cell_bold), Paragraph(f"RFC {fac_rfc}", cell_center), ""]
+                        ]
+                        t_fac = Table(fac_data, colWidths=[75, 427, 100])
+                        t_fac.setStyle(TableStyle([
+                            ("SPAN", (0,0), (2,0)),
+                            ("SPAN", (0,1), (2,1)),
+                            ("SPAN", (1,2), (2,2)),
+                            ("SPAN", (0,3), (2,3)),
+                            ("SPAN", (1,4), (2,4)),
+                            ("BACKGROUND", (0,0), (2,0), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (0,1), (2,1), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (0,2), (0,2), colors.HexColor("#1565c0")),
+                            ("TEXTCOLOR", (0,2), (0,2), colors.white),
+                            ("BACKGROUND", (1,2), (2,2), colors.HexColor("#ffffff")),
+                            ("BACKGROUND", (0,3), (2,3), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (0,4), (0,4), colors.HexColor("#1565c0")),
+                            ("TEXTCOLOR", (0,4), (0,4), colors.white),
+                            ("BACKGROUND", (1,4), (2,4), colors.HexColor("#e3f2fd")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                        story.append(t_fac)
+                        story.append(Spacer(1, 2))
+                
+                        # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA
+                        emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
+                        emb_data = [
+                            [Paragraph("<b>INFORMACION DE EMBARQUE</b>", th_style), "", "", Paragraph("<b>DIMENSIONES (mts)</b>", th_style), "", Paragraph("<b>VOLUMEN</b>", th_style), Paragraph("<b>PESO POR BULTO</b>", th_style)],
+                            [Paragraph(h, th_style) for h in emb_headers]
+                        ]
+                        
+                        for l in st.session_state.lineas_embarque_one:
+                            ancho_val = l.get('ancho', 1.20)
+                            dim_str = f"{l['largo']} x {ancho_val} x {l['alto']}"
+                            emb_data.append([
+                                str(l["cantidad"]), 
+                                str(l["tipo"]), 
+                                str(l["descripcion"]), 
+                                str(dim_str), 
+                                "", 
+                                "0", 
+                                str(l["peso"])
+                            ])
+                        
+                        filas_actuales = len(st.session_state.lineas_embarque_one)
+                        for _ in range(max(0, 6 - filas_actuales)):
+                            emb_data.append(["", "", "", "", "", "0", ""])
+                            
+                        emb_data.append(["", "", "", "", "", "0", f"{total_peso_calc:,.1f}"])
+                        
+                        t_emb = Table(emb_data, colWidths=[45, 65, 182, 95, 65, 80, 70])
+                        t_emb.setStyle(TableStyle([
+                            ("SPAN", (0,0), (2,0)),
+                            ("SPAN", (3,0), (4,0)),
+                            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (0,1), (-1,1), colors.HexColor("#1565c0")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("ALIGN", (0,0), (-1,-1), "CENTER"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                        story.append(t_emb)
+                        story.append(Spacer(1, 2))
+                
+                        # 6. BLOQUE MEDIO (Combinando rojo y azul corporativo)
+                        th_red = ParagraphStyle("THR", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
+                        th_blue = ParagraphStyle("THB", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
+                
+                        mid_table_data = [
+                            [
+                                Paragraph("<b>MERCANCIA ASEGURADA</b>", th_red), 
+                                Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_red), 
+                                Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_red)
+                            ],
+                            [
+                                Table([
+                                    [Paragraph("SI", cell_center), "", Paragraph("VALOR DECLARADO", cell_bold)],
+                                    [Paragraph("NO", cell_center), Paragraph("X", cell_center), Paragraph("POR CUENTA Y RIESGO", cell_bold)]
+                                ], colWidths=[30, 30, 85], style=[
+                                    ("BACKGROUND", (2,0), (2,-1), colors.HexColor("#e3f2fd")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                Table([
+                                    [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("N<br/>O", cell_center)],
+                                    ["", "", ""]
+                                ], colWidths=[30, 30, 25], style=[
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                ""
+                            ],
+                            [
+                                Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_blue), 
+                                Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_blue), 
+                                Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_red)
+                            ],
+                            [
+                                Table([
+                                    [Paragraph("pagado (origen)", cell_center), Paragraph("por cobrar (destino)", cell_center), Paragraph("Credito", cell_center)],
+                                    ["", "", Paragraph("X", cell_center)]
+                                ], colWidths=[48, 52, 45], style=[
+                                    ("BACKGROUND", (2,1), (2,1), colors.HexColor("#ffebee")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                Table([
+                                    [Paragraph("Recolección", cell_center), Paragraph("Recepción", cell_center), Paragraph("Entrega Domicilio", cell_center)],
+                                    [Paragraph("X", cell_center), "", Paragraph("X", cell_center)]
+                                ], colWidths=[48, 45, 62], style=[
+                                    ("BACKGROUND", (0,1), (0,1), colors.HexColor("#e3f2fd")),
+                                    ("BACKGROUND", (2,1), (2,1), colors.HexColor("#e3f2fd")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                Table([
+                                    [Paragraph("factura", cell_center), Paragraph("orden de compra", cell_center), Paragraph("pedimento", cell_center), Paragraph("otro", cell_center)]
+                                ], colWidths=[70, 70, 70, 62], style=[
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 4),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                                ])
+                            ]
+                        ]
+                
+                        t_mid = Table(mid_table_data, colWidths=[145, 155, 302])
+                        t_mid.setStyle(TableStyle([
+                            ("SPAN", (2,1), (2,1)),
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (2,0), (2,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (2,1), (2,1), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (0,2), (0,2), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (1,2), (1,2), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (2,2), (2,2), colors.HexColor("#c62828")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "TOP"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                        ]))
+                        story.append(t_mid)
+                        story.append(Spacer(1, 2))
+                
+                        # 7. BLOQUE FINAL
+                        t_final_block = Table([
+                            [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_blue), Paragraph("<b>OBSERVACIONES</b>", th_red)],
+                            [
+                                Table([
+                                    [Paragraph("<b>NOMBRE:</b>", cell_bold), Paragraph("RIGOBERTO HERNANDEZ", cell_center)],
+                                    [Paragraph("<b>EMPRESA:</b>", cell_bold), Paragraph("JYPESA", cell_center)],
+                                    [Paragraph("<b>E-MAIL:</b>", cell_bold), Paragraph("rhernandez@jypesa.com", cell_center)],
+                                    [Paragraph("<b>TELEFONO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center)]
+                                ], colWidths=[70, 230], style=[
+                                    ("BACKGROUND", (1,0), (1,-1), colors.HexColor("#e3f2fd")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                                ]),
+                                Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELÉFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)
+                            ]
+                        ], colWidths=[300, 302])
+                        t_final_block.setStyle(TableStyle([
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (1,1), (1,1), colors.HexColor("#ffebee")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "TOP"),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+                        ]))
+                        story.append(t_final_block)
+                
+                        doc.build(story)
+                        buffer.seek(0)
+                        return buffer
+                
+                    st.markdown("---")
+                    if st.button("🚀 Generar Manifiesto de Embarque (ONE Paquetería)", use_container_width=True, key="one_btn_generar_pdf"):
+                        pdf_buf = generar_pdf_one_paqueteria()
+                        st.success("¡Manifiesto de ONE Paquetería generado con el nuevo encabezado y paleta azul/roja!")
+                        st.download_button(
+                            label="📥 Descargar Manifiesto ONE Paquetería",
+                            data=pdf_buf,
+                            file_name=f"ONE_Manifiesto_{num_factura}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True,
+                            key="one_btn_descargar_pdf"
+                        )
+                else:
+                    st.warning("No se encontraron datos en el CSV de GitHub.")
+
             
             # --- SUBSECCIÓN D: CARTA RECLAMO ------
             elif st.session_state.menu_sub == "CARTA RECLAMO":
