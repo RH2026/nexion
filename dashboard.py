@@ -10932,24 +10932,30 @@ else:
                     return output.getvalue()
                 
                 # --- ESTILOS CSS GLOBALES (FONDO OSCURO Y HOVER VERDE TURQUESA) ---
+                # --- ESTILOS CSS CORPORATIVOS (NEXION) ---
                 st.markdown("""
                     <style>
-                    /* Fondo oscuro por defecto para TODOS los botones */
+                    /* Estilo corporativo para los botones */
                     div.stButton > button, div.stDownloadButton > button {
-                        background-color: #212b36 !important;
-                        color: #ffffff !important;
-                        border: 1px solid #324354 !important;
-                        border-radius: 6px !important;
-                        font-weight: 600 !important;
+                        background-color: #2B343B !important; 
+                        color: #FFFFFF !important;            
+                        border: 1px solid #2B343B !important; 
+                        border-radius: 5px !important;
                         transition: all 0.3s ease !important;
+                        width: 100% !important;
+                        font-weight: 600 !important;
                     }
                     
-                    /* Efecto Hover: Cambia a verde turquesa brillante con sombra */
                     div.stButton > button:hover, div.stDownloadButton > button:hover {
-                        background-color: #00b4db !important;
-                        border-color: #00b4db !important;
-                        color: #ffffff !important;
-                        box-shadow: 0 4px 14px rgba(0, 180, 219, 0.4) !important;
+                        background-color: #00A3A3 !important; 
+                        color: #FFFFFF !important;            
+                        border-color: #00A3A3 !important;
+                    }
+                    
+                    div.stButton > button:active, div.stDownloadButton > button:active {
+                        background-color: #00A3A3 !important;
+                        border-color: #00A3A3 !important;
+                        color: #FFFFFF !important;
                     }
                     </style>
                 """, unsafe_allow_html=True)
