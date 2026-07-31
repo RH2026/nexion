@@ -5018,6 +5018,10 @@ else:
                 CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
                 MATRIZ_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/Matriz_Excel_Dashboard.csv"
                 
+                # Validamos si el usuario actual es administrador (Rigoberto u otro rol admin según tu lógica)
+                usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
+                es_administrador = es_admin or (usuario_actual in ["Rigoberto", "Rigoberto Hernández"])
+                
                 # Actualizamos las columnas con los nombres correctos que me pediste amor
                 COLUMNAS_INCIDENCIAS = [
                     "FOLIO", "USUARIO", "PRIORIDAD", "VINCULO_BUSQUEDA", 
@@ -5129,149 +5133,130 @@ else:
                     </style>
                 """, unsafe_allow_html=True)
                 
-                
-                
-                # ── 1. PANEL DE CAPTURA INTELIGENTE ──────────────────────────────────────────────────
-                # ── 1. PANEL DE CAPTURA INTELIGENTE ──────────────────────────────────────────────────
-                with st.expander("➕ Registrar o Editar Incidencia / Queja", expanded=False):
-                    
-                    # --- FILA SUPERIOR: BÚSQUEDA Y CONTROL ---
-                    c1, c2, c3 = st.columns([2, 1, 1])
-                    
-                    with c1:
-                        n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Escribe pedido para autollenar...").strip().upper()
-                    
-                    # Lógica de Folios
-                    if not st.session_state.df_incidencias.empty and "FOLIO" in st.session_state.df_incidencias.columns:
-                        folios_numeros = st.session_state.df_incidencias['FOLIO'].str.extract(r'INC-(\d+)')[0].dropna().astype(int)
-                        if not folios_numeros.empty:
-                            ultimo_folio = folios_numeros.max()
-                            sugerencia_folio = f"INC-{ultimo_folio + 1:03d}"
+                # ── 1. PANEL DE CAPTURA INTELIGENTE (EXCLUSIVO PARA ADMIN) ───────────────────────────
+                if es_administrador:
+                    with st.expander("➕ Registrar o Editar Incidencia / Queja", expanded=False):
+                        
+                        c1, c2, c3 = st.columns([2, 1, 1])
+                        
+                        with c1:
+                            n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Escribe pedido para autollenar...").strip().upper()
+                        
+                        # Lógica de Folios
+                        if not st.session_state.df_incidencias.empty and "FOLIO" in st.session_state.df_incidencias.columns:
+                            folios_numeros = st.session_state.df_incidencias['FOLIO'].str.extract(r'INC-(\d+)')[0].dropna().astype(int)
+                            if not folios_numeros.empty:
+                                ultimo_folio = folios_numeros.max()
+                                sugerencia_folio = f"INC-{ultimo_folio + 1:03d}"
+                            else:
+                                sugerencia_folio = "INC-001"
                         else:
                             sugerencia_folio = "INC-001"
-                    else:
-                        sugerencia_folio = "INC-001"
-                        
-                    with c2:
-                        t_folio_input = st.text_input("Folio ID (Buscar o Nuevo)", value=sugerencia_folio).strip().upper()
-                        
-                    incidencia_existente = None
-                    mask = None
-                    if t_folio_input and not st.session_state.df_incidencias.empty:
-                        mask = st.session_state.df_incidencias['FOLIO'] == t_folio_input
-                        if mask.any():
-                            incidencia_existente = st.session_state.df_incidencias[mask].iloc[0]
-                            st.info(f"Modo Edición Activado: Cargando datos del Folio {t_folio_input}")
                             
-                    with c3:
-                        prioridades = ["Media", "Urgente", "Alta", "Baja"]
-                        idx_prio = prioridades.index(incidencia_existente['PRIORIDAD']) if incidencia_existente is not None and incidencia_existente['PRIORIDAD'] in prioridades else 0
-                        t_prior = st.selectbox("Gravedad / Prioridad", prioridades, index=idx_prio)
-                
-                    # Auto-relleno desde la Matriz Global
-                    info_matriz = {"cliente_destino": "", "pedido_guia": ""}
-                    if n_pedido and df_global is not None:
-                        res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
-                        if not res.empty:
-                            fila_m = res.iloc[0]
-                            guia = fila_m.get('NÚMERO DE GUÍA', 'N/A')
-                            cliente = fila_m.get('NOMBRE DEL CLIENTE', 'N/A')
-                            destino = fila_m.get('DESTINO', 'N/A')
-                            info_matriz["cliente_destino"] = f"CLIENTE: {cliente} | DESTINO: {destino}"
-                            info_matriz["pedido_guia"] = f"PEDIDO: {n_pedido} | GUIA: {guia}"
-                        else:
-                            st.warning("⚠️ Pedido no localizado en la Matriz. Puedes llenar o modificar los campos abajo a mano.")
-                
-                    # --- FORMULARIO DE CAPTURA ---
-                    with st.form("form_incidencias", clear_on_submit=False): # Cambiado a False para no perder datos en recargas
-                        f2_c1, f2_c2 = st.columns([1, 1])
-                        
-                        with f2_c1:
-                            val_cd = info_matriz["cliente_destino"] if info_matriz["cliente_destino"] else (incidencia_existente['CLIENTE_DESTINO'] if incidencia_existente is not None else "")
-                            t_cliente_destino = st.text_input("CLIENTE / DESTINO", value=val_cd)
+                        with c2:
+                            t_folio_input = st.text_input("Folio ID (Buscar o Nuevo)", value=sugerencia_folio).strip().upper()
                             
-                            val_pg = info_matriz["pedido_guia"] if info_matriz["pedido_guia"] else (incidencia_existente['PEDIDO_GUIA'] if incidencia_existente is not None else "")
-                            t_pedido_guia = st.text_input("PEDIDO / GUÍA", value=val_pg)
-                            
-                            val_resp = incidencia_existente['RESPONSABLE'] if incidencia_existente is not None else ""
-                            t_responsable = st.text_input("RESPONSABLE", value=val_resp)
-                            
-                        with f2_c2:
-                            # Aquí está la magia: Sugiere el folio actual, pero permite sobreescribir
-                            val_id_seg_default = incidencia_existente['ID_SEGUIMIENTO'] if incidencia_existente is not None else t_folio_input
-                            val_id_seg = val_id_seg_default if val_id_seg_default else ""
-                            t_id_seguimiento = st.text_input("ID SEGUIMIENTO (Sugerido por defecto)", value=val_id_seg)
-                            
-                            val_id_queja_default = incidencia_existente['ID_QUEJA'] if incidencia_existente is not None else t_folio_input
-                            val_id_queja = val_id_queja_default if val_id_queja_default else ""
-                            t_id_queja = st.text_input("ID DE QUEJA (Sugerido por defecto)", value=val_id_queja)
-                            
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        
-                        # --- NUEVOS IMPUTS DE TEXTO LARGO (Con guía) ---
-                        # --- NUEVOS INPUTS DE TEXTO LARGO (Mejorados para el navegador) ---
-                        val_det = incidencia_existente['DETALLE_INCIDENCIA'] if incidencia_existente is not None else ""
-                        t_detalle = st.text_area(
-                            "DETALLE DE INCIDENCIA", 
-                            value=val_det, 
-                            key="area_detalle",
-                            help="Describe el problema de forma clara."
-                        )
-                        
-                        val_acc = incidencia_existente['ACCIONES'] if incidencia_existente is not None else ""
-                        t_acciones = st.text_area(
-                            "ACCIONES", 
-                            value=val_acc, 
-                            key="area_acciones",
-                            help="Indica las acciones tomadas para resolver la incidencia."
-                        )
-                        
-                        # Estatus abarcando el ancho completo abajo de los inputs
-                        estatus_opciones = ["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]
-                        idx_estatus = estatus_opciones.index(incidencia_existente['ESTATUS']) if incidencia_existente is not None and incidencia_existente['ESTATUS'] in estatus_opciones else 0
-                        t_estatus = st.selectbox("Estatus de la Incidencia", estatus_opciones, index=idx_estatus)
-                
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        texto_boton = "🔄 ACTUALIZAR INCIDENCIA" if incidencia_existente is not None else "💾 REGISTRAR QUEJA / INCIDENCIA"
-                        enviar = st.form_submit_button(texto_boton, use_container_width=True)
-                        
-                        if enviar:
-                            folio_final = t_folio_input if t_folio_input else sugerencia_folio
-                            
-                            # --- BLINDAJE ---
-                            valor_busqueda = n_pedido if n_pedido else (incidencia_existente.get('VINCULO_BUSQUEDA', '') if incidencia_existente is not None else "")
-                            busqueda_final = str(valor_busqueda).upper() if valor_busqueda is not None else ""
-                            
-                            nueva_data = {
-                                "FOLIO": folio_final,
-                                "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO HERNÁNDEZ'),
-                                "PRIORIDAD": t_prior,
-                                "VINCULO_BUSQUEDA": busqueda_final, 
-                                "CLIENTE_DESTINO": str(t_cliente_destino).upper(),
-                                "PEDIDO_GUIA": str(t_pedido_guia).upper(),
-                                "ID_SEGUIMIENTO": str(t_id_seguimiento).upper(),
-                                "ID_QUEJA": str(t_id_queja).upper(),
-                                "RESPONSABLE": str(t_responsable).upper(),
-                                "DETALLE_INCIDENCIA": t_detalle,
-                                "ACCIONES": t_acciones,
-                                "ESTATUS": t_estatus
-                            }
-                            
-                            if incidencia_existente is not None and mask is not None:
-                                df_temp = st.session_state.df_incidencias[~mask]
-                                df_final = pd.concat([df_temp, pd.DataFrame([nueva_data])], ignore_index=True)
-                            else:
-                                df_final = pd.concat([st.session_state.df_incidencias, pd.DataFrame([nueva_data])], ignore_index=True)
+                        incidencia_existente = None
+                        mask = None
+                        if t_folio_input and not st.session_state.df_incidencias.empty:
+                            mask = st.session_state.df_incidencias['FOLIO'] == t_folio_input
+                            if mask.any():
+                                incidencia_existente = st.session_state.df_incidencias[mask].iloc[0]
+                                st.info(f"Modo Edición Activado: Cargando datos del Folio {t_folio_input}")
                                 
-                            if guardar_en_github(df_final):
-                                st.session_state.df_incidencias = df_final
-                                st.success("✅ ¡Registro procesado correctamente, amor!")
-                                time.sleep(1)
-                                st.rerun()
+                        with c3:
+                            prioridades = ["Media", "Urgente", "Alta", "Baja"]
+                            idx_prio = prioridades.index(incidencia_existente['PRIORIDAD']) if incidencia_existente is not None and incidencia_existente['PRIORIDAD'] in prioridades else 0
+                            t_prior = st.selectbox("Gravedad / Prioridad", prioridades, index=idx_prio)
                 
-                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (GRID PROFESIONAL - HTML EN UNA LÍNEA) ───────────
+                        # Auto-relleno desde la Matriz Global
+                        info_matriz = {"cliente_destino": "", "pedido_guia": ""}
+                        if n_pedido and df_global is not None:
+                            res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
+                            if not res.empty:
+                                fila_m = res.iloc[0]
+                                guia = fila_m.get('NÚMERO DE GUÍA', 'N/A')
+                                cliente = fila_m.get('NOMBRE DEL CLIENTE', 'N/A')
+                                destino = fila_m.get('DESTINO', 'N/A')
+                                info_matriz["cliente_destino"] = f"CLIENTE: {cliente} | DESTINO: {destino}"
+                                info_matriz["pedido_guia"] = f"PEDIDO: {n_pedido} | GUIA: {guia}"
+                            else:
+                                st.warning("⚠️ Pedido no localizado en la Matriz. Puedes llenar o modificar los campos abajo a mano.")
+                
+                        with st.form("form_incidencias", clear_on_submit=False):
+                            f2_c1, f2_c2 = st.columns([1, 1])
+                            
+                            with f2_c1:
+                                val_cd = info_matriz["cliente_destino"] if info_matriz["cliente_destino"] else (incidencia_existente['CLIENTE_DESTINO'] if incidencia_existente is not None else "")
+                                t_cliente_destino = st.text_input("CLIENTE / DESTINO", value=val_cd)
+                                
+                                val_pg = info_matriz["pedido_guia"] if info_matriz["pedido_guia"] else (incidencia_existente['PEDIDO_GUIA'] if incidencia_existente is not None else "")
+                                t_pedido_guia = st.text_input("PEDIDO / GUÍA", value=val_pg)
+                                
+                                val_resp = incidencia_existente['RESPONSABLE'] if incidencia_existente is not None else ""
+                                t_responsable = st.text_input("RESPONSABLE", value=val_resp)
+                                
+                            with f2_c2:
+                                val_id_seg_default = incidencia_existente['ID_SEGUIMIENTO'] if incidencia_existente is not None else t_folio_input
+                                val_id_seg = val_id_seg_default if val_id_seg_default else ""
+                                t_id_seguimiento = st.text_input("ID SEGUIMIENTO (Sugerido por defecto)", value=val_id_seg)
+                                
+                                val_id_queja_default = incidencia_existente['ID_QUEJA'] if incidencia_existente is not None else t_folio_input
+                                val_id_queja = val_id_queja_default if val_id_queja_default else ""
+                                t_id_queja = st.text_input("ID DE QUEJA (Sugerido por defecto)", value=val_id_queja)
+                                
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            
+                            val_det = incidencia_existente['DETALLE_INCIDENCIA'] if incidencia_existente is not None else ""
+                            t_detalle = st.text_area("DETALLE DE INCIDENCIA", value=val_det, key="area_detalle", help="Describe el problema de forma clara.")
+                            
+                            val_acc = incidencia_existente['ACCIONES'] if incidencia_existente is not None else ""
+                            t_acciones = st.text_area("ACCIONES", value=val_acc, key="area_acciones", help="Indica las acciones tomadas para resolver la incidencia.")
+                            
+                            estatus_opciones = ["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]
+                            idx_estatus = estatus_opciones.index(incidencia_existente['ESTATUS']) if incidencia_existente is not None and incidencia_existente['ESTATUS'] in estatus_opciones else 0
+                            t_estatus = st.selectbox("Estatus de la Incidencia", estatus_opciones, index=idx_estatus)
+                
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            texto_boton = "🔄 ACTUALIZAR INCIDENCIA" if incidencia_existente is not None else "💾 REGISTRAR QUEJA / INCIDENCIA"
+                            enviar = st.form_submit_button(texto_boton, use_container_width=True)
+                            
+                            if enviar:
+                                folio_final = t_folio_input if t_folio_input else sugerencia_folio
+                                
+                                valor_busqueda = n_pedido if n_pedido else (incidencia_existente.get('VINCULO_BUSQUEDA', '') if incidencia_existente is not None else "")
+                                busqueda_final = str(valor_busqueda).upper() if valor_busqueda is not None else ""
+                                
+                                nueva_data = {
+                                    "FOLIO": folio_final,
+                                    "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO HERNÁNDEZ'),
+                                    "PRIORIDAD": t_prior,
+                                    "VINCULO_BUSQUEDA": busqueda_final, 
+                                    "CLIENTE_DESTINO": str(t_cliente_destino).upper(),
+                                    "PEDIDO_GUIA": str(t_pedido_guia).upper(),
+                                    "ID_SEGUIMIENTO": str(t_id_seguimiento).upper(),
+                                    "ID_QUEJA": str(t_id_queja).upper(),
+                                    "RESPONSABLE": str(t_responsable).upper(),
+                                    "DETALLE_INCIDENCIA": t_detalle,
+                                    "ACCIONES": t_acciones,
+                                    "ESTATUS": t_estatus
+                                }
+                                
+                                if incidencia_existente is not None and mask is not None:
+                                    df_temp = st.session_state.df_incidencias[~mask]
+                                    df_final = pd.concat([df_temp, pd.DataFrame([nueva_data])], ignore_index=True)
+                                else:
+                                    df_final = pd.concat([st.session_state.df_incidencias, pd.DataFrame([nueva_data])], ignore_index=True)
+                                    
+                                if guardar_en_github(df_final):
+                                    st.session_state.df_incidencias = df_final
+                                    st.success("✅ ¡Registro procesado correctamente, amor!")
+                                    time.sleep(1)
+                                    st.rerun()
+                
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (GRID PROFESIONAL - VISIBLE PARA TODOS LOS AUTORIZADOS) ──
                 st.markdown("""
-                <style>
+                    <style>
                     .card-hover {
                         border: 1px solid #3d474d;
                         border-left: 5px solid;
@@ -5284,9 +5269,8 @@ else:
                         border-left: 5px solid #38bdf8 !important;
                         cursor: pointer;
                     }
-                </style>
+                    </style>
                 """, unsafe_allow_html=True)
-                
                 
                 prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
                 estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
@@ -5301,53 +5285,50 @@ else:
                         f_est = row.get('ESTATUS', 'PENDIENTE')
                         color_e = estatus_colores.get(f_est, "#64748b")
                         
-                        # HTML en UNA SOLA LÍNEA para evitar errores de renderizado
                         st.markdown(f"""<div class="card-hover" style="border-left-color: {color_p}; padding: 12px; margin-bottom: 10px; background: #262e33; border-radius: 5px;"><div style="display: grid; grid-template-columns: 0.8fr 1.5fr 1.2fr 2fr 1fr; gap: 10px; align-items: center;"><div><div style="font-size: 0.65em; color: #888;">FOLIO/EST</div><div style="color: {color_p}; font-weight: bold; font-size: 1em;">{row.get('FOLIO', 'INC-???')}</div><span style="background: {color_e}33; color: {color_e}; padding: 1px 4px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span></div><div><div style="font-size: 0.65em; color: #888;">CLIENTE/PEDIDO</div><div style="color: #fff; font-size: 0.9em; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div><div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">ID SEGUIMIENTO / QUEJA</div><div style="font-size: 0.85em; color: #eee;"> {row.get('ID_SEGUIMIENTO', 'N/A')}</div><div style="font-size: 0.85em; color: #eee;"> {row.get('ID_QUEJA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">DETALLE / ACCIONES</div><div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div><div style="font-size: 0.8em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div></div><div style="text-align: right;"><div style="font-size: 0.65em; color: #888;">RESPONSABLE/REG</div><div style="color: #fff; font-size: 0.85em;">👤 {row.get('RESPONSABLE', 'N/A')}</div><div style="font-size: 0.7em; color: #38bdf8;">📝 {row.get('USUARIO', 'N/A')}</div></div></div></div>""", unsafe_allow_html=True)  
                 
-                # ── 3. EDITOR DE AVANZADO ───────────────────────────────────────────────────────────
-                with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
-                    st.subheader("Modo edición avanzada")
-                    df_editor = df_master.copy()
-                    
-                    # Aseguramos columnas
-                    for col in COLUMNAS_INCIDENCIAS:
-                        if col not in df_editor.columns: df_editor[col] = ""
-                        df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+                # ── 3. EDITOR DE AVANZADO (EXCLUSIVO PARA ADMIN) ────────────────────────────────────
+                if es_administrador:
+                    with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
+                        st.subheader("Modo edición avanzada")
+                        df_editor = df_master.copy()
                         
-                    df_editado = st.data_editor(df_editor, hide_index=True, use_container_width=True, num_rows="dynamic")
-                    
-                    # --- CONSTRUCCIÓN SEGURA DE HTML ---
-                    cabeceras = "".join([f"<th>{c}</th>" for c in COLUMNAS_INCIDENCIAS if c != 'VINCULO_BUSQUEDA'])
-                    cuerpo = ""
-                    for _, fila in df_editado.iterrows():
-                        cuerpo += "<tr>" + "".join([f"<td>{str(fila.get(c, ''))}</td>" for c in COLUMNAS_INCIDENCIAS if c != 'VINCULO_BUSQUEDA']) + "</tr>"
+                        for col in COLUMNAS_INCIDENCIAS:
+                            if col not in df_editor.columns: df_editor[col] = ""
+                            df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+                            
+                        df_editado = st.data_editor(df_editor, hide_index=True, use_container_width=True, num_rows="dynamic")
+                        
+                        cabeceras = "".join([f"<th>{c}</th>" for c in COLUMNAS_INCIDENCIAS if c != 'VINCULO_BUSQUEDA'])
+                        cuerpo = ""
+                        for _, fila in df_editado.iterrows():
+                            cuerpo += "<tr>" + "".join([f"<td>{str(fila.get(c, ''))}</td>" for c in COLUMNAS_INCIDENCIAS if c != 'VINCULO_BUSQUEDA']) + "</tr>"
                 
-                    html_print = f"""
-                    <div id="printableArea" style="font-family: sans-serif;">
-                        <h2>JYPESA - Logística NEXION</h2>
-                        <table border="1" style="width:100%; border-collapse: collapse;">
-                            <thead><tr>{cabeceras}</tr></thead>
-                            <tbody>{cuerpo}</tbody>
-                        </table>
-                    </div>
-                    """
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        if st.button("🔄 SINCRONIZAR", use_container_width=True):
-                            if guardar_en_github(df_editado):
-                                st.session_state.df_incidencias = df_editado
-                                st.rerun()
-                    with col2:
-                        import streamlit.components.v1 as components
-                        if st.button("🖨️ IMPRIMIR", use_container_width=True):
-                            components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
-                    with col3:
-                        buffer = io.BytesIO()
-                        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                            df_editado.to_excel(writer, index=False, sheet_name='Incidencias')
-                        st.download_button("📊 BAJAR EXCEL", data=buffer.getvalue(), file_name="incidencias_nexion.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-    
+                        html_print = f"""
+                        <div id="printableArea" style="font-family: sans-serif;">
+                            <h2>JYPESA - Logística NEXION</h2>
+                            <table border="1" style="width:100%; border-collapse: collapse;">
+                                <thead><tr>{cabeceras}</tr></thead>
+                                <tbody>{cuerpo}</tbody>
+                            </table>
+                        </div>
+                        """
+                        
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            if st.button("🔄 SINCRONIZAR", use_container_width=True):
+                                if guardar_en_github(df_editado):
+                                    st.session_state.df_incidencias = df_editado
+                                    st.rerun()
+                        with col2:
+                            import streamlit.components.v1 as components
+                            if st.button("🖨️ IMPRIMIR", use_container_width=True):
+                                components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
+                        with col3:
+                            buffer = io.BytesIO()
+                            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                                df_editado.to_excel(writer, index=False, sheet_name='Incidencias')
+                            st.download_button(":MATERIAL/DOWNLOAD: BAJAR EXCEL", data=buffer.getvalue(), file_name="incidencias_nexion.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
         # 3. REPORTES
         elif st.session_state.menu_main == "REPORTES":
             
