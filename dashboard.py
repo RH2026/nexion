@@ -5218,7 +5218,7 @@ else:
                             t_estatus = st.selectbox("Estatus de la Incidencia", estatus_opciones, index=idx_estatus)
                 
                             st.markdown("<br>", unsafe_allow_html=True)
-                            texto_boton = "🔄 ACTUALIZAR INCIDENCIA" if incidencia_existente is not None else "💾 REGISTRAR QUEJA / INCIDENCIA"
+                            texto_boton = ":material/sync: ACTUALIZAR INCIDENCIA" if incidencia_existente is not None else ":material/save: REGISTRAR QUEJA / INCIDENCIA"
                             enviar = st.form_submit_button(texto_boton, use_container_width=True)
                             
                             if enviar:
@@ -5316,19 +5316,19 @@ else:
                         
                         col1, col2, col3 = st.columns(3)
                         with col1:
-                            if st.button("🔄 SINCRONIZAR", use_container_width=True):
+                            if st.button(":material/sync: SINCRONIZAR", use_container_width=True):
                                 if guardar_en_github(df_editado):
                                     st.session_state.df_incidencias = df_editado
                                     st.rerun()
                         with col2:
                             import streamlit.components.v1 as components
-                            if st.button("🖨️ IMPRIMIR", use_container_width=True):
+                            if st.button(":material/print: FECHA" IMPRIMIR", use_container_width=True):
                                 components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
                         with col3:
                             buffer = io.BytesIO()
                             with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
                                 df_editado.to_excel(writer, index=False, sheet_name='Incidencias')
-                            st.download_button(":MATERIAL/DOWNLOAD: BAJAR EXCEL", data=buffer.getvalue(), file_name="incidencias_nexion.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+                            st.download_button("BAJAR EXCEL", data=buffer.getvalue(), file_name="incidencias_nexion.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
         # 3. REPORTES
         elif st.session_state.menu_main == "REPORTES":
             
