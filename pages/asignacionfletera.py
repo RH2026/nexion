@@ -141,8 +141,11 @@ if not st.session_state.get("autenticado", False):
   col_btn1, col_btn2, col_btn3 = st.columns([2, 1.5, 2])
   with col_btn2:
     if st.button("INICIAR SESIÓN", use_container_width=True, type="primary"):
-      st.switch_page("log.py")
-  st.stop()
+      for key in list(st.session_state.keys()):
+        del st.session_state[key]
+      st.session_state.autenticado = False
+      st.rerent = True  # O simplemente recargar con rerun
+      st.rerun()
 
 
 # ==========================================
