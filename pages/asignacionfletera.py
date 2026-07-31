@@ -550,9 +550,11 @@ def main():
   )
 
   uploaded_file = st.file_uploader(
-      "Subir archivo ERP", type=["xlsx", "csv"], label_visibility="collapsed"
+      "Subir archivo ERP",
+      type=["xlsx", "csv"],
+      label_visibility="collapsed",
+      key="erp_file_uploader",  # <--- Esto evita el conflicto de ID duplicado
   )
-
   if uploaded_file is not None:
     try:
       df = (
