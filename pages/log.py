@@ -45,12 +45,47 @@ vars_css = {
 st.markdown(
     f"""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+/* --- OCULTAR ELEMENTOS DE STREAMLIT Y GITHUB --- */
+header, footer, [data-testid="stHeader"] {{
+    visibility: hidden !important;
+    display: none !important;
+    height: 0px !important;
+}}
+
+/* Ocultar el botón de la barra lateral (Sidebar toggle) */
+[data-testid="collapsedControl"] {{
+    display: none !important;
+}}
+
+/* Ocultar la barra lateral por completo */
+[data-testid="stSidebar"] {{
+    display: none !important;
+}}
+
+/* Ocultar elementos flotantes de GitHub / Deploy de Streamlit */
+[data-testid="stToolbar"], 
+.viewerBadge_container__1QSob, 
+#MainMenu {{
+    visibility: hidden !important;
+    display: none !important;
+}}
+
+/* APP BASE */
 html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
     color: {vars_css['text']} !important;
     font-family: 'Inter', sans-serif !important;
 }}
-header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
+
+.block-container {{
+    padding-top: 0.8rem !important;
+    padding-bottom: 5rem !important;
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* BOTONES SLIM */
 div.stButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -62,6 +97,7 @@ div.stButton > button {{
     height: 34px !important;
     width: 100% !important;
 }}
+
 div.stButton > button:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
