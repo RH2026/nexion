@@ -145,4 +145,4 @@ elif not st.session_state.get("autenticado", False):
 
 else:
   # Una vez autenticado, redirigimos limpiamente a tu primera página de la carpeta pages/
-  st.switch_page("pages/asignar_fletera.py")
+  st.switch_page("pages/asignacionfletera.py")
