@@ -14,7 +14,7 @@ import streamlit as st
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
-    page_title="Nexion - Asignar Fletera",
+    page_title="JYPESA | Logistics",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -94,20 +94,7 @@ header, footer, [data-testid="stHeader"] {{
     height: 0px !important;
 }}
 
-/* Ocultar el botón de la barra lateral (Sidebar toggle) */
-[data-testid="collapsedControl"] {{
-    display: none !important;
-}}
-
-/* Ocultar la barra lateral por completo */
-[data-testid="stSidebar"] {{
-    display: none !important;
-}}
-
-/* Ocultar elementos flotantes de GitHub / Deploy de Streamlit */
-[data-testid="stToolbar"], 
-.viewerBadge_container__1QSob, 
-#MainMenu {{
+[data-testid="collapsedControl"], [data-testid="stSidebar"], [data-testid="stToolbar"], .viewerBadge_container__1QSob, #MainMenu {{
     visibility: hidden !important;
     display: none !important;
 }}
@@ -220,7 +207,7 @@ def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
   can.setFont("Helvetica-Bold", 11)
   can.drawString(x, y, f"{str(fletera).upper()}")
   datos_qr = f"FAC: {factura} | FECHA: {fecha}"
-  qr_buffer = generar_qr_imagen(datos_qr)
+  qr_buffer = generar_qr_imagen(texto_qr=datos_qr)
   can.drawImage(
       ImageReader(qr_buffer), x + 150, y - 35, width=45, height=45, mask="auto"
   )
@@ -239,58 +226,302 @@ def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
   return out_io.getvalue()
 
 
+# Inicialización segura de estados de menú si no existen
+if "menu_main" not in st.session_state:
+  st.session_state.menu_main = "CENTRO DE DATOS"
+if "menu_sub" not in st.session_state:
+  st.session_state.menu_sub = "ASIGNAR FLETERA"
+if "busqueda_activa" not in st.session_state:
+  st.session_state.busqueda_activa = False
+if "resultado_busqueda" not in st.session_state:
+  st.session_state.resultado_busqueda = None
+if "search_key_version" not in st.session_state:
+  st.session_state.search_key_version = 1
+
 # ==========================================
-# 5. HEADER Y MENÚ DE HAMBURGUESA TEMPORAL
+# 5. HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA)
 # ==========================================
 header_zone = st.container()
 with header_zone:
-  c1, c2, c4 = st.columns([1.5, 3.5, 0.9], vertical_alignment="center")
+  c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
 
   with c1:
     try:
-      st.image(vars_css["logo"], width=150)
+      st.image(vars_css["logo"], width=160)
     except Exception:
       st.write("**NEXION**")
 
   with c2:
+    texto_principal = st.session_state.menu_main
+    azul_nexion = "#82D4E6"
+    oro_brillante = "#FFD700"
+
+    if texto_principal == "DASHBOARD":
+      texto_principal = (
+          f"NEXION <span style='color: {azul_nexion}; font-weight: 500; margin:"
+          " 0 10px; font-size: 16px;'>|</span> SMART LOGISTICS"
+      )
+
+    if st.session_state.menu_sub != "GENERAL":
+      ruta = (
+          f"{texto_principal} "
+          f"<span style='color: {azul_nexion}; opacity: 0.8; margin: 0"
+          " 15px;'>/</span> "
+          f"<span style='color: {oro_brillante}; font-weight: 500;"
+          " text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>"
+          f"{st.session_state.menu_sub}</span>"
+      )
+    else:
+      ruta = texto_principal
+
     st.markdown(
         f"""
         <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
             <p style='font-size: 13px; letter-spacing: 5px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
-                CENTRO DE DATOS <span style='color: #82D4E6; margin: 0 10px;'>/</span> <span style='color: #FFD700;'>ASIGNAR FLETERA</span>
+                {ruta}
             </p>
         </div>
     """,
         unsafe_allow_html=True,
     )
 
+  with c3:
+    es_atencion3g = (
+        st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
+    )
+    key_actual = f"main_search_v{st.session_state.search_key_version}"
+
+    query = st.text_input(
+        "Buscar",
+        (
+            "🔍 BUSCADOR DESACTIVADO"
+            if es_atencion3g
+            else "🔍 Buscar guía/pedido..."
+        ),
+        label_visibility="collapsed",
+        key=key_actual,
+        disabled=es_atencion3g,
+    )
+
+    if query:
+      url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+      try:
+        df_matriz_fresco = pd.read_csv(url_raw)
+      except Exception:
+        df_matriz_fresco = None
+
+      res_ops = pd.DataFrame()
+      if df_matriz_fresco is not None:
+        cols_m = [c.upper() for c in df_matriz_fresco.columns]
+        if "NÚMERO DE GUÍA" in cols_m:
+          res_ops = df_matriz_fresco[
+              (
+                  df_matriz_fresco["NÚMERO DE GUÍA"]
+                  .astype(str)
+                  .str.contains(query, case=False, na=False)
+              )
+              | (
+                  df_matriz_fresco["NÚMERO DE PEDIDO"]
+                  .astype(str)
+                  .str.contains(query, case=False, na=False)
+              )
+              | (
+                  df_matriz_fresco["NO CLIENTE"]
+                  .astype(str)
+                  .str.contains(query, case=False, na=False)
+              )
+              | (
+                  df_matriz_fresco["NOMBRE DEL CLIENTE"]
+                  .astype(str)
+                  .str.contains(query, case=False, na=False)
+              )
+          ]
+
+      res_inv = pd.DataFrame()
+      try:
+        df_inv_temp = pd.read_csv("inventario.csv")
+        res_inv = df_inv_temp[
+            (
+                df_inv_temp["CODIGO"]
+                .astype(str)
+                .str.contains(query, case=False, na=False)
+            )
+            | (
+                df_inv_temp["DESCRIPCION"]
+                .astype(str)
+                .str.contains(query, case=False, na=False)
+            )
+        ]
+      except Exception:
+        pass
+
+      if not res_ops.empty:
+        st.session_state.busqueda_activa = True
+        st.session_state.tipo_resultado = "OPERACION"
+        st.session_state.resultado_busqueda = res_ops
+      elif not res_inv.empty:
+        st.session_state.busqueda_activa = True
+        st.session_state.tipo_resultado = "INVENTARIO"
+        st.session_state.resultado_busqueda = res_inv
+      else:
+        st.session_state.busqueda_activa = False
+        st.toast("No se encontró ningún registro", icon="🔍")
+
   with c4:
     with st.popover("☰ Menú", use_container_width=True):
-      usuario = st.session_state.get("usuario_activo", "OPERADOR")
+      usuario = st.session_state.get("usuario_activo", "GUEST")
+      es_admin = usuario.upper() == "RIGOBERTO"
+      es_ventas = usuario.upper() == "VENTAS"
+      es_atencion3g = usuario.upper() == "ATENCION3G"
+
       nombre_display = st.session_state.get(
-          "nombre_completo", usuario
-      ).upper()
+          "nombre_completo", "OPERADOR DESCONOCIDO"
+      )
+
       st.markdown(
           f"""
-            <div style='background-color: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid #00D4FF;'>
-                <p style='color:#00D4FF; font-size:8px; font-weight:500; margin:0;'>USUARIO ACTIVO</p>
-                <p style='color:{vars_css['text']}; font-size:12px; font-weight:500; margin:0;'>{nombre_display}</p>
+            <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
+                <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
+                <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
             </div>
         """,
           unsafe_allow_html=True,
       )
+
       st.markdown(
-          "<p style='color:#f0f0f0; font-size:9px; text-align:center; margin:8px"
-          " 0;'>MENÚ TEMPORAL</p>",
+          "<p style='color:#f0f0f0; font-size:10px; font-weight:400;"
+          " text-align:center; margin:10px 0; letter-spacing:1px;'>MENÚ"
+          " PRINCIPAL</p>",
           unsafe_allow_html=True,
       )
-      if st.button("ASIGNAR FLETERA", use_container_width=True):
-        st.rerun()
-      st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+
+      if not es_ventas and not es_atencion3g:
+        if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+          st.session_state.menu_main = "DASHBOARD"
+          st.session_state.menu_sub = "GENERAL"
+          st.session_state.busqueda_activa = False
+          st.rerun()
+
+      if not es_ventas:
+        with st.expander(
+            "SEGUIMIENTO",
+            expanded=(st.session_state.menu_main == "SEGUIMIENTO"),
+        ):
+          usuario_actual = str(
+              st.session_state.get(
+                  "usuario", st.session_state.get("usuario_activo", "")
+              )
+          ).strip()
+          if es_admin:
+            opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
+          elif usuario_actual == "Cynthia":
+            opciones_seg = ["ALERTAS", "QUEJAS"]
+          else:
+            opciones_seg = ["ALERTAS"]
+
+          for s in opciones_seg:
+            label = f"» {s}" if st.session_state.menu_sub == s else s
+            if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+              st.session_state.menu_main = "SEGUIMIENTO"
+              st.session_state.menu_sub = s
+              st.session_state.busqueda_activa = False
+              st.rerun()
+
+      if not es_atencion3g:
+        with st.expander(
+            "REPORTES", expanded=(st.session_state.menu_main == "REPORTES")
+        ):
+          usuario_actual = str(
+              st.session_state.get(
+                  "usuario", st.session_state.get("usuario_activo", "")
+              )
+          ).strip()
+          if es_admin or usuario_actual == "Carlos":
+            opciones_rep = [
+                "COSTOS CEDIS",
+                "ANALISIS MENSUAL",
+                "DETALLE COSTOS",
+                "ENVIOS ESPECIALES",
+                "ENVIO DE MUESTRAS",
+            ]
+          else:
+            opciones_rep = ["ENVIO DE MUESTRAS"]
+
+          for s in opciones_rep:
+            label = f"» {s}" if st.session_state.menu_sub == s else s
+            if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+              st.session_state.menu_main = "REPORTES"
+              st.session_state.menu_sub = s
+              st.session_state.busqueda_activa = False
+              st.rerun()
+
+      if not es_ventas and not es_atencion3g:
+        with st.expander(
+            "FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")
+        ):
+          opciones_for = [
+              "SALIDA DE PT",
+              "CHECK LIST AGC",
+              "QR AGC",
+              "PREGUIA PAQMEX",
+              "RECOLECCION 3G",
+              "RECOLECCION ONE",
+              "CARTA RECLAMO",
+              "COTIZACIONES",
+          ]
+          for s in opciones_for:
+            label = f"» {s}" if st.session_state.menu_sub == s else s
+            if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+              st.session_state.menu_main = "FORMATOS"
+              st.session_state.menu_sub = s
+              st.session_state.busqueda_activa = False
+              st.rerun()
+
+      if not es_ventas and not es_atencion3g:
+        with st.expander(
+            "CENTRO DE DATOS",
+            expanded=(st.session_state.menu_main == "CENTRO DE DATOS"),
+        ):
+          for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]:
+            label = f"» {s}" if st.session_state.menu_sub == s else s
+            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+              st.session_state.menu_main = "CENTRO DE DATOS"
+              st.session_state.menu_sub = s
+              st.session_state.busqueda_activa = False
+              st.rerun()
+
+      if st.session_state.get("usuario_activo") == "Rigoberto":
+        with st.expander(
+            "FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")
+        ):
+          opciones_fin = ["WALLET", "CAJA CHICA", "GASTOS"]
+          for s in opciones_fin:
+            label = f"» {s}" if st.session_state.menu_sub == s else s
+            if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
+              st.session_state.menu_main = "FINANZAS"
+              st.session_state.menu_sub = s
+              st.session_state.busqueda_activa = False
+              st.rerun()
+
+      usuario_actual = st.session_state.get("usuario_activo", "").upper()
+      if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
+        with st.expander(
+            "ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")
+        ):
+          for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
+            label = f"» {s}" if st.session_state.get("menu_sub") == s else s
+            if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
+              st.session_state.menu_main = "ENFOQUE"
+              st.session_state.menu_sub = s
+              st.rerun()
+
+      st.markdown(
+          "<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True
+      )
       if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
         for key in list(st.session_state.keys()):
           del st.session_state[key]
-        st.switch_page("log.py")
+        st.rerun()
 
 st.markdown("---")
 
