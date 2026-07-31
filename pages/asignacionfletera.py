@@ -87,27 +87,61 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
-html, body, .stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
-.block-container {{ padding-top: 0.8rem !important; padding-bottom: 5rem !important; background-color: {vars_css['bg']} !important; }}
-
-h3, .op-query-text {{ font-size: 11px !important; letter-spacing: 8px !important; text-align: center !important; margin-top: 8px !important; margin-bottom: 18px !important; color: {vars_css['sub']} !important; }}
-
-div.stButton > button {{ 
-    background-color: {vars_css['card']} !important; 
-    color: {vars_css['text']} !important; 
-    border: 1px solid {vars_css['border']} !important; 
-    border-radius: 2px !important; 
-    font-weight: 700 !important; 
-    text-transform: uppercase; 
-    font-size: 10px !important; 
-    height: 28px !important; 
-    min-height: 28px !important; 
-    line-height: 28px !important; 
-    transition: all 0.2s ease !important; 
-    width: 100% !important; 
+/* --- OCULTAR ELEMENTOS DE STREAMLIT Y GITHUB --- */
+header, footer, [data-testid="stHeader"] {{
+    visibility: hidden !important;
+    display: none !important;
+    height: 0px !important;
 }}
-div.stButton > button:hover {{ background-color: #00A3A3 !important; color: #ffffff !important; border-color: #00A3A3 !important; }}
+
+/* Ocultar el botón de la barra lateral (Sidebar toggle) */
+[data-testid="collapsedControl"] {{
+    display: none !important;
+}}
+
+/* Ocultar la barra lateral por completo */
+[data-testid="stSidebar"] {{
+    display: none !important;
+}}
+
+/* Ocultar elementos flotantes de GitHub / Deploy de Streamlit */
+[data-testid="stToolbar"], 
+.viewerBadge_container__1QSob, 
+#MainMenu {{
+    visibility: hidden !important;
+    display: none !important;
+}}
+
+/* APP BASE */
+html, body, .stApp {{
+    background-color: {vars_css['bg']} !important;
+    color: {vars_css['text']} !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+
+.block-container {{
+    padding-top: 0.8rem !important;
+    padding-bottom: 5rem !important;
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* BOTONES SLIM */
+div.stButton > button {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    font-size: 10px !important;
+    height: 34px !important;
+    width: 100% !important;
+}}
+
+div.stButton > button:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+}}
 </style>
 """,
     unsafe_allow_html=True,
