@@ -19,11 +19,57 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 2. SISTEMA DE SEGURIDAD (VALIDACIÓN DE SESIÓN)
+# 2. SISTEMA DE SEGURIDAD PRO (BANNER ESTILO CIBER-SEGURIDAD)
 if not st.session_state.get("autenticado", False):
-  st.warning("⚠️ ACCESO DENEGADO. Por favor inicia sesión primero.")
-  if st.button("IR AL LOGIN", type="primary"):
-    st.switch_page("app.py")
+  st.markdown(
+      """
+        <style>
+        @keyframes pulseGlow {
+            0% { border-color: rgba(255, 75, 75, 0.4); box-shadow: 0 0 10px rgba(255, 75, 75, 0.1); }
+            50% { border-color: rgba(255, 75, 75, 0.9); box-shadow: 0 0 25px rgba(255, 75, 75, 0.3); }
+            100% { border-color: rgba(255, 75, 75, 0.4); box-shadow: 0 0 10px rgba(255, 75, 75, 0.1); }
+        }
+        .security-alert-box {
+            background: rgba(30, 39, 46, 0.95);
+            border: 1px solid rgba(255, 75, 75, 0.6);
+            border-left: 6px solid #ff4b4b;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-top: 10vh;
+            text-align: center;
+            animation: pulseGlow 2s infinite ease-in-out;
+            font-family: 'Inter', sans-serif;
+        }
+        .security-title {
+            color: #ff4b4b;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .security-desc {
+            color: #ffffff;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-bottom: 0px;
+        }
+        </style>
+        <div class="security-alert-box">
+            <div class="security-title">⚡ ACCESS DENIED // SECURITY PROTOCOL ACTIVE</div>
+            <div class="security-desc">Credenciales de sesión no detectadas. Redirigiendo al núcleo de autenticación.</div>
+        </div>
+    """,
+      unsafe_allow_html=True,
+  )
+
+  st.markdown("<br>", unsafe_allow_html=True)
+  col_btn1, col_btn2, col_btn3 = st.columns([2, 1.5, 2])
+  with col_btn2:
+    if st.button("INICIAR SESIÓN", use_container_width=True, type="primary"):
+      st.switch_page("log.py")
   st.stop()
 
 # ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
@@ -41,44 +87,12 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* 1. Limpieza de Interfaz */
-header, footer, [data-testid="stHeader"] {{
-    visibility: hidden;
-    height: 0px;
-}}
+header, footer, [data-testid="stHeader"] {{ visibility: hidden; height: 0px; }}
+html, body, .stApp {{ background-color: {vars_css['bg']} !important; color: {vars_css['text']} !important; font-family: 'Inter', sans-serif !important; }}
+.block-container {{ padding-top: 0.8rem !important; padding-bottom: 5rem !important; background-color: {vars_css['bg']} !important; }}
 
-/* APP BASE */
-html, body {{
-    background-color: {vars_css['bg']} !important;
-    color: {vars_css['text']} !important;
-}}
+h3, .op-query-text {{ font-size: 11px !important; letter-spacing: 8px !important; text-align: center !important; margin-top: 8px !important; margin-bottom: 18px !important; color: {vars_css['sub']} !important; }}
 
-.stApp {{ 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['text']} !important; 
-    font-family: 'Inter', sans-serif !important; 
-}}
-
-/* CONTENEDOR PRINCIPAL */
-.block-container {{ 
-    padding-top: 0.8rem !important; 
-    padding-bottom: 5rem !important; 
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* TÍTULOS Y OPERATIONAL QUERY */
-h3, .op-query-text {{ 
-    font-size: 11px !important; 
-    letter-spacing: 8px !important; 
-    text-align: center !important; 
-    margin-top: 8px !important; 
-    margin-bottom: 18px !important; 
-    color: {vars_css['sub']} !important; 
-    display: block !important; 
-    width: 100% !important; 
-}}
-
-/* BOTONES SLIM */
 div.stButton > button {{ 
     background-color: {vars_css['card']} !important; 
     color: {vars_css['text']} !important; 
@@ -93,22 +107,7 @@ div.stButton > button {{
     transition: all 0.2s ease !important; 
     width: 100% !important; 
 }}
-
-div.stButton > button:hover {{ 
-    background-color: #00A3A3 !important; 
-    color: #ffffff !important; 
-    border-color: #00A3A3 !important; 
-}}
-
-/* INPUTS Y EDITORES */
-div[data-testid="stTextInput"] > div > div,
-div[data-testid="stSelectbox"] > div > div,
-div[data-testid="stNumberInput"] > div > div {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    color: {vars_css['text']} !important;
-}}
+div.stButton > button:hover {{ background-color: #00A3A3 !important; color: #ffffff !important; border-color: #00A3A3 !important; }}
 </style>
 """,
     unsafe_allow_html=True,
@@ -120,7 +119,6 @@ div[data-testid="stNumberInput"] > div > div {{
 # ==========================================
 @st.cache_data(ttl=60)
 def obtener_matriz_github():
-  """Carga la matriz de destinos y fleteras desde GitHub evitando caché obsoleta."""
   url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
   try:
     m = pd.read_csv(url)
@@ -131,43 +129,7 @@ def obtener_matriz_github():
     return pd.DataFrame()
 
 
-def guardar_facturacion_moreno(df):
-  """Guarda automáticamente el archivo de facturación en el repositorio."""
-  try:
-    token = st.secrets["GITHUB_TOKEN"]
-    repo = "RH2026/nexion"
-    filename = "facturacion_moreno.csv"
-    url = f"https://api.github.com/repos/{repo}/contents/{filename}"
-
-    csv_content = df.to_csv(index=False).encode("utf-8-sig")
-    content_base64 = base64.b64encode(csv_content).decode("utf-8")
-
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
-    }
-
-    import requests
-
-    res = requests.get(url, headers=headers)
-    sha = res.json().get("sha") if res.status_code == 200 else None
-
-    payload = {
-        "message": f"Auto-update Facturación: {time.strftime('%Y-%m-%d %H:%M')}",
-        "content": content_base64,
-        "branch": "main",
-    }
-    if sha:
-      payload["sha"] = sha
-
-    requests.put(url, headers=headers, json=payload)
-    return True
-  except Exception:
-    return False
-
-
 def limpiar_texto(texto):
-  """Normaliza textos para eliminar acentos y caracteres especiales."""
   if pd.isna(texto):
     return ""
   texto = "".join(
@@ -183,12 +145,10 @@ def limpiar_texto(texto):
 # 4. FUNCIONES DE GENERACIÓN QR Y PDF
 # ==========================================
 def generar_qr_imagen(texto_qr):
-  """Genera un código QR en memoria y devuelve un buffer de imagen."""
   qr = qrcode.QRCode(version=1, box_size=3, border=1)
   qr.add_data(texto_qr)
   qr.make(fit=True)
   img = qr.make_image(fill_color="black", back_color="white")
-
   buffer = io.BytesIO()
   img.save(buffer, format="PNG")
   buffer.seek(0)
@@ -196,17 +156,12 @@ def generar_qr_imagen(texto_qr):
 
 
 def generar_sellos_fisicos_con_qr(lista_datos, x, y):
-  """Genera el PDF con los sellos físicos: Fletera y QR ajustados a la derecha y altura bajada."""
   output = PdfWriter()
   for fletera, factura, fecha in lista_datos:
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter)
-
-    # 1. Dibujar la Fletera en la coordenada X, Y base
     can.setFont("Helvetica-Bold", 11)
     can.drawString(x, y, f"{str(fletera).upper()}")
-
-    # 2. Dibujar el QR a la derecha (x + 150) y bajado (y - 35)
     datos_qr = f"FAC: {factura} | FECHA: {fecha}"
     qr_buffer = generar_qr_imagen(datos_qr)
     can.drawImage(
@@ -217,46 +172,34 @@ def generar_sellos_fisicos_con_qr(lista_datos, x, y):
         height=45,
         mask="auto",
     )
-
     can.save()
     packet.seek(0)
     output.add_page(PdfReader(packet).pages[0])
-
   out_io = io.BytesIO()
   output.write(out_io)
   return out_io.getvalue()
 
 
 def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
-  """Superpone el sello digital con la Fletera y el QR a la derecha."""
   packet = io.BytesIO()
   can = canvas.Canvas(packet, pagesize=letter)
-
-  # Texto de la fletera
   can.setFont("Helvetica-Bold", 11)
   can.drawString(x, y, f"{str(fletera).upper()}")
-
-  # Código QR acomodado a la derecha y bajado al nivel correcto
   datos_qr = f"FAC: {factura} | FECHA: {fecha}"
   qr_buffer = generar_qr_imagen(datos_qr)
   can.drawImage(
       ImageReader(qr_buffer), x + 150, y - 35, width=45, height=45, mask="auto"
   )
-
   can.save()
   packet.seek(0)
-
   new_pdf = PdfReader(packet)
   existing_pdf = PdfReader(pdf_file)
   output = PdfWriter()
-
   page = existing_pdf.pages[0]
   page.merge_page(new_pdf.pages[0])
   output.add_page(page)
-
   for i in range(1, len(existing_pdf.pages)):
     output.add_page(existing_pdf.pages[i])
-
   out_io = io.BytesIO()
   output.write(out_io)
   return out_io.getvalue()
@@ -293,7 +236,6 @@ with header_zone:
       nombre_display = st.session_state.get(
           "nombre_completo", usuario
       ).upper()
-
       st.markdown(
           f"""
             <div style='background-color: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid #00D4FF;'>
@@ -303,7 +245,6 @@ with header_zone:
         """,
           unsafe_allow_html=True,
       )
-
       st.markdown(
           "<p style='color:#f0f0f0; font-size:9px; text-align:center; margin:8px"
           " 0;'>MENÚ TEMPORAL</p>",
@@ -311,12 +252,11 @@ with header_zone:
       )
       if st.button("ASIGNAR FLETERA", use_container_width=True):
         st.rerun()
-
       st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
       if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
         for key in list(st.session_state.keys()):
           del st.session_state[key]
-        st.switch_page("app.py")
+        st.switch_page("log.py")
 
 st.markdown("---")
 
@@ -342,7 +282,6 @@ def main():
           if uploaded_file.name.endswith(".csv")
           else pd.read_excel(uploaded_file)
       )
-
       df.columns = [str(c).strip().replace("\n", "") for c in df.columns]
       col_folio = next(
           (
@@ -366,7 +305,6 @@ def main():
             "Folios específicos (separados por coma):",
             placeholder="Ej: 1001, 1002, 1005",
         )
-
         serie = df[col_folio].dropna()
         inicio = st.number_input(
             "Desde:", value=int(serie.min()) if not serie.empty else 0
@@ -654,10 +592,6 @@ def main():
               use_container_width=True,
               type="primary",
           )
-
-
-if __name__ == "__main__":
-  main()
 
 
 if __name__ == "__main__":
