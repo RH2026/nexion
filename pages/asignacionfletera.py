@@ -19,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── TEMA Y CSS MAESTROS (¡COLOCADOS PRIMERO PARA OCULTAR TODO DE INMEDIATO!) ──
+# ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
 vars_css = {
     "bg": "#384A52",
     "card": "#2B343B",
@@ -144,8 +144,8 @@ if not st.session_state.get("autenticado", False):
       for key in list(st.session_state.keys()):
         del st.session_state[key]
       st.session_state.autenticado = False
-      st.rerent = True  # O simplemente recargar con rerun
       st.rerun()
+  st.stop()
 
 
 # ==========================================
@@ -549,12 +549,14 @@ def main():
       unsafe_allow_html=True,
   )
 
+  # [CORREGIDO] Agregado el key único 'erp_file_uploader' para evitar duplicados
   uploaded_file = st.file_uploader(
       "Subir archivo ERP",
       type=["xlsx", "csv"],
       label_visibility="collapsed",
-      key="erp_file_uploader",  # <--- Esto evita el conflicto de ID duplicado
+      key="erp_file_uploader",
   )
+
   if uploaded_file is not None:
     try:
       df = (
