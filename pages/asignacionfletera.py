@@ -140,27 +140,35 @@ if not st.session_state.get("autenticado", False):
   st.markdown("<br>", unsafe_allow_html=True)
   col_btn1, col_btn2, col_btn3 = st.columns([2, 1.5, 2])
   with col_btn2:
-    # Usamos un enlace directo al archivo de inicio en la raíz con estilo idéntico para garantizar redirección instantánea
     st.markdown(
-        """
-        <a href="./log" target="_self" style="text-decoration: none;">
-            <div style="
-                background-color: #2B343B; 
-                color: #FFFFFF; 
-                border: 1px solid #4B5D67; 
-                border-radius: 4px; 
-                font-weight: 700; 
-                text-transform: uppercase; 
-                font-size: 10px; 
-                height: 34px; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center;
-                width: 100%;
-                letter-spacing: 1px;
-            ">
-                INICIAR SESIÓN
-            </div>
+        f"""
+        <style>
+        .custom-login-btn {{
+            background-color: {vars_css['card']} !important;
+            color: {vars_css['text']} !important;
+            border: 1px solid {vars_css['border']} !important;
+            border-radius: 4px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            font-size: 10px !important;
+            height: 34px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            text-decoration: none !important;
+            letter-spacing: 1px;
+            font-family: 'Inter', sans-serif !important;
+            box-sizing: border-box;
+        }}
+        .custom-login-btn:hover {{
+            background-color: #00A3A3 !important;
+            color: #ffffff !important;
+            border-color: #00A3A3 !important;
+        }}
+        </style>
+        <a href="./log" target="_self" class="custom-login-btn">
+            INICIAR SESIÓN
         </a>
     """,
         unsafe_allow_html=True,
