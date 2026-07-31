@@ -1629,7 +1629,7 @@ else:
 
 
     # --- MONITOR Y ALERTA GLOBAL DE CITAS (HORA LOCAL MÉXICO) ---
-    #--- MONITOR Y ALERTA GLOBAL DE CITAS (HOY, MAÑANA Y FILTRO DE ESTATUS) ---
+    #--- MONITOR Y ALERTA GLOBAL DE CITAS (DINÁMICO SEGÚN FECHAS) ---
     @st.fragment(run_every=3)
     def monitor_global_citas():
         if st.session_state.get("usuario_activo") in ["Rigoberto", "MarthaC", "Cynthia", "Carlos"]:
@@ -1689,6 +1689,23 @@ else:
             if "alerta_folio_pendiente" not in st.session_state and "alerta_cita_pendiente" in st.session_state:
                 citas_data = st.session_state.get("datos_citas_multiples", [])
                 
+                zona_gdl = ZoneInfo("America/Mexico_City")
+                hoy_str = datetime.now(zona_gdl).strftime("%d/%m/%Y")
+                mañana_str = (datetime.now(zona_gdl) + timedelta(days=1)).strftime("%d/%m/%Y")
+                
+                # Evaluamos de forma inteligente qué fechas están presentes realmente en las citas filtradas
+                tiene_hoy = any(str(datos.get("CITA", "")).strip() == hoy_str for datos in citas_data)
+                tiene_mañana = any(str(datos.get("CITA", "")).strip() == mañana_str for datos in citas_data)
+                
+                if tiene_hoy and tiene_mañana:
+                    etiqueta_tiempo = "HOY Y MAÑANA"
+                elif tiene_hoy:
+                    etiqueta_tiempo = "HOY"
+                elif tiene_mañana:
+                    etiqueta_tiempo = "MAÑANA"
+                else:
+                    etiqueta_tiempo = "PROGRAMADAS"
+                
                 # Construimos los textos para cada una de las citas encontradas
                 textos_citas = []
                 for datos in citas_data:
@@ -1700,7 +1717,7 @@ else:
                     
                 detalle_citas_str = " | ".join(textos_citas) if textos_citas else "Sin detalles"
                 
-                # Alerta visual con el tono azulito y borde naranja
+                # Alerta visual dinámica
                 st.markdown(f"""
                 <div style="
                     background-color: #2b4c7e; 
@@ -1715,7 +1732,7 @@ else:
                     align-items: center;
                     justify-content: space-between;
                 ">
-                    <span>📅 <b>CITAS (HOY Y MAÑANA) AGC({len(citas_data)}):</b> {detalle_citas_str}</span>
+                    <span>📅 <b>CITAS ({etiqueta_tiempo}) AGC({len(citas_data)}):</b> {detalle_citas_str}</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
