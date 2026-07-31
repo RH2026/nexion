@@ -9016,9 +9016,37 @@ else:
             
             # --- SRECOLECCIONES TRES GUERRAS ------
             elif st.session_state.menu_sub == "RECOLECCION 3G":
-                # --- CONFIGURACIÓN DE RECOLECCIONES TRESGUERRAS ---
-                st.subheader("🚛 Módulo de Recolecciones Tresguerras")
-            
+                st.markdown("""
+                <style>
+                    /* 2. Estilo corporativo para los botones personalizados */
+                    div.stButton > button,
+                    div.stButton > button:link,
+                    div.stButton > button:visited {
+                        background-color: #2B343B !important; 
+                        color: #FFFFFF !important;            
+                        border: 1px solid #2B343B !important; 
+                        border-radius: 5px !important;
+                        transition: all 0.3s ease !important;
+                        width: 100% !important;
+                        box-shadow: none !important;
+                    }
+                    
+                    div.stButton > button:hover,
+                    div.stButton > button:focus {
+                        background-color: #00A3A3 !important; 
+                        color: #FFFFFF !important;            
+                        border-color: #00A3A3 !important;
+                        box-shadow: none !important;
+                    }
+                    
+                    div.stButton > button:active {
+                        background-color: #00A3A3 !important;
+                        border-color: #00A3A3 !important;
+                        color: #FFFFFF !important;
+                    }
+                </style>
+            """, unsafe_allow_html=True)
+                
                 # --- FUNCIONES DE GITHUB PARA EL CONTROL DE ESTATUS Y EDICIÓN ---
                 GITHUB_REPO = "RH2026/nexion"
                 GITHUB_FILE = "recolecciones_estatus.csv"
@@ -9070,7 +9098,7 @@ else:
                         return False
             
                 # --- DEFINICIÓN DE TABS ---
-                tab1, tab2, tab3 = st.tabs(["📄 1. Formato Solicitud", "📊 2. Render de Estatus", "✏️ 3. Edición y Actualización"])
+                tab1, tab2, tab3 = st.tabs(["Formato Solicitud", "Render de Estatus", "Edición y Actualización"])
             
                 # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
                 # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
