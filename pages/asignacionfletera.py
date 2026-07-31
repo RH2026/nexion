@@ -331,7 +331,8 @@ with header_zone:
 
         query = st.text_input(
             "Buscar",
-            (
+            value="",
+            placeholder=(
                 "🔍 BUSCADOR DESACTIVADO"
                 if es_atencion3g
                 else "🔍 Buscar guía/pedido..."
@@ -403,7 +404,7 @@ with header_zone:
                 st.session_state.resultado_busqueda = res_inv
             else:
                 st.session_state.busqueda_activa = False
-                st.toast("No se encontró ningún registro", icon="🔍")
+                st.toast("No se encontró ningún registro")
 
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
