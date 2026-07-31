@@ -12,12 +12,112 @@ from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit as st
 
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(
+    page_title="Nexion - Asignar Fletera",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
+# 2. SISTEMA DE SEGURIDAD (VALIDACIÓN DE SESIÓN)
+if not st.session_state.get("autenticado", False):
+  st.warning("⚠️ ACCESO DENEGADO. Por favor inicia sesión primero.")
+  if st.button("IR AL LOGIN", type="primary"):
+    st.switch_page("app.py")
+  st.stop()
+
+# ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
+vars_css = {
+    "bg": "#384A52",
+    "card": "#2B343B",
+    "text": "#FFFFFF",
+    "sub": "#FFFFFF",
+    "border": "#4B5D67",
+    "logo": "n1.png",
+}
+
+st.markdown(
+    f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+/* 1. Limpieza de Interfaz */
+header, footer, [data-testid="stHeader"] {{
+    visibility: hidden;
+    height: 0px;
+}}
+
+/* APP BASE */
+html, body {{
+    background-color: {vars_css['bg']} !important;
+    color: {vars_css['text']} !important;
+}}
+
+.stApp {{ 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['text']} !important; 
+    font-family: 'Inter', sans-serif !important; 
+}}
+
+/* CONTENEDOR PRINCIPAL */
+.block-container {{ 
+    padding-top: 0.8rem !important; 
+    padding-bottom: 5rem !important; 
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* TÍTULOS Y OPERATIONAL QUERY */
+h3, .op-query-text {{ 
+    font-size: 11px !important; 
+    letter-spacing: 8px !important; 
+    text-align: center !important; 
+    margin-top: 8px !important; 
+    margin-bottom: 18px !important; 
+    color: {vars_css['sub']} !important; 
+    display: block !important; 
+    width: 100% !important; 
+}}
+
+/* BOTONES SLIM */
+div.stButton > button {{ 
+    background-color: {vars_css['card']} !important; 
+    color: {vars_css['text']} !important; 
+    border: 1px solid {vars_css['border']} !important; 
+    border-radius: 2px !important; 
+    font-weight: 700 !important; 
+    text-transform: uppercase; 
+    font-size: 10px !important; 
+    height: 28px !important; 
+    min-height: 28px !important; 
+    line-height: 28px !important; 
+    transition: all 0.2s ease !important; 
+    width: 100% !important; 
+}}
+
+div.stButton > button:hover {{ 
+    background-color: #00A3A3 !important; 
+    color: #ffffff !important; 
+    border-color: #00A3A3 !important; 
+}}
+
+/* INPUTS Y EDITORES */
+div[data-testid="stTextInput"] > div > div,
+div[data-testid="stSelectbox"] > div > div,
+div[data-testid="stNumberInput"] > div > div {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    color: {vars_css['text']} !important;
+}}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
 
 # ==========================================
-# 1. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
+# 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
 # ==========================================
-
-
 @st.cache_data(ttl=60)
 def obtener_matriz_github():
   """Carga la matriz de destinos y fleteras desde GitHub evitando caché obsoleta."""
@@ -80,10 +180,8 @@ def limpiar_texto(texto):
 
 
 # ==========================================
-# 2. FUNCIONES DE GENERACIÓN QR Y PDF
+# 4. FUNCIONES DE GENERACIÓN QR Y PDF
 # ==========================================
-
-
 def generar_qr_imagen(texto_qr):
   """Genera un código QR en memoria y devuelve un buffer de imagen."""
   qr = qrcode.QRCode(version=1, box_size=3, border=1)
@@ -98,7 +196,7 @@ def generar_qr_imagen(texto_qr):
 
 
 def generar_sellos_fisicos_con_qr(lista_datos, x, y):
-  """Genera el PDF con los sellos físicos: Fletera y QR ajustados en altura."""
+  """Genera el PDF con los sellos físicos: Fletera y QR ajustados a la derecha y altura bajada."""
   output = PdfWriter()
   for fletera, factura, fecha in lista_datos:
     packet = io.BytesIO()
@@ -108,7 +206,7 @@ def generar_sellos_fisicos_con_qr(lista_datos, x, y):
     can.setFont("Helvetica-Bold", 11)
     can.drawString(x, y, f"{str(fletera).upper()}")
 
-    # 2. Dibujar el QR a la derecha (x + 150) y bajado un poco más (y - 35)
+    # 2. Dibujar el QR a la derecha (x + 150) y bajado (y - 35)
     datos_qr = f"FAC: {factura} | FECHA: {fecha}"
     qr_buffer = generar_qr_imagen(datos_qr)
     can.drawImage(
@@ -130,7 +228,7 @@ def generar_sellos_fisicos_con_qr(lista_datos, x, y):
 
 
 def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
-  """Superpone el sello digital con la Fletera y el QR ajustado en altura."""
+  """Superpone el sello digital con la Fletera y el QR a la derecha."""
   packet = io.BytesIO()
   can = canvas.Canvas(packet, pagesize=letter)
 
@@ -138,7 +236,7 @@ def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
   can.setFont("Helvetica-Bold", 11)
   can.drawString(x, y, f"{str(fletera).upper()}")
 
-  # Código QR acomodado a la derecha y bajado al nivel del texto
+  # Código QR acomodado a la derecha y bajado al nivel correcto
   datos_qr = f"FAC: {factura} | FECHA: {fecha}"
   qr_buffer = generar_qr_imagen(datos_qr)
   can.drawImage(
@@ -164,88 +262,69 @@ def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
   return out_io.getvalue()
 
 
-def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
-  """Superpone el sello digital con la Fletera y el QR a la derecha."""
-  packet = io.BytesIO()
-  can = canvas.Canvas(packet, pagesize=letter)
+# ==========================================
+# 5. HEADER Y MENÚ DE HAMBURGUESA TEMPORAL
+# ==========================================
+header_zone = st.container()
+with header_zone:
+  c1, c2, c4 = st.columns([1.5, 3.5, 0.9], vertical_alignment="center")
 
-  # Texto de la fletera
-  can.setFont("Helvetica-Bold", 11)
-  can.drawString(x, y, f"{str(fletera).upper()}")
+  with c1:
+    try:
+      st.image(vars_css["logo"], width=150)
+    except Exception:
+      st.write("**NEXION**")
 
-  # Código QR acomodado a la derecha de la fletera (en la X con la marca)
-  datos_qr = f"FAC: {factura} | FECHA: {fecha}"
-  qr_buffer = generar_qr_imagen(datos_qr)
-  can.drawImage(
-      ImageReader(qr_buffer), x + 150, y - 12, width=45, height=45, mask="auto"
-  )
+  with c2:
+    st.markdown(
+        f"""
+        <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
+            <p style='font-size: 13px; letter-spacing: 5px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
+                CENTRO DE DATOS <span style='color: #82D4E6; margin: 0 10px;'>/</span> <span style='color: #FFD700;'>ASIGNAR FLETERA</span>
+            </p>
+        </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
-  can.save()
-  packet.seek(0)
+  with c4:
+    with st.popover("☰ Menú", use_container_width=True):
+      usuario = st.session_state.get("usuario_activo", "OPERADOR")
+      nombre_display = st.session_state.get(
+          "nombre_completo", usuario
+      ).upper()
 
-  new_pdf = PdfReader(packet)
-  existing_pdf = PdfReader(pdf_file)
-  output = PdfWriter()
+      st.markdown(
+          f"""
+            <div style='background-color: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid #00D4FF;'>
+                <p style='color:#00D4FF; font-size:8px; font-weight:500; margin:0;'>USUARIO ACTIVO</p>
+                <p style='color:{vars_css['text']}; font-size:12px; font-weight:500; margin:0;'>{nombre_display}</p>
+            </div>
+        """,
+          unsafe_allow_html=True,
+      )
 
-  page = existing_pdf.pages[0]
-  page.merge_page(new_pdf.pages[0])
-  output.add_page(page)
+      st.markdown(
+          "<p style='color:#f0f0f0; font-size:9px; text-align:center; margin:8px"
+          " 0;'>MENÚ TEMPORAL</p>",
+          unsafe_allow_html=True,
+      )
+      if st.button("ASIGNAR FLETERA", use_container_width=True):
+        st.rerun()
 
-  for i in range(1, len(existing_pdf.pages)):
-    output.add_page(existing_pdf.pages[i])
+      st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+      if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
+        for key in list(st.session_state.keys()):
+          del st.session_state[key]
+        st.switch_page("app.py")
 
-  out_io = io.BytesIO()
-  output.write(out_io)
-  return out_io.getvalue()
-
-
-def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
-  """Superpone el sello con Fletera y QR en un PDF digital existente."""
-  packet = io.BytesIO()
-  can = canvas.Canvas(packet, pagesize=letter)
-
-  can.setFont("Helvetica-Bold", 11)
-  can.drawString(x, y, f"{str(fletera).upper()}")
-
-  datos_qr = f"FAC: {factura} | FECHA: {fecha}"
-  qr_buffer = generar_qr_imagen(datos_qr)
-  can.drawImage(
-      ImageReader(qr_buffer), x, y - 50, width=40, height=40, mask="auto"
-  )
-
-  can.save()
-  packet.seek(0)
-
-  new_pdf = PdfReader(packet)
-  existing_pdf = PdfReader(pdf_file)
-  output = PdfWriter()
-
-  page = existing_pdf.pages[0]
-  page.merge_page(new_pdf.pages[0])
-  output.add_page(page)
-
-  for i in range(1, len(existing_pdf.pages)):
-    output.add_page(existing_pdf.pages[i])
-
-  out_io = io.BytesIO()
-  output.write(out_io)
-  return out_io.getvalue()
+st.markdown("---")
 
 
 # ==========================================
-# 3. INTERFAZ PRINCIPAL (STREAMLIT)
+# 6. INTERFAZ PRINCIPAL (MÓDULO DE ASIGNACIÓN)
 # ==========================================
-
-
 def main():
-  st.set_page_config(
-      page_title="Nexion - Módulo de Sellado",
-      page_icon="📦",
-      layout="wide",
-  )
-
-  vars_css = {"sub": "#555555"}
-
   st.markdown(
       f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px;"
       " font-weight:700;'>S&T PREPARATION MODULE</p>",
@@ -431,7 +510,7 @@ def main():
       st.error(f"Error procesando el archivo ERP: {e}")
 
   # ==========================================
-  # BLOQUE 2: LOGISTICS INTELLIGENCE & SELLADO
+  # LOGISTICS INTELLIGENCE & SISTEMA DE SELLADO
   # ==========================================
   if "df_analisis" in st.session_state:
     st.markdown("---")
@@ -575,6 +654,10 @@ def main():
               use_container_width=True,
               type="primary",
           )
+
+
+if __name__ == "__main__":
+  main()
 
 
 if __name__ == "__main__":
