@@ -140,15 +140,31 @@ if not st.session_state.get("autenticado", False):
   st.markdown("<br>", unsafe_allow_html=True)
   col_btn1, col_btn2, col_btn3 = st.columns([2, 1.5, 2])
   with col_btn2:
-    if st.button("INICIAR SESIÓN", use_container_width=True, type="primary"):
-      for key in list(st.session_state.keys()):
-        del st.session_state[key]
-      st.session_state.autenticado = False
-      try:
-        # En Streamlit Cloud multi-página, para volver a la raíz usamos la ruta principal o archivo de inicio
-        st.switch_page("log.py")
-      except Exception:
-        st.rerun()
+    # Usamos un enlace directo al archivo de inicio en la raíz con estilo idéntico para garantizar redirección instantánea
+    st.markdown(
+        """
+        <a href="./log" target="_self" style="text-decoration: none;">
+            <div style="
+                background-color: #2B343B; 
+                color: #FFFFFF; 
+                border: 1px solid #4B5D67; 
+                border-radius: 4px; 
+                font-weight: 700; 
+                text-transform: uppercase; 
+                font-size: 10px; 
+                height: 34px; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                width: 100%;
+                letter-spacing: 1px;
+            ">
+                INICIAR SESIÓN
+            </div>
+        </a>
+    """,
+        unsafe_allow_html=True,
+    )
   st.stop()
 
 
