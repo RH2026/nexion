@@ -9545,17 +9545,39 @@ else:
                             return buffer
             
                         st.markdown("---")
-                        if st.button("🚀 Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True, key="btn_gen_pdf_tg"):
-                            pdf_buf = generar_pdf_tresguerras_oficial()
-                            st.success("¡Formato de Tresguerras generado correctamente con los 4 controles en línea!")
-                            st.download_button(
-                                label="📥 Descargar PDF Tresguerras Oficial",
-                                data=pdf_buf,
-                                file_name=f"Tresguerras_Oficial_{num_factura}.pdf",
-                                mime="application/pdf",
-                                use_container_width=True,
-                                key="dl_pdf_tg_btn"
-                            )
+                        col_gen1, col_gen2 = st.columns(2)
+                        with col_gen1:
+                            if st.button("Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True, key="btn_gen_pdf_tg"):
+                                pdf_buf = generar_pdf_tresguerras_oficial()
+                                st.success("¡Formato de Tresguerras generado correctamente con los 4 controles en línea!")
+                                st.download_button(
+                                    label="📥 Descargar PDF Tresguerras Oficial",
+                                    data=pdf_buf,
+                                    file_name=f"Tresguerras_Oficial_{num_factura}.pdf",
+                                    mime="application/pdf",
+                                    use_container_width=True,
+                                    key="dl_pdf_tg_btn"
+                                )
+                        with col_gen2:
+                            if st.button("Registrar Folio en Estatus GitHub", use_container_width=True, key="btn_guardar_gh_tab1"):
+                                df_estatus_actual = cargar_estatus_github()
+                                nuevo_registro = pd.DataFrame([{
+                                    "Folio": str(num_factura),
+                                    "Fecha_Recoleccion": fecha_rec_str,
+                                    "Cliente": str(dest_cliente),
+                                    "Proveedor": str(rem_cliente),
+                                    "Peso_Total": float(total_peso_calc),
+                                    "Estatus": "PENDIENTE DE RECOLECCION",
+                                    "Observaciones": "Creado desde solicitud Tresguerras"
+                                }])
+                                if not df_estatus_actual.empty and str(num_factura) in df_estatus_actual["Folio"].values:
+                                    df_estatus_actual.loc[df_estatus_actual["Folio"] == str(num_factura), ["Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total"]] = [fecha_rec_str, str(dest_cliente), str(rem_cliente), float(total_peso_calc)]
+                                    df_final = df_estatus_actual
+                                else:
+                                    df_final = pd.concat([df_estatus_actual, nuevo_registro], ignore_index=True)
+                                
+                                if guardar_estatus_github(df_final, f"Registro de folio {num_factura}"):
+                                    st.success(f"¡Folio {num_factura} guardado/actualizado exitosamente en GitHub!")
                     else:
                         st.warning("No se encontraron datos en el CSV de GitHub.")
             
