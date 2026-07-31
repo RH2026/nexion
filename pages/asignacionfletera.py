@@ -570,7 +570,7 @@ with header_zone:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
         tipo = st.session_state.get("tipo_resultado", "OPERACION")
-        accent_color = "#1cc88a"
+        accent_color = "#82D4E6"
         inv_color = "#36b9cc"
 
         col_espacio, col_cerrar = st.columns([0.85, 0.15])
@@ -682,7 +682,7 @@ with header_zone:
                     st.markdown(
                         f"""
                         <div class="kpi-ruta-container">
-                            <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border-top: 4px solid {accent_color}; position: relative; padding: 20px; border-radius: 4px;">
+                            <div class="kpi-ruta-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-top: 4px solid {accent_color}; position: relative; padding: 20px; border-radius: 8px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                     <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
                                     <div style="display: flex; align-items: baseline; gap: 8px;">
@@ -725,7 +725,7 @@ with header_zone:
                         unsafe_allow_html=True,
                     )
             else:
-                azul_premium = "#00D4FF"
+                azul_premium = "#82D4E6"
                 st.markdown(
                     f"""
                         <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'>
@@ -748,7 +748,7 @@ with header_zone:
                             transform: translateX(10px);
                             border-color: {azul_premium} !important;
                             background: rgba(30, 39, 46, 0.9) !important;
-                            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+                            box-shadow: 0 0 15px rgba(130, 212, 230, 0.2);
                         }}
                         </style>
                     """,
