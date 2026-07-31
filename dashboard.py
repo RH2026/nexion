@@ -9073,7 +9073,9 @@ else:
                 tab1, tab2, tab3 = st.tabs(["📄 1. Formato Solicitud", "📊 2. Render de Estatus", "✏️ 3. Edición y Actualización"])
             
                 # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
+                # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
                 with tab1:
+                    # Usamos tu función cargar_csv_github tal como la tenías funcionando
                     @st.cache_data(ttl=60)
                     def cargar_csv_github():
                         try:
@@ -9118,26 +9120,28 @@ else:
                         df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
                         facturas_disponibles = df_facturacion["Factura"].unique()
                                     
+                        # --- 4 CONTROLES PRINCIPALES EN UNA SOLA FILA ---
                         top_col1, top_col2, top_col3, top_col4 = st.columns(4)
                         
                         with top_col1:
-                            fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="fecha_rec_tab1")
+                            fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now())
                         fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
             
                         with top_col2:
-                            modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"], key="modo_busq_tab1")
+                            modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"])
             
                         with top_col3:
                             if modo_busqueda == "Seleccionar de la lista":
-                                num_factura = st.selectbox("Folio / Factura", facturas_disponibles, key="sel_fact_tab1")
+                                num_factura = st.selectbox("Folio / Factura", facturas_disponibles)
                                 registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura in facturas_disponibles else pd.Series()
                             else:
-                                num_factura = st.text_input("✍️ Ingresa Folio Manual", key="txt_fact_tab1")
+                                num_factura = st.text_input("✍️ Ingresa Folio Manual")
                                 registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura and str(num_factura) in df_facturacion["Factura"].values else pd.Series()
             
                         with top_col4:
-                            tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="pago_tab1")
+                            tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"])
             
+                        # Extracción directa con tus campos funcionales
                         def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
                         def_rfc = str(registro.get("RFC", "")) if not registro.empty and pd.notna(registro.get("RFC", "")) else ""
                         def_dom = str(registro.get("Domicilio", "")) if not registro.empty and pd.notna(registro.get("Domicilio", "")) else ""
