@@ -98,26 +98,67 @@ def generar_qr_imagen(texto_qr):
 
 
 def generar_sellos_fisicos_con_qr(lista_datos, x, y):
-  """Genera el PDF con los sellos físicos (Fletera + QR de Factura/Fecha)."""
+  """Genera el PDF con los sellos físicos: Fletera y QR acomodados lado a lado."""
   output = PdfWriter()
   for fletera, factura, fecha in lista_datos:
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter)
 
-    # 1. Dibujar la Fletera (Lado derecho superior)
+    # 1. Dibujar la Fletera en la coordenada X, Y base
     can.setFont("Helvetica-Bold", 11)
     can.drawString(x, y, f"{str(fletera).upper()}")
 
-    # 2. Dibujar el QR compacto abajo del texto de la fletera
+    # 2. Dibujar el QR a la derecha de la fletera (ej. sumando 150 puntos en X)
+    # Y lo bajamos ligeramente un par de puntos (-4) para que quede bien centrado visualmente con el texto
     datos_qr = f"FAC: {factura} | FECHA: {fecha}"
     qr_buffer = generar_qr_imagen(datos_qr)
     can.drawImage(
-        ImageReader(qr_buffer), x, y - 50, width=40, height=40, mask="auto"
+        ImageReader(qr_buffer),
+        x + 150,
+        y - 12,
+        width=45,
+        height=45,
+        mask="auto",
     )
 
     can.save()
     packet.seek(0)
     output.add_page(PdfReader(packet).pages[0])
+
+  out_io = io.BytesIO()
+  output.write(out_io)
+  return out_io.getvalue()
+
+
+def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
+  """Superpone el sello digital con la Fletera y el QR a la derecha."""
+  packet = io.BytesIO()
+  can = canvas.Canvas(packet, pagesize=letter)
+
+  # Texto de la fletera
+  can.setFont("Helvetica-Bold", 11)
+  can.drawString(x, y, f"{str(fletera).upper()}")
+
+  # Código QR acomodado a la derecha de la fletera (en la X con la marca)
+  datos_qr = f"FAC: {factura} | FECHA: {fecha}"
+  qr_buffer = generar_qr_imagen(datos_qr)
+  can.drawImage(
+      ImageReader(qr_buffer), x + 150, y - 12, width=45, height=45, mask="auto"
+  )
+
+  can.save()
+  packet.seek(0)
+
+  new_pdf = PdfReader(packet)
+  existing_pdf = PdfReader(pdf_file)
+  output = PdfWriter()
+
+  page = existing_pdf.pages[0]
+  page.merge_page(new_pdf.pages[0])
+  output.add_page(page)
+
+  for i in range(1, len(existing_pdf.pages)):
+    output.add_page(existing_pdf.pages[i])
 
   out_io = io.BytesIO()
   output.write(out_io)
