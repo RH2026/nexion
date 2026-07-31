@@ -9610,26 +9610,186 @@ else:
                         st.warning("No se encontraron datos en el CSV de GitHub.")
             
                 # --- TAB 2: RENDER DE ESTATUS ---
+                # --- TAB 2: RENDER DE ESTATUS (NIVEL WAR ROOM) ---
                 with tab2:
-                    st.markdown("### 📊 Tablero de Estatus de Recolecciones")
+                    st.markdown(f"<div style='margin-bottom:20px; text-align:center;'><span style='color:#38bdf8; font-size:12px; font-weight:800; letter-spacing:4px; text-transform:uppercase;'>TABLERO GENERAL DE RENDER Y ESTATUS</span></div>", unsafe_allow_html=True)
+                    
                     df_estatus = cargar_estatus_github()
             
                     if not df_estatus.empty:
+                        # Normalizar columnas a mayúsculas para evitar errores de Matriz
+                        df_estatus.columns = [str(c).upper().strip() for c in df_estatus.columns]
+            
+                        # 1. FILTROS DE CABECERA PARA EL TABLERO
+                        with st.container():
+                            f_col1, f_col2 = st.columns([2, 2], vertical_alignment="bottom")
+                            
+                            with f_col1:
+                                # Filtro por Estatus
+                                opciones_estatus = ["TODOS"] + sorted(df_estatus["ESTATUS"].dropna().unique().tolist()) if "ESTATUS" in df_estatus.columns else ["TODOS"]
+                                filtro_estatus_tab2 = st.selectbox("FILTRAR POR ESTATUS", options=opciones_estatus, key="sel_estatus_tab2")
+                            
+                            with f_col2:
+                                # Filtro por Proveedor / Fletera
+                                col_prov_key = "PROVEEDOR" if "PROVEEDOR" in df_estatus.columns else ("FLETERA" if "FLETERA" in df_estatus.columns else None)
+                                if col_prov_key:
+                                    opciones_prov = ["TODOS"] + sorted(df_estatus[col_prov_key].dropna().unique().tolist())
+                                    filtro_prov_tab2 = st.selectbox("FILTRAR POR PROVEEDOR", options=opciones_prov, key="sel_prov_tab2")
+                                else:
+                                    filtro_prov_tab2 = "TODOS"
+            
+                        # 2. PROCESAMIENTO Y APLICACIÓN DE FILTROS
+                        df_render = df_estatus.copy()
+                        
+                        if filtro_estatus_tab2 != "TODOS":
+                            df_render = df_render[df_render["ESTATUS"] == filtro_estatus_tab2]
+                            
+                        if filtro_prov_tab2 != "TODOS" and col_prov_key:
+                            df_render = df_render[df_render[col_prov_key] == filtro_prov_tab2]
+            
+                        # 3. TARJETAS DE MÉTRICAS SUPERIORES (KPIs)
                         total_envios = len(df_estatus)
-                        pendientes = len(df_estatus[df_estatus["Estatus"].str.upper().str.contains("PENDIENTE", na=False)])
-                        entregados = len(df_estatus[df_estatus["Estatus"].str.upper().str.contains("ENTREGADO", na=False)])
-                        peso_acumulado = df_estatus["Peso_Total"].sum() if "Peso_Total" in df_estatus.columns else 0
+                        filtrados_n = len(df_render)
+                        
+                        # Conteo dinámico si existen las columnas clave
+                        pendientes_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("PENDIENTE|PROCESO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
+                        entregados_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("ENTREGADO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
+                        peso_total_val = df_estatus["PESO_TOTAL"].sum() if "PESO_TOTAL" in df_estatus.columns else 0.0
             
-                        m1, m2, m3, m4 = st.columns(4)
-                        m1.metric("📦 Total Solicitudes", total_envios)
-                        m2.metric("⏳ Pendientes / En Proceso", pendientes)
-                        m3.metric("✅ Entregados", entregados)
-                        m4.metric("⚖️ Peso Total (KG)", f"{peso_acumulado:,.2f}")
+                        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
             
-                        st.markdown("---")
-                        st.dataframe(df_estatus, use_container_width=True)
+                        kpi1.markdown(f"""
+                            <div class='base-card-alerta' style='border-left-color: #38bdf8;'>
+                                <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>TOTAL REGISTROS</div>
+                                <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{total_envios} <span style='font-size: 10px; color: #38bdf8; opacity: 0.7;'>FOLIOS</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        kpi2.markdown(f"""
+                            <div class='base-card-alerta' style='border-left-color: #FDE047;'>
+                                <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>PENDIENTES</div>
+                                <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{pendientes_n} <span style='font-size: 10px; color: #FDE047; opacity: 0.7;'>ACTIVOS</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        kpi3.markdown(f"""
+                            <div class='base-card-alerta' style='border-left-color: #00FFAA;'>
+                                <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>ENTREGADOS</div>
+                                <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{entregados_n} <span style='font-size: 10px; color: #00FFAA; opacity: 0.7;'>COMPLETOS</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        kpi4.markdown(f"""
+                            <div class='base-card-alerta' style='border-left-color: #F97316;'>
+                                <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>PESO ACUMULADO</div>
+                                <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{peso_total_val:,.1f} <span style='font-size: 10px; color: #F97316; opacity: 0.7;'>KG</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        st.divider()
+            
+                        # 4. PANEL DE VISUALIZACIÓN ESTILO WAR ROOM PARA EL RENDER
+                        st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:#FFFFFF; text-transform:uppercase; text-align:center; margin-bottom:20px;'>DETALLE OPERATIVO DE GITHUB</p>", unsafe_allow_html=True)
+            
+                        if not df_render.empty:
+                            data_render = df_render.to_dict('records')
+                            
+                            # HTML con tarjetas custom estilo War Room idénticas al bloque de alertas
+                            html_render_cards = f"""
+                            <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                                <style>
+                                    body {{ background: transparent; margin: 0; padding: 0; }}
+                                    
+                                    /* ───────── SCROLLBAR AGC STYLE ───────── */
+                                    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                    ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                    ::-webkit-scrollbar-thumb {{ 
+                                        background: #3498db; 
+                                        border-radius: 10px; 
+                                        border: 2px solid #384A52; 
+                                    }}
+                                    ::-webkit-scrollbar-thumb:hover {{ 
+                                        background: #2ecc71; 
+                                        box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
+                                    }}
+            
+                                    .card-excepcion {{
+                                        background: #263238;
+                                        border: 1px solid rgba(56, 189, 248, 0.15);
+                                        border-left: 6px solid #38bdf8;
+                                        border-radius: 12px;
+                                        margin-bottom: 12px;
+                                        padding: 18px 25px;
+                                        display: flex;
+                                        flex-wrap: wrap;
+                                        gap: 15px;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        transition: all 0.3s ease;
+                                        width: 100%;
+                                        box-sizing: border-box;
+                                    }}
+                                    .card-excepcion:hover {{ 
+                                        border-color: #38bdf8; 
+                                        background: #2d3b42;
+                                        transform: translateX(5px);
+                                    }}
+                                    .badge-estatus {{
+                                        background: rgba(56, 189, 248, 0.1);
+                                        color: #38bdf8;
+                                        padding: 8px 14px;
+                                        border-radius: 8px;
+                                        font-weight: 800;
+                                        font-family: monospace;
+                                        font-size: 13px;
+                                        text-align: center;
+                                        border: 1px solid rgba(56, 189, 248, 0.3);
+                                    }}
+                                    .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }}
+                                    .factura-destacada {{ color: #FFFFFF; font-size: 18px; font-weight: 800; letter-spacing: 1px; font-family: monospace; }}
+                                    .info-main {{ color: #FFFFFF; font-size: 13px; font-weight: 700; }}
+                                    .info-sub {{ color: #94a3b8; font-size: 11px; }}
+                                </style>
+                                {"".join([f'''
+                                <div class="card-excepcion">
+                                    <div style="flex: 1.5; min-width: 180px;">
+                                        <div class="label-mini">Folio / Factura</div>
+                                        <div class="factura-destacada">{item.get('FOLIO', 'N/A')}</div>
+                                        <div class="info-sub" style="margin-top:4px;">Fecha: {item.get('FECHA_RECOLECCION', 'N/A')}</div>
+                                    </div>
+            
+                                    <div style="flex: 2; min-width: 220px; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                        <div class="label-mini">Cliente / Destino</div>
+                                        <div class="info-main">{str(item.get('CLIENTE', 'N/A'))[:40]}</div>
+                                        <div class="info-sub" style="color: #FFFFFF !important;">Proveedor: {str(item.get('PROVEEDOR', 'N/A'))[:35]}</div>
+                                    </div>
+            
+                                    <div style="flex: 1; min-width: 120px; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                        <div class="label-mini">Peso Total</div>
+                                        <div class="info-main" style="color: #00FFAA;">{float(item.get('PESO_TOTAL', 0.0)):,.2f} KG</div>
+                                        <div class="info-sub">Observación registrada</div>
+                                    </div>
+            
+                                    <div style="flex: 1.2; min-width: 160px; text-align: right;">
+                                        <div class="label-mini" style="text-align:center;">Estatus Actual</div>
+                                        <div class="badge-estatus">{item.get('ESTATUS', 'PENDIENTE')}</div>
+                                    </div>
+                                </div>
+                                ''' for item in data_render])}
+                            </div>
+                            """
+                            
+                            # Renderizamos con componentes de altura controlada y scroll pro
+                            components.html(html_render_cards, height=600, scrolling=True)
+                        else:
+                            st.markdown(f"""
+                                <div style="background: rgba(56, 189, 248, 0.05); border: 1px dashed #38bdf8; border-radius: 10px; padding: 25px; text-align: center; margin-top: 20px;">
+                                    <p style="color: #38bdf8; font-size: 16px; margin: 0;"><b>SIN REGISTROS BAJO ESTE FILTRO</b></p>
+                                    <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">No se encontraron elementos que coincidan con los criterios seleccionados en el render.</p>
+                                </div>
+                            """, unsafe_allow_html=True)
                     else:
-                        st.info("Aún no hay registros de estatus en GitHub. El archivo 'recolecciones_estatus.csv' se creará automáticamente al registrar el primer folio.")
+                        st.info("Aún no hay registros de estatus guardados en GitHub para renderizar en este apartado.")
             
                 # --- TAB 3: EDICIÓN Y ACTUALIZACIÓN ---
                 with tab3:
