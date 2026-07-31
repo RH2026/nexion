@@ -19,7 +19,79 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 2. SISTEMA DE SEGURIDAD PRO (BANNER ESTILO CIBER-SEGURIDAD)
+# ── TEMA Y CSS MAESTROS (¡COLOCADOS PRIMERO PARA OCULTAR TODO DE INMEDIATO!) ──
+vars_css = {
+    "bg": "#384A52",
+    "card": "#2B343B",
+    "text": "#FFFFFF",
+    "sub": "#FFFFFF",
+    "border": "#4B5D67",
+    "logo": "n1.png",
+}
+
+st.markdown(
+    f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+/* --- OCULTAR ELEMENTOS DE STREAMLIT, GITHUB Y FLECHAS DE SIDEBAR --- */
+header, footer, [data-testid="stHeader"] {{
+    visibility: hidden !important;
+    display: none !important;
+    height: 0px !important;
+}}
+
+[data-testid="collapsedControl"], 
+[data-testid="stSidebar"], 
+[data-testid="stToolbar"], 
+.viewerBadge_container__1QSob, 
+#MainMenu, 
+button[kind="header"] {{
+    visibility: hidden !important;
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}}
+
+/* APP BASE */
+html, body, .stApp {{
+    background-color: {vars_css['bg']} !important;
+    color: {vars_css['text']} !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+
+.block-container {{
+    padding-top: 0.8rem !important;
+    padding-bottom: 5rem !important;
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* BOTONES SLIM */
+div.stButton > button {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    font-size: 10px !important;
+    height: 34px !important;
+    width: 100% !important;
+}}
+
+div.stButton > button:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+}}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ==========================================
+# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
+# ==========================================
 if not st.session_state.get("autenticado", False):
   st.markdown(
       """
@@ -71,68 +143,6 @@ if not st.session_state.get("autenticado", False):
     if st.button("INICIAR SESIÓN", use_container_width=True, type="primary"):
       st.switch_page("log.py")
   st.stop()
-
-# ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
-vars_css = {
-    "bg": "#384A52",
-    "card": "#2B343B",
-    "text": "#FFFFFF",
-    "sub": "#FFFFFF",
-    "border": "#4B5D67",
-    "logo": "n1.png",
-}
-
-st.markdown(
-    f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-
-/* --- OCULTAR ELEMENTOS DE STREAMLIT Y GITHUB --- */
-header, footer, [data-testid="stHeader"] {{
-    visibility: hidden !important;
-    display: none !important;
-    height: 0px !important;
-}}
-
-[data-testid="collapsedControl"], [data-testid="stSidebar"], [data-testid="stToolbar"], .viewerBadge_container__1QSob, #MainMenu {{
-    visibility: hidden !important;
-    display: none !important;
-}}
-
-/* APP BASE */
-html, body, .stApp {{
-    background-color: {vars_css['bg']} !important;
-    color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
-}}
-
-.block-container {{
-    padding-top: 0.8rem !important;
-    padding-bottom: 5rem !important;
-    background-color: {vars_css['bg']} !important;
-}}
-
-/* BOTONES SLIM */
-div.stButton > button {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    font-size: 10px !important;
-    height: 34px !important;
-    width: 100% !important;
-}}
-
-div.stButton > button:hover {{
-    background-color: #00A3A3 !important;
-    color: #ffffff !important;
-}}
-</style>
-""",
-    unsafe_allow_html=True,
-)
 
 
 # ==========================================
@@ -857,6 +867,10 @@ def main():
               use_container_width=True,
               type="primary",
           )
+
+
+if __name__ == "__main__":
+  main()
 
 
 if __name__ == "__main__":
