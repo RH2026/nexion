@@ -296,7 +296,7 @@ with header_zone:
 
     with c2:
         texto_principal = st.session_state.menu_main
-        azul_nexion = "#82D4E6"
+        azul_nexion = "#38bdf8"
         oro_brillante = "#FFD700"
 
         if texto_principal == "DASHBOARD":
@@ -419,8 +419,8 @@ with header_zone:
 
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
-                    <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
+                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #38bdf8;'>
+                    <p style='color:#38bdf8; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
                     <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                 </div>
             """,
@@ -562,7 +562,7 @@ with header_zone:
                 st.session_state.splash_completado = False
                 st.rerun()
 
-    # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
+    # ── RENDERIZADO DE CONSULTA ────────────────────────────────________________──
     if (
         st.session_state.busqueda_activa
         and st.session_state.resultado_busqueda is not None
@@ -570,7 +570,7 @@ with header_zone:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
         tipo = st.session_state.get("tipo_resultado", "OPERACION")
-        accent_color = "#82D4E6"
+        accent_color = "#38bdf8"
         inv_color = "#36b9cc"
 
         col_espacio, col_cerrar = st.columns([0.85, 0.15])
@@ -725,7 +725,7 @@ with header_zone:
                         unsafe_allow_html=True,
                     )
             else:
-                azul_premium = "#82D4E6"
+                azul_premium = "#38bdf8"
                 st.markdown(
                     f"""
                         <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'>
@@ -748,7 +748,7 @@ with header_zone:
                             transform: translateX(10px);
                             border-color: {azul_premium} !important;
                             background: rgba(30, 39, 46, 0.9) !important;
-                            box-shadow: 0 0 15px rgba(130, 212, 230, 0.2);
+                            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
                         }}
                         </style>
                     """,
