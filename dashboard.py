@@ -9075,7 +9075,6 @@ else:
                 # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
                 # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
                 with tab1:
-                    # Usamos tu función cargar_csv_github tal como la tenías funcionando
                     @st.cache_data(ttl=60)
                     def cargar_csv_github():
                         try:
@@ -9124,24 +9123,23 @@ else:
                         top_col1, top_col2, top_col3, top_col4 = st.columns(4)
                         
                         with top_col1:
-                            fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now())
+                            fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="tg_fecha_rec")
                         fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
             
                         with top_col2:
-                            modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"])
+                            modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"], key="tg_modo_busq")
             
                         with top_col3:
                             if modo_busqueda == "Seleccionar de la lista":
-                                num_factura = st.selectbox("Folio / Factura", facturas_disponibles)
+                                num_factura = st.selectbox("Folio / Factura", facturas_disponibles, key="tg_sel_fact")
                                 registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura in facturas_disponibles else pd.Series()
                             else:
-                                num_factura = st.text_input("✍️ Ingresa Folio Manual")
+                                num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
                                 registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura and str(num_factura) in df_facturacion["Factura"].values else pd.Series()
             
                         with top_col4:
-                            tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"])
+                            tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
             
-                        # Extracción directa con tus campos funcionales
                         def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
                         def_rfc = str(registro.get("RFC", "")) if not registro.empty and pd.notna(registro.get("RFC", "")) else ""
                         def_dom = str(registro.get("Domicilio", "")) if not registro.empty and pd.notna(registro.get("Domicilio", "")) else ""
@@ -9170,49 +9168,51 @@ else:
             
                         with col1:
                             titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#e65100")
-                            rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key="rem_cli_tab1")
-                            rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key="rem_call_tab1")
+                            # Usamos una KEY basada en el folio actual para forzar a Streamlit a actualizar los valores al cambiar de factura
+                            rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key=f"rem_cli_{num_factura}")
+                            rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key=f"rem_call_{num_factura}")
                             rc1, rc2 = st.columns(2)
                             with rc1:
-                                rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key="rem_col_tab1")
+                                rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key=f"rem_col_{num_factura}")
                             with rc2:
-                                rem_cp = st.text_input("CP (Remitente)", value=def_cp, key="rem_cp_tab1")
+                                rem_cp = st.text_input("CP (Remitente)", value=def_cp, key=f"rem_cp_{num_factura}")
                             rc3, rc4 = st.columns(2)
                             with rc3:
-                                rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key="rem_cui_tab1")
+                                rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key=f"rem_cui_{num_factura}")
                             with rc4:
-                                rem_estado = st.text_input("Estado", value=def_est, key="rem_est_tab1")
+                                rem_estado = st.text_input("Estado", value=def_est, key=f"rem_est_{num_factura}")
                             rc5, rc6 = st.columns(2)
                             with rc5:
-                                rem_contacto = st.text_input("Persona que entrega", value="", key="rem_cont_tab1")
+                                rem_contacto = st.text_input("Persona que entrega", value="", key=f"rem_cont_{num_factura}")
                             with rc6:
-                                rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key="rem_tel_tab1")
+                                rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key=f"rem_tel_{num_factura}")
             
                         with col2:
                             titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#4B6B94")
-                            dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados", key="dest_cli_tab1")
-                            dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155", key="dest_call_tab1")
+                            dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados", key=f"dest_cli_{num_factura}")
+                            dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155", key=f"dest_call_{num_factura}")
                             dc1, dc2 = st.columns(2)
                             with dc1:
-                                dest_colonia = st.text_input("Colonia Destino", value="La Aurora", key="dest_col_tab1")
+                                dest_colonia = st.text_input("Colonia Destino", value="La Aurora", key=f"dest_col_{num_factura}")
                             with dc2:
-                                dest_cp = st.text_input("CP Destino", value="44460", key="dest_cp_tab1")
+                                dest_cp = st.text_input("CP Destino", value="44460", key=f"dest_cp_{num_factura}")
                             dc3, dc4 = st.columns(2)
                             with dc3:
-                                dest_cui = st.text_input("Ciudad Destino", value="Guadalajara", key="dest_cui_tab1")
+                                dest_cui = st.text_input("Ciudad Destino", value="Guadalajara", key=f"dest_cui_{num_factura}")
                             with dc4:
-                                dest_estado = st.text_input("Estado Destino", value="Jalisco", key="dest_est_tab1")
+                                dest_estado = st.text_input("Estado Destino", value="Jalisco", key=f"dest_est_{num_factura}")
                             dc5, dc6 = st.columns(2)
                             with dc5:
-                                dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo", key="dest_cont_tab1")
+                                dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo", key=f"dest_cont_{num_factura}")
                             with dc6:
-                                dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123", key="dest_tel_tab1")
+                                dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123", key=f"dest_tel_{num_factura}")
             
                         titulo_seccion("FACTURAR A (DATOS FISCALES JYPESA)", color_fondo="#37474f")
-                        fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV", key="fac_cli_tab1")
-                        fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México", key="fac_dom_tab1")
-                        fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35", key="fac_rfc_tab1")
+                        fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV", key=f"fac_cli_{num_factura}")
+                        fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México", key=f"fac_dom_{num_factura}")
+                        fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35", key=f"fac_rfc_{num_factura}")
             
+                        # --- SECCIÓN DINÁMICA DE EMBARQUE ---
                         st.markdown("---")
                         titulo_seccion("📦 DETALLE DE EMBARQUE Y LÍNEAS DE CARGA", color_fondo="#e65100")
             
@@ -9241,17 +9241,18 @@ else:
             
                         col_btn1, col_btn2 = st.columns(2)
                         with col_btn1:
-                            if st.button("➕ Agregar otra línea de carga"):
+                            if st.button("➕ Agregar otra línea de carga", key="btn_add_line"):
                                 st.session_state.lineas_embarque.append({"cantidad": 1, "tipo": "CAJA", "descripcion": "MERCANCIA", "largo": 0.50, "ancho": 0.50, "alto": 0.50, "peso": 50.0})
                                 st.rerun()
                         with col_btn2:
-                            if len(st.session_state.lineas_embarque) > 1 and st.button("🗑️ Eliminar última línea"):
+                            if len(st.session_state.lineas_embarque) > 1 and st.button("🗑️ Eliminar última línea", key="btn_del_line"):
                                 st.session_state.lineas_embarque.pop()
                                 st.rerun()
             
                         total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque)
                         st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
             
+                        # --- FUNCIÓN PDF REPORTLAB (ESTILO OFICIAL TRESGUERRAS) ---
                         def generar_pdf_tresguerras_oficial():
                             buffer = BytesIO()
                             doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=15, leftMargin=15, topMargin=15, bottomMargin=15)
@@ -9264,6 +9265,7 @@ else:
                             cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
                             cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
             
+                            # 1. ENCABEZADO SUPERIOR
                             logo_io = obtener_logo_tresguerras()
                             logo_elem = Image(logo_io, width=85, height=22) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_center)
                             
@@ -9288,6 +9290,7 @@ else:
                             story.append(header_table)
                             story.append(Spacer(1, 2))
             
+                            # 2. FECHAS RECOLECCIÓN / RECEPCIÓN
                             fechas_table = Table([
                                 [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph(fecha_rec_str, cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
                                 [Paragraph("<b>FECHA DE RECEPCION:</b>", cell_bold), "", Paragraph("<b>FOLIO</b>", cell_bold), ""]
@@ -9305,6 +9308,7 @@ else:
                             story.append(fechas_table)
                             story.append(Spacer(1, 2))
             
+                            # 3. REMITENTE Y DESTINATARIO
                             rem_data = [
                                 [Paragraph("REMITENTE - RECOLECCION", th_style), ""],
                                 [Paragraph("CLIENTE:", cell_bold), Paragraph(rem_cliente, cell_bold)],
@@ -9345,6 +9349,7 @@ else:
                             story.append(t_top)
                             story.append(Spacer(1, 2))
             
+                            # 4. SECCIÓN FACTURAR A
                             fac_data = [
                                 [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
                                 [Paragraph(fac_cliente, cell_center), "", ""],
@@ -9376,6 +9381,7 @@ else:
                             story.append(t_fac)
                             story.append(Spacer(1, 2))
             
+                            # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA
                             emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
                             emb_data = [
                                 [Paragraph("<b>INFORMACION DE EMBARQUE</b>", th_style), "", "", Paragraph("<b>DIMENSIONES (mts)</b>", th_style), "", Paragraph("<b>VOLUMEN</b>", th_style), Paragraph("<b>PESO POR BULTO</b>", th_style)],
@@ -9416,6 +9422,7 @@ else:
                             story.append(t_emb)
                             story.append(Spacer(1, 2))
             
+                            # 6. BLOQUE MEDIO
                             th_red = ParagraphStyle("THR", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
                             th_green = ParagraphStyle("THG", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
             
@@ -9503,6 +9510,7 @@ else:
                             story.append(t_mid)
                             story.append(Spacer(1, 2))
             
+                            # 7. BLOQUE FINAL
                             t_final_block = Table([
                                 [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style)],
                                 [
@@ -9537,38 +9545,17 @@ else:
                             return buffer
             
                         st.markdown("---")
-                        col_gen1, col_gen2 = st.columns(2)
-                        with col_gen1:
-                            if st.button("🚀 Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True):
-                                pdf_buf = generar_pdf_tresguerras_oficial()
-                                st.success("¡Formato de Tresguerras generado correctamente con los 4 controles en línea!")
-                                st.download_button(
-                                    label="📥 Descargar PDF Tresguerras Oficial",
-                                    data=pdf_buf,
-                                    file_name=f"Tresguerras_Oficial_{num_factura}.pdf",
-                                    mime="application/pdf",
-                                    use_container_width=True
-                                )
-                        with col_gen2:
-                            if st.button("💾 Registrar Folio en Estatus GitHub", use_container_width=True):
-                                df_estatus_actual = cargar_estatus_github()
-                                nuevo_registro = pd.DataFrame([{
-                                    "Folio": str(num_factura),
-                                    "Fecha_Recoleccion": fecha_rec_str,
-                                    "Cliente": str(dest_cliente),
-                                    "Proveedor": str(rem_cliente),
-                                    "Peso_Total": float(total_peso_calc),
-                                    "Estatus": "PENDIENTE DE RECOLECCION",
-                                    "Observaciones": "Creado desde solicitud Tresguerras"
-                                }])
-                                if not df_estatus_actual.empty and str(num_factura) in df_estatus_actual["Folio"].values:
-                                    df_estatus_actual.loc[df_estatus_actual["Folio"] == str(num_factura), ["Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total"]] = [fecha_rec_str, str(dest_cliente), str(rem_cliente), float(total_peso_calc)]
-                                    df_final = df_estatus_actual
-                                else:
-                                    df_final = pd.concat([df_estatus_actual, nuevo_registro], ignore_index=True)
-                                
-                                if guardar_estatus_github(df_final, f"Registro de folio {num_factura}"):
-                                    st.success(f"¡Folio {num_factura} guardado/actualizado exitosamente en GitHub!")
+                        if st.button("🚀 Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True, key="btn_gen_pdf_tg"):
+                            pdf_buf = generar_pdf_tresguerras_oficial()
+                            st.success("¡Formato de Tresguerras generado correctamente con los 4 controles en línea!")
+                            st.download_button(
+                                label="📥 Descargar PDF Tresguerras Oficial",
+                                data=pdf_buf,
+                                file_name=f"Tresguerras_Oficial_{num_factura}.pdf",
+                                mime="application/pdf",
+                                use_container_width=True,
+                                key="dl_pdf_tg_btn"
+                            )
                     else:
                         st.warning("No se encontraron datos en el CSV de GitHub.")
             
