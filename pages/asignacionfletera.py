@@ -451,7 +451,7 @@ with header_zone:
               )
           ).strip()
           if es_admin:
-            opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
+            opciones_seg = ["ALERTAS", "QUEJAS"]
           elif usuario_actual == "Cynthia":
             opciones_seg = ["ALERTAS", "QUEJAS"]
           else:
