@@ -8,7 +8,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 import pandas as pd
-import pypdf  # O PyPDF2 dependiendo de tu entorno (pypdf o PdfReader/PdfWriter)
 from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit as st
@@ -47,6 +46,8 @@ def guardar_facturacion_moreno(df):
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json",
     }
+
+    import requests
 
     res = requests.get(url, headers=headers)
     sha = res.json().get("sha") if res.status_code == 200 else None
@@ -168,7 +169,6 @@ def main():
       layout="wide",
   )
 
-  # Simulación de estilos base si `vars_css` no está definido globalmente
   vars_css = {"sub": "#555555"}
 
   st.markdown(
@@ -504,7 +504,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-                                    file_name="Sellado.zip", 
-                                    use_container_width=True,
-                                    type="primary"
-                                )
