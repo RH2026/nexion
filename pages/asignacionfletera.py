@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime
 import io
 import re
 import time
@@ -282,10 +283,8 @@ if "search_key_version" not in st.session_state:
 # ==========================================
 # 5. HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA)
 # ==========================================
-# ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
 header_zone = st.container()
 with header_zone:
-  # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
   c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
 
   with c1:
@@ -295,19 +294,14 @@ with header_zone:
       st.write("**NEXION**")
 
   with c2:
-    # --- INTERCEPTAMOS "DASHBOARD" PARA CAMBIAR EL TEXTO VISUAL ---
     texto_principal = st.session_state.menu_main
     azul_nexion = "#82D4E6"
-    # Usamos un dorado mucho más vivo y brillante
     oro_brillante = "#FFD700"
 
-    # Si el menú es DASHBOARD, aplicamos el diseño con la línea azul
     if texto_principal == "DASHBOARD":
       texto_principal = f"NEXION <span style='color: {azul_nexion}; font-weight: 500; margin: 0 10px; font-size: 16px;'>|</span> SMART LOGISTICS"
 
-    # RUTA DINÁMICA
     if st.session_state.menu_sub != "GENERAL":
-      # Aplicamos el color brillante y un efecto de sombra sutil para el resplandor
       ruta = (
           f"{texto_principal} "
           f"<span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> "
@@ -329,11 +323,9 @@ with header_zone:
     )
 
   with c3:
-    # Verificamos si es Atencion3G para desactivar el input
     es_atencion3g = (
         st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
     )
-
     key_actual = f"main_search_v{st.session_state.search_key_version}"
 
     query = st.text_input(
@@ -345,47 +337,43 @@ with header_zone:
         ),
         label_visibility="collapsed",
         key=key_actual,
-        disabled=es_atencion3g,  # <--- Aquí sucede la magia
+        disabled=es_atencion3g,
     )
 
     if query:
-      # ── FUERZA LECTURA DE DATOS MÁS RECIENTES (MATRIZ) ──
       url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
       try:
-        # Cargamos directamente de la URL para evitar datos viejos en caché
         df_matriz_fresco = pd.read_csv(url_raw)
       except Exception:
-        df_matriz_fresco = (
-            df_matriz  # Si falla, vuelve al anterior por seguridad
-        )
+        df_matriz_fresco = None
 
-      # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz_fresco)
       res_ops = pd.DataFrame()
       if df_matriz_fresco is not None:
-        res_ops = df_matriz_fresco[
-            (
-                df_matriz_fresco["NÚMERO DE GUÍA"]
-                .astype(str)
-                .str.contains(query, case=False, na=False)
-            )
-            | (
-                df_matriz_fresco["NÚMERO DE PEDIDO"]
-                .astype(str)
-                .str.contains(query, case=False, na=False)
-            )
-            | (
-                df_matriz_fresco["NO CLIENTE"]
-                .astype(str)
-                .str.contains(query, case=False, na=False)
-            )
-            | (
-                df_matriz_fresco["NOMBRE DEL CLIENTE"]
-                .astype(str)
-                .str.contains(query, case=False, na=False)
-            )
-        ]
+        cols_m = [c.upper() for c in df_matriz_fresco.columns]
+        if "NÚMERO DE GUÍA" in cols_m:
+          res_ops = df_matriz_fresco[
+              (
+                  df_matriz_fresco["NÚMERO DE GUÍA"]
+                  .astype(str)
+                  .str.contains(query, case=False, na=False)
+              )
+              | (
+                  df_matriz_fresco["NÚMERO DE PEDIDO"]
+                  .astype(str)
+                  .str.contains(query, case=False, na=False)
+              )
+              | (
+                  df_matriz_fresco["NO CLIENTE"]
+                  .astype(str)
+                  .str.contains(query, case=False, na=False)
+              )
+              | (
+                  df_matriz_fresco["NOMBRE DEL CLIENTE"]
+                  .astype(str)
+                  .str.contains(query, case=False, na=False)
+              )
+          ]
 
-      # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
       res_inv = pd.DataFrame()
       try:
         df_inv_temp = pd.read_csv("inventario.csv")
@@ -404,7 +392,6 @@ with header_zone:
       except Exception:
         pass
 
-      # Lógica de asignación de resultados
       if not res_ops.empty:
         st.session_state.busqueda_activa = True
         st.session_state.tipo_resultado = "OPERACION"
@@ -418,16 +405,11 @@ with header_zone:
         st.toast("No se encontró ningún registro", icon="🔍")
 
   with c4:
-    # --- BOTÓN POPOVER (NAVEGACIÓN + PERFIL) ---
     with st.popover("☰ Menú", use_container_width=True):
-
-      # 1. IDENTIFICACIÓN DE USUARIO
       usuario = st.session_state.get("usuario_activo", "GUEST")
-
-      # Definimos los roles
       es_admin = usuario.upper() == "RIGOBERTO"
       es_ventas = usuario.upper() == "VENTAS"
-      es_atencion3g = usuario.upper() == "ATENCION3G"  # <--- Usuario Atencion3G
+      es_atencion3g = usuario.upper() == "ATENCION3G"
 
       nombre_display = st.session_state.get(
           "nombre_completo", "OPERADOR DESCONOCIDO"
@@ -450,9 +432,6 @@ with header_zone:
           unsafe_allow_html=True,
       )
 
-      # 2. BOTONES DE NAVEGACIÓN (Restricciones dinámicas)
-
-      # --- DASHBOARD: Oculto para Ventas y Atencion3G ---
       if not es_ventas and not es_atencion3g:
         if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
           st.session_state.menu_main = "DASHBOARD"
@@ -460,30 +439,22 @@ with header_zone:
           st.session_state.busqueda_activa = False
           st.rerun()
 
-      # --- SEGUIMIENTO: Gestión de opciones según rol y usuario ---
       if not es_ventas:
         with st.expander(
             "SEGUIMIENTO",
             expanded=(st.session_state.menu_main == "SEGUIMIENTO"),
         ):
-
-          # Obtenemos el usuario actual de forma segura
           usuario_actual = str(
               st.session_state.get(
                   "usuario", st.session_state.get("usuario_activo", "")
               )
           ).strip()
-
-          # Definimos las opciones según los permisos
           if es_admin:
             opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
           elif usuario_actual == "Cynthia":
-            opciones_seg = [
-                "ALERTAS",
-                "QUEJAS",
-            ]  # Ve alertas y quejas, pero NO Gantt
+            opciones_seg = ["ALERTAS", "QUEJAS"]
           else:
-            opciones_seg = ["ALERTAS"]  # Atencion3G y otros solo ven alertas
+            opciones_seg = ["ALERTAS"]
 
           for s in opciones_seg:
             label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -493,20 +464,15 @@ with header_zone:
               st.session_state.busqueda_activa = False
               st.rerun()
 
-      # --- REPORTES: Oculto para Atencion3G ---
       if not es_atencion3g:
         with st.expander(
             "REPORTES", expanded=(st.session_state.menu_main == "REPORTES")
         ):
-
-          # Obtenemos el usuario de la sesión cubriendo ambas claves comunes
           usuario_actual = str(
               st.session_state.get(
                   "usuario", st.session_state.get("usuario_activo", "")
               )
           ).strip()
-
-          # Verificamos si es admin o si el usuario es exactamente Carlos
           if es_admin or usuario_actual == "Carlos":
             opciones_rep = [
                 "COSTOS CEDIS",
@@ -516,9 +482,7 @@ with header_zone:
                 "ENVIO DE MUESTRAS",
             ]
           else:
-            opciones_rep = [
-                "ENVIO DE MUESTRAS"
-            ]  # Filtro para Ventas y otros
+            opciones_rep = ["ENVIO DE MUESTRAS"]
 
           for s in opciones_rep:
             label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -528,7 +492,6 @@ with header_zone:
               st.session_state.busqueda_activa = False
               st.rerun()
 
-      # --- FORMATOS: Oculto para Ventas y Atencion3G ---
       if not es_ventas and not es_atencion3g:
         with st.expander(
             "FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")
@@ -551,7 +514,6 @@ with header_zone:
               st.session_state.busqueda_activa = False
               st.rerun()
 
-      # --- HUB LOG: Oculto para Ventas y Atencion3G ---
       if not es_ventas and not es_atencion3g:
         with st.expander(
             "CENTRO DE DATOS",
@@ -565,7 +527,6 @@ with header_zone:
               st.session_state.busqueda_activa = False
               st.rerun()
 
-      # --- FINANZAS: Estrictamente confidencial ---
       if st.session_state.get("usuario_activo") == "Rigoberto":
         with st.expander(
             "FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")
@@ -579,7 +540,6 @@ with header_zone:
               st.session_state.busqueda_activa = False
               st.rerun()
 
-      # --- NUEVO: SECCIÓN ENFOQUE (Solo visible para Rigoberto, Jmoreno y Carlos) ---
       usuario_actual = st.session_state.get("usuario_activo", "").upper()
       if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
         with st.expander(
@@ -592,7 +552,6 @@ with header_zone:
               st.session_state.menu_sub = s
               st.rerun()
 
-      # 3. SECCIÓN DE CIERRE DE SESIÓN
       st.markdown(
           "<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True
       )
@@ -614,7 +573,6 @@ with header_zone:
       accent_color = "#1cc88a"
       inv_color = "#36b9cc"
 
-      # Botón Cerrar discreto
       col_espacio, col_cerrar = st.columns([0.85, 0.15])
       with col_cerrar:
         if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
@@ -624,8 +582,6 @@ with header_zone:
           st.rerun()
 
       if tipo == "INVENTARIO":
-
-        # 1. Estilo para el efecto hover (Sutil y elegante)
         st.markdown(
             f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer;"
             f" }} .card-inv:hover {{ transform: translateX(8px);"
@@ -634,8 +590,6 @@ with header_zone:
             f" 0.1); }}</style>",
             unsafe_allow_html=True,
         )
-
-        # 2. Encabezado con indicador lateral
         st.markdown(
             f"<div"
             f" style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div"
@@ -647,7 +601,6 @@ with header_zone:
             unsafe_allow_html=True,
         )
 
-        # 3. Bucle de tarjetas DELGADAS y OSCURAS
         for index, i in resultados.iterrows():
           st.markdown(
               f"<div class='card-inv'"
@@ -672,7 +625,6 @@ with header_zone:
           )
       else:
         if total == 1:
-          # --- 3. RENDERIZADO DEL TIMELINE (REPARADO) ---
           df_timeline = resultados
           if not df_timeline.empty:
             envio = df_timeline.iloc[0]
@@ -697,7 +649,6 @@ with header_zone:
             else:
               n_guia = "EN ESPERA DE SURTIDO"
 
-            # Colores base
             color_envio, color_guia, color_promesa = (
                 "#38bdf8",
                 ("#38bdf8" if tiene_guia else vars_css["border"]),
@@ -708,18 +659,14 @@ with header_zone:
                 ("#a855f7" if tiene_guia else vars_css["border"]),
             )
 
-            # --- FIX ANTICRASH ---
-            # Convertimos primero a datetime
             f_promesa_dt = pd.to_datetime(
                 envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors="coerce"
             )
-            # Solo aplicamos normalize si NO es nulo para evitar el AttributeError
             if pd.notnull(f_promesa_dt):
               f_promesa_dt = f_promesa_dt.normalize()
 
             hoy = pd.Timestamp(datetime.now()).normalize()
 
-            # --- LÓGICA DE ESTATUS Y COLORES FINALES ---
             if not tiene_guia:
               if trigger_val == "Enviada":
                 status_text, status_color = "GENERANDO GUÍA", "#38bdf8"
@@ -729,7 +676,6 @@ with header_zone:
                   vars_css["border"],
                   vars_css["border"],
               )
-
             elif not entregado_real:
               status_text, status_color = (
                   ("EN TRÁNSITO", "#38bdf8")
@@ -740,9 +686,7 @@ with header_zone:
                   vars_css["border"],
                   vars_css["border"],
               )
-
             else:
-              # Aplicamos la misma seguridad para la fecha de entrega real por si acaso
               f_entrega_dt = pd.to_datetime(
                   envio.get("FECHA DE ENTREGA REAL"),
                   dayfirst=True,
@@ -758,7 +702,6 @@ with header_zone:
               )
               color_entrega, linea_3_4 = status_color, status_color
 
-            # HTML en una sola línea
             timeline_html = (
                 f'<div style="background:{vars_css["card"]}; padding:20px;'
                 f' border-radius:8px; border:1px solid'
@@ -833,7 +776,6 @@ with header_zone:
             )
             st.markdown(timeline_html, unsafe_allow_html=True)
 
-            # --- RENDERIZADO DE DETALLES (TU BLOQUE ORIGINAL) ---
             d = resultados.iloc[0]
             st.markdown(
                 f"""
@@ -881,10 +823,7 @@ with header_zone:
                 unsafe_allow_html=True,
             )
         else:
-          # Definimos el nuevo color azulito para esta sección
           azul_premium = "#00D4FF"
-
-          # Encabezado de la sección con el indicador azul
           st.markdown(
               f"""
                         <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'>
@@ -918,7 +857,6 @@ with header_zone:
             status_text = (
                 d["COMENTARIOS"] if pd.notna(d["COMENTARIOS"]) else "OK"
             )
-
             st.markdown(
                 f"<div class='card-nexion'"
                 f" style='background:rgba(30,39,46,0.7);border:1px solid"
@@ -956,7 +894,6 @@ with header_zone:
                 unsafe_allow_html=True,
             )
 
-    # Línea decorativa final
     st.markdown(
         f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px;"
         " opacity:0.1;'>",
@@ -964,40 +901,31 @@ with header_zone:
     )
 
 
-# ── ALERTAS!!!!!!!!!!
-# --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO (BOTÓN INTEGRADO A LA IZQUIERDA) ---
+# ==========================================
+# MONITOR DE ALERTAS RIGOBERTO
+# ==========================================
 @st.fragment(run_every=3)
 def monitor_global_rigoberto():
   if st.session_state.get("usuario_activo") == "Rigoberto":
-
     try:
-      import time
-      import pandas as pd
-
       t_fresco = int(time.time() * 1000)
       url_nube = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/muestras.csv?v={t_fresco}"
-
       df_vigia = pd.read_csv(url_nube, encoding="utf-8-sig")
       df_vigia.columns = df_vigia.columns.str.strip()
 
       if not df_vigia.empty and "FOLIO" in df_vigia.columns:
         folio_actual_nube = int(pd.to_numeric(df_vigia["FOLIO"]).max())
-
         if "ultimo_folio_visto" not in st.session_state:
           st.session_state.ultimo_folio_visto = folio_actual_nube
-
         elif folio_actual_nube > st.session_state.ultimo_folio_visto:
           st.session_state.alerta_folio_pendiente = folio_actual_nube
           st.session_state.ultimo_folio_visto = folio_actual_nube
           st.rerun()
-
-    except Exception as e:
+    except Exception:
       pass
 
-    # Renderizado visual con la alerta y el botón de cierre integrado al lado izquierdo
     if "alerta_folio_pendiente" in st.session_state:
       folio = st.session_state.alerta_folio_pendiente
-
       st.markdown(
           f"""
             <div style="
@@ -1020,9 +948,6 @@ def monitor_global_rigoberto():
             """,
           unsafe_allow_html=True,
       )
-
-      # Usamos un botón de Streamlit nativo pero colocado al margen izquierdo sin columnas rebeldes
-      # Inyectamos CSS exclusivo para achicar la letra y padding de este botón en específico
       st.markdown(
           """
                 <style>
@@ -1035,13 +960,12 @@ def monitor_global_rigoberto():
             """,
           unsafe_allow_html=True,
       )
-
       if st.button("✖ CERRAR ALERTA", key="btn_cerrar_alerta_rigoberto"):
-            del st.session_state.alerta_folio_pendiente
-            st.rerun()
-    
-    
-    monitor_global_rigoberto()
+        del st.session_state.alerta_folio_pendiente
+        st.rerun()
+
+
+monitor_global_rigoberto()
 
 
 # ==========================================
