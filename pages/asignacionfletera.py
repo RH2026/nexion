@@ -280,6 +280,71 @@ if "resultado_busqueda" not in st.session_state:
 if "search_key_version" not in st.session_state:
   st.session_state.search_key_version = 1
 
+
+# ==========================================
+# MONITOR DE ALERTAS RIGOBERTO (FRAGMENTO)
+# ==========================================
+@st.fragment(run_every=3)
+def monitor_global_rigoberto():
+  if st.session_state.get("usuario_activo") == "Rigoberto":
+    try:
+      t_fresco = int(time.time() * 1000)
+      url_nube = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/muestras.csv?v={t_fresco}"
+      df_vigia = pd.read_csv(url_nube, encoding="utf-8-sig")
+      df_vigia.columns = df_vigia.columns.str.strip()
+
+      if not df_vigia.empty and "FOLIO" in df_vigia.columns:
+        folio_actual_nube = int(pd.to_numeric(df_vigia["FOLIO"]).max())
+        if "ultimo_folio_visto" not in st.session_state:
+          st.session_state.ultimo_folio_visto = folio_actual_nube
+        elif folio_actual_nube > st.session_state.ultimo_folio_visto:
+          st.session_state.alerta_folio_pendiente = folio_actual_nube
+          st.session_state.ultimo_folio_visto = folio_actual_nube
+          st.rerun()
+    except Exception:
+      pass
+
+    if "alerta_folio_pendiente" in st.session_state:
+      folio = st.session_state.alerta_folio_pendiente
+      st.markdown(
+          f"""
+            <div style="
+                background-color: #202c36; 
+                border-left: 6px solid #FF4500; 
+                padding: 20px 25px; 
+                border-radius: 5px; 
+                margin-bottom: 10px;
+                color: white;
+                font-family: sans-serif;
+                box-shadow: none !important;
+            ">
+                <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
+                    NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
+                </h2>
+                <p style="margin: 5px 0 8px 0; font-size: 09px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                    Nexion Logistic // Alerta Exclusiva Admin
+                </p>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          """
+                <style>
+                div[data-testid="stButton"] > button[kind="secondary"] {
+                    font-size: 09px !important;
+                    padding: 4px 12px !important;
+                    min-height: unset !important;
+                }
+                </style>
+            """,
+          unsafe_allow_html=True,
+      )
+      if st.button("✖ CERRAR ALERTA", key="btn_cerrar_alerta_rigoberto"):
+        del st.session_state.alerta_folio_pendiente
+        st.rerun()
+
+
 # ==========================================
 # 5. HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA)
 # ==========================================
@@ -901,70 +966,7 @@ with header_zone:
     )
 
 
-# ==========================================
-# MONITOR DE ALERTAS RIGOBERTO
-# ==========================================
-@st.fragment(run_every=3)
-def monitor_global_rigoberto():
-  if st.session_state.get("usuario_activo") == "Rigoberto":
-    try:
-      t_fresco = int(time.time() * 1000)
-      url_nube = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/muestras.csv?v={t_fresco}"
-      df_vigia = pd.read_csv(url_nube, encoding="utf-8-sig")
-      df_vigia.columns = df_vigia.columns.str.strip()
-
-      if not df_vigia.empty and "FOLIO" in df_vigia.columns:
-        folio_actual_nube = int(pd.to_numeric(df_vigia["FOLIO"]).max())
-        if "ultimo_folio_visto" not in st.session_state:
-          st.session_state.ultimo_folio_visto = folio_actual_nube
-        elif folio_actual_nube > st.session_state.ultimo_folio_visto:
-          st.session_state.alerta_folio_pendiente = folio_actual_nube
-          st.session_state.ultimo_folio_visto = folio_actual_nube
-          st.rerun()
-    except Exception:
-      pass
-
-    if "alerta_folio_pendiente" in st.session_state:
-      folio = st.session_state.alerta_folio_pendiente
-      st.markdown(
-          f"""
-            <div style="
-                background-color: #202c36; 
-                border-left: 6px solid #FF4500; 
-                padding: 20px 25px; 
-                border-radius: 5px; 
-                margin-bottom: 10px;
-                color: white;
-                font-family: sans-serif;
-                box-shadow: none !important;
-            ">
-                <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
-                    NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
-                </h2>
-                <p style="margin: 5px 0 8px 0; font-size: 09px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
-                    Nexion Logistic // Alerta Exclusiva Admin
-                </p>
-            </div>
-            """,
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          """
-                <style>
-                div[data-testid="stButton"] > button[kind="secondary"] {
-                    font-size: 09px !important;
-                    padding: 4px 12px !important;
-                    min-height: unset !important;
-                }
-                </style>
-            """,
-          unsafe_allow_html=True,
-      )
-      if st.button("✖ CERRAR ALERTA", key="btn_cerrar_alerta_rigoberto"):
-        del st.session_state.alerta_folio_pendiente
-        st.rerun()
-
-
+# Ejecutamos el monitor de alertas global fuera de bloques anidados
 monitor_global_rigoberto()
 
 
