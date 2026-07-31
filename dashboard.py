@@ -5322,7 +5322,7 @@ else:
                                     st.rerun()
                         with col2:
                             import streamlit.components.v1 as components
-                            if st.button(":material/print: FECHA" IMPRIMIR", use_container_width=True):
+                            if st.button(":material/print: IMPRIMIR", use_container_width=True):
                                 components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
                         with col3:
                             buffer = io.BytesIO()
