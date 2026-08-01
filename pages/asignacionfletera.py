@@ -80,6 +80,25 @@ div.stButton > button {{
     width: 100% !important;
 }}
 
+
+/*FOOTER FIJO */
+.footer {{ 
+    position: fixed; 
+    bottom: 0 !important; 
+    left: 0 !important; 
+    width: 100% !important; 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['sub']} !important; 
+    text-align: center; 
+    padding: 12px 0px !important; 
+    font-size: 9px; 
+    letter-spacing: 2px; 
+    border-top: 1px solid {vars_css['border']} !important; 
+    z-index: 999999 !important; 
+    animation: none !important; 
+    transform: none !important; 
+}}
+
 div.stButton > button:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
@@ -1013,3 +1032,14 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+    st.markdown(f"""
+        <div class="footer">
+            NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
+            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
+            <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
+        </div>
+    """, unsafe_allow_html=True)
+    
