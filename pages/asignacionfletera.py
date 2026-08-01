@@ -94,6 +94,8 @@ div.stButton > button:hover {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
+    # Guardamos la página actual para que sepan a dónde regresar
+    st.session_state.pagina_destino = "pages/asignacionfletera.py"
     st.switch_page("pages/log.py")
 
 # ==========================================
