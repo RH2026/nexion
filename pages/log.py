@@ -139,24 +139,64 @@ def login_screen():
       )
 
       if submit_button:
-        lista_usuarios = st.secrets.get("usuarios", {})
-        if (
-            user_input in lista_usuarios
-            and str(lista_usuarios[user_input]) == pass_input
-        ):
-          st.session_state.autenticado = True
-          st.session_state.usuario_activo = user_input
-          registrar_acceso(user_input) # Registramos acceso como ya lo tenías
-          
-          # --- AQUÍ ESTÁ LA MAGIA DE REDIRECCIÓN INTELIGENTE ---
-          destino = st.session_state.get("pagina_destino", "pages/asignacionfletera.py")
-          # Limpiamos la variable para que no se quede anclada para siempre
-          if "pagina_destino" in st.session_state:
-              del st.session_state["pagina_destino"]
-              
-          st.switch_page(destino)
-        else:
-          st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
+                lista_usuarios = st.secrets.get("usuarios", {})
+                
+                # 1. Diccionario para convertir Operator ID en Nombre Real
+                nombres_reales = {
+                    "Rigoberto": "Rigoberto Hernández",
+                    "AGomez": "Ale Gomez",
+                    "JMoreno": "Jesus Moreno",
+                    "Cynthia": "Cynthia",
+                    "Brenda": "Brenda",
+                    "Fialko": "Fialko",
+                    "Atencion3G": "Sandra Yaneli",
+                    "Claudia": "Claudia",
+                    "Ruth": "Ruth Buenrostro",
+                    "Carlos": "Carlos Vazquez",
+                    "Sandra": "Sandra, Analista",
+                    "ASanchez": "Alejandra",
+                    "MarthaC" : "Martha Casas",
+                }
+                
+                # 2. Diccionario de géneros (F = Femenino, M = Masculino)
+                generos = {
+                    "Rigoberto": "M",
+                    "AGomez": "F",
+                    "JMoreno": "M",
+                    "Cynthia": "F",
+                    "Brenda": "F",
+                    "Fialko": "M",
+                    "Yaneli": "F",
+                    "Claudia": "F",
+                    "Arturo": "M",
+                    "Ruth" : "F",
+                    "Carlos": "M",
+                    "Sandra": "F",
+                    "ASanchez":"F",
+                    "MarthaC" : "F"
+                }
+
+                if (
+                    user_input in lista_usuarios
+                    and str(lista_usuarios[user_input]) == pass_input
+                ):
+                    st.session_state.autenticado = True
+                    st.session_state.usuario_activo = user_input
+                    
+                    # Guardamos el nombre real y el género en la sesión para que las demás páginas lo lean
+                    st.session_state.nombre_completo = nombres_reales.get(user_input, user_input)
+                    st.session_state.genero_usuario = generos.get(user_input, "M")
+                    
+                    registrar_acceso(user_input)
+                    
+                    # Redirección inteligente al lugar de donde venía o a asignación por defecto
+                    destino = st.session_state.get("pagina_destino", "pages/asignacionfletera.py")
+                    if "pagina_destino" in st.session_state:
+                        del st.session_state["pagina_destino"]
+                        
+                    st.switch_page(destino)
+                else:
+                    st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
 
 # FLUJO DE CONTROL: SPLASH -> LOGIN -> MULTIPÁGINA
 if not st.session_state.get("splash_completado", False):
