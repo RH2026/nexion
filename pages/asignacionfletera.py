@@ -94,17 +94,21 @@ div.stButton > button:hover {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    # Redirección automática forzada a nivel de ventana principal
-    st.markdown(
-        """
-        <script>
-            setTimeout(function() {
-                window.top.location.href = "./log";
-            }, 10);
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
+    try:
+        # Intenta usar la redirección nativa de Streamlit si el archivo de login está en la raíz o páginas
+        st.switch_page("app.py") # O la ruta de tu archivo de login principal
+    except Exception:
+        # Respaldo visual limpio por si falla la ruta nativa
+        st.markdown(
+            """
+            <div style="background: #2B343B; border: 1px solid #4B5D67; border-radius: 12px; padding: 30px; text-align: center; color: white; font-family: 'Inter', sans-serif; margin-top: 15vh;">
+                <h3 style="color: #38bdf8; margin-bottom: 10px;">⚡ SESIÓN EXPIRADA O NO AUTORIZADA</h3>
+                <p style="color: rgba(255,255,255,0.7); font-size: 13px;">Por favor, vuelve a iniciar sesión para acceder al módulo.</p>
+                <a href="./log" target="_self" style="display: inline-block; background-color: #00A3A3; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold; margin-top: 15px; font-size: 11px;">IR AL LOGIN</a>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     st.stop()
 
 
