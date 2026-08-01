@@ -91,14 +91,10 @@ div.stButton > button:hover {{
 
 
 # ==========================================
-# 2. CONTROL DE ACCESO MAESTRO (PATRÓN DE VISTA ÚNICA)
+# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    # Si no hay sesión, cargamos la vista o lógica del login directamente aquí
-    # en lugar de bloquear con un st.stop() que congela la página.
-    st.warning("Por favor, inicia sesión para continuar.")
-    # Aquí irían tus campos de login o la llamada a tu función de acceso
-    st.stop()
+    st.switch_page("pages/log.py")
 
 # ==========================================
 # 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
