@@ -329,7 +329,6 @@ with header_zone:
         )
         key_actual = f"main_search_v{st.session_state.search_key_version}"
 
-        # Inicializamos el estado del input auxiliar si no existe
         if "busqueda_input" not in st.session_state:
             st.session_state.busqueda_input = ""
 
@@ -347,7 +346,6 @@ with header_zone:
         )
 
         if query:
-            # Simulamos carga de fuentes T1, T2, T3 o matriz general
             try:
                 df_t1 = pd.read_csv("T1.csv") if pd.io.common.file_exists("T1.csv") else None
                 df_t2 = pd.read_csv("T2.csv") if pd.io.common.file_exists("T2.csv") else None
@@ -411,10 +409,10 @@ with header_zone:
                             estatus = (
                                 "ESTATUS: ENTREGADO"
                                 if fecha_valida
-                                else "ESTATUS: EN TRANSITO"
+                                else "ESTATUS: EN TRÁNSITO"
                             )
                         else:
-                            estatus = "ESTATUS: ACTUALIZANDO DATOS"
+                            estatus = "ESTATUS: ACTUALIZANDO"
 
                         guia = (
                             f.get("TALON")
@@ -454,39 +452,32 @@ with header_zone:
                         )
 
                         color_estatus = (
-                            "#38bdf8"
+                            "#00FFAA"
                             if "ENTREGADO" in estatus
-                            else (
-                                "#FFA500"
-                                if "TRANSITO" in estatus
-                                else vars_css["card"]
-                            )
+                            else "#38bdf8"
                         )
                         
-                        # RENDERIZADO ESTANDARIZADO CON LA TARJETA OSCURA Y TONOS AZULES
+                        # RENDERIZADO ANCHO Y ESTANDARIZADO (ESTILO SEGUNDA IMAGEN)
                         html_resultado = f"""
-                        <div class="nexion-hover-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-top: 4px solid #38bdf8; padding: 22px; border-radius: 8px; margin-bottom: 25px; font-family: 'Inter', sans-serif; color: white;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                <span style="color: #38bdf8; font-weight: 800; font-size: 15px; letter-spacing: 1px;">{nombre_f} // DETALLES DE OPERACIÓN</span>
-                                <span style="background:{color_estatus}15; color:{color_estatus}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:11px; border:1px solid {color_estatus}; letter-spacing:1px; text-transform:uppercase;">{estatus}</span>
+                        <div class="nexion-hover-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; font-family: 'Inter', sans-serif; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                            <div style="flex: 1.2; min-width: 200px;">
+                                <div style="color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{nombre_f}</div>
+                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">TALÓN / FOLIO</div>
+                                <div style="color: #38bdf8; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{guia}</div>
+                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">REF: <span style="color: white; font-size: 12px; font-weight: 700;">{factura}</span></div>
                             </div>
-                            <div style="display: flex; align-items: center; margin-bottom: 25px;">
-                                <div style="color: white; font-weight: bold; font-size: 15px;">GDL</div>
-                                <div style="color: #38bdf8; margin: 0 15px; font-size: 15px;">→</div>
-                                <div style="color: white; font-weight: bold; font-size: 15px;">{destino}</div>
+                            <div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / RUTA</div>
+                                <div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{cliente}</div>
+                                <div style="font-size: 12px; color: #38bdf8; margin-top: 6px; font-weight: 600;">📍 GDL → {destino}</div>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; text-align: left;">
-                                <div>
-                                    <p style="color:#38bdf8; font-weight:800; font-size:11px; margin-bottom:6px; border-left: 2px solid #38bdf8; padding-left: 8px; letter-spacing: 0.5px;">CLIENTE / DESTINATARIO</p>
-                                    <p style="font-size:15px; margin:0; color:white; font-weight: 700;"><b>{cliente}</b></p>
-                                    <p style="font-size:12px; color:#E0E0E0; margin-top: 5px;">TALÓN / GUÍA: <b style="color: #38bdf8; font-family: monospace;">{guia}</b></p>
-                                </div>
-                                <div>
-                                    <p style="color:#38bdf8; font-weight:800; font-size:11px; margin-bottom:6px; border-left: 2px solid #38bdf8; padding-left: 8px; letter-spacing: 0.5px;">RESUMEN FINANCIERO</p>
-                                    <p style="font-size:13px; margin:0; color:white; margin-bottom: 3px;">REFERENCIA: <b>{factura}</b></p>
-                                    <p style="font-size:13px; margin:0; color:white; margin-bottom: 3px;">BULTOS: <b>{bultos}</b></p>
-                                    <p style="font-size:14px; margin:0; color:#38bdf8; font-weight: 800;">IMPORTE: ${importe}</p>
-                                </div>
+                            <div style="flex: 1.2; min-width: 160px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN FINANCIERO</div>
+                                <div style="color: white; font-weight: 700; font-size: 12px; margin-top: 2px;">BULTOS: <span style="color: #38bdf8;">{bultos}</span></div>
+                                <div style="color: #38bdf8; font-weight: 800; font-size: 14px; margin-top: 2px;">$ {importe}</div>
+                            </div>
+                            <div style="text-align: right; min-width: 140px;">
+                                <span style="background-color: {color_estatus}15; color: {color_estatus}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {color_estatus}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">{estatus}</span>
                             </div>
                         </div>
                         """
@@ -521,68 +512,37 @@ with header_zone:
                         f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
                         if pd.notnull(f_promesa_dt): f_promesa_dt = f_promesa_dt.normalize()
                         hoy = pd.Timestamp(datetime.now()).normalize()
-                        v_border, v_sub = vars_css["border"], vars_css["text"]
 
                         if not tiene_guia:
                             status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
-                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", v_border, v_border, v_border
-                            linea_1_2, linea_2_3, linea_3_4 = v_border, v_border, v_border
                         elif not entregado_real:
                             status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", v_border
-                            linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", v_border
                         else:
                             f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors='coerce')
                             if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
                             status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
-                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", status_color
-                            linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", status_color
 
-                        # RENDERIZADO ESTANDARIZADO CON LA MISMA TARJETA OSCURA Y TONOS AZULES
+                        # RENDERIZADO ANCHO Y ESTANDARIZADO PARA LA MATRIZ GENERAL
                         html_resultado = f"""
-                        <div class="nexion-hover-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-top: 4px solid #38bdf8; padding: 22px; border-radius: 8px; margin-bottom: 25px; font-family: 'Inter', sans-serif; color: white;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px;">
-                                <span style="color: #38bdf8; font-weight: 800; font-size: 15px; letter-spacing: 1px;">{envio["NOMBRE DEL CLIENTE"]}</span>
-                                <span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:11px; border:1px solid {status_color}; letter-spacing:1px; text-transform:uppercase;">{status_text}</span>
+                        <div class="nexion-hover-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; font-family: 'Inter', sans-serif; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                            <div style="flex: 1.2; min-width: 200px;">
+                                <div style="color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{envio["FLETERA"]}</div>
+                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">NÚMERO DE GUÍA</div>
+                                <div style="color: #38bdf8; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div>
+                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">PEDIDO: <span style="color: white; font-size: 12px; font-weight: 700;">{envio['NÚMERO DE PEDIDO']}</span></div>
                             </div>
-                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; position: relative; margin-bottom: 25px;">
-                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                                    <div style="width: 12px; height: 12px; background: {color_envio}; border-radius: 50%; z-index: 2;"></div>
-                                    <div style="font-size: 9px; color: {v_sub}; margin-top: 10px; font-weight: 800; letter-spacing: 1px;">ENVÍO</div>
-                                    <div style="font-size: 11px; color: white; font-weight: 600;">{f_envio}</div>
-                                </div>
-                                <div style="flex-grow: 1; height: 2px; background: {linea_1_2}; margin-top: -35px;"></div>
-                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                                    <div style="width: 12px; height: 12px; background: {color_guia}; border-radius: 50%; z-index: 2;"></div>
-                                    <div style="font-size: 9px; color: {v_sub}; margin-top: 10px; font-weight: 800; letter-spacing: 1px;">GUÍA</div>
-                                    <div style="font-size: 11px; color: white; font-weight: 600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div>
-                                </div>
-                                <div style="flex-grow: 1; height: 2px; background: {linea_2_3}; margin-top: -35px;"></div>
-                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                                    <div style="width: 12px; height: 12px; background: {color_promesa}; border-radius: 50%; z-index: 2;"></div>
-                                    <div style="font-size: 9px; color: {v_sub}; margin-top: 10px; font-weight: 800; letter-spacing: 1px;">PROMESA</div>
-                                    <div style="font-size: 11px; color: white; font-weight: 600;">{f_promesa}</div>
-                                </div>
-                                <div style="flex-grow: 1; height: 2px; background: {linea_3_4}; margin-top: -35px;"></div>
-                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                                    <div style="width: 16px; height: 16px; background: {color_entrega}; border-radius: 50%; z-index: 2;"></div>
-                                    <div style="font-size: 9px; color: {v_sub}; margin-top: 8px; font-weight: 800; letter-spacing: 1px;">ENTREGA</div>
-                                    <div style="font-size: 11px; color: white; font-weight: 600;">{f_entrega_val}</div>
-                                </div>
+                            <div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">CLIENTE / DESTINO</div>
+                                <div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio["NOMBRE DEL CLIENTE"]}</div>
+                                <div style="font-size: 12px; color: #38bdf8; margin-top: 6px; font-weight: 600;">📍 GDL → {envio['DESTINO']}</div>
                             </div>
-                            <div style="display: flex; justify-content: space-between; border-top: 1px solid {v_border}; padding-top: 15px; margin-top: 15px;">
-                                <div style="text-align: left;">
-                                    <div style="color: {v_sub}; font-size: 9px; font-weight: 800; letter-spacing: 1px;">FLETERA</div>
-                                    <div style="color: white; font-size: 13px; font-weight: 700;">{envio["FLETERA"]}</div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="color: {v_sub}; font-size: 9px; font-weight: 800; letter-spacing: 1px;">GUÍA</div>
-                                    <div style="color: white; font-size: 13px; font-weight: 700; font-family: monospace;">{n_guia}</div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="color: {v_sub}; font-size: 9px; font-weight: 800; letter-spacing: 1px;">DESTINO</div>
-                                    <div style="color: white; font-size: 13px; font-weight: 700;">{envio["DESTINO"]}</div>
-                                </div>
+                            <div style="flex: 1.2; min-width: 160px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">LOGÍSTICA Y COSTO</div>
+                                <div style="color: white; font-weight: 700; font-size: 12px; margin-top: 2px;">CAJAS: <span style="color: #38bdf8;">{envio.get('CANTIDAD DE CAJAS', 'N/A')}</span></div>
+                                <div style="color: #38bdf8; font-weight: 800; font-size: 14px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA', '0.00')}</div>
+                            </div>
+                            <div style="text-align: right; min-width: 140px;">
+                                <span style="background-color: {status_color}15; color: {status_color}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">{status_text}</span>
                             </div>
                         </div>
                         """
@@ -590,7 +550,7 @@ with header_zone:
             # --- RENDERIZADO DEL BOTÓN DE CIERRE Y RESULTADO ---
             if encontrado:
                 _, col_btn_cerrar = st.columns([5, 1])
-                with col_btn_cerrar:
+                with col_btncerrar:
                     st.markdown('<div style="margin-top: -5px;"></div>', unsafe_allow_html=True)
 
                     def limpiar_busqueda():
