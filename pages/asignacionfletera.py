@@ -457,7 +457,6 @@ with header_zone:
                             else "#38bdf8"
                         )
                         
-                        # RENDERIZADO ANCHO Y ESTANDARIZADO (ESTILO SEGUNDA IMAGEN)
                         html_resultado = f"""
                         <div class="nexion-hover-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; font-family: 'Inter', sans-serif; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
                             <div style="flex: 1.2; min-width: 200px;">
@@ -522,7 +521,6 @@ with header_zone:
                             if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
                             status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
-                        # RENDERIZADO ANCHO Y ESTANDARIZADO PARA LA MATRIZ GENERAL
                         html_resultado = f"""
                         <div class="nexion-hover-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; font-family: 'Inter', sans-serif; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
                             <div style="flex: 1.2; min-width: 200px;">
@@ -550,7 +548,7 @@ with header_zone:
             # --- RENDERIZADO DEL BOTÓN DE CIERRE Y RESULTADO ---
             if encontrado:
                 _, col_btn_cerrar = st.columns([5, 1])
-                with col_btncerrar:
+                with col_btn_cerrar:
                     st.markdown('<div style="margin-top: -5px;"></div>', unsafe_allow_html=True)
 
                     def limpiar_busqueda():
