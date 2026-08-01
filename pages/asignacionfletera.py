@@ -91,89 +91,21 @@ div.stButton > button:hover {{
 
 
 # ==========================================
+# ==========================================
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
+    # Redirección automática silenciosa al login sin mostrar advertencias
     st.markdown(
         """
-        <style>
-        @keyframes pulseGlow {
-            0% { border-color: rgba(255, 75, 75, 0.4); box-shadow: 0 0 10px rgba(255, 75, 75, 0.1); }
-            50% { border-color: rgba(255, 75, 75, 0.9); box-shadow: 0 0 25px rgba(255, 75, 75, 0.3); }
-            100% { border-color: rgba(255, 75, 75, 0.4); box-shadow: 0 0 10px rgba(255, 75, 75, 0.1); }
-        }
-        .security-alert-box {
-            background: rgba(30, 39, 46, 0.95);
-            border: 1px solid rgba(255, 75, 75, 0.6);
-            border-left: 6px solid #ff4b4b;
-            border-radius: 12px;
-            padding: 25px 30px;
-            margin-top: 10vh;
-            text-align: center;
-            animation: pulseGlow 2s infinite ease-in-out;
-            font-family: 'Inter', sans-serif;
-        }
-        .security-title {
-            color: #ff4b4b;
-            font-size: 14px;
-            font-weight: 800;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .security-desc {
-            color: #ffffff;
-            font-size: 12px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            opacity: 0.8;
-            margin-bottom: 0px;
-        }
-        </style>
-        <div class="security-alert-box">
-            <div class="security-title">⚡ ACCESS DENIED // SECURITY PROTOCOL ACTIVE</div>
-            <div class="security-desc">Credenciales de sesión no detectadas. Redirigiendo al núcleo de autenticación.</div>
-        </div>
-    """,
+        <script>
+            setTimeout(function() {
+                window.location.href = "./log";
+            }, 10);
+        </script>
+        """,
         unsafe_allow_html=True,
     )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    col_btn1, col_btn2, col_btn3 = st.columns([2, 1.5, 2])
-    with col_btn2:
-        st.markdown(
-            f"""
-        <style>
-        .custom-login-btn {{
-            background-color: {vars_css['card']} !important;
-            color: {vars_css['text']} !important;
-            border: 1px solid {vars_css['border']} !important;
-            border-radius: 4px !important;
-            font-weight: 700 !important;
-            text-transform: uppercase;
-            font-size: 10px !important;
-            height: 34px !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            text-decoration: none !important;
-            letter-spacing: 1px;
-            font-family: 'Inter', sans-serif !important;
-            box-sizing: border-box;
-        }}
-        .custom-login-btn:hover {{
-            background-color: #00A3A3 !important;
-            color: #ffffff !important;
-            border-color: #00A3A3 !important;
-        }}
-        </style>
-        <a href="./log" target="_self" class="custom-login-btn">
-            INICIAR SESIÓN
-        </a>
-    """,
-            unsafe_allow_html=True,
-        )
     st.stop()
 
 
