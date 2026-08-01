@@ -91,16 +91,15 @@ div.stButton > button:hover {{
 
 
 # ==========================================
-# ==========================================
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    # Redirección automática silenciosa al login sin mostrar advertencias
+    # Redirección automática forzada a nivel de ventana principal
     st.markdown(
         """
         <script>
             setTimeout(function() {
-                window.location.href = "./log";
+                window.top.location.href = "./log";
             }, 10);
         </script>
         """,
