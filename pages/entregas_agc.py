@@ -359,32 +359,7 @@ if query:
                     </div>
                     """
 
-                html_resultado = f"""
-                <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%;">
-                        <div style="flex: 1.2; min-width: 200px;">
-                            <div style="color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{nombre_f}</div>
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">TALÓN / FOLIO</div>
-                            <div style="color: #38bdf8; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{guia}</div>
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">REF: <span style="color: white; font-size: 12px; font-weight: 700;">{factura}</span></div>
-                        </div>
-                        <div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / RUTA</div>
-                            <div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{cliente}</div>
-                            <div style="font-size: 12px; color: #38bdf8; margin-top: 6px; font-weight: 600;">📍 GDL → {destino}</div>
-                        </div>
-                        <div style="flex: 1.2; min-width: 160px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN FINANCIERO</div>
-                            <div style="color: white; font-weight: 700; font-size: 12px; margin-top: 2px;">BULTOS: <span style="color: #38bdf8;">{bultos}</span></div>
-                            <div style="color: #38bdf8; font-weight: 800; font-size: 14px; margin-top: 2px;">$ {importe}</div>
-                        </div>
-                        <div style="text-align: right; min-width: 140px;">
-                            <span style="background-color: {color_estatus}15; color: {color_estatus}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {color_estatus}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">{estatus}</span>
-                        </div>
-                    </div>
-                    {timeline_html}
-                </div>
-                """
+                html_resultado = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box;"><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%;"><div style="flex: 1.2; min-width: 200px;"><div style="color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{nombre_f}</div><div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">TALÓN / FOLIO</div><div style="color: #38bdf8; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">REF: <span style="color: white; font-size: 12px; font-weight: 700;">{factura}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / RUTA</div><div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{cliente}</div><div style="font-size: 12px; color: #38bdf8; margin-top: 6px; font-weight: 600;">📍 GDL → {destino}</div></div><div style="flex: 1.2; min-width: 160px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN FINANCIERO</div><div style="color: white; font-weight: 700; font-size: 12px; margin-top: 2px;">BULTOS: <span style="color: #38bdf8;">{bultos}</span></div><div style="color: #38bdf8; font-weight: 800; font-size: 14px; margin-top: 2px;">$ {importe}</div></div><div style="text-align: right; min-width: 140px;"><span style="background-color: {color_estatus}15; color: {color_estatus}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {color_estatus}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">{estatus}</span></div></div>{timeline_html}</div>"""
 
     if encontrado:
         col_espacio_res, col_btn_cerrar = st.columns([10, 1])
