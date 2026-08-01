@@ -145,12 +145,17 @@ def login_screen():
         ):
           st.session_state.autenticado = True
           st.session_state.usuario_activo = user_input
-          st.success(f"¡BIENVENIDO!, {user_input.upper()}")
-          time.sleep(1)
-          st.rerun()
+          registrar_acceso(user_input) # Registramos acceso como ya lo tenías
+          
+          # --- AQUÍ ESTÁ LA MAGIA DE REDIRECCIÓN INTELIGENTE ---
+          destino = st.session_state.get("pagina_destino", "pages/asignacionfletera.py")
+          # Limpiamos la variable para que no se quede anclada para siempre
+          if "pagina_destino" in st.session_state:
+              del st.session_state["pagina_destino"]
+              
+          st.switch_page(destino)
         else:
           st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
-
 
 # FLUJO DE CONTROL: SPLASH -> LOGIN -> MULTIPÁGINA
 if not st.session_state.get("splash_completado", False):
