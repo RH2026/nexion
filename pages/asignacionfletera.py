@@ -562,7 +562,7 @@ with header_zone:
                 st.session_state.splash_completado = False
                 st.rerun()
 
-    # ── RENDERIZADO DE CONSULTA ────────────────────────────────________________──
+    # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
     if (
         st.session_state.busqueda_activa
         and st.session_state.resultado_busqueda is not None
@@ -682,41 +682,41 @@ with header_zone:
                     st.markdown(
                         f"""
                         <div class="kpi-ruta-container">
-                            <div class="kpi-ruta-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-top: 4px solid {accent_color}; position: relative; padding: 20px; border-radius: 8px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                    <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
+                            <div class="kpi-ruta-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-top: 4px solid {accent_color}; position: relative; padding: 22px; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px;">
+                                    <span style="color: {accent_color}; font-weight: 800; font-size: 15px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
                                     <div style="display: flex; align-items: baseline; gap: 8px;">
                                         <span style="font-size:16px; font-weight:600; color: white; opacity: 0.9;">FACTURA:</span>
                                         <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
                                     </div>
                                 </div>
                                 <div class="kpi-route-flow" style="margin-bottom: 25px; display: flex; align-items: center;">
-                                    <div class="city" style="color: white; font-weight:bold;">GDL</div>
-                                    <div class="arrow" style="color: {accent_color}; margin: 0 15px;">→</div>
-                                    <div class="city" style="color: white; font-weight:bold;">{d['DESTINO']}</div>
+                                    <div class="city" style="color: white; font-weight:bold; font-size: 15px;">GDL</div>
+                                    <div class="arrow" style="color: {accent_color}; margin: 0 15px; font-size: 15px;">→</div>
+                                    <div class="city" style="color: white; font-weight:bold; font-size: 15px;">{d['DESTINO']}</div>
                                 </div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; text-align: left;">
                                     <div>
-                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CLIENTE</p>
-                                        <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
-                                        <p style="font-size:11px; color:#E0E0E0; margin-bottom:2px;">ID: {d['NO CLIENTE']}</p>
-                                        <p style="font-size:11px; color:#E0E0E0; opacity:0.9;">{d['DOMICILIO']}</p>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:11px; margin-bottom:6px; border-left: 2px solid {accent_color}; padding-left: 8px; letter-spacing: 0.5px;">CLIENTE</p>
+                                        <p style="font-size:15px; margin:0; color:white; font-weight: 700;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
+                                        <p style="font-size:12px; color:#E0E0E0; margin-bottom:3px; margin-top: 3px;">ID: {d['NO CLIENTE']}</p>
+                                        <p style="font-size:12px; color:#E0E0E0; opacity:0.9; line-height: 1.4;">{d['DOMICILIO']}</p>
                                     </div>
                                     <div>
-                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">LOGÍSTICA</p>
-                                        <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
-                                        <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d['FLETERA']}</b></p>
-                                        <p style="font-size:12px; margin:0; color:white;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:11px; margin-bottom:6px; border-left: 2px solid {accent_color}; padding-left: 8px; letter-spacing: 0.5px;">LOGÍSTICA</p>
+                                        <p style="font-size:13px; margin:0; color:white; margin-bottom: 3px;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
+                                        <p style="font-size:13px; margin:0; color:white; margin-bottom: 3px;">FLETERA: <b>{d['FLETERA']}</b></p>
+                                        <p style="font-size:13px; margin:0; color:white;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
                                     </div>
                                     <div>
-                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">TIEMPOS</p>
-                                        <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
-                                        <p style="font-size:12px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:11px; margin-bottom:6px; border-left: 2px solid {accent_color}; padding-left: 8px; letter-spacing: 0.5px;">TIEMPOS</p>
+                                        <p style="font-size:13px; margin:0; color:white; margin-bottom: 3px;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
+                                        <p style="font-size:13px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
                                     </div>
                                     <div>
-                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CARGA</p>
-                                        <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
-                                        <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:11px; margin-bottom:6px; border-left: 2px solid {accent_color}; padding-left: 8px; letter-spacing: 0.5px;">CARGA</p>
+                                        <p style="font-size:13px; margin:0; color:white; margin-bottom: 3px;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
+                                        <p style="font-size:12px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
                                     </div>
                                 </div>
                             </div>
