@@ -462,7 +462,7 @@ with header_zone:
                     unsafe_allow_html=True,
                 )
         else:
-            # RENDER 2: RESULTADO ÚNICO UNIFICADO (TARJETA SUPERIOR ESTILO IMAGEN 2 + BLOQUE DE DETALLES INFERIOR)
+            # RENDER 2: RESULTADO ÚNICO UNIFICADO (TIMELINE + TARJETA SUPERIOR + BLOQUE DE DETALLES)
             if total == 1:
                 envio = resultados.iloc[0]
                 f_envio = envio.get("FECHA DE ENVÍO", "N/A")
@@ -517,10 +517,46 @@ with header_zone:
                         else ("ENTREGA CON RETRASO", "#ff4b4b")
                     )
 
-                # Tarjeta superior unificada (Estilo imagen 2 con datos compactos y limpios)
+                # Tarjeta superior unificada (Estilo timeline de Imagen 2 + Datos)
                 tarjeta_superior_html = f"""
-                <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid {accent_color}; padding: 18px 25px; border-radius: 8px 8px 0 0; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%;">
+                <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid {accent_color}; padding: 20px 25px; border-radius: 8px 8px 0 0; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box;">
+                    
+                    <!-- LÍNEA DE TIEMPO (TIMELINE) SUPERIOR -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px; position: relative;">
+                        <!-- Paso 1: Envío -->
+                        <div style="text-align: center; z-index: 2;">
+                            <div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div>
+                            <div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div>
+                        </div>
+                        <div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div>
+
+                        <!-- Paso 2: Guía -->
+                        <div style="text-align: center; z-index: 2;">
+                            <div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div>
+                            <div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div>
+                        </div>
+                        <div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div>
+
+                        <!-- Paso 3: Promesa -->
+                        <div style="text-align: center; z-index: 2;">
+                            <div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div>
+                            <div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div>
+                        </div>
+                        <div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div>
+
+                        <!-- Paso 4: Entrega Real -->
+                        <div style="text-align: center; z-index: 2;">
+                            <div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div>
+                            <div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div>
+                        </div>
+                    </div>
+
+                    <!-- BLOQUE DE DATOS COMPACTOS -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
                         <div style="flex: 1.2; min-width: 200px;">
                             <div style="color: {accent_color}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div>
                             <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">TALÓN / FOLIO</div>
