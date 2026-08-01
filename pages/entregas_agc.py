@@ -413,6 +413,10 @@ def main():
                 color: #FFFFFF !important;            
                 border-color: #00A3A3 !important;
             }
+            div.stButton > button:active {
+                background-color: #00A3A3 !important;
+                border-color: #00A3A3 !important;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -430,7 +434,7 @@ def main():
         st.session_state.tipo_entrega = 'C A M I O N'
 
     if 'mes_calendario' not in st.session_state:
-        st.session_state.mes_calendario = 6 
+        st.session_state.mes_calendario = 6  # Por defecto inicia en Junio
 
     col_btn1, col_btn2, col_btn3 = st.columns(3)
 
@@ -457,7 +461,7 @@ def main():
     elif st.session_state.tipo_entrega == 'T R A I L E R':
         titulo_dinamico = "ENTREGAS DE TRAILER"
     else:
-        titulo_dinamico = "CALENDARIO DE ENTREGAS"
+        titulo_dinamico = "CALENDARIO DE ENTregas"
 
     st.markdown(f"""
         <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
