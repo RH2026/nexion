@@ -183,11 +183,16 @@ def login_screen():
                     st.session_state.autenticado = True
                     st.session_state.usuario_activo = user_input
                     
-                    # Guardamos el nombre real y el género en la sesión para que las demás páginas lo lean
-                    st.session_state.nombre_completo = nombres_reales.get(user_input, user_input)
+                    # Guardamos el nombre real y el género para que el menú los muestre bien
+                    nombre_real = nombres_reales.get(user_input, user_input)
+                    st.session_state.nombre_completo = nombre_real
                     st.session_state.genero_usuario = generos.get(user_input, "M")
                     
                     registrar_acceso(user_input)
+                    
+                    # Mensaje de bienvenida que faltaba
+                    st.success(f"¡BIENVENIDO!, {nombre_real.upper()}")
+                    time.sleep(1)
                     
                     # Redirección inteligente al lugar de donde venía o a asignación por defecto
                     destino = st.session_state.get("pagina_destino", "pages/asignacionfletera.py")
