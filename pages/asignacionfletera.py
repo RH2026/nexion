@@ -12,7 +12,6 @@ import pandas as pd
 from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit as st
-import streamlit.components.v1 as components
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
@@ -156,7 +155,7 @@ def limpiar_texto(texto):
     return " ".join(texto.split())
 
 
-# Inicialización segura de estados de menú si no existen
+# Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "CENTRO DE DATOS"
 if "menu_sub" not in st.session_state:
@@ -172,7 +171,7 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 4. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL / MATRIZ E INVENTARIO)
+# 4. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL TRIPLE RENDER)
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -228,7 +227,6 @@ with header_zone:
         )
 
         if query:
-            # Cargar matriz fresca
             url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
             try:
                 df_matriz_fresco = pd.read_csv(url_raw)
@@ -435,7 +433,7 @@ with header_zone:
                 st.session_state.splash_completado = False
                 st.rerun()
 
-    # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA GLOBAL ────────────────────────
+    # ── RENDERIZADO DE LOS TRES TIPOS DE BÚSQUEDA / RESULTADOS ──────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
@@ -452,6 +450,7 @@ with header_zone:
                 st.session_state.search_key_version += 1
                 st.rerun()
 
+        # RENDER 1: INVENTARIO (SKU / DESCRIPCIÓN)
         if tipo == "INVENTARIO":
             st.markdown(
                 f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>",
@@ -467,6 +466,7 @@ with header_zone:
                     unsafe_allow_html=True,
                 )
         else:
+            # RENDER 2: RESULTADO ÚNICO NUTRIDO (TIMELINE + DETALLES COMPLETOS)
             if total == 1:
                 envio = resultados.iloc[0]
                 f_envio = envio.get("FECHA DE ENVÍO", "N/A")
@@ -475,6 +475,7 @@ with header_zone:
                 f_entrega_val = (
                     envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
                 )
+
                 trigger_val = str(envio.get("TRIGGER", "")).strip()
                 tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(
                     envio.get("NÚMERO DE GUÍA")
@@ -538,9 +539,57 @@ with header_zone:
                     )
                     color_entrega, linea_3_4 = status_color, status_color
 
+                # Timeline Visual Avanzado
                 timeline_html = f"""<div style="background:{vars_css['card']}; padding:20px; border-radius:8px; border:1px solid {vars_css['border']}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:30px;"><h2 style="margin:0; color:{vars_css['text']}; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio.get('NOMBRE DEL CLIENTE','')}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px; white-space:nowrap;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:30px; overflow-x:auto; padding-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css['sub']}; margin-top:10px; font-weight:700;">ENVÍO</div><div style="font-size:10px; color:white;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css['sub']}; margin-top:10px; font-weight:700;">GUÍA</div><div style="font-size:10px; color:white;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css['sub']}; margin-top:10px; font-weight:700;">PROMESA</div><div style="font-size:10px; color:white;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css['sub']}; margin-top:8px; font-weight:700;">ENTREGA</div><div style="font-size:10px; color:white;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px; border-top:1px solid {vars_css['border']}; padding-top:20px;"><div style="flex:1; min-width:80px;"><div style="color:{vars_css['sub']}; font-size:10px; font-weight:700; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{envio.get('FLETERA','')}</div></div><div style="flex:1; min-width:80px; text-align:center;"><div style="color:{vars_css['sub']}; font-size:10px; font-weight:700; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{n_guia}</div></div><div style="flex:1; min-width:80px; text-align:right;"><div style="color:{vars_css['sub']}; font-size:10px; font-weight:700; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{envio.get('DESTINO','')}</div></div></div></div>"""
                 st.markdown(timeline_html, unsafe_allow_html=True)
+
+                # Detalles Nutridos de Operación
+                d = envio
+                st.markdown(
+                    f"""
+                    <div style="background: rgba(255,255,255,0.05); border-top: 4px solid {accent_color}; position: relative; padding: 20px; border-radius: 4px; border: 1px solid {vars_css['border']}; margin-bottom: 25px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
+                            <div style="display: flex; align-items: baseline; gap: 8px;">
+                                <span style="font-size:16px; font-weight:600; color: white; opacity: 0.9;">PEDIDO:</span>
+                                <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d.get('NÚMERO DE PEDIDO','')}</span>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 25px; display: flex; align-items: center;">
+                            <div style="color: white; font-weight:bold;">GDL</div>
+                            <div style="color: {accent_color}; margin: 0 15px;">→</div>
+                            <div style="color: white; font-weight:bold;">{d.get('DESTINO','')}</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                            <div>
+                                <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CLIENTE</p>
+                                <p style="font-size:14px; margin:0; color:white;"><b>{d.get('NOMBRE DEL CLIENTE','')}</b></p>
+                                <p style="font-size:11px; color:#E0E0E0; margin-bottom:2px;">ID: {d.get('NO CLIENTE','')}</p>
+                                <p style="font-size:11px; color:#E0E0E0; opacity:0.9;">{d.get('DOMICILIO','')}</p>
+                            </div>
+                            <div>
+                                <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">LOGÍSTICA</p>
+                                <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d.get('NÚMERO DE GUÍA','')}</b></p>
+                                <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d.get('FLETERA','')}</b></p>
+                                <p style="font-size:12px; margin:0; color:white;">COSTO: <b>${d.get('COSTO DE LA GUÍA','0.00')}</b></p>
+                            </div>
+                            <div>
+                                <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">TIEMPOS</p>
+                                <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d.get('FECHA DE ENVÍO','')}</p>
+                                <p style="font-size:12px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d.get('PROMESA DE ENTREGA','')}</p>
+                            </div>
+                            <div>
+                                <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CARGA</p>
+                                <p style="font-size:12px; margin:0; color:white;">CAJAS: {d.get('CANTIDAD DE CAJAS','')}</p>
+                                <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d.get('COMENTARIOS')) else 'SIN OBSERVACIONES'}</p>
+                            </div>
+                        </div>
+                    </div>
+                """,
+                    unsafe_allow_html=True,
+                )
             else:
+                # RENDER 3: LISTADO MÚLTIPLE (CUANDO BUSCAS "CITY" O COINCIDENCIAS GENERALES)
                 st.markdown(
                     f"""
                     <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'>
