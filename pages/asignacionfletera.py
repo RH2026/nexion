@@ -80,7 +80,6 @@ div.stButton > button {{
     width: 100% !important;
 }}
 
-
 /*FOOTER FIJO */
 .footer {{ 
     position: fixed; 
@@ -113,9 +112,9 @@ div.stButton > button:hover {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    # Guardamos la página actual para que sepan a dónde regresar
     st.session_state.pagina_destino = "pages/asignacionfletera.py"
     st.switch_page("pages/log.py")
+
 
 # ==========================================
 # 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
@@ -148,7 +147,6 @@ def limpiar_texto(texto):
 # 4. FUNCIONES DE GENERACIÓN QR Y PDF
 # ==========================================
 def generar_qr_imagen(texto_qr):
-    # Reducimos el box_size de 3 a 2 para que los módulos del QR salgan más finos y pequeños
     qr = qrcode.QRCode(version=1, box_size=2, border=1)
     qr.add_data(texto_qr)
     qr.make(fit=True)
@@ -171,9 +169,9 @@ def generar_sellos_fisicos_con_qr(lista_datos, x, y):
         can.drawImage(
             ImageReader(qr_buffer),
             x + 150,
-            y - 30,  # Ajustamos ligeramente la posición vertical
-            width=30,  # <-- QR más pequeño (ancho 30)
-            height=30,  # <-- QR más pequeño (alto 30)
+            y - 30,
+            width=30,
+            height=30,
             mask="auto",
         )
         can.save()
@@ -195,8 +193,8 @@ def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
         ImageReader(qr_buffer), 
         x + 150, 
         y - 30, 
-        width=30,  # <-- QR más pequeño (ancho 30)
-        height=30, # <-- QR más pequeño (alto 30)
+        width=30, 
+        height=30, 
         mask="auto"
     )
     can.save()
@@ -230,7 +228,7 @@ if "busqueda_input" not in st.session_state:
 
 
 # ==========================================
-# 5. HEADER CON 4 COLUMNAS (BÚSQUEDA Y RESULTADO A TODO ANCHO)
+# 5. HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA)
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -275,18 +273,257 @@ with header_zone:
         es_atencion3g = (
             st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
         )
+        key_actual = f"main_search_v{st.session_state.search_key_version}"
+        
         query = st.text_input(
-            "BUSQUEDA AUXILIAR DE GUIAS",
-            value="",
-            placeholder=(
-                "🔍 BUSCADOR DESACTIVADO"
-                if es_atencion3g
-                else "Ingresa el numero de factura..."
-            ),
+            "Buscar",
+            placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar...",
             label_visibility="collapsed",
-            key="busqueda_input",
+            key=key_actual,
             disabled=es_atencion3g,
         )
+
+        if query:
+            try:
+                df_t1 = pd.read_csv("T1.csv") if pd.io.common.file_exists("T1.csv") else None
+                df_t2 = pd.read_csv("T2.csv") if pd.io.common.file_exists("T2.csv") else None
+                df_t3 = pd.read_csv("T3.csv") if pd.io.common.file_exists("T3.csv") else None
+            except:
+                df_t1, df_t2, df_t3 = None, None, None
+
+            encontrado = False
+            html_resultado = ""
+
+            # --- PASO 1: BUSCAR EN LAS FLETERAS (T1, T2, T3) ---
+            for df_source, nombre_f in [
+                (df_t1, "TRES GUERRAS"),
+                (df_t2, "TINY PACK"),
+                (df_t3, "ONE"),
+            ]:
+                if df_source is not None and not encontrado:
+                    cols_busqueda = [
+                        "OBSERVACION 1",
+                        "FACTURA_INTERNA",
+                        "Observaciones",
+                        "TALON",
+                        "CARTA_PORTE",
+                        "Guia",
+                    ]
+                    cols_presentes = [c for c in cols_busqueda if c in df_source.columns]
+
+                    if cols_presentes:
+                        mask = df_source[cols_presentes].astype(str).apply(
+                            lambda x: x.str.contains(query, case=False, na=False)
+                        ).any(axis=1)
+                        res = df_source[mask]
+                    else:
+                        res = pd.DataFrame()
+
+                    if not res.empty:
+                        encontrado = True
+                        f = res.iloc[0]
+
+                        col_f_envio = next((c for c in ['FECHA_ENVIO', 'FECHA DE ENVÍO', 'F.ENVIO', 'FECHA'] if c in df_source.columns), None)
+                        col_f_entrega = next((c for c in ['F.ENTREGA', 'FECHA_ENTREGA', 'FECHA DE ENTREGA'] if c in df_source.columns), None)
+
+                        f_envio = str(f.get(col_f_envio, "N/A")) if col_f_envio else "N/A"
+                        f_entrega_val = str(f.get(col_f_entrega, "PENDIENTE")) if col_f_entrega else "PENDIENTE"
+                        
+                        fecha_valida = False
+                        if col_f_entrega:
+                            fecha_dt = pd.to_datetime(f.get(col_f_entrega), errors="coerce")
+                            if pd.notnull(fecha_dt):
+                                fecha_valida = True
+
+                        estatus = "ESTATUS: ENTREGADO" if fecha_valida else "ESTATUS: EN TRÁNSITO"
+                        color_estatus = "#00FFAA" if fecha_valida else "#38bdf8"
+
+                        guia = f.get("TALON") or f.get("CARTA_PORTE") or f.get("Guia") or "S/N"
+                        factura = f.get("OBSERVACION 1") or f.get("FACTURA_INTERNA") or f.get("Observaciones") or "S/N"
+                        cliente = f.get("CLIENTE_DESTINO") or f.get("DESTINATARIO") or f.get("Destinatario") or "CLIENTE NO REGISTRADO"
+                        destino = f.get("DESTINO") or f.get("CIUDAD") or f.get("Oficina_Destino") or "N/A"
+                        bultos = f.get("BULTOS") or f.get("PIEZAS") or f.get("Paquetes_Ampara") or "0"
+                        importe = f.get("Sub total _ Guia") or f.get("TOTAL") or f.get("SUBTOTAL") or "0.00"
+
+                        timeline_html = ""
+                        if col_f_envio or col_f_entrega:
+                            c_envio_dot = "#38bdf8" if f_envio != "N/A" else vars_css["border"]
+                            c_entrega_dot = color_estatus if fecha_valida else vars_css["border"]
+                            linea_col = "#38bdf8" if f_envio != "N/A" else vars_css["border"]
+
+                            timeline_html = f"""
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; position: relative; margin: 20px 0 15px 0; padding: 0 10px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1; z-index: 2;">
+                                    <div style="width: 12px; height: 12px; background: {c_envio_dot}; border-radius: 50%;"></div>
+                                    <div style="font-size: 9px; color: rgba(255,255,255,0.6); margin-top: 6px; font-weight: 800; letter-spacing: 1px;">ENVÍO</div>
+                                    <div style="font-size: 11px; color: white; font-weight: 600;">{f_envio}</div>
+                                </div>
+                                <div style="flex-grow: 1; height: 2px; background: {linea_col}; margin-top: -25px;"></div>
+                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1; z-index: 2;">
+                                    <div style="width: 14px; height: 14px; background: {c_entrega_dot}; border-radius: 50%;"></div>
+                                    <div style="font-size: 9px; color: rgba(255,255,255,0.6); margin-top: 6px; font-weight: 800; letter-spacing: 1px;">ENTREGA</div>
+                                    <div style="font-size: 11px; color: white; font-weight: 600;">{f_entrega_val}</div>
+                                </div>
+                            </div>
+                            """
+
+                        html_resultado = f"""
+                        <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%;">
+                                <div style="flex: 1.2; min-width: 200px;">
+                                    <div style="color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{nombre_f}</div>
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">TALÓN / FOLIO</div>
+                                    <div style="color: #38bdf8; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{guia}</div>
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">REF: <span style="color: white; font-size: 12px; font-weight: 700;">{factura}</span></div>
+                                </div>
+                                <div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / RUTA</div>
+                                    <div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{cliente}</div>
+                                    <div style="font-size: 12px; color: #38bdf8; margin-top: 6px; font-weight: 600;">📍 GDL → {destino}</div>
+                                </div>
+                                <div style="flex: 1.2; min-width: 160px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN FINANCIERO</div>
+                                    <div style="color: white; font-weight: 700; font-size: 12px; margin-top: 2px;">BULTOS: <span style="color: #38bdf8;">{bultos}</span></div>
+                                    <div style="color: #38bdf8; font-weight: 800; font-size: 14px; margin-top: 2px;">$ {importe}</div>
+                                </div>
+                                <div style="text-align: right; min-width: 140px;">
+                                    <span style="background-color: {color_estatus}15; color: {color_estatus}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {color_estatus}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">{estatus}</span>
+                                </div>
+                            </div>
+                            {timeline_html}
+                        </div>
+                        """
+
+            # --- PASO 2: SI NO SE HALLÓ EN FLETERAS, BUSCAR EN LA MATRIZ GENERAL ---
+            if not encontrado:
+                try:
+                    url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+                    df_raw = pd.read_csv(url_raw)
+                except Exception:
+                    df_raw = None
+
+                if df_raw is not None:
+                    cols_matriz_disp = [c for c in ["NÚMERO DE PEDIDO", "NÚMERO DE GUÍA", "NOMBRE DEL CLIENTE"] if c in df_raw.columns]
+                    if cols_matriz_disp:
+                        mask_i = df_raw[cols_matriz_disp].astype(str).apply(
+                            lambda x: x.str.contains(query, case=False, na=False)
+                        ).any(axis=1)
+                        res_i = df_raw[mask_i].copy()
+                    else:
+                        res_i = pd.DataFrame()
+
+                    if not res_i.empty:
+                        encontrado = True
+                        envio = res_i.iloc[0]
+                        f_envio = envio.get("FECHA DE ENVÍO", "N/A")
+                        f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
+                        entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
+                        f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
+                        trigger_val = str(envio.get("TRIGGER", "")).strip()
+                        tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
+                        n_guia = envio["NÚMERO DE GUÍA"] if tiene_guia else ("GENERANDO GUÍA..." if trigger_val == "Enviada" else "EN ESPERA DE SURTIDO")
+
+                        f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
+                        if pd.notnull(f_promesa_dt): f_promesa_dt = f_promesa_dt.normalize()
+                        hoy = pd.Timestamp(datetime.now()).normalize()
+                        v_border, v_sub = vars_css["border"], "rgba(255,255,255,0.6)"
+
+                        if not tiene_guia:
+                            status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
+                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", v_border, v_border, v_border
+                            linea_1_2, linea_2_3, linea_3_4 = v_border, v_border, v_border
+                        elif not entregado_real:
+                            status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
+                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", v_border
+                            linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", v_border
+                        else:
+                            f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors='coerce')
+                            if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
+                            status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                            color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", status_color
+                            linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", status_color
+
+                        html_resultado = f"""
+                        <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; margin-bottom: 20px;">
+                                <div style="flex: 1.2; min-width: 200px;">
+                                    <div style="color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{envio.get('FLETERA', 'N/A')}</div>
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">NÚMERO DE GUÍA</div>
+                                    <div style="color: #38bdf8; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div>
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">PEDIDO: <span style="color: white; font-size: 12px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO', 'S/N')}</span></div>
+                                </div>
+                                <div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">CLIENTE / DESTINO</div>
+                                    <div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE', 'N/A')}</div>
+                                    <div style="font-size: 12px; color: #38bdf8; margin-top: 6px; font-weight: 600;">📍 GDL → {envio.get('DESTINO', 'N/A')}</div>
+                                </div>
+                                <div style="flex: 1.2; min-width: 160px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
+                                    <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">LOGÍSTICA Y COSTO</div>
+                                    <div style="color: white; font-weight: 700; font-size: 12px; margin-top: 2px;">CAJAS: <span style="color: #38bdf8;">{envio.get('CANTIDAD DE CAJAS', 'N/A')}</span></div>
+                                    <div style="color: #38bdf8; font-weight: 800; font-size: 14px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA', '0.00')}</div>
+                                </div>
+                                <div style="text-align: right; min-width: 140px;">
+                                    <span style="background-color: {status_color}15; color: {status_color}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">{status_text}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; position: relative; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                                    <div style="width: 12px; height: 12px; background: {color_envio}; border-radius: 50%; z-index: 2;"></div>
+                                    <div style="font-size: 9px; color: {v_sub}; margin-top: 8px; font-weight: 800; letter-spacing: 1px;">ENVÍO</div>
+                                    <div style="font-size: 11px; color: white; font-weight: 600;">{f_envio}</div>
+                                </div>
+                                <div style="flex-grow: 1; height: 2px; background: {linea_1_2}; margin-top: -22px;"></div>
+                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                                    <div style="width: 12px; height: 12px; background: {color_guia}; border-radius: 50%; z-index: 2;"></div>
+                                    <div style="font-size: 9px; color: {v_sub}; margin-top: 8px; font-weight: 800; letter-spacing: 1px;">GUÍA</div>
+                                    <div style="font-size: 11px; color: white; font-weight: 600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div>
+                                </div>
+                                <div style="flex-grow: 1; height: 2px; background: {linea_2_3}; margin-top: -22px;"></div>
+                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                                    <div style="width: 12px; height: 12px; background: {color_promesa}; border-radius: 50%; z-index: 2;"></div>
+                                    <div style="font-size: 9px; color: {v_sub}; margin-top: 8px; font-weight: 800; letter-spacing: 1px;">PROMESA</div>
+                                    <div style="font-size: 11px; color: white; font-weight: 600;">{f_promesa}</div>
+                                </div>
+                                <div style="flex-grow: 1; height: 2px; background: {linea_3_4}; margin-top: -22px;"></div>
+                                <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                                    <div style="width: 16px; height: 16px; background: {color_entrega}; border-radius: 50%; z-index: 2;"></div>
+                                    <div style="font-size: 9px; color: {v_sub}; margin-top: 6px; font-weight: 800; letter-spacing: 1px;">ENTREGA</div>
+                                    <div style="font-size: 11px; color: white; font-weight: 600;">{f_entrega_val}</div>
+                                </div>
+                            </div>
+                        </div>
+                        """
+
+            if encontrado:
+                col_espacio_res, col_btn_cerrar = st.columns([10, 1])
+                with col_btn_cerrar:
+                    def limpiar_busqueda():
+                        st.session_state.search_key_version += 1
+                    if st.button("✕ CERRAR", key="btn_cerrar_render", use_container_width=True, on_click=limpiar_busqueda):
+                        pass
+                st.markdown(html_resultado, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                    <div style="
+                        background-color: {vars_css['card']}; 
+                        border-radius: 8px; 
+                        padding: 20px; 
+                        border-left: 5px solid #ff4b4b; 
+                        border: 1px solid {vars_css['border']};
+                        margin-top: 15px; 
+                        margin-bottom: 35px;
+                        width: 100%;
+                        font-family: 'Inter', sans-serif;
+                        box-sizing: border-box;
+                    ">
+                        <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px;">Estado de Búsqueda</div>
+                        <div style="color: #ff4b4b; font-weight: bold; font-size: 1.3rem; line-height: 1.1; letter-spacing: 1px;">SIN COINCIDENCIAS</div>
+                        <div style="margin-top: 15px; border-top: 1px solid {vars_css['border']}; padding-top: 12px;">
+                            <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px;">Referencia consultada</div>
+                            <div style="color: white; font-weight: bold; font-size: 1.1rem;">{query}</div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
 
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
@@ -448,252 +685,6 @@ with header_zone:
         f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>",
         unsafe_allow_html=True,
     )
-
-# ── SECCIÓN DE RESULTADO DE BÚSQUEDA GLOBAL CON TIMELINE A TODO ANCHO ──────────────────────────
-if query:
-    try:
-        df_t1 = pd.read_csv("T1.csv") if pd.io.common.file_exists("T1.csv") else None
-        df_t2 = pd.read_csv("T2.csv") if pd.io.common.file_exists("T2.csv") else None
-        df_t3 = pd.read_csv("T3.csv") if pd.io.common.file_exists("T3.csv") else None
-    except:
-        df_t1, df_t2, df_t3 = None, None, None
-
-    encontrado = False
-    html_resultado = ""
-
-    # --- PASO 1: BUSCAR EN LAS FLETERAS (T1, T2, T3) ---
-    for df_source, nombre_f in [
-        (df_t1, "TRES GUERRAS"),
-        (df_t2, "TINY PACK"),
-        (df_t3, "ONE"),
-    ]:
-        if df_source is not None and not encontrado:
-            cols_busqueda = [
-                "OBSERVACION 1",
-                "FACTURA_INTERNA",
-                "Observaciones",
-                "TALON",
-                "CARTA_PORTE",
-                "Guia",
-            ]
-            cols_presentes = [c for c in cols_busqueda if c in df_source.columns]
-
-            if cols_presentes:
-                mask = df_source[cols_presentes].astype(str).apply(
-                    lambda x: x.str.contains(query, case=False, na=False)
-                ).any(axis=1)
-                res = df_source[mask]
-            else:
-                res = pd.DataFrame()
-
-            if not res.empty:
-                encontrado = True
-                f = res.iloc[0]
-
-                # Extracción de fechas si existen en T1, T2, T3
-                col_f_envio = next((c for c in ['FECHA_ENVIO', 'FECHA DE ENVÍO', 'F.ENVIO', 'FECHA'] if c in df_source.columns), None)
-                col_f_entrega = next((c for c in ['F.ENTREGA', 'FECHA_ENTREGA', 'FECHA DE ENTREGA'] if c in df_source.columns), None)
-
-                f_envio = str(f.get(col_f_envio, "N/A")) if col_f_envio else "N/A"
-                f_entrega_val = str(f.get(col_f_entrega, "PENDIENTE")) if col_f_entrega else "PENDIENTE"
-                
-                fecha_valida = False
-                if col_f_entrega:
-                    fecha_dt = pd.to_datetime(f.get(col_f_entrega), errors="coerce")
-                    if pd.notnull(fecha_dt):
-                        fecha_valida = True
-
-                estatus = "ESTATUS: ENTREGADO" if fecha_valida else "ESTATUS: EN TRÁNSITO"
-                color_estatus = "#00FFAA" if fecha_valida else "#38bdf8"
-
-                guia = f.get("TALON") or f.get("CARTA_PORTE") or f.get("Guia") or "S/N"
-                factura = f.get("OBSERVACION 1") or f.get("FACTURA_INTERNA") or f.get("Observaciones") or "S/N"
-                cliente = f.get("CLIENTE_DESTINO") or f.get("DESTINATARIO") or f.get("Destinatario") or "CLIENTE NO REGISTRADO"
-                destino = f.get("DESTINO") or f.get("CIUDAD") or f.get("Oficina_Destino") or "N/A"
-                bultos = f.get("BULTOS") or f.get("PIEZAS") or f.get("Paquetes_Ampara") or "0"
-                importe = f.get("Sub total _ Guia") or f.get("TOTAL") or f.get("SUBTOTAL") or "0.00"
-
-                # Timeline condicional para T1, T2, T3 (si no hay fechas completas, muestra la barra limpia)
-                timeline_html = ""
-                if col_f_envio or col_f_entrega:
-                    c_envio_dot = "#38bdf8" if f_envio != "N/A" else vars_css["border"]
-                    c_entrega_dot = color_estatus if fecha_valida else vars_css["border"]
-                    linea_col = "#38bdf8" if f_envio != "N/A" else vars_css["border"]
-
-                    timeline_html = f"""
-                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; position: relative; margin: 20px 0 15px 0; padding: 0 10px;">
-                        <div style="display: flex; flex-direction: column; align-items: center; flex: 1; z-index: 2;">
-                            <div style="width: 12px; height: 12px; background: {c_envio_dot}; border-radius: 50%;"></div>
-                            <div style="font-size: 9px; color: rgba(255,255,255,0.6); margin-top: 6px; font-weight: 800; letter-spacing: 1px;">ENVÍO</div>
-                            <div style="font-size: 11px; color: white; font-weight: 600;">{f_envio}</div>
-                        </div>
-                        <div style="flex-grow: 1; height: 2px; background: {linea_col}; margin-top: -25px;"></div>
-                        <div style="display: flex; flex-direction: column; align-items: center; flex: 1; z-index: 2;">
-                            <div style="width: 14px; height: 14px; background: {c_entrega_dot}; border-radius: 50%;"></div>
-                            <div style="font-size: 9px; color: rgba(255,255,255,0.6); margin-top: 6px; font-weight: 800; letter-spacing: 1px;">ENTREGA</div>
-                            <div style="font-size: 11px; color: white; font-weight: 600;">{f_entrega_val}</div>
-                        </div>
-                    </div>
-                    """
-
-                html_resultado = f"""
-                <div class="nexion-hover-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%;">
-                        <div style="flex: 1.2; min-width: 200px;">
-                            <div style="color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{nombre_f}</div>
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">TALÓN / FOLIO</div>
-                            <div style="color: #38bdf8; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{guia}</div>
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">REF: <span style="color: white; font-size: 12px; font-weight: 700;">{factura}</span></div>
-                        </div>
-                        <div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / RUTA</div>
-                            <div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{cliente}</div>
-                            <div style="font-size: 12px; color: #38bdf8; margin-top: 6px; font-weight: 600;">📍 GDL → {destino}</div>
-                        </div>
-                        <div style="flex: 1.2; min-width: 160px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN FINANCIERO</div>
-                            <div style="color: white; font-weight: 700; font-size: 12px; margin-top: 2px;">BULTOS: <span style="color: #38bdf8;">{bultos}</span></div>
-                            <div style="color: #38bdf8; font-weight: 800; font-size: 14px; margin-top: 2px;">$ {importe}</div>
-                        </div>
-                        <div style="text-align: right; min-width: 140px;">
-                            <span style="background-color: {color_estatus}15; color: {color_estatus}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {color_estatus}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">{estatus}</span>
-                        </div>
-                    </div>
-                    {timeline_html}
-                </div>
-                """
-
-    # --- PASO 2: SI NO SE HALLÓ EN FLETERAS, BUSCAR EN EL LISTADO GENERAL (CON TIMELINE COMPLETO) ---
-    if not encontrado:
-        try:
-            url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
-            df_raw = pd.read_csv(url_raw)
-        except Exception:
-            df_raw = None
-
-        if df_raw is not None:
-            mask_i = (
-                df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(query, case=False, na=False) |
-                df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(query, case=False, na=False) |
-                df_raw["NOMBRE DEL CLIENTE"].astype(str).str.contains(query, case=False, na=False)
-            )
-            res_i = df_raw[mask_i].copy()
-
-            if not res_i.empty:
-                encontrado = True
-                envio = res_i.iloc[0]
-                f_envio = envio.get("FECHA DE ENVÍO", "N/A")
-                f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
-                entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
-                f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
-                trigger_val = str(envio.get("TRIGGER", "")).strip()
-                tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
-                n_guia = envio["NÚMERO DE GUÍA"] if tiene_guia else ("GENERANDO GUÍA..." if trigger_val == "Enviada" else "EN ESPERA DE SURTIDO")
-
-                f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
-                if pd.notnull(f_promesa_dt): f_promesa_dt = f_promesa_dt.normalize()
-                hoy = pd.Timestamp(datetime.now()).normalize()
-                v_border, v_sub = vars_css["border"], "rgba(255,255,255,0.6)"
-
-                if not tiene_guia:
-                    status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
-                    color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", v_border, v_border, v_border
-                    linea_1_2, linea_2_3, linea_3_4 = v_border, v_border, v_border
-                elif not entregado_real:
-                    status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                    color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", v_border
-                    linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", v_border
-                else:
-                    f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors='coerce')
-                    if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
-                    status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
-                    color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", status_color
-                    linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", status_color
-
-                html_resultado = f"""
-                <div class="nexion-hover-card" style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 22px 25px; border-radius: 8px; margin-bottom: 25px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; margin-bottom: 20px;">
-                        <div style="flex: 1.2; min-width: 200px;">
-                            <div style="color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{envio["FLETERA"]}</div>
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">NÚMERO DE GUÍA</div>
-                            <div style="color: #38bdf8; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div>
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">PEDIDO: <span style="color: white; font-size: 12px; font-weight: 700;">{envio['NÚMERO DE PEDIDO']}</span></div>
-                        </div>
-                        <div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">CLIENTE / DESTINO</div>
-                            <div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio["NOMBRE DEL CLIENTE"]}</div>
-                            <div style="font-size: 12px; color: #38bdf8; margin-top: 6px; font-weight: 600;">📍 GDL → {envio['DESTINO']}</div>
-                        </div>
-                        <div style="flex: 1.2; min-width: 160px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
-                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">LOGÍSTICA Y COSTO</div>
-                            <div style="color: white; font-weight: 700; font-size: 12px; margin-top: 2px;">CAJAS: <span style="color: #38bdf8;">{envio.get('CANTIDAD DE CAJAS', 'N/A')}</span></div>
-                            <div style="color: #38bdf8; font-weight: 800; font-size: 14px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA', '0.00')}</div>
-                        </div>
-                        <div style="text-align: right; min-width: 140px;">
-                            <span style="background-color: {status_color}15; color: {status_color}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">{status_text}</span>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; position: relative; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
-                        <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                            <div style="width: 12px; height: 12px; background: {color_envio}; border-radius: 50%; z-index: 2;"></div>
-                            <div style="font-size: 9px; color: {v_sub}; margin-top: 8px; font-weight: 800; letter-spacing: 1px;">ENVÍO</div>
-                            <div style="font-size: 11px; color: white; font-weight: 600;">{f_envio}</div>
-                        </div>
-                        <div style="flex-grow: 1; height: 2px; background: {linea_1_2}; margin-top: -22px;"></div>
-                        <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                            <div style="width: 12px; height: 12px; background: {color_guia}; border-radius: 50%; z-index: 2;"></div>
-                            <div style="font-size: 9px; color: {v_sub}; margin-top: 8px; font-weight: 800; letter-spacing: 1px;">GUÍA</div>
-                            <div style="font-size: 11px; color: white; font-weight: 600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div>
-                        </div>
-                        <div style="flex-grow: 1; height: 2px; background: {linea_2_3}; margin-top: -22px;"></div>
-                        <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                            <div style="width: 12px; height: 12px; background: {color_promesa}; border-radius: 50%; z-index: 2;"></div>
-                            <div style="font-size: 9px; color: {v_sub}; margin-top: 8px; font-weight: 800; letter-spacing: 1px;">PROMESA</div>
-                            <div style="font-size: 11px; color: white; font-weight: 600;">{f_promesa}</div>
-                        </div>
-                        <div style="flex-grow: 1; height: 2px; background: {linea_3_4}; margin-top: -22px;"></div>
-                        <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                            <div style="width: 16px; height: 16px; background: {color_entrega}; border-radius: 50%; z-index: 2;"></div>
-                            <div style="font-size: 9px; color: {v_sub}; margin-top: 6px; font-weight: 800; letter-spacing: 1px;">ENTREGA</div>
-                            <div style="font-size: 11px; color: white; font-weight: 600;">{f_entrega_val}</div>
-                        </div>
-                    </div>
-                </div>
-                """
-
-    # --- RENDERIZADO DEL BOTÓN DE CIERRE Y RESULTADO ---
-    if encontrado:
-        col_espacio_res, col_btn_cerrar = st.columns([10, 1])
-        with col_btn_cerrar:
-            def limpiar_busqueda():
-                st.session_state.busqueda_input = ""
-
-            if st.button("✕ CERRAR", key="btn_cerrar_render", use_container_width=True, on_click=limpiar_busqueda):
-                pass
-
-        st.markdown(html_resultado, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-            <div class="nexion-hover-card" style="
-                background-color: {vars_css['card']}; 
-                border-radius: 8px; 
-                padding: 20px; 
-                border-left: 5px solid #ff4b4b; 
-                border: 1px solid {vars_css['border']};
-                margin-top: 15px; 
-                margin-bottom: 35px;
-                width: 100%;
-                font-family: 'Inter', sans-serif;
-                box-sizing: border-box;
-            ">
-                <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px;">Estado de Búsqueda</div>
-                <div style="color: #ff4b4b; font-weight: bold; font-size: 1.3rem; line-height: 1.1; letter-spacing: 1px;">SIN COINCIDENCIAS</div>
-                <div style="margin-top: 15px; border-top: 1px solid {vars_css['border']}; padding-top: 12px;">
-                    <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px;">Referencia consultada</div>
-                    <div style="color: white; font-weight: bold; font-size: 1.1rem;">{query}</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
 
 
 # ==========================================
@@ -1033,13 +1024,15 @@ def main():
 if __name__ == "__main__":
     main()
 
-
 # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
-    st.markdown(f"""
-        <div class="footer">
-            NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
-            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
-            <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
-        </div>
-    """, unsafe_allow_html=True)
+st.markdown(
+    f"""
+    <div class="footer">
+        NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
+        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
+        <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
+    </div>
+""",
+    unsafe_allow_html=True,
+)
     
