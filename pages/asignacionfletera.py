@@ -94,9 +94,16 @@ div.stButton > button:hover {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    # Redirección nativa automática y directa al login
-    st.switch_page("log.py")  # Cambia a "pages/log.py" si tu login está en esa carpeta
-
+    # Redirección automática directa al login vía JavaScript de forma transparente
+    st.markdown(
+        """
+        <script>
+            window.location.href = "log";
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.stop()
 
 # ==========================================
 # 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
