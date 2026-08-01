@@ -5,6 +5,7 @@ import time
 import pytz
 import requests
 import streamlit as st
+import pandas as pd
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
