@@ -129,7 +129,8 @@ def limpiar_texto(texto):
 # 4. FUNCIONES DE GENERACIÓN QR Y PDF
 # ==========================================
 def generar_qr_imagen(texto_qr):
-    qr = qrcode.QRCode(version=1, box_size=3, border=1)
+    # Reducimos el box_size de 3 a 2 para que los módulos del QR salgan más finos y pequeños
+    qr = qrcode.QRCode(version=1, box_size=2, border=1)
     qr.add_data(texto_qr)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
@@ -151,9 +152,9 @@ def generar_sellos_fisicos_con_qr(lista_datos, x, y):
         can.drawImage(
             ImageReader(qr_buffer),
             x + 150,
-            y - 35,
-            width=45,
-            height=45,
+            y - 30,  # Ajustamos ligeramente la posición vertical
+            width=30,  # <-- QR más pequeño (ancho 30)
+            height=30,  # <-- QR más pequeño (alto 30)
             mask="auto",
         )
         can.save()
@@ -172,7 +173,12 @@ def marcar_pdf_digital_con_qr(pdf_file, fletera, factura, fecha, x, y):
     datos_qr = f"FAC: {factura} | FECHA: {fecha}"
     qr_buffer = generar_qr_imagen(texto_qr=datos_qr)
     can.drawImage(
-        ImageReader(qr_buffer), x + 150, y - 35, width=45, height=45, mask="auto"
+        ImageReader(qr_buffer), 
+        x + 150, 
+        y - 30, 
+        width=30,  # <-- QR más pequeño (ancho 30)
+        height=30, # <-- QR más pequeño (alto 30)
+        mask="auto"
     )
     can.save()
     packet.seek(0)
