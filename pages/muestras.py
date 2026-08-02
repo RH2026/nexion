@@ -106,21 +106,6 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/* COMMAND BAR STYLES */
-.nexion-command-bar {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(43, 52, 59, 0.95);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-bottom: 2px solid #00D4FF;
-    padding: 10px 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-family: 'Inter', sans-serif;
-}}
-
 /*FOOTER FIJO */
 .footer {{ 
     position: fixed; 
@@ -310,186 +295,43 @@ with header_zone:
                 st.toast("No se encontró ningún registro", icon="🔍")
 
     with c4:
-        # ── NUEVA COMMAND BAR DE NAVEGACIÓN SUPERIOR PRO ──
-        with st.popover("⚡ COMMAND HUB", use_container_width=True):
-            usuario = st.session_state.get("usuario_activo", "GUEST")
-            es_admin = usuario.upper() == "RIGOBERTO"
-            es_ventas = usuario.upper() == "VENTAS"
-            es_atencion3g = usuario.upper() == "ATENCION3G"
+        # ── NUEVA BARRA DE COMANDOS HORIZONTAL (COMMAND BAR PRO) ──
+        m_col1, m_col2, m_col3, m_col4, m_col5 = st.columns(5)
         
-            nombre_display = st.session_state.get(
-                "nombre_completo", "OPERADOR DESCONOCIDO"
-            )
-        
-            st.markdown(
-                f"""
-                <div style='background-color: rgba(0, 212, 255, 0.08); padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
-                    <p style='color:#00D4FF; font-size:9px; font-weight:800; margin:0; letter-spacing:1.5px;'>OPERADOR AUTORIZADO</p>
-                    <p style='color:{vars_css['text']}; font-size:13px; font-weight:700; margin:2px 0 0 0;'>{nombre_display.upper()}</p>
-                </div>
-            """,
-                unsafe_allow_html=True,
-            )
-        
-            st.markdown(
-                "<p style='color:#00FFAA; font-size:9px; font-weight:800; text-align:center; margin:10px 0; letter-spacing:2px;'>SISTEMA DE NAVEGACIÓN PRINCIPAL</p>",
-                unsafe_allow_html=True,
-            )
-        
-            if not es_ventas and not es_atencion3g:
-                if st.button("🚀 DASHBOARD GENERAL", use_container_width=True, key="pop_trk"):
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.session_state.menu_sub = "GENERAL"
-                    st.session_state.busqueda_activa = False
-                    st.rerun()
-        
-            if not es_ventas:
-                with st.expander(
-                    "🛡️ SEGUIMIENTO Y ALERTAS",
-                    expanded=(st.session_state.menu_main == "SEGUIMIENTO"),
-                ):
-                    usuario_actual = str(
-                        st.session_state.get(
-                            "usuario", st.session_state.get("usuario_activo", "")
-                        )
-                    ).strip()
-                    if es_admin:
-                        opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
-                    elif usuario_actual == "Cynthia":
-                        opciones_seg = ["ALERTAS", "QUEJAS"]
-                    else:
-                        opciones_seg = ["ALERTAS"]
-        
-                    for s in opciones_seg:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
-                            st.session_state.menu_main = "SEGUIMIENTO"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
-        
-            if not es_ventas and not es_atencion3g:
-                with st.expander(
-                    "📦 CONTROL DE ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")
-                ):
-                    opciones_ent = ["AGC", "AMAZON", "BARCELO"]
-                    for s in opciones_ent:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}"):
-                            st.session_state.menu_main = "ENTREGAS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            
-                            if s == "AGC":
-                                st.switch_page("pages/entregas_agc.py")
-                            else:
-                                st.rerun()
-        
-            if not es_atencion3g:
-                with st.expander(
-                    "📊 REPORTES LOGÍSTICOS", expanded=(st.session_state.menu_main == "REPORTES")
-                ):
-                    usuario_actual = str(
-                        st.session_state.get(
-                            "usuario", st.session_state.get("usuario_activo", "")
-                        )
-                    ).strip()
-                    if es_admin or usuario_actual == "Carlos":
-                        opciones_rep = [
-                            "COSTOS CEDIS",
-                            "ANALISIS MENSUAL",
-                            "DETALLE COSTOS",
-                            "ENVIOS ESPECIALES",
-                            "ENVIO DE MUESTRAS",
-                        ]
-                    else:
-                        opciones_rep = ["ENVIO DE MUESTRAS"]
-        
-                    for s in opciones_rep:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
-                            st.session_state.menu_main = "REPORTES"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            
-                            if s == "ENVIO DE MUESTRAS":
-                                st.switch_page("pages/muestras.py")
-                            else:
-                                st.rerun()
-        
-            if not es_ventas and not es_atencion3g:
-                with st.expander(
-                    "📑 FORMATOS Y DOCUMENTOS", expanded=(st.session_state.menu_main == "FORMATOS")
-                ):
-                    opciones_for = [
-                        "SALIDA DE PT",
-                        "CHECK LIST AGC",
-                        "QR AGC",
-                        "PREGUIA PAQMEX",
-                        "RECOLECCION 3G",
-                        "RECOLECCION ONE",
-                        "CARTA RECLAMO",
-                        "COTIZACIONES",
-                    ]
-                    for s in opciones_for:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
-                            st.session_state.menu_main = "FORMATOS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
-        
-            if not es_ventas and not es_atencion3g:
-                with st.expander(
-                    "💻 CENTRO DE DATOS Y HUB",
-                    expanded=(st.session_state.menu_main == "CENTRO DE DATOS"),
-                ):
-                    for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
-                            st.session_state.menu_main = "CENTRO DE DATOS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            
-                            if s == "ASIGNAR FLETERA":
-                                st.switch_page("pages/asignacionfletera.py")
-                            else:
-                                st.rerun()
-        
-            if st.session_state.get("usuario_activo") == "Rigoberto":
-                with st.expander(
-                    "💳 FINANZAS Y GASTOS", expanded=(st.session_state.menu_main == "FINANZAS")
-                ):
-                    opciones_fin = ["WALLET", "CAJA CHICA", "GASTOS"]
-                    for s in opciones_fin:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
-                            st.session_state.menu_main = "FINANZAS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
-        
-            usuario_actual = st.session_state.get("usuario_activo", "").upper()
-            if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
-                with st.expander(
-                    "🎯 ENFOQUE OPERATIVO", expanded=(st.session_state.get("menu_main") == "ENFOQUE")
-                ):
-                    for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
-                        label = f"» {s}" if st.session_state.get("menu_sub") == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
-                            st.session_state.menu_main = "ENFOQUE"
-                            st.session_state.menu_sub = s
-                            st.rerun()
-        
-            st.markdown(
-                "<hr style='margin: 8px 0; opacity: 0.15;'>", unsafe_allow_html=True
-            )
-            if st.button("🔴 TERMINAR SESIÓN", use_container_width=True, type="primary"):
-                for key in list(st.session_state.keys()):
-                    del st.session_state[key]
-                st.session_state.autenticado = False
-                st.session_state.splash_completado = False
+        with m_col1:
+            if st.button("📊 DASH", use_container_width=True, key="cmd_dash"):
+                st.session_state.menu_main = "DASHBOARD"
+                st.session_state.menu_sub = "GENERAL"
+                st.session_state.busqueda_activa = False
                 st.rerun()
+                
+        with m_col2:
+            if st.button("📦 ENTREGAS", use_container_width=True, key="cmd_ent"):
+                st.session_state.menu_main = "ENTREGAS"
+                st.session_state.menu_sub = "AGC"
+                st.session_state.busqueda_activa = False
+                st.switch_page("pages/entregas_agc.py")
+                
+        with m_col3:
+            if st.button("📈 MUESTRAS", use_container_width=True, key="cmd_rep"):
+                st.session_state.menu_main = "REPORTES"
+                st.session_state.menu_sub = "ENVIO DE MUESTRAS"
+                st.session_state.busqueda_activa = False
+                st.switch_page("pages/muestras.py")
+                
+        with m_col4:
+            if st.button("📑 FORMATOS", use_container_width=True, key="cmd_for"):
+                st.session_state.menu_main = "FORMATOS"
+                st.session_state.menu_sub = "SALIDA DE PT"
+                st.session_state.busqueda_activa = False
+                st.rerun()
+                
+        with m_col5:
+            if st.button("💻 DATOS", use_container_width=True, key="cmd_dat"):
+                st.session_state.menu_main = "CENTRO DE DATOS"
+                st.session_state.menu_sub = "ASIGNAR FLETERA"
+                st.session_state.busqueda_activa = False
+                st.switch_page("pages/asignacionfletera.py")
 
     # ── RENDERIZADO DE RESULTADOS ──────────────────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
