@@ -587,12 +587,30 @@ def main():
 
     # --- VALIDACIÓN DIRECTA CON TU VARIABLE DE SESIÓN DE ADMINISTRADOR ---
     usuario_actual = st.session_state.get("usuario_activo", "").upper()
-    es_admin = (usuario_actual == "RIGOBERTO")
+    es_admin = usuario_actual == "RIGOBERTO"
 
     if es_admin:
         with st.expander("🔐 Panel de Seguridad / Modo Edición Admin", expanded=False):
-            st.success("Acceso Concedido: Administrador Reconocido 🔓")
-            modo_edicion = st.checkbox("Activar Modo Edición de Citas en Pantalla", value=False, key="check_modo_edicion_session")
+            st.markdown(
+                """
+                <div style='background: rgba(0, 255, 170, 0.08); border: 1px solid #00FFAA; border-left: 5px solid #00FFAA; padding: 12px 18px; border-radius: 6px; margin-bottom: 15px; font-family: "Inter", sans-serif; color: white;'>
+                    <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 2px;'>
+                        <div style='width: 7px; height: 7px; background: #00FFAA; border-radius: 50%; box-shadow: 0 0 8px #00FFAA;'></div>
+                        <span style='font-size: 10px; font-weight: 800; color: #00FFAA; letter-spacing: 1.5px; text-transform: uppercase;'>ACCESS GRANTED // NIVEL 5 (ROOT)</span>
+                    </div>
+                    <div style='font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-left: 15px;'>
+                        Administrador Reconocido. Credenciales de seguridad validadas en el sistema central.
+                    </div>
+                </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+            modo_edicion = st.checkbox(
+                "Activar Modo Edición de Citas en Pantalla",
+                value=False,
+                key="check_modo_edicion_session",
+            )
     else:
         modo_edicion = False
 
