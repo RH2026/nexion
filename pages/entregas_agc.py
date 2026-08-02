@@ -541,10 +541,15 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (PLANTILLA BASE CON ANIMACIÓN)
+# 5. INTERFAZ PRINCIPAL (PLANTILLA BASE CON ANIMACIÓN FLUIDA)
 # ==========================================
 def main():
-    # Contenedor con la clase de animación para que entre suavemente de arriba hacia abajo
+    # Efecto de entrada suave al cargar la página
+    if "animacion_cargada" not in st.session_state:
+        time.sleep(0.08)
+        st.session_state.animacion_cargada = True
+
+    # Contenedor animado
     st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
     
     st.markdown(
@@ -554,7 +559,7 @@ def main():
     
     # --- AQUI VA TU CONTENIDO NUEVO ---
     st.markdown("### AQUI VA TU CONTENIDO NUEVO")
-    st.info("Esta es tu página base con animación de entrada integrada. Agrega aquí tus formularios, tablas o gráficas.")
+    st.info("Esta es tu página base con animación fluida de entrada. Agrega aquí tus formularios, tablas o gráficas.")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
