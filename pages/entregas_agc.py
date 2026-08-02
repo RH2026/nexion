@@ -767,7 +767,7 @@ def main():
         
         pdf.setFillColorRGB(1, 1, 1)
         pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawString(40, height - 35, "JYPESA | REPORTE DE CITAS PENDIENTES")
+        pdf.drawString(40, height - 35, "JYPESA | REPORTE DE CITAS AGC PENDIENTES")
         pdf.setFont("Helvetica", 10)
         pdf.drawString(40, height - 55, f"PERIODO: {nombre_mes} {anio} — NEXION SUPPLY CHAIN INTELLIGENCE")
 
@@ -948,11 +948,11 @@ def main():
         df_raw.columns = df_raw.columns.str.strip()
 
         if modo_edicion:
-            st.warning("⚠️ Modo edición activo. Modifica las celdas abajo y haz clic en el botón de guardar para actualizar GitHub automáticamente.")
+            st.warning(":material/caution: Modo edición activo. Modifica las celdas abajo y haz clic en el botón de guardar para actualizar GitHub automáticamente.")
             
             df_editado = st.data_editor(df_raw, use_container_width=True, num_rows="dynamic", key="editor_agc_admin_session")
             
-            if st.button("💾 Guardar Cambios en GitHub", key="btn_guardar_github_session"):
+            if st.button(":material/save: Guardar Cambios en GitHub", key="btn_guardar_github_session"):
                 if guardar_cambios_github(df_editado):
                     st.rerun()
             st.markdown("---")
@@ -1034,10 +1034,10 @@ def main():
         with col_btn_pdf:
             st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
             pdf_bytes = generar_pdf_citas_mes(data_completa, st.session_state.mes_calendario)
-            nombre_archivo_pdf = f"citas_pendientes_{nombre_mes_actual.lower()}_2026.pdf"
+            nombre_archivo_pdf = f"citas_pendientes_agc{nombre_mes_actual.lower()}_2026.pdf"
             
             st.download_button(
-                label="📥 DESCARGAR PDF DE CITAS DEL MES",
+                label=":DESCARGAR PDF DE CITAS DEL MES",
                 data=pdf_bytes,
                 file_name=nombre_archivo_pdf,
                 mime="application/pdf",
