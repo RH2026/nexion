@@ -86,8 +86,8 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM */
-div.stButton > button {{
+/* BOTONES SLIM Y BOTONES DE DESCARGA */
+div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -97,6 +97,13 @@ div.stButton > button {{
     font-size: 10px !important;
     height: 34px !important;
     width: 100% !important;
+    transition: all 0.3s ease !important;
+}}
+
+div.stButton > button:hover, div.stDownloadButton > button:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+    border-color: #00A3A3 !important;
 }}
 
 /*FOOTER FIJO */
@@ -113,11 +120,6 @@ div.stButton > button {{
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
-}}
-
-div.stButton > button:hover {{
-    background-color: #00A3A3 !important;
-    color: #ffffff !important;
 }}
 </style>
 """,
@@ -526,6 +528,8 @@ with header_zone:
                         f_entrega_dt = f_entrega_dt.normalize()
                     status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
+                d = envio
+
                 tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 2px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 11px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
                 st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
             else:
@@ -742,7 +746,6 @@ def main():
         }
         nombre_mes = meses_nombres.get(mes_num, "MES")
 
-        # Filtrar solo citas del mes seleccionado y que NO estén entregadas
         citas_filtradas = []
         for item in data_completa:
             if item.get('estatus') == 'ENTREGADA':
@@ -759,7 +762,6 @@ def main():
         pdf = canvas.Canvas(buffer, pagesize=letter)
         width, height = letter
 
-        # Encabezado del PDF
         pdf.setFillColorRGB(0.21, 0.28, 0.32) # #384A52
         pdf.rect(0, height - 80, width, 80, fill=1, stroke=0)
         
@@ -769,7 +771,6 @@ def main():
         pdf.setFont("Helvetica", 10)
         pdf.drawString(40, height - 55, f"PERIODO: {nombre_mes} {anio} — NEXION SUPPLY CHAIN INTELLIGENCE")
 
-        # Tabla de Datos
         y = height - 120
         pdf.setFillColorRGB(0.1, 0.1, 0.1)
         pdf.setFont("Helvetica-Bold", 9)
@@ -786,7 +787,7 @@ def main():
 
         pdf.setFont("Helvetica", 8)
         for item in citas_filtradas:
-            if y < 50: # Salto de página si es necesario
+            if y < 50:
                 pdf.showPage()
                 y = height - 50
             
@@ -805,7 +806,7 @@ def main():
         buffer.seek(0)
         return buffer.getvalue()
 
-    # --- Función: Renderizado de Calendario (Solo Pendientes, Sin Parpadeos) ---
+    # --- Función: Renderizado de Calendario ---
     def render_calendario_visual(data_completa, mes_num, anio=2026):
         meses_nombres = {
             1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
@@ -911,7 +912,6 @@ def main():
             return pd.DataFrame()
 
     def guardar_cambios_github(df_nuevo):
-        import base64
         headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
         api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
         
@@ -947,7 +947,6 @@ def main():
     if not df_raw.empty:
         df_raw.columns = df_raw.columns.str.strip()
 
-        # --- MODO EDICIÓN BASADO EN TU SESIÓN DE ADMIN ---
         if modo_edicion:
             st.warning("⚠️ Modo edición activo. Modifica las celdas abajo y haz clic en el botón de guardar para actualizar GitHub automáticamente.")
             
@@ -958,7 +957,6 @@ def main():
                     st.rerun()
             st.markdown("---")
 
-        # --- PROCESAMIENTO PARA LAS TARJETAS Y CALENDARIO ---
         df_entregas = pd.DataFrame()
         df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
         df_entregas['item_no'] = df_raw.get('Item No.', pd.Series(dtype=str)).fillna('').astype(str)
