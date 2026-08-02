@@ -5,12 +5,15 @@ import re
 import time
 import unicodedata
 import zipfile
+import calendar
+import requests
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 import pandas as pd
 from pypdf import PdfReader, PdfWriter
 import qrcode
+import streamlit.components.v1 as components
 import streamlit as st
 
 # 1. CONFIGURACIÓN DE PÁGINA
@@ -126,7 +129,7 @@ div.stButton > button:hover {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/asignacionfletera.py"
+    st.session_state.pagina_destino = "pages/entregas_agc.py"
     st.switch_page("pages/log.py")
 
 
@@ -171,9 +174,9 @@ def limpiar_texto(texto):
 
 # Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
-    st.session_state.menu_main = "CENTRO DE DATOS"
+    st.session_state.menu_main = "ENTREGAS"
 if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "PLANTILLA BASE"
+    st.session_state.menu_sub = "AGC"
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
@@ -347,7 +350,6 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            # MENÚ ENTREGAS
             if not es_ventas and not es_atencion3g:
                 with st.expander(
                     "ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")
@@ -538,6 +540,7 @@ with header_zone:
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+
 
 # ==========================================
 # 5. INTERFAZ PRINCIPAL (ENTREGAS AGC)
