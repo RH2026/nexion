@@ -81,12 +81,12 @@ html, body, .stApp {{
 }}
 
 .block-container {{
-    padding-top: 0.8rem !important;
+    padding-top: 0.5rem !important;
     padding-bottom: 5rem !important;
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM Y BOTONES DE DESCARGA */
+/* BOTONES PRINCIPALES Y SUBMENÚS SLIM */
 div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -95,9 +95,9 @@ div.stButton > button, div.stDownloadButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 34px !important;
+    height: 32px !important;
     width: 100% !important;
-    transition: all 0.3s ease !important;
+    transition: all 0.2s ease !important;
 }}
 
 div.stButton > button:hover, div.stDownloadButton > button:hover {{
@@ -115,7 +115,7 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     background-color: {vars_css['bg']} !important; 
     color: {vars_css['sub']} !important; 
     text-align: center; 
-    padding: 12px 0px !important; 
+    padding: 10px 0px !important; 
     font-size: 9px; 
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
@@ -190,32 +190,20 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 4. HEADER TÁCTICO & BARRA DE COMANDOS GLOBAL
+# 4. HEADER UNIFICADO Y PANEL DE COMANDOS
 # ==========================================
 header_zone = st.container()
 with header_zone:
-    c1, c2, c3, c4 = st.columns([1.2, 2.5, 2.3, 1.0], vertical_alignment="center")
+    # FILA 1: Logo, Buscador Global y Salida perfectamente alineados
+    c_logo, c_search, c_exit = st.columns([1.2, 7.3, 1.5], vertical_alignment="center")
 
-    with c1:
+    with c_logo:
         try:
-            st.image(vars_css["logo"], width=140)
+            st.image(vars_css["logo"], width=130)
         except:
             st.write("**NEXION**")
 
-    with c2:
-        sub_actual = f" / {st.session_state.menu_sub}" if st.session_state.menu_sub != "GENERAL" else ""
-        st.markdown(
-            f"""
-            <div style='display: flex; justify-content: center; align-items: center; width: 100%; background: {vars_css['card']}; padding: 6px 12px; border-radius: 4px; border: 1px solid {vars_css['border']};'>
-                <span style='font-size: 10px; letter-spacing: 2px; color: #82D4E6; font-weight: 700; text-transform: uppercase;'>
-                    HUB: {st.session_state.menu_main} <span style='color: #FFD700;'>{sub_actual}</span>
-                </span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with c3:
+    with c_search:
         es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
         key_actual = f"main_search_v{st.session_state.search_key_version}"
 
@@ -237,13 +225,7 @@ with header_zone:
 
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
-                cols_op = [
-                    "NÚMERO DE GUÍA",
-                    "NÚMERO DE PEDIDO",
-                    "NO CLIENTE",
-                    "NOMBRE DEL CLIENTE",
-                    "DESTINO",
-                ]
+                cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
                 cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
                 if cols_op_disp:
                     mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
@@ -276,7 +258,7 @@ with header_zone:
                 st.session_state.busqueda_activa = False
                 st.toast("No se encontró ningún registro", icon="🔍")
 
-    with c4:
+    with c_exit:
         if st.button("SALIR", use_container_width=True, type="primary"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
@@ -284,12 +266,14 @@ with header_zone:
             st.session_state.splash_completado = False
             st.rerun()
 
-    # ── 5. BARRA DE COMANDOS PRINCIPAL (HORIZONTAL) ──
+    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 6px 0 10px; opacity: 0.2;'>", unsafe_allow_html=True)
+
+    # FILA 2: Los exactamente 6 botones principales del menú maestro en una sola línea simétrica
     usuario = st.session_state.get("usuario_activo", "GUEST").upper()
     es_admin = usuario == "RIGOBERTO"
-    es_ventas = usuario == "VENTAS"
 
-    cols_menu = st.columns(6 if es_admin else 5)
+    # Forzamos exactamente 6 columnas horizontales equilibradas
+    cols_menu = st.columns(6)
     
     with cols_menu[0]:
         if st.button("DASHBOARD", use_container_width=True):
@@ -326,17 +310,17 @@ with header_zone:
             st.session_state.busqueda_activa = False
             st.rerun()
 
-    if es_admin and len(cols_menu) > 5:
-        with cols_menu[5]:
-            if st.button("FINANZAS", use_container_width=True):
-                st.session_state.menu_main = "FINANZAS"
-                st.session_state.menu_sub = "WALLET"
-                st.session_state.busqueda_activa = False
-                st.rerun()
+    with cols_menu[5]:
+        if st.button("FINANZAS", use_container_width=True):
+            st.session_state.menu_main = "FINANZAS"
+            st.session_state.menu_sub = "WALLET"
+            st.session_state.busqueda_activa = False
+            st.rerun()
 
-    # ── 6. SUBMENÚ CONTEXTUAL DINÁMICO INFERIOR ──
+    # FILA 3: Submenús contextuales dinámicos alineados exactamente debajo del módulo activo
     cat_activa = st.session_state.menu_main
     submenus_map = {
+        "DASHBOARD": ["GENERAL"],
         "SEGUIMIENTO": ["ALERTAS", "GANTT", "QUEJAS"],
         "ENTREGAS": ["AGC", "AMAZON", "BARCELO"],
         "REPORTES": ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"],
@@ -348,6 +332,7 @@ with header_zone:
 
     if cat_activa in submenus_map:
         sub_opciones = submenus_map[cat_activa]
+        # Creamos un contenedor elegante para los submenús para que no se extiendan de más si son muchos
         sub_cols = st.columns(len(sub_opciones))
         for idx, sub in enumerate(sub_opciones):
             with sub_cols[idx]:
