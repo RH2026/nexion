@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
+# ── TEMA Y CSS MAESTROS (ESTILO GITHUB NAVIGATION) ────────────────────────
 vars_css = {
     "bg": "#384A52",
     "card": "#2B343B",
@@ -36,13 +36,13 @@ vars_css = {
 st.markdown(
     f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* --- ANIMACIONES DE ENTRADA --- */
 @keyframes fadeInSlideDown {{
     0% {{
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-10px);
     }}
     100% {{
         opacity: 1;
@@ -51,7 +51,7 @@ st.markdown(
 }}
 
 .animate-fade-in {{
-    animation: fadeInSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fadeInSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }}
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
@@ -86,24 +86,54 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES PRINCIPALES Y SUBMENÚS SLIM */
-div.stButton > button, div.stDownloadButton > button {{
+/* ==========================================================
+   ESTILO GITHUB TABS PARA LOS BOTONES DE NAVEGACIÓN
+   ================================================---------- */
+div[data-testid="stHorizontalBlock"] > div > div.stButton > button {{
+    background-color: transparent !important;
+    color: #94A3B8 !important;
+    border: none !important;
+    border-radius: 0px !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    font-size: 13px !important;
+    height: 38px !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    transition: color 0.2s ease !important;
+}}
+
+div[data-testid="stHorizontalBlock"] > div > div.stButton > button:hover {{
+    color: #FFFFFF !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    border-radius: 6px !important;
+}}
+
+/* Estilo para botón activo (Simulando la pestaña seleccionada de GitHub) */
+div[data-testid="stHorizontalBlock"] > div > div.stButton > button[kind="primary"] {{
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    background-color: transparent !important;
+    border-bottom: 2px solid #F97316 !important; /* Línea naranja distintiva o acento */
+    border-radius: 0px !important;
+}}
+
+/* BOTONES SECUNDARIOS / SUBMENÚS ESTILO PILDORA FINA */
+.sub-menu-container div.stButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 4px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    font-size: 10px !important;
-    height: 32px !important;
-    width: 100% !important;
-    transition: all 0.2s ease !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    height: 30px !important;
 }}
 
-div.stButton > button:hover, div.stDownloadButton > button:hover {{
+.sub-menu-container div.stButton > button:hover {{
     background-color: #00A3A3 !important;
-    color: #ffffff !important;
     border-color: #00A3A3 !important;
+    color: #FFFFFF !important;
 }}
 
 /*FOOTER FIJO */
@@ -190,12 +220,12 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 4. HEADER UNIFICADO Y PANEL DE COMANDOS
+# 4. HEADER UNIFICADO ESTILO GITHUB NAVIGATION
 # ==========================================
 header_zone = st.container()
 with header_zone:
-    # FILA 1: Logo, Buscador Global y Salida perfectamente alineados
-    c_logo, c_search, c_exit = st.columns([1.2, 7.3, 1.5], vertical_alignment="center")
+    # Fila 1: Logo, Buscador Global Slim y Botón Salir
+    c_logo, c_search, c_exit = st.columns([1.2, 7.5, 1.3], vertical_alignment="center")
 
     with c_logo:
         try:
@@ -259,65 +289,50 @@ with header_zone:
                 st.toast("No se encontró ningún registro", icon="🔍")
 
     with c_exit:
-        if st.button("SALIR", use_container_width=True, type="primary"):
+        if st.button("SALIR", use_container_width=True, type="secondary"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.session_state.autenticado = False
             st.session_state.splash_completado = False
             st.rerun()
 
-    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 6px 0 10px; opacity: 0.2;'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 4px 0 2px; opacity: 0.2;'>", unsafe_allow_html=True)
 
-    # FILA 2: Los exactamente 6 botones principales del menú maestro en una sola línea simétrica
+    # Fila 2: Los 6 botones principales con estilo de pestañas GitHub (Tabs horizontales limpios)
     usuario = st.session_state.get("usuario_activo", "GUEST").upper()
     es_admin = usuario == "RIGOBERTO"
 
-    # Forzamos exactamente 6 columnas horizontales equilibradas
     cols_menu = st.columns(6)
     
-    with cols_menu[0]:
-        if st.button("DASHBOARD", use_container_width=True):
-            st.session_state.menu_main = "DASHBOARD"
-            st.session_state.menu_sub = "GENERAL"
-            st.session_state.busqueda_activa = False
-            st.rerun()
+    botones_nav = [
+        ("DASHBOARD", "DASHBOARD", "GENERAL", True),
+        ("ENTREGAS", "ENTREGAS", "AGC", True),
+        ("REPORTES", "REPORTES", "ENVIO DE MUESTRAS", True),
+        ("CENTRO DATOS", "CENTRO DE DATOS", "ASIGNAR FLETERA", True),
+        ("FORMATOS", "FORMATOS", "SALIDA DE PT", False),
+        ("FINANZAS", "FINANZAS", "WALLET", False),
+    ]
 
-    with cols_menu[1]:
-        if st.button("ENTREGAS", use_container_width=True):
-            st.session_state.menu_main = "ENTREGAS"
-            st.session_state.menu_sub = "AGC"
-            st.session_state.busqueda_activa = False
-            st.switch_page("pages/entregas_agc.py")
+    for idx, (label, main_val, sub_val, is_page) in enumerate(botones_nav):
+        with cols_menu[idx]:
+            activo = st.session_state.menu_main == main_val
+            tipo_btn = "primary" if activo else "secondary"
+            if st.button(label, use_container_width=True, key=f"nav_gh_{main_val}", type=tipo_btn):
+                st.session_state.menu_main = main_val
+                st.session_state.menu_sub = sub_val
+                st.session_state.busqueda_activa = False
+                if main_val == "ENTREGAS":
+                    st.switch_page("pages/entregas_agc.py")
+                elif main_val == "REPORTES":
+                    st.switch_page("pages/muestras.py")
+                elif main_val == "CENTRO DE DATOS":
+                    st.switch_page("pages/asignacionfletera.py")
+                else:
+                    st.rerun()
 
-    with cols_menu[2]:
-        if st.button("REPORTES", use_container_width=True):
-            st.session_state.menu_main = "REPORTES"
-            st.session_state.menu_sub = "ENVIO DE MUESTRAS"
-            st.session_state.busqueda_activa = False
-            st.switch_page("pages/muestras.py")
+    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 0px 0 10px; opacity: 0.3;'>", unsafe_allow_html=True)
 
-    with cols_menu[3]:
-        if st.button("CENTRO DATOS", use_container_width=True):
-            st.session_state.menu_main = "CENTRO DE DATOS"
-            st.session_state.menu_sub = "ASIGNAR FLETERA"
-            st.session_state.busqueda_activa = False
-            st.switch_page("pages/asignacionfletera.py")
-
-    with cols_menu[4]:
-        if st.button("FORMATOS", use_container_width=True):
-            st.session_state.menu_main = "FORMATOS"
-            st.session_state.menu_sub = "SALIDA DE PT"
-            st.session_state.busqueda_activa = False
-            st.rerun()
-
-    with cols_menu[5]:
-        if st.button("FINANZAS", use_container_width=True):
-            st.session_state.menu_main = "FINANZAS"
-            st.session_state.menu_sub = "WALLET"
-            st.session_state.busqueda_activa = False
-            st.rerun()
-
-    # FILA 3: Submenús contextuales dinámicos alineados exactamente debajo del módulo activo
+    # Fila 3: Submenús contextuales dinámicos con contenedor limpio
     cat_activa = st.session_state.menu_main
     submenus_map = {
         "DASHBOARD": ["GENERAL"],
@@ -332,7 +347,7 @@ with header_zone:
 
     if cat_activa in submenus_map:
         sub_opciones = submenus_map[cat_activa]
-        # Creamos un contenedor elegante para los submenús para que no se extiendan de más si son muchos
+        st.markdown('<div class="sub-menu-container">', unsafe_allow_html=True)
         sub_cols = st.columns(len(sub_opciones))
         for idx, sub in enumerate(sub_opciones):
             with sub_cols[idx]:
@@ -349,6 +364,7 @@ with header_zone:
                         st.switch_page("pages/asignacionfletera.py")
                     else:
                         st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 8px 0 12px; opacity: 0.3;'>", unsafe_allow_html=True)
 
