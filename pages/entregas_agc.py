@@ -971,10 +971,10 @@ def main():
                 <div style='background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: "Inter", sans-serif; color: white;'>
                     <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 4px;'>
                         <div style='width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;'></div>
-                        <span style='font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;'>NEXION SECURITY PROTOCOL // MODO EDICIÓN ACTIVO</span>
+                        <span style='font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;'>NEXION SECURITY // MODO EDICIÓN ACTIVO</span>
                     </div>
                     <div style='font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;'>
-                        Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota en GitHub de forma segura.
+                        Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura.
                     </div>
                 </div>
             """,
@@ -989,7 +989,7 @@ def main():
             )
 
             if st.button(
-                ":material/save Guardar Cambios en GitHub", key="btn_guardar_github_session"
+                ":material/save: Guardar Cambios en GitHub", key="btn_guardar_github_session"
             ):
                 if guardar_cambios_github(df_editado):
                     st.rerun()
