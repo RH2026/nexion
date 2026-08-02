@@ -23,26 +23,26 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── TEMA Y CSS MAESTROS (ESTILO GITHUB NAVIGATION) ────────────────────────
+# ── TEMA Y CSS MAESTROS (ESTILO CHIC / MINIMALISTA / HIGH-FASHION & LOGISTICS) ──
 vars_css = {
-    "bg": "#384A52",
-    "card": "#2B343B",
-    "text": "#FFFFFF",
-    "sub": "#FFFFFF",
-    "border": "#4B5D67",
+    "bg": "#FAFAFA",         # Fondo blanco marfil ultra limpio (Estilo Zara / Portales de Alta Gama)
+    "card": "#FFFFFF",       # Tarjetas blancas puras
+    "text": "#111111",       # Texto negro absoluto de alto contraste
+    "sub": "#666666",        # Gris neutral técnico
+    "border": "#E5E5E5",     # Líneas sutiles casi imperceptibles
     "logo": "n1.png",
 }
 
 st.markdown(
     f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 /* --- ANIMACIONES DE ENTRADA --- */
 @keyframes fadeInSlideDown {{
     0% {{
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-8px);
     }}
     100% {{
         opacity: 1;
@@ -51,7 +51,7 @@ st.markdown(
 }}
 
 .animate-fade-in {{
-    animation: fadeInSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fadeInSlideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }}
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
@@ -73,82 +73,101 @@ button[kind="header"] {{
     pointer-events: none !important;
 }}
 
-/* APP BASE */
+/* APP BASE CHIC & MINIMAL */
 html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
     color: {vars_css['text']} !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
 }}
 
 .block-container {{
-    padding-top: 0.5rem !important;
+    padding-top: 1rem !important;
     padding-bottom: 5rem !important;
     background-color: {vars_css['bg']} !important;
 }}
 
 /* ==========================================================
-   ESTILO GITHUB TABS PARA LOS BOTONES DE NAVEGACIÓN
+   ESTILO NAVEGACIÓN MINIMALISTA TIPO ZARA / PORTALES CHIC
    ================================================---------- */
 div[data-testid="stHorizontalBlock"] > div > div.stButton > button {{
     background-color: transparent !important;
-    color: #94A3B8 !important;
+    color: #555555 !important;
     border: none !important;
     border-radius: 0px !important;
     font-weight: 500 !important;
-    text-transform: none !important;
-    font-size: 13px !important;
-    height: 38px !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 1.5px !important;
+    height: 36px !important;
     width: 100% !important;
     box-shadow: none !important;
-    transition: color 0.2s ease !important;
+    transition: all 0.2s ease !important;
 }}
 
 div[data-testid="stHorizontalBlock"] > div > div.stButton > button:hover {{
-    color: #FFFFFF !important;
-    background-color: rgba(255, 255, 255, 0.04) !important;
-    border-radius: 6px !important;
+    color: #000000 !important;
+    background-color: #F0F0F0 !important;
 }}
 
-/* Estilo para botón activo (Simulando la pestaña seleccionada de GitHub) */
+/* Pestaña Activa con línea inferior minimalista nítida */
 div[data-testid="stHorizontalBlock"] > div > div.stButton > button[kind="primary"] {{
-    color: #FFFFFF !important;
-    font-weight: 600 !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
     background-color: transparent !important;
-    border-bottom: 2px solid #F97316 !important; /* Línea naranja distintiva o acento */
+    border-bottom: 2px solid #000000 !important;
     border-radius: 0px !important;
 }}
 
-/* BOTONES SECUNDARIOS / SUBMENÚS ESTILO PILDORA FINA */
+/* BOTONES DE SUBMENÚS (Estilo Cápsula Editorial) */
 .sub-menu-container div.stButton > button {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
+    background-color: #FFFFFF !important;
+    color: #333333 !important;
+    border: 1px solid #E0E0E0 !important;
+    border-radius: 20px !important;
     font-weight: 600 !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
+    letter-spacing: 1px !important;
     text-transform: uppercase !important;
-    height: 30px !important;
+    height: 32px !important;
+    transition: all 0.2s ease !important;
 }}
 
 .sub-menu-container div.stButton > button:hover {{
-    background-color: #00A3A3 !important;
-    border-color: #00A3A3 !important;
+    background-color: #000000 !important;
+    border-color: #000000 !important;
     color: #FFFFFF !important;
 }}
 
-/*FOOTER FIJO */
+.sub-menu-container div.stButton > button[kind="primary"] {{
+    background-color: #111111 !important;
+    border-color: #111111 !important;
+    color: #FFFFFF !important;
+}}
+
+/* BUSCADOR ESTILO PORTAL PREMIUM */
+div[data-baseweb="input"] {{
+    background-color: #FFFFFF !important;
+    border-radius: 4px !important;
+    border: 1px solid #D1D1D1 !important;
+}}
+div[data-baseweb="input"]:focus-within {{
+    border-color: #000000 !important;
+    box-shadow: none !important;
+}}
+
+/* FOOTER CHIC */
 .footer {{ 
     position: fixed; 
     bottom: 0 !important; 
     left: 0 !important; 
     width: 100% !important; 
-    background-color: {vars_css['bg']} !important; 
-    color: {vars_css['sub']} !important; 
+    background-color: #FFFFFF !important; 
+    color: #888888 !important; 
     text-align: center; 
     padding: 10px 0px !important; 
     font-size: 9px; 
-    letter-spacing: 2px; 
-    border-top: 1px solid {vars_css['border']} !important; 
+    letter-spacing: 3px; 
+    border-top: 1px solid #E5E5E5 !important; 
     z-index: 999999 !important; 
 }}
 </style>
@@ -220,18 +239,17 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 4. HEADER UNIFICADO ESTILO GITHUB NAVIGATION
+# 4. HEADER EDITORIAL / MINIMALISTA CHIC
 # ==========================================
 header_zone = st.container()
 with header_zone:
-    # Fila 1: Logo, Buscador Global Slim y Botón Salir
     c_logo, c_search, c_exit = st.columns([1.2, 7.5, 1.3], vertical_alignment="center")
 
     with c_logo:
         try:
-            st.image(vars_css["logo"], width=130)
+            st.image(vars_css["logo"], width=120)
         except:
-            st.write("**NEXION**")
+            st.markdown("<span style='font-weight: 800; letter-spacing: 2px; color: #111;'>NEXION</span>", unsafe_allow_html=True)
 
     with c_search:
         es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
@@ -239,7 +257,7 @@ with header_zone:
 
         query = st.text_input(
             "Buscar",
-            placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar guía, pedido o cliente...",
+            placeholder="BUSCADOR DESACTIVADO" if es_atencion3g else "Buscar guía, pedido o cliente...",
             label_visibility="collapsed",
             key=key_actual,
             disabled=es_atencion3g,
@@ -296,9 +314,9 @@ with header_zone:
             st.session_state.splash_completado = False
             st.rerun()
 
-    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 4px 0 2px; opacity: 0.2;'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 6px 0 2px; opacity: 0.6;'>", unsafe_allow_html=True)
 
-    # Fila 2: Los 6 botones principales con estilo de pestañas GitHub (Tabs horizontales limpios)
+    # 6 Botones Principales Estilo Portal de Alta Gama (Editorial Tabs)
     usuario = st.session_state.get("usuario_activo", "GUEST").upper()
     es_admin = usuario == "RIGOBERTO"
 
@@ -317,7 +335,7 @@ with header_zone:
         with cols_menu[idx]:
             activo = st.session_state.menu_main == main_val
             tipo_btn = "primary" if activo else "secondary"
-            if st.button(label, use_container_width=True, key=f"nav_gh_{main_val}", type=tipo_btn):
+            if st.button(label, use_container_width=True, key=f"nav_chic_{main_val}", type=tipo_btn):
                 st.session_state.menu_main = main_val
                 st.session_state.menu_sub = sub_val
                 st.session_state.busqueda_activa = False
@@ -330,9 +348,9 @@ with header_zone:
                 else:
                     st.rerun()
 
-    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 0px 0 10px; opacity: 0.3;'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 0px 0 10px; opacity: 0.4;'>", unsafe_allow_html=True)
 
-    # Fila 3: Submenús contextuales dinámicos con contenedor limpio
+    # Submenús contextuales dinámicos en formato de píldoras flotantes modernas
     cat_activa = st.session_state.menu_main
     submenus_map = {
         "DASHBOARD": ["GENERAL"],
@@ -347,13 +365,13 @@ with header_zone:
 
     if cat_activa in submenus_map:
         sub_opciones = submenus_map[cat_activa]
-        st.markdown('<div class="sub-menu-container">', unsafe_allow_html=True)
+        st.markdown('<div class="sub-menu-container" style="display: flex; gap: 8px; justify-content: center; margin-bottom: 8px;">', unsafe_allow_html=True)
         sub_cols = st.columns(len(sub_opciones))
         for idx, sub in enumerate(sub_opciones):
             with sub_cols[idx]:
                 is_selected = st.session_state.menu_sub == sub
                 btn_type = "primary" if is_selected else "secondary"
-                if st.button(sub, use_container_width=True, key=f"sub_bar_{cat_activa}_{sub}", type=btn_type):
+                if st.button(sub, use_container_width=True, key=f"sub_chic_{cat_activa}_{sub}", type=btn_type):
                     st.session_state.menu_sub = sub
                     st.session_state.busqueda_activa = False
                     if sub == "ENVIO DE MUESTRAS":
@@ -366,16 +384,15 @@ with header_zone:
                         st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 8px 0 12px; opacity: 0.3;'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 8px 0 12px; opacity: 0.4;'>", unsafe_allow_html=True)
 
     # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA ──
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
         tipo = st.session_state.get("tipo_resultado", "OPERACION")
-        accent_color = "#00FFAA"
-        inv_color = "#36b9cc"
-        azul_premium = "#00D4FF"
+        accent_color = "#000000"
+        inv_color = "#333333"
 
         col_espacio, col_cerrar = st.columns([0.85, 0.15])
         with col_cerrar:
@@ -386,10 +403,9 @@ with header_zone:
                 st.rerun()
 
         if tipo == "INVENTARIO":
-            st.markdown(f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>", unsafe_allow_html=True)
-            st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:4px;height:18px;'></div><span style='color:#111;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:#666;'>({total})</span></span></div>", unsafe_allow_html=True)
             for _, i in resultados.iterrows():
-                st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='background:#FFFFFF;border:1px solid #E5E5E5;border-left:3px solid #111;border-radius:4px;padding:12px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:#888;font-size:9px;font-weight:700;letter-spacing:1px;'>SKU</span><br><b style='font-size:15px;color:#111;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;'><span style='color:#888;font-size:9px;font-weight:700;letter-spacing:1px;'>DESCRIPCIÓN</span><br><span style='font-size:12px;color:#222;font-weight:600;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:#F0F0F0;color:#111;padding:4px 10px;border-radius:2px;font-size:9px;font-weight:700;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
         else:
             if total == 1:
                 envio = resultados.iloc[0]
@@ -403,34 +419,16 @@ with header_zone:
                 elif trigger_val == "Enviada":
                     n_guia = "GENERANDO GUÍA..."
                 else:
-                    n_guia = "EN ESPERA DE SURTIDO"
+                    n_guia = "EN ESPERA"
 
-                f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors="coerce")
-                if pd.notnull(f_promesa_dt):
-                    f_promesa_dt = f_promesa_dt.normalize()
-                hoy = pd.Timestamp(datetime.now()).normalize()
-
-                if not tiene_guia:
-                    status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
-                elif not entregado_real:
-                    status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                else:
-                    f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors="coerce")
-                    if pd.notnull(f_entrega_dt):
-                        f_entrega_dt = f_entrega_dt.normalize()
-                    status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
-
-                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
-                st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
+                tarjeta_chic_html = f"""<div style="background: #FFFFFF; border: 1px solid #E5E5E5; border-left: 4px solid #111111; padding: 22px; border-radius: 6px; width: 100%; color: #111; margin-bottom: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #F0F0F0; padding-bottom: 12px;"><div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #555;">PEDIDO: <span style="color:#000;">#{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div><div style="font-size: 11px; font-weight: 700; color: #000; background: #F4F4F4; padding: 4px 10px; border-radius: 3px;">FLETERA: {envio.get('FLETERA','N/A')}</div></div><div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;"><div style="flex: 1;"><span style="font-size: 9px; color: #777; font-weight: 700; letter-spacing: 1px;">CLIENTE</span><div style="font-size: 13px; font-weight: 700; color: #111; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: #555; margin-top: 2px;">{envio.get('DOMICILIO','')}</div></div><div style="flex: 1; border-left: 1px solid #E5E5E5; padding-left: 15px;"><span style="font-size: 9px; color: #777; font-weight: 700; letter-spacing: 1px;">GUÍA / RASTREO</span><div style="font-size: 14px; font-weight: 800; font-family: monospace; color: #111; margin-top: 2px;">{n_guia}</div><div style="font-size: 11px; color: #555; margin-top: 2px;">DESTINO: {envio.get('DESTINO','N/A')}</div></div><div style="flex: 0.8; text-align: right;"><span style="font-size: 9px; color: #777; font-weight: 700; letter-spacing: 1px;">ESTATUS</span><div style="font-size: 12px; font-weight: 700; color: #111; margin-top: 4px; background: #EFEFEF; padding: 6px 12px; border-radius: 4px; display: inline-block;">{f_entrega_val}</div></div></div></div>"""
+                st.markdown(tarjeta_chic_html, unsafe_allow_html=True)
             else:
-                st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
-                st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
-
+                st.markdown(f"<div style='font-size: 13px; font-weight: 700; color: #111; margin-bottom: 15px; letter-spacing: 1px;'>COINCIDENCIAS ENCONTRADAS ({total})</div>", unsafe_allow_html=True)
                 for _, d in resultados.iterrows():
-                    status_text = d["COMENTARIOS"] if pd.notna(d.get("COMENTARIOS")) else "OK"
-                    st.markdown(f"<div class='card-nexion' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {azul_premium};border-radius:12px;padding:18px 25px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{azul_premium};letter-spacing:0.5px;'># {d.get('NÚMERO DE PEDIDO','')}</b><br><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;'>Envío: {d.get('FECHA DE ENVÍO','')}</span></div><div style='flex:2.5;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('NOMBRE DEL CLIENTE','')}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.5);font-style:normal;font-weight:600;'>{d.get('DESTINO','')}</i></div><div style='flex:1.8;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('FLETERA', d.get('TRANSPORTE', 'LOGÍSTICA'))}</b><br><span style='font-size:12px;color:{azul_premium};font-weight:700;font-family:monospace;'>{d.get('NÚMERO DE GUÍA','')}</span></div><div style='flex:1.2;text-align:right;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:{azul_premium};'>{d.get('FECHA DE ENTREGA REAL','')}</b><br><span style='font-size:10px;color:white;font-weight:800;text-transform:uppercase;opacity:0.8;'>{status_text}</span></div></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background:#FFFFFF;border:1px solid #E5E5E5;border-radius:6px;padding:15px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='font-size:9px;color:#777;font-weight:700;'>PEDIDO</span><br><b style='font-size:14px;color:#111;'>#{d.get('NÚMERO DE PEDIDO','')}</b></div><div style='flex:2;'><span style='font-size:9px;color:#777;font-weight:700;'>CLIENTE</span><br><b style='font-size:12px;color:#222;'>{d.get('NOMBRE DEL CLIENTE','')}</b></div><div style='flex:1;'><span style='font-size:9px;color:#777;font-weight:700;'>GUÍA</span><br><b style='font-size:12px;color:#111;font-family:monospace;'>{d.get('NÚMERO DE GUÍA','')}</b></div><div style='flex:1;text-align:right;'><span style='font-size:11px;color:#111;font-weight:700;'>{d.get('DESTINO','')}</span></div></div>", unsafe_allow_html=True)
 
-        st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+        st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 10px 0 15px; opacity: 0.4;'>", unsafe_allow_html=True)
 
 # ==========================================
 # 5. INTERFAZ PRINCIPAL
@@ -450,8 +448,8 @@ st.markdown(
     f"""
     <div class="footer">
         NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
-        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
-        <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
+        <span style="opacity:0.6; font-size:8px; letter-spacing:3px;">ENGINEERED BY</span>
+        <span style="color:#111111; font-weight:600; letter-spacing:2px;">RIGOBERTO HERNANDEZ</span>
     </div>
 """,
     unsafe_allow_html=True,
