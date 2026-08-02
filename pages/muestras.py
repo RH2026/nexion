@@ -106,6 +106,21 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
+/* COMMAND BAR STYLES */
+.nexion-command-bar {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(43, 52, 59, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 2px solid #00D4FF;
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-family: 'Inter', sans-serif;
+}}
+
 /*FOOTER FIJO */
 .footer {{ 
     position: fixed; 
@@ -295,7 +310,8 @@ with header_zone:
                 st.toast("No se encontró ningún registro", icon="🔍")
 
     with c4:
-        with st.popover("☰ Menú", use_container_width=True):
+        # ── NUEVA COMMAND BAR DE NAVEGACIÓN SUPERIOR PRO ──
+        with st.popover("⚡ COMMAND HUB", use_container_width=True):
             usuario = st.session_state.get("usuario_activo", "GUEST")
             es_admin = usuario.upper() == "RIGOBERTO"
             es_ventas = usuario.upper() == "VENTAS"
@@ -307,21 +323,21 @@ with header_zone:
         
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
-                    <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
-                    <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
+                <div style='background-color: rgba(0, 212, 255, 0.08); padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
+                    <p style='color:#00D4FF; font-size:9px; font-weight:800; margin:0; letter-spacing:1.5px;'>OPERADOR AUTORIZADO</p>
+                    <p style='color:{vars_css['text']}; font-size:13px; font-weight:700; margin:2px 0 0 0;'>{nombre_display.upper()}</p>
                 </div>
             """,
                 unsafe_allow_html=True,
             )
         
             st.markdown(
-                "<p style='color:#f0f0f0; font-size:10px; font-weight:400; text-align:center; margin:10px 0; letter-spacing:1px;'>MENÚ PRINCIPAL</p>",
+                "<p style='color:#00FFAA; font-size:9px; font-weight:800; text-align:center; margin:10px 0; letter-spacing:2px;'>SISTEMA DE NAVEGACIÓN PRINCIPAL</p>",
                 unsafe_allow_html=True,
             )
         
             if not es_ventas and not es_atencion3g:
-                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                if st.button("🚀 DASHBOARD GENERAL", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
@@ -329,7 +345,7 @@ with header_zone:
         
             if not es_ventas:
                 with st.expander(
-                    "SEGUIMIENTO",
+                    "🛡️ SEGUIMIENTO Y ALERTAS",
                     expanded=(st.session_state.menu_main == "SEGUIMIENTO"),
                 ):
                     usuario_actual = str(
@@ -354,7 +370,7 @@ with header_zone:
         
             if not es_ventas and not es_atencion3g:
                 with st.expander(
-                    "ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")
+                    "📦 CONTROL DE ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")
                 ):
                     opciones_ent = ["AGC", "AMAZON", "BARCELO"]
                     for s in opciones_ent:
@@ -371,7 +387,7 @@ with header_zone:
         
             if not es_atencion3g:
                 with st.expander(
-                    "REPORTES", expanded=(st.session_state.menu_main == "REPORTES")
+                    "📊 REPORTES LOGÍSTICOS", expanded=(st.session_state.menu_main == "REPORTES")
                 ):
                     usuario_actual = str(
                         st.session_state.get(
@@ -396,7 +412,6 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             
-                            # Redirección específica para Envío de Muestras
                             if s == "ENVIO DE MUESTRAS":
                                 st.switch_page("pages/muestras.py")
                             else:
@@ -404,7 +419,7 @@ with header_zone:
         
             if not es_ventas and not es_atencion3g:
                 with st.expander(
-                    "FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")
+                    "📑 FORMATOS Y DOCUMENTOS", expanded=(st.session_state.menu_main == "FORMATOS")
                 ):
                     opciones_for = [
                         "SALIDA DE PT",
@@ -426,7 +441,7 @@ with header_zone:
         
             if not es_ventas and not es_atencion3g:
                 with st.expander(
-                    "CENTRO DE DATOS",
+                    "💻 CENTRO DE DATOS Y HUB",
                     expanded=(st.session_state.menu_main == "CENTRO DE DATOS"),
                 ):
                     for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]:
@@ -443,7 +458,7 @@ with header_zone:
         
             if st.session_state.get("usuario_activo") == "Rigoberto":
                 with st.expander(
-                    "FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")
+                    "💳 FINANZAS Y GASTOS", expanded=(st.session_state.menu_main == "FINANZAS")
                 ):
                     opciones_fin = ["WALLET", "CAJA CHICA", "GASTOS"]
                     for s in opciones_fin:
@@ -457,7 +472,7 @@ with header_zone:
             usuario_actual = st.session_state.get("usuario_activo", "").upper()
             if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
                 with st.expander(
-                    "ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")
+                    "🎯 ENFOQUE OPERATIVO", expanded=(st.session_state.get("menu_main") == "ENFOQUE")
                 ):
                     for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
                         label = f"» {s}" if st.session_state.get("menu_sub") == s else s
@@ -467,9 +482,9 @@ with header_zone:
                             st.rerun()
         
             st.markdown(
-                "<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True
+                "<hr style='margin: 8px 0; opacity: 0.15;'>", unsafe_allow_html=True
             )
-            if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
+            if st.button("🔴 TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 st.session_state.autenticado = False
@@ -561,7 +576,6 @@ def main():
 
     # Contenedor animado con estilos limpios
     st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
-    
     
 
 
