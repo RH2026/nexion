@@ -192,274 +192,139 @@ if "tipo_resultado" not in st.session_state:
 # ==========================================
 # 4. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL TRIPLE RENDER)
 # ==========================================
-header_zone = st.container()
-with header_zone:
-    c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
+# ── 4. HEADER MODIFICADO CON BARRA DE CONTROL TÁCTICA ──
+    c1, c2, c3 = st.columns([1.5, 4.5, 1.2], vertical_alignment="center")
 
     with c1:
         try:
-            st.image(vars_css["logo"], width=160)
+            st.image(vars_css["logo"], width=150)
         except:
             st.write("**NEXION**")
 
     with c2:
-        texto_principal = st.session_state.menu_main
-        azul_nexion = "#82D4E6"
-        oro_brillante = "#FFD700"
-
-        if texto_principal == "DASHBOARD":
-            texto_principal = f"NEXION <span style='color: {azul_nexion}; font-weight: 500; margin: 0 10px; font-size: 16px;'>|</span> SMART LOGISTICS"
-
-        if st.session_state.menu_sub != "GENERAL":
-            ruta = (
-                f"{texto_principal} "
-                f"<span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> "
-                f"<span style='color: {oro_brillante}; font-weight: 500; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>"
-                f"{st.session_state.menu_sub}</span>"
-            )
-        else:
-            ruta = texto_principal
-
+        # Indicador de ruta táctica central
+        sub_actual = f" / {st.session_state.menu_sub}" if st.session_state.menu_sub != "GENERAL" else ""
         st.markdown(
             f"""
-            <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
-                <p style='font-size: 13px; letter-spacing: 5px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
-                    {ruta}
-                </p>
+            <div style='display: flex; justify-content: center; align-items: center; width: 100%; background: {vars_css['card']}; padding: 8px 15px; border-radius: 4px; border: 1px solid {vars_css['border']};'>
+                <span style='font-size: 11px; letter-spacing: 3px; color: #82D4E6; font-weight: 700; text-transform: uppercase;'>
+                    HUB: {st.session_state.menu_main} <span style='color: #FFD700;'>{sub_actual}</span>
+                </span>
             </div>
-        """,
+            """,
             unsafe_allow_html=True,
         )
 
     with c3:
-        es_atencion3g = (
-            st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
-        )
-        key_actual = f"main_search_v{st.session_state.search_key_version}"
+        # Botón de sesión ejecutiva minimalista
+        if st.button("SALIR", use_container_width=True, type="primary"):
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.session_state.autenticado = False
+            st.session_state.splash_completado = False
+            st.rerun()
 
-        query = st.text_input(
-            "Buscar",
-            placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar...",
-            label_visibility="collapsed",
-            key=key_actual,
-            disabled=es_atencion3g,
-        )
+    # ── 5. BARRA DE COMANDOS SECUNDARIA (MENÚ PRINCIPAL HORIZONTAL) ──
+    st.markdown(
+        f"""
+        <style>
+        .cmd-bar {{
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-        if query:
-            url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
-            try:
-                df_matriz_fresco = pd.read_csv(url_raw)
-                df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
-            except Exception:
-                df_matriz_fresco = cargar_datos_dashboard()
+    # Definir accesos según permisos del usuario activo
+    usuario = st.session_state.get("usuario_activo", "GUEST").upper()
+    es_admin = usuario == "RIGOBERTO"
+    es_ventas = usuario == "VENTAS"
+    es_atencion3g = usuario == "ATENCION3G"
 
-            res_ops = pd.DataFrame()
-            if df_matriz_fresco is not None:
-                cols_op = [
-                    "NÚMERO DE GUÍA",
-                    "NÚMERO DE PEDIDO",
-                    "NO CLIENTE",
-                    "NOMBRE DEL CLIENTE",
-                    "DESTINO",
-                ]
-                cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
-                if cols_op_disp:
-                    mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    res_ops = df_matriz_fresco[mask_ops]
+    # Selector horizontal de categorías principales (Estilo Command Center)
+    cols_menu = st.columns(6 if es_admin else 5)
+    
+    with cols_menu[0]:
+        if st.button("📊 DASHBOARD", use_container_width=True):
+            st.session_state.menu_main = "DASHBOARD"
+            st.session_state.menu_sub = "GENERAL"
+            st.session_state.busqueda_activa = False
+            st.rerun()
 
-            res_inv = pd.DataFrame()
-            try:
-                df_inv_temp = pd.read_csv("inventario.csv")
-                df_inv_temp.columns = df_inv_temp.columns.str.strip()
-                cols_inv = [c for c in ["CODIGO", "DESCRIPCION"] if c in df_inv_temp.columns]
-                if cols_inv:
-                    mask_inv = df_inv_temp[cols_inv].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    res_inv = df_inv_temp[mask_inv]
-            except Exception:
-                pass
+    with cols_menu[1]:
+        if st.button("🚚 ENTREGAS", use_container_width=True):
+            st.session_state.menu_main = "ENTREGAS"
+            st.session_state.menu_sub = "AGC"
+            st.session_state.busqueda_activa = False
+            st.switch_page("pages/entregas_agc.py")
 
-            if not res_ops.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "OPERACION"
-                st.session_state.resultado_busqueda = res_ops
-            elif not res_inv.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "INVENTARIO"
-                st.session_state.resultado_busqueda = res_inv
-            else:
+    with cols_menu[2]:
+        if st.button("📈 REPORTES", use_container_width=True):
+            st.session_state.menu_main = "REPORTES"
+            st.session_state.menu_sub = "ENVIO DE MUESTRAS"
+            st.session_state.busqueda_activa = False
+            st.switch_page("pages/muestras.py")
+
+    with cols_menu[3]:
+        if st.button("🗄️ DATOS", use_container_width=True):
+            st.session_state.menu_main = "CENTRO DE DATOS"
+            st.session_state.menu_sub = "ASIGNAR FLETERA"
+            st.session_state.busqueda_activa = False
+            st.switch_page("pages/asignacionfletera.py")
+
+    with cols_menu[4]:
+        if st.button("📋 FORMATOS", use_container_width=True):
+            st.session_state.menu_main = "FORMATOS"
+            st.session_state.menu_sub = "SALIDA DE PT"
+            st.session_state.busqueda_activa = False
+            st.rerun()
+
+    if es_admin and len(cols_menu) > 5:
+        with cols_menu[5]:
+            if st.button("💰 FINANZAS", use_container_width=True):
+                st.session_state.menu_main = "FINANZAS"
+                st.session_state.menu_sub = "WALLET"
                 st.session_state.busqueda_activa = False
-                st.toast("No se encontró ningún registro", icon="🔍")
-
-    with c4:
-        # ── ESTILOS CSS DEFINITIVOS: MENÚ PLANO TIPO FEDEX ──
-        st.markdown(
-            f"""
-            <style>
-            /* Botón principal del Menú */
-            div[data-testid="stPopover"] > button {{
-                background-color: {vars_css['card']} !important;
-                color: {vars_css['text']} !important;
-                border: 1px solid {vars_css['border']} !important;
-                border-radius: 4px !important;
-                font-weight: 700 !important;
-                letter-spacing: 1px !important;
-            }}
-            div[data-testid="stPopover"] > button:hover {{
-                border-color: #00D4FF !important;
-                color: #00D4FF !important;
-            }}
-
-            /* Contenedor flotante tipo tarjeta corporativa con fondo blanco */
-            div[data-testid="stPopoverContent"] {{
-                background-color: #FFFFFF !important;
-                border: 1px solid #D1D5DB !important;
-                border-radius: 4px !important;
-                padding: 0px !important;
-                box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.3) !important;
-                width: 300px !important;
-            }}
-
-            /* Forzar que todos los botones internos parezcan elementos de lista de texto */
-            div[data-testid="stPopoverContent"] div.stButton > button {{
-                background-color: transparent !important;
-                color: #1F2937 !important;
-                border: none !important;
-                border-bottom: 1px solid #E5E7EB !important;
-                border-radius: 0px !important;
-                text-align: left !important;
-                font-weight: 500 !important;
-                font-size: 13px !important;
-                padding: 0px 18px !important;
-                height: 44px !important;
-                box-shadow: none !important;
-                text-transform: none !important;
-                letter-spacing: 0px !important;
-            }}
-
-            div[data-testid="stPopoverContent"] div.stButton > button:hover {{
-                background-color: #F3F4F6 !important;
-                color: #0284C7 !important;
-                padding-left: 24px !important;
-            }}
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        with st.popover("☰ MENÚ", use_container_width=True):
-            usuario = st.session_state.get("usuario_activo", "GUEST")
-            es_admin = usuario.upper() == "RIGOBERTO"
-            es_ventas = usuario.upper() == "VENTAS"
-            es_atencion3g = usuario.upper() == "ATENCION3G"
-        
-            nombre_display = st.session_state.get(
-                "nombre_completo", "OPERADOR DESCONOCIDO"
-            )
-        
-            # Cabecera limpia de usuario activo
-            st.markdown(
-                f"""
-                <div style='background-color: #F9FAFB; padding: 14px 18px; border-bottom: 2px solid #E5E7EB;'>
-                    <p style='color: #6B7280; font-size: 9px; font-weight: 700; margin: 0; letter-spacing: 1px;'>USUARIO ACTIVO</p>
-                    <p style='color: #111827; font-size: 13px; font-weight: 700; margin: 2px 0 0 0;'>{nombre_display.upper()}</p>
-                </div>
-            """,
-                unsafe_allow_html=True,
-            )
-        
-            if not es_ventas and not es_atencion3g:
-                if st.button("Dashboard general", use_container_width=True, key="pop_trk"):
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.session_state.menu_sub = "GENERAL"
-                    st.session_state.busqueda_activa = False
-                    st.rerun()
-        
-            # Listado plano de secciones (eliminando expanders y cajas estorbosas)
-            if not es_ventas:
-                usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
-                if es_admin:
-                    opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
-                elif usuario_actual == "Cynthia":
-                    opciones_seg = ["ALERTAS", "QUEJAS"]
-                else:
-                    opciones_seg = ["ALERTAS"]
-        
-                for s in opciones_seg:
-                    if st.button(f"Seguimiento: {s.title()}", use_container_width=True, key=f"pop_sub_{s}"):
-                        st.session_state.menu_main = "SEGUIMIENTO"
-                        st.session_state.menu_sub = s
-                        st.session_state.busqueda_activa = False
-                        st.rerun()
-        
-            if not es_ventas and not es_atencion3g:
-                for s in ["AGC", "AMAZON", "BARCELO"]:
-                    if st.button(f"Entregas - {s}", use_container_width=True, key=f"pop_ent_{s}"):
-                        st.session_state.menu_main = "ENTREGAS"
-                        st.session_state.menu_sub = s
-                        st.session_state.busqueda_activa = False
-                        if s == "AGC":
-                            st.switch_page("pages/entregas_agc.py")
-                        else:
-                            st.rerun()
-        
-            if not es_atencion3g:
-                usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
-                opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"] if (es_admin or usuario_actual == "Carlos") else ["ENVIO DE MUESTRAS"]
-                for s in opciones_rep:
-                    if st.button(f"Reporte: {s.title()}", use_container_width=True, key=f"pop_rep_{s}"):
-                        st.session_state.menu_main = "REPORTES"
-                        st.session_state.menu_sub = s
-                        st.session_state.busqueda_activa = False
-                        if s == "ENVIO DE MUESTRAS":
-                            st.switch_page("pages/muestras.py")
-                        else:
-                            st.rerun()
-        
-            if not es_ventas and not es_atencion3g:
-                for s in ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]:
-                    if st.button(f"Formato: {s.title()}", use_container_width=True, key=f"pop_for_{s}"):
-                        st.session_state.menu_main = "FORMATOS"
-                        st.session_state.menu_sub = s
-                        st.session_state.busqueda_activa = False
-                        st.rerun()
-        
-            if not es_ventas and not es_atencion3g:
-                for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]:
-                    if st.button(f"Centro de datos: {s.title()}", use_container_width=True, key=f"pop_hub_{s}"):
-                        st.session_state.menu_main = "CENTRO DE DATOS"
-                        st.session_state.menu_sub = s
-                        st.session_state.busqueda_activa = False
-                        if s == "ASIGNAR FLETERA":
-                            st.switch_page("pages/asignacionfletera.py")
-                        else:
-                            st.rerun()
-        
-            if st.session_state.get("usuario_activo") == "Rigoberto":
-                for s in ["WALLET", "CAJA CHICA", "GASTOS"]:
-                    if st.button(f"Finanzas: {s.title()}", use_container_width=True, key=f"pop_fin_{s}"):
-                        st.session_state.menu_main = "FINANZAS"
-                        st.session_state.menu_sub = s
-                        st.session_state.busqueda_activa = False
-                        st.rerun()
-        
-            usuario_actual = st.session_state.get("usuario_activo", "").upper()
-            if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
-                for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
-                    if st.button(f"Enfoque: {s.title()}", use_container_width=True, key=f"pop_enf_{s}"):
-                        st.session_state.menu_main = "ENFOQUE"
-                        st.session_state.menu_sub = s
-                        st.rerun()
-        
-            if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
-                for key in list(st.session_state.keys()):
-                    del st.session_state[key]
-                st.session_state.autenticado = False
-                st.session_state.splash_completado = False
                 st.rerun()
+
+    # ── 6. SUBMENÚ CONTEXTUAL DINÁMICO (Aparece solo según la categoría activa) ──
+    cat_activa = st.session_state.menu_main
+    submenus_map = {
+        "SEGUIMIENTO": ["ALERTAS", "GANTT", "QUEJAS"],
+        "ENTREGAS": ["AGC", "AMAZON", "BARCELO"],
+        "REPORTES": ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"],
+        "FORMATOS": ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"],
+        "CENTRO DE DATOS": ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"],
+        "FINANZAS": ["WALLET", "CAJA CHICA", "GASTOS"],
+        "ENFOQUE": ["MORENO", "VAZQUEZ", "MIGUEL"]
+    }
+
+    if cat_activa in submenus_map:
+        sub_opciones = submenus_map[cat_activa]
+        sub_cols = st.columns(len(sub_opciones))
+        for idx, sub in enumerate(sub_opciones):
+            with sub_cols[idx]:
+                is_selected = st.session_state.menu_sub == sub
+                btn_type = "primary" if is_selected else "secondary"
+                if st.button(f"▪ {sub}", use_container_width=True, key=f"sub_bar_{cat_activa}_{sub}", type=btn_type):
+                    st.session_state.menu_sub = sub
+                    st.session_state.busqueda_activa = False
+                    if sub == "ENVIO DE MUESTRAS":
+                        st.switch_page("pages/muestras.py")
+                    elif sub == "AGC":
+                        st.switch_page("pages/entregas_agc.py")
+                    elif sub == "ASIGNAR FLETERA":
+                        st.switch_page("pages/asignacionfletera.py")
+                    else:
+                        st.rerun()
+
+    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 10px 0 15px; opacity: 0.3;'>", unsafe_allow_html=True)
 
     # ── RENDERIZADO DE RESULTADOS ──────────────────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
