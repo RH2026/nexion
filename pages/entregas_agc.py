@@ -734,6 +734,77 @@ def main():
         """
         return components.html(html_content, height=800, scrolling=True)
 
+    # --- Generador de PDF para Citas del Mes ---
+    def generar_pdf_citas_mes(data_completa, mes_num, anio=2026):
+        meses_nombres = {
+            1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
+            7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"
+        }
+        nombre_mes = meses_nombres.get(mes_num, "MES")
+
+        # Filtrar solo citas del mes seleccionado y que NO estén entregadas
+        citas_filtradas = []
+        for item in data_completa:
+            if item.get('estatus') == 'ENTREGADA':
+                continue
+            try:
+                fecha_str = str(item['cita']).split(" - ")[0].strip()
+                dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
+                if dt.month == mes_num and dt.year == anio:
+                    citas_filtradas.append(item)
+            except:
+                pass
+
+        buffer = io.BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+
+        # Encabezado del PDF
+        pdf.setFillColorRGB(0.21, 0.28, 0.32) # #384A52
+        pdf.rect(0, height - 80, width, 80, fill=1, stroke=0)
+        
+        pdf.setFillColorRGB(1, 1, 1)
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawString(40, height - 35, "JYPESA | REPORTE DE CITAS PENDIENTES")
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(40, height - 55, f"PERIODO: {nombre_mes} {anio} — NEXION SUPPLY CHAIN INTELLIGENCE")
+
+        # Tabla de Datos
+        y = height - 120
+        pdf.setFillColorRGB(0.1, 0.1, 0.1)
+        pdf.setFont("Helvetica-Bold", 9)
+        pdf.drawString(40, y, "FECHA / CITA")
+        pdf.drawString(140, y, "OC / PEDIDO")
+        pdf.drawString(240, y, "TIPO UNIDAD")
+        pdf.drawString(330, y, "VOLUMEN")
+        pdf.drawString(430, y, "PRODUCTO")
+        
+        y -= 8
+        pdf.setStrokeColorRGB(0.7, 0.7, 0.7)
+        pdf.line(40, y, width - 40, y)
+        y -= 20
+
+        pdf.setFont("Helvetica", 8)
+        for item in citas_filtradas:
+            if y < 50: # Salto de página si es necesario
+                pdf.showPage()
+                y = height - 50
+            
+            pdf.drawString(40, y, str(item.get('cita', ''))[:22])
+            pdf.drawString(140, y, str(item.get('oc', ''))[:18])
+            pdf.drawString(240, y, str(item.get('tipo', ''))[:15])
+            pdf.drawString(330, y, str(item.get('cantidad', ''))[:20])
+            pdf.drawString(430, y, str(item.get('producto', ''))[:25])
+            y -= 18
+
+        if not citas_filtradas:
+            pdf.setFont("Helvetica-Oblique", 10)
+            pdf.drawString(40, y, "No hay citas pendientes registradas para este mes.")
+
+        pdf.save()
+        buffer.seek(0)
+        return buffer.getvalue()
+
     # --- Función: Renderizado de Calendario (Solo Pendientes, Sin Parpadeos) ---
     def render_calendario_visual(data_completa, mes_num, anio=2026):
         meses_nombres = {
@@ -744,7 +815,6 @@ def main():
         
         eventos_dias = {}
         for item in data_completa:
-            # Filtro estricto: Solo eventos pendientes para el calendario
             if item.get('estatus') == 'ENTREGADA':
                 continue
             try:
@@ -940,14 +1010,14 @@ def main():
     if st.session_state.tipo_vista_agc == 'ENTREGAS':
         render_logistica_flow_responsive(data_pendientes)
     elif st.session_state.tipo_vista_agc == 'CALENDARIO':
-        col_mes_sel, _ = st.columns([2, 4])
+        col_mes_sel, col_btn_pdf = st.columns([3, 3])
+        
         with col_mes_sel:
             opciones_meses = {
                 "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6,
                 "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
             }
             
-            # Validar que el mes actual exista en las opciones del selector
             if st.session_state.mes_calendario not in opciones_meses.values():
                 st.session_state.mes_calendario = datetime.now().month
 
@@ -962,6 +1032,19 @@ def main():
             if opciones_meses[mes_seleccionado] != st.session_state.mes_calendario:
                 st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
                 st.rerun()
+
+        with col_btn_pdf:
+            st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
+            pdf_bytes = generar_pdf_citas_mes(data_completa, st.session_state.mes_calendario)
+            nombre_archivo_pdf = f"citas_pendientes_{nombre_mes_actual.lower()}_2026.pdf"
+            
+            st.download_button(
+                label="📥 DESCARGAR PDF DE CITAS DEL MES",
+                data=pdf_bytes,
+                file_name=nombre_archivo_pdf,
+                mime="application/pdf",
+                use_container_width=True
+            )
             
         render_calendario_visual(data_completa, st.session_state.mes_calendario)
 
