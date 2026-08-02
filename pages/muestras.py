@@ -295,16 +295,16 @@ with header_zone:
                 st.toast("No se encontró ningún registro", icon="🔍")
 
     with c4:
-        # ── ESTILOS CSS ESPECÍFICOS PARA EL MENÚ TIPO FEDEX ──
+        # ── ESTILOS CSS TIPO MENÚ FEDEX CORPORATIVO ──
         st.markdown(
             f"""
             <style>
-            /* Contenedor del popover ajustado al estilo corporativo */
+            /* Botón principal del Menú */
             div[data-testid="stPopover"] > button {{
                 background-color: {vars_css['card']} !important;
                 color: {vars_css['text']} !important;
                 border: 1px solid {vars_css['border']} !important;
-                border-radius: 6px !important;
+                border-radius: 4px !important;
                 font-weight: 700 !important;
                 letter-spacing: 1px !important;
             }}
@@ -312,24 +312,59 @@ with header_zone:
                 border-color: #00D4FF !important;
                 color: #00D4FF !important;
             }}
-            
-            /* Estilo limpio para los elementos internos del menú tipo lista flotante */
-            .fedex-menu-item {{
-                padding: 10px 14px;
-                font-size: 12px;
-                font-weight: 600;
-                color: {vars_css['text']};
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                border-bottom: 1px solid {vars_css['border']};
-                transition: all 0.2s ease;
-                display: block;
-                text-decoration: none;
+
+            /* Contenedor flotante tipo tarjeta corporativa con fondo blanco y líneas divisorias */
+            div[data-testid="stPopoverContent"] {{
+                background-color: #FFFFFF !important;
+                border: 1px solid #D1D5DB !important;
+                border-radius: 4px !important;
+                padding: 4px 0px !important;
+                box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.3) !important;
+                width: 280px !important;
             }}
-            .fedex-menu-item:hover {{
-                background-color: rgba(0, 212, 255, 0.1);
-                color: #00D4FF;
-                padding-left: 18px;
+
+            /* Ocultar elementos nativos adicionales y estilizar textos internos del popover */
+            div[data-testid="stPopoverContent"] p, 
+            div[data-testid="stPopoverContent"] span {{
+                color: #1F2937 !important;
+            }}
+
+            /* Estilo limpio para los botones de navegación internos tipo lista FedEx */
+            div[data-testid="stPopoverContent"] div.stButton > button {{
+                background-color: transparent !important;
+                color: #1F2937 !important;
+                border: none !important;
+                border-bottom: 1px solid #E5E7EB !important;
+                border-radius: 0px !important;
+                text-align: left !important;
+                font-weight: 500 !important;
+                font-size: 12px !important;
+                padding: 0px 16px !important;
+                height: 42px !important;
+                box-shadow: none !important;
+                text-transform: none !important;
+                letter-spacing: 0px !important;
+            }}
+
+            div[data-testid="stPopoverContent"] div.stButton > button:hover {{
+                background-color: #F3F4F6 !important;
+                color: #0284C7 !important;
+                border-color: #E5E7EB !important;
+                padding-left: 20px !important;
+            }}
+
+            /* Estilo especial para el botón inferior (Cerrar sesión / Acción principal) */
+            div[data-testid="stPopoverContent"] div.stButton > button[kind="primary"] {{
+                background-color: transparent !important;
+                color: #0284C7 !important;
+                font-weight: 700 !important;
+                border-top: 2px solid #E5E7EB !important;
+                text-transform: uppercase !important;
+                letter-spacing: 1px !important;
+            }}
+            div[data-testid="stPopoverContent"] div.stButton > button[kind="primary"]:hover {{
+                background-color: #E0F2FE !important;
+                color: #0369A1 !important;
             }}
             </style>
             """,
@@ -346,32 +381,26 @@ with header_zone:
                 "nombre_completo", "OPERADOR DESCONOCIDO"
             )
         
-            # Tarjeta de cabecera de usuario
+            # Cabecera limpia de usuario activo
             st.markdown(
                 f"""
-                <div style='background-color: {vars_css['card']}; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #00D4FF; border: 1px solid {vars_css['border']};'>
-                    <p style='color:#00D4FF; font-size:9px; font-weight:700; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
-                    <p style='color:{vars_css['text']}; font-size:13px; font-weight:700; margin:2px 0 0 0;'>{nombre_display.upper()}</p>
+                <div style='background-color: #F9FAFB; padding: 12px 16px; border-bottom: 2px solid #E5E7EB; margin-bottom: 4px;'>
+                    <p style='color: #6B7280; font-size: 9px; font-weight: 700; margin: 0; letter-spacing: 1px;'>USUARIO ACTIVO</p>
+                    <p style='color: #111827; font-size: 13px; font-weight: 700; margin: 2px 0 0 0;'>{nombre_display.upper()}</p>
                 </div>
             """,
                 unsafe_allow_html=True,
             )
         
-            st.markdown(
-                "<p style='color:#82D4E6; font-size:9px; font-weight:800; text-align:left; margin:12px 0 6px 4px; letter-spacing:1.5px;'>NAVEGACIÓN PRINCIPAL</p>",
-                unsafe_allow_html=True,
-            )
-        
             if not es_ventas and not es_atencion3g:
-                if st.button("📊 DASHBOARD", use_container_width=True, key="pop_trk"):
+                if st.button("📊 Dashboard general", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
                     st.rerun()
         
-            # Secciones desplegables limpias integradas con el concepto visual
             if not es_ventas:
-                with st.expander("📦 SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                with st.expander("📦 Seguimiento de operaciones", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
                     usuario_actual = str(
                         st.session_state.get(
                             "usuario", st.session_state.get("usuario_activo", "")
@@ -385,7 +414,7 @@ with header_zone:
                         opciones_seg = ["ALERTAS"]
         
                     for s in opciones_seg:
-                        label = f"▸ {s}" if st.session_state.menu_sub == s else f"  {s}"
+                        label = f"• {s}" if st.session_state.menu_sub == s else f"{s}"
                         if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
                             st.session_state.menu_main = "SEGUIMIENTO"
                             st.session_state.menu_sub = s
@@ -393,10 +422,10 @@ with header_zone:
                             st.rerun()
         
             if not es_ventas and not es_atencion3g:
-                with st.expander("🚚 ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
+                with st.expander("🚚 Entregas y rutas", expanded=(st.session_state.menu_main == "ENTREGAS")):
                     opciones_ent = ["AGC", "AMAZON", "BARCELO"]
                     for s in opciones_ent:
-                        label = f"▸ {s}" if st.session_state.menu_sub == s else f"  {s}"
+                        label = f"• {s}" if st.session_state.menu_sub == s else f"{s}"
                         if st.button(label, use_container_width=True, key=f"pop_ent_{s}"):
                             st.session_state.menu_main = "ENTREGAS"
                             st.session_state.menu_sub = s
@@ -408,7 +437,7 @@ with header_zone:
                                 st.rerun()
         
             if not es_atencion3g:
-                with st.expander("📈 REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                with st.expander("📈 Reportes y costos", expanded=(st.session_state.menu_main == "REPORTES")):
                     usuario_actual = str(
                         st.session_state.get(
                             "usuario", st.session_state.get("usuario_activo", "")
@@ -426,7 +455,7 @@ with header_zone:
                         opciones_rep = ["ENVIO DE MUESTRAS"]
         
                     for s in opciones_rep:
-                        label = f"▸ {s}" if st.session_state.menu_sub == s else f"  {s}"
+                        label = f"• {s}" if st.session_state.menu_sub == s else f"{s}"
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
                             st.session_state.menu_main = "REPORTES"
                             st.session_state.menu_sub = s
@@ -438,7 +467,7 @@ with header_zone:
                                 st.rerun()
         
             if not es_ventas and not es_atencion3g:
-                with st.expander("📋 FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                with st.expander("📋 Formatos y documentos", expanded=(st.session_state.menu_main == "FORMATOS")):
                     opciones_for = [
                         "SALIDA DE PT",
                         "CHECK LIST AGC",
@@ -450,7 +479,7 @@ with header_zone:
                         "COTIZACIONES",
                     ]
                     for s in opciones_for:
-                        label = f"▸ {s}" if st.session_state.menu_sub == s else f"  {s}"
+                        label = f"• {s}" if st.session_state.menu_sub == s else f"{s}"
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
                             st.session_state.menu_main = "FORMATOS"
                             st.session_state.menu_sub = s
@@ -458,9 +487,9 @@ with header_zone:
                             st.rerun()
         
             if not es_ventas and not es_atencion3g:
-                with st.expander("🗄️ CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
+                with st.expander("🗄️ Centro de datos", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
                     for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]:
-                        label = f"▸ {s}" if st.session_state.menu_sub == s else f"  {s}"
+                        label = f"• {s}" if st.session_state.menu_sub == s else f"{s}"
                         if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
                             st.session_state.menu_main = "CENTRO DE DATOS"
                             st.session_state.menu_sub = s
@@ -472,10 +501,10 @@ with header_zone:
                                 st.rerun()
         
             if st.session_state.get("usuario_activo") == "Rigoberto":
-                with st.expander("💰 FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
+                with st.expander("💰 Finanzas y caja chica", expanded=(st.session_state.menu_main == "FINANZAS")):
                     opciones_fin = ["WALLET", "CAJA CHICA", "GASTOS"]
                     for s in opciones_fin:
-                        label = f"▸ {s}" if st.session_state.menu_sub == s else f"  {s}"
+                        label = f"• {s}" if st.session_state.menu_sub == s else f"{s}"
                         if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
                             st.session_state.menu_main = "FINANZAS"
                             st.session_state.menu_sub = s
@@ -484,18 +513,15 @@ with header_zone:
         
             usuario_actual = st.session_state.get("usuario_activo", "").upper()
             if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
-                with st.expander("🎯 ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
+                with st.expander("🎯 Enfoque operativo", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
                     for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
-                        label = f"▸ {s}" if st.session_state.get("menu_sub") == s else f"  {s}"
+                        label = f"• {s}" if st.session_state.get("menu_sub") == s else f"{s}"
                         if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
                             st.session_state.menu_main = "ENFOQUE"
                             st.session_state.menu_sub = s
                             st.rerun()
         
-            st.markdown(
-                f"<hr style='margin: 10px 0; border-top: 1px solid {vars_css['border']}; opacity: 0.3;'>", unsafe_allow_html=True
-            )
-            if st.button("🚪 TERMINAR SESIÓN", use_container_width=True, type="primary"):
+            if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 st.session_state.autenticado = False
