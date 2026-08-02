@@ -343,7 +343,12 @@ with header_zone:
                             st.session_state.menu_main = "ENTREGAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
-                            st.rerun()
+                            
+                            # Redirección específica si seleccionan AGC
+                            if s == "AGC":
+                                st.switch_page("pages/entregas_agc.py")
+                            else:
+                                st.rerun()
         
             if not es_atencion3g:
                 with st.expander(
