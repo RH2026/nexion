@@ -539,28 +539,437 @@ with header_zone:
 
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
-
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (PLANTILLA BASE CON ANIMACIÓN FLUIDA)
+# 5. INTERFAZ PRINCIPAL (ENTREGAS AGC)
 # ==========================================
 def main():
-    # Efecto de entrada suave al cargar la página
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
 
-    # Contenedor animado
+    # Contenedor animado con estilos limpios
     st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
     
-    st.markdown(
-        f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>PLANTILLA BASE NEXION</p>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+        <style>
+            /* 1. Reset para que el contenedor use todo el ancho */
+            div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
+            
+            /* 2. Estilo para los botones personalizados */
+            div.stButton > button {
+                background-color: #2B343B !important; 
+                color: #FFFFFF !important;            
+                border: 1px solid #2B343B !important; 
+                border-radius: 5px !important;
+                transition: all 0.3s ease !important;
+                width: 100% !important;
+            }
     
-    # --- AQUI VA TU CONTENIDO NUEVO ---
-    st.markdown("### AQUI VA TU CONTENIDO NUEVO")
-    st.info("Esta es tu página base con animación fluida de entrada. Agrega aquí tus formularios, tablas o gráficas.")
-    
+            div.stButton > button:hover {
+                background-color: #00A3A3 !important; 
+                color: #FFFFFF !important;            
+                border-color: #00A3A3 !important;
+            }
+            
+            div.stButton > button:active {
+                background-color: #00A3A3 !important;
+                border-color: #00A3A3 !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # --- VALIDACIÓN DIRECTA CON TU VARIABLE DE SESIÓN DE ADMINISTRADOR ---
+    usuario_actual = st.session_state.get("usuario_activo", "").upper()
+    es_admin = (usuario_actual == "RIGOBERTO")
+
+    if es_admin:
+        with st.expander("🔐 Panel de Seguridad / Modo Edición Admin", expanded=False):
+            st.success("Acceso Concedido: Administrador Reconocido 🔓")
+            modo_edicion = st.checkbox("Activar Modo Edición de Citas en Pantalla", value=False, key="check_modo_edicion_session")
+    else:
+        modo_edicion = False
+
+    # --- Lógica de Navegación ---
+    if 'tipo_entrega' not in st.session_state:
+        st.session_state.tipo_entrega = 'C A M I O N'
+
+    if 'mes_calendario' not in st.session_state:
+        st.session_state.mes_calendario = 6  # Por defecto inicia en Junio
+
+    # Creamos TRES columnas para los botones de navegación superiores
+    col_btn1, col_btn2, col_btn3 = st.columns(3)
+
+    with col_btn1:
+        btn_type_1 = "primary" if st.session_state.tipo_entrega == 'C A M I O N' else "secondary"
+        if st.button("ENTREGAS AGC CAMIÓN", use_container_width=True, type=btn_type_1):
+            st.session_state.tipo_entrega = 'C A M I O N'
+            st.rerun()
+
+    with col_btn2:
+        btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
+        if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
+            st.session_state.tipo_entrega = 'T R A I L E R'
+            st.rerun()
+
+    with col_btn3:
+        btn_type_3 = "primary" if st.session_state.tipo_entrega == 'C A L E N D A R I O' else "secondary"
+        if st.button("VISTA CALENDARIO GLOBAL", use_container_width=True, type=btn_type_3):
+            st.session_state.tipo_entrega = 'C A L E N D A R I O'
+            st.rerun()
+
+    # --- Encabezado de Texto Dinámico ---
+    if st.session_state.tipo_entrega == 'C A M I O N':
+        titulo_dinamico = "ENTREGAS DE CAMIONES"
+    elif st.session_state.tipo_entrega == 'T R A I L E R':
+        titulo_dinamico = "ENTREGAS DE TRAILER"
+    else:
+        titulo_dinamico = "CALENDARIO DE ENTREGAS"
+
+    st.markdown(f"""
+        <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
+            <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
+                {titulo_dinamico}
+            </span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- Función de Renderizado (Tarjetas de Entregas) ---
+    def render_logistica_flow_responsive(data):
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+            <style>
+                body {{ 
+                    font-family: 'Inter', sans-serif; 
+                    background-color: #384A52; 
+                    color: #e2e8f0; 
+                    margin: 0;
+                    padding: 5px;
+                    width: 100%;
+                }}
+                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
+                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                .list-row {{
+                    background-color: #263238;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    transition: all 0.2s ease;
+                    margin-bottom: 8px;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    width: 100%;
+                }}
+                .list-row:hover {{
+                    background-color: #2c3b42;
+                    border-color: rgba(56, 189, 248, 0.3);
+                }}
+                .label-mini {{
+                    font-size: 9px;
+                    text-transform: uppercase;
+                    font-weight: 800;
+                    color: #BFBFBF;
+                    letter-spacing: 0.5px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="w-full space-y-2">
+                {"".join([f'''
+                <div class="list-row flex items-stretch">
+                    <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                    <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
+                        
+                        <div class="w-full md:w-44 shrink-0">
+                            <div class="label-mini">{item['semana']}</div>
+                            <div class="text-sm font-black text-white italic tracking-tighter leading-none min-h-[20px]">
+                                {item['oc']}
+                            </div>
+                            <div class="text-[12px] text-sky-400 font-bold mt-1">
+                                ITEM: {item['item_no']}
+                            </div>
+                        </div>
+                        
+                        <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                            <div>
+                                <div class="label-mini">Fecha Compromiso</div>
+                                <div class="text-xs text-slate-300 italic truncate min-h-[16px]">
+                                    {item['entrega_texto']}
+                                </div>
+                            </div>
+                            <div>
+                                <div class="label-mini">Producto</div>
+                                <div class="text-xs font-semibold text-sky-200 truncate min-h-[16px]">
+                                    {item['producto']}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="w-full md:w-[420px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
+                            <div class="w-2/5 shrink-0">
+                                <div class="label-mini">Volumen</div>
+                                <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['cantidad']}</div>
+                            </div>
+                            <div class="w-3/5 shrink-0">
+                                <div class="label-mini">Cita</div>
+                                <div class="text-sm font-mono font-bold min-h-[20px] truncate {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-sky-400"}">
+                                    {item['cita']}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
+                            <div class="label-mini md:mb-1">Estatus de Logística</div>
+                            <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter min-h-[16px]">
+                                {item['estatus']}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                ''' for item in data])}
+            </div>
+        </body>
+        </html>
+        """
+        return components.html(html_content, height=800, scrolling=True)
+
+    # --- Función: Renderizado de Calendario ---
+    def render_calendario_visual(data_camion, data_trailer, mes_num, anio=2026):
+        meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
+        nombre_mes = meses_nombres.get(mes_num, "MES")
+        
+        eventos_dias = {}
+        for item in data_camion:
+            try:
+                fecha_str = str(item['cita']).split(" - ")[0].strip()
+                dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
+                if dt.month == mes_num and dt.year == anio:
+                    if dt.day not in eventos_dias: 
+                        eventos_dias[dt.day] = []
+                    eventos_dias[dt.day].append({"tipo": "CAMIÓN", "oc": item['oc'], "estatus": item['estatus']})
+            except:
+                pass 
+
+        for item in data_trailer:
+            try:
+                fecha_str = str(item['cita']).split(" - ")[0].strip()
+                dt = datetime.strptime(fecha_str, "%d/%m/%Y")
+                if dt.month == mes_num and dt.year == anio:
+                    if dt.day not in eventos_dias: 
+                        eventos_dias[dt.day] = []
+                    eventos_dias[dt.day].append({"tipo": "TRAILER", "oc": item['oc'], "estatus": item['estatus']})
+            except:
+                pass
+
+        cal = calendar.Calendar(firstweekday=6) 
+        semanas_mes = cal.monthdayscalendar(anio, mes_num)
+
+        grid_html = ""
+        for semana in semanas_mes:
+            for dia in semana:
+                if dia == 0:
+                    grid_html += '<div class="bg-[#2a373d]/40 min-h-[115px] p-1 border border-white/5"></div>'
+                else:
+                    eventos_del_dia_html = ""
+                    if dia in eventos_dias:
+                        for ev in eventos_dias[dia]:
+                            bg_badge = "bg-sky-600/90 border-sky-400" if ev['tipo'] == "CAMIÓN" else "bg-emerald-700/90 border-emerald-500"
+                            texto_badge = f"{ev['tipo']} - {ev['oc']}"
+                            opacity = "opacity-60" if ev['estatus'] == "ENTREGADA" else "opacity-100 animate-pulse"
+                            
+                            eventos_del_dia_html += f'''
+                            <div class="text-[10px] font-bold text-white px-1.5 py-0.5 rounded border mb-1 truncate tracking-tight {bg_badge} {opacity}">
+                                {texto_badge}
+                            </div>
+                            '''
+
+                    grid_html += f'''
+                    <div class="bg-[#263238] min-h-[115px] p-2 border border-white/5 flex flex-col justify-between hover:bg-[#2c3b42] transition-colors">
+                        <span class="text-xs font-black text-slate-400 text-left">{dia}</span>
+                        <div class="overflow-y-auto max-h-[85px] space-y-1 mt-1 pr-0.5">
+                            {eventos_del_dia_html}
+                        </div>
+                    </div>
+                    '''
+
+        html_calendario = f"""
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+            <style>
+                body {{ font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin:0; padding:0; width: 100%; }}
+                ::-webkit-scrollbar {{ width: 4px; }}
+                ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
+            </style>
+        </head>
+        <body class="p-0">
+            <div class="w-full bg-[#1e272c] rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+                <div class="bg-[#263238] px-6 py-4 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="text-xl font-black text-white tracking-widest italic">{nombre_mes} <span style="color: #34D399;" class="font-light">{anio}</span></h2>
+                    <div class="flex items-center gap-4 text-xs font-semibold">
+                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-sky-600 rounded"></div>CAMIÓN</div>
+                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-emerald-700 rounded"></div>TRAILER</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-7 bg-[#212c31] text-center py-2 text-xs font-black text-slate-400 tracking-wider uppercase border-b border-white/5">
+                    <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+                </div>
+                
+                <div class="grid grid-cols-7 bg-[#1a2327]">
+                    {grid_html}
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        return components.html(html_calendario, height=750, scrolling=True)
+
+    # =====================================================================
+    # --- EXTRACCIÓN Y GUARDADO AUTOMÁTICO EN GITHUB ---
+    # =====================================================================
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    FILE_PATH = "agc.csv"
+    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+
+    def get_github_data():
+        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+        response = requests.get(CSV_URL, headers=headers)
+        if response.status_code == 200:
+            return pd.read_csv(io.StringIO(response.text))
+        else:
+            st.error(f"Hubo un error al cargar los datos: {response.status_code}")
+            return pd.DataFrame()
+
+    def guardar_cambios_github(df_nuevo):
+        import base64
+        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+        api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+        
+        r_get = requests.get(api_url, headers=headers)
+        if r_get.status_code != 200:
+            st.error("No se pudo obtener el identificador actual del archivo en GitHub.")
+            return False
+        sha_actual = r_get.json().get("sha")
+        
+        csv_buffer = io.StringIO()
+        df_nuevo.to_csv(csv_buffer, index=False)
+        csv_content = csv_buffer.getvalue()
+        
+        content_encoded = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+        
+        payload = {
+            "message": "Actualización automática de citas desde panel admin seguro de Rigoberto",
+            "content": content_encoded,
+            "sha": sha_actual
+        }
+        
+        r_put = requests.put(api_url, json=payload, headers=headers)
+        if r_put.status_code in [200, 201]:
+            st.success("¡Citas y cambios guardados en GitHub con éxito, mi amor! 🚀")
+            st.cache_data.clear()
+            return True
+        else:
+            st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
+            return False
+
+    df_raw = get_github_data()
+
+    if not df_raw.empty:
+        df_raw.columns = df_raw.columns.str.strip()
+
+        # --- MODO EDICIÓN BASADO EN TU SESIÓN DE ADMIN ---
+        if modo_edicion:
+            st.warning("⚠️ Modo edición activo. Modifica las celdas abajo y haz clic en el botón de guardar para actualizar GitHub automáticamente.")
+            
+            df_editado = st.data_editor(df_raw, use_container_width=True, num_rows="dynamic", key="editor_agc_admin_session")
+            
+            if st.button("💾 Guardar Cambios en GitHub", key="btn_guardar_github_session"):
+                if guardar_cambios_github(df_editado):
+                    st.rerun()
+            st.markdown("---")
+
+        # --- PROCESAMIENTO PARA LAS TARJETAS Y CALENDARIO ---
+        df_entregas = pd.DataFrame()
+        df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
+        df_entregas['item_no'] = df_raw.get('Item No.', pd.Series(dtype=str)).fillna('').astype(str)
+        df_entregas['producto'] = df_raw.get('PRODUCTO', pd.Series(dtype=str)).fillna('').astype(str)
+        
+        cajas = df_raw.get('Cajas a Entregar', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
+        tarimas = df_raw.get('Tarimas', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
+        cajas = cajas.replace({'': '0', '0.0': '0'})
+        tarimas = tarimas.replace({'': '0', '0.0': '0'})
+        
+        df_entregas['cantidad'] = cajas + " CXS / " + tarimas + " TAR"
+        df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', pd.Series(dtype=str)).fillna('').astype(str)
+        df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', pd.Series(dtype=str)).fillna('').astype(str)
+        
+        cita_series = df_raw.get('CITA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+        hora_series = df_raw.get('HORA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+        
+        valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat']
+        citas_combinadas = []
+        for c, h in zip(cita_series, hora_series):
+            es_cita_vacia = str(c).lower() in valores_nulos
+            es_hora_vacia = str(h).lower() in valores_nulos
+            
+            if es_cita_vacia and es_hora_vacia:
+                citas_combinadas.append("PENDIENTE DE CITA")
+            elif not es_cita_vacia and es_hora_vacia:
+                citas_combinadas.append(f"{c} - POR ASIGNAR")
+            elif es_cita_vacia and not es_hora_vacia:
+                citas_combinadas.append(f"PENDIENTE - {h}")
+            else:
+                citas_combinadas.append(f"{c} - {h}")
+                
+        df_entregas['cita'] = citas_combinadas
+        df_entregas['estatus'] = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
+        df_entregas['estatus'] = df_entregas['estatus'].replace('NAN', 'PENDIENTE')
+        
+        df_entregas['tipo'] = df_raw.get('Unidad', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
+        df_entregas['tipo'] = df_entregas['tipo'].str.replace('Ó', 'O') 
+        
+        df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
+        
+        data_camion = df_entregas[df_entregas['tipo'] == 'CAMION'].to_dict('records')
+        data_trailer = df_entregas[df_entregas['tipo'] == 'TRAILER'].to_dict('records')
+    else:
+        data_camion = []
+        data_trailer = []
+
+    # --- Lógica de Renderizado Condicional ---
+    if st.session_state.tipo_entrega == 'C A M I O N':
+        render_logistica_flow_responsive(data_camion)
+    elif st.session_state.tipo_entrega == 'T R A I L E R':
+        render_logistica_flow_responsive(data_trailer)
+    elif st.session_state.tipo_entrega == 'C A L E N D A R I O':
+        col_mes_sel, _ = st.columns([2, 4])
+        with col_mes_sel:
+            opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
+            
+            nombre_mes_actual = [k for k, v in opciones_meses.items() if v == st.session_state.mes_calendario][0]
+            
+            mes_seleccionado = st.selectbox(
+                "SELECCIONAR MES A VISUALIZAR", 
+                list(opciones_meses.keys()),
+                index=list(opciones_meses.keys()).index(nombre_mes_actual)
+            )
+            
+            if opciones_meses[mes_seleccionado] != st.session_state.mes_calendario:
+                st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
+                st.rerun()
+            
+        render_calendario_visual(data_camion, data_trailer, st.session_state.mes_calendario)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 
