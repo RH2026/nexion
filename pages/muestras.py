@@ -190,24 +190,24 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 4. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL TRIPLE RENDER)
+# 4. HEADER TÁCTICO & BARRA DE COMANDOS GLOBAL
 # ==========================================
-# ── 4. HEADER MODIFICADO CON BARRA DE CONTROL TÁCTICA ──
-    c1, c2, c3 = st.columns([1.5, 4.5, 1.2], vertical_alignment="center")
+header_zone = st.container()
+with header_zone:
+    c1, c2, c3, c4 = st.columns([1.2, 2.5, 2.3, 1.0], vertical_alignment="center")
 
     with c1:
         try:
-            st.image(vars_css["logo"], width=150)
+            st.image(vars_css["logo"], width=140)
         except:
             st.write("**NEXION**")
 
     with c2:
-        # Indicador de ruta táctica central
         sub_actual = f" / {st.session_state.menu_sub}" if st.session_state.menu_sub != "GENERAL" else ""
         st.markdown(
             f"""
-            <div style='display: flex; justify-content: center; align-items: center; width: 100%; background: {vars_css['card']}; padding: 8px 15px; border-radius: 4px; border: 1px solid {vars_css['border']};'>
-                <span style='font-size: 11px; letter-spacing: 3px; color: #82D4E6; font-weight: 700; text-transform: uppercase;'>
+            <div style='display: flex; justify-content: center; align-items: center; width: 100%; background: {vars_css['card']}; padding: 6px 12px; border-radius: 4px; border: 1px solid {vars_css['border']};'>
+                <span style='font-size: 10px; letter-spacing: 2px; color: #82D4E6; font-weight: 700; text-transform: uppercase;'>
                     HUB: {st.session_state.menu_main} <span style='color: #FFD700;'>{sub_actual}</span>
                 </span>
             </div>
@@ -216,7 +216,67 @@ if "tipo_resultado" not in st.session_state:
         )
 
     with c3:
-        # Botón de sesión ejecutiva minimalista
+        es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
+        key_actual = f"main_search_v{st.session_state.search_key_version}"
+
+        query = st.text_input(
+            "Buscar",
+            placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar guía, pedido o cliente...",
+            label_visibility="collapsed",
+            key=key_actual,
+            disabled=es_atencion3g,
+        )
+
+        if query:
+            url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+            try:
+                df_matriz_fresco = pd.read_csv(url_raw)
+                df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
+            except Exception:
+                df_matriz_fresco = cargar_datos_dashboard()
+
+            res_ops = pd.DataFrame()
+            if df_matriz_fresco is not None:
+                cols_op = [
+                    "NÚMERO DE GUÍA",
+                    "NÚMERO DE PEDIDO",
+                    "NO CLIENTE",
+                    "NOMBRE DEL CLIENTE",
+                    "DESTINO",
+                ]
+                cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
+                if cols_op_disp:
+                    mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
+                        lambda x: x.str.contains(query, case=False, na=False)
+                    ).any(axis=1)
+                    res_ops = df_matriz_fresco[mask_ops]
+
+            res_inv = pd.DataFrame()
+            try:
+                df_inv_temp = pd.read_csv("inventario.csv")
+                df_inv_temp.columns = df_inv_temp.columns.str.strip()
+                cols_inv = [c for c in ["CODIGO", "DESCRIPCION"] if c in df_inv_temp.columns]
+                if cols_inv:
+                    mask_inv = df_inv_temp[cols_inv].astype(str).apply(
+                        lambda x: x.str.contains(query, case=False, na=False)
+                    ).any(axis=1)
+                    res_inv = df_inv_temp[mask_inv]
+            except Exception:
+                pass
+
+            if not res_ops.empty:
+                st.session_state.busqueda_activa = True
+                st.session_state.tipo_resultado = "OPERACION"
+                st.session_state.resultado_busqueda = res_ops
+            elif not res_inv.empty:
+                st.session_state.busqueda_activa = True
+                st.session_state.tipo_resultado = "INVENTARIO"
+                st.session_state.resultado_busqueda = res_inv
+            else:
+                st.session_state.busqueda_activa = False
+                st.toast("No se encontró ningún registro", icon="🔍")
+
+    with c4:
         if st.button("SALIR", use_container_width=True, type="primary"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
@@ -224,62 +284,43 @@ if "tipo_resultado" not in st.session_state:
             st.session_state.splash_completado = False
             st.rerun()
 
-    # ── 5. BARRA DE COMANDOS SECUNDARIA (MENÚ PRINCIPAL HORIZONTAL) ──
-    st.markdown(
-        f"""
-        <style>
-        .cmd-bar {{
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            margin-bottom: 15px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Definir accesos según permisos del usuario activo
+    # ── 5. BARRA DE COMANDOS PRINCIPAL (HORIZONTAL) ──
     usuario = st.session_state.get("usuario_activo", "GUEST").upper()
     es_admin = usuario == "RIGOBERTO"
     es_ventas = usuario == "VENTAS"
-    es_atencion3g = usuario == "ATENCION3G"
 
-    # Selector horizontal de categorías principales (Estilo Command Center)
     cols_menu = st.columns(6 if es_admin else 5)
     
     with cols_menu[0]:
-        if st.button("📊 DASHBOARD", use_container_width=True):
+        if st.button("DASHBOARD", use_container_width=True):
             st.session_state.menu_main = "DASHBOARD"
             st.session_state.menu_sub = "GENERAL"
             st.session_state.busqueda_activa = False
             st.rerun()
 
     with cols_menu[1]:
-        if st.button("🚚 ENTREGAS", use_container_width=True):
+        if st.button("ENTREGAS", use_container_width=True):
             st.session_state.menu_main = "ENTREGAS"
             st.session_state.menu_sub = "AGC"
             st.session_state.busqueda_activa = False
             st.switch_page("pages/entregas_agc.py")
 
     with cols_menu[2]:
-        if st.button("📈 REPORTES", use_container_width=True):
+        if st.button("REPORTES", use_container_width=True):
             st.session_state.menu_main = "REPORTES"
             st.session_state.menu_sub = "ENVIO DE MUESTRAS"
             st.session_state.busqueda_activa = False
             st.switch_page("pages/muestras.py")
 
     with cols_menu[3]:
-        if st.button("🗄️ DATOS", use_container_width=True):
+        if st.button("CENTRO DATOS", use_container_width=True):
             st.session_state.menu_main = "CENTRO DE DATOS"
             st.session_state.menu_sub = "ASIGNAR FLETERA"
             st.session_state.busqueda_activa = False
             st.switch_page("pages/asignacionfletera.py")
 
     with cols_menu[4]:
-        if st.button("📋 FORMATOS", use_container_width=True):
+        if st.button("FORMATOS", use_container_width=True):
             st.session_state.menu_main = "FORMATOS"
             st.session_state.menu_sub = "SALIDA DE PT"
             st.session_state.busqueda_activa = False
@@ -287,13 +328,13 @@ if "tipo_resultado" not in st.session_state:
 
     if es_admin and len(cols_menu) > 5:
         with cols_menu[5]:
-            if st.button("💰 FINANZAS", use_container_width=True):
+            if st.button("FINANZAS", use_container_width=True):
                 st.session_state.menu_main = "FINANZAS"
                 st.session_state.menu_sub = "WALLET"
                 st.session_state.busqueda_activa = False
                 st.rerun()
 
-    # ── 6. SUBMENÚ CONTEXTUAL DINÁMICO (Aparece solo según la categoría activa) ──
+    # ── 6. SUBMENÚ CONTEXTUAL DINÁMICO INFERIOR ──
     cat_activa = st.session_state.menu_main
     submenus_map = {
         "SEGUIMIENTO": ["ALERTAS", "GANTT", "QUEJAS"],
@@ -312,7 +353,7 @@ if "tipo_resultado" not in st.session_state:
             with sub_cols[idx]:
                 is_selected = st.session_state.menu_sub == sub
                 btn_type = "primary" if is_selected else "secondary"
-                if st.button(f"▪ {sub}", use_container_width=True, key=f"sub_bar_{cat_activa}_{sub}", type=btn_type):
+                if st.button(sub, use_container_width=True, key=f"sub_bar_{cat_activa}_{sub}", type=btn_type):
                     st.session_state.menu_sub = sub
                     st.session_state.busqueda_activa = False
                     if sub == "ENVIO DE MUESTRAS":
@@ -324,9 +365,9 @@ if "tipo_resultado" not in st.session_state:
                     else:
                         st.rerun()
 
-    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 10px 0 15px; opacity: 0.3;'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='border-top: 1px solid {vars_css['border']}; margin: 8px 0 12px; opacity: 0.3;'>", unsafe_allow_html=True)
 
-    # ── RENDERIZADO DE RESULTADOS ──────────────────────────────────────────
+    # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA ──
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
@@ -343,21 +384,16 @@ if "tipo_resultado" not in st.session_state:
                 st.session_state.search_key_version += 1
                 st.rerun()
 
-        # RENDER 1: INVENTARIO
         if tipo == "INVENTARIO":
             st.markdown(f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>", unsafe_allow_html=True)
             st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
             for _, i in resultados.iterrows():
                 st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
         else:
-            # RENDER 2: RESULTADO ÚNICO UNIFICADO
             if total == 1:
                 envio = resultados.iloc[0]
-                f_envio = envio.get("FECHA DE ENVÍO", "N/A")
-                f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
                 entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
                 f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
-
                 trigger_val = str(envio.get("TRIGGER", "")).strip()
                 tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
 
@@ -383,12 +419,9 @@ if "tipo_resultado" not in st.session_state:
                         f_entrega_dt = f_entrega_dt.normalize()
                     status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
-                d = envio
-
                 tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
                 st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
             else:
-                # RENDER 3: LISTADO MÚLTIPLE
                 st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
                 st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
 
@@ -398,22 +431,15 @@ if "tipo_resultado" not in st.session_state:
 
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
-    st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
-
-
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (ENTREGAS AGC)
+# 5. INTERFAZ PRINCIPAL
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
 
-    # Contenedor animado con estilos limpios
     st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
-    
-    
-
 
 if __name__ == "__main__":
     main()
