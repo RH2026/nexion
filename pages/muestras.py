@@ -86,7 +86,32 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM Y BOTONES DE DESCARGA */
+/* BOTONES DE LA BARRA DE MENÚ HORIZONTAL PRO */
+.stHorizontalBlock div.stButton > button {{
+    background: rgba(43, 52, 59, 0.75) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: 2px solid #00D4FF !important;
+    border-radius: 6px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    font-size: 11px !important;
+    letter-spacing: 1.5px !important;
+    height: 42px !important;
+    width: 100% !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}}
+
+.stHorizontalBlock div.stButton > button:hover {{
+    background: rgba(0, 212, 255, 0.15) !important;
+    color: #00D4FF !important;
+    border-color: #00D4FF !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3) !important;
+}}
+
+/* BOTONES GENERALES RESTANTES */
 div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -190,11 +215,12 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 4. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL TRIPLE RENDER)
+# 4. HEADER EXACTAMENTE DE 3 COLUMNAS + BARRA DE MENÚ INFERIOR
 # ==========================================
 header_zone = st.container()
 with header_zone:
-    c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
+    # ── COLUMNA 1: LOGO | COLUMNA 2: TÍTULO DINÁMICO | COLUMNA 3: BUSCADOR ──
+    c1, c2, c3 = st.columns([1.8, 5.2, 3.0], vertical_alignment="center")
 
     with c1:
         try:
@@ -223,7 +249,7 @@ with header_zone:
         st.markdown(
             f"""
             <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
-                <p style='font-size: 13px; letter-spacing: 5px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
+                <p style='font-size: 13px; letter-spacing: 4px; color: {vars_css['sub']}; margin: 0; font-weight: 600; text-transform: uppercase; text-align: center;'>
                     {ruta}
                 </p>
             </div>
@@ -294,44 +320,59 @@ with header_zone:
                 st.session_state.busqueda_activa = False
                 st.toast("No se encontró ningún registro", icon="🔍")
 
-    with c4:
-        # ── NUEVA BARRA DE COMANDOS HORIZONTAL (COMMAND BAR PRO) ──
-        m_col1, m_col2, m_col3, m_col4, m_col5 = st.columns(5)
-        
-        with m_col1:
-            if st.button("📊 DASH", use_container_width=True, key="cmd_dash"):
-                st.session_state.menu_main = "DASHBOARD"
-                st.session_state.menu_sub = "GENERAL"
-                st.session_state.busqueda_activa = False
-                st.rerun()
-                
-        with m_col2:
-            if st.button("📦 ENTREGAS", use_container_width=True, key="cmd_ent"):
-                st.session_state.menu_main = "ENTREGAS"
-                st.session_state.menu_sub = "AGC"
-                st.session_state.busqueda_activa = False
-                st.switch_page("pages/entregas_agc.py")
-                
-        with m_col3:
-            if st.button("📈 MUESTRAS", use_container_width=True, key="cmd_rep"):
-                st.session_state.menu_main = "REPORTES"
-                st.session_state.menu_sub = "ENVIO DE MUESTRAS"
-                st.session_state.busqueda_activa = False
-                st.switch_page("pages/muestras.py")
-                
-        with m_col4:
-            if st.button("📑 FORMATOS", use_container_width=True, key="cmd_for"):
-                st.session_state.menu_main = "FORMATOS"
-                st.session_state.menu_sub = "SALIDA DE PT"
-                st.session_state.busqueda_activa = False
-                st.rerun()
-                
-        with m_col5:
-            if st.button("💻 DATOS", use_container_width=True, key="cmd_dat"):
-                st.session_state.menu_main = "CENTRO DE DATOS"
-                st.session_state.menu_sub = "ASIGNAR FLETERA"
-                st.session_state.busqueda_activa = False
-                st.switch_page("pages/asignacionfletera.py")
+    # Separador sutil de diseño
+    st.markdown("<hr style='border-top:1px solid rgba(255,255,255,0.1); margin:12px 0 15px;'>", unsafe_allow_html=True)
+
+    # ── CONTENEDOR DE LA BARRA DE MENÚ HORIZONTAL INFERIOR (ESTILO COMMAND BAR PRO) ──
+    st.markdown(
+        """
+        <div style='background: rgba(26, 32, 38, 0.65); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 12px 18px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
+            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>
+                <span style='font-size: 9px; font-weight: 800; color: #00FFAA; letter-spacing: 2px; text-transform: uppercase;'>⚡ NEXION COMMAND HUB // NAVEGACIÓN PRINCIPAL</span>
+                <span style='font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.6); letter-spacing: 1px;'>SESIÓN: {user_act}</span>
+            </div>
+        </div>
+        """.format(user_act=st.session_state.get('usuario_activo', 'GUEST').upper()),
+        unsafe_allow_html=True
+    )
+
+    # Botonera horizontal expandida a todo el ancho de la pantalla
+    m1, m2, m3, m4, m5 = st.columns(5)
+
+    with m1:
+        if st.button("📊 DASHBOARD", use_container_width=True, key="cmd_dash"):
+            st.session_state.menu_main = "DASHBOARD"
+            st.session_state.menu_sub = "GENERAL"
+            st.session_state.busqueda_activa = False
+            st.rerun()
+
+    with m2:
+        if st.button("📦 ENTREGAS", use_container_width=True, key="cmd_ent"):
+            st.session_state.menu_main = "ENTREGAS"
+            st.session_state.menu_sub = "AGC"
+            st.session_state.busqueda_activa = False
+            st.switch_page("pages/entregas_agc.py")
+
+    with m3:
+        if st.button("📈 MUESTRAS", use_container_width=True, key="cmd_muestras"):
+            st.session_state.menu_main = "REPORTES"
+            st.session_state.menu_sub = "ENVIO DE MUESTRAS"
+            st.session_state.busqueda_activa = False
+            st.switch_page("pages/muestras.py")
+
+    with m4:
+        if st.button("📑 FORMATOS", use_container_width=True, key="cmd_for"):
+            st.session_state.menu_main = "FORMATOS"
+            st.session_state.menu_sub = "SALIDA DE PT"
+            st.session_state.busqueda_activa = False
+            st.rerun()
+
+    with m5:
+        if st.button("💻 CENTRO DATOS", use_container_width=True, key="cmd_dat"):
+            st.session_state.menu_main = "CENTRO DE DATOS"
+            st.session_state.menu_sub = "ASIGNAR FLETERA"
+            st.session_state.busqueda_activa = False
+            st.switch_page("pages/asignacionfletera.py")
 
     # ── RENDERIZADO DE RESULTADOS ──────────────────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
