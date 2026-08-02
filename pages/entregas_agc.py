@@ -35,6 +35,22 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+/* --- ANIMACIONES DE ENTRADA --- */
+@keyframes fadeInSlideDown {{
+    0% {{
+        opacity: 0;
+        transform: translateY(-20px);
+    }}
+    100% {{
+        opacity: 1;
+        transform: translateY(0);
+    }}
+}}
+
+.animate-fade-in {{
+    animation: fadeInSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}}
+
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
     visibility: hidden !important;
@@ -331,7 +347,7 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            # NUEVO MENÚ ENTREGAS (COLOCADO DESPUÉS DE SEGUIMIENTO)
+            # MENÚ ENTREGAS
             if not es_ventas and not es_atencion3g:
                 with st.expander(
                     "ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")
@@ -344,7 +360,6 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             
-                            # Redirección específica si seleccionan AGC
                             if s == "AGC":
                                 st.switch_page("pages/entregas_agc.py")
                             else:
@@ -412,7 +427,6 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             
-                            # Redirección específica para Asignar Fletera
                             if s == "ASIGNAR FLETERA":
                                 st.switch_page("pages/asignacionfletera.py")
                             else:
@@ -527,9 +541,12 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (PLANTILLA BASE)
+# 5. INTERFAZ PRINCIPAL (PLANTILLA BASE CON ANIMACIÓN)
 # ==========================================
 def main():
+    # Contenedor con la clase de animación para que entre suavemente de arriba hacia abajo
+    st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
+    
     st.markdown(
         f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>PLANTILLA BASE NEXION</p>",
         unsafe_allow_html=True,
@@ -537,7 +554,9 @@ def main():
     
     # --- AQUI VA TU CONTENIDO NUEVO ---
     st.markdown("### AQUI VA TU CONTENIDO NUEVO")
-    st.info("Esta es tu página base. Agrega aquí tus formularios, tablas, gráficas o componentes personalizados.")
+    st.info("Esta es tu página base con animación de entrada integrada. Agrega aquí tus formularios, tablas o gráficas.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
