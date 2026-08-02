@@ -411,7 +411,12 @@ with header_zone:
                             st.session_state.menu_main = "CENTRO DE DATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
-                            st.rerun()
+                            
+                            # Redirección específica para Asignar Fletera
+                            if s == "ASIGNAR FLETERA":
+                                st.switch_page("pages/asignacionfletera.py")
+                            else:
+                                st.rerun()
         
             if st.session_state.get("usuario_activo") == "Rigoberto":
                 with st.expander(
