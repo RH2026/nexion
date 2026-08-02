@@ -597,7 +597,7 @@ def main():
         st.session_state.tipo_vista_agc = 'ENTREGAS'
 
     if 'mes_calendario' not in st.session_state:
-        st.session_state.mes_calendario = 6  # Por defecto inicia en Junio
+        st.session_state.mes_calendario = datetime.now().month  # Mes en curso dinámico
 
     # Creamos DOS botones principales superiores
     col_btn1, col_btn2 = st.columns(2)
@@ -734,13 +734,19 @@ def main():
         """
         return components.html(html_content, height=800, scrolling=True)
 
-    # --- Función: Renderizado de Calendario ---
+    # --- Función: Renderizado de Calendario (Solo Pendientes, Sin Parpadeos) ---
     def render_calendario_visual(data_completa, mes_num, anio=2026):
-        meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
+        meses_nombres = {
+            1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
+            7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"
+        }
         nombre_mes = meses_nombres.get(mes_num, "MES")
         
         eventos_dias = {}
         for item in data_completa:
+            # Filtro estricto: Solo eventos pendientes para el calendario
+            if item.get('estatus') == 'ENTREGADA':
+                continue
             try:
                 fecha_str = str(item['cita']).split(" - ")[0].strip()
                 dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
@@ -765,10 +771,9 @@ def main():
                         for ev in eventos_dias[dia]:
                             bg_badge = "bg-sky-600/90 border-sky-400" if ev['tipo'] == "CAMION" else "bg-emerald-700/90 border-emerald-500"
                             texto_badge = f"{ev['tipo']} - {ev['oc']}"
-                            opacity = "opacity-60" if ev['estatus'] == "ENTREGADA" else "opacity-100 animate-pulse"
                             
                             eventos_del_dia_html += f'''
-                            <div class="text-[10px] font-bold text-white px-1.5 py-0.5 rounded border mb-1 truncate tracking-tight {bg_badge} {opacity}">
+                            <div class="text-[10px] font-bold text-white px-1.5 py-0.5 rounded border mb-1 truncate tracking-tight {bg_badge}">
                                 {texto_badge}
                             </div>
                             '''
@@ -925,7 +930,6 @@ def main():
         
         df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
         
-        # Guardamos todo para el calendario, pero filtramos las entregadas SOLO para el render de tarjetas
         data_completa = df_entregas.to_dict('records')
         data_pendientes = [item for item in data_completa if item['estatus'] != 'ENTREGADA']
     else:
@@ -938,8 +942,15 @@ def main():
     elif st.session_state.tipo_vista_agc == 'CALENDARIO':
         col_mes_sel, _ = st.columns([2, 4])
         with col_mes_sel:
-            opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
+            opciones_meses = {
+                "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6,
+                "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
+            }
             
+            # Validar que el mes actual exista en las opciones del selector
+            if st.session_state.mes_calendario not in opciones_meses.values():
+                st.session_state.mes_calendario = datetime.now().month
+
             nombre_mes_actual = [k for k, v in opciones_meses.items() if v == st.session_state.mes_calendario][0]
             
             mes_seleccionado = st.selectbox(
