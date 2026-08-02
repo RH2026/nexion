@@ -592,41 +592,33 @@ def main():
     else:
         modo_edicion = False
 
-    # --- Lógica de Navegación ---
-    if 'tipo_entrega' not in st.session_state:
-        st.session_state.tipo_entrega = 'C A M I O N'
+    # --- Lógica de Navegación de Vistas ---
+    if 'tipo_vista_agc' not in st.session_state:
+        st.session_state.tipo_vista_agc = 'ENTREGAS'
 
     if 'mes_calendario' not in st.session_state:
         st.session_state.mes_calendario = 6  # Por defecto inicia en Junio
 
-    # Creamos TRES columnas para los botones de navegación superiores
-    col_btn1, col_btn2, col_btn3 = st.columns(3)
+    # Creamos DOS botones principales superiores
+    col_btn1, col_btn2 = st.columns(2)
 
     with col_btn1:
-        btn_type_1 = "primary" if st.session_state.tipo_entrega == 'C A M I O N' else "secondary"
-        if st.button("ENTREGAS AGC CAMIÓN", use_container_width=True, type=btn_type_1):
-            st.session_state.tipo_entrega = 'C A M I O N'
+        btn_type_1 = "primary" if st.session_state.tipo_vista_agc == 'ENTREGAS' else "secondary"
+        if st.button("VISTA DE ENTREGAS", use_container_width=True, type=btn_type_1):
+            st.session_state.tipo_vista_agc = 'ENTREGAS'
             st.rerun()
 
     with col_btn2:
-        btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
-        if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
-            st.session_state.tipo_entrega = 'T R A I L E R'
-            st.rerun()
-
-    with col_btn3:
-        btn_type_3 = "primary" if st.session_state.tipo_entrega == 'C A L E N D A R I O' else "secondary"
-        if st.button("VISTA CALENDARIO GLOBAL", use_container_width=True, type=btn_type_3):
-            st.session_state.tipo_entrega = 'C A L E N D A R I O'
+        btn_type_2 = "primary" if st.session_state.tipo_vista_agc == 'CALENDARIO' else "secondary"
+        if st.button("VISTA CALENDARIO GLOBAL", use_container_width=True, type=btn_type_2):
+            st.session_state.tipo_vista_agc = 'CALENDARIO'
             st.rerun()
 
     # --- Encabezado de Texto Dinámico ---
-    if st.session_state.tipo_entrega == 'C A M I O N':
-        titulo_dinamico = "ENTREGAS DE CAMIONES"
-    elif st.session_state.tipo_entrega == 'T R A I L E R':
-        titulo_dinamico = "ENTREGAS DE TRAILER"
+    if st.session_state.tipo_vista_agc == 'ENTREGAS':
+        titulo_dinamico = "PANEL DE ENTREGAS PENDIENTES (AGC)"
     else:
-        titulo_dinamico = "CALENDARIO DE ENTREGAS"
+        titulo_dinamico = "CALENDARIO DE ENTREGAS GLOBAL"
 
     st.markdown(f"""
         <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
@@ -726,7 +718,8 @@ def main():
                         </div>
 
                         <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
-                            <div class="label-mini md:mb-1">Estatus de Logística</div>
+                            <div class="label-mini md:mb-1">Tipo / Estatus</div>
+                            <div class="text-[10px] font-bold text-emerald-300 uppercase">{item['tipo']}</div>
                             <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter min-h-[16px]">
                                 {item['estatus']}
                             </div>
@@ -742,32 +735,21 @@ def main():
         return components.html(html_content, height=800, scrolling=True)
 
     # --- Función: Renderizado de Calendario ---
-    def render_calendario_visual(data_camion, data_trailer, mes_num, anio=2026):
+    def render_calendario_visual(data_completa, mes_num, anio=2026):
         meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
         nombre_mes = meses_nombres.get(mes_num, "MES")
         
         eventos_dias = {}
-        for item in data_camion:
+        for item in data_completa:
             try:
                 fecha_str = str(item['cita']).split(" - ")[0].strip()
                 dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
                 if dt.month == mes_num and dt.year == anio:
                     if dt.day not in eventos_dias: 
                         eventos_dias[dt.day] = []
-                    eventos_dias[dt.day].append({"tipo": "CAMIÓN", "oc": item['oc'], "estatus": item['estatus']})
+                    eventos_dias[dt.day].append({"tipo": item['tipo'], "oc": item['oc'], "estatus": item['estatus']})
             except:
                 pass 
-
-        for item in data_trailer:
-            try:
-                fecha_str = str(item['cita']).split(" - ")[0].strip()
-                dt = datetime.strptime(fecha_str, "%d/%m/%Y")
-                if dt.month == mes_num and dt.year == anio:
-                    if dt.day not in eventos_dias: 
-                        eventos_dias[dt.day] = []
-                    eventos_dias[dt.day].append({"tipo": "TRAILER", "oc": item['oc'], "estatus": item['estatus']})
-            except:
-                pass
 
         cal = calendar.Calendar(firstweekday=6) 
         semanas_mes = cal.monthdayscalendar(anio, mes_num)
@@ -781,7 +763,7 @@ def main():
                     eventos_del_dia_html = ""
                     if dia in eventos_dias:
                         for ev in eventos_dias[dia]:
-                            bg_badge = "bg-sky-600/90 border-sky-400" if ev['tipo'] == "CAMIÓN" else "bg-emerald-700/90 border-emerald-500"
+                            bg_badge = "bg-sky-600/90 border-sky-400" if ev['tipo'] == "CAMION" else "bg-emerald-700/90 border-emerald-500"
                             texto_badge = f"{ev['tipo']} - {ev['oc']}"
                             opacity = "opacity-60" if ev['estatus'] == "ENTREGADA" else "opacity-100 animate-pulse"
                             
@@ -818,7 +800,7 @@ def main():
                 <div class="bg-[#263238] px-6 py-4 border-b border-white/10 flex justify-between items-center">
                     <h2 class="text-xl font-black text-white tracking-widest italic">{nombre_mes} <span style="color: #34D399;" class="font-light">{anio}</span></h2>
                     <div class="flex items-center gap-4 text-xs font-semibold">
-                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-sky-600 rounded"></div>CAMIÓN</div>
+                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-sky-600 rounded"></div>CAMION</div>
                         <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-emerald-700 rounded"></div>TRAILER</div>
                     </div>
                 </div>
@@ -943,18 +925,17 @@ def main():
         
         df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
         
-        data_camion = df_entregas[df_entregas['tipo'] == 'CAMION'].to_dict('records')
-        data_trailer = df_entregas[df_entregas['tipo'] == 'TRAILER'].to_dict('records')
+        # Guardamos todo para el calendario, pero filtramos las entregadas SOLO para el render de tarjetas
+        data_completa = df_entregas.to_dict('records')
+        data_pendientes = [item for item in data_completa if item['estatus'] != 'ENTREGADA']
     else:
-        data_camion = []
-        data_trailer = []
+        data_completa = []
+        data_pendientes = []
 
-    # --- Lógica de Renderizado Condicional ---
-    if st.session_state.tipo_entrega == 'C A M I O N':
-        render_logistica_flow_responsive(data_camion)
-    elif st.session_state.tipo_entrega == 'T R A I L E R':
-        render_logistica_flow_responsive(data_trailer)
-    elif st.session_state.tipo_entrega == 'C A L E N D A R I O':
+    # --- Lógica de Renderizado Condicional de Vistas ---
+    if st.session_state.tipo_vista_agc == 'ENTREGAS':
+        render_logistica_flow_responsive(data_pendientes)
+    elif st.session_state.tipo_vista_agc == 'CALENDARIO':
         col_mes_sel, _ = st.columns([2, 4])
         with col_mes_sel:
             opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
@@ -971,7 +952,7 @@ def main():
                 st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
                 st.rerun()
             
-        render_calendario_visual(data_camion, data_trailer, st.session_state.mes_calendario)
+        render_calendario_visual(data_completa, st.session_state.mes_calendario)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
