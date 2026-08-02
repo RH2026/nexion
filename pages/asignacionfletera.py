@@ -331,7 +331,6 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            # NUEVO MENÚ ENTREGAS (COLOCADO DESPUÉS DE SEGUIMIENTO)
             if not es_ventas and not es_atencion3g:
                 with st.expander(
                     "ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")
@@ -344,7 +343,6 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             
-                            # Redirección específica si seleccionan AGC
                             if s == "AGC":
                                 st.switch_page("pages/entregas_agc.py")
                             else:
@@ -376,7 +374,12 @@ with header_zone:
                             st.session_state.menu_main = "REPORTES"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
-                            st.rerun()
+                            
+                            # Redirección específica para Envío de Muestras
+                            if s == "ENVIO DE MUESTRAS":
+                                st.switch_page("pages/muestras.py")
+                            else:
+                                st.rerun()
         
             if not es_ventas and not es_atencion3g:
                 with st.expander(
@@ -412,7 +415,6 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             
-                            # Redirección específica para Asignar Fletera
                             if s == "ASIGNAR FLETERA":
                                 st.switch_page("pages/asignacionfletera.py")
                             else:
