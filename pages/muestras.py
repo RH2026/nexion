@@ -33,6 +33,100 @@ vars_css = {
     "logo": "n1.png",
 }
 
+# --- MODIFICACIÓN FEDEX: Añadimos estilos para los menús desplegables ---
+css_fedex = """
+/* --- ESTILOS DE MENÚS TIPO FEDEX --- */
+.fedex-menu {
+    width: 100%;
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.fedex-menu ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.fedex-menu li {
+    position: relative;
+}
+
+.fedex-menu li a {
+    display: block;
+    color: #000000 !important;
+    padding: 15px 20px;
+    text-decoration: none;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif !important;
+    border-bottom: 1px solid #E0E0E0;
+    font-weight: 500;
+}
+
+.fedex-menu li:last-child a {
+    border-bottom: none;
+}
+
+/* Estilo del primer nivel de menú (el que se despliega) */
+.fedex-menu > ul > li > a {
+    background-color: #7D007D !important; /* Color púrpura como base del menú FedEx */
+    color: #FFFFFF !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 25px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    margin-bottom: 0;
+}
+
+.fedex-menu > ul > li > a:after {
+    content: '▼';
+    font-size: 10px;
+    color: #FFFFFF;
+    margin-left: 10px;
+}
+
+.fedex-menu > ul > li:hover > a {
+    background-color: #660066 !important; /* Color púrpura más oscuro al pasar el ratón */
+}
+
+/* Submenús (los elementos internos) */
+.fedex-menu ul ul {
+    display: none; /* Por defecto ocultos */
+    position: static; /* Cambiado a static para que se expandan hacia abajo */
+    background-color: #FFFFFF !important;
+    box-shadow: none;
+    padding-left: 0;
+}
+
+.fedex-menu li:hover > ul {
+    display: block; /* Mostrar al pasar el ratón */
+}
+
+.fedex-menu ul ul li a {
+    padding: 12px 25px 12px 35px;
+    font-weight: 500;
+    color: #424242 !important;
+}
+
+.fedex-menu ul ul li a:hover {
+    background-color: #F5F5F5 !important;
+}
+
+/* Estilo para los enlaces destacados (ej. "TODOS LOS SERVICIOS") */
+.fedex-menu .destacado a {
+    color: #0072C6 !important; /* Azul FedEx para enlaces destacados */
+    font-weight: 700;
+    border-top: 1px solid #E0E0E0;
+}
+"""
+
 st.markdown(
     f"""
 <style>
@@ -91,7 +185,7 @@ html, body, .stApp {{
     background: rgba(43, 52, 59, 0.75) !important;
     color: #FFFFFF !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-top: 2px solid #00D4FF !important;
+    border-top: 2px solid #00D4FF !important; /* Usamos tu azul cian */
     border-radius: 6px !important;
     font-weight: 800 !important;
     text-transform: uppercase;
@@ -107,7 +201,7 @@ html, body, .stApp {{
     background: rgba(0, 212, 255, 0.15) !important;
     color: #00D4FF !important;
     border-color: #00D4FF !important;
-    transform: translateY(-2px) !important;
+    transform: translateY(-200px) !important;
     box-shadow: 0 0 15px rgba(0, 212, 255, 0.3) !important;
 }}
 
@@ -146,6 +240,8 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
 }}
+
+{css_fedex} /* --- AÑADIMOS EL CSS DE FEDEX AQUÍ --- */
 </style>
 """,
     unsafe_allow_html=True,
@@ -272,207 +368,3 @@ with header_zone:
         )
 
         if query:
-            url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
-            try:
-                df_matriz_fresco = pd.read_csv(url_raw)
-                df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
-            except Exception:
-                df_matriz_fresco = cargar_datos_dashboard()
-
-            res_ops = pd.DataFrame()
-            if df_matriz_fresco is not None:
-                cols_op = [
-                    "NÚMERO DE GUÍA",
-                    "NÚMERO DE PEDIDO",
-                    "NO CLIENTE",
-                    "NOMBRE DEL CLIENTE",
-                    "DESTINO",
-                ]
-                cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
-                if cols_op_disp:
-                    mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    res_ops = df_matriz_fresco[mask_ops]
-
-            res_inv = pd.DataFrame()
-            try:
-                df_inv_temp = pd.read_csv("inventario.csv")
-                df_inv_temp.columns = df_inv_temp.columns.str.strip()
-                cols_inv = [c for c in ["CODIGO", "DESCRIPCION"] if c in df_inv_temp.columns]
-                if cols_inv:
-                    mask_inv = df_inv_temp[cols_inv].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    res_inv = df_inv_temp[mask_inv]
-            except Exception:
-                pass
-
-            if not res_ops.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "OPERACION"
-                st.session_state.resultado_busqueda = res_ops
-            elif not res_inv.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "INVENTARIO"
-                st.session_state.resultado_busqueda = res_inv
-            else:
-                st.session_state.busqueda_activa = False
-                st.toast("No se encontró ningún registro", icon="🔍")
-
-    # Separador sutil de diseño
-    st.markdown("<hr style='border-top:1px solid rgba(255,255,255,0.1); margin:12px 0 15px;'>", unsafe_allow_html=True)
-
-    # ── CONTENEDOR DE LA BARRA DE MENÚ HORIZONTAL INFERIOR (ESTILO COMMAND BAR PRO) ──
-    st.markdown(
-        """
-        <div style='background: rgba(26, 32, 38, 0.65); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 12px 18px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
-            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>
-                <span style='font-size: 9px; font-weight: 800; color: #00FFAA; letter-spacing: 2px; text-transform: uppercase;'>⚡ NEXION COMMAND HUB // NAVEGACIÓN PRINCIPAL</span>
-                <span style='font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.6); letter-spacing: 1px;'>SESIÓN: {user_act}</span>
-            </div>
-        </div>
-        """.format(user_act=st.session_state.get('usuario_activo', 'GUEST').upper()),
-        unsafe_allow_html=True
-    )
-
-    # Botonera horizontal expandida a todo el ancho de la pantalla
-    m1, m2, m3, m4, m5 = st.columns(5)
-
-    with m1:
-        if st.button("📊 DASHBOARD", use_container_width=True, key="cmd_dash"):
-            st.session_state.menu_main = "DASHBOARD"
-            st.session_state.menu_sub = "GENERAL"
-            st.session_state.busqueda_activa = False
-            st.rerun()
-
-    with m2:
-        if st.button("📦 ENTREGAS", use_container_width=True, key="cmd_ent"):
-            st.session_state.menu_main = "ENTREGAS"
-            st.session_state.menu_sub = "AGC"
-            st.session_state.busqueda_activa = False
-            st.switch_page("pages/entregas_agc.py")
-
-    with m3:
-        if st.button("📈 MUESTRAS", use_container_width=True, key="cmd_muestras"):
-            st.session_state.menu_main = "REPORTES"
-            st.session_state.menu_sub = "ENVIO DE MUESTRAS"
-            st.session_state.busqueda_activa = False
-            st.switch_page("pages/muestras.py")
-
-    with m4:
-        if st.button("📑 FORMATOS", use_container_width=True, key="cmd_for"):
-            st.session_state.menu_main = "FORMATOS"
-            st.session_state.menu_sub = "SALIDA DE PT"
-            st.session_state.busqueda_activa = False
-            st.rerun()
-
-    with m5:
-        if st.button("💻 CENTRO DATOS", use_container_width=True, key="cmd_dat"):
-            st.session_state.menu_main = "CENTRO DE DATOS"
-            st.session_state.menu_sub = "ASIGNAR FLETERA"
-            st.session_state.busqueda_activa = False
-            st.switch_page("pages/asignacionfletera.py")
-
-    # ── RENDERIZADO DE RESULTADOS ──────────────────────────────────────────
-    if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
-        resultados = st.session_state.resultado_busqueda
-        total = len(resultados)
-        tipo = st.session_state.get("tipo_resultado", "OPERACION")
-        accent_color = "#00FFAA"
-        inv_color = "#36b9cc"
-        azul_premium = "#00D4FF"
-
-        col_espacio, col_cerrar = st.columns([0.85, 0.15])
-        with col_cerrar:
-            if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
-                st.session_state.busqueda_activa = False
-                st.session_state.resultado_busqueda = None
-                st.session_state.search_key_version += 1
-                st.rerun()
-
-        # RENDER 1: INVENTARIO
-        if tipo == "INVENTARIO":
-            st.markdown(f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>", unsafe_allow_html=True)
-            st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
-            for _, i in resultados.iterrows():
-                st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
-        else:
-            # RENDER 2: RESULTADO ÚNICO UNIFICADO
-            if total == 1:
-                envio = resultados.iloc[0]
-                f_envio = envio.get("FECHA DE ENVÍO", "N/A")
-                f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
-                entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
-                f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
-
-                trigger_val = str(envio.get("TRIGGER", "")).strip()
-                tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
-
-                if tiene_guia:
-                    n_guia = envio["NÚMERO DE GUÍA"]
-                elif trigger_val == "Enviada":
-                    n_guia = "GENERANDO GUÍA..."
-                else:
-                    n_guia = "EN ESPERA DE SURTIDO"
-
-                f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors="coerce")
-                if pd.notnull(f_promesa_dt):
-                    f_promesa_dt = f_promesa_dt.normalize()
-                hoy = pd.Timestamp(datetime.now()).normalize()
-
-                if not tiene_guia:
-                    status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
-                elif not entregado_real:
-                    status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                else:
-                    f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors="coerce")
-                    if pd.notnull(f_entrega_dt):
-                        f_entrega_dt = f_entrega_dt.normalize()
-                    status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
-
-                d = envio
-
-                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
-                st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
-            else:
-                # RENDER 3: LISTADO MÚLTIPLE
-                st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
-                st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
-
-                for _, d in resultados.iterrows():
-                    status_text = d["COMENTARIOS"] if pd.notna(d.get("COMENTARIOS")) else "OK"
-                    st.markdown(f"<div class='card-nexion' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {azul_premium};border-radius:12px;padding:18px 25px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{azul_premium};letter-spacing:0.5px;'># {d.get('NÚMERO DE PEDIDO','')}</b><br><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;'>Envío: {d.get('FECHA DE ENVÍO','')}</span></div><div style='flex:2.5;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('NOMBRE DEL CLIENTE','')}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.5);font-style:normal;font-weight:600;'>{d.get('DESTINO','')}</i></div><div style='flex:1.8;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('FLETERA', d.get('TRANSPORTE', 'LOGÍSTICA'))}</b><br><span style='font-size:12px;color:{azul_premium};font-weight:700;font-family:monospace;'>{d.get('NÚMERO DE GUÍA','')}</span></div><div style='flex:1.2;text-align:right;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:{azul_premium};'>{d.get('FECHA DE ENTREGA REAL','')}</b><br><span style='font-size:10px;color:white;font-weight:800;text-transform:uppercase;opacity:0.8;'>{status_text}</span></div></div>", unsafe_allow_html=True)
-
-        st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
-
-    st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
-
-
-# ==========================================
-# 5. INTERFAZ PRINCIPAL (ENTREGAS AGC)
-# ==========================================
-def main():
-    if "animacion_cargada" not in st.session_state:
-        time.sleep(0.08)
-        st.session_state.animacion_cargada = True
-
-    # Contenedor animado con estilos limpios
-    st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
-    
-
-
-if __name__ == "__main__":
-    main()
-
-# ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
-st.markdown(
-    f"""
-    <div class="footer">
-        NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
-        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
-        <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
-    </div>
-""",
-    unsafe_allow_html=True,
-)
