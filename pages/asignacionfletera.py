@@ -35,6 +35,22 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+/* --- ANIMACIONES DE ENTRADA --- */
+@keyframes fadeInUp {{
+    from {{
+        opacity: 0;
+        transform: translateY(15px);
+    }}
+    to {{
+        opacity: 1;
+        transform: translateY(0);
+    }}
+}}
+
+[data-testid="stVerticalBlock"] > div {{
+    animation: fadeInUp 0.6s ease-out;
+}}
+
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
     visibility: hidden !important;
@@ -534,6 +550,10 @@ with header_zone:
 # 5. INTERFAZ PRINCIPAL (MÓDULO DE ASIGNACIÓN)
 # ==========================================
 def main():
+    if "animacion_cargada" not in st.session_state:
+        time.sleep(0.08)
+        st.session_state.animacion_cargada = True
+    
     st.markdown(
         f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T PREPARATION MODULE</p>",
         unsafe_allow_html=True,
