@@ -95,7 +95,7 @@ div.stButton > button, div.stDownloadButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 34px !important;
+    height: 32px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -104,6 +104,24 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
     border-color: #00A3A3 !important;
+}}
+
+/* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
+div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
+    gap: 0.45rem !important;
+}}
+
+div[data-testid="stPopoverBody"] .stButton {{
+    margin-bottom: 0rem !important;
+}}
+
+div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
+    border: none !important;
+    background: transparent !important;
+    margin-bottom: 0rem !important;
+    > div {{
+        padding: 0 !important;
+    }}
 }}
 
 /*FOOTER FIJO */
@@ -322,16 +340,11 @@ with header_zone:
         
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
+                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #00D4FF;'>
                     <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
-                    <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
+                    <p style='color:{vars_css['text']}; font-size:13px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                 </div>
             """,
-                unsafe_allow_html=True,
-            )
-        
-            st.markdown(
-                "<p style='color:#f0f0f0; font-size:10px; font-weight:400; text-align:center; margin:10px 0; letter-spacing:1px;'>MENÚ PRINCIPAL</p>",
                 unsafe_allow_html=True,
             )
         
@@ -349,7 +362,7 @@ with header_zone:
                     opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
                             st.session_state.menu_main = "SEGUIMIENTO"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -361,7 +374,7 @@ with header_zone:
                     opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
                     for s in opciones_ent:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
                             st.session_state.menu_main = "ENTREGAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -376,7 +389,7 @@ with header_zone:
                     opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False)]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}2"):
                             st.session_state.menu_main = "REPORTES"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -391,7 +404,7 @@ with header_zone:
                     opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False)]
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_for_{s}2"):
                             st.session_state.menu_main = "FORMATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -403,7 +416,7 @@ with header_zone:
                     opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}2"):
                             st.session_state.menu_main = "CENTRO DE DATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -418,7 +431,7 @@ with header_zone:
                     opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False)]
                     for s in opciones_fin:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_fin_{s}2"):
                             st.session_state.menu_main = "FINANZAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -430,18 +443,18 @@ with header_zone:
                     opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False)]
                     for s in opciones_enf:
                         label = f"» {s}" if st.session_state.get("menu_sub") == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}2"):
                             st.session_state.menu_main = "ENFOQUE"
                             st.session_state.menu_sub = s
                             st.rerun()
         
             if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
-                if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl"):
+                if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl2"):
                     st.session_state.menu_main = "ACCESS CONTROL"
                     st.session_state.menu_sub = "SETTINGS"
                     st.switch_page("pages/accesscontrol.py")
         
-            st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
             if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
@@ -523,32 +536,6 @@ def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
-
-    st.markdown("""
-        <style>
-            div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
-            
-            div.stButton > button {
-                background-color: #2B343B !important; 
-                color: #FFFFFF !important;            
-                border: 1px solid #2B343B !important; 
-                border-radius: 5px !important;
-                transition: all 0.3s ease !important;
-                width: 100% !important;
-            }
-    
-            div.stButton > button:hover {
-                background-color: #00A3A3 !important; 
-                color: #FFFFFF !important;            
-                border-color: #00A3A3 !important;
-            }
-            
-            div.stButton > button:active {
-                background-color: #00A3A3 !important;
-                border-color: #00A3A3 !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
 
     usuario_actual = st.session_state.get("usuario_activo", "").upper()
     es_admin = usuario_actual == "RIGOBERTO"
