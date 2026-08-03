@@ -86,7 +86,7 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM Y BOTONES DE DESCARGA GENERALES */
+/* BOTONES GENERALES DEL MENÚ */
 div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -106,26 +106,26 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/* ESTILOS ESPECÍFICOS MAESTROS PARA LOS BOTONES DEL POPOVER */
-/* 1. Botón ACCESS CONTROL: Azul perrón eléctrico */
-div[data-testid="stPopoverBody"] button:nth-last-child(2) {{
+/* --- ESTILOS QUIRÚRGICOS PARA BOTONES ESPECÍFICOS --- */
+/* Botón Access Control: Azul perrón eléctrico */
+div.btn-access-control button {{
     background-color: #0072ff !important;
     color: #ffffff !important;
     border: 1px solid #00c6ff !important;
     box-shadow: 0 0 10px rgba(0, 114, 255, 0.4) !important;
 }}
-div[data-testid="stPopoverBody"] button:nth-last-child(2):hover {{
+div.btn-access-control button:hover {{
     background-color: #005bb5 !important;
     border-color: #0072ff !important;
 }}
 
-/* 2. Botón TERMINAR SESIÓN: Rojo oscuro rogo */
-div[data-testid="stPopoverBody"] button:nth-last-child(1) {{
+/* Botón Terminar Sesión: Rojo oscuro rogo */
+div.btn-terminar-sesion button {{
     background-color: #4a0e17 !important;
     color: #ffcccc !important;
     border: 1px solid #8b0000 !important;
 }}
-div[data-testid="stPopoverBody"] button:nth-last-child(1):hover {{
+div.btn-terminar-sesion button:hover {{
     background-color: #660012 !important;
     color: #ffffff !important;
     border-color: #ff4d4d !important;
@@ -623,18 +623,23 @@ with header_zone:
                             st.rerun()
         
             if tiene_permiso("ACCESS CONTROL") or es_rigoberto:
+                st.markdown('<div class="btn-access-control">', unsafe_allow_html=True)
                 if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl"):
                     st.session_state.menu_main = "ACCESS CONTROL"
                     st.session_state.menu_sub = "SETTINGS"
                     st.switch_page("pages/accesscontrol.py")
+                st.markdown('</div>', unsafe_allow_html=True)
         
             st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
-            if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
+            
+            st.markdown('<div class="btn-terminar-sesion">', unsafe_allow_html=True)
+            if st.button("TERMINAR SESIÓN", use_container_width=True, key="pop_terminar_sesion"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 st.session_state.autenticado = False
                 st.session_state.splash_completado = False
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # ── RENDERIZADO DE RESULTADOS ──────────────────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
