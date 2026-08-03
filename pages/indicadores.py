@@ -352,6 +352,7 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
+            # 1. Búsqueda en Matriz Principal
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -368,6 +369,7 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops]
 
+            # 2. Búsqueda en Inventario
             res_inv = pd.DataFrame()
             try:
                 df_inv_temp = pd.read_csv("inventario.csv")
@@ -381,10 +383,35 @@ with header_zone:
             except Exception:
                 pass
 
+            # 3. Búsqueda en Archivo T1 (AQUÍ ESTABA EL FALTANTE)
+            res_t1 = pd.DataFrame()
+            try:
+                # Ajusta el nombre del archivo o ruta si es diferente (ej. "t1.csv" o URL de GitHub)
+                df_t1_temp = pd.read_csv("t1.csv") 
+                df_t1_temp.columns = df_t1_temp.columns.str.strip()
+                
+                # Puedes listar aquí las columnas de T1 donde quieras buscar el folio
+                cols_t1 = [c for c in df_t1_temp.columns if c in ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "FOLIO", "NO CLIENTE", "NOMBRE DEL CLIENTE"]]
+                if not cols_t1: # Si no encuentra ninguna exacta, busca en todas las columnas del archivo T1
+                    cols_t1 = df_t1_temp.columns.tolist()
+                    
+                if cols_t1:
+                    mask_t1 = df_t1_temp[cols_t1].astype(str).apply(
+                        lambda x: x.str.contains(query, case=False, na=False)
+                    ).any(axis=1)
+                    res_t1 = df_t1_temp[mask_t1]
+            except Exception:
+                pass
+
+            # Asignación de resultados por prioridad
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
                 st.session_state.resultado_busqueda = res_ops
+            elif not res_t1.empty:
+                st.session_state.busqueda_activa = True
+                st.session_state.tipo_resultado = "T1"  # O puedes tratarlo como OPERACION si comparte estructura
+                st.session_state.resultado_busqueda = res_t1
             elif not res_inv.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "INVENTARIO"
