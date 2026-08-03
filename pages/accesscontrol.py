@@ -147,134 +147,140 @@ if usuario_actual_val != "RIGOBERTO":
 
 
 # ==========================================
-# 3. CONFIGURACIÓN GITHUB PARA PERMISOS
+# 3. CONFIGURACIÓN GITHUB PARA PERMISOS (CONSTRUCTO MAESTRO)
 # ==========================================
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 
-def asegurar_matriz_permisos_en_github():
+def asegurar_y_actualizar_matriz_en_github():
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/permisos_usuarios.csv"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get(url, headers=headers)
     
-    if r.status_code != 200:
-        df_default = pd.DataFrame([
-            {
-                "USUARIO": "Rigoberto", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": True, "ENFOQUE": True, "ACCESS CONTROL": True,
-                "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": True, "ANALISIS MENSUAL": True, "DETALLE COSTOS": True, "ENVIOS ESPECIALES": True, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": True, "CAJA CHICA": True, "GASTOS": True, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
-            },
-            {
-                "USUARIO": "AGomez", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "JMoreno", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
-            },
-            {
-                "USUARIO": "Cynthia", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "Brenda", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "Fialko", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "Atencion3G", 
-                "DASHBOARD": False, "SEGUIMIENTO": False, "ENTREGAS": False, "REPORTES": False, "FORMATOS": False, "CENTRO DE DATOS": False, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": False, "GANTT": False, "QUEJAS": False, "AGC": False, "AMAZON": False, "BARCELO": False,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": False,
-                "SALIDA DE PT": False, "CHECK LIST AGC": False, "QR AGC": False, "PREGUIA PAQMEX": False, "RECOLECCION 3G": False, "RECOLECCION ONE": False, "CARTA RECLAMO": False, "COTIZACIONES": False,
-                "ASIGNAR FLETERA": False, "CARGAR DATOS": False, "ETIQUETAS": False, "HERRAMIENTAS": False, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "Claudia", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "Ruth", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "Carlos", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": True, "ANALISIS MENSUAL": True, "DETALLE COSTOS": True, "ENVIOS ESPECIALES": True, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
-            },
-            {
-                "USUARIO": "Sandra", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "ASanchez", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            },
-            {
-                "USUARIO": "MarthaC", 
-                "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
-                "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
-                "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-                "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
-            }
-        ])
-        csv_string = df_default.to_csv(index=False)
-        payload = {
-            "message": "Creación automática de matriz de permisos con submenús",
-            "content": base64.b64encode(csv_string.encode()).decode()
+    # Matriz maestra completa con todos los submódulos detallados
+    df_default = pd.DataFrame([
+        {
+            "USUARIO": "Rigoberto", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": True, "ENFOQUE": True, "ACCESS CONTROL": True,
+            "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": True, "ANALISIS MENSUAL": True, "DETALLE COSTOS": True, "ENVIOS ESPECIALES": True, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": True, "CAJA CHICA": True, "GASTOS": True, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
+        },
+        {
+            "USUARIO": "AGomez", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "JMoreno", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
+        },
+        {
+            "USUARIO": "Cynthia", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "Brenda", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "Fialko", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "Atencion3G", 
+            "DASHBOARD": False, "SEGUIMIENTO": False, "ENTREGAS": False, "REPORTES": False, "FORMATOS": False, "CENTRO DE DATOS": False, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": False, "GANTT": False, "QUEJAS": False, "AGC": False, "AMAZON": False, "BARCELO": False,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": False,
+            "SALIDA DE PT": False, "CHECK LIST AGC": False, "QR AGC": False, "PREGUIA PAQMEX": False, "RECOLECCION 3G": False, "RECOLECCION ONE": False, "CARTA RECLAMO": False, "COTIZACIONES": False,
+            "ASIGNAR FLETERA": False, "CARGAR DATOS": False, "ETIQUETAS": False, "HERRAMIENTAS": False, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "Claudia", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "Ruth", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "Carlos", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": True, "ANALISIS MENSUAL": True, "DETALLE COSTOS": True, "ENVIOS ESPECIALES": True, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
+        },
+        {
+            "USUARIO": "Sandra", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "ASanchez", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+        },
+        {
+            "USUARIO": "MarthaC", 
+            "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+            "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         }
-        requests.put(url, json=payload, headers=headers)
+    ])
 
-asegurar_matriz_permisos_en_github()
+    csv_string = df_default.to_csv(index=False)
+    payload = {
+        "message": "Actualización forzada de matriz completa con submenús detallados",
+        "content": base64.b64encode(csv_string.encode()).decode()
+    }
+    
+    if r.status_code == 200:
+        payload["sha"] = r.json().get("sha")
+        
+    requests.put(url, json=payload, headers=headers)
 
-@st.cache_data(ttl=10)
+# Forzar actualización en GitHub al iniciar para asegurarnos de que existan las columnas
+asegurar_y_actualizar_matriz_en_github()
+
+@st.cache_data(ttl=5)
 def cargar_matriz_permisos():
     url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/permisos_usuarios.csv?nocache={int(time.time())}"
     try:
@@ -290,7 +296,7 @@ def guardar_matriz_en_github(df_actualizado):
     
     csv_string = df_actualizado.to_csv(index=False)
     payload = {
-        "message": "Actualización de matriz detallada de permisos desde Access Control",
+        "message": "Actualización de matriz de permisos desde Access Control",
         "content": base64.b64encode(csv_string.encode()).decode()
     }
     
@@ -463,7 +469,6 @@ with header_zone:
             usuario = st.session_state.get("usuario_activo", "GUEST")
             nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
         
-            # BLINDAJE SUPREMO: Si es Rigoberto, tiene acceso total garantizado a todo
             es_rigoberto = usuario.upper() == "RIGOBERTO"
             permisos = st.session_state.get("permisos", {})
             
@@ -487,7 +492,6 @@ with header_zone:
                 unsafe_allow_html=True,
             )
         
-            # MÓDULOS Y SUBMENÚS CONDICIONADOS (BLINDADOS PARA RIGOBERTO)
             if tiene_permiso("DASHBOARD"):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
@@ -682,6 +686,8 @@ def main():
     st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 5px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 20px;'>Configura los permisos tanto de los módulos principales como de cada uno de sus submenús individuales por operador.</p>", unsafe_allow_html=True)
 
+    # Limpiar caché para asegurar lectura fresca
+    st.cache_data.clear()
     df_permisos = cargar_matriz_permisos()
 
     if not df_permisos.empty:
@@ -689,7 +695,6 @@ def main():
             if col != "USUARIO":
                 df_permisos[col] = df_permisos[col].astype(bool)
 
-        # Definir grupos detallados incluyendo módulo principal y sus submenús
         cols_seg = ["USUARIO", "SEGUIMIENTO", "ALERTAS", "GANTT", "QUEJAS"]
         cols_ent = ["USUARIO", "ENTREGAS", "AGC", "AMAZON", "BARCELO"]
         cols_rep = ["USUARIO", "REPORTES", "COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
