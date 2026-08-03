@@ -741,7 +741,7 @@ def main():
         # Altura expandida (height=650) en cada data_editor para mostrar todas las filas sin cortar a nadie
         with tab_dash:
             df_t = df_editado[[c for c in cols_dash if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dash", height=550)
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dash", height=500)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
