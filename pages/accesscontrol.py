@@ -106,6 +106,20 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
+/* --- ESTILO NEXION PARA EL DATA EDITOR (TABLITAS) --- */
+[data-testid="stDataFrame"] {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+}}
+
+/* Forzar colores en la cuadrícula y celdas de Streamlit Data Editor */
+iframe[title="streamlit.components.v1.components.html"], .stDataFrame div {{
+    color-scheme: dark;
+}}
+
 /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
 div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
     gap: 0.35rem !important;
