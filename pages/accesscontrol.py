@@ -164,13 +164,6 @@ if not st.session_state.get("autenticado", False):
     st.session_state.pagina_destino = "pages/accesscontrol.py"
     st.switch_page("pages/log.py")
 
-# ==========================================
-# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
-# ==========================================
-if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/accesscontrol.py"
-    st.switch_page("pages/log.py")
-
 # Validación exclusiva para Rigoberto (Admin supremo)
 usuario_actual_val = st.session_state.get("usuario_activo", "").upper()
 if usuario_actual_val != "RIGOBERTO":
@@ -231,7 +224,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Rigoberto", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": True, "ENFOQUE": True, "ACCESS CONTROL": True,
             "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": True, "ANALISIS MENSUAL": True, "DETALLE COSTOS": True, "ENVIOS ESPECIALES": True, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": True, "ANALISIS MENSUAL": True, "DETALLE COSTOS": True, "ENVIOS ESPECIALES": True, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": True,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": True, "CAJA CHICA": True, "GASTOS": True, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
         },
@@ -239,7 +232,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "AGomez", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -247,7 +240,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "JMoreno", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": True,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
         },
@@ -255,7 +248,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Cynthia", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -263,7 +256,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Brenda", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -271,7 +264,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Fialko", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -279,7 +272,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Atencion3G", 
             "DASHBOARD": False, "SEGUIMIENTO": False, "ENTREGAS": False, "REPORTES": False, "FORMATOS": False, "CENTRO DE DATOS": False, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": False, "GANTT": False, "QUEJAS": False, "AGC": False, "AMAZON": False, "BARCELO": False,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": False,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": False, "PANEL MUESTRAS": False,
             "SALIDA DE PT": False, "CHECK LIST AGC": False, "QR AGC": False, "PREGUIA PAQMEX": False, "RECOLECCION 3G": False, "RECOLECCION ONE": False, "CARTA RECLAMO": False, "COTIZACIONES": False,
             "ASIGNAR FLETERA": False, "CARGAR DATOS": False, "ETIQUETAS": False, "HERRAMIENTAS": False, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -287,7 +280,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Claudia", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -295,7 +288,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Ruth", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -303,7 +296,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Carlos", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": True, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": True, "ANALISIS MENSUAL": True, "DETALLE COSTOS": True, "ENVIOS ESPECIALES": True, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": True, "ANALISIS MENSUAL": True, "DETALLE COSTOS": True, "ENVIOS ESPECIALES": True, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": True,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
         },
@@ -311,7 +304,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "Sandra", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -319,7 +312,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "ASanchez", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
@@ -327,7 +320,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "USUARIO": "MarthaC", 
             "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True,
-            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True,
+            "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
             "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         }
@@ -762,7 +755,7 @@ def main():
 
         cols_seg = ["USUARIO", "SEGUIMIENTO", "ALERTAS", "GANTT", "QUEJAS"]
         cols_ent = ["USUARIO", "ENTREGAS", "AGC", "AMAZON", "BARCELO"]
-        cols_rep = ["USUARIO", "REPORTES", "COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+        cols_rep = ["USUARIO", "REPORTES", "COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS", "PANEL MUESTRAS"]
         cols_for = ["USUARIO", "FORMATOS", "SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
         cols_dat = ["USUARIO", "CENTRO DE DATOS", "ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
         cols_fin = ["USUARIO", "FINANZAS", "WALLET", "CAJA CHICA", "GASTOS"]
