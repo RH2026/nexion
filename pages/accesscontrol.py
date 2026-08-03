@@ -563,6 +563,7 @@ with header_zone:
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
+                    st.switch_page("pages/indicadores.py")
                     st.rerun()
         
             if tiene_permiso("SEGUIMIENTO"):
