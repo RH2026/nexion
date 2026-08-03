@@ -147,7 +147,7 @@ if usuario_actual_val != "RIGOBERTO":
 
 
 # ==========================================
-# 3. CONFIGURACIÓN GITHUB PARA PERMISOS (CON SHA BLINDADO)
+# 3. CONFIGURACIÓN GITHUB PARA PERMISOS (CON CACHÉ INSTANTÁNEA EN SESSION_STATE)
 # ==========================================
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
@@ -159,7 +159,7 @@ def asegurar_y_actualizar_matriz_en_github():
     r = requests.get(url, headers=headers)
     
     if r.status_code == 200:
-        return # Si ya existe, no sobrescribimos por defecto para respetar tus cambios guardados
+        return 
 
     df_default = pd.DataFrame([
         {
@@ -277,21 +277,27 @@ def asegurar_y_actualizar_matriz_en_github():
 
 asegurar_y_actualizar_matriz_en_github()
 
-@st.cache_data(ttl=2)
 def cargar_matriz_permisos():
+    # Si tenemos una versión en memoria guardada recientemente, la usamos al instante (CERO RETRASO)
+    if "df_permisos_local" in st.session_state:
+        return st.session_state["df_permisos_local"]
+
     url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/permisos_usuarios.csv?nocache={int(time.time())}"
     try:
         df = pd.read_csv(url)
         df.columns = [str(c).upper().strip() for c in df.columns]
+        st.session_state["df_permisos_local"] = df
         return df
     except Exception as e:
         return pd.DataFrame()
 
 def guardar_matriz_en_github(df_actualizado):
+    # Guardado instantáneo en memoria local del estado
+    st.session_state["df_permisos_local"] = df_actualizado
+
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/permisos_usuarios.csv"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     
-    # 1. Obtener el SHA actual del archivo en GitHub obligatoriamente
     r_get = requests.get(url, headers=headers)
     sha = ""
     if r_get.status_code == 200:
@@ -307,11 +313,6 @@ def guardar_matriz_en_github(df_actualizado):
         payload["sha"] = sha
         
     res = requests.put(url, json=payload, headers=headers)
-    
-    # Imprimir respuesta en consola/terminal si falla para depuración
-    if res.status_code not in [200, 201]:
-        print(f"Error GitHub API: {res.status_code} - {res.text}")
-        
     return res.status_code in [200, 201]
 
 
@@ -784,15 +785,14 @@ def main():
         col_b1, col_b2 = st.columns([1.5, 4])
         with col_b1:
             if st.button("💾 GUARDAR Y SINCRONIZAR", use_container_width=True, type="primary"):
-                with st.spinner("Actualizando GitHub..."):
+                with st.spinner("Actualizando permisos al instante..."):
                     exito = guardar_matriz_en_github(df_editado)
                     if exito:
-                        st.cache_data.clear()
-                        st.success("¡Permisos y submenús actualizados con éxito!")
-                        time.sleep(1)
+                        st.success("¡Permisos actualizados al instante en la app y guardados en GitHub!")
+                        time.sleep(0.5)
                         st.rerun()
                     else:
-                        st.error("Error al sincronizar con GitHub. Revisa el token o los permisos del repo.")
+                        st.error("Error al sincronizar con GitHub. Revisa el token o los permisos.")
     else:
         st.warning("No se pudo cargar la matriz de permisos. Asegúrate de que el archivo exista en GitHub.")
 
