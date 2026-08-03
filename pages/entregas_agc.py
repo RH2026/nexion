@@ -454,17 +454,10 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            usuario_actual = st.session_state.get("usuario_activo", "").upper()
-            if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
-                with st.expander(
-                    "ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")
-                ):
-                    for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
-                        label = f"» {s}" if st.session_state.get("menu_sub") == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
-                            st.session_state.menu_main = "ENFOQUE"
-                            st.session_state.menu_sub = s
-                            st.rerun()
+            if st.button("SETTINGS", use_container_width=True, key="pop_enf_SETTINGS"):
+                st.session_state.menu_main = "ACCESS CONTROL"
+                st.session_state.menu_sub = "SETTINGS"
+                st.switch_page("pages/accesscontrol.py")
         
             st.markdown(
                 "<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True
