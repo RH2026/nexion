@@ -149,7 +149,7 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/entregas_agc.py"
+    st.session_state.pagina_destino = "pages/indicadores.py"
     st.switch_page("pages/log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
