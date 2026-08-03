@@ -1,14 +1,14 @@
 USUARIO,DASHBOARD,SEGUIMIENTO,ENTREGAS,REPORTES,FORMATOS,CENTRO DE DATOS,FINANZAS,ENFOQUE
 Rigoberto,True,True,True,True,True,True,True,True
-AGomez,True,True,True,True,True,True,False,False
-JMoreno,True,True,True,True,True,True,False,True
+AGomez,True,True,False,True,True,True,False,False
+JMoreno,True,True,False,True,True,True,False,True
 Cynthia,True,True,True,True,True,True,False,False
-Brenda,True,True,True,True,True,True,False,False
-Fialko,True,True,True,True,True,True,False,False
+Brenda,True,True,False,True,True,True,False,False
+Fialko,True,True,False,True,True,True,False,False
 Atencion3G,False,False,False,False,False,False,False,False
-Claudia,True,True,True,True,True,True,False,False
-Ruth,True,True,True,True,True,True,False,False
-Carlos,True,True,True,True,True,True,False,True
-Sandra,True,True,True,True,True,True,False,False
-ASanchez,True,True,True,True,True,True,False,False
-MarthaC,True,True,True,True,True,True,False,False
+Claudia,True,True,False,True,True,True,False,False
+Ruth,True,True,False,True,True,True,False,False
+Carlos,True,True,False,True,True,True,False,True
+Sandra,True,True,False,True,True,True,False,False
+ASanchez,True,True,False,True,True,True,False,False
+MarthaC,True,True,False,True,True,True,False,False
