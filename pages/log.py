@@ -328,7 +328,7 @@ def login_screen():
             time.sleep(0.8)
             st.session_state.login_exitoso = False
             
-            destino = st.session_state.get("pagina_destino", "pages/asignacionfletera.py")
+            destino = st.session_state.get("pagina_destino", "pages/indicadores.py")
             if "pagina_destino" in st.session_state:
                 del st.session_state["pagina_destino"]
                 
