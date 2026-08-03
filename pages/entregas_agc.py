@@ -559,9 +559,7 @@ def main():
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
 
-    # Contenedor animado con estilos limpios
-    st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
-    
+        
     st.markdown("""
         <style>
             /* 1. Reset para que el contenedor use todo el ancho */
