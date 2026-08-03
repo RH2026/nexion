@@ -591,7 +591,11 @@ with header_zone:
 # ==========================================
 # 5. INTERFAZ PRINCIPAL (SOLO DONITAS Y GRÁFICOS)
 # ==========================================
-def main():
+def main():   
+if "animacion_cargada" not in st.session_state:
+    time.sleep(0.08)
+    st.session_state.animacion_cargada = True
+    
     def cargar_datos():
         t = int(time.time())
         url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
