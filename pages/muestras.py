@@ -41,20 +41,14 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* --- ANIMACIONES DE ENTRADA --- */
-@keyframes fadeInSlideDown {{
-    0% {{
-        opacity: 0;
-        transform: translateY(-20px);
-    }}
-    100% {{
-        opacity: 1;
-        transform: translateY(0);
-    }}
+/* --- ANIMACIÓN DE ENTRADA (BLINDADA) --- */
+@keyframes fadeInUp {{ 
+    from {{ opacity: 0; transform: translateY(15px); }} 
+    to {{ opacity: 1; transform: translateY(0); }} 
 }}
 
-.animate-fade-in {{
-    animation: fadeInSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+[data-testid="stVerticalBlock"] > div {{
+    animation: fadeInUp 0.6s ease-out;
 }}
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
@@ -556,13 +550,6 @@ def main():
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
 
-    st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
-    
-    if "reset_key" not in st.session_state:
-        st.session_state.reset_key = 0
-    if "folio_guardado" not in st.session_state:
-        st.session_state.folio_guardado = False
-
     GITHUB_USER = "RH2026"
     GITHUB_REPO = "nexion"
     GITHUB_PATH = "muestras.csv"
@@ -717,7 +704,7 @@ def main():
         headers = {"Authorization": f"token {GITHUB_TOKEN}"}
         csv_string = df.to_csv(index=False)
         payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
-        return requests.put(url, json=payload, headers=headers).status_code == 200                        
+        return requests.put(url, json=payload, headers=headers).status_code == 200                         
 
     def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago, total_cajas=1):
         filas_prod = ""
@@ -917,7 +904,17 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    st.subheader(":material/shopping_cart: SELECCION DE PRODUCTOS")
+    st.markdown(
+        """
+        <div style='display: flex; align-items: center; gap: 10px; margin: 15px 0 10px 0;'>
+            <div style='background: #00D4FF; width: 4px; height: 16px; border-radius: 2px;'></div>
+            <span style='color: white; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;'>
+                SELECCION DE PRODUCTOS
+            </span>
+        </div>
+    """,
+        unsafe_allow_html=True,
+    )
     
     if "seleccionados_muestras" not in st.session_state:
         st.session_state.seleccionados_muestras = []
@@ -942,7 +939,7 @@ def main():
     if seleccionados:
         st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
         
-        num_filas = (len(seleccionados) + 2) // 3  
+        num_filas = (len(seleccionados) + 2) // 3 
         altura_dinamica = min(max(num_filas * 95, 120), 500) 
         
         with st.container(height=altura_dinamica, border=True):
@@ -1170,7 +1167,16 @@ def main():
     usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
     
     if usuario_logeado in lista_admins:
-        st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
+        st.markdown(
+            """
+            <div style='background: rgba(0, 212, 255, 0.05); border: 1px solid rgba(0, 212, 255, 0.2); border-left: 4px solid #00D4FF; padding: 10px 15px; border-radius: 6px; margin: 20px 0 15px 0;'>
+                <span style='color: #00D4FF; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;'>
+                    🛠 PANEL DE ADMINISTRACIÓN — USO EXCLUSIVO DE LOGÍSTICA
+                </span>
+            </div>
+        """,
+            unsafe_allow_html=True,
+        )
         t1, t2, t3 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes", "Edicion"])
         
         with t1:
@@ -1249,7 +1255,10 @@ def main():
                 c_adm1, c_adm2 = st.columns(2)
                 
                 with c_adm1:
-                    st.subheader("1. ASIGNAR DATOS DE ENVIO")
+                    st.markdown(
+                        "<p style='color: #00FFAA; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;'>1. ASIGNAR DATOS DE ENVIO</p>",
+                        unsafe_allow_html=True,
+                    )
                     n_paq_nombre = st.selectbox("Nombre de Paquetería", 
                         ["AEREO", "NO APLICA","TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
                         index=None, placeholder="Selecciona paquetería...")
@@ -1283,7 +1292,10 @@ def main():
                             st.rerun()
                 
                 with c_adm2:
-                    st.subheader("2. IMPRESION FINAL")
+                    st.markdown(
+                        "<p style='color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;'>2. IMPRESION FINAL</p>",
+                        unsafe_allow_html=True,
+                    )
                     st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
                     
                     btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
