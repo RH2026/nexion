@@ -273,10 +273,11 @@ def limpiar_texto(texto):
 
 
 # Inicialización segura de estados de menú
+# Inicialización segura de estados de menú para el Dashboard
 if "menu_main" not in st.session_state:
-    st.session_state.menu_main = "ENTREGAS"
+    st.session_state.menu_main = "DASHBOARD"
 if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "AGC"
+    st.session_state.menu_sub = "GENERAL"
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
