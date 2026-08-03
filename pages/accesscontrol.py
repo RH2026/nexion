@@ -461,8 +461,16 @@ with header_zone:
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
             usuario = st.session_state.get("usuario_activo", "GUEST")
-            permisos = st.session_state.get("permisos", {})
             nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
+        
+            # BLINDAJE SUPREMO: Si es Rigoberto, tiene acceso total garantizado a todo
+            es_rigoberto = usuario.upper() == "RIGOBERTO"
+            permisos = st.session_state.get("permisos", {})
+            
+            def tiene_permiso(clave):
+                if es_rigoberto:
+                    return True
+                return permisos.get(clave, False)
         
             st.markdown(
                 f"""
@@ -479,18 +487,18 @@ with header_zone:
                 unsafe_allow_html=True,
             )
         
-            # MÓDULOS Y SUBMENÚS CONDICIONADOS POR PERMISOS DE GITHUB
-            if permisos.get("DASHBOARD", False):
+            # MÓDULOS Y SUBMENÚS CONDICIONADOS (BLINDADOS PARA RIGOBERTO)
+            if tiene_permiso("DASHBOARD"):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
                     st.rerun()
         
-            if permisos.get("SEGUIMIENTO", False):
+            if tiene_permiso("SEGUIMIENTO"):
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
                     opciones_seg_posibles = ["ALERTAS", "GANTT", "QUEJAS"]
-                    opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
+                    opciones_seg = [s for s in opciones_seg_posibles if tiene_permiso(s)]
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
@@ -499,10 +507,10 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            if permisos.get("ENTREGAS", False):
+            if tiene_permiso("ENTREGAS"):
                 with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
                     opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO"]
-                    opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
+                    opciones_ent = [s for s in opciones_ent_posibles if tiene_permiso(s)]
                     for s in opciones_ent:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_ent_{s}"):
@@ -514,10 +522,10 @@ with header_zone:
                             else:
                                 st.rerun()
         
-            if permisos.get("REPORTES", False):
+            if tiene_permiso("REPORTES"):
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                     opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
-                    opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False)]
+                    opciones_rep = [s for s in opciones_rep_posibles if tiene_permiso(s)]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
@@ -529,10 +537,10 @@ with header_zone:
                             else:
                                 st.rerun()
         
-            if permisos.get("FORMATOS", False):
+            if tiene_permiso("FORMATOS"):
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
                     opciones_for_posibles = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
-                    opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False)]
+                    opciones_for = [s for s in opciones_for_posibles if tiene_permiso(s)]
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -541,10 +549,10 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            if permisos.get("CENTRO DE DATOS", False):
+            if tiene_permiso("CENTRO DE DATOS"):
                 with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
                     opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
-                    opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
+                    opciones_hub = [s for s in opciones_hub_posibles if tiene_permiso(s)]
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
@@ -556,10 +564,10 @@ with header_zone:
                             else:
                                 st.rerun()
         
-            if permisos.get("FINANZAS", False):
+            if tiene_permiso("FINANZAS"):
                 with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
                     opciones_fin_posibles = ["WALLET", "CAJA CHICA", "GASTOS"]
-                    opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False)]
+                    opciones_fin = [s for s in opciones_fin_posibles if tiene_permiso(s)]
                     for s in opciones_fin:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
@@ -568,10 +576,10 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
 
-            if permisos.get("ENFOQUE", False):
+            if tiene_permiso("ENFOQUE"):
                 with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
                     opciones_enf_posibles = ["MORENO", "VAZQUEZ", "MIGUEL"]
-                    opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False)]
+                    opciones_enf = [s for s in opciones_enf_posibles if tiene_permiso(s)]
                     for s in opciones_enf:
                         label = f"» {s}" if st.session_state.get("menu_sub") == s else s
                         if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
@@ -579,7 +587,7 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.rerun()
         
-            if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
+            if tiene_permiso("ACCESS CONTROL") or es_rigoberto:
                 if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl"):
                     st.session_state.menu_main = "ACCESS CONTROL"
                     st.session_state.menu_sub = "SETTINGS"
