@@ -830,6 +830,7 @@ def main():
     else:
         nuevo_num = 1
     
+    # --- CAPTURA NUEVA ---
     st.write("")
     with st.container():
         f_paq_nombre = ""
@@ -837,16 +838,16 @@ def main():
         
         c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
         
-        f_folio = c1.text_input("FOLIO", value=f"JYP-{nuevo_num}", disabled=True)
+        f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=f"JYP-{nuevo_num}", disabled=True)
         f_paq_sel = c2.selectbox(
-            "FORMA DE ENVÍO", 
+            ":material/local_shipping: FORMA DE ENVÍO", 
             ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
         )
         f_ent_sel = c3.selectbox(
-            "TIPO DE ENTREGA", 
+            ":material/home_pin: TIPO DE ENTREGA", 
             ["Domicilio", "Ocurre Oficina"]
         )
-        f_fecha_sel = c4.date_input("FECHA", date.today())
+        f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
     
     st.divider()
     
@@ -857,13 +858,13 @@ def main():
             unsafe_allow_html=True
         )
         st.write("")
-        st.text_input("Nombre Remitente", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
+        st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
         
         c_rem1, c_rem2 = st.columns([2, 1])
-        f_atn_rem = c_rem1.text_input("Atención", "RIGOBERTO HERNANDEZ")
-        f_tel_rem = c_rem2.text_input("Teléfono", "3319753122")
+        f_atn_rem = c_rem1.text_input(":material/person: Atención", "RIGOBERTO HERNANDEZ")
+        f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
         f_soli = st.text_input(
-            "Solicitante / Agente", 
+            ":material/badge: Solicitante / Agente", 
             placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS",
             key=f"soli_{st.session_state.reset_key}"
         ).upper()
@@ -874,19 +875,19 @@ def main():
             unsafe_allow_html=True
         )
         st.write("")
-        f_h = st.text_input("Hotel / Nombre", key=f"h_{st.session_state.reset_key}").upper()
-        f_ca = st.text_input("Calle y Número", key=f"ca_{st.session_state.reset_key}").upper()
+        f_h = st.text_input(":material/hotel: Hotel / Nombre", key=f"h_{st.session_state.reset_key}").upper()
+        f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_{st.session_state.reset_key}").upper()
         
         cd1, cd2 = st.columns(2)
-        f_co = cd1.text_input("Colonia", key=f"co_{st.session_state.reset_key}").upper()
-        f_cp = cd2.text_input("C.P.", key=f"cp_{st.session_state.reset_key}")
+        f_co = cd1.text_input(":material/map: Colonia", key=f"co_{st.session_state.reset_key}").upper()
+        f_cp = cd2.text_input(":material/mailbox: C.P.", key=f"cp_{st.session_state.reset_key}")
         
         cd3, cd4 = st.columns(2)
-        f_ci = cd3.text_input("Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
-        f_es = cd4.text_input("Estado", key=f"es_{st.session_state.reset_key}").upper()
+        f_ci = cd3.text_input(":material/location_city: Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
+        f_es = cd4.text_input(":material/public: Estado", key=f"es_{st.session_state.reset_key}").upper()
         
         f_con = st.text_input(
-            "Contacto Receptor", 
+            ":material/contact_phone: Contacto Receptor", 
             placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE",
             key=f"con_{st.session_state.reset_key}"
         ).upper()
@@ -916,7 +917,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    st.subheader("SELECCION DE PRODUCTOS")
+    st.subheader(":material/shopping_cart: SELECCION DE PRODUCTOS")
     
     if "seleccionados_muestras" not in st.session_state:
         st.session_state.seleccionados_muestras = []
@@ -925,7 +926,7 @@ def main():
         st.session_state.seleccionados_muestras = [p for p in st.session_state.seleccionados_muestras if p != prod_a_borrar]
     
     seleccionados = st.multiselect(
-        "Busca y selecciona productos:", 
+        ":material/search: Busca y selecciona productos:", 
         list(precios.keys()),
         key=f"prod_select_{st.session_state.reset_key}",
         default=st.session_state.get('seleccionados_muestras', []),
@@ -965,7 +966,7 @@ def main():
                         q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
                     
                     with c3:
-                        st.button("🗑️", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
+                        st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
     
                     if q > 0:
                         prods_actuales.append({"desc": p, "cant": q})
@@ -986,7 +987,7 @@ def main():
     
     col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
 
-    if col_b1.button("GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
+    if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
         if not f_h: 
             st.error("Falta el hotel")
         elif not f_soli:
@@ -1040,7 +1041,7 @@ def main():
             </div>
         """, unsafe_allow_html=True)
 
-    if col_b2.button("GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
+    if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
         folio_final = st.session_state.get("folio_actual", nuevo_num - 1)
         folio_simple = f"JYP-{folio_final}" 
         
@@ -1062,7 +1063,7 @@ def main():
         """
         components.html(js_code, height=0)
 
-    if col_b3.button("BORRAR", use_container_width=True):
+    if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
         st.session_state.folio_guardado = False
         if "folio_actual" in st.session_state:
             del st.session_state.folio_actual
@@ -1263,7 +1264,7 @@ def main():
                     val_def_cajas = int(datos_fol.get('CANTIDAD_TOTAL', 1)) if datos_fol is not None else 1
                     n_total_cajas = st.number_input("Cantidad Final de Cajas / Bultos", min_value=1, max_value=100, value=max(val_def_cajas, 1), step=1)
                     
-                    btn_guardar = st.button("GUARDAR Y ACTUALIZAR FOLIO", 
+                    btn_guardar = st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", 
                                                 use_container_width=True, 
                                                 disabled=not fol_sel_texto)
                     
@@ -1285,7 +1286,7 @@ def main():
                     st.subheader("2. IMPRESION FINAL")
                     st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
                     
-                    btn_imprimir = st.button("IMPRIMIR FORMATO ACTUALIZADO", 
+                    btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
                                                 use_container_width=True, 
                                                 disabled=not fol_sel_texto)
                     
@@ -1333,7 +1334,7 @@ def main():
                         )
                         
                         st.download_button(
-                            label="DESCARGAR ETIQUETA PDF",
+                            label=":material/save: DESCARGAR ETIQUETA PDF",
                             data=pdf_etq_bytes,
                             file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
                             mime="application/pdf",
@@ -1356,7 +1357,7 @@ def main():
             
                 col_f1, col_f2 = st.columns([1.5, 2.5])
                 mes_sel = col_f1.selectbox(
-                    "FILTRAR PERIODO", 
+                    ":material/calendar_month: FILTRAR PERIODO", 
                     ["MOSTRAR TODO"] + meses_lista
                 )
             
@@ -1473,15 +1474,15 @@ def main():
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;width:100% !important;font-family:sans-serif;}} .no-print{{display:none;}}}} table{{width:100% !important;border-collapse:collapse;margin-top:15px;table-layout:fixed;}} th{{background:#eee !important;border:1px solid black;padding:8px;font-size:11px;-webkit-print-color-adjust:exact;}} td{{border:1px solid black;padding:6px;font-size:10px;vertical-align:top;word-wrap:break-word;}}</style></head><body><div style='display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid black;padding-bottom:10px;'><div><h1 style='margin:0;font-size:18px;font-weight:900;'>Jabones y Productos Especializados</h1><p style='margin:0;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;'>distribucion y Logistica 2026</p></div><div style='text-align:right;'><h2 style='margin:0;font-size:16px;text-decoration:underline;'>Reporte de Envio de Muestras</h2><p style='margin:5px 0 0 0;font-size:12px;'><b>GENERADO: {date.today().strftime('%d/%m/%Y')}</b></p></div></div><table><thead><tr><th style='width:7%;'>FOLIO</th><th style='width:15%;'>SOLICITANTE</th><th style='width:25%;'>DESTINO / HOTEL</th><th style='width:33%;'>DETALLE DE PRODUCTOS</th><th style='width:10%;'>COSTO PROD.</th><th style='width:10%;'>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:2px solid black;padding-top:10px;font-family:monospace;'><p style='margin:2px 0;'>TOTAL PRODUCTOS: <b>${t_prod:,.2f}</b></p><p style='margin:2px 0;'>TOTAL FLETES: <b>${t_flete:,.2f}</b></p><h3 style='margin:8px 0;font-size:20px;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
-                    if st.button("IMPRIMIR REPORTE", type="primary", use_container_width=True):
+                    if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
                         components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
                 with c2:
                     output = io.BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                         df_render.drop(columns=['FECHA_DT', 'MES_FILTRO']).to_excel(writer, index=False)
-                    st.download_button(f"EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
+                    st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
                 with c3:
-                    if st.button("ACTUALIZAR", use_container_width=True): st.rerun()
+                    if st.button(":material/update: ACTUALIZAR", use_container_width=True): st.rerun()
             else:
                 st.info("No hay registros todavía.")
 
