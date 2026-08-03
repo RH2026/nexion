@@ -1218,7 +1218,14 @@ def main():
     
     usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
     permisos_usuario = st.session_state.get('permisos', {})
-    es_admin_general = usuario_logeado.upper() == "RIGOBERTO" or permisos_usuario.get("ACCESS CONTROL", False) or "LOGISTICA" in usuario_logeado.upper()
+    
+    # Validación integrada con la matriz de permisos de Access Control
+    es_admin_general = (
+        usuario_logeado.upper() == "RIGOBERTO" 
+        or permisos_usuario.get("ACCESS CONTROL", False) 
+        or permisos_usuario.get("PANEL MUESTRAS", False)
+        or "LOGISTICA" in usuario_logeado.upper()
+    )
     
     if es_admin_general or usuario_logeado in ["Rigoberto", "JMoreno"]:
         st.markdown(
