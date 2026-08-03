@@ -609,91 +609,91 @@ def main():
             return None
     
     def render_listado_operativo_premium(df):
-        # --- FORMATEO DE FECHAS ANTES DE CONVERTIR ---
-        df_display = df.copy()
-        for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-            if col in df_display.columns:
-                df_display[col] = pd.to_datetime(df_display[col], errors='coerce').dt.strftime('%d-%m-%Y').fillna('')
+    # --- FORMATEO DE FECHAS ANTES DE CONVERTIR ---
+    df_display = df.copy()
+    for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+        if col in df_display.columns:
+            df_display[col] = pd.to_datetime(df_display[col], errors='coerce').dt.strftime('%d-%m-%Y').fillna('')
+
+    data = df_display.fillna('').to_dict('records')
     
-        data = df_display.fillna('').to_dict('records')
-        
-        # Definimos html_content aquí adentro de forma local para evitar el NameError
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <style>
-                body {{ background-color: transparent; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; }}
-                .row-logistica {{
-                    background-color: #263238;
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 12px;
-                    margin-bottom: 10px;
-                    padding: 16px;
-                    transition: all 0.3s ease;
-                }}
-                .row-logistica:hover {{
-                    border-color: #00FFAA;
-                    transform: translateX(5px);
-                    background-color: #2d3b42;
-                }}
-                .label-mini {{
-                    font-size: 8px;
-                    text-transform: uppercase;
-                    color: rgba(255,255,255,0.5);
-                    font-weight: 800;
-                    letter-spacing: 1px;
-                }}
-                .valor {{ font-size: 13px; font-weight: 700; color: #FFFFFF; }}
-                .highlight {{ color: #00FFAA; font-family: monospace; }}
-                
-                ::-webkit-scrollbar {{ width: 8px; }}
-                ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); }}
-                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
-                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
-            </style>
-        </head>
-        <body>
-            <div style="padding: 10px;">
-                {"".join([f'''
-                <div class="row-logistica">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                        <div>
-                            <div class="label-mini">Pedido / Factura</div>
-                            <div class="valor highlight text-lg">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
-                            <div class="text-[10px] text-blue-300 opacity-80">Envío: {str(item.get('FECHA DE ENVÍO', ''))}</div>
-                        </div>
-                        
-                        <div>
-                            <div class="label-mini">Cliente / Destino</div>
-                            <div class="valor truncate text-xs uppercase">{str(item.get('NOMBRE DEL CLIENTE', ''))[:40]}</div>
-                            <div class="text-[10px] text-white/50 italic">{str(item.get('DESTINO', ''))}</div>
-                        </div>
-    
-                        <div class="border-x border-white/5 px-4">
-                            <div class="label-mini">Transporte y Guía</div>
-                            <div class="valor text-[11px]">{str(item.get('FLETERA', ''))}</div>
-                            <div class="text-[10px] {"text-emerald-400" if item.get('NÚMERO DE GUÍA') else "text-orange-400"}">
-                                {str(item.get('NÚMERO DE GUÍA', 'PENDIENTE'))}
-                            </div>
-                        </div>
-    
-                        <div class="text-right">
-                            <div class="label-mini">Estatus Entrega</div>
-                            <div class="valor text-sm {"text-emerald-400" if item.get('FECHA DE ENTREGA REAL') else "text-orange-400"}">
-                                {str(item.get('FECHA DE ENTREGA REAL', 'EN TRÁNSITO'))}
-                            </div>
-                            <div class="text-[9px] text-white/40 uppercase">Promesa: {str(item.get('PROMESA DE ENTREGA', ''))}</div>
+    # Construcción segura de la variable local para evitar NameError
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body {{ background-color: transparent; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; }}
+            .row-logistica {{
+                background-color: #263238;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 12px;
+                margin-bottom: 10px;
+                padding: 16px;
+                transition: all 0.3s ease;
+            }}
+            .row-logistica:hover {{
+                border-color: #00FFAA;
+                transform: translateX(5px);
+                background-color: #2d3b42;
+            }}
+            .label-mini {{
+                font-size: 8px;
+                text-transform: uppercase;
+                color: rgba(255,255,255,0.5);
+                font-weight: 800;
+                letter-spacing: 1px;
+            }}
+            .valor {{ font-size: 13px; font-weight: 700; color: #FFFFFF; }}
+            .highlight {{ color: #00FFAA; font-family: monospace; }}
+            
+            ::-webkit-scrollbar {{ width: 8px; }}
+            ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); }}
+            ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+            ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+        </style>
+    </head>
+    <body>
+        <div style="padding: 10px;">
+            {"".join([f'''
+            <div class="row-logistica">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                    <div>
+                        <div class="label-mini">Pedido / Factura</div>
+                        <div class="valor highlight text-lg">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
+                        <div class="text-[10px] text-blue-300 opacity-80">Envío: {str(item.get('FECHA DE ENVÍO', ''))}</div>
+                    </div>
+                    
+                    <div>
+                        <div class="label-mini">Cliente / Destino</div>
+                        <div class="valor truncate text-xs uppercase">{str(item.get('NOMBRE DEL CLIENTE', ''))[:40]}</div>
+                        <div class="text-[10px] text-white/50 italic">{str(item.get('DESTINO', ''))}</div>
+                    </div>
+
+                    <div class="border-x border-white/5 px-4">
+                        <div class="label-mini">Transporte y Guía</div>
+                        <div class="valor text-[11px]">{str(item.get('FLETERA', ''))}</div>
+                        <div class="text-[10px] {"text-emerald-400" if item.get('NÚMERO DE GUÍA') else "text-orange-400"}">
+                            {str(item.get('NÚMERO DE GUÍA', 'PENDIENTE'))}
                         </div>
                     </div>
+
+                    <div class="text-right">
+                        <div class="label-mini">Estatus Entrega</div>
+                        <div class="valor text-sm {"text-emerald-400" if item.get('FECHA DE ENTREGA REAL') else "text-orange-400"}">
+                            {str(item.get('FECHA DE ENTREGA REAL', 'EN TRÁNSITO'))}
+                        </div>
+                        <div class="text-[9px] text-white/40 uppercase">Promesa: {str(item.get('PROMESA DE ENTREGA', ''))}</div>
+                    </div>
                 </div>
-                ''' for item in data])}
             </div>
-        </body>
-        </html>
-        """
-        return components.html(html_content, height=600, scrolling=True)
+            ''' for item in data])}
+        </div>
+    </body>
+    </html>
+    """
+    return components.html(html_content, height=600, scrolling=True)
     
     # --- EJECUCIÓN DEL MÓDULO ---
     # --- EJECUCIÓN DEL MÓDULO ---
