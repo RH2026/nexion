@@ -95,7 +95,7 @@ div.stButton > button, div.stDownloadButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 34px !important;
+    height: 28px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -104,6 +104,24 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
     border-color: #00A3A3 !important;
+}}
+
+/* --- COMPACTAR ESPACIADO EN EL POPOVER --- */
+div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
+    gap: 0.25rem !important;
+}}
+
+div[data-testid="stPopoverBody"] .stButton {{
+    margin-bottom: -0.3rem !important;
+}}
+
+div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
+    border: none !important;
+    background: transparent !important;
+    margin-bottom: -0.3rem !important;
+> div {{
+        padding: 0 !important;
+    }}
 }}
 
 /*FOOTER FIJO BLINDADO */
@@ -485,19 +503,14 @@ with header_zone:
         
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
+                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #00D4FF;'>
                     <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
-                    <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
+                    <p style='color:{vars_css['text']}; font-size:13px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                 </div>
             """,
                 unsafe_allow_html=True,
-            )
-        
-            st.markdown(
-                "<p style='color:#f0f0f0; font-size:10px; font-weight:400; text-align:center; margin:10px 0; letter-spacing:1px;'>MENÚ PRINCIPAL</p>",
-                unsafe_allow_html=True,
-            )
-        
+            )       
+                    
             if tiene_permiso("DASHBOARD"):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
@@ -603,7 +616,7 @@ with header_zone:
                     st.session_state.menu_sub = "SETTINGS"
                     st.switch_page("pages/accesscontrol.py")
         
-            st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
             if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
@@ -710,8 +723,8 @@ def main():
         cols_dash = ["USUARIO", "DASHBOARD"]
 
         tab_dash, tab_seg, tab_ent, tab_rep, tab_for, tab_dat, tab_fin, tab_enf, tab_acc = st.tabs([
-            "📊 DASHBOARD", "🔍 SEGUIMIENTO", "🚚 ENTREGAS", "📈 REPORTES", 
-            "📋 FORMATOS", "💾 DATOS", "💰 FINANZAS", "🎯 ENFOQUE", "🔒 ACCESS CTRL"
+            "DASHBOARD", "SEGUIMIENTO", "ENTREGAS", "REPORTES", 
+            "FORMATOS", "DATOS", "FINANZAS", "ENFOQUE", "ACCESS CTRL"
         ])
 
         df_editado = df_permisos.copy()
@@ -782,7 +795,7 @@ def main():
         st.markdown("<br>", unsafe_allow_html=True)
         col_b1, col_b2 = st.columns([1.5, 4])
         with col_b1:
-            if st.button("💾 GUARDAR Y SINCRONIZAR", use_container_width=True, type="primary"):
+            if st.button("GUARDAR Y SINCRONIZAR", use_container_width=True, type="primary"):
                 with st.spinner("Actualizando permisos al instante..."):
                     exito = guardar_matriz_en_github(df_editado)
                     if exito:
