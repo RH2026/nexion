@@ -106,7 +106,7 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/* --- ESTILO NEXION PARA EL DATA EDITOR (TABLITAS) --- */
+/* --- ESTILO NEXION AMPLIADO PARA EL DATA EDITOR --- */
 [data-testid="stDataFrame"] {{
     background-color: {vars_css['card']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -115,9 +115,15 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
 }}
 
-/* Forzar colores en la cuadrícula y celdas de Streamlit Data Editor */
-iframe[title="streamlit.components.v1.components.html"], .stDataFrame div {{
-    color-scheme: dark;
+/* Forzar mayor altura vertical en la tabla interactiva de permisos */
+[data-testid="stDataFrame"] div[data-testid="stTable"], 
+[data-testid="stDataFrame"] [data-baseweb="base-input"],
+div.stDataEditor {{
+    min-height: 580px !important;
+}}
+
+[data-testid="stDataFrame"] [role="grid"] {{
+    min-height: 560px !important;
 }}
 
 /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
