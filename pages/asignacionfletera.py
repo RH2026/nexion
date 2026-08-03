@@ -92,8 +92,33 @@ div.stButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 34px !important;
+    height: 32px !important;
     width: 100% !important;
+    transition: all 0.3s ease !important;
+}}
+
+div.stButton > button:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+    border-color: #00A3A3 !important;
+}}
+
+/* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
+div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
+    gap: 0.45rem !important;
+}}
+
+div[data-testid="stPopoverBody"] .stButton {{
+    margin-bottom: 0rem !important;
+}}
+
+div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
+    border: none !important;
+    background: transparent !important;
+    margin-bottom: 0rem !important;
+    > div {{
+        padding: 0 !important;
+    }}
 }}
 
 /*FOOTER FIJO BLINDADO */
@@ -113,11 +138,6 @@ div.stButton > button {{
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;
-}}
-
-div.stButton > button:hover {{
-    background-color: #00A3A3 !important;
-    color: #ffffff !important;
 }}
 </style>
 """,
@@ -171,7 +191,7 @@ def obtener_matriz_github():
 @st.cache_data(ttl=60)
 def cargar_datos_dashboard():
     t = int(time.time())
-    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+    url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}" if 'GITHUB_USER' in globals() else f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
     try:
         df = pd.read_csv(url, encoding="utf-8-sig")
         df.columns = df.columns.str.strip()
@@ -320,16 +340,11 @@ with header_zone:
         
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
+                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #00D4FF;'>
                     <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
-                    <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
+                    <p style='color:{vars_css['text']}; font-size:13px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                 </div>
             """,
-                unsafe_allow_html=True,
-            )
-        
-            st.markdown(
-                "<p style='color:#f0f0f0; font-size:10px; font-weight:400; text-align:center; margin:10px 0; letter-spacing:1px;'>MENÚ PRINCIPAL</p>",
                 unsafe_allow_html=True,
             )
         
@@ -438,7 +453,7 @@ with header_zone:
                     st.session_state.menu_sub = "SETTINGS"
                     st.switch_page("pages/accesscontrol.py")
         
-            st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
             if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
