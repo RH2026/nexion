@@ -18,7 +18,7 @@ import streamlit as st
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
-    page_title="JYPESA | Logistics",
+    page_title="JYPESA | Centro de Control",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -50,7 +50,7 @@ st.markdown(
     }}
 }}
 
-[data-testid="stVerticalBlock"] > div {{
+[data-testid="stVerticalBlock"] > div:not(:has(.footer)) {{
     animation: fadeInUp 0.6s ease-out;
 }}
 
@@ -106,9 +106,9 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/*FOOTER FIJO */
+/*FOOTER FIJO BLINDADO */
 .footer {{ 
-    position: fixed; 
+    position: fixed !important; 
     bottom: 0 !important; 
     left: 0 !important; 
     width: 100% !important; 
@@ -120,6 +120,9 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
 }}
 </style>
 """,
@@ -131,36 +134,76 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/entregas_agc.py"
+    st.session_state.pagina_destino = "pages/centro_de_control.py"
     st.switch_page("pages/log.py")
+
+# Validación exclusiva para Rigoberto (Admin supremo)
+usuario_actual_val = st.session_state.get("usuario_activo", "").upper()
+if usuario_actual_val != "RIGOBERTO":
+    st.error("ACCESO DENEGADO. MÓDULO EXCLUSIVO PARA ADMINISTRACIÓN.")
+    if st.button("REGRESAR"):
+        st.switch_page("pages/asignacionfletera.py")
+    st.stop()
 
 
 # ==========================================
-# 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
+# 3. CONFIGURACIÓN GITHUB PARA PERMISOS
+# ==========================================
+GITHUB_USER = "RH2026"
+GITHUB_REPO = "nexion"
+GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+
+@st.cache_data(ttl=10)
+def cargar_matriz_permisos():
+    url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/permisos_usuarios.csv?nocache={int(time.time())}"
+    try:
+        df = pd.read_csv(url)
+        df.columns = [str(c).upper().strip() for c in df.columns]
+        return df
+    except Exception as e:
+        return pd.DataFrame()
+
+def guardar_matriz_en_github(df_actualizado):
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/permisos_usuarios.csv"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    
+    csv_string = df_actualizado.to_csv(index=False)
+    payload = {
+        "message": "Actualización de matriz de permisos desde Centro de Control",
+        "content": base64.b64encode(csv_string.encode()).decode()
+    }
+    
+    r_get = requests.get(url, headers=headers)
+    if r_get.status_code == 200:
+        payload["sha"] = r_get.json().get("sha")
+        
+    res = requests.put(url, json=payload, headers=headers)
+    return res.status_code in [200, 201]
+
+
+# ==========================================
+# 4. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
 # ==========================================
 @st.cache_data(ttl=60)
 def obtener_matriz_github():
-    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
+    url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
     try:
         m = pd.read_csv(url)
         m.columns = [str(c).upper().strip() for c in m.columns]
         return m
     except Exception as e:
-        st.error(f"Error fatal al conectar con GitHub: {e}")
         return pd.DataFrame()
-
 
 @st.cache_data(ttl=60)
 def cargar_datos_dashboard():
     t = int(time.time())
-    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+    url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
     try:
         df = pd.read_csv(url, encoding="utf-8-sig")
         df.columns = df.columns.str.strip()
         return df
     except Exception as e:
         return None
-
 
 def limpiar_texto(texto):
     if pd.isna(texto):
@@ -176,9 +219,9 @@ def limpiar_texto(texto):
 
 # Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
-    st.session_state.menu_main = "ENTREGAS"
+    st.session_state.menu_main = "CENTRO DE CONTROL"
 if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "AGC"
+    st.session_state.menu_sub = "PERMISOS"
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
@@ -190,7 +233,7 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 4. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL TRIPLE RENDER)
+# 5. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL TRIPLE RENDER)
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -396,7 +439,6 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             
-                            # Redirección específica para Envío de Muestras
                             if s == "ENVIO DE MUESTRAS":
                                 st.switch_page("pages/muestras.py")
                             else:
@@ -453,19 +495,15 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             st.rerun()
-        
-            usuario_actual = st.session_state.get("usuario_activo", "").upper()
-            if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
+                            
                 with st.expander(
-                    "ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")
+                    "CENTRO DE CONTROL", expanded=(st.session_state.menu_main == "CENTRO DE CONTROL")
                 ):
-                    for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
-                        label = f"» {s}" if st.session_state.get("menu_sub") == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
-                            st.session_state.menu_main = "ENFOQUE"
-                            st.session_state.menu_sub = s
-                            st.rerun()
-        
+                    if st.button("» MATRIZ PERMISOS", use_container_width=True, key="pop_ctrl_perm"):
+                        st.session_state.menu_main = "CENTRO DE CONTROL"
+                        st.session_state.menu_sub = "PERMISOS"
+                        st.switch_page("pages/centro_de_control.py")
+
             st.markdown(
                 "<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True
             )
@@ -493,14 +531,12 @@ with header_zone:
                 st.session_state.search_key_version += 1
                 st.rerun()
 
-        # RENDER 1: INVENTARIO
         if tipo == "INVENTARIO":
             st.markdown(f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>", unsafe_allow_html=True)
             st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
             for _, i in resultados.iterrows():
                 st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
         else:
-            # RENDER 2: RESULTADO ÚNICO UNIFICADO
             if total == 1:
                 envio = resultados.iloc[0]
                 f_envio = envio.get("FECHA DE ENVÍO", "N/A")
@@ -533,12 +569,9 @@ with header_zone:
                         f_entrega_dt = f_entrega_dt.normalize()
                     status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
-                d = envio
-
                 tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
                 st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
             else:
-                # RENDER 3: LISTADO MÚLTIPLE
                 st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
                 st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
 
@@ -552,15 +585,44 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (ENTREGAS AGC)
+# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL DE PERMISOS)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
 
-        
-   
+    st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 5px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 25px;'>Gestiona los módulos visibles para cada operador en tiempo real mediante casillas de verificación. Al guardar, se sincroniza automáticamente con el repositorio en GitHub.</p>", unsafe_allow_html=True)
+
+    df_permisos = cargar_matriz_permisos()
+
+    if not df_permisos.empty:
+        for col in df_permisos.columns:
+            if col != "USUARIO":
+                df_permisos[col] = df_permisos[col].astype(bool)
+
+        df_editado = st.data_editor(
+            df_permisos,
+            use_container_width=True,
+            hide_index=True,
+            key="editor_permisos_pro"
+        )
+
+        col_b1, col_b2 = st.columns([1.5, 4])
+        with col_b1:
+            if st.button("💾 GUARDAR Y SINCRONIZAR", use_container_width=True, type="primary"):
+                with st.spinner("Actualizando GitHub..."):
+                    exito = guardar_matriz_en_github(df_editado)
+                    if exito:
+                        st.cache_data.clear()
+                        st.success("¡Permisos actualizados con éxito!")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("Error al sincronizar con GitHub. Revisa tu token.")
+    else:
+        st.warning("No se pudo cargar la matriz de permisos. Asegúrate de que el archivo exista en GitHub.")
 
 
 if __name__ == "__main__":
