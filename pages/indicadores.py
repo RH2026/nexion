@@ -228,7 +228,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         st.stop()
 
 # Blindaje correcto para la página de Dashboard
-verificar_permiso_pagina("DASHBOARD", "GENERAL")
+verificar_permiso_pagina("DASHBOARD")
 
 
 # ==========================================
