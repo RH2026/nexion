@@ -128,11 +128,31 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
 
 
 # ==========================================
-# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
+# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
     st.session_state.pagina_destino = "pages/entregas_agc.py"
     st.switch_page("pages/log.py")
+
+def verificar_permiso_pagina(modulo, submodulo=None):
+    permisos = st.session_state.get("permisos", {})
+    if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
+        return True
+        
+    if not permisos.get(modulo.upper(), False):
+        st.error(f"ACCESO DENEGADO: No tienes permisos para acceder al módulo {modulo}.")
+        if st.button("REGRESAR AL INICIO"):
+            st.switch_page("pages/asignacionfletera.py")
+        st.stop()
+        
+    if submodulo and not permisos.get(submodulo.upper(), False):
+        st.error(f"ACCESO DENEGADO: No tienes permisos para acceder a la sección {submodulo}.")
+        if st.button("REGRESAR AL INICIO"):
+            st.switch_page("pages/asignacionfletera.py")
+        st.stop()
+
+# Blindaje de Módulo ENTREGAS y Submenú AGC
+verificar_permiso_pagina("ENTREGAS", "AGC")
 
 
 # ==========================================
@@ -190,7 +210,7 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 4. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL TRIPLE RENDER)
+# 4. HEADER CON 4 COLUMNAS Y MENÚ BLINDADO
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -297,13 +317,8 @@ with header_zone:
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
             usuario = st.session_state.get("usuario_activo", "GUEST")
-            es_admin = usuario.upper() == "RIGOBERTO"
-            es_ventas = usuario.upper() == "VENTAS"
-            es_atencion3g = usuario.upper() == "ATENCION3G"
-        
-            nombre_display = st.session_state.get(
-                "nombre_completo", "OPERADOR DESCONOCIDO"
-            )
+            permisos = st.session_state.get("permisos", {})
+            nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
         
             st.markdown(
                 f"""
@@ -320,30 +335,18 @@ with header_zone:
                 unsafe_allow_html=True,
             )
         
-            if not es_ventas and not es_atencion3g:
+            # MÓDULOS Y SUBMENÚS CONDICIONADOS POR PERMISOS DE GITHUB
+            if permisos.get("DASHBOARD", False):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
                     st.rerun()
         
-            if not es_ventas:
-                with st.expander(
-                    "SEGUIMIENTO",
-                    expanded=(st.session_state.menu_main == "SEGUIMIENTO"),
-                ):
-                    usuario_actual = str(
-                        st.session_state.get(
-                            "usuario", st.session_state.get("usuario_activo", "")
-                        )
-                    ).strip()
-                    if es_admin:
-                        opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
-                    elif usuario_actual == "Cynthia":
-                        opciones_seg = ["ALERTAS", "QUEJAS"]
-                    else:
-                        opciones_seg = ["ALERTAS"]
-        
+            if permisos.get("SEGUIMIENTO", False):
+                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                    opciones_seg_posibles = ["ALERTAS", "GANTT", "QUEJAS"]
+                    opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
@@ -352,70 +355,40 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            if not es_ventas and not es_atencion3g:
-                with st.expander(
-                    "ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")
-                ):
-                    opciones_ent = ["AGC", "AMAZON", "BARCELO"]
+            if permisos.get("ENTREGAS", False):
+                with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
+                    opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO"]
+                    opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
                     for s in opciones_ent:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_ent_{s}"):
                             st.session_state.menu_main = "ENTREGAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
-                            
                             if s == "AGC":
                                 st.switch_page("pages/entregas_agc.py")
                             else:
                                 st.rerun()
         
-            if not es_atencion3g:
-                with st.expander(
-                    "REPORTES", expanded=(st.session_state.menu_main == "REPORTES")
-                ):
-                    usuario_actual = str(
-                        st.session_state.get(
-                            "usuario", st.session_state.get("usuario_activo", "")
-                        )
-                    ).strip()
-                    if es_admin or usuario_actual == "Carlos":
-                        opciones_rep = [
-                            "COSTOS CEDIS",
-                            "ANALISIS MENSUAL",
-                            "DETALLE COSTOS",
-                            "ENVIOS ESPECIALES",
-                            "ENVIO DE MUESTRAS",
-                        ]
-                    else:
-                        opciones_rep = ["ENVIO DE MUESTRAS"]
-        
+            if permisos.get("REPORTES", False):
+                with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                    opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                    opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False)]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
                             st.session_state.menu_main = "REPORTES"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
-                            
-                            # Redirección específica para Envío de Muestras
                             if s == "ENVIO DE MUESTRAS":
                                 st.switch_page("pages/muestras.py")
                             else:
                                 st.rerun()
         
-            if not es_ventas and not es_atencion3g:
-                with st.expander(
-                    "FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")
-                ):
-                    opciones_for = [
-                        "SALIDA DE PT",
-                        "CHECK LIST AGC",
-                        "QR AGC",
-                        "PREGUIA PAQMEX",
-                        "RECOLECCION 3G",
-                        "RECOLECCION ONE",
-                        "CARTA RECLAMO",
-                        "COTIZACIONES",
-                    ]
+            if permisos.get("FORMATOS", False):
+                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                    opciones_for_posibles = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
+                    opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False)]
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -424,28 +397,25 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            if not es_ventas and not es_atencion3g:
-                with st.expander(
-                    "CENTRO DE DATOS",
-                    expanded=(st.session_state.menu_main == "CENTRO DE DATOS"),
-                ):
-                    for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]:
+            if permisos.get("CENTRO DE DATOS", False):
+                with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
+                    opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
+                    opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
+                    for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
                             st.session_state.menu_main = "CENTRO DE DATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
-                            
                             if s == "ASIGNAR FLETERA":
                                 st.switch_page("pages/asignacionfletera.py")
                             else:
                                 st.rerun()
         
-            if st.session_state.get("usuario_activo") == "Rigoberto":
-                with st.expander(
-                    "FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")
-                ):
-                    opciones_fin = ["WALLET", "CAJA CHICA", "GASTOS"]
+            if permisos.get("FINANZAS", False):
+                with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
+                    opciones_fin_posibles = ["WALLET", "CAJA CHICA", "GASTOS"]
+                    opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False)]
                     for s in opciones_fin:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
@@ -453,15 +423,25 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             st.rerun()
+
+            if permisos.get("ENFOQUE", False):
+                with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
+                    opciones_enf_posibles = ["MORENO", "VAZQUEZ", "MIGUEL"]
+                    opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False)]
+                    for s in opciones_enf:
+                        label = f"» {s}" if st.session_state.get("menu_sub") == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
+                            st.session_state.menu_main = "ENFOQUE"
+                            st.session_state.menu_sub = s
+                            st.rerun()
         
-            if st.button("SETTINGS", use_container_width=True, key="pop_enf_SETTINGS"):
-                st.session_state.menu_main = "ACCESS CONTROL"
-                st.session_state.menu_sub = "SETTINGS"
-                st.switch_page("pages/accesscontrol.py")
+            if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
+                if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl"):
+                    st.session_state.menu_main = "ACCESS CONTROL"
+                    st.session_state.menu_sub = "SETTINGS"
+                    st.switch_page("pages/accesscontrol.py")
         
-            st.markdown(
-                "<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True
-            )
+            st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
             if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
@@ -469,7 +449,7 @@ with header_zone:
                 st.session_state.splash_completado = False
                 st.rerun()
 
-    # ── RENDERIZADO DE RESULTADOS ──────────────────────────────────────────
+    # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA ──────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
@@ -486,21 +466,16 @@ with header_zone:
                 st.session_state.search_key_version += 1
                 st.rerun()
 
-        # RENDER 1: INVENTARIO
         if tipo == "INVENTARIO":
             st.markdown(f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>", unsafe_allow_html=True)
             st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
             for _, i in resultados.iterrows():
                 st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
         else:
-            # RENDER 2: RESULTADO ÚNICO UNIFICADO
             if total == 1:
                 envio = resultados.iloc[0]
-                f_envio = envio.get("FECHA DE ENVÍO", "N/A")
-                f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
                 entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
                 f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
-
                 trigger_val = str(envio.get("TRIGGER", "")).strip()
                 tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
 
@@ -526,12 +501,9 @@ with header_zone:
                         f_entrega_dt = f_entrega_dt.normalize()
                     status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
-                d = envio
-
                 tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
                 st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
             else:
-                # RENDER 3: LISTADO MÚLTIPLE
                 st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
                 st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
 
@@ -552,13 +524,10 @@ def main():
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
 
-        
     st.markdown("""
         <style>
-            /* 1. Reset para que el contenedor use todo el ancho */
             div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
             
-            /* 2. Estilo para los botones personalizados */
             div.stButton > button {
                 background-color: #2B343B !important; 
                 color: #FFFFFF !important;            
@@ -581,7 +550,6 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # --- VALIDACIÓN DIRECTA CON TU VARIABLE DE SESIÓN DE ADMINISTRADOR ---
     usuario_actual = st.session_state.get("usuario_activo", "").upper()
     es_admin = usuario_actual == "RIGOBERTO"
 
@@ -610,14 +578,12 @@ def main():
     else:
         modo_edicion = False
 
-    # --- Lógica de Navegación de Vistas ---
     if 'tipo_vista_agc' not in st.session_state:
         st.session_state.tipo_vista_agc = 'ENTREGAS'
 
     if 'mes_calendario' not in st.session_state:
-        st.session_state.mes_calendario = datetime.now().month  # Mes en curso dinámico
+        st.session_state.mes_calendario = datetime.now().month
 
-    # Creamos DOS botones principales superiores
     col_btn1, col_btn2 = st.columns(2)
 
     with col_btn1:
@@ -632,7 +598,6 @@ def main():
             st.session_state.tipo_vista_agc = 'CALENDARIO'
             st.rerun()
 
-    # --- Encabezado de Texto Dinámico ---
     if st.session_state.tipo_vista_agc == 'ENTREGAS':
         titulo_dinamico = "PANEL DE ENTREGAS PENDIENTES (AGC)"
     else:
@@ -646,7 +611,6 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # --- Función de Renderizado (Tarjetas de Entregas) ---
     def render_logistica_flow_responsive(data):
         html_content = f"""
         <!DOCTYPE html>
@@ -752,7 +716,6 @@ def main():
         """
         return components.html(html_content, height=800, scrolling=True)
 
-    # --- Generador de PDF para Citas del Mes ---
     def generar_pdf_citas_mes(data_completa, mes_num, anio=2026):
         meses_nombres = {
             1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
@@ -776,7 +739,7 @@ def main():
         pdf = canvas.Canvas(buffer, pagesize=letter)
         width, height = letter
 
-        pdf.setFillColorRGB(0.21, 0.28, 0.32) # #384A52
+        pdf.setFillColorRGB(0.21, 0.28, 0.32)
         pdf.rect(0, height - 80, width, 80, fill=1, stroke=0)
         
         pdf.setFillColorRGB(1, 1, 1)
@@ -820,7 +783,6 @@ def main():
         buffer.seek(0)
         return buffer.getvalue()
 
-    # --- Función: Renderizado de Calendario ---
     def render_calendario_visual(data_completa, mes_num, anio=2026):
         meses_nombres = {
             1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
@@ -908,9 +870,6 @@ def main():
         """
         return components.html(html_calendario, height=750, scrolling=True)
 
-    # =====================================================================
-    # --- EXTRACCIÓN Y GUARDADO AUTOMÁTICO EN GITHUB ---
-    # =====================================================================
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "agc.csv"
@@ -1038,7 +997,6 @@ def main():
         data_completa = []
         data_pendientes = []
 
-    # --- Lógica de Renderizado Condicional de Vistas ---
     if st.session_state.tipo_vista_agc == 'ENTREGAS':
         render_logistica_flow_responsive(data_pendientes)
     elif st.session_state.tipo_vista_agc == 'CALENDARIO':
