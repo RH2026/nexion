@@ -1,20 +1,23 @@
 import base64
-from datetime import datetime
+import calendar
+from datetime import datetime, date
 import io
 import re
 import time
 import unicodedata
 import zipfile
-import calendar
 import requests
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfgen import canvas
 import pandas as pd
 from pypdf import PdfReader, PdfWriter
 import qrcode
-import streamlit.components.v1 as components
 import streamlit as st
+import streamlit.components.v1 as components
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import ImageReader, simpleSplit
+from reportlab.pdfgen import canvas
+import reportlab.lib.units as units
+
+cm = units.cm
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
@@ -396,7 +399,6 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             
-                            # Redirección específica para Envío de Muestras
                             if s == "ENVIO DE MUESTRAS":
                                 st.switch_page("pages/muestras.py")
                             else:
@@ -481,7 +483,6 @@ with header_zone:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
         tipo = st.session_state.get("tipo_resultado", "OPERACION")
-        accent_color = "#00FFAA"
         inv_color = "#36b9cc"
         azul_premium = "#00D4FF"
 
@@ -503,8 +504,6 @@ with header_zone:
             # RENDER 2: RESULTADO ÚNICO UNIFICADO
             if total == 1:
                 envio = resultados.iloc[0]
-                f_envio = envio.get("FECHA DE ENVÍO", "N/A")
-                f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
                 entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
                 f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
 
@@ -533,9 +532,7 @@ with header_zone:
                         f_entrega_dt = f_entrega_dt.normalize()
                     status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
-                d = envio
-
-                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
+                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: #00FFAA; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: #00FFAA; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: #00FFAA; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: #00FFAA;">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: #00FFAA; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
                 st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
             else:
                 # RENDER 3: LISTADO MÚLTIPLE
@@ -552,31 +549,25 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (ENTREGAS AGC)
+# 5. INTERFAZ PRINCIPAL (MUESTRAS)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
 
-    # Contenedor animado con estilos limpios
     st.markdown('<div class="animate-fade-in">', unsafe_allow_html=True)
     
-    # --- 1. LLAVES DE ESTADO ---
     if "reset_key" not in st.session_state:
         st.session_state.reset_key = 0
     if "folio_guardado" not in st.session_state:
         st.session_state.folio_guardado = False
 
-    
-    
-    # --- VARIABLES DE GITHUB ---
     GITHUB_USER = "RH2026"
     GITHUB_REPO = "nexion"
     GITHUB_PATH = "muestras.csv"
     GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
     
-    # Diccionario de precios SINCRONIZADO
     precios = {
         "Envio Muestras Especiales": 0.0,
         "Kit Accesorios Ecologicos": 47.85,
@@ -627,12 +618,8 @@ def main():
         "4018-A28 KIT de costura Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 1.90,
         "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas": 2.44,
         "68829526 Rack Dove Dove Mlac Bracket Metalized Bottle 1 Pieza": 193.90
-
-        
-
     }
     
-    # --- FUNCION PARA ETIQUETA DE EMBARQUE---
     def limpiar_parentesis(texto):
         return re.sub(r'\(.*?\)', '', str(texto)).strip()
     
@@ -657,7 +644,6 @@ def main():
         c = canvas.Canvas(output, pagesize=letter)
         width_carta, height_carta = letter
         
-        # Medidas exactas de la etiqueta
         w_rec, h_rec = 10.5 * cm, 7.5 * cm
         x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
         
@@ -667,14 +653,12 @@ def main():
         transporte_final = str(transporte_val if transporte_val else 'TRES GUERRAS')
     
         for i in range(total_etqs):
-            # Dibujar contorno de etiqueta
             c.setDash(1, 2)
             c.setStrokeColorRGB(0.7, 0.7, 0.7)
             c.rect(x_offset, y_offset, w_rec, h_rec)
             c.setDash([])
             c.setStrokeColorRGB(0, 0, 0)
     
-            # CABECERA JYPESA
             c.setFont("Helvetica-Bold", 7)
             c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
             c.setFont("Helvetica", 6)
@@ -686,16 +670,13 @@ def main():
             c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
             c.setStrokeColorRGB(0, 0, 0)
     
-            # NOMBRE CLIENTE (GIGANTE)
             y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
     
-            # DIRECCIÓN
             y_inicio_direccion = y_termino_nombre - 0.7*cm
             if y_inicio_direccion > y_offset + 4.3*cm: y_inicio_direccion = y_offset + 4.3*cm
             if y_inicio_direccion < y_offset + 2.9*cm: y_inicio_direccion = y_offset + 2.9*cm
             dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 14.5, 0.5*cm, max_lineas=3)
     
-            # PIE DE ETIQUETA
             c.setLineWidth(0.6)
             y_linea_pie = y_offset + 1.4*cm
             c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
@@ -708,7 +689,6 @@ def main():
             c.setFont("Helvetica-Bold", 13)
             c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(factura_val))
     
-            # Numeración limpia (ej. 1 / 3, 2 / 3...) sin rastro de Moreno
             c.setFont("Helvetica-Bold", 13)
             c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {total_etqs}")
     
@@ -718,9 +698,7 @@ def main():
     
         c.save()
         return output.getvalue()
-    
 
-    # --- FUNCIONES GITHUB ---
     def obtener_datos_github():
         try:
             url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
@@ -728,7 +706,7 @@ def main():
             r = requests.get(url, headers=headers)
             if r.status_code == 200:
                 content = r.json()
-                df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                df = pd.read_csv(io.BytesIO(base64.b64decode(content['content'])))
                 return df, content['sha']
         except:
             pass
@@ -739,9 +717,8 @@ def main():
         headers = {"Authorization": f"token {GITHUB_TOKEN}"}
         csv_string = df.to_csv(index=False)
         payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
-        return requests.put(url, json=payload, headers=headers).status_code == 200                      
+        return requests.put(url, json=payload, headers=headers).status_code == 200                        
 
-    # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
     def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago, total_cajas=1):
         filas_prod = ""
         for p in productos:
@@ -839,11 +816,9 @@ def main():
         """
         return html
     
-    # --- CARGA DE DATOS ---
     df_actual, sha_actual = obtener_datos_github()
     
     if not df_actual.empty:
-        # 1. Primero arreglamos las columnas si faltan
         for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL", "ESTATUS"]:
             if col not in df_actual.columns: 
                 if col == "ESTATUS":
@@ -851,35 +826,27 @@ def main():
                 else:
                     df_actual[col] = 0.0
         
-        # 2. LUEGO calculamos el número (Alineado aquí adentro)
         nuevo_num = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1)
     else:
-        # 3. Si el archivo está vacío, empezamos en 1
         nuevo_num = 1
     
-    # --- INTERFAZ ---
-    
-    
-    # --- CAPTURA NUEVA ---
     st.write("")
     with st.container():
-        # Definimos valores por defecto (ya no se muestran a Ventas)
         f_paq_nombre = ""
         f_tipo_pago = ""
         
-        # Ahora empezamos directamente con los datos que sí llena Ventas
         c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
         
-        f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=f"JYP-{nuevo_num}", disabled=True)
+        f_folio = c1.text_input("FOLIO", value=f"JYP-{nuevo_num}", disabled=True)
         f_paq_sel = c2.selectbox(
-            ":material/local_shipping: FORMA DE ENVÍO", 
+            "FORMA DE ENVÍO", 
             ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
         )
         f_ent_sel = c3.selectbox(
-            ":material/home_pin: TIPO DE ENTREGA", 
+            "TIPO DE ENTREGA", 
             ["Domicilio", "Ocurre Oficina"]
         )
-        f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
+        f_fecha_sel = c4.date_input("FECHA", date.today())
     
     st.divider()
     
@@ -890,15 +857,15 @@ def main():
             unsafe_allow_html=True
         )
         st.write("")
-        st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
+        st.text_input("Nombre Remitente", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
         
         c_rem1, c_rem2 = st.columns([2, 1])
-        f_atn_rem = c_rem1.text_input(":material/person: Atención", "RIGOBERTO HERNANDEZ")
-        f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
+        f_atn_rem = c_rem1.text_input("Atención", "RIGOBERTO HERNANDEZ")
+        f_tel_rem = c_rem2.text_input("Teléfono", "3319753122")
         f_soli = st.text_input(
-            ":material/badge: Solicitante / Agente", 
+            "Solicitante / Agente", 
             placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS",
-            key=f"soli_{st.session_state.reset_key}" # <--- Agregamos esta línea
+            key=f"soli_{st.session_state.reset_key}"
         ).upper()
     
     with col_dest:
@@ -907,28 +874,25 @@ def main():
             unsafe_allow_html=True
         )
         st.write("")
-        # Agregamos la key dinámica a cada uno:
-        f_h = st.text_input(":material/hotel: Hotel / Nombre", key=f"h_{st.session_state.reset_key}").upper()
-        f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_{st.session_state.reset_key}").upper()
+        f_h = st.text_input("Hotel / Nombre", key=f"h_{st.session_state.reset_key}").upper()
+        f_ca = st.text_input("Calle y Número", key=f"ca_{st.session_state.reset_key}").upper()
         
         cd1, cd2 = st.columns(2)
-        f_co = cd1.text_input(":material/map: Colonia", key=f"co_{st.session_state.reset_key}").upper()
-        f_cp = cd2.text_input(":material/mailbox: C.P.", key=f"cp_{st.session_state.reset_key}")
+        f_co = cd1.text_input("Colonia", key=f"co_{st.session_state.reset_key}").upper()
+        f_cp = cd2.text_input("C.P.", key=f"cp_{st.session_state.reset_key}")
         
         cd3, cd4 = st.columns(2)
-        f_ci = cd3.text_input(":material/location_city: Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
-        f_es = cd4.text_input(":material/public: Estado", key=f"es_{st.session_state.reset_key}").upper()
+        f_ci = cd3.text_input("Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
+        f_es = cd4.text_input("Estado", key=f"es_{st.session_state.reset_key}").upper()
         
         f_con = st.text_input(
-            ":material/contact_phone: Contacto Receptor", 
+            "Contacto Receptor", 
             placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE",
-            key=f"con_{st.session_state.reset_key}" # <--- La clave del éxito
+            key=f"con_{st.session_state.reset_key}"
         ).upper()
     
     st.divider()
     
-    # --- PRODUCTOS ---                
-    # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO
     st.markdown("""
         <style>
         .stMultiSelect div[data-baseweb="select"] {
@@ -952,19 +916,18 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    st.subheader(":material/shopping_cart: SELECCION DE PRODUCTOS")
+    st.subheader("SELECCION DE PRODUCTOS")
     
     if "seleccionados_muestras" not in st.session_state:
         st.session_state.seleccionados_muestras = []
     
     def eliminar_producto(prod_a_borrar):
         st.session_state.seleccionados_muestras = [p for p in st.session_state.seleccionados_muestras if p != prod_a_borrar]
-        st.session_state.multi_prods_main = st.session_state.seleccionados_muestras
     
     seleccionados = st.multiselect(
-        ":material/search: Busca y selecciona productos:", 
+        "Busca y selecciona productos:", 
         list(precios.keys()),
-        key=f"prod_select_{st.session_state.reset_key}", # <--- Esto es lo que hace la magia
+        key=f"prod_select_{st.session_state.reset_key}",
         default=st.session_state.get('seleccionados_muestras', []),
         placeholder="SELECCIONAR PRODUCTOS"
     )
@@ -978,11 +941,7 @@ def main():
     if seleccionados:
         st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
         
-        # --- CÁLCULO DINÁMICO DE LA ALTURA ---
-        # Calculamos cuántas filas hay (3 productos por fila)
         num_filas = (len(seleccionados) + 2) // 3  
-        # Altura base por fila (aprox 90px) + un pequeño margen
-        # Ponemos un máximo de 500px para que no se coma toda la pantalla si son muchísimos
         altura_dinamica = min(max(num_filas * 95, 120), 500) 
         
         with st.container(height=altura_dinamica, border=True):
@@ -1006,7 +965,7 @@ def main():
                         q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
                     
                     with c3:
-                        st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
+                        st.button("🗑️", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
     
                     if q > 0:
                         prods_actuales.append({"desc": p, "cant": q})
@@ -1025,16 +984,14 @@ def main():
     st.write("")
     st.write("")
     
-    # --- BOTONES PRINCIPALES ---
     col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
 
-    # --- BOTÓN GUARDAR ---
-    if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
+    if col_b1.button("GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
         if not f_h: 
             st.error("Falta el hotel")
         elif not f_soli:
             st.error("Falta el nombre de quien solicita (Solicitante / Agente)")
-        elif not f_con: # <--- AQUÍ ESTÁ EL BLOQUEO NUEVO, AMOR
+        elif not f_con: 
             st.error("Falta el nombre y teléfono de quien recibe")
         elif not prods_actuales: 
             st.error("Selecciona al menos un producto")
@@ -1043,7 +1000,7 @@ def main():
             
             reg = {
                 "FOLIO": nuevo_num, 
-                "ESTATUS": "NO SURTIDO", # <--- LÍNEA NUEVA AGREGADA AQUÍ
+                "ESTATUS": "NO SURTIDO",
                 "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
                 "NOMBRE DEL HOTEL": f_h.upper(), 
                 "DESTINO": direccion_completa,
@@ -1066,7 +1023,6 @@ def main():
             df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
             
             if subir_a_github(df_f, sha_actual, f"Folio JYP-{nuevo_num}"):
-                # MEMORIA: Guardamos el folio que acabamos de usar antes de que cambie
                 st.session_state.folio_actual = nuevo_num
                 st.session_state.folio_guardado = True 
                 
@@ -1074,7 +1030,6 @@ def main():
                 time.sleep(1)
                 st.rerun()
 
-    # --- MENSAJE DE ADVERTENCIA ---
     if not st.session_state.folio_guardado:
         st.markdown("""
             <div style="background-color: rgba(255, 165, 0, 0.1); border-left: 5px solid #FFA500; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
@@ -1085,11 +1040,7 @@ def main():
             </div>
         """, unsafe_allow_html=True)
 
-    # --- BOTÓN GUARDAR PDF (REPARADO CON MEMORIA) ---
-    if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
-        
-        # LOGICA DE ORO: Si ya guardamos, usamos el folio en memoria. 
-        # Si por algo no está (rerun), usamos nuevo_num - 1.
+    if col_b2.button("GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
         folio_final = st.session_state.get("folio_actual", nuevo_num - 1)
         folio_simple = f"JYP-{folio_final}" 
         
@@ -1111,27 +1062,22 @@ def main():
         """
         components.html(js_code, height=0)
 
-    # --- BOTÓN BORRAR ---
-    if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
+    if col_b3.button("BORRAR", use_container_width=True):
         st.session_state.folio_guardado = False
-        # Limpiamos el folio de la memoria para el siguiente registro
         if "folio_actual" in st.session_state:
             del st.session_state.folio_actual
         st.session_state.seleccionados_muestras = []
         st.session_state.reset_key += 1
         st.rerun()
-    # --- BÚSQUEDA RÁPIDA ---                
-    # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
-    # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO CON PRODUCTOS) ---
+
     st.write("")
     st.write("")
-    st.write("")                                
+    st.write("")                            
     
     with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS", expanded=True):
         if not df_actual.empty:
             busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:").upper()
             
-            # Aseguramos la existencia de las columnas necesarias
             df_vista = df_actual.copy()
             df_vista = df_vista.fillna('') 
             
@@ -1141,15 +1087,12 @@ def main():
             df_render = df_vista.sort_values(by="FOLIO", ascending=False)
             data_busqueda = df_render.to_dict('records')
             
-            # Calculamos altura dinámica (un poco más alto para que quepan bien los productos)
             alto_busqueda = min(len(data_busqueda) * 130 + 20, 550) 
             
-            # Generamos las tarjetas con el desglose de productos incluidos
             tarjetas_busqueda_html = ""
             for item in data_busqueda:
                 detalle_p_busqueda = ""
                 for p_key in precios.keys():
-                    # Aseguramos que la cantidad sea numérica y evitamos errores con vacíos
                     cant_p = pd.to_numeric(item.get(p_key, 0), errors='coerce')
                     if pd.notna(cant_p) and cant_p > 0:
                         detalle_p_busqueda += f"• {int(cant_p)} PZAS {str(p_key).upper()}<br>"
@@ -1215,23 +1158,14 @@ def main():
                 {tarjetas_busqueda_html}
             </div>
             """
-            import streamlit.components.v1 as components
             components.html(html_busqueda, height=alto_busqueda, scrolling=False)
         else:
             st.info("No hay registros todavía.")
-
             
-    # --- PANEL DE ADMIN ---
-    # --- PANEL DE ADMINISTRACIÓN (CORRECCIÓN DE NAMEERROR) ---
     st.divider()
     st.write("")
     
-    # 1. Definimos la lista de quiénes mandan aquí
     lista_admins = ["Rigoberto", "JMoreno"]
-    
-    # 2. DEFINIMOS LA VARIABLE (Esto es lo que te faltaba, amor)
-    # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
-    # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
     usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
     
     if usuario_logeado in lista_admins:
@@ -1239,20 +1173,16 @@ def main():
         t1, t2, t3 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes", "Edicion"])
         
         with t1:
-            # 1. Pon esto justo DEBAJO de donde creas los tabs (t1, t2)
             contenedor_aviso = st.empty()
             if not df_actual.empty:
-                # --- CSS CORREGIDO: BOTONES OSCUROS CON HOVER CIAN ---
                 st.markdown("""
                 <style>
-                /* Botón en estado normal (oscuro) */
                 div[data-testid="stButton"] button {
                     background-color: #263238 !important; 
                     color: #FFFFFF !important;
                     border: 1px solid #44555A !important;
                     transition: all 0.3s ease-in-out !important;
                 }
-                /* Botón en hover (cian neón) */
                 div[data-testid="stButton"] button:hover {
                     background-color: #00A3A3 !important;
                     color: #FFFFFF !important;
@@ -1265,7 +1195,6 @@ def main():
                 df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
                 opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
                 
-                # 1. El selector siempre arriba
                 fol_sel_texto = st.selectbox(
                     "Seleccionar Folio para procesar (Logística):", 
                     opciones_folios, 
@@ -1273,7 +1202,6 @@ def main():
                     placeholder="Busca el folio que envió Ventas..."
                 )
                 
-                # Inicializamos variables vacías por si no hay selección
                 datos_fol = None
                 fol_edit = None
     
@@ -1281,7 +1209,6 @@ def main():
                     fol_edit = int(fol_sel_texto.split(" - ")[0])
                     datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
 
-                    # ---> AQUI ENTRA LA MAGIA VISUAL (RENDER DEL FOLIO SELECCIONADO) --->
                     detalle_p_admin = ""
                     for p in precios.keys():
                         cant_admin = datos_fol.get(p, 0)
@@ -1316,11 +1243,8 @@ def main():
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                    # <--- FIN DE LA MAGIA VISUAL --->
 
-                # --- SECCIONES SIEMPRE VISIBLES ---
-                # --- SECCIONES SIEMPRE VISIBLES ---
-                st.divider() # Una línea para separar
+                st.divider() 
                 c_adm1, c_adm2 = st.columns(2)
                 
                 with c_adm1:
@@ -1336,29 +1260,24 @@ def main():
                     n_gui = st.text_input("Número de Guía").upper()
                     n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
                     
-                    # Campo para definir la cantidad final de cajas/bultos totales del envío
                     val_def_cajas = int(datos_fol.get('CANTIDAD_TOTAL', 1)) if datos_fol is not None else 1
                     n_total_cajas = st.number_input("Cantidad Final de Cajas / Bultos", min_value=1, max_value=100, value=max(val_def_cajas, 1), step=1)
                     
-                    # El botón solo se activa si hay un folio seleccionado
-                    btn_guardar = st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", 
-                                            use_container_width=True, 
-                                            disabled=not fol_sel_texto)
+                    btn_guardar = st.button("GUARDAR Y ACTUALIZAR FOLIO", 
+                                                use_container_width=True, 
+                                                disabled=not fol_sel_texto)
                     
                     if btn_guardar and datos_fol is not None:
-                        # 1. Actualizamos datos
                         idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
                         df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
                         df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
                         df_actual.at[idx, "NUMERO_GUIA"] = n_gui
                         df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
-                        df_actual.at[idx, "CANTIDAD_TOTAL"] = n_total_cajas # Guardamos las cajas totales aquí
+                        df_actual.at[idx, "CANTIDAD_TOTAL"] = n_total_cajas 
                         df_actual.at[idx, "ESTATUS"] = "DESPACHADO" 
                         
-                        # 2. Subimos a GitHub
                         if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
                             st.success(f"FOLIO JYP-{fol_edit} GUARDADO")
-                            import time
                             time.sleep(1.5)
                             st.rerun()
                 
@@ -1366,10 +1285,9 @@ def main():
                     st.subheader("2. IMPRESION FINAL")
                     st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
                     
-                    # El botón de imprimir también se deshabilita si no hay selección
-                    btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
-                                            use_container_width=True, 
-                                            disabled=not fol_sel_texto)
+                    btn_imprimir = st.button("IMPRIMIR FORMATO ACTUALIZADO", 
+                                                use_container_width=True, 
+                                                disabled=not fol_sel_texto)
                     
                     if btn_imprimir and datos_fol is not None:
                         prods_re = []
@@ -1380,7 +1298,6 @@ def main():
                         paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
                         pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
                 
-                        # Pasamos n_total_cajas a la función de impresión HTML
                         h_re = generar_html_impresion(
                             f"JYP-{int(datos_fol['FOLIO'])}", 
                             datos_fol.get("PAQUETERIA", "ENVIO"), 
@@ -1398,16 +1315,14 @@ def main():
                             datos_fol.get("COMENTARIOS", "RE-IMPRESIÓN DE LOGÍSTICA"), 
                             paq_a_imprimir, 
                             pago_a_imprimir,
-                            total_cajas=n_total_cajas  # <--- Enviando el parámetro de cajas a la impresión
+                            total_cajas=n_total_cajas 
                         )
                         components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
                     
                     st.write("")
                     
-                    # --- SELECTOR Y BOTÓN DE ETIQUETAS PDF ---
                     if fol_sel_texto and datos_fol is not None:
                         cant_etiquetas_sel = n_total_cajas 
-                        
                         transporte_etq = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", datos_fol.get("PAQUETERIA", "TRES GUERRAS"))
                         
                         pdf_etq_bytes = generar_etiquetas_limpias(
@@ -1417,64 +1332,31 @@ def main():
                             transporte_val=transporte_etq
                         )
                         
-                        st.markdown("""
-                            <style>
-                            div.stDownloadButton > button {
-                                background-color: #263238 !important;
-                                color: #FFFFFF !important;
-                                border: 1px solid #44555A !important;
-                                width: 100% !important;
-                                border-radius: 4px !important;
-                                font-weight: 400 !important;
-                                transition: all 0.3s ease-in-out !important;
-                            }
-                            div.stDownloadButton > button:hover {
-                                background-color: #00A3A3 !important;
-                                border-color: #00A3A3 !important;
-                                color: #FFFFFF !important;
-                                box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
-                            }
-                            </style>
-                        """, unsafe_allow_html=True)
-                
                         st.download_button(
-                            label=":material/save: DESCARGAR ETIQUETA PDF",
+                            label="DESCARGAR ETIQUETA PDF",
                             data=pdf_etq_bytes,
                             file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
                             mime="application/pdf",
                             use_container_width=True
                         )
-                                                                
         
         with t2:
-            # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
-            # --- BLOQUE DE FILTRADO POR MES (DETECTOR DE FORMATO MIXTO) ---
             if not df_actual.empty:
                 st.write("")
-                
-                # 1. Limpieza inicial
                 df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip()
-            
-                # 2. INTENTO 1: Formato Año-Mes-Día (Lo nuevo: 2026-03-20)
                 df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], format='%Y-%m-%d', errors='coerce')
-            
-                # 3. INTENTO 2: Si falló, buscar formato Día/Mes/Año (Lo viejo: 18/03/2026)
-                # El .fillna() solo llena las que el paso anterior no pudo convertir
                 df_actual['FECHA_DT'] = df_actual['FECHA_DT'].fillna(
                     pd.to_datetime(df_actual['FECHA'], dayfirst=True, errors='coerce')
                 )
-            
-                # 4. Generar el filtro de mes
                 df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
             
-                # --- EL RESTO DE TU LÓGICA DE SELECTOR ---
                 meses_lista = sorted([m for m in df_actual['MES_FILTRO'].unique() if m != "SIN FECHA"], reverse=True)
                 if "SIN FECHA" in df_actual['MES_FILTRO'].values:
                     meses_lista.append("SIN FECHA")
             
                 col_f1, col_f2 = st.columns([1.5, 2.5])
                 mes_sel = col_f1.selectbox(
-                    ":material/calendar_month: FILTRAR PERIODO", 
+                    "FILTRAR PERIODO", 
                     ["MOSTRAR TODO"] + meses_lista
                 )
             
@@ -1482,20 +1364,15 @@ def main():
                     df_render = df_actual[df_actual['MES_FILTRO'] == mes_sel].copy()
                 else:
                     df_render = df_actual.copy()
-                
-                
             
-                # 1. Cálculos de lógica (Sobre el DF filtrado amor)
                 t_prod = df_render["COSTO_TOTAL"].sum()
                 t_flete = df_render["COSTO_GUIA"].sum()
                 filas_html = ""
                 tarjetas_html = ""
                 
-                # Limpieza y orden descendente
                 df_render = df_render.fillna(0)
                 df_render = df_render.sort_values(by="FOLIO", ascending=False)
                 
-                # --- GENERACIÓN DE CONTENIDO (TU DISEÑO IDENTICO) ---
                 for _, r in df_render.iterrows():
                     detalle_p = ""
                     for p in precios.keys():
@@ -1503,15 +1380,12 @@ def main():
                         if cant > 0: 
                             detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
                     
-                    # --- NUEVO: LÓGICA DE ETIQUETA VISUAL ---
                     estatus_bd = str(r.get('ESTATUS', 'NO SURTIDO')).upper()
                     if estatus_bd == "DESPACHADO":
                         badge_html = "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 8px; border-radius:12px; font-size:9px; font-weight:800; letter-spacing:1px; margin-top:5px;'>✓ DESPACHADO</div>"
                     else:
                         badge_html = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 8px; border-radius:12px; font-size:9px; font-weight:800; letter-spacing:1px; margin-top:5px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>"
-                    # ----------------------------------------
                     
-                    # Tu HTML de FILAS para el reporte de impresión
                     filas_html += f"""
                     <tr style="page-break-inside: avoid;">
                         <td style='border:1px solid black; padding:6px; text-align:center; font-size:10px; width:7%;'>{r['FOLIO']}</td>
@@ -1534,14 +1408,13 @@ def main():
                         </td>
                     </tr>"""
 
-                    # Tu HTML de TARJETAS visuales
                     tarjetas_html += f"""
                     <div class="card-reporte" style="padding: 20px 30px; margin-bottom: 15px;">
                         <div class="col-folio" style="flex: 1;">
                             <div class="label-mini">FOLIO</div>
                             <div class="val-folio" style="margin-bottom: 5px;">#{r['FOLIO']}</div>
                             <div class="val-sub">{r['FECHA']}</div>
-                            {badge_html} <!-- <--- SE INYECTA LA ETIQUETA AQUÍ -->
+                            {badge_html}
                         </div>
                         <div class="col-info" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
                             <div class="label-mini">SOLICITANTE / DESTINO</div>
@@ -1560,7 +1433,6 @@ def main():
                         </div>
                     </div>"""
 
-                # --- VISOR (TU CSS IDENTICO) ---
                 st.markdown(f"""
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                         <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>VISTA: {mes_sel}</p>
@@ -1590,7 +1462,6 @@ def main():
                 </div>"""
                 components.html(html_final, height=520, scrolling=False)
 
-                # Banner de Totales (RECALCULADO)
                 st.markdown(f"""
                     <div style="background:#263238; border-top: 4px solid #00FFAA; border-radius: 0 0 12px 12px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                         <div style="color:rgba(255,255,255,0.6); font-size:12px;">PRODUCTOS: <span style="color:white; font-weight:bold;">${t_prod:,.2f}</span></div>
@@ -1599,22 +1470,18 @@ def main():
                     </div>
                 """, unsafe_allow_html=True)
 
-                # --- BOTONES DE ACCIÓN ---
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    # Versión corregida en una sola línea con los textos exactos de tus fotos
                     form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;width:100% !important;font-family:sans-serif;}} .no-print{{display:none;}}}} table{{width:100% !important;border-collapse:collapse;margin-top:15px;table-layout:fixed;}} th{{background:#eee !important;border:1px solid black;padding:8px;font-size:11px;-webkit-print-color-adjust:exact;}} td{{border:1px solid black;padding:6px;font-size:10px;vertical-align:top;word-wrap:break-word;}}</style></head><body><div style='display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid black;padding-bottom:10px;'><div><h1 style='margin:0;font-size:18px;font-weight:900;'>Jabones y Productos Especializados</h1><p style='margin:0;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;'>distribucion y Logistica 2026</p></div><div style='text-align:right;'><h2 style='margin:0;font-size:16px;text-decoration:underline;'>Reporte de Envio de Muestras</h2><p style='margin:5px 0 0 0;font-size:12px;'><b>GENERADO: {date.today().strftime('%d/%m/%Y')}</b></p></div></div><table><thead><tr><th style='width:7%;'>FOLIO</th><th style='width:15%;'>SOLICITANTE</th><th style='width:25%;'>DESTINO / HOTEL</th><th style='width:33%;'>DETALLE DE PRODUCTOS</th><th style='width:10%;'>COSTO PROD.</th><th style='width:10%;'>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:2px solid black;padding-top:10px;font-family:monospace;'><p style='margin:2px 0;'>TOTAL PRODUCTOS: <b>${t_prod:,.2f}</b></p><p style='margin:2px 0;'>TOTAL FLETES: <b>${t_flete:,.2f}</b></p><h3 style='margin:8px 0;font-size:20px;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
-                    if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
+                    if st.button("IMPRIMIR REPORTE", type="primary", use_container_width=True):
                         components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
                 with c2:
-                    output = BytesIO()
+                    output = io.BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                        # Descargamos solo lo filtrado
                         df_render.drop(columns=['FECHA_DT', 'MES_FILTRO']).to_excel(writer, index=False)
-                    st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
+                    st.download_button(f"EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
                 with c3:
-                    if st.button(":material/update: ACTUALIZAR", use_container_width=True): st.rerun()
-
+                    if st.button("ACTUALIZAR", use_container_width=True): st.rerun()
             else:
                 st.info("No hay registros todavía.")
 
@@ -1648,7 +1515,6 @@ def main():
             if df_actual.empty:
                 st.warning("No hay registros en la matriz de muestras para editar.")
             else:
-                # Selector para buscar el folio a editar
                 df_sorted_edit = df_actual.sort_values(by="FOLIO", ascending=False)
                 opciones_edit = [f"Folio #{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']} ({r['FECHA']})" for _, r in df_sorted_edit.iterrows()]
                 
@@ -1661,7 +1527,6 @@ def main():
                 )
         
                 if folio_a_editar:
-                    # Extraer el número de folio seleccionado
                     num_folio_sel = int(folio_a_editar.split(" - ")[0].replace("Folio #", ""))
                     idx_fila = df_actual.index[df_actual['FOLIO'] == num_folio_sel].tolist()[0]
                     registro_sel = df_actual.loc[idx_fila]
@@ -1669,7 +1534,6 @@ def main():
                     st.markdown("---")
                     st.subheader(f"Editando: JYP-{num_folio_sel}")
         
-                    # Formulario de edición dividido en columnas
                     with st.form(key=f"form_edicion_{num_folio_sel}"):
                         col_e1, col_e2, col_e3 = st.columns(3)
                         
@@ -1694,19 +1558,17 @@ def main():
                         st.markdown("##### 📦 Modificar Cantidades de Productos")
                         st.write("Ajusta las piezas de los productos incluidos en este folio:")
         
-                        # Diccionario temporal para capturar las nuevas cantidades de los productos
                         nuevas_cantidades = {}
                         cols_prods = st.columns(3)
                         
                         keys_precios = list(precios.keys())
                         for i, prod in enumerate(keys_precios):
-                            # Protección robusta contra valores nulos, vacíos o NaN
                             val_bruto = registro_sel.get(prod, 0)
                             try:
                                 cant_actual = int(val_bruto) if pd.notna(val_bruto) and str(val_bruto).strip() != "" else 0
                             except (ValueError, TypeError):
                                 cant_actual = 0
-            
+        
                             col_target = cols_prods[i % 3]
                             with col_target:
                                 nuevas_cantidades[prod] = st.number_input(
@@ -1721,18 +1583,15 @@ def main():
         
                         st.markdown("---")
                         
-                        # Botones de acción dentro del formulario
                         col_btn_1, col_btn_2 = st.columns([2, 1])
                         
                         guardar_cambios = col_btn_1.form_submit_button("GUARDAR CAMBIOS EN ESTE FOLIO", use_container_width=True)
                         eliminar_registro = col_btn_2.form_submit_button("ELIMINAR ESTE FOLIO", use_container_width=True)
         
                         if guardar_cambios:
-                            # Recalcular totales
                             total_cants = sum(nuevas_cantidades.values())
                             total_cost_p = sum(qty * precios.get(p_key, 0) for p_key, qty in nuevas_cantidades.items())
         
-                            # Actualizar DataFrame principal
                             df_actual.at[idx_fila, "NOMBRE DEL HOTEL"] = nuevo_hotel
                             df_actual.at[idx_fila, "SOLICITO"] = nuevo_solicito
                             df_actual.at[idx_fila, "ESTATUS"] = nuevo_estatus
@@ -1745,11 +1604,9 @@ def main():
                             df_actual.at[idx_fila, "COSTO_TOTAL"] = round(total_cost_p, 2)
                             df_actual.at[idx_fila, "COMENTARIOS"] = nuevo_comentario
         
-                            # Actualizar columnas de productos
                             for p_key, qty in nuevas_cantidades.items():
                                 df_actual.at[idx_fila, p_key] = qty
         
-                            # Subir cambios a GitHub
                             if subir_a_github(df_actual, sha_actual, f"Edicion total Folio JYP-{num_folio_sel}"):
                                 st.success(f"¡Folio JYP-{num_folio_sel} actualizado y sincronizado correctamente!")
                                 time.sleep(1)
@@ -1758,7 +1615,6 @@ def main():
                                 st.error("Error al sincronizar con GitHub. Verifica tus credenciales.")
         
                         if eliminar_registro:
-                            # Eliminar la fila del DataFrame
                             df_actual = df_actual.drop(idx_fila).reset_index(drop=True)
                             
                             if subir_a_github(df_actual, sha_actual, f"Eliminacion Folio JYP-{num_folio_sel}"):
@@ -1767,11 +1623,7 @@ def main():
                                 st.rerun()
                             else:
                                 st.error("Error al eliminar el registro en GitHub.")
-
-            
-
     else:
-        # --- DISEÑO PRO: FRANJA ULTRA DELGADA EN UNA SOLA LÍNEA ---
         html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:8px solid #F7C300; padding:18px 40px; border-radius:10px; margin:15px 0; box-shadow:0 6px 20px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:25px;"><span style="font-size:28px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:900; font-size:14px; letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:4px;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:14px; font-weight:500; opacity:0.9;">El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:6px 16px; border:1px solid rgba(247,195,0,0.5); background:rgba(247,195,0,0.1); border-radius:6px; font-size:11px; color:#F7C300; font-weight:900; letter-spacing:1px;">ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
         st.markdown(html_restringido, unsafe_allow_html=True)
 
@@ -1779,7 +1631,7 @@ def main():
 if __name__ == "__main__":
     main()
 
-# ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+# ── FOOTER FIJO ────────────────────────
 st.markdown(
     f"""
     <div class="footer">
