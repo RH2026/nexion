@@ -515,12 +515,10 @@ with header_zone:
                     st.switch_page("pages/accesscontrol.py")
         
             st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
-               if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
-                    for key in list(st.session_state.keys()):
-                        del st.session_state[key]
-                    st.session_state.autenticado = False
-                    st.session_state.splash_completado = False
-                    st.switch_page("pages/log.py")
+            if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+                st.rerun()
 
     # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA ──────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
