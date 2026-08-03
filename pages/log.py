@@ -37,19 +37,19 @@ def asegurar_matriz_permisos_en_github():
     
     if r.status_code != 200:
         df_default = pd.DataFrame([
-            {"USUARIO": "Rigoberto", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": True, "ENFOQUE": True},
-            {"USUARIO": "AGomez", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "JMoreno", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True},
-            {"USUARIO": "Cynthia", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "Brenda", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "Fialko", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "Atencion3G", "DASHBOARD": False, "SEGUIMIENTO": False, "ENTREGAS": False, "REPORTES": False, "FORMATOS": False, "CENTRO DE DATOS": False, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "Claudia", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "Ruth", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "Carlos", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True},
-            {"USUARIO": "Sandra", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "ASanchez", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False},
-            {"USUARIO": "MarthaC", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False}
+            {"USUARIO": "Rigoberto", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": True, "ENFOQUE": True, "CENTRO DE CONTROL": True},
+            {"USUARIO": "AGomez", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "JMoreno", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True, "CENTRO DE CONTROL": False},
+            {"USUARIO": "Cynthia", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "Brenda", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "Fialko", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "Atencion3G", "DASHBOARD": False, "SEGUIMIENTO": False, "ENTREGAS": False, "REPORTES": False, "FORMATOS": False, "CENTRO DE DATOS": False, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "Claudia", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "Ruth", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "Carlos", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": True, "CENTRO DE CONTROL": False},
+            {"USUARIO": "Sandra", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "ASanchez", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False},
+            {"USUARIO": "MarthaC", "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "CENTRO DE CONTROL": False}
         ])
         csv_string = df_default.to_csv(index=False)
         payload = {
@@ -91,7 +91,6 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* --- OCULTAR ELEMENTOS DE STREAMLIT Y GITHUB --- */
 header, footer, [data-testid="stHeader"] {{
     visibility: hidden !important;
     display: none !important;
@@ -113,7 +112,6 @@ header, footer, [data-testid="stHeader"] {{
     display: none !important;
 }}
 
-/* APP BASE */
 html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
     color: {vars_css['text']} !important;
@@ -126,7 +124,6 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM */
 div.stButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -229,17 +226,24 @@ def login_screen():
                     st.session_state.genero_usuario = generos.get(user_input, "M")
                     
                     registrar_acceso(user_input)
-                    
-                    st.success(f"¡BIENVENIDO!, {nombre_real.upper()}")
-                    time.sleep(1)
-                    
-                    destino = st.session_state.get("pagina_destino", "pages/asignacionfletera.py")
-                    if "pagina_destino" in st.session_state:
-                        del st.session_state["pagina_destino"]
-                        
-                    st.switch_page(destino)
+                    st.session_state.login_exitoso = True
                 else:
+                    st.session_state.login_exitoso = False
                     st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
+
+        # Manejamos el cambio de página FUERA del formulario para evitar el StreamlitAPIException
+        if st.session_state.get("login_exitoso", False):
+            st.success(f"¡BIENVENIDO!, {st.session_state.get('nombre_completo', '').upper()}")
+            time.sleep(0.8)
+            st.session_state.login_exitoso = False
+            
+            # Definimos ruta segura a la página de destino
+            destino = st.session_state.get("pagina_destino", "pages/asignacionfletera.py")
+            if "pagina_destino" in st.session_state:
+                del st.session_state["pagina_destino"]
+                
+            st.switch_page(destino)
+
 
 # FLUJO DE CONTROL: SPLASH -> LOGIN -> MULTIPÁGINA
 if not st.session_state.get("splash_completado", False):
@@ -260,7 +264,7 @@ if not st.session_state.get("splash_completado", False):
             """
         with p.container():
             st.markdown(splash_html, unsafe_allow_html=True)
-            time.sleep(0.5)
+            time.sleep(0.4)
     p.empty()
     st.session_state.splash_completado = True
     st.rerun()
