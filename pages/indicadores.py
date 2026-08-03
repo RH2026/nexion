@@ -613,12 +613,11 @@ def main():
         df_display = df.copy()
         for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
             if col in df_display.columns:
-                # Convertimos a fecha y luego a texto con formato día-mes-año
                 df_display[col] = pd.to_datetime(df_display[col], errors='coerce').dt.strftime('%d-%m-%Y').fillna('')
     
-        # Llenamos vacíos y convertimos a diccionario
         data = df_display.fillna('').to_dict('records')
         
+        # Definimos html_content aquí adentro de forma local para evitar el NameError
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -649,7 +648,6 @@ def main():
                 .valor {{ font-size: 13px; font-weight: 700; color: #FFFFFF; }}
                 .highlight {{ color: #00FFAA; font-family: monospace; }}
                 
-                /* Scrollbar */
                 ::-webkit-scrollbar {{ width: 8px; }}
                 ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); }}
                 ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
