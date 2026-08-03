@@ -414,7 +414,7 @@ with header_zone:
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
-                    st.switch_page("pages/indicadores.py"))
+                    st.switch_page("pages/indicadores.py")
         
             if permisos.get("SEGUIMIENTO", False):
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
