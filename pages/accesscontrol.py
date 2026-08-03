@@ -199,6 +199,8 @@ if usuario_actual_val != "RIGOBERTO":
     col_regresar, col_vacia = st.columns([1.5, 4])
     with col_regresar:
         if st.button("REGRESAR AL PANEL PRINCIPAL", use_container_width=True):
+            st.session_state.autenticado = False
+            st.session_state.login_exitoso = False
             st.switch_page("pages/log.py")
             
     st.stop()
