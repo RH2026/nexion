@@ -502,7 +502,7 @@ with header_zone:
                     if st.button("» MATRIZ PERMISOS", use_container_width=True, key="pop_ctrl_perm"):
                         st.session_state.menu_main = "CENTRO DE CONTROL"
                         st.session_state.menu_sub = "PERMISOS"
-                        st.switch_page("pages/centro_de_control.py")
+                        st.switch_page("accesscontrol.py")
 
             st.markdown(
                 "<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True
