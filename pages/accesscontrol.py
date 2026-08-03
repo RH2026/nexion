@@ -106,19 +106,19 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/* --- ESPACIADO EQUILIBRADO EN EL POPOVER --- */
+/* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
 div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
-    gap: 0.45rem !important;
+    gap: 0.35rem !important;
 }}
 
 div[data-testid="stPopoverBody"] .stButton {{
-    margin-bottom: 0rem !important;
+    margin-bottom: 4px !important;
 }}
 
 div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     border: none !important;
     background: transparent !important;
-    margin-bottom: 0rem !important;
+    margin-bottom: 4px !important;
     > div {{
         padding: 0 !important;
     }}
@@ -503,7 +503,7 @@ with header_zone:
         
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #00D4FF;'>
+                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #00D4FF;'>
                     <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
                     <p style='color:{vars_css['text']}; font-size:13px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                 </div>
