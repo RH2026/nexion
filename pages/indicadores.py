@@ -609,7 +609,6 @@ def main():
             return None
     
     def render_listado_operativo_premium(df):
-        # --- FORMATEO DE FECHAS ANTES DE CONVERTIR ---
         df_display = df.copy()
         for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
             if col in df_display.columns:
@@ -617,92 +616,41 @@ def main():
     
         data = df_display.fillna('').to_dict('records')
         
-        # Generamos las filas de forma limpia para evitar que Python colapse el f-string
-        filas_generadas = []
         for item in data:
-            tiene_g = bool(item.get('NÚMERO DE GUÍA'))
-            cls_g = "text-emerald-400" if tiene_g else "text-orange-400"
-            val_g = str(item.get('NÚMERO DE GUÍA', 'PENDIENTE'))
+            pedido = str(item.get('NÚMERO DE PEDIDO', ''))
+            f_envio = str(item.get('FECHA DE ENVÍO', ''))
+            cliente = str(item.get('NOMBRE DEL CLIENTE', ''))[:40]
+            destino = str(item.get('DESTINO', ''))
+            fletera = str(item.get('FLETERA', ''))
+            guia = str(item.get('NÚMERO DE GUÍA', ''))
+            entrega = str(item.get('FECHA DE ENTREGA REAL', ''))
+            promesa = str(item.get('PROMESA DE ENTREGA', ''))
             
-            tiene_e = bool(item.get('FECHA DE ENTREGA REAL'))
-            cls_e = "text-emerald-400" if tiene_e else "text-orange-400"
-            val_e = str(item.get('FECHA DE ENTREGA REAL', 'EN TRÁNSITO'))
-            
-            fila = f"""
-            <div class="row-logistica">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                    <div>
-                        <div class="label-mini">Pedido / Factura</div>
-                        <div class="valor highlight text-lg">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
-                        <div class="text-[10px] text-blue-300 opacity-80">Envío: {str(item.get('FECHA DE ENVÍO', ''))}</div>
-                    </div>
-                    
-                    <div>
-                        <div class="label-mini">Cliente / Destino</div>
-                        <div class="valor truncate text-xs uppercase">{str(item.get('NOMBRE DEL CLIENTE', ''))[:40]}</div>
-                        <div class="text-[10px] text-white/50 italic">{str(item.get('DESTINO', ''))}</div>
-                    </div>
-
-                    <div class="border-x border-white/5 px-4">
-                        <div class="label-mini">Transporte y Guía</div>
-                        <div class="valor text-[11px]">{str(item.get('FLETERA', ''))}</div>
-                        <div class="text-[10px] {cls_g}">{val_g}</div>
-                    </div>
-
-                    <div class="text-right">
-                        <div class="label-mini">Estatus Entrega</div>
-                        <div class="valor text-sm {cls_e}">{val_e}</div>
-                        <div class="text-[9px] text-white/40 uppercase">Promesa: {str(item.get('PROMESA DE ENTREGA', ''))}</div>
-                    </div>
-                </div>
-            </div>
-            """
-            filas_generadas.append(fila)
-
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <style>
-                body {{ background-color: transparent; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; }}
-                .row-logistica {{
-                    background-color: #263238;
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 12px;
-                    margin-bottom: 10px;
-                    padding: 16px;
-                    transition: all 0.3s ease;
-                }}
-                .row-logistica:hover {{
-                    border-color: #00FFAA;
-                    transform: translateX(5px);
-                    background-color: #2d3b42;
-                }}
-                .label-mini {{
-                    font-size: 8px;
-                    text-transform: uppercase;
-                    color: rgba(255,255,255,0.5);
-                    font-weight: 800;
-                    letter-spacing: 1px;
-                }}
-                .valor {{ font-size: 13px; font-weight: 700; color: #FFFFFF; }}
-                .highlight {{ color: #00FFAA; font-family: monospace; }}
+            # Contenedor visual nativo limpio y ordenado
+            with st.container(border=True):
+                col1, col2, col3, col4 = st.columns([1.2, 2, 1.5, 1.2])
                 
-                ::-webkit-scrollbar {{ width: 8px; }}
-                ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); }}
-                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
-                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
-            </style>
-        </head>
-        <body>
-            <div style="padding: 10px;">
-                {"".join(filas_generadas)}
-            </div>
-        </body>
-        </html>
-        """
-        return components.html(html_content, height=600, scrolling=True)
+                with col1:
+                    st.markdown(f"<span style='font-size:9px; color:rgba(255,255,255,0.5); font-weight:800;'>PEDIDO / FACTURA</span>", unsafe_allow_html=True)
+                    st.markdown(f"<b style='color:#00FFAA; font-size:16px;'>{pedido}</b>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='font-size:10px; color:#93c5fd;'>Envío: {f_envio}</span>", unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"<span style='font-size:9px; color:rgba(255,255,255,0.5); font-weight:800;'>CLIENTE / DESTINO</span>", unsafe_allow_html=True)
+                    st.markdown(f"<b style='font-size:12px; text-transform:uppercase;'>{cliente}</b>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='font-size:10px; color:rgba(255,255,255,0.6);'>{destino}</span>", unsafe_allow_html=True)
+                
+                with col3:
+                    st.markdown(f"<span style='font-size:9px; color:rgba(255,255,255,0.5); font-weight:800;'>TRANSPORTE Y GUÍA</span>", unsafe_allow_html=True)
+                    st.markdown(f"<b style='font-size:11px;'>{fletera}</b>", unsafe_allow_html=True)
+                    color_g = "color: #34d399;" if guia else "color: #fb923c;"
+                    st.markdown(f"<span style='font-size:10px; {color_g} font-weight:700;'>{guia if guia else 'PENDIENTE'}</span>", unsafe_allow_html=True)
+                
+                with col4:
+                    st.markdown(f"<span style='font-size:9px; color:rgba(255,255,255,0.5); font-weight:800;'>ESTATUS ENTREGA</span>", unsafe_allow_html=True)
+                    color_e = "color: #34d399;" if entrega else "color: #fb923c;"
+                    st.markdown(f"<b style='font-size:12px; {color_e}'>{entrega if entrega else 'EN TRÁNSITO'}</b>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='font-size:9px; color:rgba(255,255,255,0.4);'>Promesa: {promesa}</span>", unsafe_allow_html=True)
     
     # --- EJECUCIÓN DEL MÓDULO ---
     # --- EJECUCIÓN DEL MÓDULO ---
