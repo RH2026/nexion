@@ -609,7 +609,7 @@ def main():
             return None
     
     def render_listado_operativo_premium(df):
-    # --- FORMATEO DE FECHAS ANTES DE CONVERTIR ---
+        # --- FORMATEO DE FECHAS ANTES DE CONVERTIR ---
         df_display = df.copy()
         for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
             if col in df_display.columns:
@@ -617,7 +617,7 @@ def main():
     
         data = df_display.fillna('').to_dict('records')
         
-        # Construcción segura de la variable local para evitar NameError
+        # --- DEFINICIÓN DE html_content (EVITA EL NAMEERROR) ---
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -693,6 +693,7 @@ def main():
         </body>
         </html>
         """
+        
         return components.html(html_content, height=600, scrolling=True)
     
     # --- EJECUCIÓN DEL MÓDULO ---
