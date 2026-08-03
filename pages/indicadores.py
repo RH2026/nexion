@@ -384,17 +384,16 @@ with header_zone:
                 pass
 
             # 3. Búsqueda en Archivo T1 (AQUÍ ESTABA EL FALTANTE)
+            # 3. Búsqueda en Archivo T1.xlsx (Columnas OBSERVACION 1 y TALON)
             res_t1 = pd.DataFrame()
             try:
-                # Ajusta el nombre del archivo o ruta si es diferente (ej. "t1.csv" o URL de GitHub)
-                df_t1_temp = pd.read_csv("t1.csv") 
-                df_t1_temp.columns = df_t1_temp.columns.str.strip()
+                # Lee el archivo de Excel (asegúrate de tener 'openpyxl' instalado en tu entorno)
+                df_t1_temp = pd.read_excel("T1.xlsx") 
+                df_t1_temp.columns = df_t1_temp.columns.str.strip().str.upper()
                 
-                # Puedes listar aquí las columnas de T1 donde quieras buscar el folio
-                cols_t1 = [c for c in df_t1_temp.columns if c in ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "FOLIO", "NO CLIENTE", "NOMBRE DEL CLIENTE"]]
-                if not cols_t1: # Si no encuentra ninguna exacta, busca en todas las columnas del archivo T1
-                    cols_t1 = df_t1_temp.columns.tolist()
-                    
+                # Filtramos únicamente las columnas solicitadas que realmente existan en el archivo
+                cols_t1 = [c for c in ["OBSERVACION 1", "TALON"] if c in df_t1_temp.columns]
+                
                 if cols_t1:
                     mask_t1 = df_t1_temp[cols_t1].astype(str).apply(
                         lambda x: x.str.contains(query, case=False, na=False)
@@ -410,7 +409,7 @@ with header_zone:
                 st.session_state.resultado_busqueda = res_ops
             elif not res_t1.empty:
                 st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "T1"  # O puedes tratarlo como OPERACION si comparte estructura
+                st.session_state.tipo_resultado = "OPERACION"  # Lo mapeamos para que use la misma estructura de tarjeta
                 st.session_state.resultado_busqueda = res_t1
             elif not res_inv.empty:
                 st.session_state.busqueda_activa = True
