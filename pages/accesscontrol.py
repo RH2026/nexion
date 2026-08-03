@@ -86,7 +86,7 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM Y BOTONES DE DESCARGA */
+/* BOTONES SLIM Y BOTONES DE DESCARGA GENERALES */
 div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -104,6 +104,31 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
     border-color: #00A3A3 !important;
+}}
+
+/* ESTILOS ESPECÍFICOS MAESTROS PARA LOS BOTONES DEL POPOVER */
+/* 1. Botón ACCESS CONTROL: Azul perrón eléctrico */
+div[data-testid="stPopoverBody"] button:nth-last-child(2) {{
+    background-color: #0072ff !important;
+    color: #ffffff !important;
+    border: 1px solid #00c6ff !important;
+    box-shadow: 0 0 10px rgba(0, 114, 255, 0.4) !important;
+}}
+div[data-testid="stPopoverBody"] button:nth-last-child(2):hover {{
+    background-color: #005bb5 !important;
+    border-color: #0072ff !important;
+}}
+
+/* 2. Botón TERMINAR SESIÓN: Rojo oscuro rogo */
+div[data-testid="stPopoverBody"] button:nth-last-child(1) {{
+    background-color: #4a0e17 !important;
+    color: #ffcccc !important;
+    border: 1px solid #8b0000 !important;
+}}
+div[data-testid="stPopoverBody"] button:nth-last-child(1):hover {{
+    background-color: #660012 !important;
+    color: #ffffff !important;
+    border-color: #ff4d4d !important;
 }}
 
 /*FOOTER FIJO BLINDADO */
@@ -278,7 +303,6 @@ def asegurar_y_actualizar_matriz_en_github():
 asegurar_y_actualizar_matriz_en_github()
 
 def cargar_matriz_permisos():
-    # Si tenemos una versión en memoria guardada recientemente, la usamos al instante (CERO RETRASO)
     if "df_permisos_local" in st.session_state:
         return st.session_state["df_permisos_local"]
 
@@ -292,7 +316,6 @@ def cargar_matriz_permisos():
         return pd.DataFrame()
 
 def guardar_matriz_en_github(df_actualizado):
-    # Guardado instantáneo en memoria local del estado
     st.session_state["df_permisos_local"] = df_actualizado
 
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/permisos_usuarios.csv"
@@ -485,35 +508,6 @@ with header_zone:
                     return True
                 return permisos.get(clave, False)
         
-            # CSS personalizado y exclusivo para estos dos botones (sin tocar los demás)
-            st.markdown("""
-                <style>
-                /* Botón de Access Control: Azul perrón eléctrico */
-                button[key="pop_access_ctrl"], div[data-testid="stButton"] button[key="pop_access_ctrl"] {
-                    background-color: #0072ff !important;
-                    color: #ffffff !important;
-                    border: 1px solid #00c6ff !important;
-                    box-shadow: 0 0 10px rgba(0, 114, 255, 0.4) !important;
-                }
-                button[key="pop_access_ctrl"]:hover {
-                    background-color: #005bb5 !important;
-                    border-color: #0072ff !important;
-                }
-
-                /* Botón de Terminar Sesión: Rojo oscuro rogo */
-                button:has(div:contains("TERMINAR SESIÓN")), div.stButton > button:nth-last-child(1) {
-                    background-color: #4a0e17 !important;
-                    color: #ffcccc !important;
-                    border: 1px solid #8b0000 !important;
-                }
-                button:has(div:contains("TERMINAR SESIÓN")):hover, div.stButton > button:nth-last-child(1):hover {
-                    background-color: #660012 !important;
-                    color: #ffffff !important;
-                    border-color: #ff4d4d !important;
-                }
-                </style>
-            """, unsafe_allow_html=True)
-
             st.markdown(
                 f"""
                 <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
