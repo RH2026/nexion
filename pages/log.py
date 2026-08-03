@@ -363,4 +363,4 @@ elif not st.session_state.get("autenticado", False):
     login_screen()
 
 else:
-    st.switch_page("pages/asignacionfletera.py")
+    st.switch_page("pages/indicadores.py")
