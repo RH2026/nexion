@@ -798,39 +798,84 @@ def main():
 
         p = p.loc[:, ~p.columns.isna()]
         modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
-
+                    
+        # Ahora el editor debería funcionar sin errores
         p_editado = st.data_editor(
-            p,
-            use_container_width=True,
-            hide_index=True,
+            p, use_container_width=True, hide_index=True,
             column_config={
-                "RECOMENDACION": st.column_config.TextColumn(
-                    "FLETERA", disabled=not modo_edicion
-                ),
-                "COSTO": st.column_config.NumberColumn(
-                    "TARIFA", format="$%.2f", disabled=not modo_edicion
-                ),
+                "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
+                "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
             },
-            key="editor_final_github",
+            key="editor_final_github"
         )
-
-        if st.button(
-            "FIJAR CAMBIOS",
-            use_container_width=True,
-            type="primary",
-        ):
+        
+        # Botón 1: Fijar Cambios (Arriba)
+        if st.button(":material/save_as: FIJAR CAMBIOS", use_container_width=True, type="primary"):
             st.session_state.df_analisis = p_editado
             st.toast("Cambios guardados", icon="✅")
-
+            
+        st.write("") # Respiro visual
+        
+        # Botón 2: Descargar Análisis (Abajo)
         output_xlsx = io.BytesIO()
-        p_editado.to_excel(output_xlsx, index=False, engine="openpyxl")
+        p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
         st.download_button(
-            label="DESCARGAR ANÁLISIS",
-            data=output_xlsx.getvalue(),
-            file_name="Analisis_Final.xlsx",
+            label=":material/download: DESCARGAR ANÁLISIS", 
+            data=output_xlsx.getvalue(), 
+            file_name="Analisis_Final.xlsx", 
             use_container_width=True,
-            type="primary",
+            type="primary" 
         )
+        
+        with st.expander("SISTEMA DE SELLADO", expanded=False):
+            cx, cy = st.columns(2)
+            ax = cx.slider("X", 0, 612, 399)
+            ay = cy.slider("Y", 0, 792, 760)
+            
+            st.markdown("###### :material/print: Opciones de Impresión Física")
+            s1, s2 = st.columns(2)
+            
+            with s1:
+                sellos_normal = p_editado['RECOMENDACION'].tolist()
+                st.download_button(
+                    label=":material/print: GENERAR SELLOS NORMAL", 
+                    data=generar_sellos_fisicos(sellos_normal, ax, ay), 
+                    file_name="Sellos_Normales.pdf", 
+                    use_container_width=True,
+                    type="primary" 
+                )
+                
+            with s2:
+                sellos_invertidos = p_editado['RECOMENDACION'].tolist()[::-1]
+                st.download_button(
+                    label=":material/swap_vert: GENERAR SELLOS MODO INVERSO", 
+                    data=generar_sellos_fisicos(sellos_invertidos, ax, ay), 
+                    file_name="Sellos_Inversos.pdf", 
+                    use_container_width=True,
+                    type="primary"
+                )
+                    
+            st.markdown("---")
+            st.markdown("###### :material/devices: Opciones de Sellado Digital")
+            pdfs = st.file_uploader(":material/picture_as_pdf: Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+            
+            if pdfs:
+                if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
+                    mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
+                    z_io = io.BytesIO()
+                    with zipfile.ZipFile(z_io, "a") as zf:
+                        for pdf in pdfs:
+                            f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
+                            if f_id: 
+                                zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
+                    
+                    st.download_button(
+                        label=":material/folder_zip: DESCARGAR ZIP", 
+                        data=z_io.getvalue(), 
+                        file_name="Sellado.zip", 
+                        use_container_width=True,
+                        type="primary"
+                    )
 
 
 if __name__ == "__main__":
