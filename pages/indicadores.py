@@ -15,6 +15,7 @@ from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit.components.v1 as components
 import streamlit as st
+import pytz
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
@@ -408,13 +409,12 @@ with header_zone:
                 unsafe_allow_html=True,
             )
         
-            # MÓDULOS Y SUBMENÚS CONDICIONADOS POR PERMISOS DE GITHUB
             if permisos.get("DASHBOARD", False):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
-                    st.rerun()
+                    st.switch_page("pages/indicadores.py")
         
             if permisos.get("SEGUIMIENTO", False):
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
@@ -835,8 +835,6 @@ def main():
             df_raw = cargar_datos()
             
             if df_raw is not None:
-                import pytz
-                from datetime import datetime
                 tz_gdl = pytz.timezone('America/Mexico_City')
                 hoy_gdl = datetime.now(tz_gdl).date()
                 hoy_dt = pd.Timestamp(hoy_gdl)
@@ -859,6 +857,18 @@ def main():
                 en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)
+
+                # --- RENDERIZADO DE LAS DONITAS EN COLUMNAS ---
+                st.markdown("<br>", unsafe_allow_html=True)
+                col_k1, col_k2, col_k3, col_k4 = st.columns(4)
+                with col_k1:
+                    render_kpi(total_p, total_p, "TOTAL PEDIDOS", "#38bdf8")
+                with col_k2:
+                    render_kpi(entregados, total_p, "ENTREGADOS", "#00FFAA")
+                with col_k3:
+                    render_kpi(en_tiempo, total_t if total_t > 0 else 1, "EN TIEMPO", "#a855f7")
+                with col_k4:
+                    render_kpi(retrasados, total_t if total_t > 0 else 1, "RETRASADOS", "#ff4b4b")
 
 
 if __name__ == "__main__":
