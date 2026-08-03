@@ -103,6 +103,24 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
+/* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
+div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
+    gap: 0.45rem !important;
+}}
+
+div[data-testid="stPopoverBody"] .stButton {{
+    margin-bottom: 0rem !important;
+}}
+
+div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
+    border: none !important;
+    background: transparent !important;
+    margin-bottom: 0rem !important;
+    > div {{
+        padding: 0 !important;
+    }}
+}}
+
 /*FOOTER FIJO BLINDADO */
 .footer {{ 
     position: fixed !important; 
@@ -141,13 +159,13 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         
     if not permisos.get(modulo.upper(), False):
         st.error(f"ACCESO DENEGADO: No tienes permisos para acceder al módulo {modulo}.")
-        if st.button("REGRESAR AL INICIO"):
+        if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo_denegado"):
             st.switch_page("pages/entregas_agc.py")
         st.stop()
         
     if submodulo and not permisos.get(submodulo.upper(), False):
         st.error(f"ACCESO DENEGADO: No tienes permisos para acceder a la sección {submodulo}.")
-        if st.button("REGRESAR AL INICIO"):
+        if st.button("REGRESAR AL INICIO", key="btn_regresar_sub_denegado"):
             st.switch_page("pages/entregas_agc.py")
         st.stop()
 
@@ -326,16 +344,11 @@ with header_zone:
         
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
+                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #00D4FF;'>
                     <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
-                    <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
+                    <p style='color:{vars_css['text']}; font-size:13px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                 </div>
             """,
-                unsafe_allow_html=True,
-            )
-        
-            st.markdown(
-                "<p style='color:#f0f0f0; font-size:10px; font-weight:400; text-align:center; margin:10px 0; letter-spacing:1px;'>MENÚ PRINCIPAL</p>",
                 unsafe_allow_html=True,
             )
         
@@ -352,7 +365,7 @@ with header_zone:
                     opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
                             st.session_state.menu_main = "SEGUIMIENTO"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -364,7 +377,7 @@ with header_zone:
                     opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
                     for s in opciones_ent:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
                             st.session_state.menu_main = "ENTREGAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -379,7 +392,7 @@ with header_zone:
                     opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False)]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}2"):
                             st.session_state.menu_main = "REPORTES"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -394,7 +407,7 @@ with header_zone:
                     opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False)]
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_for_{s}2"):
                             st.session_state.menu_main = "FORMATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -406,7 +419,7 @@ with header_zone:
                     opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}2"):
                             st.session_state.menu_main = "CENTRO DE DATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -421,7 +434,7 @@ with header_zone:
                     opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False)]
                     for s in opciones_fin:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_fin_{s}2"):
                             st.session_state.menu_main = "FINANZAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -433,18 +446,18 @@ with header_zone:
                     opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False)]
                     for s in opciones_enf:
                         label = f"» {s}" if st.session_state.get("menu_sub") == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}2"):
                             st.session_state.menu_main = "ENFOQUE"
                             st.session_state.menu_sub = s
                             st.rerun()
         
             if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
-                if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl"):
+                if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl2"):
                     st.session_state.menu_main = "ACCESS CONTROL"
                     st.session_state.menu_sub = "SETTINGS"
                     st.switch_page("pages/accesscontrol.py")
         
-            st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
             if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
@@ -684,7 +697,7 @@ def main():
         headers = {"Authorization": f"token {GITHUB_TOKEN}"}
         csv_string = df.to_csv(index=False)
         payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
-        return requests.put(url, json=payload, headers=headers).status_code == 200                         
+        return requests.put(url, json=payload, headers=headers).status_code == 200                       
 
     def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago, total_cajas=1):
         filas_prod = ""
@@ -1143,7 +1156,6 @@ def main():
     st.divider()
     st.write("")
     
-    # Validación con permisos robustos y rol de Rigoberto
     usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
     permisos_usuario = st.session_state.get('permisos', {})
     es_admin_general = usuario_logeado.upper() == "RIGOBERTO" or permisos_usuario.get("ACCESS CONTROL", False) or "LOGISTICA" in usuario_logeado.upper()
@@ -1468,15 +1480,15 @@ def main():
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;width:100% !important;font-family:sans-serif;}} .no-print{{display:none;}}}} table{{width:100% !important;border-collapse:collapse;margin-top:15px;table-layout:fixed;}} th{{background:#eee !important;border:1px solid black;padding:8px;font-size:11px;-webkit-print-color-adjust:exact;}} td{{border:1px solid black;padding:6px;font-size:10px;vertical-align:top;word-wrap:break-word;}}</style></head><body><div style='display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid black;padding-bottom:10px;'><div><h1 style='margin:0;font-size:18px;font-weight:900;'>Jabones y Productos Especializados</h1><p style='margin:0;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;'>distribucion y Logistica 2026</p></div><div style='text-align:right;'><h2 style='margin:0;font-size:16px;text-decoration:underline;'>Reporte de Envio de Muestras</h2><p style='margin:5px 0 0 0;font-size:12px;'><b>GENERADO: {date.today().strftime('%d/%m/%Y')}</b></p></div></div><table><thead><tr><th style='width:7%;'>FOLIO</th><th style='width:15%;'>SOLICITANTE</th><th style='width:25%;'>DESTINO / HOTEL</th><th style='width:33%;'>DETALLE DE PRODUCTOS</th><th style='width:10%;'>COSTO PROD.</th><th style='width:10%;'>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:2px solid black;padding-top:10px;font-family:monospace;'><p style='margin:2px 0;'>TOTAL PRODUCTOS: <b>${t_prod:,.2f}</b></p><p style='margin:2px 0;'>TOTAL FLETES: <b>${t_flete:,.2f}</b></p><h3 style='margin:8px 0;font-size:20px;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
-                    if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
+                    if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True, key="btn_imprimir_reporte_tab"):
                         components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
                 with c2:
                     output = io.BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                         df_render.drop(columns=['FECHA_DT', 'MES_FILTRO']).to_excel(writer, index=False)
-                    st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
+                    st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True, key="btn_download_excel_tab")
                 with c3:
-                    if st.button(":material/update: ACTUALIZAR", use_container_width=True): st.rerun()
+                    if st.button(":material/update: ACTUALIZAR", use_container_width=True, key="btn_actualizar_tab"): st.rerun()
             else:
                 st.info("No hay registros todavía.")
 
