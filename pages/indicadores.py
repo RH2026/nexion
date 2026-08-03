@@ -190,7 +190,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_m, col_vacia_m = st.columns([1.5, 4])
         with col_regresar_m:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
-                st.switch_page("pages/asignacionfletera.py")
+                st.switch_page("pages/indicadores.py")
         st.stop()
             
     if submodulo and not permisos.get(submodulo.upper(), False):
@@ -226,11 +226,11 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_s, col_vacia_s = st.columns([1.5, 4])
         with col_regresar_s:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo", use_container_width=True):
-                st.switch_page("pages/asignacionfletera.py")
+                st.switch_page("pages/indicadores.py")
         st.stop()
 
-# Blindaje de Módulo ENTREGAS y Submenú AGC
-verificar_permiso_pagina("ENTREGAS", "AGC")
+# Blindaje de Módulo DASHBOARD
+verificar_permiso_pagina("DASHBOARD")
 
 
 # ==========================================
