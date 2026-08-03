@@ -147,7 +147,7 @@ if usuario_actual_val != "RIGOBERTO":
 
 
 # ==========================================
-# 3. CONFIGURACIÓN GITHUB PARA PERMISOS (CONSTRUCTO MAESTRO)
+# 3. CONFIGURACIÓN GITHUB PARA PERMISOS (CON SHA BLINDADO)
 # ==========================================
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
@@ -158,7 +158,9 @@ def asegurar_y_actualizar_matriz_en_github():
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get(url, headers=headers)
     
-    # Matriz maestra completa con todos los submódulos detallados
+    if r.status_code == 200:
+        return # Si ya existe, no sobrescribimos por defecto para respetar tus cambios guardados
+
     df_default = pd.DataFrame([
         {
             "USUARIO": "Rigoberto", 
@@ -268,19 +270,14 @@ def asegurar_y_actualizar_matriz_en_github():
 
     csv_string = df_default.to_csv(index=False)
     payload = {
-        "message": "Actualización forzada de matriz completa con submenús detallados",
+        "message": "Inicialización de matriz completa con submenús",
         "content": base64.b64encode(csv_string.encode()).decode()
     }
-    
-    if r.status_code == 200:
-        payload["sha"] = r.json().get("sha")
-        
     requests.put(url, json=payload, headers=headers)
 
-# Forzar actualización en GitHub al iniciar para asegurarnos de que existan las columnas
 asegurar_y_actualizar_matriz_en_github()
 
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=2)
 def cargar_matriz_permisos():
     url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/permisos_usuarios.csv?nocache={int(time.time())}"
     try:
@@ -294,17 +291,27 @@ def guardar_matriz_en_github(df_actualizado):
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/permisos_usuarios.csv"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     
+    # 1. Obtener el SHA actual del archivo en GitHub obligatoriamente
+    r_get = requests.get(url, headers=headers)
+    sha = ""
+    if r_get.status_code == 200:
+        sha = r_get.json().get("sha", "")
+
     csv_string = df_actualizado.to_csv(index=False)
     payload = {
         "message": "Actualización de matriz de permisos desde Access Control",
         "content": base64.b64encode(csv_string.encode()).decode()
     }
     
-    r_get = requests.get(url, headers=headers)
-    if r_get.status_code == 200:
-        payload["sha"] = r_get.json().get("sha")
+    if sha:
+        payload["sha"] = sha
         
     res = requests.put(url, json=payload, headers=headers)
+    
+    # Imprimir respuesta en consola/terminal si falla para depuración
+    if res.status_code not in [200, 201]:
+        print(f"Error GitHub API: {res.status_code} - {res.text}")
+        
     return res.status_code in [200, 201]
 
 
@@ -686,8 +693,6 @@ def main():
     st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 5px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 20px;'>Configura los permisos tanto de los módulos principales como de cada uno de sus submenús individuales por operador.</p>", unsafe_allow_html=True)
 
-    # Limpiar caché para asegurar lectura fresca
-    st.cache_data.clear()
     df_permisos = cargar_matriz_permisos()
 
     if not df_permisos.empty:
@@ -787,7 +792,7 @@ def main():
                         time.sleep(1)
                         st.rerun()
                     else:
-                        st.error("Error al sincronizar con GitHub. Revisa tu token.")
+                        st.error("Error al sincronizar con GitHub. Revisa el token o los permisos del repo.")
     else:
         st.warning("No se pudo cargar la matriz de permisos. Asegúrate de que el archivo exista en GitHub.")
 
