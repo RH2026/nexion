@@ -664,7 +664,7 @@ with header_zone:
 
 
 # ==========================================
-# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL DE PERMISOS)
+# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL CON PESTAÑAS POR MÓDULO)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
@@ -672,7 +672,7 @@ def main():
         st.session_state.animacion_cargada = True
 
     st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 5px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 25px;'>Gestiona los módulos y submenús detallados para cada operador en tiempo real mediante casillas de verificación. Al guardar, se sincroniza automáticamente con el repositorio en GitHub.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 20px;'>Selecciona una categoría de módulo en las pestañas para configurar los permisos de acceso y submenús por operador de forma cómoda y limpia.</p>", unsafe_allow_html=True)
 
     df_permisos = cargar_matriz_permisos()
 
@@ -681,13 +681,89 @@ def main():
             if col != "USUARIO":
                 df_permisos[col] = df_permisos[col].astype(bool)
 
-        df_editado = st.data_editor(
-            df_permisos,
-            use_container_width=True,
-            hide_index=True,
-            key="editor_permisos_pro"
-        )
+        # Definir grupos de columnas por módulo
+        cols_gral = ["USUARIO"]
+        cols_seg = ["USUARIO", "SEGUIMIENTO", "ALERTAS", "GANTT", "QUEJAS"]
+        cols_ent = ["USUARIO", "ENTREGAS", "AGC", "AMAZON", "BARCELO"]
+        cols_rep = ["USUARIO", "REPORTES", "COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+        cols_for = ["USUARIO", "FORMATOS", "SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
+        cols_dat = ["USUARIO", "CENTRO DE DATOS", "ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
+        cols_fin = ["USUARIO", "FINANZAS", "WALLET", "CAJA CHICA", "GASTOS"]
+        cols_enf = ["USUARIO", "ENFOQUE", "MORENO", "VAZQUEZ", "MIGUEL"]
+        cols_acc = ["USUARIO", "ACCESS CONTROL"]
 
+        tab_dash, tab_seg, tab_ent, tab_rep, tab_for, tab_dat, tab_fin, tab_enf, tab_acc = st.tabs([
+            "📊 DASHBOARD", "🔍 SEGUIMIENTO", "🚚 ENTREGAS", "📈 REPORTES", 
+            "📋 FORMATOS", "💾 DATOS", "💰 FINANZAS", "🎯 ENFOQUE", "🔒 ACCESS CTRL"
+        ])
+
+        df_editado = df_permisos.copy()
+
+        with tab_dash:
+            cols_ver = ["USUARIO", "DASHBOARD"]
+            df_t = df_editado[[c for c in cols_ver if c in df_editado.columns]]
+            sub_dash = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dash")
+            for c in sub_dash.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_dash[c]
+
+        with tab_seg:
+            df_t = df_editado[[c for c in cols_seg if c in df_editado.columns]]
+            sub_seg = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_seg")
+            for c in sub_seg.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_seg[c]
+
+        with tab_ent:
+            df_t = df_editado[[c for c in cols_ent if c in df_editado.columns]]
+            sub_ent = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_ent")
+            for c in sub_ent.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_ent[c]
+
+        with tab_rep:
+            df_t = df_editado[[c for c in cols_rep if c in df_editado.columns]]
+            sub_rep = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_rep")
+            for c in sub_rep.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_rep[c]
+
+        with tab_for:
+            df_t = df_editado[[c for c in cols_for if c in df_editado.columns]]
+            sub_for = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_for")
+            for c in sub_for.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_for[c]
+
+        with tab_dat:
+            df_t = df_editado[[c for c in cols_dat if c in df_editado.columns]]
+            sub_dat = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dat")
+            for c in sub_dat.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_dat[c]
+
+        with tab_fin:
+            df_t = df_editado[[c for c in cols_fin if c in df_editado.columns]]
+            sub_fin = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_fin")
+            for c in sub_fin.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_fin[c]
+
+        with tab_enf:
+            df_t = df_editado[[c for c in cols_enf if c in df_editado.columns]]
+            sub_enf = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_enf")
+            for c in sub_enf.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_enf[c]
+
+        with tab_acc:
+            df_t = df_editado[[c for c in cols_acc if c in df_editado.columns]]
+            sub_acc = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_acc")
+            for c in sub_acc.columns:
+                if c != "USUARIO":
+                    df_editado[c] = sub_acc[c]
+
+        st.markdown("<br>", unsafe_allow_html=True)
         col_b1, col_b2 = st.columns([1.5, 4])
         with col_b1:
             if st.button("💾 GUARDAR Y SINCRONIZAR", use_container_width=True, type="primary"):
@@ -695,7 +771,7 @@ def main():
                     exito = guardar_matriz_en_github(df_editado)
                     if exito:
                         st.cache_data.clear()
-                        st.success("¡Permisos actualizados con éxito!")
+                        st.success("¡Permisos y submenús actualizados con éxito!")
                         time.sleep(1)
                         st.rerun()
                     else:
