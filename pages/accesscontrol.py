@@ -115,17 +115,6 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
 }}
 
-/* Forzar mayor altura vertical en la tabla interactiva de permisos */
-[data-testid="stDataFrame"] div[data-testid="stTable"], 
-[data-testid="stDataFrame"] [data-baseweb="base-input"],
-div.stDataEditor {{
-    min-height: 580px !important;
-}}
-
-[data-testid="stDataFrame"] [role="grid"] {{
-    min-height: 560px !important;
-}}
-
 /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
 div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
     gap: 0.35rem !important;
@@ -749,65 +738,66 @@ def main():
 
         df_editado = df_permisos.copy()
 
+        # Altura expandida (height=650) en cada data_editor para mostrar todas las filas sin cortar a nadie
         with tab_dash:
             df_t = df_editado[[c for c in cols_dash if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dash")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dash", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
 
         with tab_seg:
             df_t = df_editado[[c for c in cols_seg if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_seg")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_seg", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
 
         with tab_ent:
             df_t = df_editado[[c for c in cols_ent if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_ent")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_ent", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
 
         with tab_rep:
             df_t = df_editado[[c for c in cols_rep if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_rep")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_rep", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
 
         with tab_for:
             df_t = df_editado[[c for c in cols_for if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_for")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_for", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
 
         with tab_dat:
             df_t = df_editado[[c for c in cols_dat if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dat")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dat", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
 
         with tab_fin:
             df_t = df_editado[[c for c in cols_fin if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_fin")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_fin", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
 
         with tab_enf:
             df_t = df_editado[[c for c in cols_enf if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_enf")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_enf", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
 
         with tab_acc:
             df_t = df_editado[[c for c in cols_acc if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_acc")
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_acc", height=650)
             for c in sub_ed.columns:
                 if c != "USUARIO":
                     df_editado[c] = sub_ed[c]
