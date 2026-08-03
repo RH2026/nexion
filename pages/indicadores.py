@@ -617,7 +617,48 @@ def main():
     
         data = df_display.fillna('').to_dict('records')
         
-        # --- DEFINICIÓN DE html_content (EVITA EL NAMEERROR) ---
+        # Generamos las filas de forma limpia para evitar que Python colapse el f-string
+        filas_generadas = []
+        for item in data:
+            tiene_g = bool(item.get('NÚMERO DE GUÍA'))
+            cls_g = "text-emerald-400" if tiene_g else "text-orange-400"
+            val_g = str(item.get('NÚMERO DE GUÍA', 'PENDIENTE'))
+            
+            tiene_e = bool(item.get('FECHA DE ENTREGA REAL'))
+            cls_e = "text-emerald-400" if tiene_e else "text-orange-400"
+            val_e = str(item.get('FECHA DE ENTREGA REAL', 'EN TRÁNSITO'))
+            
+            fila = f"""
+            <div class="row-logistica">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                    <div>
+                        <div class="label-mini">Pedido / Factura</div>
+                        <div class="valor highlight text-lg">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
+                        <div class="text-[10px] text-blue-300 opacity-80">Envío: {str(item.get('FECHA DE ENVÍO', ''))}</div>
+                    </div>
+                    
+                    <div>
+                        <div class="label-mini">Cliente / Destino</div>
+                        <div class="valor truncate text-xs uppercase">{str(item.get('NOMBRE DEL CLIENTE', ''))[:40]}</div>
+                        <div class="text-[10px] text-white/50 italic">{str(item.get('DESTINO', ''))}</div>
+                    </div>
+
+                    <div class="border-x border-white/5 px-4">
+                        <div class="label-mini">Transporte y Guía</div>
+                        <div class="valor text-[11px]">{str(item.get('FLETERA', ''))}</div>
+                        <div class="text-[10px] {cls_g}">{val_g}</div>
+                    </div>
+
+                    <div class="text-right">
+                        <div class="label-mini">Estatus Entrega</div>
+                        <div class="valor text-sm {cls_e}">{val_e}</div>
+                        <div class="text-[9px] text-white/40 uppercase">Promesa: {str(item.get('PROMESA DE ENTREGA', ''))}</div>
+                    </div>
+                </div>
+            </div>
+            """
+            filas_generadas.append(fila)
+
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -656,44 +697,11 @@ def main():
         </head>
         <body>
             <div style="padding: 10px;">
-                {"".join([f'''
-                <div class="row-logistica">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                        <div>
-                            <div class="label-mini">Pedido / Factura</div>
-                            <div class="valor highlight text-lg">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
-                            <div class="text-[10px] text-blue-300 opacity-80">Envío: {str(item.get('FECHA DE ENVÍO', ''))}</div>
-                        </div>
-                        
-                        <div>
-                            <div class="label-mini">Cliente / Destino</div>
-                            <div class="valor truncate text-xs uppercase">{str(item.get('NOMBRE DEL CLIENTE', ''))[:40]}</div>
-                            <div class="text-[10px] text-white/50 italic">{str(item.get('DESTINO', ''))}</div>
-                        </div>
-    
-                        <div class="border-x border-white/5 px-4">
-                            <div class="label-mini">Transporte y Guía</div>
-                            <div class="valor text-[11px]">{str(item.get('FLETERA', ''))}</div>
-                            <div class="text-[10px] {"text-emerald-400" if item.get('NÚMERO DE GUÍA') else "text-orange-400"}">
-                                {str(item.get('NÚMERO DE GUÍA', 'PENDIENTE'))}
-                            </div>
-                        </div>
-    
-                        <div class="text-right">
-                            <div class="label-mini">Estatus Entrega</div>
-                            <div class="valor text-sm {"text-emerald-400" if item.get('FECHA DE ENTREGA REAL') else "text-orange-400"}">
-                                {str(item.get('FECHA DE ENTREGA REAL', 'EN TRÁNSITO'))}
-                            </div>
-                            <div class="text-[9px] text-white/40 uppercase">Promesa: {str(item.get('PROMESA DE ENTREGA', ''))}</div>
-                        </div>
-                    </div>
-                </div>
-                ''' for item in data])}
+                {"".join(filas_generadas)}
             </div>
         </body>
         </html>
         """
-        
         return components.html(html_content, height=600, scrolling=True)
     
     # --- EJECUCIÓN DEL MÓDULO ---
