@@ -106,26 +106,35 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/* --- ESTILOS QUIRÚRGICOS PARA BOTONES ESPECÍFICOS --- */
+/* --- ESTILOS QUIRÚRGICOS PARA ACCESS CONTROL Y TERMINAR SESIÓN --- */
+/* Eliminar huecos de los contenedores internos dentro del popover */
+div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
+    gap: 0.4rem !important;
+}}
+
 /* Botón Access Control: Azul perrón eléctrico */
-div.btn-access-control button {{
+div[data-testid="stPopoverBody"] button[kind="secondary"]:has(div:contains("ACCESS CONTROL")),
+div[data-testid="stPopoverBody"] div.stButton:has(button[key="pop_access_ctrl"]) button {{
     background-color: #0072ff !important;
     color: #ffffff !important;
     border: 1px solid #00c6ff !important;
     box-shadow: 0 0 10px rgba(0, 114, 255, 0.4) !important;
 }}
-div.btn-access-control button:hover {{
+div[data-testid="stPopoverBody"] button[kind="secondary"]:has(div:contains("ACCESS CONTROL")):hover,
+div[data-testid="stPopoverBody"] div.stButton:has(button[key="pop_access_ctrl"]) button:hover {{
     background-color: #005bb5 !important;
     border-color: #0072ff !important;
 }}
 
 /* Botón Terminar Sesión: Rojo oscuro rogo */
-div.btn-terminar-sesion button {{
+div[data-testid="stPopoverBody"] button[kind="primary"],
+div[data-testid="stPopoverBody"] button:has(div:contains("TERMINAR SESIÓN")) {{
     background-color: #4a0e17 !important;
     color: #ffcccc !important;
     border: 1px solid #8b0000 !important;
 }}
-div.btn-terminar-sesion button:hover {{
+div[data-testid="stPopoverBody"] button[kind="primary"]:hover,
+div[data-testid="stPopoverBody"] button:has(div:contains("TERMINAR SESIÓN")):hover {{
     background-color: #660012 !important;
     color: #ffffff !important;
     border-color: #ff4d4d !important;
@@ -510,7 +519,7 @@ with header_zone:
         
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
+                <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #00D4FF;'>
                     <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
                     <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                 </div>
@@ -519,7 +528,7 @@ with header_zone:
             )
         
             st.markdown(
-                "<p style='color:#f0f0f0; font-size:10px; font-weight:400; text-align:center; margin:10px 0; letter-spacing:1px;'>MENÚ PRINCIPAL</p>",
+                "<p style='color:#f0f0f0; font-size:10px; font-weight:400; text-align:center; margin:5px 0; letter-spacing:1px;'>MENÚ PRINCIPAL</p>",
                 unsafe_allow_html=True,
             )
         
@@ -623,23 +632,18 @@ with header_zone:
                             st.rerun()
         
             if tiene_permiso("ACCESS CONTROL") or es_rigoberto:
-                st.markdown('<div class="btn-access-control">', unsafe_allow_html=True)
                 if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl"):
                     st.session_state.menu_main = "ACCESS CONTROL"
                     st.session_state.menu_sub = "SETTINGS"
                     st.switch_page("pages/accesscontrol.py")
-                st.markdown('</div>', unsafe_allow_html=True)
         
-            st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
-            
-            st.markdown('<div class="btn-terminar-sesion">', unsafe_allow_html=True)
-            if st.button("TERMINAR SESIÓN", use_container_width=True, key="pop_terminar_sesion"):
+            st.markdown("<hr style='margin: 3px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+            if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary", key="pop_terminar_sesion"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 st.session_state.autenticado = False
                 st.session_state.splash_completado = False
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
 
     # ── RENDERIZADO DE RESULTADOS ──────────────────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
