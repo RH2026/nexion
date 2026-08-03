@@ -95,7 +95,7 @@ div.stButton > button, div.stDownloadButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 28px !important;
+    height: 32px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -106,20 +106,20 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/* --- COMPACTAR ESPACIADO EN EL POPOVER --- */
+/* --- ESPACIADO EQUILIBRADO EN EL POPOVER --- */
 div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
-    gap: 0.25rem !important;
+    gap: 0.45rem !important;
 }}
 
 div[data-testid="stPopoverBody"] .stButton {{
-    margin-bottom: -0.3rem !important;
+    margin-bottom: 0rem !important;
 }}
 
 div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     border: none !important;
     background: transparent !important;
-    margin-bottom: -0.3rem !important;
-> div {{
+    margin-bottom: 0rem !important;
+    > div {{
         padding: 0 !important;
     }}
 }}
@@ -509,7 +509,7 @@ with header_zone:
                 </div>
             """,
                 unsafe_allow_html=True,
-            )       
+            )        
                     
             if tiene_permiso("DASHBOARD"):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
