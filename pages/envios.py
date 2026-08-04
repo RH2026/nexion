@@ -670,7 +670,7 @@ def render_envios_flow_responsive(data):
         <div class="w-full space-y-2">
             {"".join([f'''
             <div class="list-row flex items-stretch">
-                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADO" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADO" else ("bg-orange-500" if item['estatus'] == "SURTIENDO" else "bg-amber-500")} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                 <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
                     
                     <div class="w-full md:w-44 shrink-0">
@@ -708,7 +708,7 @@ def render_envios_flow_responsive(data):
                     <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
                         <div class="label-mini md:mb-1">Fecha Envío / Estatus</div>
                         <div class="text-[10px] font-bold text-emerald-300 uppercase">{item['fecha_envio']}</div>
-                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADO" else "text-orange-400"} tracking-tighter min-h-[16px]">
+                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADO" else ("text-orange-400" if item['estatus'] == "SURTIENDO" else "text-amber-400")} tracking-tighter min-h-[16px]">
                             {item['estatus']}
                         </div>
                     </div>
@@ -851,14 +851,70 @@ def main():
         df_envios['nombre_cliente'] = df_raw.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('').astype(str)
-        df_envios['fecha_envio'] = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str)
+        
+        fecha_envio_raw = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+        df_envios['fecha_envio'] = fecha_envio_raw
         
         estatus_series = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
-        df_envios['estatus'] = estatus_series.replace('NAN', 'PENDIENTE')
         
+        # Condición: si la fecha de envío está en blanco, vacía, o es "0" / "0.0" / "-" / "NAN", estatus = SURTIENDO
+        valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat']
+        estatus_calculado = []
+        for f_env, est in zip(fecha_envio_raw, estatus_series):
+            f_str = str(f_env).lower().strip()
+            if f_str in valores_nulos_fecha:
+                estatus_calculado.append("SURTIENDO")
+            else:
+                if est in ['', 'NAN']:
+                    estatus_calculado.append("PENDIENTE")
+                else:
+                    estatus_calculado.append(est)
+                    
+        df_envios['estatus'] = estatus_calculado
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
+
+        # ── FILTROS SUPER INTELIGENTES 4 EN LÍNEA ────────────────────────
+        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #82D4E6; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;'>🎯 FILTRADO INTELIGENTE DE ENVÍOS</div>", unsafe_allow_html=True)
         
-        data_completa = df_envios.to_dict('records')
+        f1, f2, f3, f4 = st.columns(4)
+
+        with f1:
+            facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
+            filtro_factura = st.selectbox("FACTURA", facturas_opts, key="filtro_factura_envios")
+
+        with f2:
+            paq_opts = ["TODAS"] + sorted(list(df_envios['recomendacion'].loc[df_envios['recomendacion'] != ''].unique()))
+            filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
+
+        with f3:
+            # Filtro inteligente combinado para cliente (Nombre Comercial o Extranjero)
+            filtro_cliente = st.text_input("CLIENTE (COMERCIAL / EXTRAN)", placeholder="🔍 Buscar cliente...", key="filtro_cliente_envios")
+
+        with f4:
+            estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
+            filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
+
+        # Aplicación de filtros sobre el DataFrame
+        df_filtrado = df_envios.copy()
+
+        if filtro_factura != "TODAS":
+            df_filtrado = df_filtrado[df_filtrado['factura'] == filtro_factura]
+
+        if filtro_paqueteria != "TODAS":
+            df_filtrado = df_filtrado[df_filtrado['recomendacion'] == filtro_paqueteria]
+
+        if filtro_cliente:
+            q_cli = filtro_cliente.strip().lower()
+            mask_cli = (
+                df_filtrado['nombre_cliente'].str.lower().str.contains(q_cli, na=False) |
+                df_filtrado['nombre_extran'].str.lower().str.contains(q_cli, na=False)
+            )
+            df_filtrado = df_filtrado[mask_cli]
+
+        if filtro_estatus != "TODOS":
+            df_filtrado = df_filtrado[df_filtrado['estatus'] == filtro_estatus]
+
+        data_completa = df_filtrado.to_dict('records')
     else:
         data_completa = []
 
