@@ -273,12 +273,13 @@ def limpiar_texto(texto):
 
 
 # ==========================================
-# 3.1 FUNCIÓN PARA ACUMULAR Y GUARDAR EN GITHUB (envios.csv)
+# 3.1 FUNCIÓN PARA ACUMULAR, ELIMINAR DUPLICADOS Y AÑADIR COLUMNAS VACÍAS
 # ==========================================
 def actualizar_historial_envios_github(df_nuevos):
     """
-    Descarga envios.csv de GitHub si existe, le concatena los nuevos datos 
-    (evitando duplicados por Factura) y los vuelve a subir. Si no existe, lo crea.
+    Descarga envios.csv de GitHub, le añade columnas vacías (FECHA DE ENVIO, ESTATUS),
+    concatena los nuevos datos, elimina duplicados por Factura (conservando el más reciente)
+    y lo vuelve a subir. Si no existe, lo crea desde cero.
     """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
@@ -295,6 +296,13 @@ def actualizar_historial_envios_github(df_nuevos):
     
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
+    # Asegurar que los datos nuevos tengan las columnas vacías requeridas
+    df_procesado = df_nuevos.copy()
+    if "FECHA DE ENVIO" not in df_procesado.columns:
+        df_procesado["FECHA DE ENVIO"] = ""
+    if "ESTATUS" not in df_procesado.columns:
+        df_procesado["ESTATUS"] = ""
+
     # 1. Intentar leer el archivo actual de GitHub
     r = requests.get(url, headers=headers)
     df_existente = pd.DataFrame()
@@ -306,23 +314,31 @@ def actualizar_historial_envios_github(df_nuevos):
         content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
         df_existente = pd.read_csv(io.StringIO(content_decoded))
     
-    # 2. Combinar historial anterior con el nuevo análisis
+    # 2. Combinar historial existente con el nuevo análisis
     if not df_existente.empty:
-        df_combinado = pd.concat([df_existente, df_nuevos], ignore_index=True)
-        if "Factura" in df_combinado.columns:
-            df_combinado = df_combinado.drop_duplicates(subset=["Factura"], keep="last")
+        # Asegurar también que el archivo existente tenga las columnas por compatibilidad
+        if "FECHA DE ENVIO" not in df_existente.columns:
+            df_existente["FECHA DE ENVIO"] = ""
+        if "ESTATUS" not in df_existente.columns:
+            df_existente["ESTATUS"] = ""
+            
+        df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
     else:
-        df_combinado = df_nuevos
+        df_combinado = df_procesado
 
-    # 3. Convertir a CSV en memoria y codificar en Base64
+    # 3. Eliminar duplicados si suben por error la misma factura (mantiene el último / más reciente)
+    if "Factura" in df_combinado.columns:
+        df_combinado = df_combinado.drop_duplicates(subset=["Factura"], keep="last")
+
+    # 4. Convertir a CSV en memoria y codificar en Base64
     csv_buffer = io.StringIO()
     df_combinado.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
     csv_str = csv_buffer.getvalue()
     content_base64 = base64.b64encode(csv_str.encode("utf-8")).decode("utf-8")
     
-    # 4. Preparar petición PUT para GitHub
+    # 5. Preparar petición PUT para GitHub
     data = {
-        "message": "Actualización automática de envios.csv desde NEXION",
+        "message": "Actualización automática y limpieza de duplicados en envios.csv",
         "content": content_base64,
         "branch": "main"
     }
@@ -940,10 +956,10 @@ def main():
         if st.button("FIJAR CAMBIOS", use_container_width=True, type="primary"):
             st.session_state.df_analisis = p_editado
             
-            # Sincronizar y acumular en envios.csv dentro de GitHub
+            # Sincronizar, añadir columnas vacías, eliminar duplicados y acumular en envios.csv dentro de GitHub
             exito = actualizar_historial_envios_github(p_editado)
             if exito:
-                st.toast("¡Cambios guardados y acumulados en envios.csv!", icon="✅")
+                st.toast("¡Cambios guardados, duplicados depurados y acumulados en envios.csv!", icon="✅")
             else:
                 st.toast("Guardado localmente, pero falló la sincronización con GitHub", icon="⚠️")
             
