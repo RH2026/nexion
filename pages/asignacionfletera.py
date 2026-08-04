@@ -578,16 +578,18 @@ with header_zone:
         
             if permisos.get("ENTREGAS", False):
                 with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
-                    opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO"]
+                    opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO", "NACIONAL"]
                     opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
                     for s in opciones_ent:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}"):
+                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
                             st.session_state.menu_main = "ENTREGAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             if s == "AGC":
                                 st.switch_page("pages/entregas_agc.py")
+                            elif s == "NACIONAL":
+                                st.switch_page("pages/envios.py")
                             else:
                                 st.rerun()
         
