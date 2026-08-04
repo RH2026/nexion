@@ -301,7 +301,7 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         # QR a un lado, bajado más (y_pos - 14) para alinearse perfecto al centro del texto
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
-        c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 32, width=55, height=55)
+        c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 37, width=55, height=55)
         
         c.showPage()
     c.save()
