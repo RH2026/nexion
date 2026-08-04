@@ -157,7 +157,6 @@ def verificar_permiso_pagina(modulo, submodulo=None):
     if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
         return True
         
-    # Validación de permisos por Módulo
     if not permisos.get(modulo.upper(), False):
         st.markdown(
             f"""
@@ -194,7 +193,6 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/asignacionfletera.py")
         st.stop()
         
-    # Validación de permisos por Submódulo
     if submodulo and not permisos.get(submodulo.upper(), False):
         st.markdown(
             f"""
@@ -231,7 +229,6 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/asignacionfletera.py")
         st.stop()
 
-# Blindaje de Módulo CENTRO DE DATOS y Submenú ASIGNAR FLETERA
 verificar_permiso_pagina("CENTRO DE DATOS", "ASIGNAR FLETERA")
 
 
@@ -253,7 +250,7 @@ def obtener_matriz_github():
 @st.cache_data(ttl=60)
 def cargar_datos_dashboard():
     t = int(time.time())
-    url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}" if 'GITHUB_USER' in globals() else f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+    url = f"https://raw.githubusercontent.com/{globals().get('GITHUB_USER', 'RH2026')}/{globals().get('GITHUB_REPO', 'nexion')}/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
     try:
         df = pd.read_csv(url, encoding="utf-8-sig")
         df.columns = df.columns.str.strip()
@@ -272,6 +269,46 @@ def limpiar_texto(texto):
     ).upper()
     texto = re.sub(r"[^A-Z0-9\s]", " ", texto)
     return " ".join(texto.split())
+
+
+# ==========================================
+# 3.1 FUNCIONES DE SELLADO (MOTOR REPORTLAB & FPDF)
+# ==========================================
+def generar_sellos_fisicos(lista_textos, x_pos, y_pos):
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    for texto in lista_textos:
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(x_pos, y_pos, str(texto))
+        c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def marcar_pdf_digital(pdf_file, texto_sello, x_pos, y_pos):
+    reader = PdfReader(pdf_file)
+    writer = PdfWriter()
+    
+    # Crear página con el sello usando ReportLab
+    packet = io.BytesIO()
+    can = canvas.Canvas(packet, pagesize=letter)
+    can.setFont("Helvetica-Bold", 12)
+    can.drawString(x_pos, y_pos, str(texto_sello))
+    can.save()
+    packet.seek(0)
+    
+    overlay_reader = PdfReader(packet)
+    overlay_page = overlay_reader.pages[0]
+    
+    for page in reader.pages:
+        page.merge_page(overlay_page)
+        writer.add_page(page)
+        
+    output_pdf = io.BytesIO()
+    writer.write(output_pdf)
+    output_pdf.seek(0)
+    return output_pdf.getvalue()
 
 
 # Inicialización segura de estados de menú
@@ -523,7 +560,6 @@ with header_zone:
                 st.session_state.splash_completado = False
                 st.rerun()
 
-   # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA ──────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
@@ -799,7 +835,6 @@ def main():
         p = p.loc[:, ~p.columns.isna()]
         modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
                     
-        # Ahora el editor debería funcionar sin errores
         p_editado = st.data_editor(
             p, use_container_width=True, hide_index=True,
             column_config={
@@ -809,18 +844,16 @@ def main():
             key="editor_final_github"
         )
         
-        # Botón 1: Fijar Cambios (Arriba)
-        if st.button(":material/save_as: FIJAR CAMBIOS", use_container_width=True, type="primary"):
+        if st.button("💾 FIJAR CAMBIOS", use_container_width=True, type="primary"):
             st.session_state.df_analisis = p_editado
             st.toast("Cambios guardados", icon="✅")
             
-        st.write("") # Respiro visual
+        st.write("") 
         
-        # Botón 2: Descargar Análisis (Abajo)
         output_xlsx = io.BytesIO()
         p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
         st.download_button(
-            label=":material/download: DESCARGAR ANÁLISIS", 
+            label="📥 DESCARGAR ANÁLISIS", 
             data=output_xlsx.getvalue(), 
             file_name="Analisis_Final.xlsx", 
             use_container_width=True,
@@ -832,13 +865,13 @@ def main():
             ax = cx.slider("X", 0, 612, 399)
             ay = cy.slider("Y", 0, 792, 760)
             
-            st.markdown("###### :material/print: Opciones de Impresión Física")
+            st.markdown("###### 🖨️ Opciones de Impresión Física")
             s1, s2 = st.columns(2)
             
             with s1:
                 sellos_normal = p_editado['RECOMENDACION'].tolist()
                 st.download_button(
-                    label=":material/print: GENERAR SELLOS NORMAL", 
+                    label="🖨️ GENERAR SELLOS NORMAL", 
                     data=generar_sellos_fisicos(sellos_normal, ax, ay), 
                     file_name="Sellos_Normales.pdf", 
                     use_container_width=True,
@@ -848,7 +881,7 @@ def main():
             with s2:
                 sellos_invertidos = p_editado['RECOMENDACION'].tolist()[::-1]
                 st.download_button(
-                    label=":material/swap_vert: GENERAR SELLOS MODO INVERSO", 
+                    label="🔄 GENERAR SELLOS MODO INVERSO", 
                     data=generar_sellos_fisicos(sellos_invertidos, ax, ay), 
                     file_name="Sellos_Inversos.pdf", 
                     use_container_width=True,
@@ -856,8 +889,8 @@ def main():
                 )
                     
             st.markdown("---")
-            st.markdown("###### :material/devices: Opciones de Sellado Digital")
-            pdfs = st.file_uploader(":material/picture_as_pdf: Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+            st.markdown("###### 💻 Opciones de Sellado Digital")
+            pdfs = st.file_uploader("📄 Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
             
             if pdfs:
                 if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
@@ -870,7 +903,7 @@ def main():
                                 zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
                     
                     st.download_button(
-                        label=":material/folder_zip: DESCARGAR ZIP", 
+                        label="📦 DESCARGAR ZIP", 
                         data=z_io.getvalue(), 
                         file_name="Sellado.zip", 
                         use_container_width=True,
