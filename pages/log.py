@@ -47,6 +47,14 @@ def asegurar_matriz_permisos_en_github():
                 "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "HERRAMIENTAS": True, "WALLET": True, "CAJA CHICA": True, "GASTOS": True, "MORENO": True, "VAZQUEZ": True, "MIGUEL": True
             },
             {
+                "USUARIO": "AGC", 
+                "DASHBOARD": False, "SEGUIMIENTO": False, "ENTREGAS": True, "REPORTES": False, "FORMATOS": False, "CENTRO DE DATOS": False, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
+                "ALERTAS": False, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": False, "BARCELO": False, "NACIONAL": False,
+                "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": False, "PANEL MUESTRAS": False,
+                "SALIDA DE PT": False, "CHECK LIST AGC": False, "QR AGC": False, "PREGUIA PAQMEX": False, "RECOLECCION 3G": False, "RECOLECCION ONE": False, "CARTA RECLAMO": False, "COTIZACIONES": False,
+                "ASIGNAR FLETERA": False, "CARGAR DATOS": False, "ETIQUETAS": False, "HERRAMIENTAS": False, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+            },
+            {
                 "USUARIO": "AGomez", 
                 "DASHBOARD": True, "SEGUIMIENTO": True, "ENTREGAS": True, "REPORTES": True, "FORMATOS": True, "CENTRO DE DATOS": True, "FINANZAS": False, "ENFOQUE": False, "ACCESS CONTROL": False,
                 "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True, "NACIONAL": True,
@@ -145,7 +153,7 @@ def asegurar_matriz_permisos_en_github():
         ])
         csv_string = df_default.to_csv(index=False)
         payload = {
-            "message": "Creación automática de matriz de permisos de usuarios con NACIONAL",
+            "message": "Creación automática de matriz de permisos de usuarios con NACIONAL y AGC",
             "content": base64.b64encode(csv_string.encode()).decode()
         }
         requests.put(url, json=payload, headers=headers)
@@ -272,6 +280,7 @@ def login_screen():
                 
                 nombres_reales = {
                     "Rigoberto": "Rigoberto Hernández",
+                    "AGC": "Operador AGC",
                     "AGomez": "Ale Gomez",
                     "JMoreno": "Jesus Moreno",
                     "Cynthia": "Cynthia",
@@ -288,6 +297,7 @@ def login_screen():
                 
                 generos = {
                     "Rigoberto": "M",
+                    "AGC": "M",
                     "AGomez": "F",
                     "JMoreno": "M",
                     "Cynthia": "F",
@@ -328,10 +338,36 @@ def login_screen():
             time.sleep(0.8)
             st.session_state.login_exitoso = False
             
-            destino = st.session_state.get("pagina_destino", "pages/indicadores.py")
+            # MAPA DE PRIORIDADES DE REDIRECCIÓN SEGÚN PERMISOS
+            paginas_permitidas_map = [
+                ("DASHBOARD", "pages/indicadores.py"),
+                ("AGC", "pages/entregas_agc.py"),
+                ("NACIONAL", "pages/envios.py"),
+                ("ENVIO DE MUESTRAS", "pages/muestras.py"),
+                ("ASIGNAR FLETERA", "pages/asignacionfletera.py"),
+                ("ETIQUETAS", "pages/etiquetas.py"),
+            ]
+            
+            # Si se forzó una página de destino específica por el sistema
+            destino = st.session_state.get("pagina_destino", None)
             if "pagina_destino" in st.session_state:
                 del st.session_state["pagina_destino"]
-                
+            
+            # Si no hay destino forzado, evaluamos los permisos del usuario actual
+            if not destino:
+                if user_input.upper() == "RIGOBERTO":
+                    destino = "pages/indicadores.py"
+                else:
+                    permisos_usuario = st.session_state.get("permisos", {})
+                    destino_encontrado = False
+                    for permiso_key, ruta_archivo in paginas_permitidas_map:
+                        if permisos_usuario.get(permiso_key, False):
+                            destino = ruta_archivo
+                            destino_encontrado = True
+                            break
+                    if not destino_encontrado:
+                        destino = "pages/indicadores.py"
+                        
             st.switch_page(destino)
 
 
@@ -363,4 +399,15 @@ elif not st.session_state.get("autenticado", False):
     login_screen()
 
 else:
-    st.switch_page("pages/indicadores.py")
+    # REDIRECCIÓN INTELIGENTE GENERAL SI ENTRA DIRECTAMENTE
+    usuario_activo = st.session_state.get("usuario_activo", "").upper()
+    if usuario_activo == "RIGOBERTO":
+        st.switch_page("pages/indicadores.py")
+    else:
+        permisos_usuario = st.session_state.get("permisos", {})
+        if permisos_usuario.get("AGC", False):
+            st.switch_page("pages/entregas_agc.py")
+        elif permisos_usuario.get("NACIONAL", False):
+            st.switch_page("pages/envios.py")
+        else:
+            st.switch_page("pages/indicadores.py")
