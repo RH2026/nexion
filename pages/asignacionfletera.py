@@ -272,29 +272,63 @@ def limpiar_texto(texto):
 
 
 # ==========================================
-# 3.1 FUNCIONES DE SELLADO (MOTOR REPORTLAB & FPDF)
+# 3.1 FUNCIONES DE SELLADO CON QR INTEGRADO
 # ==========================================
-def generar_sellos_fisicos(lista_textos, x_pos, y_pos):
+def crear_imagen_qr(contenido_qr):
+    qr = qrcode.QRCode(version=1, box_size=2, border=1)
+    qr.add_data(contenido_qr)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
+
+
+def generar_sellos_fisicos(df_datos, x_pos, y_pos):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
-    for texto in lista_textos:
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(x_pos, y_pos, str(texto))
+    fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    for _, row in df_datos.iterrows():
+        fletera = str(row.get('RECOMENDACION', 'N/A'))
+        factura = str(row.get('Factura', 'S/N'))
+        
+        # Dibujar Texto de la Fletera
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(x_pos, y_pos, f"FLETERA: {fletera}")
+        c.drawString(x_pos, y_pos - 12, f"FACTURA: {factura}")
+        c.drawString(x_pos, y_pos - 24, f"FECHA PROG: {fecha_programacion}")
+        
+        # Generar QR pequeño a un lado (a unos 135 puntos a la derecha)
+        texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
+        qr_io = crear_imagen_qr(texto_qr)
+        c.drawImage(ImageReader(qr_io), x_pos + 140, y_pos - 20, width=40, height=40)
+        
         c.showPage()
     c.save()
     buffer.seek(0)
     return buffer.getvalue()
 
 
-def marcar_pdf_digital(pdf_file, texto_sello, x_pos, y_pos):
+def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
     reader = PdfReader(pdf_file)
     writer = PdfWriter()
+    fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
     
-    # Crear página con el sello usando ReportLab
+    # Crear página con el sello y el QR usando ReportLab
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter)
-    can.setFont("Helvetica-Bold", 12)
-    can.drawString(x_pos, y_pos, str(texto_sello))
+    
+    can.setFont("Helvetica-Bold", 11)
+    can.drawString(x_pos, y_pos, f"FLETERA: {fletera_val}")
+    can.drawString(x_pos, y_pos - 12, f"FACTURA: {factura_val}")
+    can.drawString(x_pos, y_pos - 24, f"FECHA PROG: {fecha_programacion}")
+    
+    texto_qr = f"FLETERA: {fletera_val} | FACTURA: {factura_val} | PROG: {fecha_programacion}"
+    qr_io = crear_imagen_qr(texto_qr)
+    can.drawImage(ImageReader(qr_io), x_pos + 140, y_pos - 20, width=40, height=40)
+    
     can.save()
     packet.seek(0)
     
@@ -869,20 +903,19 @@ def main():
             s1, s2 = st.columns(2)
             
             with s1:
-                sellos_normal = p_editado['RECOMENDACION'].tolist()
                 st.download_button(
                     label="🖨️ GENERAR SELLOS NORMAL", 
-                    data=generar_sellos_fisicos(sellos_normal, ax, ay), 
+                    data=generar_sellos_fisicos(p_editado, ax, ay), 
                     file_name="Sellos_Normales.pdf", 
                     use_container_width=True,
                     type="primary" 
                 )
                 
             with s2:
-                sellos_invertidos = p_editado['RECOMENDACION'].tolist()[::-1]
+                p_invertido = p_editado.iloc[::-1].reset_index(drop=True)
                 st.download_button(
                     label="🔄 GENERAR SELLOS MODO INVERSO", 
-                    data=generar_sellos_fisicos(sellos_invertidos, ax, ay), 
+                    data=generar_sellos_fisicos(p_invertido, ax, ay), 
                     file_name="Sellos_Inversos.pdf", 
                     use_container_width=True,
                     type="primary"
@@ -894,13 +927,14 @@ def main():
             
             if pdfs:
                 if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
-                    mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
+                    mapa_fletera = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
                     z_io = io.BytesIO()
                     with zipfile.ZipFile(z_io, "a") as zf:
                         for pdf in pdfs:
-                            f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
+                            f_id = next((k for k in mapa_fletera.keys() if k in pdf.name.upper()), None)
                             if f_id: 
-                                zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
+                                fletera_val = mapa_fletera[f_id]
+                                zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, fletera_val, f_id, ax, ay))
                     
                     st.download_button(
                         label="📦 DESCARGAR ZIP", 
