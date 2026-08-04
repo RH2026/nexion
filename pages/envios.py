@@ -230,7 +230,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         st.stop()
 
 # Blindaje de Módulo REPORTES / ENVIOS
-verificar_permiso_pagina("REPORTES", "ENVIOS")
+verificar_permiso_pagina("ENTREGAS", "NACIONAL")
 
 
 # ==========================================
