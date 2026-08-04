@@ -294,16 +294,14 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         fletera = str(row.get('RECOMENDACION', 'N/A'))
         factura = str(row.get('Factura', 'S/N'))
         
-        # Dibujar Texto de la Fletera
-        c.setFont("Helvetica-Bold", 11)
+        # Solo se imprime el texto de la fletera en el documento físico
+        c.setFont("Helvetica-Bold", 12)
         c.drawString(x_pos, y_pos, f"FLETERA: {fletera}")
-        c.drawString(x_pos, y_pos - 12, f"FACTURA: {factura}")
-        c.drawString(x_pos, y_pos - 24, f"FECHA PROG: {fecha_programacion}")
         
-        # Generar QR pequeño a un lado (a unos 135 puntos a la derecha)
+        # El QR a un lado contiene la información completa (Fletera, Factura y Fecha Prog)
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
-        c.drawImage(ImageReader(qr_io), x_pos + 140, y_pos - 20, width=40, height=40)
+        c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 4, width=35, height=35)
         
         c.showPage()
     c.save()
@@ -316,18 +314,17 @@ def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
     writer = PdfWriter()
     fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
     
-    # Crear página con el sello y el QR usando ReportLab
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter)
     
-    can.setFont("Helvetica-Bold", 11)
+    # Solo el texto de la fletera en el PDF digital
+    can.setFont("Helvetica-Bold", 12)
     can.drawString(x_pos, y_pos, f"FLETERA: {fletera_val}")
-    can.drawString(x_pos, y_pos - 12, f"FACTURA: {factura_val}")
-    can.drawString(x_pos, y_pos - 24, f"FECHA PROG: {fecha_programacion}")
     
+    # QR con toda la info a un lado
     texto_qr = f"FLETERA: {fletera_val} | FACTURA: {factura_val} | PROG: {fecha_programacion}"
     qr_io = crear_imagen_qr(texto_qr)
-    can.drawImage(ImageReader(qr_io), x_pos + 140, y_pos - 20, width=40, height=40)
+    can.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 4, width=35, height=35)
     
     can.save()
     packet.seek(0)
@@ -959,4 +956,3 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-    
