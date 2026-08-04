@@ -101,9 +101,9 @@ div.stButton > button, div.stDownloadButton > button {{
 }}
 
 div.stButton > button:hover, div.stDownloadButton > button:hover {{
-    background-color: #00A3A3 !important;
+    background-color: #D97706 !important;
     color: #ffffff !important;
-    border-color: #00A3A3 !important;
+    border-color: #D97706 !important;
 }}
 
 /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
@@ -229,7 +229,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/indicadores.py")
         st.stop()
 
-# Blindaje de Módulo REPORTES / ENVIOS
+# Blindaje de Módulo ENTREGAS / NACIONAL
 verificar_permiso_pagina("ENTREGAS", "NACIONAL")
 
 
@@ -274,9 +274,9 @@ def limpiar_texto(texto):
 
 # Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
-    st.session_state.menu_main = "REPORTES"
+    st.session_state.menu_main = "ENTREGAS"
 if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "ENVIOS"
+    st.session_state.menu_sub = "NACIONAL"
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
@@ -431,8 +431,8 @@ with header_zone:
         
             st.markdown(
                 f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #00D4FF;'>
-                    <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
+                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #D97706;'>
+                    <p style='color:#F59E0B; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
                     <p style='color:{vars_css['text']}; font-size:13px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
                 </div>
             """,
@@ -560,9 +560,9 @@ with header_zone:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
         tipo = st.session_state.get("tipo_resultado", "OPERACION")
-        accent_color = "#00FFAA"
+        accent_color = "#F59E0B"
         inv_color = "#36b9cc"
-        azul_premium = "#00D4FF"
+        azul_premium = "#F59E0B"
 
         col_espacio, col_cerrar = st.columns([0.85, 0.15])
         with col_cerrar:
@@ -598,20 +598,20 @@ with header_zone:
                 hoy = pd.Timestamp(datetime.now()).normalize()
 
                 if not tiene_guia:
-                    status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
+                    status_text, status_color = ("GENERANDO GUÍA", "#F59E0B") if trigger_val == "Enviada" else ("SURTIENDO", "#F59E0B")
                 elif not entregado_real:
-                    status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
+                    status_text, status_color = ("EN TRÁNSITO", "#F59E0B") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
                 else:
                     f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors="coerce")
                     if pd.notnull(f_entrega_dt):
                         f_entrega_dt = f_entrega_dt.normalize()
-                    status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                    status_text, status_color = ("ENTREGADO", "#10B981") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
-                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
+                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #F59E0B; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #F59E0B; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #F59E0B;"></div><div style="font-size: 9px; font-weight: 800; color: #F59E0B; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #F59E0B; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #D97706; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #D97706;"></div><div style="font-size: 9px; font-weight: 800; color: #D97706; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #D97706; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #F59E0B; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #F59E0B;"></div><div style="font-size: 9px; font-weight: 800; color: #F59E0B; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #10B981; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
                 st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
             else:
                 st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
-                st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
+                st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }}</style>", unsafe_allow_html=True)
 
                 for _, d in resultados.iterrows():
                     status_text = d["COMENTARIOS"] if "COMENTARIOS" in d and pd.notna(d.get("COMENTARIOS")) else "OK"
@@ -644,8 +644,8 @@ def render_envios_flow_responsive(data):
             }}
             ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
             ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
-            ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
-            ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+            ::-webkit-scrollbar-thumb {{ background: #D97706; border-radius: 10px; border: 2px solid #384A52; }}
+            ::-webkit-scrollbar-thumb:hover {{ background: #F59E0B; }}
             .list-row {{
                 background-color: #263238;
                 border: 1px solid rgba(255, 255, 255, 0.05);
@@ -657,7 +657,7 @@ def render_envios_flow_responsive(data):
             }}
             .list-row:hover {{
                 background-color: #2c3b42;
-                border-color: rgba(56, 189, 248, 0.3);
+                border-color: rgba(245, 158, 11, 0.4);
             }}
             .label-mini {{
                 font-size: 9px;
@@ -672,7 +672,7 @@ def render_envios_flow_responsive(data):
         <div class="w-full space-y-2">
             {"".join([f'''
             <div class="list-row flex items-stretch">
-                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADO" else ("bg-orange-500" if item['estatus'] == "SURTIENDO" else "bg-amber-500")} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADO" else ("bg-amber-500" if item['estatus'] == "SURTIENDO" else "bg-amber-600")} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                 <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
                     
                     <div class="w-full md:w-44 shrink-0">
@@ -680,7 +680,7 @@ def render_envios_flow_responsive(data):
                         <div class="text-sm font-black text-white italic tracking-tighter leading-none min-h-[20px]">
                             {item['factura']}
                         </div>
-                        <div class="text-[12px] text-sky-400 font-bold mt-1">
+                        <div class="text-[12px] text-amber-400 font-bold mt-1">
                             RECO: {item['recomendacion']}
                         </div>
                     </div>
@@ -694,7 +694,7 @@ def render_envios_flow_responsive(data):
                         </div>
                         <div>
                             <div class="label-mini">Cliente / Extran</div>
-                            <div class="text-xs font-semibold text-sky-200 truncate min-h-[16px]">
+                            <div class="text-xs font-semibold text-amber-200 truncate min-h-[16px]">
                                 {item['nombre_cliente']} {f"/ {item['nombre_extran']}" if item['nombre_extran'] else ""}
                             </div>
                         </div>
@@ -710,7 +710,7 @@ def render_envios_flow_responsive(data):
                     <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
                         <div class="label-mini md:mb-1">Fecha Envío / Estatus</div>
                         <div class="text-[10px] font-bold text-emerald-300 uppercase">{item['fecha_envio']}</div>
-                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADO" else ("text-orange-400" if item['estatus'] == "SURTIENDO" else "text-amber-400")} tracking-tighter min-h-[16px]">
+                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADO" else ("text-amber-400" if item['estatus'] == "SURTIENDO" else "text-amber-500")} tracking-tighter min-h-[16px]">
                             {item['estatus']}
                         </div>
                     </div>
@@ -859,7 +859,6 @@ def main():
         
         estatus_series = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
         
-        # Condición: si la fecha de envío está en blanco, vacía, o es "0" / "0.0" / "-" / "NAN", estatus = SURTIENDO
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat']
         estatus_calculado = []
         for f_env, est in zip(fecha_envio_raw, estatus_series):
@@ -876,7 +875,7 @@ def main():
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
 
         # ── FILTROS SUPER INTELIGENTES 4 EN LÍNEA ────────────────────────
-        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #82D4E6; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;'>🎯 FILTRADO INTELIGENTE DE ENVÍOS</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #F59E0B; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;'>🎯 FILTRADO INTELIGENTE DE ENVÍOS</div>", unsafe_allow_html=True)
         
         f1, f2, f3, f4 = st.columns(4)
 
@@ -889,14 +888,12 @@ def main():
             filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
 
         with f3:
-            # Filtro inteligente combinado para cliente (Nombre Comercial o Extranjero)
             filtro_cliente = st.text_input("CLIENTE (COMERCIAL / EXTRAN)", placeholder="🔍 Buscar cliente...", key="filtro_cliente_envios")
 
         with f4:
             estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
             filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
 
-        # Aplicación de filtros sobre el DataFrame
         df_filtrado = df_envios.copy()
 
         if filtro_factura != "TODAS":
