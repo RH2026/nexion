@@ -149,7 +149,7 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/indicadores.py"
+    st.session_state.pagina_destino = "pages/envios.py"
     st.switch_page("pages/log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
@@ -229,8 +229,8 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/indicadores.py")
         st.stop()
 
-# Blindaje de Módulo DASHBOARD
-verificar_permiso_pagina("DASHBOARD")
+# Blindaje de Módulo REPORTES / ENVIOS
+verificar_permiso_pagina("REPORTES", "ENVIOS")
 
 
 # ==========================================
@@ -274,9 +274,9 @@ def limpiar_texto(texto):
 
 # Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
-    st.session_state.menu_main = "DASHBOARD"
+    st.session_state.menu_main = "REPORTES"
 if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "GENERAL"
+    st.session_state.menu_sub = "ENVIOS"
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
@@ -351,7 +351,6 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
-            # 1. Búsqueda en Matriz Principal
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -368,7 +367,6 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops]
 
-            # 2. Búsqueda en Inventario
             res_inv = pd.DataFrame()
             try:
                 df_inv_temp = pd.read_csv("inventario.csv")
@@ -382,7 +380,6 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. Búsqueda en Archivo T1.xlsx (Mapeando sus columnas a los nombres estándar de la tarjeta)
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
@@ -397,7 +394,6 @@ with header_zone:
                     match_t1 = df_t1_temp[mask_t1].copy()
                     
                     if not match_t1.empty:
-                        # Mapeo de columnas de T1 a los nombres estándar que usa la tarjeta única de resultados
                         match_t1 = match_t1.rename(columns={
                             "TALON": "NÚMERO DE GUÍA",
                             "OBSERVACION 1": "NÚMERO DE PEDIDO",
@@ -406,13 +402,11 @@ with header_zone:
                             "F.DOC": "FECHA DE ENVÍO",
                             "BULTOS": "CANTIDAD DE CAJAS"
                         })
-                        # Asignamos la fletera por defecto para que aparezca "TRES GUERRAS"
                         match_t1["FLETERA"] = "TRES GUERRAS"
                         res_t1 = match_t1
             except Exception:
                 pass
 
-            # Asignación de resultados por prioridad
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -560,7 +554,6 @@ with header_zone:
                 st.session_state.splash_completado = False
                 st.rerun()
 
-    # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA ──────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
@@ -634,7 +627,6 @@ def main():
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
     
-   
 
 if __name__ == "__main__":
     main()
