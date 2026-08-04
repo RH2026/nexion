@@ -619,14 +619,252 @@ with header_zone:
 
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
+
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (SOLO DONITAS Y GRÁFICOS)
+# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS
 # ==========================================
+def render_envios_flow_responsive(data):
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+            body {{ 
+                font-family: 'Inter', sans-serif; 
+                background-color: #384A52; 
+                color: #e2e8f0; 
+                margin: 0;
+                padding: 5px;
+                width: 100%;
+            }}
+            ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+            ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+            ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
+            ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+            .list-row {{
+                background-color: #263238;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                transition: all 0.2s ease;
+                margin-bottom: 8px;
+                border-radius: 10px;
+                overflow: hidden;
+                width: 100%;
+            }}
+            .list-row:hover {{
+                background-color: #2c3b42;
+                border-color: rgba(56, 189, 248, 0.3);
+            }}
+            .label-mini {{
+                font-size: 9px;
+                text-transform: uppercase;
+                font-weight: 800;
+                color: #BFBFBF;
+                letter-spacing: 0.5px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="w-full space-y-2">
+            {"".join([f'''
+            <div class="list-row flex items-stretch">
+                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADO" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
+                    
+                    <div class="w-full md:w-44 shrink-0">
+                        <div class="label-mini">Factura</div>
+                        <div class="text-sm font-black text-white italic tracking-tighter leading-none min-h-[20px]">
+                            {item['factura']}
+                        </div>
+                        <div class="text-[12px] text-sky-400 font-bold mt-1">
+                            RECO: {item['recomendacion']}
+                        </div>
+                    </div>
+                    
+                    <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                        <div>
+                            <div class="label-mini">Dirección</div>
+                            <div class="text-xs text-slate-300 italic truncate min-h-[16px]">
+                                {item['direccion']}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="label-mini">Cliente / Extran</div>
+                            <div class="text-xs font-semibold text-sky-200 truncate min-h-[16px]">
+                                {item['nombre_cliente']} {f"/ {item['nombre_extran']}" if item['nombre_extran'] else ""}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-[350px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
+                        <div class="w-full shrink-0">
+                            <div class="label-mini">Destino</div>
+                            <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['destino']}</div>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
+                        <div class="label-mini md:mb-1">Fecha Envío / Estatus</div>
+                        <div class="text-[10px] font-bold text-emerald-300 uppercase">{item['fecha_envio']}</div>
+                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADO" else "text-orange-400"} tracking-tighter min-h-[16px]">
+                            {item['estatus']}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            ''' for item in data])}
+        </div>
+    </body>
+    </html>
+    """
+    return components.html(html_content, height=800, scrolling=True)
+
+
 def main():    
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
     
+    usuario_actual = st.session_state.get("usuario_activo", "").upper()
+    es_admin = usuario_actual == "RIGOBERTO"
+
+    if es_admin:
+        with st.expander("🔐 Panel de Seguridad / Modo Edición Admin", expanded=False):
+            st.markdown(
+                """
+                <div style='background: rgba(0, 255, 170, 0.08); border: 1px solid #00FFAA; border-left: 5px solid #00FFAA; padding: 12px 18px; border-radius: 6px; margin-bottom: 15px; font-family: "Inter", sans-serif; color: white;'>
+                    <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 2px;'>
+                        <div style='width: 7px; height: 7px; background: #00FFAA; border-radius: 50%; box-shadow: 0 0 8px #00FFAA;'></div>
+                        <span style='font-size: 10px; font-weight: 800; color: #00FFAA; letter-spacing: 1.5px; text-transform: uppercase;'>ACCESS GRANTED // NIVEL 5 (ROOT)</span>
+                    </div>
+                    <div style='font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-left: 15px;'>
+                        Administrador Reconocido. Credenciales de seguridad validadas en el sistema central.
+                    </div>
+                </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+            modo_edicion = st.checkbox(
+                "Activar Modo Edición de Envíos en Pantalla",
+                value=False,
+                key="check_modo_edicion_envios_session",
+            )
+    else:
+        modo_edicion = False
+
+    st.markdown("""
+        <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
+            <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
+                PANEL DE CONTROL DE ENVÍOS
+            </span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    FILE_PATH = "envios.csv"
+    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+
+    def get_github_data():
+        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+        response = requests.get(CSV_URL, headers=headers)
+        if response.status_code == 200:
+            return pd.read_csv(io.StringIO(response.text))
+        else:
+            st.error(f"Hubo un error al cargar los datos: {response.status_code}")
+            return pd.DataFrame()
+
+    def guardar_cambios_github(df_nuevo):
+        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+        api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+        
+        r_get = requests.get(api_url, headers=headers)
+        if r_get.status_code != 200:
+            st.error("No se pudo obtener el identificador actual del archivo en GitHub.")
+            return False
+        sha_actual = r_get.json().get("sha")
+        
+        csv_buffer = io.StringIO()
+        df_nuevo.to_csv(csv_buffer, index=False)
+        csv_content = csv_buffer.getvalue()
+        
+        content_encoded = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+        
+        payload = {
+            "message": "Actualización automática de envíos desde panel admin seguro de Rigoberto",
+            "content": content_encoded,
+            "sha": sha_actual
+        }
+        
+        r_put = requests.put(api_url, json=payload, headers=headers)
+        if r_put.status_code in [200, 201]:
+            st.success("¡Envíos guardados en GitHub con éxito, mi amor! 🚀")
+            st.cache_data.clear()
+            return True
+        else:
+            st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
+            return False
+
+    df_raw = get_github_data()
+
+    if not df_raw.empty:
+        df_raw.columns = df_raw.columns.str.strip()
+
+        if modo_edicion:
+            st.markdown(
+                f"""
+                <div style='background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: "Inter", sans-serif; color: white;'>
+                    <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 4px;'>
+                        <div style='width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;'></div>
+                        <span style='font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;'>NEXION SECURITY // MODO EDICIÓN ACTIVO</span>
+                    </div>
+                    <div style='font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;'>
+                        Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura.
+                    </div>
+                </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+            df_editado = st.data_editor(
+                df_raw,
+                use_container_width=True,
+                num_rows="dynamic",
+                key="editor_envios_admin_session",
+            )
+
+            if st.button(
+                ":material/save: Guardar Cambios en GitHub", key="btn_guardar_github_envios_session"
+            ):
+                if guardar_cambios_github(df_editado):
+                    st.rerun()
+            st.markdown("---")
+
+        df_envios = pd.DataFrame()
+        df_envios['factura'] = df_raw.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
+        df_envios['recomendacion'] = df_raw.get('RECOMENDACION', pd.Series(dtype=str)).fillna('').astype(str)
+        df_envios['direccion'] = df_raw.get('DIRECCION', pd.Series(dtype=str)).fillna('').astype(str)
+        df_envios['nombre_cliente'] = df_raw.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
+        df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
+        df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('').astype(str)
+        df_envios['fecha_envio'] = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str)
+        
+        estatus_series = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
+        df_envios['estatus'] = estatus_series.replace('NAN', 'PENDIENTE')
+        
+        df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
+        
+        data_completa = df_envios.to_dict('records')
+    else:
+        data_completa = []
+
+    render_envios_flow_responsive(data_completa)
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
 if __name__ == "__main__":
     main()
