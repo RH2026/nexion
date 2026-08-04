@@ -330,17 +330,17 @@ with header_zone:
         )
 
     with c3:
-        es_atencion3g = (
-            st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
+        es_agc_o_atencion = (
+            st.session_state.get("usuario_activo", "").upper() in ["AGC", "ATENCION3G"]
         )
         key_actual = f"main_search_v{st.session_state.search_key_version}"
 
         query = st.text_input(
             "Buscar",
-            placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar...",
+            placeholder="🔍 BUSCADOR DESACTIVADO" if es_agc_o_atencion else "🔍 Buscar...",
             label_visibility="collapsed",
             key=key_actual,
-            disabled=es_atencion3g,
+            disabled=es_agc_o_atencion,
         )
 
         if query:
