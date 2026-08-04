@@ -294,14 +294,14 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         fletera = str(row.get('RECOMENDACION', 'N/A'))
         factura = str(row.get('Factura', 'S/N'))
         
-        # Solo se imprime el texto de la fletera en el documento físico
+        # Solo se imprime el texto del nombre limpio de la fletera
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(x_pos, y_pos, f"FLETERA: {fletera}")
+        c.drawString(x_pos, y_pos, f"{fletera}")
         
-        # El QR a un lado contiene la información completa (Fletera, Factura y Fecha Prog)
+        # QR a un lado, bajado más (y_pos - 14) para alinearse perfecto al centro del texto
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
-        c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 4, width=35, height=35)
+        c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 14, width=35, height=35)
         
         c.showPage()
     c.save()
@@ -317,14 +317,14 @@ def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter)
     
-    # Solo el texto de la fletera en el PDF digital
+    # Solo el nombre limpio de la fletera en el PDF digital
     can.setFont("Helvetica-Bold", 12)
-    can.drawString(x_pos, y_pos, f"FLETERA: {fletera_val}")
+    can.drawString(x_pos, y_pos, f"{fletera_val}")
     
-    # QR con toda la info a un lado
+    # QR con toda la info a un lado, ajustado hacia abajo
     texto_qr = f"FLETERA: {fletera_val} | FACTURA: {factura_val} | PROG: {fecha_programacion}"
     qr_io = crear_imagen_qr(texto_qr)
-    can.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 4, width=35, height=35)
+    can.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 14, width=35, height=35)
     
     can.save()
     packet.seek(0)
