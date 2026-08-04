@@ -403,7 +403,8 @@ with header_zone:
                             "OBSERVACION 1": "NÚMERO DE PEDIDO",
                             "DESTINATARIO": "NOMBRE DEL CLIENTE",
                             "SUBTOTAL": "COSTO DE LA GUÍA",
-                            "F.DOC": "FECHA DE ENVÍO"
+                            "F.DOC": "FECHA DE ENVÍO",
+                            "BULTOS": "CANTIDAD DE CAJAS"
                         })
                         res_t1 = match_t1
             except Exception:
