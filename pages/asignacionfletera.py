@@ -5,6 +5,7 @@ import re
 import time
 import unicodedata
 import zipfile
+import requests
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
@@ -272,7 +273,73 @@ def limpiar_texto(texto):
 
 
 # ==========================================
-# 3.1 FUNCIONES DE SELLADO CON QR INTEGRADO
+# 3.1 FUNCIÓN PARA ACUMULAR Y GUARDAR EN GITHUB (envios.csv)
+# ==========================================
+def actualizar_historial_envios_github(df_nuevos):
+    """
+    Descarga envios.csv de GitHub si existe, le concatena los nuevos datos 
+    (evitando duplicados por Factura) y los vuelve a subir. Si no existe, lo crea.
+    """
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    FILE_PATH = "envios.csv"
+    
+    if not TOKEN:
+        st.error("Falta configurar el GITHUB_TOKEN en los Secrets de Streamlit.")
+        return False
+
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+    
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    
+    # 1. Intentar leer el archivo actual de GitHub
+    r = requests.get(url, headers=headers)
+    df_existente = pd.DataFrame()
+    sha = None
+    
+    if r.status_code == 200:
+        file_info = r.json()
+        sha = file_info["sha"]
+        content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
+        df_existente = pd.read_csv(io.StringIO(content_decoded))
+    
+    # 2. Combinar historial anterior con el nuevo análisis
+    if not df_existente.empty:
+        df_combinado = pd.concat([df_existente, df_nuevos], ignore_index=True)
+        if "Factura" in df_combinado.columns:
+            df_combinado = df_combinado.drop_duplicates(subset=["Factura"], keep="last")
+    else:
+        df_combinado = df_nuevos
+
+    # 3. Convertir a CSV en memoria y codificar en Base64
+    csv_buffer = io.StringIO()
+    df_combinado.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+    csv_str = csv_buffer.getvalue()
+    content_base64 = base64.b64encode(csv_str.encode("utf-8")).decode("utf-8")
+    
+    # 4. Preparar petición PUT para GitHub
+    data = {
+        "message": "Actualización automática de envios.csv desde NEXION",
+        "content": content_base64,
+        "branch": "main"
+    }
+    if sha:
+        data["sha"] = sha  # Requerido si el archivo ya existe
+
+    put_response = requests.put(url, headers=headers, json=data)
+    
+    if put_response.status_code in [200, 201]:
+        return True
+    else:
+        st.error(f"Error al actualizar envios.csv en GitHub: {put_response.json().get('message', 'Desconocido')}")
+        return False
+
+
+# ==========================================
+# 3.2 FUNCIONES DE SELLADO CON QR INTEGRADO
 # ==========================================
 def crear_imagen_qr(contenido_qr):
     qr = qrcode.QRCode(version=1, box_size=2, border=1)
@@ -294,11 +361,9 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         fletera = str(row.get('RECOMENDACION', 'N/A'))
         factura = str(row.get('Factura', 'S/N'))
         
-        # Solo se imprime el texto del nombre limpio de la fletera
         c.setFont("Helvetica-Bold", 12)
         c.drawString(x_pos, y_pos, f"{fletera}")
         
-        # QR a un lado, bajado más (y_pos - 14) para alinearse perfecto al centro del texto
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
         c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 37, width=55, height=55)
@@ -317,11 +382,9 @@ def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter)
     
-    # Solo el nombre limpio de la fletera en el PDF digital
     can.setFont("Helvetica-Bold", 12)
     can.drawString(x_pos, y_pos, f"{fletera_val}")
     
-    # QR con toda la info a un lado, ajustado hacia abajo
     texto_qr = f"FLETERA: {fletera_val} | FACTURA: {factura_val} | PROG: {fecha_programacion}"
     qr_io = crear_imagen_qr(texto_qr)
     can.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 14, width=35, height=35)
@@ -595,7 +658,6 @@ with header_zone:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
         tipo = st.session_state.get("tipo_resultado", "OPERACION")
-        accent_color = "#00FFAA"
         inv_color = "#36b9cc"
         azul_premium = "#00D4FF"
 
@@ -642,7 +704,7 @@ with header_zone:
                         f_entrega_dt = f_entrega_dt.normalize()
                     status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
-                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
+                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: #00FFAA; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: #00FFAA; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: #00FFAA; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: #00FFAA;">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: #00FFAA; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
                 st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
             else:
                 st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
@@ -877,7 +939,13 @@ def main():
         
         if st.button("FIJAR CAMBIOS", use_container_width=True, type="primary"):
             st.session_state.df_analisis = p_editado
-            st.toast("Cambios guardados", icon="✅")
+            
+            # Sincronizar y acumular en envios.csv dentro de GitHub
+            exito = actualizar_historial_envios_github(p_editado)
+            if exito:
+                st.toast("¡Cambios guardados y acumulados en envios.csv!", icon="✅")
+            else:
+                st.toast("Guardado localmente, pero falló la sincronización con GitHub", icon="⚠️")
             
         st.write("") 
         
