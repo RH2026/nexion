@@ -406,6 +406,8 @@ with header_zone:
                             "F.DOC": "FECHA DE ENVÍO",
                             "BULTOS": "CANTIDAD DE CAJAS"
                         })
+                        # Asignamos la fletera por defecto para que aparezca "TRES GUERRAS"
+                        match_t1["FLETERA"] = "TRES GUERRAS"
                         res_t1 = match_t1
             except Exception:
                 pass
