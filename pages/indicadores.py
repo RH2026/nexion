@@ -273,7 +273,6 @@ def limpiar_texto(texto):
 
 
 # Inicialización segura de estados de menú
-# Inicialización segura de estados de menú para el Dashboard
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "DASHBOARD"
 if "menu_sub" not in st.session_state:
@@ -383,22 +382,30 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. Búsqueda en Archivo T1 (AQUÍ ESTABA EL FALTANTE)
-            # 3. Búsqueda en Archivo T1.xlsx (Columnas OBSERVACION 1 y TALON)
+            # 3. Búsqueda en Archivo T1.xlsx (Mapeando sus columnas a los nombres estándar de la tarjeta)
             res_t1 = pd.DataFrame()
             try:
-                # Lee el archivo de Excel (asegúrate de tener 'openpyxl' instalado en tu entorno)
                 df_t1_temp = pd.read_excel("T1.xlsx") 
                 df_t1_temp.columns = df_t1_temp.columns.str.strip().str.upper()
                 
-                # Filtramos únicamente las columnas solicitadas que realmente existan en el archivo
-                cols_t1 = [c for c in ["OBSERVACION 1", "TALON"] if c in df_t1_temp.columns]
+                cols_t1 = [c for c in ["OBSERVACION 1", "TALON", "DESTINATARIO", "DESTINO"] if c in df_t1_temp.columns]
                 
                 if cols_t1:
                     mask_t1 = df_t1_temp[cols_t1].astype(str).apply(
                         lambda x: x.str.contains(query, case=False, na=False)
                     ).any(axis=1)
-                    res_t1 = df_t1_temp[mask_t1]
+                    match_t1 = df_t1_temp[mask_t1].copy()
+                    
+                    if not match_t1.empty:
+                        # Mapeo de columnas de T1 a los nombres estándar que usa la tarjeta única de resultados
+                        match_t1 = match_t1.rename(columns={
+                            "TALON": "NÚMERO DE GUÍA",
+                            "OBSERVACION 1": "NÚMERO DE PEDIDO",
+                            "DESTINATARIO": "NOMBRE DEL CLIENTE",
+                            "SUBTOTAL": "COSTO DE LA GUÍA",
+                            "F.DOC": "FECHA DE ENVÍO"
+                        })
+                        res_t1 = match_t1
             except Exception:
                 pass
 
@@ -409,7 +416,7 @@ with header_zone:
                 st.session_state.resultado_busqueda = res_ops
             elif not res_t1.empty:
                 st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "OPERACION"  # Lo mapeamos para que use la misma estructura de tarjeta
+                st.session_state.tipo_resultado = "OPERACION" 
                 st.session_state.resultado_busqueda = res_t1
             elif not res_inv.empty:
                 st.session_state.busqueda_activa = True
@@ -435,7 +442,6 @@ with header_zone:
                 unsafe_allow_html=True,
             )
         
-            # MÓDULOS Y SUBMENÚS CONDICIONADOS POR PERMISOS DE GITHUB
             if permisos.get("DASHBOARD", False):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
@@ -608,7 +614,7 @@ with header_zone:
                 st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
 
                 for _, d in resultados.iterrows():
-                    status_text = d["COMENTARIOS"] if pd.notna(d.get("COMENTARIOS")) else "OK"
+                    status_text = d["COMENTARIOS"] if "COMENTARIOS" in d and pd.notna(d.get("COMENTARIOS")) else "OK"
                     st.markdown(f"<div class='card-nexion' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {azul_premium};border-radius:12px;padding:18px 25px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{azul_premium};letter-spacing:0.5px;'># {d.get('NÚMERO DE PEDIDO','')}</b><br><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;'>Envío: {d.get('FECHA DE ENVÍO','')}</span></div><div style='flex:2.5;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('NOMBRE DEL CLIENTE','')}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.5);font-style:normal;font-weight:600;'>{d.get('DESTINO','')}</i></div><div style='flex:1.8;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('FLETERA', d.get('TRANSPORTE', 'LOGÍSTICA'))}</b><br><span style='font-size:12px;color:{azul_premium};font-weight:700;font-family:monospace;'>{d.get('NÚMERO DE GUÍA','')}</span></div><div style='flex:1.2;text-align:right;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:{azul_premium};'>{d.get('FECHA DE ENTREGA REAL','')}</b><br><span style='font-size:10px;color:white;font-weight:800;text-transform:uppercase;opacity:0.8;'>{status_text}</span></div></div>", unsafe_allow_html=True)
 
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
@@ -618,7 +624,7 @@ with header_zone:
 # ==========================================
 # 5. INTERFAZ PRINCIPAL (SOLO DONITAS Y GRÁFICOS)
 # ==========================================
-def main():   
+def main():    
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
