@@ -301,7 +301,7 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         # QR a un lado, bajado más (y_pos - 14) para alinearse perfecto al centro del texto
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
-        c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 14, width=35, height=35)
+        c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 14, width=55, height=55)
         
         c.showPage()
     c.save()
@@ -875,7 +875,7 @@ def main():
             key="editor_final_github"
         )
         
-        if st.button("💾 FIJAR CAMBIOS", use_container_width=True, type="primary"):
+        if st.button("FIJAR CAMBIOS", use_container_width=True, type="primary"):
             st.session_state.df_analisis = p_editado
             st.toast("Cambios guardados", icon="✅")
             
@@ -884,7 +884,7 @@ def main():
         output_xlsx = io.BytesIO()
         p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
         st.download_button(
-            label="📥 DESCARGAR ANÁLISIS", 
+            label="DESCARGAR ANÁLISIS", 
             data=output_xlsx.getvalue(), 
             file_name="Analisis_Final.xlsx", 
             use_container_width=True,
@@ -896,12 +896,12 @@ def main():
             ax = cx.slider("X", 0, 612, 399)
             ay = cy.slider("Y", 0, 792, 760)
             
-            st.markdown("###### 🖨️ Opciones de Impresión Física")
+            st.markdown("###### Opciones de Impresión Física")
             s1, s2 = st.columns(2)
             
             with s1:
                 st.download_button(
-                    label="🖨️ GENERAR SELLOS NORMAL", 
+                    label="GENERAR SELLOS NORMAL", 
                     data=generar_sellos_fisicos(p_editado, ax, ay), 
                     file_name="Sellos_Normales.pdf", 
                     use_container_width=True,
@@ -911,7 +911,7 @@ def main():
             with s2:
                 p_invertido = p_editado.iloc[::-1].reset_index(drop=True)
                 st.download_button(
-                    label="🔄 GENERAR SELLOS MODO INVERSO", 
+                    label="GENERAR SELLOS MODO INVERSO", 
                     data=generar_sellos_fisicos(p_invertido, ax, ay), 
                     file_name="Sellos_Inversos.pdf", 
                     use_container_width=True,
