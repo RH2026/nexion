@@ -776,7 +776,7 @@ def main():
             </div>
         """, unsafe_allow_html=True)
     with col_btn_refrescar:
-        if st.button("🔄 ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
+        if st.button(":material/reload: ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
 
@@ -947,7 +947,7 @@ def main():
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
 
         # ── FILTROS SUPER INTELIGENTES 4 EN LÍNEA ────────────────────────
-        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #82D4E6; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;'>🎯 FILTRADO INTELIGENTE DE ENVÍOS</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #82D4E6; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;'></div>", unsafe_allow_html=True)
         
         f1, f2, f3, f4 = st.columns(4)
 
