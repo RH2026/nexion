@@ -277,7 +277,7 @@ def limpiar_texto(texto):
 # ==========================================
 def actualizar_historial_envios_github(df_nuevos):
     """
-    Descarga envios.csv de GitHub, le añade columnas vacías (FECHA DE ENVIO, ESTATUS),
+    Descarga envios.csv de GitHub, le añade columnas vacías (FECHA DE ENVIO, ESTATUS, FECHA ACTUAL, SERVICIO),
     concatena los nuevos datos, elimina duplicados por Factura (conservando el más reciente)
     y lo vuelve a subir. Si no existe, lo crea desde cero.
     """
@@ -329,10 +329,6 @@ def actualizar_historial_envios_github(df_nuevos):
             df_existente["FECHA ACTUAL"] = ""
         if "SERVICIO" not in df_existente.columns:
             df_existente["SERVICIO"] = ""
-            
-        df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
-    else:
-        df_combinado = df_procesado
             
         df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
     else:
