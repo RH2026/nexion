@@ -229,7 +229,6 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/indicadores.py")
         st.stop()
 
-# Blindaje de Módulo REPORTES / ENVIOS
 verificar_permiso_pagina("ENTREGAS", "NACIONAL")
 
 
@@ -244,7 +243,6 @@ def obtener_matriz_github():
         m.columns = [str(c).upper().strip() for c in m.columns]
         return m
     except Exception as e:
-        st.error(f"Error fatal al conectar con GitHub: {e}")
         return pd.DataFrame()
 
 
@@ -625,7 +623,7 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS
+# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (CON GUÍA INTEGRADA)
 # ==========================================
 def render_envios_flow_responsive(data):
     html_content = f"""
@@ -677,13 +675,20 @@ def render_envios_flow_responsive(data):
                 <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADO" else ("bg-orange-500" if item['estatus'] == "SURTIENDO" else "bg-amber-500")} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                 <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
                     
-                    <div class="w-full md:w-44 shrink-0">
+                    <div class="w-full md:w-40 shrink-0">
                         <div class="label-mini">Factura</div>
                         <div class="text-sm font-black text-white italic tracking-tighter leading-none min-h-[20px]">
                             {item['factura']}
                         </div>
                         <div class="text-[12px] text-sky-400 font-bold mt-1">
                             RECO: {item['recomendacion']}
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-40 shrink-0">
+                        <div class="label-mini">No. Guía / Talón</div>
+                        <div class="text-xs font-mono font-bold text-amber-300 truncate min-h-[16px]">
+                            {item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}
                         </div>
                     </div>
                     
@@ -702,14 +707,14 @@ def render_envios_flow_responsive(data):
                         </div>
                     </div>
 
-                    <div class="w-full md:w-[350px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
+                    <div class="w-full md:w-[250px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-6">
                         <div class="w-full shrink-0">
                             <div class="label-mini">Destino</div>
                             <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['destino']}</div>
                         </div>
                     </div>
 
-                    <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
+                    <div class="w-full md:w-36 flex justify-between md:block text-right shrink-0">
                         <div class="label-mini md:mb-1">Fecha Envío / Estatus</div>
                         <div class="text-[10px] font-bold text-emerald-300 uppercase">{item['fecha_envio']}</div>
                         <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADO" else ("text-orange-400" if item['estatus'] == "SURTIENDO" else "text-amber-400")} tracking-tighter min-h-[16px]">
@@ -760,13 +765,20 @@ def main():
     else:
         modo_edicion = False
 
-    st.markdown("""
-        <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
-            <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
-                PANEL DE CONTROL DE ENVÍOS
-            </span>
-        </div>
-    """, unsafe_allow_html=True)
+    # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA (SIN RECARGAR LA PÁGINA) ────────
+    col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
+    with col_titulo:
+        st.markdown("""
+            <div style='text-align:left; margin-top:15px; margin-bottom:10px;'>
+                <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
+                    PANEL DE CONTROL DE ENVÍOS
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+    with col_btn_refrescar:
+        if st.button("🔄 ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
 
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
@@ -815,6 +827,15 @@ def main():
 
     df_raw = get_github_data()
 
+    # Cargar fuentes adicionales para búsqueda de número de guía (Matriz Dashboard y T1.xlsx)
+    df_dashboard_global = cargar_datos_dashboard()
+    df_t1_global = pd.DataFrame()
+    try:
+        df_t1_global = pd.read_excel("T1.xlsx")
+        df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
+    except Exception:
+        pass
+
     if not df_raw.empty:
         df_raw.columns = df_raw.columns.str.strip()
 
@@ -861,16 +882,62 @@ def main():
         
         estatus_series = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
         
-        # Condición blindada para fecha y hora de envío
+        # Búsqueda automática de Número de Guía en la matriz y T1.xlsx
+        lista_guias = []
+        for idx, row in df_raw.iterrows():
+            fac = str(row.get('Factura', '')).strip()
+            guia_encontrada = ""
+            
+            # Buscar en columnas directas de df_raw si existen
+            for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
+                if col_g in df_raw.columns and pd.notna(row.get(col_g)):
+                    val_g = str(row.get(col_g)).strip()
+                    if val_g and val_g not in ['', 'nan', '0', '0.0']:
+                        guia_encontrada = val_g
+                        break
+            
+            # Buscar en la matriz general de dashboard
+            if not guia_encontrada and df_dashboard_global is not None and not df_dashboard_global.empty:
+                for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
+                    if col_ped in df_dashboard_global.columns:
+                        match_dash = df_dashboard_global[df_dashboard_global[col_ped].astype(str).str.strip() == fac]
+                        if not match_dash.empty:
+                            for cg_dash in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA']:
+                                if cg_dash in match_dash.columns:
+                                    vg = str(match_dash.iloc[0][cg_dash]).strip()
+                                    if vg and vg not in ['', 'nan', '0', '0.0']:
+                                        guia_encontrada = vg
+                                        break
+                        if guia_encontrada:
+                            break
+
+            # Buscar en T1.xlsx si aún no se encuentra
+            if not guia_encontrada and not df_t1_global.empty:
+                for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
+                    if col_t1_ped in df_t1_global.columns:
+                        match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
+                        if not match_t1.empty:
+                            for cg_t1 in ['TALON', 'GUIA', 'NÚMERO DE GUÍA']:
+                                if cg_t1 in match_t1.columns:
+                                    vg = str(match_t1.iloc[0][cg_t1]).strip()
+                                    if vg and vg not in ['', 'nan', '0', '0.0']:
+                                        guia_encontrada = vg
+                                        break
+                        if guia_encontrada:
+                            break
+
+            lista_guias.append(guia_encontrada)
+
+        df_envios['numero_guia'] = lista_guias
+
+        # Condición blindada para fecha, hora de envío y estatus
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         estatus_calculado = []
         for f_env, est in zip(fecha_envio_raw, estatus_series):
             f_str = str(f_env).lower().strip()
-            # Si no tiene fecha de envío (está vacío o nulo) -> SURTIENDO
             if f_str in valores_nulos_fecha:
                 estatus_calculado.append("SURTIENDO")
             else:
-                # Si ya tiene fecha y hora registrada, el envío ya se hizo -> ENVIADA
                 if est in ['', 'NAN', 'PENDIENTE', 'SURTIENDO']:
                     estatus_calculado.append("ENVIADA")
                 else:
@@ -893,7 +960,6 @@ def main():
             filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
 
         with f3:
-            # Filtro inteligente combinado para cliente (Nombre Comercial o Extranjero)
             filtro_cliente = st.text_input("CLIENTE (COMERCIAL / EXTRAN)", placeholder="🔍 Buscar cliente...", key="filtro_cliente_envios")
 
         with f4:
