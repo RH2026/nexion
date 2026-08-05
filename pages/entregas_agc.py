@@ -474,7 +474,7 @@ with header_zone:
         
             if permisos.get("CENTRO DE DATOS", False):
                 with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
-                    opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
+                    opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
                     opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -486,6 +486,8 @@ with header_zone:
                                 st.switch_page("pages/asignacionfletera.py")
                             elif s == "ETIQUETAS":
                                 st.switch_page("pages/etiquetas.py")
+                            elif s == "ESCANEAR QR":
+                                st.switch_page("pages/qrup.py")
                             else:
                                 st.rerun()
         
