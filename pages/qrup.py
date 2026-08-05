@@ -794,7 +794,7 @@ def main():
                     📱 LECTOR QR MÓVIL (CÁMARA DEL CELULAR)
                 </p>
                 <p style="font-size: 11px; color: rgba(255,255,255,0.8); margin-bottom: 12px;">
-                    Apunta con la cámara de tu celular al código QR. En cuanto se lea, <b>se guardará automáticamente</b> en GitHub. Si la factura no existe o ya tiene fecha registrada, no se sobrescribirá.
+                    Apunta con la cámara de tu celular al código QR. En cuanto se lea, <b>se guardará automáticamente</b> en la base de datos. Si la factura no existe o ya tiene fecha registrada, no se sobrescribirá.
                 </p>
             </div>
             """,
