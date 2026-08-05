@@ -257,7 +257,7 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
 def actualizar_envios_desde_qr(texto_qr):
     """
     Parsea el QR del tipo: FLETERA: TRES GUERRAS | FACTURA: 241877 | PROG: 2026-08-04 17:28
-    Busca envios.csv en GitHub, actualiza la 'FECHA DE ENVIO' para esa factura y la sube.
+    Busca envios.csv en GitHub, convierte la columna a texto, actualiza la fecha de envío y la sube.
     """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
@@ -271,7 +271,7 @@ def actualizar_envios_desde_qr(texto_qr):
         match_prog = re.search(r"PROG:\s*([\d\-]+\s+[\d:]+)", texto_qr, re.IGNORECASE)
 
         if not match_factura or not match_prog:
-            return False, "El formato del QR no es válido o faltan campos."
+            return False, "El formato del QR no es válido. Asegúrate de que contenga FACTURA y PROG."
 
         factura_scans = str(match_factura.group(1)).strip()
         prog_val = str(match_prog.group(1)).strip()
@@ -284,7 +284,7 @@ def actualizar_envios_desde_qr(texto_qr):
 
         r = requests.get(url, headers=headers)
         if r.status_code != 200:
-            return False, "No se pudo descargar envios.csv de GitHub."
+            return False, "No se pudo conectar con envios.csv en GitHub."
 
         file_info = r.json()
         sha = file_info["sha"]
@@ -301,6 +301,7 @@ def actualizar_envios_desde_qr(texto_qr):
         if not col_fac_encontrada:
             return False, "No se encontró la columna de Factura en envios.csv."
 
+        # Buscar o crear la columna de fecha de envío
         col_fecha_envio = None
         for c in df_envios.columns:
             if "fecha" in c.lower() and "envio" in c.lower():
@@ -311,6 +312,8 @@ def actualizar_envios_desde_qr(texto_qr):
             col_fecha_envio = "FECHA DE ENVIO"
             df_envios[col_fecha_envio] = ""
 
+        # BLINDAJE: Forzar toda la columna a texto (string) para evitar el error de float64
+        df_envios[col_fecha_envio] = df_envios[col_fecha_envio].astype(str)
         df_envios[col_fac_encontrada] = df_envios[col_fac_encontrada].astype(str).str.strip()
 
         if factura_scans in df_envios[col_fac_encontrada].values:
@@ -323,7 +326,7 @@ def actualizar_envios_desde_qr(texto_qr):
         content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
 
         data = {
-            "message": f"Actualización de fecha de envío por escaneo QR para factura {factura_scans}",
+            "message": f"Actualización de fecha de envío por QR para factura {factura_scans}",
             "content": content_base64,
             "branch": "main",
             "sha": sha
@@ -331,12 +334,12 @@ def actualizar_envios_desde_qr(texto_qr):
 
         put_response = requests.put(url, headers=headers, json=data)
         if put_response.status_code in [200, 201]:
-            return True, f"Factura {factura_scans} actualizada con éxito (PROG: {prog_val})."
+            return True, f"¡Factura {factura_scans} actualizada con éxito! Fecha: {prog_val}"
         else:
-            return False, f"Error al guardar en GitHub: {put_response.json().get('message', 'Desconocido')}"
+            return False, "Error al guardar los cambios en GitHub."
 
     except Exception as e:
-        return False, f"Error procesando el QR: {str(e)}"
+        return False, f"Error procesando: {str(e)}"
 
 def generar_etiquetas_nexion(df_datos):
     output = io.BytesIO()
