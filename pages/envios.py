@@ -619,7 +619,7 @@ with header_zone:
 
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
-   st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 
 # ==========================================
@@ -796,7 +796,6 @@ def main():
             "Pragma": "no-cache",
             "Expires": "0"
         }
-        # Limpiamos headers vacíos
         headers = {k: v for k, v in headers.items() if v}
         
         response = requests.get(CSV_URL, headers=headers)
