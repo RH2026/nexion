@@ -207,7 +207,7 @@ if usuario_actual_val != "RIGOBERTO":
 
 
 # ==========================================
-# 3. CONFIGURACIÓN GITHUB PARA PERMISOS (CON CACHÉ INSTANTÁNEA EN SESSION_STATE)
+# 3. CONFIGURACIÓN GITHUB PARA PERMISOS
 # ==========================================
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
@@ -426,7 +426,7 @@ if "tipo_resultado" not in st.session_state:
 
 
 # ==========================================
-# 5. HEADER CON 4 COLUMNAS (BÚSQUEDA GLOBAL TRIPLE RENDER)
+# 5. HEADER CON 4 COLUMNAS
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -698,8 +698,6 @@ with header_zone:
         else:
             if total == 1:
                 envio = resultados.iloc[0]
-                f_envio = envio.get("FECHA DE ENVÍO", "N/A")
-                f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
                 entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
                 f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
 
@@ -744,7 +742,7 @@ with header_zone:
 
 
 # ==========================================
-# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL CON PESTAÑAS Y SUBMENÚS)
+# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL CON MARCAR/DESMARCAR TODO)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
@@ -761,6 +759,7 @@ def main():
             if col != "USUARIO":
                 df_permisos[col] = df_permisos[col].astype(bool)
 
+        cols_dash = ["USUARIO", "DASHBOARD"]
         cols_seg = ["USUARIO", "SEGUIMIENTO", "ALERTAS", "GANTT", "QUEJAS"]
         cols_ent = ["USUARIO", "ENTREGAS", "AGC", "AMAZON", "BARCELO", "NACIONAL"]
         cols_rep = ["USUARIO", "REPORTES", "COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS", "PANEL MUESTRAS"]
@@ -769,7 +768,6 @@ def main():
         cols_fin = ["USUARIO", "FINANZAS", "WALLET", "CAJA CHICA", "GASTOS"]
         cols_enf = ["USUARIO", "ENFOQUE", "MORENO", "VAZQUEZ", "MIGUEL"]
         cols_acc = ["USUARIO", "ACCESS CONTROL"]
-        cols_dash = ["USUARIO", "DASHBOARD"]
 
         tab_dash, tab_seg, tab_ent, tab_rep, tab_for, tab_dat, tab_fin, tab_enf, tab_acc = st.tabs([
             "DASHBOARD", "SEGUIMIENTO", "ENTREGAS", "REPORTES", 
@@ -778,69 +776,64 @@ def main():
 
         df_editado = df_permisos.copy()
 
-        # Altura expandida (height=500) en cada data_editor para mostrar todas las filas sin cortar a nadie
-        with tab_dash:
-            df_t = df_editado[[c for c in cols_dash if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dash", height=500)
+        def renderizar_pestana_con_botones(cols_tab, tab_key, df_fuente):
+            col_btn1, col_btn2, col_vacia = st.columns([1.5, 1.5, 4])
+            
+            # Inicializar estado para selección total en esta pestaña si no existe
+            key_estado_todo = f"estado_todo_{tab_key}"
+            if key_estado_todo not in st.session_state:
+                st.session_state[key_estado_todo] = False
+
+            with col_btn1:
+                if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
+                    for c in cols_tab:
+                        if c != "USUARIO":
+                            df_fuente[c] = True
+                    st.session_state["df_permisos_local"] = df_fuente
+                    st.rerun()
+
+            with col_btn2:
+                if st.button("❌ Desmarcar Todo", key=f"btn_desmarcar_todo_{tab_key}", use_container_width=True):
+                    for c in cols_tab:
+                        if c != "USUARIO":
+                            df_fuente[c] = False
+                    st.session_state["df_permisos_local"] = df_fuente
+                    st.rerun()
+
+            df_t = df_fuente[[c for c in cols_tab if c in df_fuente.columns]]
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key=f"ed_{tab_key}", height=450)
+            
             for c in sub_ed.columns:
                 if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+                    df_fuente[c] = sub_ed[c]
+            return df_fuente
+
+        with tab_dash:
+            df_editado = renderizar_pestana_con_botones(cols_dash, "dash", df_editado)
 
         with tab_seg:
-            df_t = df_editado[[c for c in cols_seg if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_seg", height=500)
-            for c in sub_ed.columns:
-                if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+            df_editado = renderizar_pestana_con_botones(cols_seg, "seg", df_editado)
 
         with tab_ent:
-            df_t = df_editado[[c for c in cols_ent if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_ent", height=500)
-            for c in sub_ed.columns:
-                if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+            df_editado = renderizar_pestana_con_botones(cols_ent, "ent", df_editado)
 
         with tab_rep:
-            df_t = df_editado[[c for c in cols_rep if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_rep", height=500)
-            for c in sub_ed.columns:
-                if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+            df_editado = renderizar_pestana_con_botones(cols_rep, "rep", df_editado)
 
         with tab_for:
-            df_t = df_editado[[c for c in cols_for if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_for", height=500)
-            for c in sub_ed.columns:
-                if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+            df_editado = renderizar_pestana_con_botones(cols_for, "for", df_editado)
 
         with tab_dat:
-            df_t = df_editado[[c for c in cols_dat if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_dat", height=500)
-            for c in sub_ed.columns:
-                if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+            df_editado = renderizar_pestana_con_botones(cols_dat, "dat", df_editado)
 
         with tab_fin:
-            df_t = df_editado[[c for c in cols_fin if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_fin", height=500)
-            for c in sub_ed.columns:
-                if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+            df_editado = renderizar_pestana_con_botones(cols_fin, "fin", df_editado)
 
         with tab_enf:
-            df_t = df_editado[[c for c in cols_enf if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_enf", height=500)
-            for c in sub_ed.columns:
-                if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+            df_editado = renderizar_pestana_con_botones(cols_enf, "enf", df_editado)
 
         with tab_acc:
-            df_t = df_editado[[c for c in cols_acc if c in df_editado.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key="ed_acc", height=500)
-            for c in sub_ed.columns:
-                if c != "USUARIO":
-                    df_editado[c] = sub_ed[c]
+            df_editado = renderizar_pestana_con_botones(cols_acc, "acc", df_editado)
 
         st.markdown("<br>", unsafe_allow_html=True)
         col_b1, col_b2 = st.columns([1.5, 4])
