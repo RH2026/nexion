@@ -256,7 +256,8 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
 
 def actualizar_envios_desde_qr(texto_qr):
     """
-    Parsea el QR, verifica si ya tiene fecha de envío; si está vacía, la actualiza en GitHub.
+    Parsea el QR, verifica que exista en la base de datos general / envios, 
+    si no existe frena la operación; si ya tiene fecha de envío avisa, y si está vacía la actualiza.
     """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
@@ -275,6 +276,17 @@ def actualizar_envios_desde_qr(texto_qr):
         factura_scans = str(match_factura.group(1)).strip()
         prog_val = str(match_prog.group(1)).strip()
 
+        # 1. Validación previa en la base de datos principal (Dashboard) para asegurar existencia real
+        df_dash_val = cargar_datos_dashboard()
+        existe_en_sistema = False
+        if df_dash_val is not None and not df_dash_val.empty:
+            for col_p in ["NÚMERO DE PEDIDO", "PEDIDO", "FACTURA"]:
+                if col_p in df_dash_val.columns:
+                    if factura_scans in df_dash_val[col_p].astype(str).str.strip().values:
+                        existe_en_sistema = True
+                        break
+
+        # 2. Descargar y verificar envios.csv
         headers = {
             "Authorization": f"Bearer {TOKEN}",
             "Accept": "application/vnd.github+json"
@@ -314,18 +326,24 @@ def actualizar_envios_desde_qr(texto_qr):
         df_envios[col_fecha_envio] = df_envios[col_fecha_envio].astype(str)
         df_envios[col_fac_encontrada] = df_envios[col_fac_encontrada].astype(str).str.strip()
 
-        if factura_scans in df_envios[col_fac_encontrada].values:
-            # Validar si ya tiene información registrada
+        # Verificar si existe en envios.csv o en el dashboard general
+        en_envios = factura_scans in df_envios[col_fac_encontrada].values
+
+        if not en_envios and not existe_en_sistema:
+            return False, f"❌ La factura {factura_scans} no existe en la base de datos. No se puede guardar."
+
+        if en_envios:
             fila_actual = df_envios[df_envios[col_fac_encontrada] == factura_scans].iloc[0]
             valor_actual = str(fila_actual[col_fecha_envio]).strip()
 
             if valor_actual and valor_actual.lower() not in ["nan", "nat", "none", ""]:
                 return False, f"⚠️ La factura {factura_scans} ya cuenta con fecha de envío registrada ({valor_actual}). No se puede sobrescribir."
 
-            # Si está vacía, se actualiza
             df_envios.loc[df_envios[col_fac_encontrada] == factura_scans, col_fecha_envio] = prog_val
         else:
-            return False, f"La factura {factura_scans} no existe en envios.csv."
+            # Si existe en el sistema general pero no estaba en envios.csv, se agrega de forma segura
+            nueva_fila = {col_fac_encontrada: factura_scans, col_fecha_envio: prog_val}
+            df_envios = pd.concat([df_envios, pd.DataFrame([nueva_fila])], ignore_index=True)
 
         csv_buffer = io.StringIO()
         df_envios.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
@@ -776,7 +794,7 @@ def main():
                     📱 LECTOR QR MÓVIL (CÁMARA DEL CELULAR)
                 </p>
                 <p style="font-size: 11px; color: rgba(255,255,255,0.8); margin-bottom: 12px;">
-                    Apunta con la cámara de tu celular al código QR. En cuanto se lea, <b>se guardará automáticamente</b> en GitHub. Si ya tiene fecha registrada, no se sobrescribirá.
+                    Apunta con la cámara de tu celular al código QR. En cuanto se lea, <b>se guardará automáticamente</b> en GitHub. Si la factura no existe o ya tiene fecha registrada, no se sobrescribirá.
                 </p>
             </div>
             """,
@@ -796,7 +814,7 @@ def main():
 
             if qr_detectado and qr_detectado != st.session_state.ultimo_qr_procesado:
                 st.session_state.ultimo_qr_procesado = qr_detectado
-                with st.spinner("QR detectado. Guardando en GitHub automáticamente..."):
+                with st.spinner("QR detectado. Verificando y guardando..."):
                     exito, mensaje = actualizar_envios_desde_qr(qr_detectado)
                     if exito:
                         st.success(mensaje)
@@ -815,11 +833,12 @@ def main():
 
         if st.button("🚀 PROCESAR Y ACTUALIZAR MANUALMENTE", key="btn_procesar_qr_manual", type="primary"):
             if qr_input_manual:
-                with st.spinner("Actualizando envios.csv en GitHub..."):
+                with st.spinner("Validando y actualizando en GitHub..."):
                     exito, mensaje = actualizar_envios_desde_qr(qr_input_manual)
                     if exito:
                         st.success(mensaje)
                         time.sleep(1)
+                        st.rerun()
                     else:
                         st.error(mensaje)
             else:
