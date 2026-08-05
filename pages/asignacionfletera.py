@@ -302,6 +302,10 @@ def actualizar_historial_envios_github(df_nuevos):
         df_procesado["FECHA DE ENVIO"] = ""
     if "ESTATUS" not in df_procesado.columns:
         df_procesado["ESTATUS"] = ""
+    if "FECHA ACTUAL" not in df_procesado.columns:
+        df_procesado["FECHA ACTUAL"] = ""
+    if "SERVICIO" not in df_procesado.columns:
+        df_procesado["SERVICIO"] = ""
 
     # 1. Intentar leer el archivo actual de GitHub
     r = requests.get(url, headers=headers)
@@ -321,6 +325,14 @@ def actualizar_historial_envios_github(df_nuevos):
             df_existente["FECHA DE ENVIO"] = ""
         if "ESTATUS" not in df_existente.columns:
             df_existente["ESTATUS"] = ""
+        if "FECHA ACTUAL" not in df_existente.columns:
+            df_existente["FECHA ACTUAL"] = ""
+        if "SERVICIO" not in df_existente.columns:
+            df_existente["SERVICIO"] = ""
+            
+        df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
+    else:
+        df_combinado = df_procesado
             
         df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
     else:
