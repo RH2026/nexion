@@ -861,16 +861,18 @@ def main():
         
         estatus_series = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
         
-        # Condición: si la fecha de envío está en blanco, vacía, o es "0" / "0.0" / "-" / "NAN", estatus = SURTIENDO
-        valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat']
+        # Condición blindada para fecha y hora de envío
+        valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         estatus_calculado = []
         for f_env, est in zip(fecha_envio_raw, estatus_series):
             f_str = str(f_env).lower().strip()
+            # Si no tiene fecha de envío (está vacío o nulo) -> SURTIENDO
             if f_str in valores_nulos_fecha:
                 estatus_calculado.append("SURTIENDO")
             else:
-                if est in ['', 'NAN']:
-                    estatus_calculado.append("PENDIENTE")
+                # Si ya tiene fecha y hora registrada, el envío ya se hizo -> ENVIADA
+                if est in ['', 'NAN', 'PENDIENTE', 'SURTIENDO']:
+                    estatus_calculado.append("ENVIADA")
                 else:
                     estatus_calculado.append(est)
                     
