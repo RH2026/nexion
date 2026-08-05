@@ -619,7 +619,7 @@ with header_zone:
 
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
-    st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+   st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 
 # ==========================================
@@ -765,7 +765,7 @@ def main():
     else:
         modo_edicion = False
 
-    # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA (SIN RECARGAR LA PÁGINA) ────────
+    # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA (ARTILLERÍA PESADA ANTI-CACHE) ────────
     col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
     with col_titulo:
         st.markdown("""
@@ -778,15 +778,27 @@ def main():
     with col_btn_refrescar:
         if st.button("ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
             st.cache_data.clear()
+            st.session_state.pop("df_envios_cache_v", None)
             st.rerun()
 
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "envios.csv"
-    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+    
+    # URL con marca de tiempo precisa en milisegundos para evitar caché agresiva de GitHub CDN / Cloudflare
+    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}?_t={int(time.time() * 1000)}"
 
     def get_github_data():
-        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+        # Headers avanzados para saltarse cualquier caché intermedia
+        headers = {
+            "Authorization": f"token {TOKEN}" if TOKEN else "",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+        # Limpiamos headers vacíos
+        headers = {k: v for k, v in headers.items() if v}
+        
         response = requests.get(CSV_URL, headers=headers)
         if response.status_code == 200:
             return pd.read_csv(io.StringIO(response.text))
