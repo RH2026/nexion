@@ -196,7 +196,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/indicadores.py")
         st.stop()
 
-verificar_permiso_pagina("CENTRO DE DATOS", "ETIQUETAS")
+verificar_permiso_pagina("CENTRO DE DATOS", "ESCANEAR QR")
 
 
 # ==========================================
