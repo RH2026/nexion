@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 import io
 import re
@@ -188,7 +189,6 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/indicadores.py")
         st.stop()
 
-# Blindaje correcto para ETIQUETAS (dentro de CENTRO DE DATOS)
 verificar_permiso_pagina("CENTRO DE DATOS", "ETIQUETAS")
 
 
@@ -246,6 +246,96 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
         c.drawCentredString(x_centro, y_actual, line)
         y_actual -= interlineado
     return y_actual 
+
+def actualizar_envios_desde_qr(texto_qr):
+    """
+    Parsea el QR del tipo: FLETERA: TRES GUERRAS | FACTURA: 241877 | PROG: 2026-08-04 17:28
+    Busca envios.csv en GitHub, actualiza la 'FECHA DE ENVIO' (o fecha de envio) para esa factura y la sube.
+    """
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    FILE_PATH = "envios.csv"
+    
+    if not TOKEN:
+        return False, "Falta configurar GITHUB_TOKEN en los Secrets."
+
+    try:
+        # Parseo seguro con expresiones regulares
+        match_factura = re.search(r"FACTURA:\s*([^\s|]+)", texto_qr, re.IGNORECASE)
+        match_prog = re.search(r"PROG:\s*([\d\-]+\s+[\d:]+)", texto_qr, re.IGNORECASE)
+
+        if not match_factura or not match_prog:
+            return False, "El formato del QR no es válido o faltan campos."
+
+        factura_scans = str(match_factura.group(1)).strip()
+        prog_val = str(match_prog.group(1)).strip()
+
+        headers = {
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/vnd.github+json"
+        }
+        url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+
+        r = requests.get(url, headers=headers)
+        if r.status_code != 200:
+            return False, "No se pudo descargar envios.csv de GitHub."
+
+        file_info = r.json()
+        sha = file_info["sha"]
+        content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
+        df_envios = pd.read_csv(io.StringIO(content_decoded))
+        df_envios.columns = [str(c).strip() for c in df_envios.columns]
+
+        # Normalizar columna de factura para búsqueda robusta
+        col_fac_encontrada = None
+        for c in df_envios.columns:
+            if c.lower() in ["factura", "folio", "docnum"]:
+                col_fac_encontrada = c
+                break
+
+        if not col_fac_encontrada:
+            return False, "No se encontró la columna de Factura en envios.csv."
+
+        # Buscar columna de fecha de envío
+        col_fecha_envio = None
+        for c in df_envios.columns:
+            if "fecha" in c.lower() and "envio" in c.lower():
+                col_fecha_envio = c
+                break
+        
+        if not col_fecha_envio:
+            col_fecha_envio = "FECHA DE ENVIO"
+            df_envios[col_fecha_envio] = ""
+
+        # Convertir a string para emparejar bien
+        df_envios[col_fac_encontrada] = df_envios[col_fac_encontrada].astype(str).str.strip()
+
+        if factura_scans in df_envios[col_fac_encontrada].values:
+            df_envios.loc[df_envios[col_fac_encontrada] == factura_scans, col_fecha_envio] = prog_val
+        else:
+            # Si no está exacto, intentamos añadiendo la fila nueva o avisando
+            return False, f"La factura {factura_scans} no existe en envios.csv."
+
+        # Subir de regreso a GitHub
+        csv_buffer = io.StringIO()
+        df_envios.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+        content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
+
+        data = {
+            "message": f"Actualización de fecha de envío por escaneo QR para factura {factura_scans}",
+            "content": content_base64,
+            "branch": "main",
+            "sha": sha
+        }
+
+        put_response = requests.put(url, headers=headers, json=data)
+        if put_response.status_code in [200, 201]:
+            return True, f"Factura {factura_scans} actualizada con éxito (PROG: {prog_val})."
+        else:
+            return False, f"Error al guardar en GitHub: {put_response.json().get('message', 'Desconocido')}"
+
+    except Exception as e:
+        return False, f"Error procesando el QR: {str(e)}"
 
 def generar_etiquetas_nexion(df_datos):
     output = io.BytesIO()
@@ -389,7 +479,6 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
-            # 1. Búsqueda en Matriz Principal
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -406,7 +495,6 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops]
 
-            # 2. Búsqueda en Inventario
             res_inv = pd.DataFrame()
             try:
                 df_inv_temp = pd.read_csv("inventario.csv")
@@ -420,7 +508,6 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. Búsqueda en Archivo T1.xlsx
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
@@ -664,145 +751,39 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (PESTAÑAS DE ETIQUETAS)
+# 5. INTERFAZ PRINCIPAL (MÓDULO DE ESCANEO QR Y ETIQUETAS)
 # ==========================================
-def main():    
-    tab1, tab2, tab3 = st.tabs([
-        "CARGAR POR EXCEL (Lote)", 
-        "BASE DE DATOS GITHUB", 
-        "CAPTURA MANUAL"
-    ])
-    
-    with tab1:
-        st.subheader("Cargar Archivo Excel de Pedidos")
-        archivo = st.file_uploader("Sube tu archivo .xlsx", type=["xlsx"], key="creador_etiquetas_excel")
-        
-        if archivo:
-            try:
-                df_excel = pd.read_excel(archivo, sheet_name=0)
-                st.subheader("Vista previa de datos")
-                st.dataframe(df_excel[['Quantity', 'DIRECCION', 'Factura']].head(5), use_container_width=True)
+def main():
+    st.markdown("<p style='letter-spacing:3px; color:#FFFFFF; font-size:10px; font-weight:700;'>MOBILE QR SCANNER & LABELS HUB</p>", unsafe_allow_html=True)
 
-                if st.button("Generar Etiquetas desde Excel", use_container_width=True, key="btn_gen_excel"):
-                    with st.spinner("Generando documento..."):
-                        pdf_data = generar_etiquetas_nexion(df_excel)
-                        if pdf_data:
-                            st.success("¡Documento generado con éxito!")
-                            st.download_button(
-                                label="Descargar PDF de Etiquetas",
-                                data=pdf_data,
-                                file_name="etiquetas_nexion_excel.pdf",
-                                mime="application/pdf",
-                                use_container_width=True,
-                                key="dl_excel"
-                            )
-            except Exception as e:
-                st.error(f"Error al leer los pedidos: {e}")
-    
-    with tab2:
-        st.subheader("Base de Datos - facturacion_moreno.csv")
-        df_facturacion = cargar_csv_github()
-        
-        if not df_facturacion.empty:
-            df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
-            facturas_disponibles = df_facturacion["Factura"].unique()
-
-            c_col1, c_col2 = st.columns(2)
-            with c_col1:
-                modo_busqueda = st.selectbox(
-                    "🔍 Método de Selección", 
-                    ["Seleccionar de la lista", "Escribir folio manual"],
-                    key="modo_busq_etq_github"
-                )
-
-            num_factura_seleccionada = None
-            with c_col2:
-                if modo_busqueda == "Seleccionar de la lista":
-                    num_factura_seleccionada = st.selectbox("📦 Selecciona Factura / Folio", facturas_disponibles, key="sel_factura_etq_github")
-                else:
-                    num_factura_seleccionada = st.text_input("✍️ Ingresa Folio Manual", key="txt_folio_manual_etq_github")
-
-            if num_factura_seleccionada:
-                df_encontrado = df_facturacion[df_facturacion["Factura"] == str(num_factura_seleccionada).strip()]
-                
-                if not df_encontrado.empty:
-                    row_data = df_encontrado.iloc[0].copy()
-                    
-                    st.markdown("---")
-                    st.info(f"📋 **Cliente encontrado:** {row_data.get('Nombre_Extran', row_data.get('Nombre_Cliente', 'SIN NOMBRE'))}")
-                    
-                    col_c, col_t = st.columns(2)
-                    with col_c:
-                        cajas_manual = st.number_input("📦 Cantidad de Cajas / Bultos", min_value=1, value=1, step=1, key="num_cajas_manual_db")
-                    with col_t:
-                        transporte_manual = st.text_input("🚛 Transporte / Paquetería", value=str(row_data.get('RECOMENDACION', row_data.get('Transporte', 'TRES GUERRAS'))), key="txt_transporte_manual_db")
-                    
-                    row_data['Quantity'] = cajas_manual
-                    row_data['RECOMENDACION'] = transporte_manual
-                    
-                    df_procesar_individual = pd.DataFrame([row_data])
-
-                    if st.button("Generar Etiqueta Individual", use_container_width=True, key="btn_gen_moreno"):
-                        with st.spinner("Generando etiqueta..."):
-                            pdf_data_moreno = generar_etiquetas_nexion(df_procesar_individual)
-                            if pdf_data_moreno:
-                                st.success("¡Etiqueta generada con éxito!")
-                                st.download_button(
-                                    label="Descargar PDF de Etiqueta",
-                                    data=pdf_data_moreno,
-                                    file_name=f"etiqueta_factura_{num_factura_seleccionada}.pdf",
-                                    mime="application/pdf",
-                                    use_container_width=True,
-                                    key="dl_moreno"
-                                )
-                else:
-                    st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
-        else:
-            st.warning("No se pudieron cargar los datos de GitHub. Verifica tu token o conexión.")
-    
-    with tab3:
-        st.markdown("""
-            <div style="background-color: #263243; padding: 10px 15px; border-radius: 5px; color: #ffffff; font-size: 14px; margin-bottom: 20px;">
-                Ingresa los datos del envío manualmente (sin necesidad de archivos).
+    # Sección para escanear / ingresar el QR con el cel
+    with st.container():
+        st.markdown(
+            f"""
+            <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="color: #00D4FF; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase;">
+                    📱 ESCÁNER DE QR (LECTURA MÓVIL)
+                </p>
+                <p style="font-size: 11px; color: rgba(255,255,255,0.8); margin-bottom: 12px;">
+                    Escanea o pega el texto del QR (ej: <code>FLETERA: TRES GUERRAS | FACTURA: 241877 | PROG: 2026-08-04 17:28</code>) para actualizar la fecha de envío automáticamente en <b>envios.csv</b>.
+                </p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True
+        )
 
-        col_m1, col_m2 = st.columns(2)
-        with col_m1:
-            manual_factura = st.text_input("NÚMERO DE FACTURA / FOLIO", value="235050", key="man_factura")
-            manual_nombre = st.text_input("NOMBRE DEL CLIENTE / HOTEL", value="HOTEL EJEMPLO", key="man_nombre")
-            manual_cajas = st.number_input("CANTIDAD DE CAJAS / BULTOS", min_value=1, value=1, step=1, key="man_cajas")
-
-        with col_m2:
-            manual_direccion = st.text_area("DIRECCIÓN COMPLETA DE DESTINO", value="Av. Principal #123, Col. Centro, C.P. 44100, Guadalajara, Jal.", height=107, key="man_direccion")
-            manual_transporte = st.text_input("TRANSPORTE / PAQUETERÍA", value="TRES GUERRAS", key="man_transporte")
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Generar Etiqueta Manual", use_container_width=True, key="btn_gen_manual_libre"):
-            if not manual_factura or not manual_nombre or not manual_direccion:
-                st.error("Por favor completa los campos obligatorios (Factura, Nombre y Dirección).")
+        qr_input = st.text_input("Contenido del QR escaneado con celular:", placeholder="Pega aquí el contenido del QR...")
+        if st.button("PROCESAR Y ACTUALIZAR ENVÍO DESDE QR", key="btn_procesar_qr"):
+            if qr_input:
+                exito, mensaje = actualizar_envios_desde_qr(qr_input)
+                if exito:
+                    st.success(mensaje)
+                else:
+                    st.error(mensaje)
             else:
-                dict_manual = {
-                    'Factura': str(manual_factura),
-                    'Nombre_Cliente': str(manual_nombre),
-                    'DIRECCION': str(manual_direccion),
-                    'Quantity': int(manual_cajas),
-                    'RECOMENDACION': str(manual_transporte)
-                }
-                df_manual_pro = pd.DataFrame([dict_manual])
+                st.warning("Por favor ingresa o escanea el texto del QR.")
 
-                with st.spinner("Generando etiqueta manual..."):
-                    pdf_data_manual = generar_etiquetas_nexion(df_manual_pro)
-                    if pdf_data_manual:
-                        st.success("¡Etiqueta manual generada con éxito!")
-                        st.download_button(
-                            label="Descargar PDF de Etiqueta Manual",
-                            data=pdf_data_manual,
-                            file_name=f"etiqueta_manual_{manual_factura}.pdf",
-                            mime="application/pdf",
-                            use_container_width=True,
-                            key="dl_manual_libre"
-                        )
+    st.markdown("---")
 
 if __name__ == "__main__":
     main()
