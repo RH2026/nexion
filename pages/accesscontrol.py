@@ -619,7 +619,7 @@ with header_zone:
         
             if tiene_permiso("CENTRO DE DATOS"):
                 with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
-                    opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
+                    opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
                     opciones_hub = [s for s in opciones_hub_posibles if tiene_permiso(s)]
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -629,6 +629,10 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             if s == "ASIGNAR FLETERA":
                                 st.switch_page("pages/asignacionfletera.py")
+                            elif s == "ETIQUETAS":
+                                st.switch_page("pages/etiquetas.py")
+                            elif s == "ESCANEAR QR":
+                                st.switch_page("pages/qrup.py")
                             else:
                                 st.rerun()
         
