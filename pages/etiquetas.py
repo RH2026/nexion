@@ -13,6 +13,13 @@ from reportlab.pdfgen import canvas
 import pandas as pd
 import streamlit as st
 
+# Intentar importar el escáner QR nativo para móviles si está instalado
+try:
+    from streamlit_qrcode_scanner import qrcode_scanner
+    _QR_SCANNER_DISPONIBLE = True
+except ImportError:
+    _QR_SCANNER_DISPONIBLE = False
+
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
     page_title="JYPESA | Logistics",
@@ -250,7 +257,7 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
 def actualizar_envios_desde_qr(texto_qr):
     """
     Parsea el QR del tipo: FLETERA: TRES GUERRAS | FACTURA: 241877 | PROG: 2026-08-04 17:28
-    Busca envios.csv en GitHub, actualiza la 'FECHA DE ENVIO' (o fecha de envio) para esa factura y la sube.
+    Busca envios.csv en GitHub, actualiza la 'FECHA DE ENVIO' para esa factura y la sube.
     """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
@@ -260,7 +267,6 @@ def actualizar_envios_desde_qr(texto_qr):
         return False, "Falta configurar GITHUB_TOKEN en los Secrets."
 
     try:
-        # Parseo seguro con expresiones regulares
         match_factura = re.search(r"FACTURA:\s*([^\s|]+)", texto_qr, re.IGNORECASE)
         match_prog = re.search(r"PROG:\s*([\d\-]+\s+[\d:]+)", texto_qr, re.IGNORECASE)
 
@@ -286,7 +292,6 @@ def actualizar_envios_desde_qr(texto_qr):
         df_envios = pd.read_csv(io.StringIO(content_decoded))
         df_envios.columns = [str(c).strip() for c in df_envios.columns]
 
-        # Normalizar columna de factura para búsqueda robusta
         col_fac_encontrada = None
         for c in df_envios.columns:
             if c.lower() in ["factura", "folio", "docnum"]:
@@ -296,7 +301,6 @@ def actualizar_envios_desde_qr(texto_qr):
         if not col_fac_encontrada:
             return False, "No se encontró la columna de Factura en envios.csv."
 
-        # Buscar columna de fecha de envío
         col_fecha_envio = None
         for c in df_envios.columns:
             if "fecha" in c.lower() and "envio" in c.lower():
@@ -307,16 +311,13 @@ def actualizar_envios_desde_qr(texto_qr):
             col_fecha_envio = "FECHA DE ENVIO"
             df_envios[col_fecha_envio] = ""
 
-        # Convertir a string para emparejar bien
         df_envios[col_fac_encontrada] = df_envios[col_fac_encontrada].astype(str).str.strip()
 
         if factura_scans in df_envios[col_fac_encontrada].values:
             df_envios.loc[df_envios[col_fac_encontrada] == factura_scans, col_fecha_envio] = prog_val
         else:
-            # Si no está exacto, intentamos añadiendo la fila nueva o avisando
             return False, f"La factura {factura_scans} no existe en envios.csv."
 
-        # Subir de regreso a GitHub
         csv_buffer = io.StringIO()
         df_envios.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
         content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
@@ -756,34 +757,48 @@ with header_zone:
 def main():
     st.markdown("<p style='letter-spacing:3px; color:#FFFFFF; font-size:10px; font-weight:700;'>MOBILE QR SCANNER & LABELS HUB</p>", unsafe_allow_html=True)
 
-    # Sección para escanear / ingresar el QR con el cel
+    # Contenedor del Lector QR Móvil y Entrada Manual
     with st.container():
         st.markdown(
             f"""
             <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
                 <p style="color: #00D4FF; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase;">
-                    📱 ESCÁNER DE QR (LECTURA MÓVIL)
+                    📱 LECTOR QR MÓVIL (CÁMARA DEL CELULAR)
                 </p>
                 <p style="font-size: 11px; color: rgba(255,255,255,0.8); margin-bottom: 12px;">
-                    Escanea o pega el texto del QR (ej: <code>FLETERA: TRES GUERRAS | FACTURA: 241877 | PROG: 2026-08-04 17:28</code>) para actualizar la fecha de envío automáticamente en <b>envios.csv</b>.
+                    Apunta con la cámara de tu celular al código QR de la etiqueta para actualizar en tiempo real la <b>FECHA DE ENVÍO</b> en <b>envios.csv</b>.
                 </p>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        qr_input = st.text_input("Contenido del QR escaneado con celular:", placeholder="Pega aquí el contenido del QR...")
-        if st.button("PROCESAR Y ACTUALIZAR ENVÍO DESDE QR", key="btn_procesar_qr"):
+        qr_detectado = None
+
+        # Si el paquete del lector de QR está instalado, activamos la cámara
+        if _QR_SCANNER_DISPONIBLE:
+            st.markdown("###### 📷 Cámara Activa:")
+            qr_detectado = qrcode_scanner(key="lector_qr_movil")
+        else:
+            st.info("💡 Tip: Para activar el visor de la cámara web/celular directamente en pantalla, asegúrate de tener instalado `streamlit-qrcode-scanner`. Mientras tanto, puedes usar el campo de abajo o escanear con la app de tu cámara.")
+
+        # Campo alternativo / manual para escanear o pegar el texto del QR
+        qr_input = st.text_input("O ingresa / pega el contenido del QR escaneado:", value=qr_detectado if qr_detectado else "", placeholder="Ej: FLETERA: TRES GUERRAS | FACTURA: 241877 | PROG: 2026-08-04 17:28")
+
+        if st.button("🚀 PROCESAR Y ACTUALIZAR EN GITHUB", key="btn_procesar_qr", type="primary"):
             if qr_input:
-                exito, mensaje = actualizar_envios_desde_qr(qr_input)
-                if exito:
-                    st.success(mensaje)
-                else:
-                    st.error(mensaje)
+                with st.spinner("Actualizando envios.csv en GitHub..."):
+                    exito, mensaje = actualizar_envios_desde_qr(qr_input)
+                    if exito:
+                        st.success(mensaje)
+                        time.sleep(1)
+                    else:
+                        st.error(mensaje)
             else:
-                st.warning("Por favor ingresa o escanea el texto del QR.")
+                st.warning("Por favor escanea o ingresa un código QR válido.")
 
     st.markdown("---")
+
 
 if __name__ == "__main__":
     main()
