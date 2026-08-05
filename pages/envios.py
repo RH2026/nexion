@@ -776,7 +776,7 @@ def main():
             </div>
         """, unsafe_allow_html=True)
     with col_btn_refrescar:
-        if st.button(":material/reload: ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
+        if st.button("ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
 
@@ -818,7 +818,7 @@ def main():
         
         r_put = requests.put(api_url, json=payload, headers=headers)
         if r_put.status_code in [200, 201]:
-            st.success("¡Envíos guardados en GitHub con éxito, mi amor! 🚀")
+            st.success("¡Envíos guardados en GitHub con éxito! 🚀")
             st.cache_data.clear()
             return True
         else:
