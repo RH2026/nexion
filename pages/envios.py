@@ -349,6 +349,7 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
+            # 1. Búsqueda en Matriz Principal (Global)
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -363,21 +364,9 @@ with header_zone:
                     mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
                         lambda x: x.str.contains(query, case=False, na=False)
                     ).any(axis=1)
-                    res_ops = df_matriz_fresco[mask_ops]
+                    res_ops = df_matriz_fresco[mask_ops].copy()
 
-            res_inv = pd.DataFrame()
-            try:
-                df_inv_temp = pd.read_csv("inventario.csv")
-                df_inv_temp.columns = df_inv_temp.columns.str.strip()
-                cols_inv = [c for c in ["CODIGO", "DESCRIPCION"] if c in df_inv_temp.columns]
-                if cols_inv:
-                    mask_inv = df_inv_temp[cols_inv].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    res_inv = df_inv_temp[mask_inv]
-            except Exception:
-                pass
-
+            # 2. Búsqueda en Archivo T1.xlsx
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
@@ -405,6 +394,38 @@ with header_zone:
             except Exception:
                 pass
 
+            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
+            if not res_ops.empty and not res_t1.empty:
+                for idx, row in res_ops.iterrows():
+                    guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
+                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
+                    if guia_actual in ["", "nan", "0", "None"]:
+                        pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
+                        # Buscamos coincidencia en T1 por número de pedido/factura
+                        match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
+                        if not match_en_t1.empty:
+                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
+                            res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
+                            res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
+                            if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
+                                res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
+
+            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
+            res_inv = pd.DataFrame()
+            if res_ops.empty and res_t1.empty:
+                try:
+                    df_inv_temp = pd.read_csv("inventario.csv")
+                    df_inv_temp.columns = df_inv_temp.columns.str.strip()
+                    cols_inv = [c for c in ["CODIGO", "DESCRIPCION"] if c in df_inv_temp.columns]
+                    if cols_inv:
+                        mask_inv = df_inv_temp[cols_inv].astype(str).apply(
+                            lambda x: x.str.contains(query, case=False, na=False)
+                        ).any(axis=1)
+                        res_inv = df_inv_temp[mask_inv]
+                except Exception:
+                    pass
+
+            # Asignación final de resultados
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -419,7 +440,8 @@ with header_zone:
                 st.session_state.resultado_busqueda = res_inv
             else:
                 st.session_state.busqueda_activa = False
-                st.toast("No se encontró ningún registro", icon="🔍")
+                st.session_state.resultado_busqueda = None
+                st.toast("Sin resultados: No se encontró en Matriz Global ni en T1", icon="⚠️")
 
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
