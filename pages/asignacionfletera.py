@@ -378,7 +378,9 @@ def crear_imagen_qr(contenido_qr):
 
 def generar_sellos_fisicos(df_datos, x_pos, y_pos):
     buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=letter)
+    # Forzamos las medidas exactas del tamaño Carta en puntos (width, height)
+    # 8.5 x 11 pulgadas * 72 puntos por pulgada = 612 x 792
+    c = canvas.Canvas(buffer, pagesize=(612, 792)) 
     fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
     
     for _, row in df_datos.iterrows():
@@ -390,6 +392,7 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
+        # Asegúrate de que tus coordenadas x_pos, y_pos no se salgan del lienzo de 612x792
         c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 37, width=55, height=55)
         
         c.showPage()
@@ -404,7 +407,10 @@ def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
     fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
     
     packet = io.BytesIO()
-    can = canvas.Canvas(packet, pagesize=letter)
+    # --- AQUÍ ESTABA EL PUNTO CLAVE: ---
+    # Si el PDF original no tenía tamaño definido o venía en A4, 
+    # al poner 'letter' aquí, forzamos el formato correcto.
+    can = canvas.Canvas(packet, pagesize=letter) 
     
     can.setFont("Helvetica-Bold", 12)
     can.drawString(x_pos, y_pos, f"{fletera_val}")
