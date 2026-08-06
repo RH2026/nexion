@@ -145,6 +145,41 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
 )
 
 
+#----registraas usuario------
+GITHUB_USER = "RH2026"
+GITHUB_REPO = "nexion"
+GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+
+def registrar_acceso_github(usuario, modulo):
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/auditoria_accesos.csv"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    r = requests.get(url, headers=headers)
+    
+    fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    if r.status_code == 200:
+        file_data = r.json()
+        sha = file_data.get("sha", "")
+        content_decoded = base64.b64decode(file_data.get("content", "")).decode("utf-8")
+        df_aud = pd.read_csv(io.StringIO(content_decoded))
+    else:
+        df_aud = pd.DataFrame(columns=["FECHA_HORA", "USUARIO", "MODULO"])
+        sha = ""
+
+    nuevo_registro = pd.DataFrame([{"FECHA_HORA": fecha_hora, "USUARIO": usuario, "MODULO": modulo}])
+    df_aud = pd.concat([df_aud, nuevo_registro], ignore_index=True)
+    
+    csv_string = df_aud.to_csv(index=False)
+    payload = {
+        "message": f"Registro de acceso de {usuario} al módulo {modulo}",
+        "content": base64.b64encode(csv_string.encode()).decode()
+    }
+    if sha:
+        payload["sha"] = sha
+        
+    requests.put(url, json=payload, headers=headers)
+
+
 # ==========================================
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
@@ -463,6 +498,7 @@ with header_zone:
         
             if permisos.get("DASHBOARD", False):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                    registrar_acceso_github(usuario, "DASHBOARD")
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
@@ -475,6 +511,7 @@ with header_zone:
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
+                            registrar_acceso_github(usuario, f"SEGUIMIENTO - {s}")
                             st.session_state.menu_main = "SEGUIMIENTO"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -487,6 +524,7 @@ with header_zone:
                     for s in opciones_ent:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
+                            registrar_acceso_github(usuario, f"ENTREGAS - {s}")
                             st.session_state.menu_main = "ENTREGAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -504,6 +542,7 @@ with header_zone:
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}2"):
+                            registrar_acceso_github(usuario, f"REPORTES - {s}")
                             st.session_state.menu_main = "REPORTES"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -519,6 +558,7 @@ with header_zone:
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}2"):
+                            registrar_acceso_github(usuario, f"FORMATOS - {s}")
                             st.session_state.menu_main = "FORMATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -531,6 +571,7 @@ with header_zone:
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_hub_{s}2"):
+                            registrar_acceso_github(usuario, f"CENTRO DE DATOS - {s}")
                             st.session_state.menu_main = "CENTRO DE DATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -550,6 +591,7 @@ with header_zone:
                     for s in opciones_fin:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_fin_{s}2"):
+                            registrar_acceso_github(usuario, f"FINANZAS - {s}")
                             st.session_state.menu_main = "FINANZAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -562,12 +604,14 @@ with header_zone:
                     for s in opciones_enf:
                         label = f"» {s}" if st.session_state.get("menu_sub") == s else s
                         if st.button(label, use_container_width=True, key=f"pop_enf_{s}2"):
+                            registrar_acceso_github(usuario, f"ENFOQUE - {s}")
                             st.session_state.menu_main = "ENFOQUE"
                             st.session_state.menu_sub = s
                             st.rerun()
         
             if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
                 if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl2"):
+                    registrar_acceso_github(usuario, "ACCESS CONTROL")
                     st.session_state.menu_main = "ACCESS CONTROL"
                     st.session_state.menu_sub = "SETTINGS"
                     st.switch_page("pages/accesscontrol.py")
