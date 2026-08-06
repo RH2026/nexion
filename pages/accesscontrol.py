@@ -207,7 +207,7 @@ if usuario_actual_val != "RIGOBERTO":
 
 
 # ==========================================
-# 3. CONFIGURACIÓN GITHUB PARA PERMISOS
+# 3. CONFIGURACIÓN GITHUB PARA PERMISOS Y AUDITORÍA
 # ==========================================
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
@@ -337,6 +337,24 @@ def asegurar_y_actualizar_matriz_en_github():
 
 asegurar_y_actualizar_matriz_en_github()
 
+# Función para verificar y crear la base de datos de auditoría en GitHub si no existe
+def asegurar_y_cargar_auditoria_en_github():
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/auditoria_accesos.csv"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    r = requests.get(url, headers=headers)
+    
+    if r.status_code != 200:
+        # Si no existe, creamos el archivo con columnas iniciales
+        df_init = pd.DataFrame(columns=["FECHA_HORA", "USUARIO", "MODULO"])
+        csv_string = df_init.to_csv(index=False)
+        payload = {
+            "message": "Creación automática de auditoria_accesos.csv",
+            "content": base64.b64encode(csv_string.encode()).decode()
+        }
+        requests.put(url, json=payload, headers=headers)
+
+asegurar_y_cargar_auditoria_en_github()
+
 def cargar_matriz_permisos():
     if "df_permisos_local" in st.session_state:
         return st.session_state["df_permisos_local"]
@@ -372,6 +390,16 @@ def guardar_matriz_en_github(df_actualizado):
         
     res = requests.put(url, json=payload, headers=headers)
     return res.status_code in [200, 201]
+
+# Función para cargar el registro de auditoría desde GitHub
+@st.cache_data(ttl=30)
+def cargar_datos_auditoria():
+    url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/auditoria_accesos.csv?nocache={int(time.time())}"
+    try:
+        df = pd.read_csv(url)
+        return df
+    except Exception:
+        return pd.DataFrame(columns=["FECHA_HORA", "USUARIO", "MODULO"])
 
 
 # ==========================================
@@ -795,7 +823,7 @@ with header_zone:
 
 
 # ==========================================
-# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL ULTRA COMPACTO)
+# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL ULTRA COMPACTO + AUDITORÍA)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
@@ -822,15 +850,14 @@ def main():
         cols_enf = ["USUARIO", "ENFOQUE", "MORENO", "VAZQUEZ", "MIGUEL"]
         cols_acc = ["USUARIO", "ACCESS CONTROL"]
 
-        tab_dash, tab_seg, tab_ent, tab_rep, tab_for, tab_dat, tab_fin, tab_enf, tab_acc = st.tabs([
+        tab_dash, tab_seg, tab_ent, tab_rep, tab_for, tab_dat, tab_fin, tab_enf, tab_acc, tab_aud = st.tabs([
             "DASHBOARD", "SEGUIMIENTO", "ENTREGAS", "REPORTES", 
-            "FORMATOS", "DATOS", "FINANZAS", "ENFOQUE", "ACCESS CTRL"
+            "FORMATOS", "DATOS", "FINANZAS", "ENFOQUE", "ACCESS CTRL", "AUDITORÍA"
         ])
 
         df_editado = df_permisos.copy()
 
         def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
-            # Barra superior compacta con Marcar/Desmarcar Todo
             c_m1, c_m2, c_esp = st.columns([1.5, 1.5, 4])
             with c_m1:
                 if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
@@ -850,7 +877,6 @@ def main():
 
             st.markdown("<hr style='border-top:1px solid rgba(255,255,255,0.08); margin:8px 0;'>", unsafe_allow_html=True)
 
-            # Acordeón muy compacto o bloque desplegable para acciones rápidas por operador para no saturar
             with st.expander("⚡ Accesos rápidos por operador (Expandir/Contraer)", expanded=False):
                 for idx, row in df_fuente.iterrows():
                     user_name = row["USUARIO"]
@@ -909,6 +935,14 @@ def main():
 
         with tab_acc:
             df_editado = renderizar_pestana_compacta(cols_acc, "acc", df_editado)
+
+        with tab_aud:
+            st.markdown("<p style='font-size: 13px; font-weight: 700; color: #82D4E6; margin-bottom: 10px;'>REGISTRO DE ACCESOS Y ACTIVIDAD DE OPERADORES</p>", unsafe_allow_html=True)
+            df_auditoria = cargar_datos_auditoria()
+            if not df_auditoria.empty:
+                st.dataframe(df_auditoria, use_container_width=True, hide_index=True, height=380)
+            else:
+                st.info("No hay registros de auditoría disponibles todavía en el sistema.")
 
         st.markdown("<br>", unsafe_allow_html=True)
         col_b1, col_b2 = st.columns([1.5, 4])
