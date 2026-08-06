@@ -7906,6 +7906,16 @@ else:
                     ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
                     fecha_texto = f"{ahora.day} de {ms[ahora.month - 1]} del {ahora.year}"
                     
+                    # Convertir el logo a Base64 para que aparezca perfectamente en el HTML
+                    logo_base64 = ""
+                    try:
+                        with open("jypesa.png", "rb") as img_file:
+                            logo_base64 = base64.b64encode(img_file.read()).decode("utf-8")
+                    except:
+                        pass
+                    
+                    img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 75px; height: auto;">' if logo_base64 else ''
+                    
                     # Generar las 30 filas dinámicamente
                     filas_html = ""
                     for i in range(1, 31):
@@ -7935,10 +7945,10 @@ else:
                     <body style="margin: 0; padding: 0; background: white;">
                         <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 20px; color: #1a1a1a; max-width: 800px; margin: auto; line-height: 1.3;">
                             
-                            <!-- Encabezado con Logo y Título -->
-                            <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; align-items: center; gap: 15px;">
-                                    <img src="jypesa.png" style="width: 80px;">
+                            <!-- Encabezado con Logo y Datos -->
+                            <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    {img_tag}
                                     <div style="display: flex; flex-direction: column;">
                                         <span style="font-size: 1.1em; font-weight: 800; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
                                         <span style="font-size: 0.8em; font-weight: 600; color: #666;">Distribución y Logística | Control de Calidad</span>
@@ -7946,13 +7956,9 @@ else:
                                 </div>
                                 <span style="font-size: 0.85em; color: #444; font-weight: 700;">{fecha_texto}</span>
                             </div>
-            
-                            <!-- Instrucción -->
-                            <div style="background: #fff3cd; border: 1px solid #ffeeba; padding: 8px; margin-bottom: 10px; text-align: center; font-size: 0.85em; font-weight: bold; color: #856404; border-radius: 4px;">
-                                Marque con una “C” para indicar que cumple la especificación y marque con una “NC” para indicar que no cumple.
-                            </div>
                 
-                            <div style="margin-bottom: 15px; background-color: #fefdf5; padding: 8px 12px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo}; display: flex; justify-content: space-between; align-items: center;">
+                            <!-- Título y Datos de Guía -->
+                            <div style="margin-bottom: 8px; background-color: #fefdf5; padding: 8px 12px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo}; display: flex; justify-content: space-between; align-items: center;">
                                 <h2 style="font-size: 0.95em; text-transform: uppercase; color: #000; margin:0; font-weight: 800;">
                                     CHECKLIST DE INSPECCIÓN AGC
                                 </h2>
@@ -7960,6 +7966,11 @@ else:
                                     <strong>Orden/Guía:</strong> {orden_carga if orden_carga else '___'}<br>
                                     <strong>Transporte:</strong> {transporte if transporte else '___'}
                                 </div>
+                            </div>
+            
+                            <!-- Instrucción Justo Después del Checklist -->
+                            <div style="background: #fff3cd; border: 1px solid #ffeeba; padding: 6px 10px; margin-bottom: 12px; text-align: center; font-size: 0.8em; font-weight: bold; color: #856404; border-radius: 4px;">
+                                Marque con una “C” para indicar que cumple la especificación y marque con una “NC” para indicar que no cumple.
                             </div>
                 
                             <table style="width: 100%; border-collapse: collapse; font-size: 0.75em; margin-bottom: 15px;">
@@ -8000,7 +8011,7 @@ else:
                 if st.button(":material/print: IMPRIMIR CHECKLIST", type="primary", use_container_width=True):
                     checklist_html = generar_checklist_html()
                     components.html(f"{checklist_html}<script>window.print();</script>", height=0)
-                        
+                                    
             
             
             # --- SUBSECCIÓN C: PROFORMA ---
