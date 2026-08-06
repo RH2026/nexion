@@ -410,7 +410,18 @@ with header_zone:
                 mask_env = df_envios[[c for c in cols_env if c in df_envios.columns]].astype(str).apply(
                     lambda x: x.str.contains(query, case=False, na=False)
                 ).any(axis=1)
-                res_envios = df_envios[mask_env].copy()
+                match_env = df_envios[mask_env].copy()
+                
+                if not match_env.empty:
+                    # Mapeamos los nombres de tus columnas al estándar que lee la tarjeta visual
+                    match_env = match_env.rename(columns={
+                        "Factura": "NÚMERO DE PEDIDO",
+                        "Nombre_Cliente": "NOMBRE DEL CLIENTE",
+                        "RECOMENDACION": "TRANSPORTE",
+                        "DIRECCION": "DOMICILIO",
+                        "ESTATUS": "COMENTARIOS"
+                    })
+                    res_envios = match_env
 
             # --- T1.xlsx (Mantenido) ---
             res_t1 = pd.DataFrame()
