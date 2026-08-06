@@ -379,106 +379,67 @@ with header_zone:
         )
 
         if query:
-            url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+            # Fuentes de datos
+            url_matriz = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+            
+            # 1. Carga de datos
             try:
-                df_matriz_fresco = pd.read_csv(url_raw)
+                df_matriz_fresco = pd.read_csv(url_matriz)
                 df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
-            except Exception:
+            except:
                 df_matriz_fresco = cargar_datos_dashboard()
 
-            # 1. Búsqueda en Matriz Principal (Global)
+            try:
+                df_envios = pd.read_csv("envios.csv")
+                df_envios.columns = df_envios.columns.str.strip()
+            except:
+                df_envios = pd.DataFrame()
+
+            # Búsquedas
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
-                cols_op = [
-                    "NÚMERO DE GUÍA",
-                    "NÚMERO DE PEDIDO",
-                    "NO CLIENTE",
-                    "NOMBRE DEL CLIENTE",
-                    "DESTINO",
-                ]
-                cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
-                if cols_op_disp:
-                    mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    res_ops = df_matriz_fresco[mask_ops].copy()
+                cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
+                mask_ops = df_matriz_fresco[[c for c in cols_op if c in df_matriz_fresco.columns]].astype(str).apply(
+                    lambda x: x.str.contains(query, case=False, na=False)
+                ).any(axis=1)
+                res_ops = df_matriz_fresco[mask_ops].copy()
 
-            # 2. Búsqueda en Archivo T1.xlsx
+            res_envios = pd.DataFrame()
+            if not df_envios.empty:
+                cols_env = ["Factura", "RECOMENDACION", "DIRECCION", "Nombre_Cliente", "Nombre_Extran", "DESTINO", "ESTATUS"]
+                mask_env = df_envios[[c for c in cols_env if c in df_envios.columns]].astype(str).apply(
+                    lambda x: x.str.contains(query, case=False, na=False)
+                ).any(axis=1)
+                res_envios = df_envios[mask_env].copy()
+
+            # --- T1.xlsx (Mantenido) ---
             res_t1 = pd.DataFrame()
             try:
-                df_t1_temp = pd.read_excel("T1.xlsx") 
+                df_t1_temp = pd.read_excel("T1.xlsx")
                 df_t1_temp.columns = df_t1_temp.columns.str.strip().str.upper()
-                
                 cols_t1 = [c for c in ["OBSERVACION 1", "TALON", "DESTINATARIO", "DESTINO"] if c in df_t1_temp.columns]
-                
                 if cols_t1:
-                    mask_t1 = df_t1_temp[cols_t1].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    match_t1 = df_t1_temp[mask_t1].copy()
-                    
-                    if not match_t1.empty:
-                        match_t1 = match_t1.rename(columns={
-                            "TALON": "NÚMERO DE GUÍA",
-                            "OBSERVACION 1": "NÚMERO DE PEDIDO",
-                            "DESTINATARIO": "NOMBRE DEL CLIENTE",
-                            "SUBTOTAL": "COSTO DE LA GUÍA",
-                            "F.DOC": "FECHA DE ENVÍO",
-                            "BULTOS": "CANTIDAD DE CAJAS"
-                        })
-                        match_t1["FLETERA"] = "TRES GUERRAS"
-                        res_t1 = match_t1
-            except Exception:
-                pass
+                    mask_t1 = df_t1_temp[cols_t1].astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
+                    res_t1 = df_t1_temp[mask_t1].copy()
+            except: pass
 
-            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
-            if not res_ops.empty and not res_t1.empty:
-                for idx, row in res_ops.iterrows():
-                    guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
-                    if guia_actual in ["", "nan", "0", "None"]:
-                        pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
-                        match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
-                        if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
-                            res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
-                            res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
-                            if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
-                                res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
-
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
-            res_inv = pd.DataFrame()
-            if res_ops.empty and res_t1.empty:
-                try:
-                    df_inv_temp = pd.read_csv("inventario.csv")
-                    df_inv_temp.columns = df_inv_temp.columns.str.strip()
-                    cols_inv = [c for c in ["CODIGO", "DESCRIPCION"] if c in df_inv_temp.columns]
-                    if cols_inv:
-                        mask_inv = df_inv_temp[cols_inv].astype(str).apply(
-                            lambda x: x.str.contains(query, case=False, na=False)
-                        ).any(axis=1)
-                        res_inv = df_inv_temp[mask_inv]
-                except Exception:
-                    pass
-
-            # Asignación final de resultados
-            if not res_ops.empty:
+            # Asignación final con tu condición especial
+            if not res_ops.empty or not res_envios.empty or not res_t1.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
-                st.session_state.resultado_busqueda = res_ops
-            elif not res_t1.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "OPERACION" 
-                st.session_state.resultado_busqueda = res_t1
-            elif not res_inv.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "INVENTARIO"
-                st.session_state.resultado_busqueda = res_inv
+                # Consolidamos resultados
+                st.session_state.resultado_busqueda = pd.concat([res_ops, res_envios]).drop_duplicates()
             else:
                 st.session_state.busqueda_activa = False
                 st.session_state.resultado_busqueda = None
-                st.toast("Sin resultados: No se encontró en Matriz Global ni en T1", icon="⚠️")
+                
+                # Verificación de identidad
+                es_rigoberto = st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO"
+                
+                if es_rigoberto:
+                    st.toast("estas jodido rigoberto ;)", icon="😊")
+                else:
+                    st.toast("Sin resultados: No se encontró información.", icon="⚠️")
 
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
