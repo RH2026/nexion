@@ -95,7 +95,7 @@ div.stButton > button, div.stDownloadButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 32px !important;
+    height: 28px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -795,15 +795,15 @@ with header_zone:
 
 
 # ==========================================
-# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL CON MARCAR/DESMARCAR TODO Y POR FILA)
+# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL ULTRA COMPACTO)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
 
-    st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 5px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 20px;'>Configura los permisos tanto de los módulos principales como de cada uno de sus submenús individuales por operador.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 2px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 12px;'>Configura los permisos tanto de los módulos principales como de cada uno de sus submenús individuales por operador.</p>", unsafe_allow_html=True)
 
     df_permisos = cargar_matriz_permisos()
 
@@ -829,11 +829,10 @@ def main():
 
         df_editado = df_permisos.copy()
 
-        def renderizar_pestana_con_botones(cols_tab, tab_key, df_fuente):
-            # Botones globales de la pestaña
-            col_btn1, col_btn2, col_vacia = st.columns([1.5, 1.5, 4])
-            
-            with col_btn1:
+        def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
+            # Barra superior compacta con Marcar/Desmarcar Todo
+            c_m1, c_m2, c_esp = st.columns([1.5, 1.5, 4])
+            with c_m1:
                 if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
                     for c in cols_tab:
                         if c != "USUARIO":
@@ -841,7 +840,7 @@ def main():
                     st.session_state["df_permisos_local"] = df_fuente
                     st.rerun()
 
-            with col_btn2:
+            with c_m2:
                 if st.button("❌ Desmarcar Todo", key=f"btn_desmarcar_todo_{tab_key}", use_container_width=True):
                     for c in cols_tab:
                         if c != "USUARIO":
@@ -849,37 +848,33 @@ def main():
                     st.session_state["df_permisos_local"] = df_fuente
                     st.rerun()
 
-            st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
+            st.markdown("<hr style='border-top:1px solid rgba(255,255,255,0.08); margin:8px 0;'>", unsafe_allow_html=True)
+
+            # Acordeón muy compacto o bloque desplegable para acciones rápidas por operador para no saturar
+            with st.expander("⚡ Accesos rápidos por operador (Expandir/Contraer)", expanded=False):
+                for idx, row in df_fuente.iterrows():
+                    user_name = row["USUARIO"]
+                    cols_u = st.columns([2, 1, 1, 4])
+                    with cols_u[0]:
+                        st.markdown(f"<span style='font-size:11px; font-weight:700; line-height:28px;'>👤 {user_name}</span>", unsafe_allow_html=True)
+                    with cols_u[1]:
+                        if st.button(f"Marcar", key=f"rc_m_{tab_key}_{user_name}", use_container_width=True):
+                            for c in cols_tab:
+                                if c != "USUARIO":
+                                    df_fuente.loc[df_fuente["USUARIO"] == user_name, c] = True
+                            st.session_state["df_permisos_local"] = df_fuente
+                            st.rerun()
+                    with cols_u[2]:
+                        if st.button(f"Quitar", key=f"rc_d_{tab_key}_{user_name}", use_container_width=True):
+                            for c in cols_tab:
+                                if c != "USUARIO":
+                                    df_fuente.loc[df_fuente["USUARIO"] == user_name, c] = False
+                            st.session_state["df_permisos_local"] = df_fuente
+                            st.rerun()
+                st.markdown("<div style='margin: 4px 0;'></div>", unsafe_allow_html=True)
 
             df_t = df_fuente[[c for c in cols_tab if c in df_fuente.columns]].copy()
-
-            # Añadimos controles rápidos por fila (operador)
-            st.markdown("<p style='font-size: 11px; font-weight: 700; color: #82D4E6; letter-spacing: 1px; margin-bottom: 8px;'>ACCESOS RÁPIDOS POR OPERADOR:</p>", unsafe_allow_html=True)
-            
-            # Mostramos botones en filas organizadas para marcar/desmarcar por usuario
-            for idx, row in df_t.iterrows():
-                user_name = row["USUARIO"]
-                col_u_name, col_u_m, col_u_d, col_u_space = st.columns([1.5, 1.2, 1.2, 3.5])
-                with col_u_name:
-                    st.markdown(f"<span style='font-size: 12px; font-weight: 700; line-height: 32px;'>👤 {user_name}</span>", unsafe_allow_html=True)
-                with col_u_m:
-                    if st.button(f"Marcar", key=f"row_marcar_{tab_key}_{user_name}", use_container_width=True):
-                        for c in cols_tab:
-                            if c != "USUARIO":
-                                df_fuente.loc[df_fuente["USUARIO"] == user_name, c] = True
-                        st.session_state["df_permisos_local"] = df_fuente
-                        st.rerun()
-                with col_u_d:
-                    if st.button(f"Desmarcar", key=f"row_desmarcar_{tab_key}_{user_name}", use_container_width=True):
-                        for c in cols_tab:
-                            if c != "USUARIO":
-                                df_fuente.loc[df_fuente["USUARIO"] == user_name, c] = False
-                        st.session_state["df_permisos_local"] = df_fuente
-                        st.rerun()
-
-            st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
-
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key=f"ed_{tab_key}", height=400)
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key=f"ed_{tab_key}", height=360)
             
             for c in sub_ed.columns:
                 if c != "USUARIO":
@@ -889,31 +884,31 @@ def main():
             return df_fuente
 
         with tab_dash:
-            df_editado = renderizar_pestana_con_botones(cols_dash, "dash", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_dash, "dash", df_editado)
 
         with tab_seg:
-            df_editado = renderizar_pestana_con_botones(cols_seg, "seg", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_seg, "seg", df_editado)
 
         with tab_ent:
-            df_editado = renderizar_pestana_con_botones(cols_ent, "ent", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_ent, "ent", df_editado)
 
         with tab_rep:
-            df_editado = renderizar_pestana_con_botones(cols_rep, "rep", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_rep, "rep", df_editado)
 
         with tab_for:
-            df_editado = renderizar_pestana_con_botones(cols_for, "for", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_for, "for", df_editado)
 
         with tab_dat:
-            df_editado = renderizar_pestana_con_botones(cols_dat, "dat", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_dat, "dat", df_editado)
 
         with tab_fin:
-            df_editado = renderizar_pestana_con_botones(cols_fin, "fin", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_fin, "fin", df_editado)
 
         with tab_enf:
-            df_editado = renderizar_pestana_con_botones(cols_enf, "enf", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_enf, "enf", df_editado)
 
         with tab_acc:
-            df_editado = renderizar_pestana_con_botones(cols_acc, "acc", df_editado)
+            df_editado = renderizar_pestana_compacta(cols_acc, "acc", df_editado)
 
         st.markdown("<br>", unsafe_allow_html=True)
         col_b1, col_b2 = st.columns([1.5, 4])
