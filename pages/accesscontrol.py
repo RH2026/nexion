@@ -795,7 +795,7 @@ with header_zone:
 
 
 # ==========================================
-# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL CON MARCAR/DESMARCAR TODO)
+# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL CON MARCAR/DESMARCAR TODO Y POR FILA)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
@@ -830,13 +830,9 @@ def main():
         df_editado = df_permisos.copy()
 
         def renderizar_pestana_con_botones(cols_tab, tab_key, df_fuente):
+            # Botones globales de la pestaña
             col_btn1, col_btn2, col_vacia = st.columns([1.5, 1.5, 4])
             
-            # Inicializar estado para selección total en esta pestaña si no existe
-            key_estado_todo = f"estado_todo_{tab_key}"
-            if key_estado_todo not in st.session_state:
-                st.session_state[key_estado_todo] = False
-
             with col_btn1:
                 if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
                     for c in cols_tab:
@@ -853,12 +849,43 @@ def main():
                     st.session_state["df_permisos_local"] = df_fuente
                     st.rerun()
 
-            df_t = df_fuente[[c for c in cols_tab if c in df_fuente.columns]]
-            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key=f"ed_{tab_key}", height=450)
+            st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
+
+            df_t = df_fuente[[c for c in cols_tab if c in df_fuente.columns]].copy()
+
+            # Añadimos controles rápidos por fila (operador)
+            st.markdown("<p style='font-size: 11px; font-weight: 700; color: #82D4E6; letter-spacing: 1px; margin-bottom: 8px;'>ACCESOS RÁPIDOS POR OPERADOR:</p>", unsafe_allow_html=True)
+            
+            # Mostramos botones en filas organizadas para marcar/desmarcar por usuario
+            for idx, row in df_t.iterrows():
+                user_name = row["USUARIO"]
+                col_u_name, col_u_m, col_u_d, col_u_space = st.columns([1.5, 1.2, 1.2, 3.5])
+                with col_u_name:
+                    st.markdown(f"<span style='font-size: 12px; font-weight: 700; line-height: 32px;'>👤 {user_name}</span>", unsafe_allow_html=True)
+                with col_u_m:
+                    if st.button(f"Marcar", key=f"row_marcar_{tab_key}_{user_name}", use_container_width=True):
+                        for c in cols_tab:
+                            if c != "USUARIO":
+                                df_fuente.loc[df_fuente["USUARIO"] == user_name, c] = True
+                        st.session_state["df_permisos_local"] = df_fuente
+                        st.rerun()
+                with col_u_d:
+                    if st.button(f"Desmarcar", key=f"row_desmarcar_{tab_key}_{user_name}", use_container_width=True):
+                        for c in cols_tab:
+                            if c != "USUARIO":
+                                df_fuente.loc[df_fuente["USUARIO"] == user_name, c] = False
+                        st.session_state["df_permisos_local"] = df_fuente
+                        st.rerun()
+
+            st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
+
+            sub_ed = st.data_editor(df_t, use_container_width=True, hide_index=True, key=f"ed_{tab_key}", height=400)
             
             for c in sub_ed.columns:
                 if c != "USUARIO":
-                    df_fuente[c] = sub_ed[c]
+                    for idx, val in sub_ed[c].items():
+                        user_val = sub_ed.loc[idx, "USUARIO"]
+                        df_fuente.loc[df_fuente["USUARIO"] == user_val, c] = val
             return df_fuente
 
         with tab_dash:
