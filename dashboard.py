@@ -7959,7 +7959,7 @@ else:
                 
                             <!-- Título y Datos de Guía -->
                             <div style="margin-bottom: 8px; background-color: #fefdf5; padding: 8px 12px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo}; display: flex; justify-content: space-between; align-items: center;">
-                                <h2 style="font-size: 0.95em; text-transform: uppercase; color: #000; margin:0; font-weight: 800;">
+                                <h2 style="font-size: 0.65em; text-transform: uppercase; color: #000; margin:0; font-weight: 800;">
                                     CHECKLIST DE INSPECCIÓN DE TARIMAS CONFORME ESPECIFICACIÓN DE AGC
                                 </h2>
                                 <div style="font-size: 0.8em; color: #333; text-align: right;">
