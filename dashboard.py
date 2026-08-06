@@ -7885,7 +7885,7 @@ else:
                 
                 jypesa_azul = "#003A70" 
                 jypesa_amarillo = "#FFC72C"
-                                
+                
                 with st.container():
                     st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
                     
@@ -7920,7 +7920,7 @@ else:
                             <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
                         </tr>
                         """
-                
+                    
                     return f"""
                     <!DOCTYPE html>
                     <html>
@@ -7935,16 +7935,25 @@ else:
                     <body style="margin: 0; padding: 0; background: white;">
                         <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 20px; color: #1a1a1a; max-width: 800px; margin: auto; line-height: 1.3;">
                             
-                            <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 5px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: baseline;">
-                                <div style="display: flex; flex-direction: column;">
-                                    <span style="font-size: 1.1em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
-                                    <span style="font-size: 0.85em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | Control de Calidad</span>
+                            <!-- Encabezado con Logo y Título -->
+                            <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <img src="jypesa.png" style="width: 80px;">
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="font-size: 1.1em; font-weight: 800; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                        <span style="font-size: 0.8em; font-weight: 600; color: #666;">Distribución y Logística | Control de Calidad</span>
+                                    </div>
                                 </div>
                                 <span style="font-size: 0.85em; color: #444; font-weight: 700;">{fecha_texto}</span>
                             </div>
+            
+                            <!-- Instrucción -->
+                            <div style="background: #fff3cd; border: 1px solid #ffeeba; padding: 8px; margin-bottom: 10px; text-align: center; font-size: 0.85em; font-weight: bold; color: #856404; border-radius: 4px;">
+                                Marque con una “C” para indicar que cumple la especificación y marque con una “NC” para indicar que no cumple.
+                            </div>
                 
                             <div style="margin-bottom: 15px; background-color: #fefdf5; padding: 8px 12px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo}; display: flex; justify-content: space-between; align-items: center;">
-                                <h2 style="font-size: 0.95em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
+                                <h2 style="font-size: 0.95em; text-transform: uppercase; color: #000; margin:0; font-weight: 800;">
                                     CHECKLIST DE INSPECCIÓN AGC
                                 </h2>
                                 <div style="font-size: 0.8em; color: #333; text-align: right;">
@@ -7991,157 +8000,6 @@ else:
                 if st.button(":material/print: IMPRIMIR CHECKLIST", type="primary", use_container_width=True):
                     checklist_html = generar_checklist_html()
                     components.html(f"{checklist_html}<script>window.print();</script>", height=0)
-
-            if st.session_state.menu_sub == "QR AGC":
-                # ==========================
-                # ESTILO Y DISEÑO NEXION (MATCH VISUAL COMPACTO)
-                # ==========================
-                st.markdown("""
-                    <style>
-                    .nexion-card {
-                        background-color: #1e252b;
-                        border: 1px solid #2d3748;
-                        border-left: 4px solid #d4af37;
-                        padding: 20px;
-                        border-radius: 8px;
-                        color: #e2e8f0;
-                        font-family: sans-serif;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-                        height: 100%;
-                    }
-                    .nexion-card h4 {
-                        color: #f7fafc;
-                        margin-top: 0;
-                        font-size: 1.1rem;
-                        font-weight: 600;
-                        letter-spacing: 0.5px;
-                    }
-                    .nexion-card ol {
-                        margin: 0;
-                        padding-left: 20px;
-                        font-size: 0.95rem;
-                        line-height: 1.6;
-                        color: #cbd5e0;
-                    }
-                    .nexion-card li strong {
-                        color: #edf2f7;
-                    }
-                    .centered-preview {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        width: 100%;
-                    }
-                    </style>
-                """, unsafe_allow_html=True)
-                
-                # Datos y selección en inputs limpios
-                np_opt = ["712117", "PT10065", "PT10219", "PT10264", "PT10185"]
-                numero_parte = st.selectbox("Número de Parte", np_opt)
-                lote = st.text_input("Lote (Ej. 6080)")
-                valor_fijo = "140"
-                
-                def get_font(size):
-                    for ruta in ["DejaVuSans-Bold.ttf", "arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf", "C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/Arial.ttf"]:
-                        try: return ImageFont.truetype(ruta, size)
-                        except: pass
-                    return ImageFont.load_default()
-                
-                if lote:
-                    texto_qr = f"{numero_parte}-{lote}-{valor_fijo}$"
-                    
-                    # Generación QR
-                    qr = qrcode.QRCode(version=2, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=15, border=1)
-                    qr.add_data(texto_qr)
-                    qr.make(fit=True)
-                    qr_img = qr.make_image(fill_color="#27272A", back_color="white").convert("RGB")
-                
-                    # Lienzo de Etiqueta (1004 x 1228 px)
-                    w_px, h_px = int(1004), int(1228)
-                    etiqueta = PILImage.new("RGB", (w_px, h_px), "white")
-                    draw = ImageDraw.Draw(etiqueta)
-                
-                    # Fuentes
-                    f_np, f_info, f_bot = get_font(52), get_font(44), get_font(56)
-                
-                    # ==========================
-                    # LOGO (Margen izquierdo ajustado a 90 para darle aire)
-                    # ==========================
-                    try:
-                        logo = PILImage.open("agc.png").convert("RGBA")
-                        nw = 320
-                        nh = int(logo.size[1] * nw / logo.size[0])
-                        etiqueta.paste(logo.resize((nw, nh), PILImage.Resampling.LANCZOS), (90, 20), logo.resize((nw, nh), PILImage.Resampling.LANCZOS))
-                    except Exception as e:
-                        st.warning(f"No se encontró agc.png ({e})")
-                
-                    # ==========================
-                    # TEXTOS PRINCIPALES (Margen izquierdo ajustado a x = 90)
-                    # ==========================
-                    x = 90
-                    draw.text((x, 250), numero_parte, fill="#222222", font=f_np)
-                    draw.text((x, 312), f"{lote}", fill="#222222", font=f_info)
-                    draw.text((x, 362), f"{valor_fijo}", fill="#222222", font=f_info)
-                
-                    # ==========================
-                    # QR (Perfectamente centrado en el ancho de 1004px)
-                    # ==========================
-                    qr_sz = 670
-                    qr_x = (w_px - qr_sz) // 2
-                    etiqueta.paste(qr_img.resize((qr_sz, qr_sz), PILImage.Resampling.NEAREST), (qr_x, 420))
-                
-                    # ==========================
-                    # TEXTO INFERIOR
-                    # ==========================
-                    bbox = draw.textbbox((0, 0), texto_qr, font=f_bot)
-                    draw.text(((w_px - (bbox[2] - bbox[0])) // 2, 1095), texto_qr, fill="#222222", font=f_bot)
-                
-                    st.markdown("### Vista previa e Instrucciones")
-                    
-                    # Columnas simétricas principales
-                    col_prev, col_inst = st.columns([1, 1.2], vertical_alignment="top")
-                    
-                    buf_img = BytesIO()
-                    etiqueta.save(buf_img, format="PNG")
-                    
-                    with col_prev:
-                        st.markdown('<div class="centered-preview">', unsafe_allow_html=True)
-                        st.image(buf_img.getvalue(), width=320)
-                        st.markdown('</div>', unsafe_allow_html=True)
-                        
-                    with col_inst:
-                        st.markdown("""
-                        <div class="nexion-card">
-                            <h4>Instrucciones de Impresión</h4>
-                            <ol>
-                                <li><strong>Abrir el PDF</strong> generado.</li>
-                                <li>Presionar <strong>CTRL + P</strong> en el teclado.</li>
-                                <li>Seleccionar la impresora <strong>Zebra 200</strong>.</li>
-                                <li>Ajustar la orientación a <strong>Horizontal</strong>.</li>
-                                <li>Entrar a <strong>Propiedades</strong> y fijar dimensiones en <strong>10.40 x 8.00 cm</strong>.</li>
-                                <li>Confirmar con <strong>Aceptar</strong> e imprimir.</li>
-                            </ol>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                    # Generación de PDF
-                    pdf_buf = BytesIO()
-                    c = canvas.Canvas(pdf_buf, pagesize=(8.5 * cm, 10.4 * cm))
-                    buf_img.seek(0)
-                    c.drawImage(ImageReader(buf_img), 0, 0, width=8.5 * cm, height=10.4 * cm)
-                    c.showPage()
-                    c.save()
-                    
-                    # Botón de descarga principal a todo lo ancho de la pantalla
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    st.download_button(
-                        ":material/print: IMPRIMIR / DESCARGAR ETIQUETA PDF", 
-                        pdf_buf.getvalue(), 
-                        file_name=f"Etiqueta_{numero_parte}_{lote}.pdf", 
-                        mime="application/pdf", 
-                        use_container_width=True
-                    )
                         
             
             
