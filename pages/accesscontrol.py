@@ -337,23 +337,40 @@ def asegurar_y_actualizar_matriz_en_github():
 
 asegurar_y_actualizar_matriz_en_github()
 
-# Función para verificar y crear la base de datos de auditoría en GitHub si no existe
-def asegurar_y_cargar_auditoria_en_github():
+# Función para registrar acceso automáticamente en auditoría y sincronizar con GitHub
+def registrar_acceso_github(usuario, modulo):
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/auditoria_accesos.csv"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get(url, headers=headers)
     
-    if r.status_code != 200:
-        # Si no existe, creamos el archivo con columnas iniciales
-        df_init = pd.DataFrame(columns=["FECHA_HORA", "USUARIO", "MODULO"])
-        csv_string = df_init.to_csv(index=False)
-        payload = {
-            "message": "Creación automática de auditoria_accesos.csv",
-            "content": base64.b64encode(csv_string.encode()).decode()
-        }
-        requests.put(url, json=payload, headers=headers)
+    fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    if r.status_code == 200:
+        file_data = r.json()
+        sha = file_data.get("sha", "")
+        content_decoded = base64.b64decode(file_data.get("content", "")).decode("utf-8")
+        df_aud = pd.read_csv(io.StringIO(content_decoded))
+    else:
+        df_aud = pd.DataFrame(columns=["FECHA_HORA", "USUARIO", "MODULO"])
+        sha = ""
 
-asegurar_y_cargar_auditoria_en_github()
+    # Agregar nuevo registro
+    nuevo_registro = pd.DataFrame([{"FECHA_HORA": fecha_hora, "USUARIO": usuario, "MODULO": modulo}])
+    df_aud = pd.concat([df_aud, nuevo_registro], ignore_index=True)
+    
+    csv_string = df_aud.to_csv(index=False)
+    payload = {
+        "message": f"Registro de acceso de {usuario} al módulo {modulo}",
+        "content": base64.b64encode(csv_string.encode()).decode()
+    }
+    if sha:
+        payload["sha"] = sha
+        
+    requests.put(url, json=payload, headers=headers)
+
+# Registrar la visita actual a Access Control
+usuario_actual = st.session_state.get("usuario_activo", "GUEST")
+registrar_acceso_github(usuario_actual, "ACCESS CONTROL")
 
 def cargar_matriz_permisos():
     if "df_permisos_local" in st.session_state:
@@ -381,7 +398,7 @@ def guardar_matriz_en_github(df_actualizado):
 
     csv_string = df_actualizado.to_csv(index=False)
     payload = {
-        "message": "Actualización de matriz de permisos desde Access Control con ESCANEAR QR",
+        "message": "Actualización de matriz de permisos desde Access Control",
         "content": base64.b64encode(csv_string.encode()).decode()
     }
     
@@ -391,8 +408,7 @@ def guardar_matriz_en_github(df_actualizado):
     res = requests.put(url, json=payload, headers=headers)
     return res.status_code in [200, 201]
 
-# Función para cargar el registro de auditoría desde GitHub
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=15)
 def cargar_datos_auditoria():
     url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/auditoria_accesos.csv?nocache={int(time.time())}"
     try:
@@ -517,7 +533,6 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
-            # 1. Búsqueda en Matriz Principal (Global)
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -534,20 +549,16 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops].copy()
 
-            # 2. Búsqueda en Archivo T1.xlsx
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
                 df_t1_temp.columns = df_t1_temp.columns.str.strip().str.upper()
-                
                 cols_t1 = [c for c in ["OBSERVACION 1", "TALON", "DESTINATARIO", "DESTINO"] if c in df_t1_temp.columns]
-                
                 if cols_t1:
                     mask_t1 = df_t1_temp[cols_t1].astype(str).apply(
                         lambda x: x.str.contains(query, case=False, na=False)
                     ).any(axis=1)
                     match_t1 = df_t1_temp[mask_t1].copy()
-                    
                     if not match_t1.empty:
                         match_t1 = match_t1.rename(columns={
                             "TALON": "NÚMERO DE GUÍA",
@@ -562,23 +573,18 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
             res_inv = pd.DataFrame()
             if res_ops.empty and res_t1.empty:
                 try:
@@ -593,7 +599,6 @@ with header_zone:
                 except Exception:
                     pass
 
-            # Asignación final de resultados
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -636,6 +641,7 @@ with header_zone:
                     
             if tiene_permiso("DASHBOARD"):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                    registrar_acceso_github(usuario, "DASHBOARD")
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
@@ -649,6 +655,7 @@ with header_zone:
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                            registrar_acceso_github(usuario, f"SEGUIMIENTO - {s}")
                             st.session_state.menu_main = "SEGUIMIENTO"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -661,6 +668,7 @@ with header_zone:
                     for s in opciones_ent:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_ent_{s}"):
+                            registrar_acceso_github(usuario, f"ENTREGAS - {s}")
                             st.session_state.menu_main = "ENTREGAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -678,6 +686,7 @@ with header_zone:
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+                            registrar_acceso_github(usuario, f"REPORTES - {s}")
                             st.session_state.menu_main = "REPORTES"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -693,6 +702,7 @@ with header_zone:
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+                            registrar_acceso_github(usuario, f"FORMATOS - {s}")
                             st.session_state.menu_main = "FORMATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -705,6 +715,7 @@ with header_zone:
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                            registrar_acceso_github(usuario, f"CENTRO DE DATOS - {s}")
                             st.session_state.menu_main = "CENTRO DE DATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -724,6 +735,7 @@ with header_zone:
                     for s in opciones_fin:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
+                            registrar_acceso_github(usuario, f"FINANZAS - {s}")
                             st.session_state.menu_main = "FINANZAS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
@@ -736,12 +748,14 @@ with header_zone:
                     for s in opciones_enf:
                         label = f"» {s}" if st.session_state.get("menu_sub") == s else s
                         if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
+                            registrar_acceso_github(usuario, f"ENFOQUE - {s}")
                             st.session_state.menu_main = "ENFOQUE"
                             st.session_state.menu_sub = s
                             st.rerun()
         
             if tiene_permiso("ACCESS CONTROL") or es_rigoberto:
                 if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl"):
+                    registrar_acceso_github(usuario, "ACCESS CONTROL")
                     st.session_state.menu_main = "ACCESS CONTROL"
                     st.session_state.menu_sub = "SETTINGS"
                     st.switch_page("pages/accesscontrol.py")
@@ -823,7 +837,7 @@ with header_zone:
 
 
 # ==========================================
-# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL ULTRA COMPACTO + AUDITORÍA)
+# 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL ULTRA COMPACTO + AUDITORÍA PRO)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
@@ -937,12 +951,48 @@ def main():
             df_editado = renderizar_pestana_compacta(cols_acc, "acc", df_editado)
 
         with tab_aud:
-            st.markdown("<p style='font-size: 13px; font-weight: 700; color: #82D4E6; margin-bottom: 10px;'>REGISTRO DE ACCESOS Y ACTIVIDAD DE OPERADORES</p>", unsafe_allow_html=True)
-            df_auditoria = cargar_datos_auditoria()
-            if not df_auditoria.empty:
-                st.dataframe(df_auditoria, use_container_width=True, hide_index=True, height=380)
-            else:
-                st.info("No hay registros de auditoría disponibles todavía en el sistema.")
+            st.markdown(f"""
+                <div style='display:flex;align-items:center;gap:10px;margin:15px 0;'>
+                    <div style='background:#FF4B4B;width:5px;height:25px;border-radius:2px;box-shadow:0 0 10px #FF4B4B;'></div>
+                    <span style='color:white;font-size:16px;font-weight:800;letter-spacing:2px;text-transform:uppercase;'>MONITOR DE ACTIVIDAD // AUDITORÍA EN TIEMPO REAL</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            try:
+                df_logs = cargar_datos_auditoria()
+                
+                st.markdown(f"<style>.card-log {{ transition: all 0.3s ease; cursor: pointer; }} .card-log:hover {{ transform: translateX(5px); border-color: #FF4B4B !important; background: rgba(255, 75, 75, 0.05) !important; }}</style>", unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                if not df_logs.empty:
+                    for index, row in df_logs.iloc[::-1].head(15).iterrows():
+                        usr = str(row.get('USUARIO', 'GUEST'))
+                        fch = str(row.get('FECHA_HORA', 'N/A'))
+                        mod = str(row.get('MODULO', 'GENERAL'))
+                        
+                        st.markdown(f"""
+                            <div class='card-log' style='background:rgba(30,39,46,0.5); border:1px solid rgba(255,255,255,0.05); border-left:4px solid #FF4B4B; border-radius:8px; padding:10px 20px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;'>
+                                <div style='flex:1;'>
+                                    <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>OPERADOR</span><br>
+                                    <b style='font-size:14px; color:white; letter-spacing:0.5px;'>{usr.upper()}</b>
+                                </div>
+                                <div style='flex:2; padding-left:20px; border-left:1px solid rgba(255,255,255,0.08);'>
+                                    <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>MÓDULO ACCEDIDO</span><br>
+                                    <b style='font-size:12px; color:#82D4E6;'>{mod.upper()}</b>
+                                </div>
+                                <div style='flex:2; padding-left:20px; border-left:1px solid rgba(255,255,255,0.08);'>
+                                    <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>FECHA Y HORA DE ACCESO</span><br>
+                                    <span style='font-size:12px; color:#FF4B4B; font-family:monospace; font-weight:700;'>{fch}</span>
+                                </div>
+                                <div style='flex:0.5; text-align:right;'>
+                                    <span style='background:rgba(0,255,170,0.1); color:#00FFAA; padding:3px 8px; border-radius:4px; font-size:8px; font-weight:800;'>ENTRY OK</span>
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.info("Esperando el primer registro de acceso para mostrar el historial...")
+            except Exception as e:
+                st.warning("No se pudo cargar el registro de auditoría en este momento.")
 
         st.markdown("<br>", unsafe_allow_html=True)
         col_b1, col_b2 = st.columns([1.5, 4])
