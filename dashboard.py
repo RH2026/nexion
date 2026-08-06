@@ -7914,7 +7914,7 @@ else:
                     except:
                         pass
                     
-                    img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 75px; height: auto;">' if logo_base64 else ''
+                    img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 100px; height: auto;">' if logo_base64 else ''
                     
                     # Generar las 30 filas dinámicamente
                     filas_html = ""
@@ -7960,7 +7960,7 @@ else:
                             <!-- Título y Datos de Guía -->
                             <div style="margin-bottom: 8px; background-color: #fefdf5; padding: 8px 12px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo}; display: flex; justify-content: space-between; align-items: center;">
                                 <h2 style="font-size: 0.95em; text-transform: uppercase; color: #000; margin:0; font-weight: 800;">
-                                    CHECKLIST DE INSPECCIÓN AGC
+                                    CHECKLIST DE INSPECCIÓN DE TARIMAS CONFORME ESPECIFICACIÓN DE AGC
                                 </h2>
                                 <div style="font-size: 0.8em; color: #333; text-align: right;">
                                     <strong>Orden/Guía:</strong> {orden_carga if orden_carga else '___'}<br>
