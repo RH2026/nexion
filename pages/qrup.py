@@ -455,6 +455,10 @@ if "search_key_version" not in st.session_state:
 if "tipo_resultado" not in st.session_state:
     st.session_state.tipo_resultado = "OPERACION"
 
+# Inicializar historial de escaneos recientes para la vista previa de validación
+if "scans_recientes" not in st.session_state:
+    st.session_state.scans_recientes = []
+
 
 # ==========================================
 # 4. HEADER CON 4 COLUMNAS, BUSCADOR Y MENÚ BLINDADO
@@ -794,7 +798,7 @@ def main():
                     📱 LECTOR QR MÓVIL (CÁMARA DEL CELULAR)
                 </p>
                 <p style="font-size: 11px; color: rgba(255,255,255,0.8); margin-bottom: 12px;">
-                    Apunta con la cámara de tu celular al código QR. En cuanto se lea, <b>se guardará automáticamente</b> en la base de datos. Si la factura no existe o ya tiene fecha registrada, no se sobrescribirá.
+                    Apunta con la cámara de tu celular al código QR. En cuanto se lea, <b>se guardará automáticamente</b> en la base de datos y aparecerá abajo en la vista previa del listado escaneado.
                 </p>
             </div>
             """,
@@ -818,6 +822,8 @@ def main():
                     exito, mensaje = actualizar_envios_desde_qr(qr_detectado)
                     if exito:
                         st.success(mensaje)
+                        # Agregar al listado de vista previa temporal de escaneos
+                        st.session_state.scans_recientes.insert(0, {"qr": qr_detectado, "hora": datetime.now().strftime("%H:%M:%S"), "msg": mensaje})
                         time.sleep(1)
                         st.rerun()
                     else:
@@ -837,12 +843,41 @@ def main():
                     exito, mensaje = actualizar_envios_desde_qr(qr_input_manual)
                     if exito:
                         st.success(mensaje)
+                        # Agregar al listado de vista previa temporal de escaneos
+                        st.session_state.scans_recientes.insert(0, {"qr": qr_input_manual, "hora": datetime.now().strftime("%H:%M:%S"), "msg": mensaje})
                         time.sleep(1)
                         st.rerun()
                     else:
                         st.error(mensaje)
             else:
                 st.warning("Por favor ingresa o pega el texto del QR.")
+
+    # ── VISTA PREVIA DEL LISTADO ESCANEADO (VALIDACIÓN EN TIEMPO REAL) ──
+    if st.session_state.scans_recientes:
+        st.markdown("---")
+        col_t_prev, col_limpiar = st.columns([4, 1])
+        with col_t_prev:
+            st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'><div style='background:#00FFAA;width:4px;height:18px;border-radius:2px;'></div><span style='color:white;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>📋 VISTA PREVIA DE ESCANEOS RECIENTES ({len(st.session_state.scans_recientes)})</span></div>", unsafe_allow_html=True)
+        with col_limpiar:
+            if st.button("🗑️ Limpiar Vista", key="btn_limpiar_vprev"):
+                st.session_state.scans_recientes = []
+                st.rerun()
+
+        # Contenedor con scroll o diseño limpio para validar la carga de la sesión
+        for idx, item in enumerate(st.session_state.scans_recientes[:10]): # Muestra los últimos 10
+            st.markdown(
+                f"""
+                <div style="background: rgba(0, 255, 170, 0.05); border: 1px solid rgba(0, 255, 170, 0.2); border-left: 4px solid #00FFAA; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="color: #00FFAA; font-size: 10px; font-weight: 800; letter-spacing: 1px;">✅ CARGADO EXITOSAMENTE</span>
+                        <span style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 600;">🕒 {item['hora']}</span>
+                    </div>
+                    <div style="font-size: 11px; color: white; font-weight: 700; word-break: break-all;">{item['msg']}</div>
+                    <div style="font-size: 9px; color: rgba(255,255,255,0.6); font-family: monospace; margin-top: 3px;">Data: {item['qr']}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
     st.markdown("---")
 
