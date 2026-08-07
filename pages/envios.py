@@ -787,6 +787,12 @@ def main():
     else:
         modo_edicion = False
 
+    # Inicializar estado para limpiar fechas si no existe
+    if "limpiar_fprog" not in st.session_state:
+        st.session_state.limpiar_fprog = False
+    if "limpiar_fenv" not in st.session_state:
+        st.session_state.limpiar_fenv = False
+
     # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA ────────────────────────
     col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
     with col_titulo:
@@ -913,7 +919,7 @@ def main():
         fecha_envio_raw = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
         df_envios['fecha_envio'] = fecha_envio_raw
         
-        # Parseo de fechas para que el calendario pueda compararlas perfectamente
+        # Parseo de fechas para el filtrado por calendario
         df_envios['dt_prog_parsed'] = pd.to_datetime(df_envios['fecha_programacion'], dayfirst=True, errors='coerce')
         df_envios['dt_envio_parsed'] = pd.to_datetime(df_envios['fecha_envio'], dayfirst=True, errors='coerce')
 
@@ -1008,22 +1014,26 @@ def main():
 
         df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
 
-        # ── 5 FILTROS EN UNA SOLA LÍNEA CON CALENDARIOS INTERACTIVOS ──
+        # ── 5 FILTROS EN UNA SOLA LÍNEA CON CALENDARIOS LIMPIOS ──
         f1, f2, f3, f4, f5 = st.columns(5)
 
         with f1:
-            usar_fprog = st.checkbox("Filtrar F. Programación", value=False, key="chk_fprog")
-            if usar_fprog:
-                filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=datetime.now().date(), key="filtro_fprog_envios")
-            else:
-                filtro_fprog = None
+            subcol_cal1, subcol_btn1 = st.columns([0.75, 0.25], vertical_alignment="bottom")
+            with subcol_cal1:
+                filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
+            with subcol_btn1:
+                if st.button("✕", key="limpiar_fprog_btn", use_container_width=True, help="Quitar filtro de fecha programación"):
+                    st.session_state.calendario_fprog_envios = None
+                    st.rerun()
 
         with f2:
-            usar_fenv = st.checkbox("Filtrar F. Envío", value=False, key="chk_fenv")
-            if usar_fenv:
-                filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=datetime.now().date(), key="filtro_fenvio_envios")
-            else:
-                filtro_fenvio = None
+            subcol_cal2, subcol_btn2 = st.columns([0.75, 0.25], vertical_alignment="bottom")
+            with subcol_cal2:
+                filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
+            with subcol_btn2:
+                if st.button("✕", key="limpiar_fenv_btn", use_container_width=True, help="Quitar filtro de fecha de envío"):
+                    st.session_state.calendario_fenv_envios = None
+                    st.rerun()
 
         with f3:
             facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
