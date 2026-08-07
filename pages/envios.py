@@ -217,7 +217,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                     </span>
                 </div>
                 <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                    No tienes permisos para acceder al sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
+                    No tienes permisos para acceder a la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
                 </div>
             </div>
             """,
@@ -913,6 +913,10 @@ def main():
         fecha_envio_raw = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
         df_envios['fecha_envio'] = fecha_envio_raw
         
+        # Parseo de fechas para que el calendario pueda compararlas perfectamente
+        df_envios['dt_prog_parsed'] = pd.to_datetime(df_envios['fecha_programacion'], dayfirst=True, errors='coerce')
+        df_envios['dt_envio_parsed'] = pd.to_datetime(df_envios['fecha_envio'], dayfirst=True, errors='coerce')
+
         lista_guias = []
         for idx, row in df_raw.iterrows():
             fac = str(row.get('Factura', '')).strip()
@@ -1004,16 +1008,22 @@ def main():
 
         df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
 
-        # ── 5 FILTROS EN UNA SOLA LÍNEA ────────────────────────
+        # ── 5 FILTROS EN UNA SOLA LÍNEA CON CALENDARIOS INTERACTIVOS ──
         f1, f2, f3, f4, f5 = st.columns(5)
 
         with f1:
-            fprog_opts = ["TODAS"] + sorted(list(df_envios['fecha_programacion'].loc[df_envios['fecha_programacion'] != ''].unique()))
-            filtro_fprog = st.selectbox("FECHA PROGRAMACIÓN", fprog_opts, key="filtro_fprog_envios")
+            usar_fprog = st.checkbox("Filtrar F. Programación", value=False, key="chk_fprog")
+            if usar_fprog:
+                filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=datetime.now().date(), key="filtro_fprog_envios")
+            else:
+                filtro_fprog = None
 
         with f2:
-            fenv_opts = ["TODAS"] + sorted(list(df_envios['fecha_envio'].loc[df_envios['fecha_envio'] != ''].unique()))
-            filtro_fenvio = st.selectbox("FECHA DE ENVÍO", fenv_opts, key="filtro_fenvio_envios")
+            usar_fenv = st.checkbox("Filtrar F. Envío", value=False, key="chk_fenv")
+            if usar_fenv:
+                filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=datetime.now().date(), key="filtro_fenvio_envios")
+            else:
+                filtro_fenvio = None
 
         with f3:
             facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
@@ -1029,11 +1039,11 @@ def main():
 
         df_filtrado = df_envios.copy()
 
-        if filtro_fprog != "TODAS":
-            df_filtrado = df_filtrado[df_filtrado['fecha_programacion'] == filtro_fprog]
+        if filtro_fprog is not None:
+            df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == filtro_fprog]
 
-        if filtro_fenvio != "TODAS":
-            df_filtrado = df_filtrado[df_filtrado['fecha_envio'] == filtro_fenvio]
+        if filtro_fenvio is not None:
+            df_filtrado = df_filtrado[df_filtrado['dt_envio_parsed'].dt.date == filtro_fenvio]
 
         if filtro_factura != "TODAS":
             df_filtrado = df_filtrado[df_filtrado['factura'] == filtro_factura]
