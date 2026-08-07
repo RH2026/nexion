@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import re
 import time
@@ -15,6 +15,7 @@ from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit.components.v1 as components
 import streamlit as st
+import pytz
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
@@ -192,7 +193,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
             if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
                 st.switch_page("pages/indicadores.py")
         st.stop()
-            
+        
     if submodulo and not permisos.get(submodulo.upper(), False):
         st.markdown(
             f"""
@@ -349,7 +350,6 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
-            # 1. Búsqueda en Matriz Principal (Global)
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -366,7 +366,6 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops].copy()
 
-            # 2. Búsqueda en Archivo T1.xlsx
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
@@ -394,23 +393,18 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
             res_inv = pd.DataFrame()
             if res_ops.empty and res_t1.empty:
                 try:
@@ -425,7 +419,6 @@ with header_zone:
                 except Exception:
                     pass
 
-            # Asignación final de resultados
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -694,23 +687,30 @@ def render_envios_flow_responsive(data):
         <div class="w-full space-y-2">
             {"".join([f'''
             <div class="list-row flex items-stretch">
-                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADO" else ("bg-orange-500" if item['estatus'] == "SURTIENDO" else "bg-amber-500")} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "EN TIEMPO" else ("bg-red-500" if item['estatus'] == "RETRASO" else "bg-amber-500")} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                 <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
                     
-                    <div class="w-full md:w-40 shrink-0">
+                    <div class="w-full md:w-36 shrink-0">
                         <div class="label-mini">Factura</div>
                         <div class="text-sm font-black text-white italic tracking-tighter leading-none min-h-[20px]">
                             {item['factura']}
                         </div>
-                        <div class="text-[12px] text-sky-400 font-bold mt-1">
+                        <div class="text-[11px] text-sky-400 font-bold mt-1">
                             RECO: {item['recomendacion']}
                         </div>
                     </div>
 
-                    <div class="w-full md:w-40 shrink-0">
+                    <div class="w-full md:w-36 shrink-0">
                         <div class="label-mini">No. Guía / Talón</div>
                         <div class="text-xs font-mono font-bold text-amber-300 truncate min-h-[16px]">
                             {item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-36 shrink-0">
+                        <div class="label-mini">F. Programación</div>
+                        <div class="text-xs font-bold text-slate-200 truncate min-h-[16px]">
+                            {item['fecha_programacion'] if item['fecha_programacion'] else 'N/A'}
                         </div>
                     </div>
                     
@@ -729,7 +729,7 @@ def render_envios_flow_responsive(data):
                         </div>
                     </div>
 
-                    <div class="w-full md:w-[250px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-6">
+                    <div class="w-full md:w-[200px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-6">
                         <div class="w-full shrink-0">
                             <div class="label-mini">Destino</div>
                             <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['destino']}</div>
@@ -738,8 +738,8 @@ def render_envios_flow_responsive(data):
 
                     <div class="w-full md:w-36 flex justify-between md:block text-right shrink-0">
                         <div class="label-mini md:mb-1">Fecha Envío / Estatus</div>
-                        <div class="text-[10px] font-bold text-emerald-300 uppercase">{item['fecha_envio']}</div>
-                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADO" else ("text-orange-400" if item['estatus'] == "SURTIENDO" else "text-amber-400")} tracking-tighter min-h-[16px]">
+                        <div class="text-[10px] font-bold text-emerald-300 uppercase">{item['fecha_envio'] if item['fecha_envio'] else 'SIN ENVIO'}</div>
+                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "EN TIEMPO" else ("text-red-400" if item['estatus'] == "RETRASO" else "text-amber-400")} tracking-tighter min-h-[16px]">
                             {item['estatus']}
                         </div>
                     </div>
@@ -787,7 +787,7 @@ def main():
     else:
         modo_edicion = False
 
-    # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA (ARTILLERÍA PESADA ANTI-CACHE) ────────
+    # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA ────────────────────────
     col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
     with col_titulo:
         st.markdown("""
@@ -807,11 +807,9 @@ def main():
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "envios.csv"
     
-    # URL con marca de tiempo precisa en milisegundos para evitar caché agresiva de GitHub CDN / Cloudflare
     CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}?_t={int(time.time() * 1000)}"
 
     def get_github_data():
-        # Headers avanzados para saltarse cualquier caché intermedia
         headers = {
             "Authorization": f"token {TOKEN}" if TOKEN else "",
             "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -860,7 +858,6 @@ def main():
 
     df_raw = get_github_data()
 
-    # Cargar fuentes adicionales para búsqueda de número de guía (Matriz Dashboard y T1.xlsx)
     df_dashboard_global = cargar_datos_dashboard()
     df_t1_global = pd.DataFrame()
     try:
@@ -910,18 +907,19 @@ def main():
         df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('').astype(str)
         
+        # Extracción y limpieza de Fechas
+        fecha_prog_raw = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+        df_envios['fecha_programacion'] = fecha_prog_raw
+
         fecha_envio_raw = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
         df_envios['fecha_envio'] = fecha_envio_raw
         
-        estatus_series = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
-        
-        # Búsqueda automática de Número de Guía en la matriz y T1.xlsx
+        # Búsqueda automática de Número de Guía
         lista_guias = []
         for idx, row in df_raw.iterrows():
             fac = str(row.get('Factura', '')).strip()
             guia_encontrada = ""
             
-            # Buscar en columnas directas de df_raw si existen
             for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
                 if col_g in df_raw.columns and pd.notna(row.get(col_g)):
                     val_g = str(row.get(col_g)).strip()
@@ -929,7 +927,6 @@ def main():
                         guia_encontrada = val_g
                         break
             
-            # Buscar en la matriz general de dashboard
             if not guia_encontrada and df_dashboard_global is not None and not df_dashboard_global.empty:
                 for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
                     if col_ped in df_dashboard_global.columns:
@@ -944,7 +941,6 @@ def main():
                         if guia_encontrada:
                             break
 
-            # Buscar en T1.xlsx si aún no se encuentra
             if not guia_encontrada and not df_t1_global.empty:
                 for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
                     if col_t1_ped in df_t1_global.columns:
@@ -963,25 +959,52 @@ def main():
 
         df_envios['numero_guia'] = lista_guias
 
-        # Condición blindada para fecha, hora de envío y estatus
+        # ── LÓGICA MAESTRA: 24 HORAS GUADALAJARA (RETRASO VS EN TIEMPO) ──
+        tz_gdl = pytz.timezone("America/Mexico_City")
+        ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
+        
         estatus_calculado = []
-        for f_env, est in zip(fecha_envio_raw, estatus_series):
-            f_str = str(f_env).lower().strip()
-            if f_str in valores_nulos_fecha:
-                estatus_calculado.append("SURTIENDO")
-            else:
-                if est in ['', 'NAN', 'PENDIENTE', 'SURTIENDO']:
-                    estatus_calculado.append("ENVIADA")
+        for f_prog, f_env in zip(fecha_prog_raw, fecha_envio_raw):
+            fp_str = str(f_prog).strip()
+            fe_str = str(f_env).strip()
+            
+            dt_prog = pd.to_datetime(fp_str, errors='coerce')
+            dt_env = pd.to_datetime(fe_str, errors='coerce')
+            
+            # Caso 1: Si no hay fecha de programación válida
+            if pd.isna(dt_prog):
+                if fe_str.lower() in valores_nulos_fecha:
+                    estatus_calculado.append("SURTIENDO")
                 else:
-                    estatus_calculado.append(est)
+                    estatus_calculado.append("EN TIEMPO")
+                continue
+                
+            limite_24h = dt_prog + timedelta(hours=24)
+            
+            # Caso 2: Si no tiene fecha de envío pero ya pasaron más de 24 horas desde la programación
+            if fe_str.lower() in valores_nulos_fecha:
+                if ahora_gdl > limite_24h:
+                    estatus_calculado.append("RETRASO")
+                else:
+                    estatus_calculado.append("SURTIENDO")
+            else:
+                # Caso 3: Tiene fecha de envío con hora, se compara si superó las 24 horas de la fecha de programación
+                if pd.notna(dt_env):
+                    if dt_env > limite_24h:
+                        estatus_calculado.append("RETRASO")
+                    else:
+                        estatus_calculado.append("EN TIEMPO")
+                else:
+                    estatus_calculado.append("EN TIEMPO")
                     
         df_envios['estatus'] = estatus_calculado
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
 
+        # Ordenar folios en orden consecutivo estricto
+        df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
+
         # ── FILTROS SUPER INTELIGENTES 4 EN LÍNEA ────────────────────────
-        st.markdown("<div style='font-size: 11px; font-weight: 800; color: #82D4E6; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;'></div>", unsafe_allow_html=True)
-        
         f1, f2, f3, f4 = st.columns(4)
 
         with f1:
@@ -999,7 +1022,6 @@ def main():
             estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
             filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
 
-        # Aplicación de filtros sobre el DataFrame
         df_filtrado = df_envios.copy()
 
         if filtro_factura != "TODAS":
