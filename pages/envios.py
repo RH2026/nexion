@@ -217,7 +217,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                     </span>
                 </div>
                 <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                    No tienes permisos para acceder a la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
+                    No tienes permisos para acceder al sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
                 </div>
             </div>
             """,
@@ -982,7 +982,6 @@ def main():
             fecha_prog_date = dt_prog.date()
             limite_24h = dt_prog + timedelta(hours=24)
             
-            # Si la fecha de programación es en el futuro (mañana o después), NUNCA debe marcar retraso
             if fecha_prog_date > hoy_gdl:
                 if fe_str.lower() in valores_nulos_fecha:
                     estatus_calculado.append("SURTIENDO")
@@ -1005,39 +1004,42 @@ def main():
 
         df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
 
-        # ── FILTROS SUPER INTELIGENTES 4 EN LÍNEA ────────────────────────
-        f1, f2, f3, f4 = st.columns(4)
+        # ── 5 FILTROS EN UNA SOLA LÍNEA ────────────────────────
+        f1, f2, f3, f4, f5 = st.columns(5)
 
         with f1:
+            fprog_opts = ["TODAS"] + sorted(list(df_envios['fecha_programacion'].loc[df_envios['fecha_programacion'] != ''].unique()))
+            filtro_fprog = st.selectbox("FECHA PROGRAMACIÓN", fprog_opts, key="filtro_fprog_envios")
+
+        with f2:
+            fenv_opts = ["TODAS"] + sorted(list(df_envios['fecha_envio'].loc[df_envios['fecha_envio'] != ''].unique()))
+            filtro_fenvio = st.selectbox("FECHA DE ENVÍO", fenv_opts, key="filtro_fenvio_envios")
+
+        with f3:
             facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
             filtro_factura = st.selectbox("FACTURA", facturas_opts, key="filtro_factura_envios")
 
-        with f2:
+        with f4:
             paq_opts = ["TODAS"] + sorted(list(df_envios['recomendacion'].loc[df_envios['recomendacion'] != ''].unique()))
             filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
 
-        with f3:
-            filtro_cliente = st.text_input("CLIENTE (COMERCIAL / EXTRAN)", placeholder="🔍 Buscar cliente...", key="filtro_cliente_envios")
-
-        with f4:
+        with f5:
             estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
             filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
 
         df_filtrado = df_envios.copy()
+
+        if filtro_fprog != "TODAS":
+            df_filtrado = df_filtrado[df_filtrado['fecha_programacion'] == filtro_fprog]
+
+        if filtro_fenvio != "TODAS":
+            df_filtrado = df_filtrado[df_filtrado['fecha_envio'] == filtro_fenvio]
 
         if filtro_factura != "TODAS":
             df_filtrado = df_filtrado[df_filtrado['factura'] == filtro_factura]
 
         if filtro_paqueteria != "TODAS":
             df_filtrado = df_filtrado[df_filtrado['recomendacion'] == filtro_paqueteria]
-
-        if filtro_cliente:
-            q_cli = filtro_cliente.strip().lower()
-            mask_cli = (
-                df_filtrado['nombre_cliente'].str.lower().str.contains(q_cli, na=False) |
-                df_filtrado['nombre_extran'].str.lower().str.contains(q_cli, na=False)
-            )
-            df_filtrado = df_filtrado[mask_cli]
 
         if filtro_estatus != "TODOS":
             df_filtrado = df_filtrado[df_filtrado['estatus'] == filtro_estatus]
