@@ -738,7 +738,7 @@ def render_envios_flow_responsive(data):
 
                     <div class="w-full md:w-36 flex justify-between md:block text-right shrink-0">
                         <div class="label-mini md:mb-1">Fecha Envío / Estatus</div>
-                        <div class="text-[10px] font-bold text-sky-400 uppercase">{item['fecha_envio'] if item['fecha_envio'] else 'SIN ENVIO'}</div>
+                        <div class="text-[10px] font-bold text-sky-400 uppercase">{item['fecha_envio'] if item['fecha_envio'] else 'SIN ENVIAR'}</div>
                         <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "EN TIEMPO" else ("text-red-400" if item['estatus'] == "RETRASO" else "text-amber-400")} tracking-tighter min-h-[16px]">
                             {item['estatus']}
                         </div>
