@@ -963,7 +963,6 @@ def main():
 
                         st.session_state.df_analisis = df_log[cols_finales]
                         st.success("¡Motor sincronizado con datos recientes y fecha de programación ajustada!")
-                        st.rerun()
 
                     except Exception as e:
                         st.error(f"Error en el motor de asignación: {e}")
